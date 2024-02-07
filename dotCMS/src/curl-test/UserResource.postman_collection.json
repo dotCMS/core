@@ -1,12 +1,141 @@
 {
 	"info": {
-		"_postman_id": "958f7287-3a20-4591-94ae-525a6c9a7c38",
+		"_postman_id": "ed475436-c760-4988-b584-39d75e4cd648",
 		"name": "UserResource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
 	},
 	"item": [
+		{
+			"name": "CreateUserOnFrench",
+			"item": [
+				{
+					"name": "CreateFrench",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"frenchLanguageId\", jsonData.entity.id);",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"languageCode\":\"fr\",\n    \"countryCode\":\"fr\",\n    \"language\":\"French\",\n    \"country\":\"French\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateUserFrench",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User FE creation sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"french@dotcms.com\");",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"FrenchUser\");",
+									"    pm.expect(jsonData.entity.user[\"languageId\"]).to.eql(\"fr_FR\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\":\"userid-french-12345678\",\n    \"active\":true,\n    \"firstName\":\"FrenchUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"French\",\n    \"nickName\":\"French\",\n    \"email\":\"french@dotcms.com\",\n    \"male\":true,\n    \"languageId\":{{frenchLanguageId}},\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Get Users Include Anon and Default User",
 			"event": [
@@ -501,6 +630,10 @@
 	"variable": [
 		{
 			"key": "containsAttrAndValue",
+			"value": ""
+		},
+		{
+			"key": "frenchLanguageId",
 			"value": ""
 		}
 	]

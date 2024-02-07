@@ -39,6 +39,11 @@
     width: $spacing-6;
 }
 
+a.p-button {
+    color: var(--color-palette-primary-500);
+    text-decoration: none;
+}
+
 .p-field > label {
     font-size: $font-size-sm;
 }

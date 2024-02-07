@@ -3,7 +3,7 @@ package com.dotcms.model.asset;
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.vertx.codegen.annotations.Nullable;
+import io.smallrye.common.constraint.Nullable;
 import org.immutables.value.Value;
 
 import java.time.Instant;

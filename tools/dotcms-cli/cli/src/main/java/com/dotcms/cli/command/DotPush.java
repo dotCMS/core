@@ -32,4 +32,13 @@ public interface DotPush {
         return Optional.empty();
     }
 
+    /**
+     * Returns the execution order of this push command.
+     *
+     * @return the execution order of this push command
+     */
+    default int getOrder() {
+        return Integer.MAX_VALUE;  // default to the highest possible value
+    }
+
 }

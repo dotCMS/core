@@ -15,7 +15,7 @@ import {
 } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotMenu, DotMenuItem } from '@models/navigation';
+import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotMenuService {

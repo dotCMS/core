@@ -20,6 +20,7 @@ import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -79,6 +80,7 @@ public class CircuitBreakerUrl {
     private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
     private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl = new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
 
+    public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[]{});
     /**
      * 
      * @param proxyUrl
@@ -354,6 +356,10 @@ public class CircuitBreakerUrl {
         }
     }
 
+    /**
+     * Retrieve the response headers
+     * @return Header
+     */
     public Header[] getResponseHeaders() {
         return responseHeaders;
     }
@@ -393,14 +399,19 @@ public class CircuitBreakerUrl {
         }
     }
 
-    public static class Response<T extends Serializable> {
+    public static class Response<T extends Serializable> implements Serializable {
 
         private final T response;
         private final int statusCode;
 
-        private Response(final T response, final int statusCode) {
+        // this is not serializable, so we need to make it transient or figured out how to do serialization
+        private final transient Header[] responseHeaders;
+
+
+        private Response(final T response, final int statusCode, final Header[] responseHeaders) {
             this.response = response;
             this.statusCode = statusCode;
+            this.responseHeaders = responseHeaders;
         }
 
         Response(final CircuitBreakerUrl circuitBreakerUrl, final Class<T> clazz) throws IOException {
@@ -408,12 +419,17 @@ public class CircuitBreakerUrl {
                 clazz.equals(String.class)
                     ? clazz.cast(circuitBreakerUrl.doString())
                     : circuitBreakerUrl.doObject(clazz),
-                circuitBreakerUrl.response()
+                circuitBreakerUrl.response(),
+                circuitBreakerUrl.getResponseHeaders()
             );
         }
 
         Response(final CircuitBreakerUrl circuitBreakerUrl) throws IOException {
             this(circuitBreakerUrl, (Class<T>) String.class);
+        }
+
+        public Header[] getResponseHeaders() {
+            return responseHeaders;
         }
 
         public T getResponse() {
@@ -432,7 +448,5 @@ public class CircuitBreakerUrl {
                 '}';
         }
     }
-
-    public static Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0);
 
 }

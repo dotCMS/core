@@ -1,26 +1,37 @@
 @use "variables" as *;
 
 $notification-padding: $spacing-3;
+$notification-dot-badge-size: 0.625rem;
 
 :host {
-    position: relative;
     display: flex;
+    position: relative;
 
-    .badge {
-        background-color: $color-palette-primary;
-        border-radius: 2px;
+    .toolbar-notifications__container {
+        position: relative;
+        margin-left: $spacing-1;
+    }
+
+    .dot-toolbar-notifications__button-active {
+        background-color: $color-palette-primary-op-20;
+        border-radius: 50%;
+    }
+
+    .dot-toolbar__badge {
+        background-color: $color-accessible-text-fuchsia;
+        border-radius: $notification-dot-badge-size;
         color: $white;
-        font-size: $font-size-sm;
-        line-height: $font-size-sm;
-        padding: 2px 5px;
+        width: $notification-dot-badge-size;
+        height: $notification-dot-badge-size;
         position: absolute;
-        left: 16px;
-        top: -3px;
+        left: 28px;
+        top: 2px;
     }
 
     .toolbar-notifications {
         padding: $notification-padding 0 $notification-padding $notification-padding;
         width: 350px;
+        margin: $spacing-1;
 
         &:before {
             background: $white;
@@ -36,15 +47,14 @@ $notification-padding: $spacing-3;
 
     .toolbar-notifications__heading {
         display: flex;
-        margin-bottom: $font-size-xs;
         justify-content: space-between;
         padding-right: $notification-padding;
     }
 
     .toolbar-notifications__title {
-        align-self: center;
         font-size: $font-size-lg;
         margin: 0;
+        padding-bottom: $spacing-0;
     }
 
     .toolbar-notifications__footer {

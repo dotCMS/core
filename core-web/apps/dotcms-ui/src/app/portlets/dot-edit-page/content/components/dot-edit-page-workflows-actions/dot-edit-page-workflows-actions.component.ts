@@ -14,14 +14,14 @@ import { MenuItem } from 'primeng/api';
 
 import { catchError, map, take, tap } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWizardService,
+    DotGlobalMessageService,
+    DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -30,6 +30,7 @@ import {
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 
+// Check this component to create the Workflow Action for the Edit Page
 @Component({
     selector: 'dot-edit-page-workflows-actions',
     templateUrl: './dot-edit-page-workflows-actions.component.html',
@@ -127,7 +128,11 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
     ): void {
         const currentMenuActions = this.actions;
         this.dotWorkflowActionsFireService
-            .fireTo(this.page.workingInode, workflow.id, data)
+            .fireTo({
+                inode: this.page.workingInode,
+                actionId: workflow.id,
+                data
+            })
             .pipe(
                 take(1),
                 catchError((error) => {

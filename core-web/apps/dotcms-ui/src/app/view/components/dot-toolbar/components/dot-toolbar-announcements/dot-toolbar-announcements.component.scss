@@ -1,9 +1,11 @@
 @use "variables" as *;
 
 :host {
-    max-height: 37rem;
-    overflow: scroll;
+    max-height: 100vh;
+    overflow: auto;
     display: block;
+    padding: $spacing-4;
+    width: 26rem;
 }
 
 .announcements__list {
@@ -14,25 +16,34 @@
 .announcements__container {
     display: flex;
     justify-content: flex-end;
+
+    i {
+        color: $color-palette-primary-500;
+    }
 }
 
 .announcements__list-item {
     display: flex;
+    position: relative;
     flex-direction: row;
     gap: $spacing-3;
-    padding: $spacing-3 $spacing-1;
-
+    padding: $spacing-2 $spacing-1;
+    margin-bottom: $spacing-1;
+    border-radius: $border-radius-md;
     &:hover {
-        border-radius: $spacing-0;
         background-color: $color-palette-primary-100;
     }
+}
+
+.announcements__list-item--active {
+    background-color: $color-palette-secondary-100;
 }
 
 .announcements__title {
     margin: 0;
     padding-bottom: $spacing-1;
     border-bottom: 1px solid $color-palette-gray-300;
-    font-size: $font-size-xl;
+    font-size: $font-size-lg;
 }
 
 .announcements__content {
@@ -47,11 +58,12 @@
 }
 
 .announcements__image {
-    height: 2.5rem;
-    width: 2.5rem;
+    height: 2.7rem;
+    width: 2.7rem;
     background-color: var(--color-palette-secondary-200);
     color: var(--color-palette-secondary-500);
     border-radius: 50%;
+    font-size: $font-size-lg;
 }
 
 .announcements__label {
@@ -59,18 +71,46 @@
 }
 
 .announcements__about {
-    display: flex;
+    display: grid;
     flex-direction: column;
     gap: $spacing-3;
-    margin: $spacing-3 0;
+    margin: $spacing-3;
+    grid-template-columns: 1fr 1fr;
 }
 
 .announcements__link {
     color: $color-palette-primary;
     padding: $spacing-1;
     border-radius: $border-radius-lg;
-    text-decoration: none;
     &:hover {
         background-color: $color-palette-primary-100;
+    }
+}
+
+.announcements__url {
+    text-decoration: none;
+    color: $black;
+}
+
+.announcements__badge {
+    background-color: $color-accessible-text-fuchsia;
+    border-radius: 50%;
+    color: $white;
+    font-size: $font-size-sm;
+    line-height: $font-size-sm;
+    width: 0.625rem;
+    height: 0.625rem;
+    position: absolute;
+    left: 39px;
+    top: 14px;
+}
+
+::ng-deep {
+    .toolbar-announcements__container {
+        &.p-overlaypanel {
+            .p-overlaypanel-content {
+                padding: 0;
+            }
+        }
     }
 }

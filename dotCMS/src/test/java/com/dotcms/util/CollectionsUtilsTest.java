@@ -7,6 +7,7 @@ import io.vavr.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,6 +22,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.partition;
 import static com.dotcms.util.CollectionsUtils.set;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -364,5 +366,59 @@ public class CollectionsUtilsTest extends UnitTestBase {
         CollectionsUtils.renameKey( map, "key1", "key2");
         assertEquals( map.get("key1"), null);
         assertEquals( map.get("key2"), null);
+    }
+
+    /**
+     * Method to test: {@link CollectionsUtils#concat(Object[], Object[])}
+     * Given Scenario: concat two arrays
+     * ExpectedResult: a resulting array with the elements of both arrays
+     *
+     */
+    @Test
+    public void testConcatPrimitive(){
+        Integer [] array1 = {1,2,3};
+        Integer [] array2 = {4,5,6};
+        Integer [] array3 = CollectionsUtils.concat( array1, array2);
+        assertArrayEquals( array3, new Integer[]{1,2,3,4,5,6});
+    }
+
+    private final static String JS_JSON_MAP = "(function test(context) {\n" +
+            "\n" +
+            "    \n" +
+            "    const contentJsonOut = {\n" +
+            "        \"message\":\"Contentlet 1 deleted\",\n" +
+            "        \"inner\": {\n" +
+            "            \"inner-message\":\"Contentlet 2 deleted\"\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    return contentJsonOut;\n" +
+            "})\n";
+
+    /**
+     * Method to test: {@link CollectionsUtils#toSerializableMap(Map)}
+     * Given Scenario: Convert an non serializable Map to a serializable map, should have inner non serializable maps
+     * ExpectedResult: a resulting Map should be serializable
+     *
+     */
+    @Test
+    public void test_toSerializableMap(){
+
+        final Map nonsSerializableMap = new NoSerializableMap();
+        nonsSerializableMap.put("object", new Object());
+        nonsSerializableMap.put("string", "string");
+
+        final Map nonsSerializableMap2 = new NoSerializableMap();
+        nonsSerializableMap2.put("object", new Object());
+        nonsSerializableMap2.put("string", "string");
+        nonsSerializableMap.put("inner", nonsSerializableMap2);
+        final Object resultMap =  CollectionsUtils.toSerializableMap(nonsSerializableMap);
+
+        Assert.assertNotNull(resultMap);
+        Assert.assertTrue(resultMap instanceof Map);
+        Assert.assertTrue(resultMap instanceof Serializable);
+        Assert.assertTrue(Map.class.cast(resultMap).get("inner") instanceof Map);
+        Assert.assertTrue(Map.class.cast(resultMap).get("inner") instanceof Serializable);
+
     }
 }

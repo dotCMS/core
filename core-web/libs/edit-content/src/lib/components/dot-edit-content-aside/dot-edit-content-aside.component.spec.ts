@@ -1,10 +1,11 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 import { mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotMessageService, DotWorkflowService, DotFormatDateService } from '@dotcms/data-access';
 
 import { DotEditContentAsideComponent } from './dot-edit-content-aside.component';
 
@@ -15,6 +16,7 @@ describe('DotEditContentAsideComponent', () => {
     const createComponent = createComponentFactory({
         component: DotEditContentAsideComponent,
         detectChanges: false,
+        imports: [HttpClientTestingModule],
         providers: [
             mockProvider(ActivatedRoute), // Needed, use RouterLink
             {
@@ -37,12 +39,26 @@ describe('DotEditContentAsideComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: DotWorkflowService,
+                    useValue: {
+                        getWorkflowStatus: () =>
+                            of({
+                                scheme: { name: 'Test' },
+                                step: { name: 'Test' },
+                                task: { assignedTo: 'Admin User' }
+                            })
+                    }
+                }
+            ]
+        });
     });
 
-    it('should render aside info', () => {
+    it('should render aside information data', () => {
         spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
-        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType);
+        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
         spectator.detectChanges();
         expect(spectator.query(byTestId('modified-by')).textContent.trim()).toBe('Admin User');
         expect(spectator.query(byTestId('last-modified')).textContent.trim()).toBe('11/07/2023');
@@ -51,15 +67,36 @@ describe('DotEditContentAsideComponent', () => {
         );
     });
 
-    it('should not render aside info', () => {
-        const CONTENT_WITHOUT_CONTENTLET = CONTENT_FORM_DATA_MOCK;
+    it('should not render aside information data', () => {
+        const CONTENT_WITHOUT_CONTENTLET = { ...CONTENT_FORM_DATA_MOCK };
         delete CONTENT_WITHOUT_CONTENTLET.contentlet;
         spectator.setInput('contentLet', CONTENT_WITHOUT_CONTENTLET.contentlet);
-        spectator.setInput('contentType', CONTENT_WITHOUT_CONTENTLET.contentType);
+        spectator.setInput('contentType', CONTENT_WITHOUT_CONTENTLET.contentType.contentType);
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('modified-by')).textContent).toBe('');
         expect(spectator.query(byTestId('last-modified')).textContent).toBe('');
         expect(spectator.query(byTestId('inode'))).toBeFalsy();
+    });
+
+    it('should render aside workflow data', () => {
+        spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
+        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
+        spectator.detectChanges();
+
+        expect(spectator.component.workflow$).toBeDefined();
+        expect(spectator.query(byTestId('workflow-name')).textContent.trim()).toBe('Test');
+        expect(spectator.query(byTestId('workflow-step')).textContent.trim()).toBe('Test');
+        expect(spectator.query(byTestId('workflow-assigned')).textContent.trim()).toBe(
+            'Admin User'
+        );
+    });
+
+    it('should render New as status when dont have contentlet', () => {
+        spectator.setInput('contentLet', null);
+        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('workflow-step')).textContent).toBe('New');
     });
 });

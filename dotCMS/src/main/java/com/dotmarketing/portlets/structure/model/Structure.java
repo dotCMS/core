@@ -1,13 +1,10 @@
 package com.dotmarketing.portlets.structure.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -20,18 +17,27 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-
+/**
+ * This class is an old representation a Content Type in dotCMS. It's still used in many places for
+ * backwards compatibility, but it should not be used in new code.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class Structure extends Inode implements Permissionable, Treeable,ContentTypeIf,
         ManifestItem {
 
@@ -39,37 +45,37 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
 
 
     /**
-     * @deprecated As of 2016-05-16, replaced by {@link Type#CONTENT}
+     * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#CONTENT}
      */
     @Deprecated
     public static final int STRUCTURE_TYPE_CONTENT      = 1;
 
     /**
-     * @deprecated As of 2016-05-16, replaced by {@link Type#WIDGET}
+     * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#WIDGET}
      */
     @Deprecated
     public static final int STRUCTURE_TYPE_WIDGET       = 2;
 
     /**
-     * @deprecated As of 2016-05-16, replaced by {@link Type#FORM}
+     * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#FORM}
      */
     @Deprecated
     public static final int STRUCTURE_TYPE_FORM         = 3;
 
     /**
-     * @deprecated As of 2016-05-16, replaced by {@link Type#FILEASSET}
+     * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#FILEASSET
      */
     @Deprecated
     public static final int STRUCTURE_TYPE_FILEASSET    = 4;
 
     /**
-     * @deprecated As of 2016-05-16, replaced by {@link Type#HTMLPAGE}
+     * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#HTMLPAGE}
      */
     @Deprecated
     public static final int STRUCTURE_TYPE_HTMLPAGE     = 5;
 
     /**
-     * @deprecated As of 2016-05-16, replaced by  {@link Type#PERSONA}
+     * @deprecated As of 2016-05-16, replaced by  {@link BaseContentType#PERSONA}
      */
     @Deprecated
     public static final int STRUCTURE_TYPE_PERSONA      = 6;
@@ -87,15 +93,14 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
     private boolean system;
     private String velocityVarName;
     private String urlMapPattern;
-    private String host="SYSTEM_HOST";
-    private String folder="SYSTEM_FOLDER";
+    private String host = Host.SYSTEM_HOST;
+    private String folder = Folder.SYSTEM_FOLDER;
     private String publishDateVar;
     private String expireDateVar;
     private Date modDate;
     private String icon;
     private int sortOrder;
-
-
+    private Map<String, Object> metadata = new HashMap<>();
 
     public String getDetailPage() {
         return pagedetail;
@@ -152,14 +157,13 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
         delete(recursive);
     }
 
-    public void delete(boolean recursive) throws DotHibernateException, DotDataException
-    {
+    public void delete(final boolean recursive) throws DotDataException {
         if(recursive)
         {
-            List<Field> list = FieldFactory.getFieldsByStructure(inode);
+            final List<Field> list = FieldFactory.getFieldsByStructure(inode);
             for(int i = 0;i < list.size();i++)
             {
-                Field field = (Field) list.get(i);
+                final Field field = list.get(i);
                 field.delete();
             }
         }
@@ -310,11 +314,11 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
     public Permissionable getParentPermissionable() throws DotDataException {
         try {
 
-            if(UtilMethods.isSet(getFolder()) && !getFolder().equals("SYSTEM_FOLDER")){
+            if(UtilMethods.isSet(getFolder()) && !getFolder().equals(Folder.SYSTEM_FOLDER)){
 
                 return APILocator.getFolderAPI().find(getFolder(), APILocator.getUserAPI().getSystemUser(), false);
 
-            }else if(UtilMethods.isSet(getHost()) && !getHost().equals("SYSTEM_HOST")){
+            }else if(UtilMethods.isSet(getHost()) && !getHost().equals(Host.SYSTEM_HOST)){
 
                 try {
                     return APILocator.getHostAPI().find(getHost(), APILocator.getUserAPI().getSystemUser(), false);
@@ -323,8 +327,9 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
                 }
             }
             return APILocator.getHostAPI().findSystemHost();
-        } catch (Exception e) {
-            throw new DotRuntimeException(e.getMessage(), e);
+        } catch (final Exception e) {
+            throw new DotRuntimeException(String.format("Failed to get the parent permissionable from Content Type " +
+                    "'%s' [ %s ]: %s", this.name, this.identifier, ExceptionUtil.getErrorMessage(e)), e);
         }
     }
 
@@ -439,4 +444,24 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
     public int getSortOrder() {
         return sortOrder;
     }
+
+    /**
+     * Returns the metadata for this Content Type.
+     *
+     * @return A Map with the Content Type's metadata.
+     */
+    public Map<String, Object> getMetadata(){
+        return this.metadata;
+    }
+
+    /**
+     * Sets the metadata for this Content Type, which may include different configuration
+     * properties or simple common-use attributes for the type in a single column.
+     *
+     * @param metadata A Map with the Content Type's metadata.
+     */
+    public void setMetadata(final Map<String, Object> metadata){
+        this.metadata = metadata;
+    }
+
 }

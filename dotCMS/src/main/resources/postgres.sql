@@ -730,6 +730,7 @@ create table structure (
    sort_order int4,
    icon varchar(255),
    marked_for_deletion bool not null default false,
+   metadata JSONB NULL,
    primary key (inode)
 );
 create table cms_role (
@@ -2515,3 +2516,8 @@ create table system_table (
      key varchar(511) primary key,
      value text not null
 );
+
+
+-- Set up "like 'param%'" indexes for inode and identifier
+CREATE INDEX if not exists inode_inode_leading_idx ON inode(inode  COLLATE "C");
+CREATE INDEX if not exists identifier_id_leading_idx ON identifier(id  COLLATE "C");

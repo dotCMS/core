@@ -3,16 +3,18 @@
 
 import { Observable, of as observableOf, Subject } from 'rxjs';
 
-import { Component, DebugElement, Injectable, Input } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Injectable, Input, signal } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoginService, SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -85,6 +87,7 @@ describe('DotToolbarNotificationsComponent', () => {
         notifications_title: 'Notifications',
         notifications_load_more: 'More'
     });
+    const siteServiceMock = new SiteServiceMock();
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -93,13 +96,21 @@ describe('DotToolbarNotificationsComponent', () => {
                 MockDotDropDownComponent,
                 MockDotNotificationsListComponent
             ],
-            imports: [DotPipesModule, DotMessagePipe, ButtonModule],
+            imports: [DotPipesModule, DotMessagePipe, ButtonModule, HttpClientTestingModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: IframeOverlayService, useClass: MockIframeOverlayService },
                 { provide: DotcmsEventsService, useClass: MockDotcmsEventsService },
                 { provide: LoginService, useClass: MockLoginService },
-                { provide: NotificationsService, useClass: MockNotificationsService }
+                { provide: NotificationsService, useClass: MockNotificationsService },
+                {
+                    provide: AnnouncementsStore,
+                    useClass: AnnouncementsStore
+                },
+                {
+                    provide: SiteService,
+                    useValue: siteServiceMock
+                }
             ]
         }).compileComponents();
 
@@ -107,10 +118,12 @@ describe('DotToolbarNotificationsComponent', () => {
     }));
 
     it(`should has a badge`, () => {
+        fixture.componentInstance.showUnreadAnnouncement = signal(true);
         fixture.detectChanges();
         const badge: DebugElement = fixture.debugElement.query(
             By.css('#dot-toolbar-notifications-badge')
         );
+
         expect(badge).not.toBeNull();
     });
 });

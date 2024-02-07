@@ -11,7 +11,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
     BayesianStatusResponse,
     ComponentStatus,
@@ -27,7 +27,6 @@ import {
     getExperimentResultsMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
     DotExperimentsReportsState,
@@ -426,7 +425,10 @@ describe('DotExperimentsReportsStore', () => {
 
             dotExperimentsService.promoteVariant.mockReturnValue(of(EXPERIMENT_MOCK));
 
-            store.promoteVariant({ experimentId: EXPERIMENT_MOCK.id, variant: variant });
+            store.promoteVariant({
+                experimentId: EXPERIMENT_MOCK.id,
+                variant: variant
+            });
 
             expect(dotExperimentsService.promoteVariant).toHaveBeenCalledWith(
                 EXPERIMENT_MOCK.id,

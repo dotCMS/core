@@ -1,13 +1,15 @@
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { AiPluginResponse, DotAIImageResponse } from './dot-ai.models';
+import { AiPluginResponse, DotAICompletionsConfig, DotAIImageResponse } from './dot-ai.models';
+
+import { AI_PLUGIN_KEY } from '../../utils';
 
 const API_ENDPOINT = '/api/v1/ai';
 const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
@@ -32,15 +34,28 @@ export class DotAiService {
     generateContent(prompt: string): Observable<string> {
         return this.http
             .post<AiPluginResponse>(`${API_ENDPOINT}/text/generate`, JSON.stringify({ prompt }), {
-                headers
+                headers,
+                observe: 'response'
             })
             .pipe(
-                catchError(() => {
-                    return throwError('Error fetching AI content');
-                }),
-                map(({ choices }) => {
-                    // We only will use the first choice
+                map((response) => {
+                    // If the response is 200 and the body come with an error, we throw an error
+                    if (response.body.error) {
+                        throw new Error(response.body.error.message);
+                    }
+
+                    const choices = response.body.choices;
+                    if (!choices || choices.length === 0) {
+                        throw new Error(
+                            'block-editor.extension.ai-image.api-error.no-choice-returned'
+                        );
+                    }
+
+                    // We only use the first choice
                     return choices[0].message.content;
+                }),
+                catchError((errorMsg: string) => {
+                    return throwError(errorMsg);
                 })
             );
     }
@@ -65,7 +80,9 @@ export class DotAiService {
                 }
             )
             .pipe(
-                catchError(() => throwError('Error fetching AI content')),
+                catchError(() =>
+                    throwError('block-editor.extension.ai-image.api-error.missing-token')
+                ),
                 switchMap((response: DotAIImageResponse) => {
                     return this.createAndPublishContentlet(response);
                 })
@@ -73,12 +90,21 @@ export class DotAiService {
     }
 
     /**
-     * Checks the installation status of a plugin.
+     * Checks if the plugin is installed and properly configured.
      *
-     * @return {Observable<HttpResponse<unknown>>} Observable that emits an HttpResponse object containing the plugin installation status.
+     * @return {Observable<boolean>} An observable that emits a boolean value indicating if the plugin is installed and properly configured.
      */
-    checkPluginInstallation(): Observable<HttpResponse<unknown>> {
-        return this.http.get(`${API_ENDPOINT}/image/test`, { observe: 'response' });
+    checkPluginInstallation(): Observable<boolean> {
+        return this.http
+            .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
+                observe: 'response'
+            })
+            .pipe(
+                map((res) => res.status === 200 && res.body.apiKey !== AI_PLUGIN_KEY.NOT_SET),
+                catchError(() => {
+                    return of(false);
+                })
+            );
     }
 
     private createAndPublishContentlet(image: DotAIImageResponse): Observable<DotCMSContentlet[]> {
@@ -99,7 +125,11 @@ export class DotAiService {
             })
             .pipe(
                 pluck('entity', 'results'),
-                catchError((error) => throwError(error))
+                catchError(() =>
+                    throwError(
+                        'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
+                    )
+                )
             ) as Observable<DotCMSContentlet[]>;
     }
 }

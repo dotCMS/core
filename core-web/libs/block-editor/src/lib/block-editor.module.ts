@@ -3,6 +3,9 @@ import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
@@ -26,22 +29,12 @@ import {
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
-import {
-    AI_PLUGIN_INSTALLED_TOKEN,
-    DotAiService,
-    DotUploadFileService,
-    EditorDirective
-} from './shared';
+import { DotAiService, DotUploadFileService, EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
-import { DotBlockEditorInitService } from './shared/services/dot-block-editor-init/dot-block-editor-init.service';
 import { SharedModule } from './shared/shared.module';
 
 const initTranslations = (dotMessageService: DotMessageService) => {
     return () => dotMessageService.init();
-};
-
-const initializeBlockEditor = (appInitService: DotBlockEditorInitService) => {
-    return () => appInitService.initializeBlockEditor();
 };
 
 @NgModule({
@@ -54,8 +47,9 @@ const initializeBlockEditor = (appInitService: DotBlockEditorInitService) => {
         AssetFormModule,
         DotFieldRequiredDirective,
         UploadPlaceholderComponent,
-        AIImagePromptComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        ConfirmDialogModule,
+        AIImagePromptComponent
     ],
     declarations: [
         EditorDirective,
@@ -78,24 +72,12 @@ const initializeBlockEditor = (appInitService: DotBlockEditorInitService) => {
         LoggerService,
         StringUtils,
         DotAiService,
-        DotBlockEditorInitService,
+        ConfirmationService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,
             deps: [DotMessageService],
             multi: true
-        },
-
-        {
-            provide: APP_INITIALIZER,
-            useFactory: initializeBlockEditor,
-            deps: [DotBlockEditorInitService],
-            multi: true
-        },
-        {
-            provide: AI_PLUGIN_INSTALLED_TOKEN,
-            useFactory: (service: DotBlockEditorInitService) => service.isPluginInstalled,
-            deps: [DotBlockEditorInitService]
         }
     ],
     exports: [
@@ -107,8 +89,7 @@ const initializeBlockEditor = (appInitService: DotBlockEditorInitService) => {
         BubbleFormComponent,
         DotBlockEditorComponent,
         AIContentPromptComponent,
-        AIContentActionsComponent,
-        AIImagePromptComponent
+        AIContentActionsComponent
     ]
 })
 export class BlockEditorModule {}

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+    CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
@@ -11,14 +12,13 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
+import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
 import {
-    DotContentThumbnailComponent,
+    DotTempFileThumbnailComponent,
+    DotFileSizeFormatPipe,
     DotMessagePipe,
-    DotSpinnerModule,
-    DotThumbnailOptions
+    DotSpinnerModule
 } from '@dotcms/ui';
-
-import { BinaryFile } from '../../interfaces';
 
 export enum EDITABLE_FILE {
     image = 'image',
@@ -26,50 +26,58 @@ export enum EDITABLE_FILE {
     unknown = 'unknown'
 }
 
-type EDITABLE_FILE_FUNCTION_MAP = {
-    [key in EDITABLE_FILE]: () => boolean;
-};
-
 @Component({
     selector: 'dot-binary-field-preview',
     standalone: true,
     imports: [
         CommonModule,
         ButtonModule,
-        DotContentThumbnailComponent,
+        DotTempFileThumbnailComponent,
         DotSpinnerModule,
         OverlayPanelModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotFileSizeFormatPipe
     ],
     templateUrl: './dot-binary-field-preview.component.html',
     styleUrls: ['./dot-binary-field-preview.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotBinaryFieldPreviewComponent implements OnChanges {
-    @Input() file: BinaryFile;
+    @Input() contentlet: DotCMSContentlet;
+    @Input() tempFile: DotCMSTempFile;
     @Input() editableImage: boolean;
 
     @Output() editImage: EventEmitter<void> = new EventEmitter();
     @Output() editFile: EventEmitter<void> = new EventEmitter();
     @Output() removeFile: EventEmitter<void> = new EventEmitter();
 
-    private readonly EDITABLE_FILE_FUNCTION_MAP: EDITABLE_FILE_FUNCTION_MAP = {
-        [EDITABLE_FILE.image]: () => this.editableImage,
-        [EDITABLE_FILE.text]: () => !!this.file?.content,
-        [EDITABLE_FILE.unknown]: () => !!this.file?.content
-    };
-    private contenttype: EDITABLE_FILE;
     isEditable = false;
 
-    get dotThumbnailOptions(): DotThumbnailOptions {
-        return {
-            tempUrl: this.file.url,
-            inode: this.file.inode,
-            name: this.file.name,
-            contentType: this.file.mimeType,
-            iconSize: '48px',
-            titleImage: this.file.name
-        };
+    get content(): string {
+        return this.tempFile?.content || this.contentlet?.content;
+    }
+
+    get metadata(): DotFileMetadata {
+        return this.tempFile?.metadata || this.contentletMetadata;
+    }
+
+    get title(): string {
+        return this.contentlet?.fileName || this.metadata.name;
+    }
+
+    get contentletMetadata(): DotFileMetadata {
+        const { metaData = '', fieldVariable = '' } = this.contentlet;
+
+        return metaData || this.contentlet[`${fieldVariable}MetaData`];
+    }
+
+    get objectFit(): string {
+        if (this.metadata?.height > this.metadata?.width) {
+            return 'contain';
+        }
+
+        return 'cover';
     }
 
     ngOnChanges(): void {
@@ -83,18 +91,17 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
      * @memberof DotBinaryFieldPreviewComponent
      */
     onEdit(): void {
-        if (this.contenttype === EDITABLE_FILE.image) {
-            this.editImage.emit();
+        if (this.metadata.editableAsText) {
+            this.editFile.emit();
 
             return;
         }
 
-        this.editFile.emit();
+        this.editImage.emit();
     }
 
     private setIsEditable() {
-        const type = this.file.mimeType?.split('/')[0];
-        this.contenttype = EDITABLE_FILE[type] || EDITABLE_FILE.unknown;
-        this.isEditable = this.EDITABLE_FILE_FUNCTION_MAP[this.contenttype]();
+        this.isEditable =
+            this.metadata.editableAsText || (this.metadata.isImage && this.editableImage);
     }
 }

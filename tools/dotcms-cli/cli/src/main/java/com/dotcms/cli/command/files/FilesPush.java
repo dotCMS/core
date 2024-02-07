@@ -12,6 +12,7 @@ import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.command.PushContext;
+import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
@@ -106,13 +107,6 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     pushMixin.path().toAbsolutePath()));
             return CommandLine.ExitCode.SOFTWARE;
         }
-
-        // Let's try to print these tree with some order
-        result.sort((o1, o2) -> {
-            var left = o1.localPaths();
-            var right = o2.localPaths();
-            return left.filePath().compareTo(right.filePath());
-        });
 
         var count = 0;
 
@@ -284,6 +278,11 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Optional<String> getCustomMixinName() {
         return Optional.of(FILES_PUSH_MIXIN);
+    }
+
+    @Override
+    public int getOrder() {
+        return ApplyCommandOrder.FILES.getOrder();
     }
 
 }

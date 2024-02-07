@@ -21,14 +21,16 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import {
     DotAlertConfirmService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
+    DotRouterService,
     DotSiteBrowserService,
-    PaginatorService
+    PaginatorService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -45,16 +47,15 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
-import { DotFormatDateService, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     DotFormatDateServiceMock,
+    DotMessageDisplayServiceMock,
     MockDotMessageService,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { ContainerListRoutingModule } from './container-list-routing.module';
@@ -271,7 +272,10 @@ describe('ContainerListComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock }
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                }
             ],
             imports: [
                 ActionHeaderModule,
@@ -333,8 +337,12 @@ describe('ContainerListComponent', () => {
                 By.css('[data-testid="123Published"]')
             ).componentInstance;
             const actions = setBasicOptions();
-            actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
-            actions.push({ menuItem: { label: 'Duplicate', command: jasmine.any(Function) } });
+            actions.push({
+                menuItem: { label: 'Unpublish', command: jasmine.any(Function) }
+            });
+            actions.push({
+                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+            });
 
             expect(publishContainer.actions).toEqual(actions);
         });
@@ -344,8 +352,12 @@ describe('ContainerListComponent', () => {
                 By.css('[data-testid="123Unpublish"]')
             ).componentInstance;
             const actions = setBasicOptions();
-            actions.push({ menuItem: { label: 'Archive', command: jasmine.any(Function) } });
-            actions.push({ menuItem: { label: 'Duplicate', command: jasmine.any(Function) } });
+            actions.push({
+                menuItem: { label: 'Archive', command: jasmine.any(Function) }
+            });
+            actions.push({
+                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+            });
 
             expect(unPublishContainer.actions).toEqual(actions);
         });
