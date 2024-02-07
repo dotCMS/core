@@ -2,8 +2,6 @@ package com.dotcms.jitsu;
 
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.json.JSONObject;
-
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,10 +10,10 @@ import java.util.Map;
  * Payload for a JITSU Event
  *
  * @see EventLogWebInterceptor
- * @see com.dotcms.metrics.MetricsSenderSubmitter
+ * @see EventLogSubmitter
  * @see EventLogRunnable
  */
-public class EventsPayload implements Serializable {
+public class EventsPayload {
     private JSONObject jsonObject;
     final List<LiteExperiment> shortExperiments = new ArrayList<>();
 

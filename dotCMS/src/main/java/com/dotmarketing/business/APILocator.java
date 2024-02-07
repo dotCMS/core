@@ -62,8 +62,6 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPIImpl;
 import com.dotcms.mail.MailAPI;
 import com.dotcms.mail.MailAPIImpl;
-import com.dotcms.analytics.experience.metric.MetricsAPI;
-import com.dotcms.analytics.experience.metric.MetricsAPIImpl;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
@@ -1139,14 +1137,6 @@ public class APILocator extends Locator<APIIndex> {
 		return (AnalyticsAPI) getInstance(APIIndex.ANALYTICS_API);
 	}
 
-	/**
-	 * Creates a single instance of the {@link MetricsAPI} class.
-	 * @return
-	 */
-	public static MetricsAPI getMetricsAPI() {
-		return (MetricsAPI) getInstance(APIIndex.METRICS_API);
-	}
-
 	public static ContentTypeDestroyAPI getContentTypeDestroyAPI() {
 		return (ContentTypeDestroyAPI) getInstance(APIIndex.CONTENT_TYPE_DESTROY_API);
 	}
@@ -1311,7 +1301,6 @@ enum APIIndex
 	EXPERIMENTS_API,
 	BAYESIAN_API,
 	ANALYTICS_API,
-	METRICS_API,
 	CONTENT_TYPE_DESTROY_API,
 
 	SYSTEM_API;
@@ -1403,7 +1392,6 @@ enum APIIndex
 			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
 			case BAYESIAN_API: return new BayesianAPIImpl();
 			case ANALYTICS_API: return new AnalyticsAPIImpl();
-			case METRICS_API: return new MetricsAPIImpl();
 			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 			case SYSTEM_API: return new SystemAPIImpl();
 		}
