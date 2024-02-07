@@ -76,6 +76,7 @@ import {
 } from '@portlets/shared/dot-content-types-edit/components/fields/service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
+import { DotBinarySettingsComponent } from './components/dot-binary-settings/dot-binary-settings.component';
 import { DotBlockEditorSettingsComponent } from './components/dot-block-editor-settings/dot-block-editor-settings.component';
 import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
@@ -131,6 +132,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotSecondaryToolbarModule,
         DotFieldHelperModule,
         DotFieldValidationMessageComponent,
+        DotBinarySettingsComponent,
         TooltipModule,
         DotIconModule,
         DotMaxlengthModule,

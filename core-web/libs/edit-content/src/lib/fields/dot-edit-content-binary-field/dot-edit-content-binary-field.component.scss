@@ -16,6 +16,11 @@
     padding: $spacing-1;
     height: 12.5rem;
     min-width: 12.5rem;
+    gap: $spacing-1;
+
+    &:has(.binary-field__actions:empty) {
+        gap: 0; // Remove gap when there are no actions, is cleaner than removing the div by logic
+    }
 }
 
 .binary-field__container--uploading {
@@ -28,6 +33,10 @@
     gap: $spacing-3;
     justify-content: center;
     align-items: flex-start;
+
+    &:empty {
+        display: none;
+    }
 }
 
 .binary-field__actions .p-button {
@@ -41,7 +50,6 @@
 .binary-field__drop-zone {
     border: $field-border-size dashed $input-border-color;
     border-radius: $border-radius-md;
-    margin-right: $spacing-1;
     height: 100%;
     flex: 1;
     overflow: auto;
