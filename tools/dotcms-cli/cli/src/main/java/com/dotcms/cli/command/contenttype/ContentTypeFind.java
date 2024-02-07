@@ -89,7 +89,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
         int page = 1;
         while (true) {
             final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
-                    null, page, null, "variable", null, null, null);
+                    null, page,  pageSize, "variable", null, null, null);
             final List<ContentType> types = responseEntityView.entity();
             if (types.isEmpty()) {
                 output.info("@|yellow No content-types were returned, Check you have access permissions.|@");

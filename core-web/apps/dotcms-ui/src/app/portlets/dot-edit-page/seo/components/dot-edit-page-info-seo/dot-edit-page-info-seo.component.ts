@@ -3,10 +3,9 @@ import { Component, Inject, Input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotLinkComponent } from '@components/dot-link/dot-link.component';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 /**
@@ -24,7 +23,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         CommonModule,
         ButtonModule,
         DotCopyButtonComponent,
-        DotApiLinkModule,
+        DotApiLinkComponent,
         DotPipesModule,
         DotMessagePipe,
         DotLinkComponent
@@ -37,10 +36,26 @@ export class DotEditPageInfoSeoComponent {
     innerApiLink: string;
     baseUrl: string;
     seoImprovements: boolean;
+    previewUrl: string;
 
     constructor(@Inject(DOCUMENT) private document: Document) {
         this.baseUrl = document.defaultView.location.href.includes('edit-page')
             ? document.defaultView.location.origin
             : '';
+    }
+
+    @Input()
+    set apiLink(value: string) {
+        if (value) {
+            const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
+
+            this.previewUrl = `${frontEndUrl}${
+                frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+            }disabledNavigateMode=true`;
+        } else {
+            this.previewUrl = value;
+        }
+
+        this.innerApiLink = value;
     }
 }

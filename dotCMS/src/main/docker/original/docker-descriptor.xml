@@ -1,9 +1,24 @@
-<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<assembly xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
     xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
     <includeBaseDirectory>false</includeBaseDirectory>
 
     <fileSets>
+        <!-- hack to make sure these empty directories get included-->
+        <fileSet>
+            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}/config</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/temp</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}/config</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/logs</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
 
         <fileSet>
             <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}</directory>
@@ -15,11 +30,9 @@
                 <exclude>**/felix-cache/**</exclude>
                 <exclude>**/webapps/cargorpc/**</exclude>
                 <exclude>**/work/**</exclude>
-                <exclude>**/temp/**</exclude>
                 <exclude>**/logs/**</exclude>
             </excludes>
         </fileSet>
-
         <fileSet>
             <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}</directory>
             <outputDirectory>dotserver/tomcat-${tomcat.version}</outputDirectory>
@@ -36,9 +49,44 @@
         <fileSet>
             <directory>${exploded-webapp-dir}</directory>
             <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
+            <excludes>
+                <exclude>**/dotcms-webcomponents/dist/dotcms-webcomponents/**</exclude>
+                <exclude>**/dotcms-binary-field-builder/dist/dotcms-binary-field-builder/**</exclude>
+                <exclude>**/dotcms-block-editor/dist/dotcms-block-editor/**</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${exploded-webapp-dir}/dotcms-webcomponents/dist</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
+            <includes>
+                <include>**/dotcms-webcomponents/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${exploded-webapp-dir}/dotcms-binary-field-builder/dist</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
+            <includes>
+                <include>**/dotcms-binary-field-builder/**</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${exploded-webapp-dir}/dotcms-block-editor/dist</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
+            <includes>
+                <include>**/dotcms-block-editor/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${tomcat-lib-folder}</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/lib</outputDirectory>
+            <includes>
+                <include>tomcat-redis-session-manager-${tomcat.redis.session.manager.version}.jar</include>
+                <include>tomcat-catalina-${tomcat.catalina.version}.jar</include>
+                <include>commons-pool2-${commons-pool2.version}.jar</include>
+                <include>jedis-${jedis.version}.jar</include>
+            </includes>
         </fileSet>
     </fileSets>
-
-
 
 </assembly>

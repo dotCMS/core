@@ -7,9 +7,9 @@ import {
     CATEGORY_SOURCE,
     DotCategory
 } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
     CATEGORY_API_URL,

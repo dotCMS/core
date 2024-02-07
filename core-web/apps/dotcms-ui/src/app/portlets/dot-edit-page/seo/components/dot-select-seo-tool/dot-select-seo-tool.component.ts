@@ -1,10 +1,8 @@
 import { DecimalPipe, NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 
-import { DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, socialMediaTiles } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-
-import { socialMediaTiles } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 
 @Component({
     selector: 'dot-select-seo-tool',

@@ -346,5 +346,11 @@ public interface RedisClient<K, V> {
     default Collection<K> getChannels() {
         return Collections.emptyList();
     }
+
+    /**
+     * Deletes all entries that matches the pattern
+     * @param pattern String
+     */
+    void deleteFromPattern(String pattern);
 }
 

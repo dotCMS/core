@@ -16,17 +16,16 @@ import { ConfirmationService, SelectItem } from 'primeng/api';
 
 import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
 import {
-    DotHttpErrorHandled,
-    DotHttpErrorManagerService
-} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    PushPublishService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -37,7 +36,6 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -187,7 +185,10 @@ describe('DotContentTypesPortletComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PushPublishService, useClass: MockPushPublishService },
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
-                { provide: DotHttpErrorManagerService, useClass: MockDotHttpErrorManagerService },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
+                },
                 { provide: DotContentTypeStore, useClass: MockDotContentTypeStore }
             ]
         }).compileComponents();

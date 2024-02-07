@@ -1,0 +1,891 @@
+package com.dotcms.contenttype.test;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.FieldFactory;
+import com.dotcms.contenttype.business.sql.FieldSql;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.exception.OverFieldLimitException;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableDateTimeField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableLineDividerField;
+import com.dotcms.contenttype.model.field.ImmutableSelectField;
+import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.util.Config;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.junit.Assert;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
+import org.mockito.Mockito;
+
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@RunWith(DataProviderRunner.class)
+public class FieldFactoryImplTest extends ContentTypeBaseTest {
+
+	public static class TestCaseVelSuggestion {
+		Class<? extends Field> fieldType;
+		String fieldVarName;
+		String baseExpectedSuggestion;
+
+		public TestCaseVelSuggestion(final String fieldVarName, final String baseExpectedSuggestion, final Class<? extends Field> fieldType) {
+			this.fieldVarName = fieldVarName;
+			this.baseExpectedSuggestion = baseExpectedSuggestion;
+			this.fieldType = fieldType;
+		}
+	}
+
+	@DataProvider
+	public static Object[] testCaseVelSuggestion(){
+		return new Object[] {
+				new TestCaseVelSuggestion("Host", Contentlet.HOST_KEY.toLowerCase(), BinaryField.class),
+				new TestCaseVelSuggestion("CONFolder", Contentlet.CON_FOLDER_KEY.toLowerCase(), TextField.class ),
+				new TestCaseVelSuggestion("LANGUAGEid", Contentlet.LANGUAGEID_KEY.toLowerCase(), TextAreaField.class),
+				new TestCaseVelSuggestion("OWNER", Contentlet.OWNER_KEY.toLowerCase(), DateField.class),
+				new TestCaseVelSuggestion("ModUser", Contentlet.MOD_USER_KEY.toLowerCase(), FileField.class ),
+				new TestCaseVelSuggestion("ArchivED", Contentlet.ARCHIVED_KEY.toLowerCase(), DateTimeField.class),
+				new TestCaseVelSuggestion("inode", Contentlet.INODE_KEY.toLowerCase(), TimeField.class),
+				new TestCaseVelSuggestion("BaseType", Contentlet.BASE_TYPE_KEY.toLowerCase(), WysiwygField.class),
+
+		};
+	}
+
+	final static String TEST_VAR_PREFIX = "testField";
+
+	@Test
+	public void testEquals() throws Exception {
+
+		DotConnect db = new DotConnect();
+
+		db.setSQL("select inode from field");
+		List<Map<String, Object>> results = db.loadObjectResults();
+
+		for (Map<String, Object> map : results) {
+			Field field1 = fieldFactory.byId(map.get("inode").toString());
+			Field field2 = fieldFactory.byId(map.get("inode").toString());
+			assertThat("Field1 == Field2", field1.equals(field2));
+		}
+	}
+
+	@Test
+	public void testFindByTypeMethods() throws Exception {
+
+		List<Field> fields1 = fieldFactory.byContentTypeId(newsLikeContentType.id());
+		List<Field> fields2 = fieldFactory.byContentTypeId(newsLikeContentType.id());
+		for (int i = 0; i < fields1.size(); i++) {
+
+			Field field1 = fields1.get(i);
+			Field field2 = fields2.get(i);
+
+			assertThat("Field1 == Field2", field1.equals(field2));
+		}
+	}
+
+    /**
+     * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#selectByContentTypeInDb(String)}
+     * Given Scenario: Get content type fields filtering by content type id using default order (sort_order, velocity_var_name asc)
+     * ExpectedResult: Fields must be returned in correct order
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	@Test
+	public void testSelectByContentTypeInDb() throws DotDataException, DotSecurityException {
+	    ContentType contentType = null;
+
+	    try {
+            contentType = getContentTypeForTest(null);
+            validateFieldsOrder(fieldFactory.selectByContentTypeInDb(contentType.id()));
+        } finally {
+	        if (contentType != null && contentType.id() != null){
+	            contentTypeApi.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#byContentTypeVar(String)}
+     * Given Scenario: Get content type fields filtering by content type variable using default order (sort_order, velocity_var_name asc)
+     * ExpectedResult: Fields must be returned in correct order
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testSelectByContentTypeVarInDb() throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+
+        try {
+            contentType = getContentTypeForTest(null);
+            validateFieldsOrder(fieldFactory.byContentTypeVar(contentType.variable()));
+        } finally {
+            if (contentType != null && contentType.id() != null){
+                contentTypeApi.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#byContentTypeIdFieldRelationTypeInDb(String, String)}
+     * Given Scenario: Get content type fields filtering by content type id and relation type using default order (sort_order, velocity_var_name asc)
+     * ExpectedResult: Fields must be returned in correct order
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testSelectByContentTypeIdFieldRelationTypeInDb()
+            throws DotDataException, DotSecurityException {
+        final String testRelationType = "testRelationType" + System.currentTimeMillis();
+        ContentType contentType = null;
+
+        try{
+            contentType = getContentTypeForTest(testRelationType);
+
+            assertEquals("aliases", fieldFactory
+                    .byContentTypeIdFieldRelationTypeInDb(contentType.id(), testRelationType).get()
+                    .variable());
+
+        } finally {
+            if (contentType != null && contentType.id() != null){
+                contentTypeApi.delete(contentType);
+            }
+        }
+
+    }
+
+    /**
+     * Verify tests results given a list of fields
+     * @param resultFields Fields to be validated
+     */
+    private void validateFieldsOrder(final List<Field> resultFields) {
+        assertNotNull(resultFields);
+        assertEquals(5, resultFields.size());
+
+        //Verify order
+        assertEquals("aliases", resultFields.get(0).variable());
+        assertEquals("fields0", resultFields.get(1).variable());
+        assertEquals("fields1", resultFields.get(2).variable());
+        assertEquals("hostName", resultFields.get(3).variable());
+        assertEquals("tagStorage", resultFields.get(4).variable());
+    }
+
+    /**
+     * Create a content type with fields that contain the same sort_order and relationType
+     * @param testRelationType {@link String} to be used as relationType
+     * @return {@link ContentType}
+     * @throws DotDataException
+     */
+    private ContentType getContentTypeForTest(final String testRelationType) throws DotDataException {
+        final ContentTypeDataGen dataGen = new ContentTypeDataGen();
+
+        //Add new fields
+        final List<Field> inputFields = new ArrayList<>();
+        inputFields.add(new FieldDataGen().velocityVarName("fields0").relationType(testRelationType).next());
+        inputFields.add(new FieldDataGen().velocityVarName("fields1").relationType(testRelationType).next());
+        inputFields.add(new FieldDataGen().velocityVarName("hostName").relationType(testRelationType).next());
+        inputFields.add(new FieldDataGen().velocityVarName("aliases").relationType(testRelationType).next());
+        inputFields.add(new FieldDataGen().velocityVarName("tagStorage").relationType(testRelationType).next());
+
+        dataGen.fields(inputFields);
+
+        final ContentType contentType = dataGen.nextPersisted();
+
+        //Set the same sort_order in all fields
+        DotConnect dc = new DotConnect();
+        dc.setSQL("update field set sort_order = 1 where structure_inode = ?");
+        dc.addParam(contentType.id());
+        dc.loadResult();
+
+        return contentType;
+    }
+
+
+    @Test
+	public void testFieldVariables() throws Exception {
+		List<Field> fields = fieldFactory.byContentTypeId(newsLikeContentType.id());
+		final int runs = 10;
+
+
+		for (Field field : fields) {
+			List<FieldVariable> vars = field.fieldVariables();
+			for(FieldVariable var : vars){
+				fieldApi.delete(var);
+			}
+
+			vars = FactoryLocator.getFieldFactory().loadVariables(field);
+
+			assertThat("No field vars for field " + field, vars.size() ==0);
+
+			for(int i=0;i<runs;i++){
+				String key = "key" + i;
+				String val = "val"+i;
+
+				FieldVariable var = ImmutableFieldVariable.builder()
+						.key(key)
+						.value(val)
+						.fieldId(field.inode())
+						.build();
+
+				var = fieldApi.save(var, APILocator.systemUser());
+				assertThat("field var saved correctly " + var, var.equals(FactoryLocator.getFieldFactory().loadVariable(var.id())));
+
+				vars = FactoryLocator.getFieldFactory().loadVariables(field);
+				assertThat("field var added for field " + field, vars.size() ==i+1);
+
+			}
+
+			int mySize = vars.size();
+			assertThat("field vars all saved correctly ", mySize ==runs);
+
+			for(FieldVariable var : vars){
+				fieldApi.delete(var);
+				assertThat("field deleted correctly " + var,--mySize == FactoryLocator.getFieldFactory().loadVariables(field).size());
+			}
+		}
+	}
+
+	@Test
+	public void testSaveAndFindReturnSameObject() throws Exception {
+
+		String uu = UUID.randomUUID().toString();
+
+		TextField textField = ImmutableTextField.builder().name("test field" + uu)
+				.variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
+				.dataType(DataTypes.TEXT).id(uu).build();
+
+		Field savedField = fieldFactory.save(textField);
+		String inode = savedField.inode();
+		Field field2 = fieldFactory.byId(inode);
+
+		assertThat("savedField == field2", savedField.equals(field2));
+
+	}
+
+
+	@Test
+	public void testTextDBColumn() throws Exception {
+
+	    String uu = UUID.randomUUID().toString();
+
+	    TextField textField = ImmutableTextField.builder().name("test field" + uu)
+	            .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
+	            .dataType(DataTypes.TEXT).id(uu).build();
+
+	    Field savedField = fieldFactory.save(textField);
+	    String inode = savedField.inode();
+	    Field field2 = fieldFactory.byId(inode);
+	    assertThat("field2 text data type", field2.dataType() == DataTypes.TEXT);
+	    assertThat("field2 text db column", field2.dbColumn().matches("text[0-9]+"));
+	}
+
+
+    @Test
+    public void testBadIntDBColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        TextField textField = ImmutableTextField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
+                .dataType(DataTypes.INTEGER).dbColumn("bad1").build();
+
+        Field savedField = fieldFactory.save(textField);
+        String inode = savedField.inode();
+        Field field2 = fieldFactory.byId(inode);
+        assertThat("testBadIntDBColumn text data type", field2.dataType() == DataTypes.INTEGER);
+        assertThat("testBadIntDBColumn text db column", field2.dbColumn().matches("integer[0-9]+"));
+    }
+    
+    
+    @Test
+    public void testBadLegacyDBColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+
+        
+        LineDividerField badLineDividerField = ImmutableLineDividerField.builder()
+            .name("test field" + uu)
+            .id(uu)
+            .variable(TEST_VAR_PREFIX + uu)
+            .contentTypeId(newsLikeContentType.id()).hint("my hint")
+            .dataType(DataTypes.INTEGER)
+            .sortOrder(99)
+            .dbColumn("section_divider1").build();
+        
+        insertRawFieldInDb(badLineDividerField);
+
+        String inode = badLineDividerField.inode();
+        Field fieldFromDB = fieldFactory.byId(inode);
+        assertThat("testBadLegacyDBColumn  data type", fieldFromDB.dataType() == DataTypes.SYSTEM);
+        assertThat("testBadLegacyDBColumn  db column", fieldFromDB.dbColumn().matches("section_divider1"));
+        assertThat("testBadLegacyDBColumn  order column", fieldFromDB.sortOrder() ==99);
+        
+        
+        Field field3 = FieldBuilder.builder(fieldFromDB).sortOrder(10).build();
+        fieldFactory.save(field3);
+        fieldFromDB = fieldFactory.byId(inode);
+        
+        assertThat("testBadLegacyDBColumn  data type", fieldFromDB.dataType() == DataTypes.SYSTEM);
+        assertThat("testBadLegacyDBColumn  db column", fieldFromDB.dbColumn().matches("system_field"));
+        assertThat("testBadLegacyDBColumn  order column", fieldFromDB.sortOrder() ==10);
+        
+        
+    }
+    
+    
+    FieldSql sql =  FieldSql.getInstance();
+    
+
+    private void insertRawFieldInDb(Field field) throws DotDataException {
+      
+      
+      DotConnect dc = new DotConnect();
+      dc.setSQL(sql.insertFieldInode);
+      dc.addParam(field.id());
+      dc.addParam(field.iDate());
+      dc.addParam(field.owner());
+      dc.loadResult();
+      
+      
+
+      
+      
+      dc.setSQL(sql.insertField);
+      dc.addParam(field.id());
+      dc.addParam(field.contentTypeId());
+      dc.addParam(field.name());
+      dc.addParam(field.type().getCanonicalName());
+      dc.addParam(field.relationType());
+      dc.addParam(field.dbColumn());
+      dc.addParam(field.required());
+      dc.addParam(field.indexed());
+      dc.addParam(field.listed());
+      dc.addParam(field.variable());
+      dc.addParam(field.sortOrder());
+      dc.addParam(field.values());
+      dc.addParam(field.regexCheck());
+      dc.addParam(field.hint());
+      dc.addParam(field.defaultValue());
+      dc.addParam(field.fixed());
+      dc.addParam(field.readOnly());
+      dc.addParam(field.searchable());
+      dc.addParam(field.unique());
+      dc.addParam(field.modDate());
+
+      dc.loadResult();
+    }
+    
+    @Test
+    public void testBadBoolDBColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        SelectField selectField = ImmutableSelectField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
+                .dataType(DataTypes.BOOL).dbColumn("notreal").values("").build();
+
+        Field savedField = fieldFactory.save(selectField);
+        String inode = savedField.inode();
+        Field field2 = fieldFactory.byId(inode);
+        assertThat("testBadBoolDBColumn select data type", field2.dataType() == DataTypes.BOOL);
+        assertThat("testBadBoolDBColumn select db column", field2.dbColumn().matches("bool[0-9]+"));
+    }
+    
+	
+	
+    @Test
+    public void testTextIntColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        TextField textField = ImmutableTextField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
+                .dataType(DataTypes.INTEGER).id(uu).build();
+
+        Field savedField = fieldFactory.save(textField);
+        Field field2 = fieldFactory.byId(savedField.inode());
+        assertThat("field2 int dataType ", field2.dataType() == DataTypes.INTEGER);
+        assertThat("field2 int db column", field2.dbColumn().matches("integer[0-9]+"));
+    }
+    
+    @Test
+    public void testTextFloatColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        TextField textField = ImmutableTextField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
+                .dataType(DataTypes.FLOAT).id(uu).build();
+
+        Field savedField = fieldFactory.save(textField);
+        Field field2 = fieldFactory.byId(savedField.inode());
+        assertThat("field2 float dataType", field2.dataType() == DataTypes.FLOAT);
+        assertThat("field2 float db column", field2.dbColumn().matches("float[0-9]+"));
+    }
+    
+    @Test
+    public void testBinaryFieldDataType() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        BinaryField binField = ImmutableBinaryField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint").id(uu).build();
+
+        Field savedField = fieldFactory.save(binField);
+        Field field2 = fieldFactory.byId(savedField.inode());
+        assertThat("binField system_field dataType ", field2.dataType() == DataTypes.SYSTEM);
+        assertThat("binField system_field db column", field2.dbColumn().matches("system_field"));
+
+    }
+    
+    @Test
+    public void testReorderField() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        BinaryField binField = ImmutableBinaryField.builder().name("test field" + uu).sortOrder(15)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint").id(uu).build();
+
+        Field savedField = fieldFactory.save(binField);
+        assertThat("binField sort order ", savedField.sortOrder() == 15);
+        
+        Field loadedField = fieldFactory.byId(savedField.inode());
+        assertThat("loadedField sort order ", loadedField.sortOrder() == 15);
+        
+        
+        Field savedAgain = FieldBuilder.builder(loadedField).sortOrder(50).build();
+        Field savedAgain2 = fieldFactory.save(savedAgain);
+        assertThat("savedAgain2 sort order ", savedAgain2.sortOrder() == 50);
+        
+        
+        //assertThat("binField system_field dataType ", field2.dataType() == DataTypes.SYSTEM);
+        //assertThat("binField system_field db column", field2.dbColumn().matches("system_field"));
+
+    }
+    
+	@Test
+	public void testDataTypeLimit() throws Exception {
+
+		long time = System.currentTimeMillis();
+		ContentType struct = ImmutableSimpleContentType.builder().description("description" + time)
+				.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+				.name("ContentTypeTesting" + time).owner("owner")
+				.variable("velocityVarNameTesting" + time).build();
+		struct = new ContentTypeFactoryImpl().save(struct);
+
+		for (DataTypes dt : DataTypes.values()) {
+			int numFields = 0;
+			List<Field> fields = fieldFactory.byContentTypeId(struct.inode());
+			for (Field f : fields) {
+				if (f.dataType() == dt)
+					numFields++;
+			}
+			while (numFields < 30) {
+				String uu = UUID.randomUUID().toString();
+
+				Field savedField = null;
+
+				if (dt == DataTypes.FLOAT || dt == DataTypes.TEXT || dt == DataTypes.INTEGER) {
+					savedField = ImmutableTextField.builder().name("test field" + uu)
+							.variable(TEST_VAR_PREFIX + "textField" + uu)
+							.contentTypeId(struct.inode()).dataType(dt).build();
+
+				} else if (dt == DataTypes.DATE) {
+					savedField = ImmutableDateTimeField.builder().name("date field " + uu)
+							.variable(TEST_VAR_PREFIX + "dateField" + uu)
+							.contentTypeId(struct.inode()).dataType(dt).build();
+
+				} else if (dt == DataTypes.LONG_TEXT) {
+					savedField = ImmutableTextAreaField.builder().name("long text field " + uu)
+							.variable(TEST_VAR_PREFIX + "longTextField" + uu)
+							.contentTypeId(struct.inode()).dataType(dt).build();
+
+				}
+				if (savedField != null) {
+					try {
+						fieldFactory.save(savedField);
+
+					} catch (Throwable e) {
+						try {
+							assertThat("Over Field Limit:" + e.getMessage(),
+									e instanceof OverFieldLimitException);
+							assertThat("Over Field Limit" + e.getMessage(),
+									numFields >= Config.getIntProperty(
+											"db.number.of.contentlet.columns.per.datatype", 25));
+							break;
+						} catch (Throwable t) {
+							e.printStackTrace();
+							t.printStackTrace();
+							throw e;
+						}
+					}
+				}
+				numFields++;
+			}
+
+		}
+		contentTypeApi.delete(struct);
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#delete(Field)}
+	 * When: Call the delete methos with several fields
+	 * Should: delete all of them
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeletingFields() throws Exception {
+
+		final long currentTime = System.currentTimeMillis();
+		final ContentType contentType_1 = new ContentTypeDataGen()
+				.field(new FieldDataGen().velocityVarName("varContentType1Field1" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field2" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field3" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field4" + currentTime).next())
+				.nextPersisted();
+
+		final ContentType contentType_2 = new ContentTypeDataGen()
+				.field(new FieldDataGen().velocityVarName("varContentType2Field1" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType2Field2" + currentTime).next())
+				.nextPersisted();
+
+		final ContentType contentType_3 = new ContentTypeDataGen()
+				.field(new FieldDataGen().velocityVarName("varContentType1Field1" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field2" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field3" + currentTime).next())
+				.nextPersisted();
+
+		for (ContentType type : list(contentType_1, contentType_2, contentType_3)) {
+			for (Field field : fieldFactory.byContentType(type)) {
+				if (field.variable().startsWith(TEST_VAR_PREFIX)) {
+					deleteFields(ImmutableList.of(field));
+				}
+			}
+		}
+	}
+
+
+	@Test
+	public void testLegacyFieldBuilder() throws Exception {
+
+		List<Field> newFields = Arrays.asList(fieldFactory.byContentTypeId(newsLikeContentType.id()).toArray(new Field[0]));
+		List<com.dotmarketing.portlets.structure.model.Field> oldFields = APILocator
+				.getStructureAPI().find(newsLikeContentType.id(), APILocator.getUserAPI().getSystemUser())
+				.getFieldsBySortOrder();
+
+		assertThat("newFields == oldFields", newFields.size() == oldFields.size());
+
+		List<Field> newOldFields = Arrays.asList(new LegacyFieldTransformer(oldFields).asList().toArray(new Field[0]));
+
+		for (int i = 0; i < newFields.size(); i++) {
+			Field f1 = newFields.get(i);
+			Field f2 = newOldFields.get(i);
+			try {
+				assertThat("New Field and old field are equal", f1.equals(f2));
+				buildObject(ImmutableList.of(f1, f2));
+			} catch (Throwable t) {
+				System.out.println("these are not equal!:" + i);
+
+				// these are not equal!
+				System.out.println(f1);
+				System.out.println(f2);
+				throw t;
+
+			}
+		}
+
+	}
+
+	@Test
+	public void testFieldImplClasses() throws Exception {
+
+		for (Class<? extends Field> clazz : APILocator.getContentTypeFieldAPI().fieldTypes()) {
+			Field newField = FieldBuilder.builder(clazz).contentTypeId("test")
+					.name("test" + clazz.getSimpleName())
+					.variable(TEST_VAR_PREFIX + clazz.getSimpleName()).build();
+			buildObject(ImmutableList.of(newField));
+
+		}
+
+	}
+
+
+	@Test
+	public void testSuggestVelocityVar() throws Exception {
+
+		Map<String, String> testingNames =
+				ImmutableMap.<String, String>builder().put("This is a Variable", "thisIsAVariable")
+				.put("HereIs ONe", "hereisOne")
+				.put("A. A. Milne", "aAMilne")
+				.put("test", "test")
+				.put("teSt", "teSt1")
+				.put("TEST", "test2")
+				.put("TeST", "test3")
+				.put("TeSt", "test4")
+				.put("Test", "test5")
+				.put("1 x 2/5", "x25")
+				.put("Test5", "test51")
+				.put("SKU", "sku")
+				.put("Camel Case DOne Wrong", "camelCaseDoneWrong")
+				.put("NOOWORK ee", "nooworkEe")
+				.put("#@%!$Q#^QAGR", "qQagr")
+				.build();
+
+
+		List<Field> testFields = null;
+		for (BaseContentType baseType : BaseContentType.values()) {
+			if (baseType == baseType.ANY)
+				continue;
+			ContentType type = ContentTypeBuilder.instanceOf(baseType.immutableClass());
+			testFields = type.requiredFields();
+			for (Field field : testFields) {
+				// make sure variables work
+
+				String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+				String suggestion2 = fieldFactory.suggestVelocityVar(field.variable(), field,
+						testFields.stream().map(Field::variable).collect(Collectors.toList()));
+				try {
+					assertThat("we are not munging up existing vars", field.variable().equals(
+							fieldFactory.suggestVelocityVar(field.variable(), field, ImmutableList.of())));
+					assertThat("we are suggesting good names", suggestion != null);
+					assertThat("we should not suggest an existing variable name ",
+							(!field.variable().equals(suggestion2)));
+				} catch (Throwable t) {
+
+					System.out.println(t.getMessage());
+					System.out.println(type);
+					System.out.println(field);
+					System.out.println(field.variable());
+					System.out.println("suggestion:" + suggestion);
+					System.out.println("suggestion:" + suggestion2);
+				}
+			}
+		}
+
+		testFields = new ArrayList<>();
+		for (String key : testingNames.keySet()) {
+			Field field = Mockito.mock(Field.class);
+			String suggest = fieldFactory.suggestVelocityVar(key, field,
+					testFields.stream().map(Field::variable).collect(Collectors.toList()));
+
+
+			testFields.add(ImmutableTextField.builder().name(key).variable(suggest)
+					.contentTypeId("fake").build());
+			assertThat("variable " + key + " "  + " returned "
+					+ suggest + " expected " + testingNames.get(key), suggest.equals(testingNames.get(key)) );
+
+
+		}
+		Set<String> set = new HashSet();
+		for (Field field : testFields) {
+			assertThat("we have all different var names", !set.contains(field.variable()));
+			set.add(field.variable());
+		}
+
+
+	}
+
+
+	@Test
+    public void testUTF8SuggestVariable() throws Exception {
+
+        List<String> testingNames = ImmutableList.<String>builder()
+
+            .add("你好吗")
+            .add("输入法. 手写; 拼音;")
+            .add("百度贴吧")
+            .build();
+
+        List<Field> testFields = new ArrayList<>();
+        for (String key : testingNames) {
+            String suggest = fieldFactory.suggestVelocityVar(key, Mockito.mock(Field.class), testFields
+					.stream().map(Field::variable).collect(Collectors.toList()));
+            
+            assertThat("variable " + key + " " + " returned an a generic fieldVar:" + suggest , suggest.startsWith(FieldFactory.GENERIC_FIELD_VAR));
+
+            testFields.add(ImmutableTextField.builder()
+                .name(key)
+                .variable(suggest)
+                .contentTypeId("fake")
+                .build());
+
+        }
+        Set<String> set = new HashSet();
+        for (Field field : testFields) {
+            assertThat("we have all different var names", !set.contains(field.variable()));
+            set.add(field.variable());
+        }
+
+
+
+    }
+
+	private void buildObject(List<Field> fields) throws Exception {
+
+		for (Field f : fields) {
+			try {
+				assertThat("we are getting the right class back from type()",
+						f.type().isAssignableFrom(f.getClass()));
+
+				// build with the different datatypes
+				for (DataTypes dt : f.acceptedDataTypes()) {
+					FieldBuilder.builder(f).dataType(dt).build();
+				}
+			} catch (Throwable t) {
+				System.out.println(f);
+				System.out.println(f.type());
+				System.out.println(f.getClass());
+
+				throw t;
+			}
+		}
+	}
+
+
+	private void deleteFields(List<Field> fields) throws Exception {
+
+		for (Field field : fields) {
+			assertThat("deleteing works", field.equals(fieldFactory.byId(field.inode())));
+			fieldFactory.delete(field);
+			try {
+				Field nope = fieldFactory.byId(field.inode());
+			} catch (Exception nodb) {
+				assertThat("deleteing works", nodb instanceof NotFoundInDbException);
+			}
+			assertThat("deleteing fieldVars works", fieldFactory.loadVariables(field).size() == 0);
+
+		}
+	}
+
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#suggestVelocityVar(String, Field, List)}
+	 * Given Scenario: Users should not be able to call "Host" any fields
+	 * ExpectedResult: suggestion should be "host1"
+	 * @throws DotDataException
+	 */
+	@Test
+	@UseDataProvider("testCaseVelSuggestion")
+	public void test_suggestVelocityVar_shouldRespectReservedWords(final TestCaseVelSuggestion testCase) throws DotDataException {
+		//fill an array with number from 1 to 10
+		final ArrayList<String> numbers = new ArrayList<>();
+		for (int i = 1; i <= 10; i++) {
+			numbers.add(String.valueOf(i));
+		}
+
+		try {
+			//create binary field
+			final Field field = new FieldDataGen()
+					.defaultValue(null)
+					.name(testCase.fieldVarName)
+					.velocityVarName(testCase.fieldVarName)
+					.type(testCase.fieldType)
+					.next();
+
+			//get suggestion
+			final String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+
+			//the suggestion length should larger than the field name
+			Assert.assertTrue(testCase.fieldVarName.length() < suggestion.length());
+
+			final String lastChar = String.valueOf(suggestion.charAt(suggestion.length() - 1));
+			//the suggestion should have a number at the var name
+			Assert.assertTrue(numbers.contains(lastChar));
+			Assert.assertTrue("Var expected to be "+testCase.baseExpectedSuggestion + lastChar+" but was: "+suggestion,
+					suggestion.equalsIgnoreCase(testCase.baseExpectedSuggestion + lastChar));
+
+		}catch (Exception e) {
+			throw new DotDataException(e.getMessage(), e);
+
+		}
+
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#suggestVelocityVar(String, Field, List)}
+	 * Given Scenario: Users should be able to create a content type with a suggested velocity var
+	 * ExpectedResult: Contentlet should be created
+	 * @throws DotDataException
+	 */
+	@Test
+	public void test_suggestVelocityVar_userMustBeAbleToAddContent() throws DotDataException, DotSecurityException {
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
+
+		final ContentType ctTest = contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+						FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("VelVar" + System.currentTimeMillis())
+				.owner(user.getUserId()).build());
+
+		final String fieldVarName = "Identifier";
+		//Create Text Fields
+		final Field field = FieldBuilder.builder(TextField.class).name(fieldVarName).variable(fieldVarName)
+				.contentTypeId(ctTest.id()).dataType(DataTypes.TEXT).indexed(true).build();
+
+		contentTypeFieldAPI.save(field, user);
+
+		//create contentlet
+		final Contentlet content = new ContentletDataGen(ctTest.id()).nextPersisted();
+
+		final ContentType contentType =  APILocator.getContentTypeAPI(user).find(ctTest.inode());
+		//validate if contentType has the suggested var
+		assertEquals(contentType.fields().get(0).variable(), field.variable());
+
+		assertEquals(content.getContentType().name(), ctTest.name());
+		Assert.assertTrue(content.getContentType().fields().size() > 0);
+		assertEquals(content.getContentType().fields().get(0).variable(), field.variable());
+		contentTypeAPI.delete(ctTest);
+	}
+}

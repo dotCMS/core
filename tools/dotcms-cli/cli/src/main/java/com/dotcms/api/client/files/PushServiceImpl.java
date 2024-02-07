@@ -93,7 +93,38 @@ public class PushServiceImpl implements PushService {
         }
 
         normalize(traversalResult);
+        sort(traversalResult);
+
         return traversalResult;
+    }
+
+    /**
+     * Sorts the given list of TraverseResult objects based on site and status.
+     *
+     * @param traversalResult the list of TraverseResult objects to be sorted
+     */
+    private void sort(ArrayList<TraverseResult> traversalResult) {
+
+        // Apply some sorting to ensure a proper processing order
+
+        // Sorting by site name
+        traversalResult.sort((o1, o2) -> {
+            var left = o1.localPaths();
+            var right = o2.localPaths();
+            return left.site().compareTo(right.site());
+        });
+        // Sorting by default language: true comes first
+        traversalResult.sort((o1, o2) -> {
+            var left = o1.localPaths();
+            var right = o2.localPaths();
+            return Boolean.compare(right.isDefaultLanguage(), left.isDefaultLanguage());
+        });
+        // Sorting by status: "live" comes first
+        traversalResult.sort((o1, o2) -> {
+            var left = o1.localPaths();
+            var right = o2.localPaths();
+            return left.status().compareTo(right.status());
+        });
     }
 
     /**

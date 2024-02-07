@@ -27,7 +27,6 @@ import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { IFrameModule } from '@components/_common/iframe';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
@@ -39,6 +38,7 @@ import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.modu
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
 import {
+    DotApiLinkComponent,
     DotAutofocusDirective,
     DotCopyButtonComponent,
     DotFieldRequiredDirective,
@@ -76,6 +76,7 @@ import {
 } from '@portlets/shared/dot-content-types-edit/components/fields/service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
+import { DotBinarySettingsComponent } from './components/dot-binary-settings/dot-binary-settings.component';
 import { DotBlockEditorSettingsComponent } from './components/dot-block-editor-settings/dot-block-editor-settings.component';
 import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
@@ -119,7 +120,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         ContentTypeFieldsAddRowModule,
         DialogModule,
         DotAddToBundleModule,
-        DotApiLinkModule,
+        DotApiLinkComponent,
         DotAutofocusDirective,
         DotBaseTypeSelectorModule,
         DotContentTypeFieldsVariablesModule,
@@ -131,6 +132,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotSecondaryToolbarModule,
         DotFieldHelperModule,
         DotFieldValidationMessageComponent,
+        DotBinarySettingsComponent,
         TooltipModule,
         DotIconModule,
         DotMaxlengthModule,

@@ -3,11 +3,22 @@ package com.dotcms.api;
 import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
-import com.dotcms.model.site.*;
-
+import com.dotcms.model.site.CopySiteRequest;
+import com.dotcms.model.site.CreateUpdateSiteRequest;
+import com.dotcms.model.site.GetSiteByNameRequest;
+import com.dotcms.model.site.Site;
+import com.dotcms.model.site.SiteView;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -99,6 +110,15 @@ public interface SiteAPI {
     ResponseEntityView<SiteView> update(
             @QueryParam("id") final String  siteIdentifier,
             final CreateUpdateSiteRequest request
+    );
+
+    @PUT
+    @Path("/{siteId}/_makedefault")
+    @Operation(
+            summary = " Marks a Site as default"
+    )
+    ResponseEntityView<Boolean> makeDefault(
+            @PathParam("siteId") final String siteId
     );
 
     @PUT

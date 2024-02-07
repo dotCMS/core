@@ -7,15 +7,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
 
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
+    DotHttpErrorManagerService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    PushPublishService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
@@ -53,7 +53,8 @@ type DotRowActions = {
     providers: [DotContentTypeStore]
 })
 export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
-    @ViewChild('listing', { static: false }) listing: DotListingDataTableComponent;
+    @ViewChild('listing', { static: false })
+    listing: DotListingDataTableComponent;
     filterBy: string;
     showTable = false;
     paginatorExtraParams: { [key: string]: string };

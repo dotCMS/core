@@ -1,12 +1,12 @@
 {
     "root": true,
     "ignorePatterns": ["**/*"],
-    "plugins": ["@nrwl/nx", "eslint-plugin-import", "ban"],
+    "plugins": ["@nx", "eslint-plugin-import", "ban"],
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
             "rules": {
-                "@nrwl/nx/enforce-module-boundaries": [
+                "@nx/enforce-module-boundaries": [
                     "error",
                     {
                         "allowCircularSelfDependency": true,
@@ -24,7 +24,7 @@
         },
         {
             "files": ["*.ts", "*.tsx"],
-            "extends": ["plugin:@nrwl/nx/typescript"],
+            "extends": ["plugin:@nx/typescript"],
             "rules": {
                 "@typescript-eslint/keyword-spacing": [
                     "error",
@@ -69,12 +69,30 @@
                 "no-duplicate-imports": "error",
                 "ban/ban": [
                     2,
-                    { "name": ["describe", "only"], "message": "don't focus tests" },
-                    { "name": "fdescribe", "message": "don't focus tests" },
-                    { "name": ["it", "only"], "message": "don't focus tests" },
-                    { "name": "fit", "message": "don't focus tests" },
-                    { "name": ["test", "only"], "message": "don't focus tests" },
-                    { "name": "ftest", "message": "don't focus tests" }
+                    {
+                        "name": ["describe", "only"],
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": "fdescribe",
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": ["it", "only"],
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": "fit",
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": ["test", "only"],
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": "ftest",
+                        "message": "don't focus tests"
+                    }
                 ],
                 "import/order": [
                     "error",
@@ -91,20 +109,66 @@
                             "type"
                         ],
                         "pathGroups": [
-                            { "pattern": "@angular/**", "group": "external", "position": "after" },
-                            { "pattern": "primeng/**", "group": "external", "position": "after" },
-                            { "pattern": "rxjs/**", "group": "external", "position": "after" },
-                            { "pattern": "@tiptap/**", "group": "external", "position": "after" },
-                            { "pattern": "@components/**", "group": "internal" },
-                            { "pattern": "@directives/**", "group": "internal" },
-                            { "pattern": "@dotcms-ui/**", "group": "internal" },
-                            { "pattern": "@dotcms/**", "group": "internal" },
-                            { "pattern": "@portlets/**", "group": "internal" },
-                            { "pattern": "@models/**", "group": "internal" },
-                            { "pattern": "@pipes/**", "group": "internal" },
-                            { "pattern": "@services/**", "group": "internal" },
-                            { "pattern": "@shared/**", "group": "internal" },
-                            { "pattern": "@tests/**", "group": "internal" }
+                            {
+                                "pattern": "@angular/**",
+                                "group": "external",
+                                "position": "after"
+                            },
+                            {
+                                "pattern": "primeng/**",
+                                "group": "external",
+                                "position": "after"
+                            },
+                            {
+                                "pattern": "rxjs/**",
+                                "group": "external",
+                                "position": "after"
+                            },
+                            {
+                                "pattern": "@tiptap/**",
+                                "group": "external",
+                                "position": "after"
+                            },
+                            {
+                                "pattern": "@components/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@directives/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@dotcms-ui/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@dotcms/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@portlets/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@models/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@pipes/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@services/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@shared/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@tests/**",
+                                "group": "internal"
+                            }
                         ],
                         "pathGroupsExcludedImportTypes": ["internal"],
                         "alphabetize": {
@@ -117,8 +181,9 @@
         },
         {
             "files": ["*.js", "*.jsx"],
-            "extends": ["plugin:@nrwl/nx/javascript"],
+            "extends": ["plugin:@nx/javascript"],
             "rules": {}
         }
-    ]
+    ],
+    "extends": ["plugin:storybook/recommended"]
 }

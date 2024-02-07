@@ -6,10 +6,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.io.File;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.storage.StoragePersistenceAPI.HASH_OBJECT;
 import static com.dotcms.storage.model.BasicMetadataFields.CONTENT_TYPE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.EDITABLE_AS_TEXT;
 import static com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.VERSION_KEY;
@@ -75,22 +78,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 CacheLocator.getMetadataCache());
     }
 
-    /**
-     * {@inheritDoc}
-     * @param binary {@link File} file to get the information
-     * @return
-     */
     @Override
     public Map<String, Serializable> generateRawBasicMetaData(final File binary) {
         return this.generateBasicMetaData(binary, s -> true); // raw = no filter
     }
 
-    /**
-     * {@inheritDoc}
-     * @param binary  {@link File} file to get the information
-     * @param maxLength {@link Long} max length is used when parse the content, how many bytes do you want to parse.
-     * @return
-     */
     @Override
     public Map<String, Serializable> generateRawFullMetaData(final File binary, long maxLength) {
         return this.generateFullMetaData(binary, s -> true, maxLength); // raw = no filter
@@ -195,12 +187,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return metadataMap;
     }
 
-    /**
-     * {@inheritDoc}
-     * @param binary {@link File} file to get the information
-     * @param configuration {@link GenerateMetadataConfig}
-     * @return
-     */
     @Override
     public Map<String, Serializable> generateMetaData(final File binary,
             final GenerateMetadataConfig configuration) throws DotDataException {
@@ -387,50 +373,59 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * @param requestMetaData {@link FetchMetadataParams}
-     * @return
-     */
     @Override
     public Map<String, Serializable> retrieveMetaData(final FetchMetadataParams requestMetaData)
             throws DotDataException {
         if (requestMetaData.isCache()) {
-            final Map<String, Serializable> metadataMap = metadataCache
+            final Map<String, Serializable> metadataMap = this.metadataCache
                     .getMetadataMap(requestMetaData.getCacheKeySupplier().get());
             if (null != metadataMap) {
+                checkEditableAsText(metadataMap);
+                putIntoCache(requestMetaData.getCacheKeySupplier().get(), metadataMap);
                 return metadataMap;
             }
         }
 
         Map<String, Serializable> metadataMap = null;
         final StorageKey storageKey = requestMetaData.getStorageKey();
-        final StoragePersistenceAPI storage = persistenceProvider
+        final StoragePersistenceAPI storage = this.persistenceProvider
                 .getStorage(storageKey.getStorage());
 
         this.checkBucket(storageKey, storage);
         if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
-
             metadataMap = retrieveMetadata(storageKey, storage);
             Logger.debug(FileStorageAPIImpl.class,
-                    "Retrieve the meta data from storage, path: " + storageKey.getPath());
+                    () -> "Retrieve the meta data from storage path: " + storageKey.getPath());
+            checkEditableAsText(metadataMap);
             if (null != requestMetaData.getCacheKeySupplier()) {
                 final Map<String, Serializable> projection = requestMetaData.getProjectionMapForCache().apply(metadataMap);
                 putIntoCache(requestMetaData.getCacheKeySupplier().get(), projection);
                 return projection;
             }
-
         }
-
         return metadataMap;
     }
 
-    /***
-     * {@inheritDoc}
-     * @param requestMetaData {@link FetchMetadataParams}
-     * @return
-     * @throws DotDataException
+    /**
+     * Performs a simple check that verifies whether the File that the metadata belongs to can be
+     * editable as a text file. If it can, the {@link BasicMetadataFields#EDITABLE_AS_TEXT} property
+     * will be added.
+     * <p>This is particularly useful in the File's edit mode in the back-end for dotCMS to allow
+     * content authors to edit the contents directly in the Code Editor field. If, for any reason,
+     * the MIME Type cannot be detected, the value of the
+     * the {@link BasicMetadataFields#EDITABLE_AS_TEXT} property will be set to {@code false}.</p>
+     *
+     * @param metadataMap The File's metadata Map.
      */
+    private void checkEditableAsText(final Map<String, Serializable> metadataMap) {
+        if (!metadataMap.containsKey(BasicMetadataFields.EDITABLE_AS_TEXT.key())) {
+            final String mimeType =
+                    Try.of(() -> metadataMap.get(CONTENT_TYPE_META_KEY.key()).toString()).getOrElse(StringPool.BLANK);
+            metadataMap.put(EDITABLE_AS_TEXT.key(), FileUtil.isFileEditableAsText(mimeType));
+        }
+    }
+
+    @Override
     public boolean removeMetaData(final FetchMetadataParams requestMetaData) throws DotDataException{
         boolean deleteSucceeded = false;
         final StorageKey storageKey = requestMetaData.getStorageKey();
@@ -443,12 +438,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return deleteSucceeded;
     }
 
-    /***
-     * {@inheritDoc}
-     * @param requestMetaData {@link FetchMetadataParams}
-     * @return
-     * @throws DotDataException
-     */
+    @Override
     public boolean removeVersionMetaData(final FetchMetadataParams requestMetaData) throws DotDataException{
         boolean deleteSucceeded = false;
         final StorageKey storageKey = requestMetaData.getStorageKey();
@@ -461,12 +451,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return deleteSucceeded;
     }
 
-    /**
-     * {@inheritDoc}
-     * @param fetchMetadataParams
-     * @param customAttributes
-     * @throws DotDataException
-     */
     @Override
     public void putCustomMetadataAttributes(
             final FetchMetadataParams fetchMetadataParams,
@@ -527,12 +511,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     }
 
-    /**
-     * {@inheritDoc}
-     * @param requestMetadata
-     * @param metadata
-     * @throws DotDataException
-     */
+    @Override
     public boolean setMetadata(final FetchMetadataParams requestMetadata,
             final Map<String, Serializable> metadata) throws DotDataException {
         final StorageKey storageKey = requestMetadata.getStorageKey();
