@@ -102,10 +102,31 @@ describe('DotEditContentBinaryFieldComponent', () => {
     });
 
     beforeEach(() => {
+        const systemOptions = {
+            allowURLImport: true,
+            allowCodeWrite: true
+        };
+
+        const JSONString = JSON.stringify(systemOptions);
+
+        const newField = {
+            ...FIELD,
+            fieldVariables: [
+                ...FIELD.fieldVariables,
+                {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                    fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
+                    id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
+                    key: 'systemOptions',
+                    value: JSONString
+                }
+            ]
+        };
+
         spectator = createComponent({
             detectChanges: false,
             props: {
-                field: FIELD,
+                field: newField,
                 contentlet: null
             }
         });
@@ -314,6 +335,30 @@ describe('DotEditContentBinaryFieldComponent', () => {
             await spectator.fixture.whenStable();
 
             expect(spectator.query(byTestId('preview'))).toBeTruthy();
+        });
+    });
+
+    describe('No systemOptions', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                detectChanges: false,
+                props: {
+                    field: FIELD,
+                    contentlet: null
+                }
+            });
+        });
+
+        it("shouldn't show url import button if not setted in settings", () => {
+            const importFromURLButton = spectator.query(byTestId('action-url-btn'));
+
+            expect(importFromURLButton).toBeNull();
+        });
+
+        it("shouldn't show code editor button if not setted in settings", async () => {
+            const codeEditorButton = spectator.query(byTestId('action-editor-btn'));
+
+            expect(codeEditorButton).toBeNull();
         });
     });
 
