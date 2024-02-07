@@ -3,8 +3,8 @@
     @for (item of announcements(); track item.identifier;) {
     <li
         class="announcements__list-item"
-        [class.announcements__list-item--active]="showUnreadAnnouncement">
-        <span class="announcements__badge" *ngIf="showUnreadAnnouncement"></span>
+        [class.announcements__list-item--active]="!item.hasBeenRead">
+        <span class="announcements__badge" *ngIf="!item.hasBeenRead"></span>
         <span class="announcements__image pi" [ngClass]="typesIcons[item.type]"></span>
         <a
             class="announcements__url"
@@ -14,7 +14,7 @@
             data-testId="announcement_link"
             aria-labelledby="announcement-label date-label">
             <div class="announcements__content">
-                <span class="announcements__label">{{ item.title }}</span>
+                <span class="announcements__label">{{ item.title }} </span>
                 <span class="announcements__date">{{ item.announcementDateAsISO8601 | date }}</span>
             </div>
         </a>
