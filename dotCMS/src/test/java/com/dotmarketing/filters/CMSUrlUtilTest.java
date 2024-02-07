@@ -61,6 +61,18 @@ public class CMSUrlUtilTest {
         final String contentIdentifier2 = CMSUrlUtil.getInstance().getInodeFromUrlPath(templateUrlPath);
         assertNotNull(contentIdentifier2);
         assertEquals("27e8f845c3bd21ad1c601b8fe005caa6", contentIdentifier2);
+
+        final String feUrlPath = "/data/shared/assets/c/e/ce837ff5-dc6f-427a-8f60-d18afc395be9/fileAsset/openai-summarize.vtl";
+        final String contentIdentifier3 = CMSUrlUtil.getInstance().getInodeFromUrlPath(feUrlPath);
+        assertNotNull(contentIdentifier3);
+        assertEquals("ce837ff5-dc6f-427a-8f60-d18afc395be9", contentIdentifier3);
+
+
+        final String template2UrlPath = "LIVE/d2e56042255158023d03164cd3852ead.templatelayout";
+        final String contentIdentifier4 = CMSUrlUtil.getInstance().getInodeFromUrlPath(template2UrlPath);
+        assertNotNull(contentIdentifier4);
+        assertEquals("d2e56042255158023d03164cd3852ead", contentIdentifier4);
+
     }
 
 }
