@@ -63,19 +63,26 @@
                     (convert)="convertWysiwygToBlock($event)"></dot-convert-wysiwyg-to-block>
             </div>
         </p-tabPanel>
-
-        <p-tabPanel
-            #panel
-            *ngIf="!!currentField?.id && isBlockEditorField"
-            [header]="'Settings'"
-            [disabled]="!currentField?.id">
+        @if(!!currentField?.id && isFieldWithSettings) {
+        <p-tabPanel #panel [header]="'Settings'" [disabled]="!currentField?.id">
+            @switch ( this.currentFieldType?.clazz) { @case
+            ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
             <dot-block-editor-settings
                 [field]="currentField"
-                [isVisible]="panel._selected"
+                [isVisible]="panel.selected"
                 (changeControls)="changesDialogActions($event)"
                 (save)="toggleDialog()"
                 (valid)="setDialogOkButtonState($event)"></dot-block-editor-settings>
+            } @case("com.dotcms.contenttype.model.field.ImmutableBinaryField") {
+            <dot-binary-settings
+                [field]="currentField"
+                [isVisible]="panel.selected"
+                (save)="toggleDialog()"
+                (valid)="setDialogOkButtonState($event)"
+                (changeControls)="changesDialogActions($event)"></dot-binary-settings>
+            }}
         </p-tabPanel>
+        }
 
         <p-tabPanel
             #panel

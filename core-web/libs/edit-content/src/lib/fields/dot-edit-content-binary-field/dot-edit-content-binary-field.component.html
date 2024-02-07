@@ -36,12 +36,14 @@
 
         <div class="binary-field__actions">
             <p-button
+                *ngIf="systemOptions?.allowURLImport"
                 [label]="'dot.binary.field.action.import.from.url' | dm"
                 (click)="openDialog(BinaryFieldMode.URL)"
                 data-testId="action-url-btn"
                 icon="pi pi-link"
                 styleClass="p-button-link p-button-secondary p-button-sm"></p-button>
             <p-button
+                *ngIf="systemOptions?.allowCodeWrite"
                 [label]="'dot.binary.field.action.create.new.file' | dm"
                 (click)="openDialog(BinaryFieldMode.EDITOR)"
                 data-testId="action-editor-btn"
@@ -83,6 +85,8 @@
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
             <dot-dot-binary-field-editor
                 *ngSwitchCase="BinaryFieldMode.EDITOR"
+                [allowFileNameEdit]="systemOptions?.allowFileNameEdit"
+                [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
                 [fileContent]="vm.tempFile?.content || vm.contentlet?.content"
                 [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
                 [userMonacoOptions]="customMonacoOptions()"
