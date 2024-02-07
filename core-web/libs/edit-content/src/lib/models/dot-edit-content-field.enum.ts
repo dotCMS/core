@@ -22,5 +22,6 @@ export enum FIELD_TYPES {
     BLOCK_EDITOR = 'Story-Block',
     BINARY = 'Binary',
     CUSTOM_FIELD = 'Custom-Field',
-    JSON = 'JSON-Field'
+    JSON = 'JSON-Field',
+    KEY_VALUE = 'Key-Value'
 }

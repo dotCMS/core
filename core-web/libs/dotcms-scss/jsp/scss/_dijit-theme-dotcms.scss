@@ -422,7 +422,7 @@ $slider-remaining-disabled-color: $white;
 // Menus
 $menu-bgcolor: $white;
 $menu-border: none;
-$menu-shadow: $md-shadow-1;
+$menu-shadow: $shadow-xs;
 $menu-item-bgcolor: $menu-bgcolor;
 $menu-item-separator: none;
 $menu-item-hover-bgcolor: $color-palette-gray-200;
@@ -471,12 +471,12 @@ $panel-border-radius: 1px;
 $panel-title-height: $field-height-md;
 
 $panel-normal-border: none;
-$panel-normal-shadow: $md-shadow-1;
+$panel-normal-shadow: $shadow-xs;
 $panel-normal-title-bgcolor: transparent;
 $panel-normal-title-textcolor: $font-color-base;
 
 $panel-hover-border: none;
-$panel-hover-shadow: $md-shadow-2;
+$panel-hover-shadow: $shadow-s;
 $panel-hover-title-bgcolor: transparent;
 $panel-hover-title-textcolor: $font-color-base;
 
@@ -547,7 +547,7 @@ $accordion-title-hover-bgcolor: $color-palette-gray-400;
 $accordion-title-selected-bgcolor: $color-palette-gray-400;
 
 // Dialog Box
-$menu-shadow: $md-shadow-2;
+$menu-shadow: $shadow-s;
 $menu-radius: 0px;
 
 $dialog-closeicon-bgcolor: $color-palette-gray-800;
@@ -568,5 +568,5 @@ $tooltip-normal-border: solid 1px $color-palette-gray-700;
 $tooltop-normal-padding: $spacing-1;
 
 // Popup
-$popup-shadow: $md-shadow-1;
+$popup-shadow: $shadow-xs;
 $popup-border: none;

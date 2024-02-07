@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { Component, HostBinding, HostListener, OnInit } from '@angular/core';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotMenu, DotMenuItem } from '@models/navigation';
+import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import { DotNavigationService } from './services/dot-navigation.service';
 

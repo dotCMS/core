@@ -49,7 +49,7 @@ public class PushMixin {
      */
     public Path path() {
         if (null == path) {
-            return Path.of("");
+            return Path.of("").toAbsolutePath();
         }
         return path.toPath();
     }

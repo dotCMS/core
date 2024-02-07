@@ -4,6 +4,7 @@ import {
     Component,
     ElementRef,
     HostListener,
+    Inject,
     Input,
     NgZone,
     OnInit,
@@ -16,8 +17,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
-
-import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { WINDOW } from '@dotcms/utils';
 
 @Component({
     selector: 'dot-edit-content-custom-field',
@@ -25,21 +25,28 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
     imports: [SafeUrlPipe, NgStyle, NgClass, DotIconModule, NgIf, ButtonModule],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [
+        {
+            provide: WINDOW,
+            useValue: window
+        }
+    ]
 })
 export class DotEditContentCustomFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
+    @Input() contentType!: string;
 
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
     private controlContainer = inject(ControlContainer);
-    private editContentService = inject(DotEditContentService);
     private zone = inject(NgZone);
 
-    private contentType = this.editContentService.currentContentType;
     variables!: { [key: string]: string };
     isFullscreen = false;
     src!: string;
+
+    constructor(@Inject(WINDOW) private window: Window) {}
 
     ngOnInit() {
         this.src = `/html/legacy_custom_field/legacy-custom-field.jsp?variable=${this.contentType}&field=${this.field.variable}`;
@@ -68,6 +75,7 @@ export class DotEditContentCustomFieldComponent implements OnInit {
     onIframeLoad() {
         const iframeWindow = this.iframe.nativeElement.contentWindow as Window;
         iframeWindow['form'] = this.zone.run(() => this.form);
+        iframeWindow.postMessage({ type: 'dotcms:form:loaded' }, this.window.parent.origin);
     }
 
     /**

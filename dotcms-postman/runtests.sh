@@ -1,6 +1,6 @@
 #!/bin/bash
 
-wait=60
+wait=2
 echo "Waiting for ${wait} seconds to images be pulled"
 sleep $wait
 docker-compose logs -t -f dotcms-test &
@@ -34,8 +34,13 @@ do
   echo "Running collection: [${collection}]"
   collection_name="${collection%.*}"
 
-  echo "Running newman command: newman run ${collection} -e postman_environment.json --reporters cli,junit --reporter-junit-export ${postman_tests_results_dir}/TEST-${collection_name}.xml"
-  newman run ${collection} -e postman_environment.json --reporters cli,junit --reporter-junit-export ${postman_tests_results_dir}/TEST-${collection_name}.xml
+  echo "Running newman command:
+  newman run ${collection} -e postman_environment.json --reporters cli,junit,htmlextra --reporter-junit-export ${postman_tests_results_dir}/TEST-${collection_name}.xml --reporter-htmlextra-export ${postman_tests_results_dir}/TEST-${collection_name}.html"
+  newman run ${collection} \
+    -e postman_environment.json \
+    --reporters cli,junit,htmlextra \
+    --reporter-junit-export ${postman_tests_results_dir}/TEST-${collection_name}.xml \
+    --reporter-htmlextra-export ${postman_tests_results_dir}/TEST-${collection_name}.html
 
   collection_exit_code=$?
   if [[ $collection_exit_code -ne 0 ]]; then

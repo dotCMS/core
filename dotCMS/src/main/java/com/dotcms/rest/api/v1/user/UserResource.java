@@ -31,6 +31,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -43,6 +44,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -724,10 +726,7 @@ public class UserResource implements Serializable {
 			user.setMiddleName(createUserForm.getMiddleName());
 		}
 
-		if (createUserForm.getLanguageId() <= 0) {
-			user.setLanguageId(String.valueOf(createUserForm.getLanguageId() <= 0?
-					APILocator.getLanguageAPI().getDefaultLanguage().getId(): createUserForm.getLanguageId()));
-		}
+		processLanguage(createUserForm, user);
 
 		if (UtilMethods.isSet(createUserForm.getNickName())) {
 			user.setNickName(createUserForm.getNickName());
@@ -758,6 +757,17 @@ public class UserResource implements Serializable {
 		}
 
 		return user;
+	}
+
+	private static void processLanguage(final CreateUserForm createUserForm, final User user) {
+
+		final Language language = createUserForm.getLanguageId() <= 0?
+				APILocator.getLanguageAPI().getDefaultLanguage():
+				APILocator.getLanguageAPI().getLanguage(createUserForm.getLanguageId());
+
+		final Locale locale   = language.asLocale();
+		final String languageString = locale.getLanguage() + StringPool.UNDERLINE + locale.getCountry();
+		user.setLanguageId(languageString);
 	}
 
 

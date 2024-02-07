@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.vtl;
 
+import com.dotcms.rendering.util.ScriptingReaderParams;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -21,7 +22,7 @@ public class RequestBodyVelocityReader implements VelocityReader {
     private static final String SCRIPTING_USER_ROLE_KEY = "Scripting Developer";
 
     @Override
-    public Reader getVelocity(final VTLResource.VelocityReaderParams params) throws DotSecurityException, DotDataException {
+    public Reader getVelocity(final ScriptingReaderParams params) throws DotSecurityException, DotDataException {
         final RoleAPI roleAPI = APILocator.getRoleAPI();
         final boolean canRenderVelocity = APILocator.getRoleAPI()
                 .doesUserHaveRole(params.getUser(), roleAPI.loadRoleByKey(SCRIPTING_USER_ROLE_KEY));

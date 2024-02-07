@@ -45,18 +45,6 @@
 
 package com.dotcms.enterprise.license;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.enterprise.LicenseUtil;
@@ -68,6 +56,7 @@ import com.dotcms.enterprise.license.bouncycastle.crypto.paddings.PaddedBuffered
 import com.dotcms.enterprise.license.bouncycastle.crypto.params.KeyParameter;
 import com.dotcms.enterprise.license.bouncycastle.util.encoders.Base64;
 import com.dotcms.enterprise.license.bouncycastle.util.encoders.Hex;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
@@ -77,14 +66,26 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Provides access to licensing information for a dotCMS instance. This allows the system to perform
- * validations a to limit or hide enterprise-only application features.
+ * validations and limit or hide enterprise-level application features.
  * 
  * @author root
  * @since 1.x
- *
  */
 public final class LicenseManager {
 
@@ -169,20 +170,20 @@ public final class LicenseManager {
      * expiration days.
      */
     private DotLicense readLicenseFile() {
-        File f = new File(getLicensePath());
-        try (InputStream is = Files.newInputStream(f.toPath())){
-            String licenseRaw = IOUtils.toString(is);
-            DotLicense dl = new LicenseTransformer(licenseRaw).dotLicense;
+        final File licenseFile = new File(getLicensePath());
+        try (final InputStream is = Files.newInputStream(licenseFile.toPath())) {
+            final String licenseRaw = IOUtils.toString(is, StandardCharsets.UTF_8);
+            final DotLicense dl = new LicenseTransformer(licenseRaw).dotLicense;
             try {
                 LicenseRepoDAO.upsertLicenseToRepo( dl.serial, licenseRaw);
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 Logger.warnEveryAndDebug(this.getClass(), "Cannot upsert License to db", e,120000);
             }
             return dl;
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             // Eat Me
-            Logger.warn(System.class, "No Valid License Found : " + f.getAbsolutePath());
-             
+            Logger.debug(System.class, String.format("No valid license was found: %s",
+                    ExceptionUtil.getErrorMessage(e)), e);
         }
         return setupDefaultLicense(false);
     }

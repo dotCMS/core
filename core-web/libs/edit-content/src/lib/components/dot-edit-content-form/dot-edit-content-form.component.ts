@@ -28,28 +28,30 @@ import {
     FLATTENED_FIELD_TYPES
 } from '../../models/dot-edit-content-field.constant';
 import { FILTERED_TYPES } from '../../models/dot-edit-content-form.enum';
-import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
+import { EditContentPayload } from '../../models/dot-edit-content-form.interface';
 import { getFinalCastedValue, transformLayoutToTabs } from '../../utils/functions.util';
+import { DotEditContentAsideComponent } from '../dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 import { FIELD_TYPES } from '../dot-edit-content-field/utils';
 
 @Component({
     selector: 'dot-edit-content-form',
     standalone: true,
+    templateUrl: './dot-edit-content-form.component.html',
+    styleUrls: ['./dot-edit-content-form.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         CommonModule,
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
         DotMessagePipe,
+        DotEditContentAsideComponent,
         TabViewModule
-    ],
-    templateUrl: './dot-edit-content-form.component.html',
-    styleUrls: ['./dot-edit-content-form.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    ]
 })
 export class DotEditContentFormComponent implements OnInit {
-    @Input() formData!: EditContentFormData;
+    @Input() formData!: EditContentPayload;
     @Output() changeValue = new EventEmitter();
 
     private readonly fb = inject(FormBuilder);
@@ -77,17 +79,17 @@ export class DotEditContentFormComponent implements OnInit {
     initilizeForm() {
         this.form = this.fb.group({});
 
-        this.formData.fields.forEach((field) => {
+        this.form.valueChanges.subscribe((value) => {
+            this.onFormChange(value);
+        });
+
+        this.formData.contentType.fields.forEach((field) => {
             if (Object.values(FILTERED_TYPES).includes(field.fieldType as FILTERED_TYPES)) {
                 return;
             }
 
             const fieldControl = this.initializeFormControl(field);
             this.form.addControl(field.variable, fieldControl);
-        });
-
-        this.form.valueChanges.subscribe((value) => {
-            this.onFormChange(value);
         });
     }
 
@@ -131,7 +133,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     onFormChange(value) {
-        this.formData.fields.forEach(({ variable, fieldType }) => {
+        this.formData.contentType.fields.forEach(({ variable, fieldType }) => {
             // Shorthand for conditional assignment
 
             if (FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
@@ -156,7 +158,7 @@ export class DotEditContentFormComponent implements OnInit {
     private setLayoutTabs() {
         this.tabs = transformLayoutToTabs(
             this.dotMessageService.get('Content'),
-            this.formData.layout
+            this.formData.contentType.layout
         );
     }
 }

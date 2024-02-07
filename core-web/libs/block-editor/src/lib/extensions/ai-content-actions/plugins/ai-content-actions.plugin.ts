@@ -10,10 +10,12 @@ import { takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { getAIPlaceholderImage } from '../../../shared';
 import { DOT_AI_TEXT_CONTENT_KEY } from '../../ai-content-prompt/ai-content-prompt.extension';
 import { AiContentPromptStore } from '../../ai-content-prompt/store/ai-content-prompt.store';
 import { DOT_AI_IMAGE_CONTENT_KEY } from '../../ai-image-prompt/ai-image-prompt.extension';
 import { DotAiImagePromptStore } from '../../ai-image-prompt/ai-image-prompt.store';
+import { AI_IMAGE_PLACEHOLDER_PROPERTY } from '../../ai-image-prompt/plugins/ai-image-prompt.plugin';
 import { ACTIONS, AIContentActionsComponent } from '../ai-content-actions.component';
 import { AI_CONTENT_ACTIONS_PLUGIN_KEY } from '../ai-content-actions.extension';
 import { TIPPY_OPTIONS } from '../utils';
@@ -75,6 +77,8 @@ export class AIContentActionsView {
         this.dotAiImagePromptStore = this.component.injector.get(DotAiImagePromptStore);
 
         this.component.instance.actionEmitter.pipe(takeUntil(this.destroy$)).subscribe((action) => {
+            //TODO: Create a store to handle this actions, and remove external stores references. Since the update / apply
+            // methods in the plugins get fired ( to often) on every change in the editor.
             switch (action) {
                 case ACTIONS.ACCEPT:
                     this.acceptContent();
@@ -148,6 +152,20 @@ export class AIContentActionsView {
             case DOT_AI_TEXT_CONTENT_KEY:
                 this.aiContentPromptStore.setAcceptContent(true);
                 break;
+
+            case DOT_AI_IMAGE_CONTENT_KEY:
+                // eslint-disable-next-line no-case-declarations
+                const placeholder = getAIPlaceholderImage(this.editor);
+
+                delete placeholder.node.attrs.data[AI_IMAGE_PLACEHOLDER_PROPERTY];
+
+                this.view.dispatch(
+                    this.view.state.tr.setNodeMarkup(placeholder.from, undefined, {
+                        data: placeholder.node.attrs.data
+                    })
+                );
+
+                break;
         }
     }
 
@@ -168,8 +186,24 @@ export class AIContentActionsView {
     }
 
     private deleteContent() {
+        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
+        switch (pluginState.nodeType) {
+            case DOT_AI_TEXT_CONTENT_KEY:
+                this.aiContentPromptStore.setDeleteContent(true);
+                break;
+
+            case DOT_AI_IMAGE_CONTENT_KEY:
+                // eslint-disable-next-line no-case-declarations
+                const placeholder = getAIPlaceholderImage(this.editor);
+                this.editor.commands.deleteRange({
+                    from: placeholder.from,
+                    to: placeholder.to
+                });
+
+                break;
+        }
+
         this.editor.commands.closeAIContentActions();
-        this.editor.commands.deleteSelection();
     }
 
     private handleKeyDown(event: KeyboardEvent) {

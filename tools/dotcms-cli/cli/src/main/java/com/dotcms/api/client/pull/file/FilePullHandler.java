@@ -145,6 +145,13 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
         final TreeNode tree = treeInfo.getLeft();
         final TreeNodeInfo treeNodeInfo = treeInfo.getRight();
 
+        // If we don't generate empty folders, we need to check if there are assets to process
+        // in the tree node, if not, we skip the pull process avoiding the creation of site
+        // folders with no content.
+        if (!generateEmptyFolders && treeNodeInfo.assetsCount() == 0) {
+            return List.of();
+        }
+
         // Display the header
         output.info(header(content, treeNodeInfo));
 
@@ -269,7 +276,7 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                             "@|bold,green [%s]|@ Languages to pull\n\n",
                     treeNodeInfo.site(),
                     treeNodeInfo.assetsCount(),
-                    treeNodeInfo.foldersCount() == 0 ? 1 : treeNodeInfo.foldersCount(),
+                    treeNodeInfo.foldersCount(),
                     treeNodeInfo.languages().size());
 
         } else if (content.asset().isPresent()) {

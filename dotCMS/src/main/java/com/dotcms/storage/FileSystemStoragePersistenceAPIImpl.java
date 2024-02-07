@@ -1,11 +1,13 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.FileUtil;
@@ -50,6 +52,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     private final Lazy<String> contentMetadataCompressor = Lazy.of(()->Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none"));
 
+    private final IdentifierStripedLock lockManager;
+
     /**
      * default constructor
      */
@@ -60,6 +64,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         Logger.debug(FileSystemStoragePersistenceAPIImpl.class, () -> String
                 .format("Default root group '%s' is currently mapped to folder '%s' ", rootGroupKey,
                         rootFolder));
+        lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
     }
 
     /**
@@ -76,26 +81,15 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     folder, groupName));
         }
         groups.put(groupName.toLowerCase(), folder);
-        Logger.debug(FileSystemStoragePersistenceAPIImpl.class, String.format("Registering new group '%s' mapped to folder '%s' ",groupName, folder));
+        Logger.debug(this, () -> String.format("Registering new group '%s' mapped to folder '%s' ",groupName, folder));
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @return
-     */
     @Override
     public boolean existsGroup(final String groupName) throws DotDataException{
         final String groupNameLC = groupName.toLowerCase();
         return groups.containsKey(groupNameLC) && this.groups.get(groupNameLC).exists();
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName  {@link String}
-     * @param path {@link String}
-     * @return
-     */
     @Override
     public boolean existsObject(final String groupName, final String path) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
@@ -111,44 +105,33 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @return
-     */
     @Override
     public boolean createGroup(final String groupName) throws DotDataException {
         return this.createGroup(groupName, ImmutableMap.of());
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName    {@link String} group name
-     * @param extraOptions {@link Map} depending on the implementation it might need extra options or not.
-     * @return
-     */
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
-        final File rootGroup = groups.get(getRootGroupKey());
+        final File groupNamePath = this.groups.get(groupNameLC);
+        if (null != groupNamePath && groupNamePath.exists() && groupNamePath.isAbsolute()) {
+            return true;
+        }
+        // If the group name DOES NOT represent an absolute path, it must be
+        // appended to the path of the root group
+        final File rootGroup = this.groups.get(getRootGroupKey());
         final File destBucketFile = new File(rootGroup, groupNameLC);
         if (!destBucketFile.exists()) {
             final boolean bucketCreated = destBucketFile.mkdirs();
             if (bucketCreated) {
-               groups.put(groupNameLC, destBucketFile);
+               this.groups.put(groupNameLC, destBucketFile);
             }
             return bucketCreated;
         }
-
-        groups.put(groupNameLC, destBucketFile);
+        this.groups.put(groupNameLC, destBucketFile);
         return true; // the bucket already exist
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @return
-     */
     @Override
     public int deleteGroup(final String groupName) throws DotDataException {
         final File rootGroup = groups.get(getRootGroupKey());
@@ -161,12 +144,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @param path   {   @link String} object path
-     * @return
-     */
     @Override
     public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
         return new File(groups.get(groupName.toLowerCase()), path.toLowerCase()).delete();
@@ -177,24 +154,12 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return deleteObjectAndReferences(groupName, path);
     }
 
-    /**
-     * {@inheritDoc}
-     * @return
-     */
     @Override
-    public List<String> listGroups() throws DotDataException {
+    public List<String> listGroups() {
 
         return new ImmutableList.Builder<String>().addAll(groups.keySet()).build();
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName  {@link String} the group to upload
-     * @param path       {@link String} path to upload the file
-     * @param file       {@link File}   the actual file
-     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
-     * @return
-     */
     @Override
     public Object pushFile(final String groupName,
             final String path,
@@ -228,15 +193,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} the group to upload
-     * @param path       {@link String} path to upload the file
-     * @param writerDelegate     {@link ObjectWriterDelegate} stream to upload
-     * @param object     {@link Serializable} object to write into the storage
-     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
-     * @return
-     */
     @Override
     public Object pushObject(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate,
@@ -253,26 +209,44 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         if (groupDir.canWrite()) {
 
             try {
-                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
-                this.prepareParent(destBucketFile);
-                final boolean bucketCreated = destBucketFile.createNewFile();   // we create the file if it does not exist and then write on it.
-                if (!bucketCreated) {
-                    Logger.debug(this, String.format("Destination bucket '%s' could not be created", destBucketFile));
-                }
-                final String compressor = contentMetadataCompressor.get();
-                try (final OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
-                    writerDelegate.write(outputStream, object);
-                    outputStream.flush();
-                }
-            } catch (final IOException e) {
-                Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
-                throw new  DotDataException(e.getMessage(),e);
+                return lockManager.tryLock("fs_" + groupName + path,
+                        () -> {
+
+                            final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
+
+                            // someone else already wrote the file meanwhile waiting for the lock
+                            // so, I do not need to write it again
+                            if (!destBucketFile.exists()) {
+
+                                try {
+
+                                    final File tempDestBucketFile = com.dotmarketing.util.FileUtil.
+                                            createTemporaryFile(String.valueOf((groupName+path).hashCode()));
+                                    final String compressor = contentMetadataCompressor.get();
+                                    try (OutputStream outputStream = FileUtil.createOutputStream(tempDestBucketFile.toPath(), compressor)) {
+                                        writerDelegate.write(outputStream, object);
+                                        outputStream.flush();
+                                    }
+
+                                    // copy from the temp file to the final destination
+                                    this.prepareParent(destBucketFile);
+
+                                    FileUtil.move(tempDestBucketFile, destBucketFile);
+                                } catch (IOException e) {
+                                    Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
+                                    throw new DotDataException(e.getMessage(), e);
+                                }
+                            }
+
+                            return true;
+                        }
+                );
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
             }
         } else {
             throw new IllegalArgumentException(String.format("Bucket '%s' could not be created", groupName));
         }
-
-        return true;
     }
 
     /**
@@ -287,14 +261,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} the bucket to push
-     * @param path       {@link String} path to push the file
-     * @param file       {@link File}   the actual file
-     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
-     * @return
-     */
     @Override
     public Future<Object> pushFileAsync(final String groupName, final String path,
             final File file, final Map<String, Serializable> extraMeta) {
@@ -303,15 +269,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         );
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName
-     * @param path       {@link String} path to upload the file
-     * @param writerDelegate     {@link ObjectWriterDelegate} stream to upload
-     * @param object     {@link Serializable} object to write into the storage
-     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
-     * @return
-     */
     @Override
     public Future<Object> pushObjectAsync(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate, final Serializable object,
@@ -321,13 +278,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 () -> this.pushObject(groupName, path, writerDelegate, object, extraMeta)
         );
     }
-
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @param path {@link String}
-     * @return
-     */
 
     @Override
     public File pullFile(final String groupName, final String path) throws DotDataException {
@@ -358,13 +308,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
         return clientFile;
     }
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String}  group name to pull
-     * @param path {@link String} path to pull the file
-     * @param readerDelegate {@link ObjectReaderDelegate} to reads the object
-     * @return
-     */
+
     @Override
     public Object pullObject(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) throws DotDataException {
@@ -379,8 +323,10 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         final File groupDir = groups.get(groupName.toLowerCase());
 
         if (groupDir.canRead()) {
+            File file = null;
+
             try {
-                final File file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
+                file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
                 if (file.exists()) {
                     final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
                     try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
@@ -389,9 +335,19 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 } else {
                     throw new IllegalArgumentException("The file: " + path + ", does not exists.");
                 }
+            } catch (MismatchedInputException e) {
+                final String msg = "error getting: (" + groupName + '|' + path +
+                        "), probably the file is zero length or corrupted, msg:" + e.getMessage();
+                Logger.warn(FileSystemStoragePersistenceAPIImpl.class, msg, e);
+                if (null != file && file.exists()) {
+                    Logger.info(this, "Deleting the file:" + file + ", because it is corrupted.");
+                    file.delete();
+                }
+                object = Map.of(); // no object
             } catch (IOException e) {
-                Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
-                throw new DotRuntimeException(e);
+                final String msg = "error getting: (" + groupName + '|' + path + "), msg:" + e.getMessage();
+                Logger.error(FileSystemStoragePersistenceAPIImpl.class, msg, e);
+                throw new DotRuntimeException(msg, e);
             }
         } else {
             throw new IllegalArgumentException(String.format("The folder: `%s` mapped by the bucket: `%s` could not be read.",groupDir.getAbsolutePath(), groupName));
@@ -400,12 +356,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return object;
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @param path {@link String}
-     * @return
-     */
     @Override
     public Future<File> pullFileAsync(final String groupName, final String path) {
 
@@ -414,13 +364,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         );
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @param path {@link String}
-     * @param readerDelegate {@link ObjectReaderDelegate} to reads the object
-     * @return
-     */
     @Override
     public Future<Object> pullObjectAsync(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) {

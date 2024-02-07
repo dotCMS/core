@@ -1,7 +1,5 @@
 <dot-portlet-base>
-    <dot-not-licensed-component
-        *ngIf="!canAccessPortlet; else licensed"
-    ></dot-not-licensed-component>
+    <dot-not-license *ngIf="!canAccessPortlet; else licensed" />
     <ng-template #licensed
         ><div class="dot-apps__container">
             <div class="dot-apps__header">
@@ -9,8 +7,7 @@
                     #searchInput
                     [placeholder]="('apps.search.placeholder' | dm) || ''"
                     pInputText
-                    type="text"
-                />
+                    type="text" />
                 <div class="dot-apps__header-actions">
                     <div class="dot-apps__header-info">
                         <dot-icon name="help" size="18"></dot-icon>
@@ -26,8 +23,7 @@
                         (click)="confirmImportExport('Import')"
                         pButton
                         link
-                        icon="pi pi-upload"
-                    ></button>
+                        icon="pi pi-upload"></button>
                     <button
                         class="dot-apps-configuration__action_export_button"
                         [label]="'apps.confirmation.export.all.button' | dm"
@@ -35,16 +31,14 @@
                         (click)="confirmImportExport('Export')"
                         pButton
                         link
-                        icon="pi pi-download"
-                    ></button>
+                        icon="pi pi-download"></button>
                 </div>
             </div>
             <div class="dot-apps__body">
                 <dot-apps-card
                     *ngFor="let app of appsCopy"
                     [app]="app"
-                    (actionFired)="goToApp($event)"
-                ></dot-apps-card>
+                    (actionFired)="goToApp($event)"></dot-apps-card>
             </div>
         </div>
     </ng-template>
@@ -54,6 +48,5 @@
         [action]="importExportDialogAction"
         [show]="showDialog"
         (resolved)="reloadAppsData()"
-        (shutdown)="onClosedDialog()"
-    ></dot-apps-import-export-dialog>
+        (shutdown)="onClosedDialog()"></dot-apps-import-export-dialog>
 </dot-portlet-base>

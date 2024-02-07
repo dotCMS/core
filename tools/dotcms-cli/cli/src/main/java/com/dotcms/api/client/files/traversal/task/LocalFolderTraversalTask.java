@@ -190,7 +190,10 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                                     localPathStructure.filePath(), live, lang, pushInfo.isNew(),
                                     pushInfo.isModified()));
 
-                    var asset = assetViewFromFile(localPathStructure);
+                    var asset = assetViewFromFile(
+                            localPathStructure,
+                            pushInfo.fileHash()
+                    );
                     final AssetSync syncData = AssetSync.builder().
                             markedForPush(true).
                             pushType(pushInfo.pushType()).
@@ -240,7 +243,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                         pushInfo = shouldPushFile(live, lang, file, remoteFolder.assets());
                     } else {
                         // The folder does not even exist on the remote server, we need to push all files
-                        pushInfo = new PushInfo(true, true, false);
+                        pushInfo = pushInfoForNoRemote(file);
                     }
 
                     if (pushInfo.push()) {
@@ -255,7 +258,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                                 .build();
 
                         assetVersionsBuilder.addVersions(
-                                assetViewFromFile(workspaceFile, file).
+                                assetViewFromFile(workspaceFile, file, pushInfo.fileHash()).
                                         sync(syncData).
                                         build()
                         );
@@ -283,11 +286,11 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
             boolean markForPush = false;
             if (params.ignoreEmptyFolders()) {
                 if (folderFiles != null && folderFiles.length > 0) {
-                    // Does  not exist on remote server, so we need to push it
+                    // Does not exist on remote server, so we need to push it
                     markForPush = true;
                 }
             } else {
-                // Does  not exist on remote server, so we need to push it
+                // Does not exist on remote server, so we need to push it
                 markForPush = true;
             }
             folder.sync(FolderSync.builder().markedForPush(markForPush).build());
@@ -562,7 +565,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                                     File file, final AssetVersionsView remoteAsset) {
 
         if (remoteAsset == null) {
-            return new PushInfo(true, true, false);
+            return pushInfoForNoRemote(file);
         }
 
         // Remote SHA-256
@@ -583,14 +586,14 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
             }
         }
 
+        // Local SHA-256
+        final String localFileHash = Utils.Sha256toUnixHash(file.toPath());
+
         var push = true;
         var isNew = true;
         var modifed = false;
 
         if (!Strings.isNullOrEmpty(remoteFileHash)) { // We found the file in the remote server
-
-            // Local SHA-256
-            final String localFileHash = Utils.Sha256toUnixHash(file.toPath());
 
             // Verify if we need to push the file
             if (localFileHash.equals(remoteFileHash)) {
@@ -601,7 +604,21 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
             }
         }
 
-        return new PushInfo(push, isNew, modifed);
+        return new PushInfo(push, isNew, modifed, localFileHash);
+    }
+
+    /**
+     * Generates the push information for a file that does not have a remote counterpart.
+     *
+     * @param file The file for which to generate push information.
+     * @return The PushInfo object representing the push information for the file.
+     */
+    private PushInfo pushInfoForNoRemote(File file) {
+
+        // Local SHA-256
+        final String localFileHash = Utils.Sha256toUnixHash(file.toPath());
+
+        return new PushInfo(true, true, false, localFileHash);
     }
 
     /**
@@ -653,24 +670,29 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      *
      * @param workspaceFile the workspace file
      * @param file          the file to build the AssetView from
+     * @param fileHash      the file hash
      * @return The AssetView.Builder representing the asset view
      */
-    private AssetView.Builder assetViewFromFile(File workspaceFile, File file) {
+    private AssetView.Builder assetViewFromFile(final File workspaceFile, final File file,
+            final String fileHash) {
 
         final var localPathStructure = parseLocalPath(workspaceFile, file);
-        return assetViewFromFile(localPathStructure);
+        return assetViewFromFile(localPathStructure, fileHash);
     }
 
     /**
      * Builds an AssetView object from a local path structure.
      *
      * @param localPathStructure the local path structure
+     * @param fileHash           the file hash
      * @return The AssetView.Builder representing the asset view
      */
-    private AssetView.Builder assetViewFromFile(LocalPathStructure localPathStructure) {
+    private AssetView.Builder assetViewFromFile(final LocalPathStructure localPathStructure,
+            final String fileHash) {
 
         var metadata = new HashMap<String, Object>();
         metadata.put(PATH_META_KEY.key(), localPathStructure.folderPath());
+        metadata.put(SHA256_META_KEY.key(), fileHash);
 
         var live = statusToBoolean(localPathStructure.status());
 
@@ -691,18 +713,22 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
         private final boolean push;
         private final boolean isNew;
         private final boolean isModified;
+        private final String fileHash;
 
         /**
-         * Constructs a new PushInfo instance.
+         * Represents the push information for a file.
          *
          * @param push       whether the file should be pushed
          * @param isNew      whether the file is new
          * @param isModified whether the file has been modified
+         * @param fileHash   the file hash
          */
-        public PushInfo(boolean push, boolean isNew, boolean isModified) {
+        PushInfo(final boolean push, final boolean isNew, final boolean isModified,
+                final String fileHash) {
             this.push = push;
             this.isNew = isNew;
             this.isModified = isModified;
+            this.fileHash = fileHash;
         }
 
         /**
@@ -710,7 +736,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
          *
          * @return true if the file should be pushed, false otherwise
          */
-        public boolean push() {
+        boolean push() {
             return push;
         }
 
@@ -719,7 +745,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
          *
          * @return true if the file is new, false otherwise
          */
-        public boolean isNew() {
+        boolean isNew() {
             return isNew;
         }
 
@@ -728,10 +754,24 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
          *
          * @return true if the file has been modified, false otherwise
          */
-        public boolean isModified() {
+        boolean isModified() {
             return isModified;
         }
 
+        /**
+         * Returns the file hash.
+         *
+         * @return The file hash
+         */
+        String fileHash() {
+            return fileHash;
+        }
+
+        /**
+         * Determines the push type for a file based on its synchronization information.
+         *
+         * @return The push type for the file: NEW, MODIFIED, or UNKNOWN
+         */
         PushType pushType() {
             PushType pushType = isNew() ? PushType.NEW : PushType.UNKNOWN;
             if(pushType == PushType.UNKNOWN){

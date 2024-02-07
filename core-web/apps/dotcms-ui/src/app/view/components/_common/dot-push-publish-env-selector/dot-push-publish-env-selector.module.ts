@@ -5,8 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelectModule } from 'primeng/multiselect';
 
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { DotCurrentUserService } from '@dotcms/data-access';
+import { DotCurrentUserService, PushPublishService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

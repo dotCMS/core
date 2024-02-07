@@ -107,6 +107,9 @@ public class ConsoleProgressBar implements Runnable {
         } finally {
             if (currentStep >= totalSteps) {
 
+                // If there were no steps to run, we still need to show the progress bar as completed
+                totalSteps = totalSteps > 0 ? totalSteps : 1;
+
                 builder = initBuilder(builder);
 
                 // We reached 100% progress

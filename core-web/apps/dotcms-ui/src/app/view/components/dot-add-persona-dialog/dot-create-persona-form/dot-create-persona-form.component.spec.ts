@@ -18,7 +18,12 @@ import {
     DotFieldValidationMessageComponent,
     DotMessagePipe
 } from '@dotcms/ui';
-import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
+import {
+    mockDotCMSTempFile,
+    MockDotMessageService,
+    mockSites,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
 
@@ -28,17 +33,6 @@ const FROM_INITIAL_VALUE = {
     name: '',
     photo: null,
     tags: null
-};
-
-export const mockDotCMSTempFile = {
-    fileName: 'temp-file_123.jpeg',
-    folder: '',
-    id: 'temp-file_123',
-    image: true,
-    length: 5204,
-    mimeType: 'image/jpeg',
-    referenceUrl: '...temp-file_123.jpeg',
-    thumbnailUrl: '...250/temp-file_123.jpeg'
 };
 
 const mockFileUploadResponse = {

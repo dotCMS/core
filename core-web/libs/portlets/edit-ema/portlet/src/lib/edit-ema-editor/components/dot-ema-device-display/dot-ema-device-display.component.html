@@ -1,0 +1,5 @@
+<i *ngIf="!!currentDevice.icon" [class]="currentDevice.icon" data-testId="device-icon"></i>
+<span class="device__name" data-testId="device-name">
+    {{ currentDevice.name }} {{ currentDevice.cssWidth }} x
+    {{ currentDevice.cssHeight }}
+</span>
