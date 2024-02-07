@@ -50,6 +50,7 @@ import static com.dotmarketing.filters.CMSFilter.CMS_INDEX_PAGE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
+import static com.liferay.util.StringPool.PERIOD;
 import static com.liferay.util.StringPool.UNDERLINE;
 import static java.util.stream.Collectors.toSet;
 
@@ -601,6 +602,17 @@ public class CMSUrlUtil {
 			if (urlPath.startsWith(FORWARD_SLASH + mode.name() + FORWARD_SLASH)) {
 				final String urlPathWithoutMode = urlPath.substring(mode.name().length() + 2);
 				return urlPathWithoutMode.substring(0, urlPathWithoutMode.indexOf(FORWARD_SLASH));
+			}
+			if (urlPath.startsWith(mode.name() + FORWARD_SLASH)) {
+				final String urlPathWithoutMode = urlPath.substring(mode.name().length() + 1);
+				int indexOf = urlPathWithoutMode.indexOf(FORWARD_SLASH);
+				if (indexOf == -1) {
+					indexOf = urlPathWithoutMode.indexOf(UNDERLINE);
+				}
+				if (indexOf == -1) {
+					indexOf = urlPathWithoutMode.indexOf(PERIOD);
+				}
+				return urlPathWithoutMode.substring(0, indexOf);
 			}
 		}
 
