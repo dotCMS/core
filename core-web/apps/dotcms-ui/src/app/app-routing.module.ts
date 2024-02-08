@@ -220,7 +220,8 @@ const appRoutes: Routes = [
     imports: [
         RouterModule.forRoot(appRoutes, {
             useHash: true,
-            onSameUrlNavigation: 'reload'
+            onSameUrlNavigation: 'reload',
+            enableViewTransitions: true
         })
     ],
     providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
