@@ -58,11 +58,12 @@
 }
 
 .announcements__image {
-    height: 2.5rem;
-    width: 2.5rem;
+    height: 2.7rem;
+    width: 2.7rem;
     background-color: var(--color-palette-secondary-200);
     color: var(--color-palette-secondary-500);
     border-radius: 50%;
+    font-size: $font-size-lg;
 }
 
 .announcements__label {
@@ -70,10 +71,11 @@
 }
 
 .announcements__about {
-    display: flex;
+    display: grid;
     flex-direction: column;
     gap: $spacing-3;
-    margin: $spacing-3 0;
+    margin: $spacing-3;
+    grid-template-columns: 1fr 1fr;
 }
 
 .announcements__link {
@@ -96,10 +98,11 @@
     color: $white;
     font-size: $font-size-sm;
     line-height: $font-size-sm;
-    padding: $spacing-0;
+    width: 0.625rem;
+    height: 0.625rem;
     position: absolute;
-    left: 35px;
-    top: 12px;
+    left: 39px;
+    top: 14px;
 }
 
 ::ng-deep {

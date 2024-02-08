@@ -515,6 +515,30 @@ export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'json'
 };
 
+export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
+    contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
+    dataType: 'TEXT',
+    fieldType: 'Key-Value',
+    fieldTypeLabel: 'KeyValue',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698291913000,
+    id: '96909fa20a00497cd3b766b52edac0ec',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'KeyValue',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 1,
+    unique: false,
+    values: '{ "key1": "value1" }',
+    variable: 'KeyValue'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -535,7 +559,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     BLOCK_EDITOR_FIELD_MOCK,
     BINARY_FIELD_MOCK,
     CUSTOM_FIELD_MOCK,
-    JSON_FIELD_MOCK
+    JSON_FIELD_MOCK,
+    KEY_VALUE_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;

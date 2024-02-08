@@ -9,6 +9,7 @@
 | `alt`                | `alt`                  |             | `string`            | `''`        |
 | `contentlet`         | --                     |             | `DotContentletItem` | `undefined` |
 | `cover`              | `cover`                |             | `boolean`           | `true`      |
+| `fieldVariable`      | `field-variable`       |             | `string`            | `''`        |
 | `height`             | `height`               |             | `string`            | `''`        |
 | `iconSize`           | `icon-size`            |             | `string`            | `''`        |
 | `playableVideo`      | `playable-video`       |             | `boolean`           | `false`     |

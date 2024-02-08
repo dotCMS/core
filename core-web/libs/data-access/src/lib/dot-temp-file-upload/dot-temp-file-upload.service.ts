@@ -7,17 +7,7 @@ import { catchError, map, pluck, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-
-export interface DotCMSTempFile {
-    fileName: string;
-    folder: string;
-    id: string;
-    image: boolean;
-    length: number;
-    mimeType: string;
-    referenceUrl: string;
-    thumbnailUrl: string;
-}
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotTempFileUploadService {

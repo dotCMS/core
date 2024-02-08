@@ -3,13 +3,10 @@ package com.dotcms.jitsu;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
-import com.dotcms.analytics.helper.AnalyticsHelper;
-import com.dotcms.analytics.experience.metric.MetricsAPI;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
-import com.dotcms.metrics.MetricsSenderSubmitter;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -44,7 +41,7 @@ import javax.servlet.http.HttpServletResponse;
  * <p>
  * For GET requests to "/s/lib.js", it responds with the lib.js file
  * <p>
- * For POST requests to "/api/v1/event", it sends the event in JSON via {@link MetricsSenderSubmitter}
+ * For POST requests to "/api/v1/event", it sends the event in JSON via {@link EventLogSubmitter}
  */
 public class EventLogWebInterceptor implements WebInterceptor {
 
@@ -54,12 +51,12 @@ public class EventLogWebInterceptor implements WebInterceptor {
         "/api/v1/event"
     };
 
-    private final MetricsSenderSubmitter submitter;
+    private final EventLogSubmitter submitter;
     private final Lazy<String> jitsuLib;
     private final ExperimentsAPI experimentsAPI = APILocator.getExperimentsAPI();
 
     public EventLogWebInterceptor() {
-        submitter = new MetricsSenderSubmitter();
+        submitter = new EventLogSubmitter();
         jitsuLib = Lazy.of(() -> {
             try (final InputStream in = this.getClass().getResourceAsStream("/jitsu/lib.js")) {
                 return new BufferedReader(
@@ -131,15 +128,12 @@ public class EventLogWebInterceptor implements WebInterceptor {
         //eventPayload.put("clusterId", ClusterFactory.getClusterId());
 
         try {
+
             addRunningExperimentAsPayload(experiments, eventPayload);
 
             if (!eventPayload.isEmpty()) {
                 final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-
-                this.submitter.logEvent(
-                        MetricsAPI.createAnalyticsAppPayload(
-                                AnalyticsHelper.get().appFromHost(host),
-                                eventPayload));
+                this.submitter.logEvent(host, eventPayload);
             }
         } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
             Logger.error(this, "Error resolving current host", e);
