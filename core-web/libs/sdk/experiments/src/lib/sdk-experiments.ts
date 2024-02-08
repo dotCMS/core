@@ -2,7 +2,7 @@
  * Represents an SDK Experiment.
  * @class
  */
-export class sdkExperiment {
+export class DotSdkExperiment {
   constructor() {}
 
   /**

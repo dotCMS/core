@@ -4,16 +4,19 @@
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
-      "rules": {}
+      "rules": {
+        "@typescript-eslint/naming-convention": [
+          "error",
+          {
+            "selector": "class",
+            "format": ["PascalCase"],
+            "leadingUnderscore": "allow",
+            "trailingUnderscore": "allow"
+          }
+        ]
+      }
     },
-    {
-      "files": ["*.ts", "*.tsx"],
-      "rules": {}
-    },
-    {
-      "files": ["*.js", "*.jsx"],
-      "rules": {}
-    },
+
     {
       "files": ["*.json"],
       "parser": "jsonc-eslint-parser",

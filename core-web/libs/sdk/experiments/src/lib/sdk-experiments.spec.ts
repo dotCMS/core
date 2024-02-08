@@ -1,9 +1,9 @@
-import { sdkExperiment } from '@dotcms/sdk/experiments';
+import { DotSdkExperiment } from '@dotcms/sdk/experiments';
 
 describe('sdkExperiments', () => {
-  let sdk: sdkExperiment;
+  let sdk: DotSdkExperiment;
   beforeEach(() => {
-    sdk = new sdkExperiment();
+    sdk = new DotSdkExperiment();
   });
   it('should work', () => {
     expect(sdk.init()).toEqual('Pending Implementation');
