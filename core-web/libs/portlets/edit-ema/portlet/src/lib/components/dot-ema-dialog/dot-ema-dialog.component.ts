@@ -27,7 +27,6 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
     selector: 'dot-edit-ema-dialog',
     standalone: true,
     templateUrl: './dot-ema-dialog.component.html',
-    styleUrl: './dot-ema-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         NgIf,
