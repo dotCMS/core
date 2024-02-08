@@ -1,6 +1,5 @@
 package com.dotcms.api.client.files.traversal.task;
 
-import com.dotcms.api.client.files.traversal.RemoteFolderTraversalTaskParams;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
@@ -8,10 +7,8 @@ import com.dotcms.model.asset.FolderView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.Future;
-import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
@@ -21,8 +18,8 @@ import org.jboss.logging.Logger;
  * representation of its contents. This task is used to split the traversal into smaller sub-tasks
  * that can be executed in parallel, allowing for faster traversal of large directory structures.
  */
-@ApplicationScoped
-public class RemoteFolderTraversalTask {
+@Dependent
+public class RemoteFolderTraversalTask extends TraversalTaskProcessor {
 
     private final ManagedExecutor executor;
     private final Logger logger;
@@ -94,20 +91,7 @@ public class RemoteFolderTraversalTask {
         );
 
         // Wait for all tasks to complete and gather the results
-        for (int i = 0; i < toProcessCount; i++) {
-
-            try {
-                Future<Pair<List<Exception>, TreeNode>> future = completionService.take(); // Retrieves and removes the Future representing the next completed task
-                Pair<List<Exception>, TreeNode> taskResult = future.get(); // Should not block, as the task is already complete
-                errors.addAll(taskResult.getLeft());
-                currentNode.addChild(taskResult.getRight());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new TraversalTaskException("Thread was interrupted", e);
-            } catch (ExecutionException e) {
-                throw new TraversalTaskException(e.getMessage(), e);
-            }
-        }
+        processTasks(toProcessCount, completionService, errors, currentNode);
 
         return Pair.of(errors, currentNode);
     }

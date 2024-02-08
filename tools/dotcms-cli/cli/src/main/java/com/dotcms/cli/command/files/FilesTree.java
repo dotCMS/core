@@ -7,15 +7,15 @@ import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
-import org.apache.commons.lang3.tuple.Pair;
-import picocli.CommandLine;
-import picocli.CommandLine.Parameters;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.microprofile.context.ManagedExecutor;
+import picocli.CommandLine;
+import picocli.CommandLine.Parameters;
 
 /**
  * Command to display a hierarchical tree view of the files and subdirectories within the specified
@@ -87,6 +87,9 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @Inject
+    ManagedExecutor executor;
+
     @Override
     public Integer call() throws Exception {
 
@@ -98,7 +101,7 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
         var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
         var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
 
-        CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = CompletableFuture.supplyAsync(
+        CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = executor.supplyAsync(
                 () -> {
                     // Service to handle the traversal of the folder
                     return remoteTraversalService.traverseRemoteFolder(
@@ -118,7 +121,7 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
                 folderTraversalFuture
         );
 
-        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+        CompletableFuture<Void> animationFuture = executor.runAsync(
                 consoleLoadingAnimation
         );
 

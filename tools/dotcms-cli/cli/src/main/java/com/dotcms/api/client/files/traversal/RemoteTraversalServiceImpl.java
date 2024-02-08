@@ -3,7 +3,9 @@ package com.dotcms.api.client.files.traversal;
 import com.dotcms.api.client.files.traversal.data.Pusher;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.task.PushTreeNodeTask;
+import com.dotcms.api.client.files.traversal.task.PushTreeNodeTaskParams;
 import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTask;
+import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTaskParams;
 import com.dotcms.api.traversal.Filter;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.common.AssetsUtils;
@@ -12,7 +14,6 @@ import io.quarkus.arc.DefaultBean;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -135,12 +136,25 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
         }
 
         // ---
-        var forkJoinPool = ForkJoinPool.commonPool();
-        var task = new PushTreeNodeTask(PushTraverseParams.builder()
-                .from(traverseParams)
-                .pusher(pusher)
-                .build());
-        return forkJoinPool.invoke(task);
+        var task = new PushTreeNodeTask(
+                logger,
+                executor,
+                traverseParams.pushContext(),
+                pusher
+        );
+        
+        task.setTraversalParams(PushTreeNodeTaskParams.builder()
+                .workspacePath(traverseParams.workspacePath())
+                .localPaths(traverseParams.localPaths())
+                .rootNode(traverseParams.rootNode())
+                .failFast(traverseParams.failFast())
+                .isRetry(traverseParams.isRetry())
+                .maxRetryAttempts(traverseParams.maxRetryAttempts())
+                .progressBar(traverseParams.progressBar())
+                .build()
+        );
+
+        return task.compute();
     }
 
     /**

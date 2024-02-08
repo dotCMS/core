@@ -1,4 +1,4 @@
-package com.dotcms.api.client.files.traversal;
+package com.dotcms.api.client.files.traversal.task;
 
 import com.dotcms.api.traversal.Filter;
 import com.dotcms.model.annotation.ValueType;
@@ -7,8 +7,7 @@ import java.io.Serializable;
 import org.immutables.value.Value;
 
 /**
- * This interface represents the parameters for a
- * {@link com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTask}.
+ * This interface represents the parameters for a {@link RemoteFolderTraversalTask}.
  */
 @ValueType
 @Value.Immutable

@@ -12,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import javax.inject.Inject;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
@@ -30,6 +31,9 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
 
     @Inject
     Logger logger;
+
+    @Inject
+    ManagedExecutor executor;
 
     /**
      * Returns a display name of a given T element. Used for logging purposes.
@@ -58,7 +62,7 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
                 contents.size()
         );
 
-        CompletableFuture<List<Exception>> pullFuture = CompletableFuture.supplyAsync(
+        CompletableFuture<List<Exception>> pullFuture = executor.supplyAsync(
                 () -> {
 
                     final var format = InputOutputFormat.valueOf(
@@ -82,7 +86,7 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
                 });
         progressBar.setFuture(pullFuture);
 
-        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+        CompletableFuture<Void> animationFuture = executor.runAsync(
                 progressBar
         );
 
