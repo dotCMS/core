@@ -1,5 +1,5 @@
 {
-  "name": "sdk-experiments",
+  "name": "@dotcms/experiments",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/sdk/experiments/src",
   "projectType": "library",
