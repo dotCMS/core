@@ -67,7 +67,7 @@ public class InstanceCommand implements Callable<Integer>, DotCommand {
             final String color = serviceBean.active() ? "green" : "blue";
             output.info(String.format(
                     " Profile [@|bold,underline,%s %s|@], Uri [@|bold,underline,%s %s|@], active [@|bold,underline,%s %s|@]. ",
-                    color, serviceBean.name(), color, serviceBean.uri(), color,
+                    color, serviceBean.name(), color, serviceBean.url(), color,
                     toStringYesNo(serviceBean.active())));
         }
 

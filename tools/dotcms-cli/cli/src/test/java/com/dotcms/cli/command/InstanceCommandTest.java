@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
+import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -32,7 +33,7 @@ class InstanceCommandTest extends CommandTest {
     @Order(2)
     void Test_Command_Instance_Pass_Only_List_Param() throws IOException {
 
-            resetServiceProfiles().persist(ServiceBean.builder().name("demo").active(false).uri(URI.create("https://demo.dotcms.com/api")).build());
+            resetServiceProfiles().persist(ServiceBean.builder().name("demo").active(false).url(new URL("https://demo.dotcms.com")).build());
 
             final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
@@ -42,9 +43,9 @@ class InstanceCommandTest extends CommandTest {
                 Assertions.assertEquals(ExitCode.OK, status);
                 final String output = writer.toString();
                 Assertions.assertTrue(
-                        output.contains("Profile [default], Uri [http://localhost:8080/api]"),()->output);
+                        output.contains("Profile [default], Uri [http://localhost:8080]"),()->output);
                 Assertions.assertTrue(
-                        output.contains("Profile [demo], Uri [https://demo.dotcms.com/api]"), ()->output);
+                        output.contains("Profile [demo], Uri [https://demo.dotcms.com]"), ()->output);
             }
     }
 
@@ -108,7 +109,7 @@ class InstanceCommandTest extends CommandTest {
         Assertions.assertTrue(active.isPresent());
         //Let's activate demo since we know is an included profile
         final String newProfile = "demo";
-        serviceManager.persist(ServiceBean.builder().name(newProfile).active(false).build());
+        serviceManager.persist(ServiceBean.builder().name(newProfile).url(new URL("https://demo.dotcms.com")).active(false).build());
         final Optional<ServiceBean> inactive = serviceManager.services().stream()
                 .filter(serviceBean -> !serviceBean.active()).findFirst();
         Assertions.assertTrue(inactive.isPresent());

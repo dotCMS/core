@@ -1,15 +1,17 @@
 package com.dotcms.api.client.model;
 
-import com.dotcms.api.exception.APIConfigurationException;
+import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.model.config.ServiceBean;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.Map;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.jboss.logging.Logger;
 
 /**
@@ -24,44 +26,11 @@ public class RestClientFactory {
     @Inject
     Logger logger;
 
-
     @Inject
     ServiceManager serviceManager;
 
-    AtomicReference<ServiceBean> value = new AtomicReference<>();
-
-    private final Map<String, APIEndpoints> registry = new ConcurrentHashMap<>();
-
-    /**
-     * Given the selected profile this will return or instantiate a Rest Client
-     * @param profileName config profile
-     * @param clazz Rest Client class
-     * @return Client Instance
-     * @param <T> Rest Client class Type
-     */
-    <T> T getClient(final String profileName, final Class<T> clazz) {
-        if (registry.containsKey(profileName)) {
-            return registry.get(profileName).getClient(clazz);
-        } else {
-            try {
-                final Optional<ServiceBean> service = serviceManager.get(profileName);
-                service.ifPresentOrElse(
-                        serviceBean -> {
-                            registry.put(profileName, new APIEndpoints(serviceBean.uri()));
-                        },
-                        () -> {
-                            throw new APIConfigurationException(String.format(
-                                    "No Service configuration found for profile named [%s]",
-                                    profileName));
-                        }
-                );
-            }catch (IOException e) {
-                throw new APIConfigurationException(
-                        String.format("Unable to get service configuration for profile [%s]", profileName), e);
-            }
-        }
-        return registry.get(profileName).getClient(clazz);
-    }
+    // Stores a reference to the current selected profile, so we don't have to get it from disk every time
+    AtomicReference<ServiceBean> profile = new AtomicReference<>();
 
         /**
          * Given the selected profile this will return or instantiate a Rest Client
@@ -73,7 +42,7 @@ public class RestClientFactory {
 
             Optional<ServiceBean> profile;
             try {
-                profile = getService();
+                profile = getServiceProfile();
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to get current selected profile ", e);
             }
@@ -83,20 +52,52 @@ public class RestClientFactory {
                                 YAMLFactoryServiceManagerImpl.DOT_SERVICE_YML)
                 );
             }
-            return getClient(profile.get().name(), clazz);
+
+            URI uri;
+            try{
+               uri = toApiURI(profile.get().url());
+            } catch (URISyntaxException | IOException e) {
+                throw new IllegalStateException("  ", e);
+            }
+
+            return newRestClient(clazz, uri);
         }
 
-    public Optional<ServiceBean> getService() throws IOException {
-        ServiceBean val = value.get();
+    public Optional<ServiceBean> getServiceProfile() throws IOException {
+        ServiceBean val = profile.get();
         if (val == null) {
+            // if no profile is stored in memory, get it from the service manager
             val = serviceManager.selected().orElseThrow();
             // Set the value only if it's currently null
-            if (!value.compareAndSet(null, val)) {
+            if (!profile.compareAndSet(null, val)) {
                 // If compareAndSet fails, another thread has already set the value
-                val = value.get();
+                val = profile.get();
             }
         }
         return Optional.ofNullable(val);
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> T newRestClient(final Class<T> clazz, final URI apiBaseUri) {
+        return (T)
+                RestClientBuilder.newBuilder()
+                        .register(ClientObjectMapper.class)
+                        .baseUri(apiBaseUri)
+                        .build(clazz);
+    }
+
+    URI toApiURI(final URL url) throws IOException, URISyntaxException {
+        String raw = url.toString();
+        if (raw.endsWith("/")) {
+            raw = raw + "api";
+        } else {
+            if(!raw.endsWith("/api")){
+                raw = raw + "/api";
+            }
+        }
+        raw = raw.replaceAll("(?<!(http:|https:))//", "/");
+        logger.info(String.format("API URI: %s", raw));
+        return new URL(raw).toURI();
     }
 
 }

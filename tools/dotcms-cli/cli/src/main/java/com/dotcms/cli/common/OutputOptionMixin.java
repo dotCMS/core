@@ -194,7 +194,7 @@ public class OutputOptionMixin implements MessageWriter {
         //Short error message
         message = String.format("%s %s  ", message,
                 handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
-                        : "No error message was provided");
+                        :  "An exception " + handledEx.getClass().getSimpleName() + " Occurred With no error message provided.");
         error(message);
         Log.error(message, ex);
         //Won't print unless the "showErrors" flag is on

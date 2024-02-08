@@ -6,11 +6,11 @@ import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;
 import com.dotcms.cli.command.site.SiteCommand;
-import com.dotcms.cli.exception.ExceptionHandlerImpl;
+import com.dotcms.cli.common.DotExceptionHandler;
 import com.dotcms.cli.common.DotExecutionStrategy;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.exception.ExceptionHandlerImpl;
 import com.dotcms.model.annotation.SecuredPassword;
-import io.quarkus.arc.Unremovable;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import javax.enterprise.context.ApplicationScoped;
@@ -26,9 +26,9 @@ import picocli.CommandLine.ParameterException;
 
 @TopCommand
 @CommandLine.Command(
-        name = "dotCMS",
+        name = EntryCommand.NAME,
         mixinStandardHelpOptions = true,
-        version = {"dotcms-cli 1.0", "picocli " + CommandLine.VERSION},
+        version = {"dotCMS cli 1.0", "picocli " + CommandLine.VERSION},
         description = {
                 "@|bold,underline,blue dotCMS|@ cli is a command line interface to interact with your @|bold,underline,blue dotCMS|@ instance.",
         },
@@ -52,9 +52,11 @@ import picocli.CommandLine.ParameterException;
                 FilesCommand.class
         }
 )
-public class EntryCommand  implements DotCommand{
+public class EntryCommand implements DotCommand{
 
-    // Declared here, so we have an instance available via Arc container
+    public static final String NAME = "dotCMS";
+
+    // Declared here, so we have an instance available via Arc container on the Customized CommandLine
     @Inject
     ExceptionHandlerImpl exceptionHandler;
 
@@ -70,7 +72,7 @@ public class EntryCommand  implements DotCommand{
 
     @Override
     public String getName() {
-        return null;
+        return NAME;
     }
 
     @Override
@@ -91,7 +93,7 @@ class CustomConfiguration {
     @Produces
     CommandLine customCommandLine(final PicocliCommandLineFactory factory) {
 
-        CommandLine cmdLine = factory.create();
+        final CommandLine cmdLine = factory.create();
 
         var configurationUtil = CustomConfigurationUtil.getInstance();
 
@@ -138,21 +140,9 @@ class CustomConfigurationUtil {
     public void customize(CommandLine cmdLine) {
 
         cmdLine.setCaseInsensitiveEnumValuesAllowed(true)
-                .setExecutionStrategy(
-                        new DotExecutionStrategy(new CommandLine.RunLast()))
-                .setExecutionExceptionHandler((ex, commandLine, parseResult) -> {
-                    final Object object = commandLine.getCommand();
-                    if (object instanceof DotCommand) {
-                        final DotCommand command = (DotCommand) object;
-                        final OutputOptionMixin output = command.getOutput();
-                        return output.handleCommandException(ex,
-                                String.format("Error in command [%s] with message: %n ",
-                                        command.getName()));
-                    } else {
-                        commandLine.getErr().println(ex.getMessage());
-                    }
-                    return ExitCode.SOFTWARE;
-                }).setExitCodeExceptionMapper(t -> {
+                .setExecutionStrategy(new DotExecutionStrategy(new CommandLine.RunLast()))
+                .setExecutionExceptionHandler(new DotExceptionHandler())
+                .setExitCodeExceptionMapper(t -> {
                     // customize exit code
                     // We usually throw an IllegalArgumentException to denote that an invalid param has been passed
                     if (t instanceof ParameterException || t instanceof IllegalArgumentException) {

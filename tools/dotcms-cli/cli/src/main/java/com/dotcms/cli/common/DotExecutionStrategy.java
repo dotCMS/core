@@ -2,12 +2,12 @@ package com.dotcms.cli.common;
 
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.InitCommand;
-import com.dotcms.cli.exception.ExceptionHandler;
 import com.dotcms.cli.exception.UninitializedStateException;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.arc.Arc;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.IExecutionStrategy;
@@ -45,21 +45,35 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     public int execute(CommandLine.ParseResult parseResult)
             throws ExecutionException, ParameterException {
 
-        System.out.println("Executing command: " + parseResult.commandSpec().name());
-        //System.out.println("Executing sub-command: " + parseResult.subcommand().commandSpec().name());
-        if (!parseResult.originalArgs().isEmpty()) {
-            final String commandLineString = String.join(" ", parseResult.originalArgs());
-            final String format = String.format("Executing command: %s", commandLineString);
+        final Optional<CommandsChain> chain = SubcommandProcessor.process(parseResult);
+
+        if (chain.isPresent()) {
+            final CommandsChain commandsChain = chain.get();
+
+             if(commandsChain.isHelpRequestedAny()){
+              // Here requesting help so no need to revise if there is any configuration
+               return underlyingStrategy.execute(parseResult);
+            }
+
+            //Everything here is a sub command of EntryCommand
+            final String command = commandsChain.command();
+            final String format = String.format("Executing command: %s", command);
             LOGGER.info(format);
 
-            if(!InitCommand.NAME.equals(parseResult.commandSpec().name()) && parseResult.subcommand() != null){
+           final String parentCommand = commandsChain.firstSubcommand().map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+
+            if (!InitCommand.NAME.equals(parentCommand)){
                 final ServiceManager manager = getServiceManager();
-                try{
-                final List<ServiceBean> services = manager.services();
-                if(services.isEmpty()){
-                    throw new UninitializedStateException(parseResult.commandSpec().commandLine(),"No dotCMS instances found. Please run 'dotCMS init' to initialize the CLI.");
-                }}catch (IOException e){
-                    throw new ExecutionException(parseResult.commandSpec().commandLine(), "Error reading dotCMS instances", e);
+                try {
+                    final List<ServiceBean> services = manager.services();
+                    if (services.isEmpty()) {
+                        throw new UninitializedStateException(
+                                parseResult.commandSpec().commandLine(),
+                                "No dotCMS configured instances were found. Please run 'init' to initialize the CLI.");
+                    }
+                } catch (IOException e) {
+                    throw new ExecutionException(parseResult.commandSpec().commandLine(),
+                            "Error reading dotCMS instances", e);
                 }
             }
         }
@@ -67,14 +81,12 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         return underlyingStrategy.execute(parseResult);
     }
 
-
-    ServiceManager serviceManager;
-
-    ServiceManager getServiceManager(){
-        if(null == serviceManager){
-            serviceManager = Arc.container().instance(ServiceManager.class).get();
-        }
-        return serviceManager;
+    /**
+     * Returns the ServiceManager instance declared at EntryCommand.
+     * @return the ServiceManager instance from the Arc container
+     */
+    private ServiceManager getServiceManager() {
+        return Arc.container().instance(ServiceManager.class).get();
     }
 
 }

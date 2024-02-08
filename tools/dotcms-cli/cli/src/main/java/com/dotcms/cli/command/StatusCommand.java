@@ -10,14 +10,13 @@ import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.user.User;
 import java.io.IOException;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import java.net.URI;
+import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -68,17 +67,17 @@ public class StatusCommand implements Callable<Integer>, DotCommand {
                     InstanceCommand.NAME));
         } else {
             final ServiceBean serviceBean = optional.get();
-            final URI uri = serviceBean.uri();
+            final URL url = serviceBean.url();
             if (null == serviceBean.credentials()) {
                 output.info(String.format(
                         "Active instance is [@|bold,underline,blue %s|@] API is [@|bold,underline,blue %s|@] @|bold,underline No active user|@ Use %s Command.",
-                        serviceBean.name(), uri, LoginCommand.NAME)
+                        serviceBean.name(), url, LoginCommand.NAME)
                 );
             } else {
 
                 output.info(String.format(
                         "Active instance is [@|bold,underline,blue %s|@] API is [@|bold,underline,blue %s|@] User [@|bold,underline,blue %s|@]",
-                        serviceBean.name(), uri, serviceBean.credentials().user()));
+                        serviceBean.name(), url, serviceBean.credentials().user()));
 
                 final Optional<String> userId = authenticationContext.getUser();
                 if (userId.isEmpty()) {

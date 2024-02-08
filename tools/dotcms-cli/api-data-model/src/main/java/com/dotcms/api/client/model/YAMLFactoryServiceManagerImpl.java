@@ -92,7 +92,7 @@ public class YAMLFactoryServiceManagerImpl implements ServiceManager {
             ServiceBean serviceBean = iterator.next();
             //if the new incoming bean is meant to be the new active one... We mark all others inactive
             serviceBean = newServiceBean.active() ? serviceBean.withActive(false) : serviceBean;
-            if (newServiceBean.name().equals(serviceBean.name())) {
+            if (newServiceBean.name().equalsIgnoreCase(serviceBean.name())) {
                 //Remove cuz it's about to get replaced with the new `newServiceBean`
                 iterator.remove();
             } else {

@@ -2,7 +2,8 @@ package com.dotcms.model.config;
 
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.net.URI;
+import java.net.MalformedURLException;
+import java.net.URL;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
@@ -17,8 +18,7 @@ public interface AbstractServiceBean {
     default boolean active() {return  false;}
 
     @NotNull
-    @Value.Default
-    default URI uri() {return URI.create("http://localhost:8080/api");}
+    URL url();
 
     @Nullable
     CredentialsBean credentials();
