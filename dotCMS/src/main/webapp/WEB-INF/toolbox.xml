@@ -312,9 +312,14 @@
 		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.MarkdownTool</class>
 	</tool>
-    <tool>
-        <key>dotcache</key>
-        <scope>application</scope>
-        <class>com.dotcms.rendering.velocity.viewtools.dotcache.DotCacheTool</class>
-    </tool>
+	<tool>
+			<key>dotcache</key>
+			<scope>application</scope>
+			<class>com.dotcms.rendering.velocity.viewtools.dotcache.DotCacheTool</class>
+	</tool>
+	<tool>
+			<key>tokentool</key>
+			<scope>request</scope>
+			<class>com.dotcms.rendering.velocity.viewtools.TokenTool</class>
+	</tool>
 </toolbox>

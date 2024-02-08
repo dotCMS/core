@@ -1,7 +1,9 @@
 package com.dotcms.auth.providers.jwt.factories;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.ApiToken.Builder;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -14,8 +16,10 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -28,6 +32,8 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
 import io.vavr.control.Try;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -314,6 +320,73 @@ public class ApiTokenAPI {
 
         return persistApiToken(tokenIssued, user);
     }
+
+
+
+    public String generateShortLivedToken(String jwtOrTokenId, int expirationSeconds, String requestingIp) {
+
+
+        Optional<User> userOpt = resolveUserForToken(jwtOrTokenId,requestingIp);
+        if (userOpt.isEmpty()) {
+            return null;
+        }
+        User userForToken = userOpt.get();
+        if (userForToken.isAdmin() && Config.getBooleanProperty("SHORT_LIVED_TOKEN_BLOCK_CMS_ADMINS", true)) {
+            SecurityLogger.logInfo(this.getClass(), "Unable to generate a short lived token for admin users.");
+            throw new DotRuntimeException("Unable to generate a short lived token for admin users.");
+        }
+        if (userForToken.isBackendUser() && Config.getBooleanProperty("SHORT_LIVED_TOKEN_BLOCK_BACKEND_USERS", true)) {
+            SecurityLogger.logInfo(this.getClass(), "Unable to generate a short lived token for back end users.");
+            throw new DotRuntimeException("Unable to generate a short lived token for back end users.");
+        }
+        int expiration = Math.min(
+                Config.getIntProperty("SHORT_LIVED_TOKEN_MAX_SHORTLIVED_LENGTH_SEC", 60 * 60 * 24 * 7 /* 7 days */), expirationSeconds);
+
+
+        int slashNetmask = Config.getIntProperty("SHORT_LIVED_TOKEN_DEFAULT_NETMASK", 24);
+
+
+        Builder tokenBuilder = ApiToken.builder()
+                .withIssueDate(new Date())
+                .withUser(userForToken)
+                .withRequestingIp(requestingIp)
+                .withRequestingUserId(userForToken.getUserId())
+                .withExpires(Date.from(Instant.now().plus(expiration, ChronoUnit.SECONDS)));
+        if (Config.getBooleanProperty("SHORT_LIVED_TOKEN_LIMIT_BASED_ON_IP_ADDRESS", true)) {
+            tokenBuilder.withAllowNetwork(requestingIp + "/" + slashNetmask);
+        }
+
+        ApiToken token = APILocator.getApiTokenAPI().persistApiToken(tokenBuilder.build(), userForToken);
+        return APILocator.getApiTokenAPI().getJWT(token, userForToken);
+
+    }
+
+    /**
+     * This checks the system secrets for a token under the key passed in and if it exists, will extract and return the
+     * user of that token.  If there is no secret token that corresponds to the secretKey, then the Token is looked up
+     * by its ID and the user is returned from that.
+     *
+     * @param jwtOrTokenId
+     * @return
+     */
+    Optional<User> resolveUserForToken(String jwtOrTokenId, String ipAddress) {
+        if (UtilMethods.isEmpty(jwtOrTokenId)) {
+            return Optional.empty();
+        }
+        Optional<User> user = userFromJwt(jwtOrTokenId, ipAddress);
+        if (user.isPresent()) {
+            return user;
+        }
+
+        Optional<ApiToken> token = APILocator.getApiTokenAPI().findApiToken(jwtOrTokenId);
+        if(token.isEmpty() || !token.get().isInIpRange(ipAddress)){
+            return Optional.empty();
+        }
+        return Try.of(() -> APILocator.getUserAPI().loadUserById(token.get().getUserId())).toJavaOptional();
+
+    }
+
+
     
     
     
