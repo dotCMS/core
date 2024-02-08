@@ -60,8 +60,6 @@ jobs:
       version: ${{ steps.set-common-vars.outputs.version }}
     if: success()
     steps:
-      - name: Cleanup
-        uses: ./.github/actions/cleanup-runner
       - run: echo 'GitHub context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -70,7 +68,8 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.ref }}
-
+      - name: Cleanup
+        uses: ./.github/actions/cleanup-runner
       - name: Restore Docker Context
         id: restore-docker-context
         uses: actions/cache/restore@v3
