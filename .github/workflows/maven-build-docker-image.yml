@@ -60,6 +60,8 @@ jobs:
       version: ${{ steps.set-common-vars.outputs.version }}
     if: success()
     steps:
+      - name: Cleanup
+        uses: ./.github/actions/cleanup-runner
       - run: echo 'GitHub context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
