@@ -1,5 +1,5 @@
 {
-  "name": "sdk-experiments",
+  "name": "@dotcms/experiments",
   "version": "0.0.1-alpha",
   "dependencies": {},
   "description": "Official JavaScript library to use Experiments with DotCMS.",
