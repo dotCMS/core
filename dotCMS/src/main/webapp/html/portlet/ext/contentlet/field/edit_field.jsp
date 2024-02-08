@@ -734,13 +734,13 @@
                 %>
             
 
-            <div id="confirmReplaceNameDialog" dojoType="dijit.Dialog" >
-                <div dojoType="dijit.layout.ContentPane" style="text-align:center;height:auto;" class="box" hasShadow="true" id="confirmReplaceNameDialogCP">
+            <div id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>" dojoType="dijit.Dialog" >
+                <div dojoType="dijit.layout.ContentPane" style="text-align:center;height:auto;" class="box" hasShadow="true" id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>CP">
                     <p style="margin:0;max-width:600px;word-wrap: break-word">
                         <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %> 
-                        "<span id="confirmReplaceNameDialog-oldValue"> </span>" 
+                        "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue"> </span>" 
                         <%= LanguageUtil.get(pageContext, "with") %>  
-                        "<span id="confirmReplaceNameDialog-newValue"></span>""
+                        "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-newValue"></span>""
                         <br>&nbsp;<br>
                     </p>
                     <div class="buttonRow">
@@ -765,11 +765,11 @@
 
                     titleField?.setValue(newFileName);
                     fileNameField?.setValue(newFileName);
-                    dijit.byId("confirmReplaceNameDialog").hide();
+                    dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").hide();
                 }
                 
                 function closeConfirmReplaceName(){
-                    dijit.byId("confirmReplaceNameDialog").hide();
+                    dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").hide();
                 }
             </script>
             <script>
@@ -837,9 +837,9 @@
                                 }
     
                                 if(fileNameField.value && fileName && fileNameField.value !== fileName) {
-                                    document.getElementById("confirmReplaceNameDialog-oldValue").innerHTML = fileNameField.value;
-                                    document.getElementById("confirmReplaceNameDialog-newValue").innerHTML = fileName;
-                                    dijit.byId("confirmReplaceNameDialog").show();
+                                    document.getElementById("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue").innerHTML = fileNameField.value;
+                                    document.getElementById("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-newValue").innerHTML = fileName;
+                                    dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").show();
                                 }
 
                                 if(!fileNameField.value){
