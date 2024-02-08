@@ -45,6 +45,7 @@ describe('AnnouncementsStore', () => {
     });
 
     it('should fetch announcements', (done) => {
+        localStorage.removeItem('dotAnnouncementsData');
         const mockAnnouncements: Announcement[] = [
             {
                 title: 'Test Announcement',
