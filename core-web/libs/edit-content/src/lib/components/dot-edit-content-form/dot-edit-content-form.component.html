@@ -19,7 +19,7 @@
                         *ngFor="let field of column.fields"
                         [field]="field"
                         [contentlet]="formData.contentlet"
-                        [contentType]="formData.contentType"
+                        [contentType]="formData.contentType.variable"
                         data-testId="field" />
                 </div>
             </div>
