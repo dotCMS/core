@@ -142,8 +142,10 @@
 </ng-container>
 <dot-edit-ema-dialog
     #dialog
+    *ngIf="!currentDevice"
     (formSelected)="addSelectedForm($event)"
-    (customEvent)="onCustomEvent($event)"></dot-edit-ema-dialog>
+    (customEvent)="onCustomEvent($event)"
+    data-testId="ema-dialog"></dot-edit-ema-dialog>
 <p-confirmDialog
     *ngIf="!currentDevice"
     [style]="{

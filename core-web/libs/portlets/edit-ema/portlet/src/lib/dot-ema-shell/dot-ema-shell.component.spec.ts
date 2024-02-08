@@ -1,5 +1,5 @@
 import { describe, expect } from '@jest/globals';
-import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
+import { SpectatorRouting, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -192,38 +192,15 @@ describe('DotEmaShellComponent', () => {
         });
 
         describe('page properties', () => {
-            it('should open the dialog when triggering store.initEditAction with shell as context', () => {
-                spectator.detectChanges();
-
-                store.initActionEdit({
-                    inode: '123',
-                    title: 'hello world',
-                    type: 'shell'
-                });
-                spectator.detectChanges();
-
-                expect(spectator.query(byTestId('dialog-iframe'))).not.toBeNull();
-            });
-
             it('should trigger a navigate when saving and the url changed', () => {
                 const navigate = jest.spyOn(router, 'navigate');
 
                 spectator.detectChanges();
-                store.initActionEdit({
-                    inode: '123',
-                    title: 'hello world',
-                    type: 'shell'
-                });
-                spectator.detectChanges();
 
-                const dialogIframe = spectator.debugElement.query(
-                    By.css('[data-testId="dialog-iframe"]')
-                );
+                const dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
 
-                spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
-
-                dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
-                    new CustomEvent('ng-event', {
+                spectator.triggerEventHandler(dialog, 'customEvent', {
+                    event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                             payload: {
@@ -231,7 +208,7 @@ describe('DotEmaShellComponent', () => {
                             }
                         }
                     })
-                );
+                });
                 spectator.detectChanges();
 
                 expect(navigate).toHaveBeenCalledWith([], {
@@ -246,29 +223,20 @@ describe('DotEmaShellComponent', () => {
                 const loadMock = jest.spyOn(store, 'load');
 
                 spectator.detectChanges();
-                store.initActionEdit({
-                    inode: '123',
-                    title: 'hello world',
-                    type: 'shell'
-                });
-                spectator.detectChanges();
 
-                const dialogIframe = spectator.debugElement.query(
-                    By.css('[data-testId="dialog-iframe"]')
-                );
+                const dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
 
-                spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
-
-                dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
-                    new CustomEvent('ng-event', {
+                spectator.triggerEventHandler(dialog, 'customEvent', {
+                    event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                             payload: {
-                                htmlPageReferer: '/index'
+                                htmlPageReferer: '/my-awesome-page'
                             }
                         }
                     })
-                );
+                });
+
                 spectator.detectChanges();
 
                 expect(loadMock).toHaveBeenCalledWith({
