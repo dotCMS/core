@@ -5,6 +5,10 @@ on:
       version:
         description: 'Release version'
         required: true
+      publishNpmPackage:
+        description: 'Publish NPM Package'
+        required: false
+        default: 'false'
       skipTests:
         description: 'Skip tests'
         default: 'true'
@@ -304,7 +308,7 @@ jobs:
 
   publish-npm-package:
     name: "Publish NPM Package"
-    if: success()
+    if: github.event.inputs.publishNpmPackage == 'true' && success()  # Run only if explicitly indicated and successful
     needs: [ build, release ]
     runs-on: ubuntu-latest
     steps:
@@ -386,8 +390,9 @@ jobs:
         run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
 
       - name: 'Publish to NPM registry'
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
         run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
           npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
