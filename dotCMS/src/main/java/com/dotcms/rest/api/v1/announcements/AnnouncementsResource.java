@@ -62,7 +62,6 @@ public class AnnouncementsResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final ResponseEntityView<List<Announcement>> announcements(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @QueryParam("langIdOrCode") final String langIdOrCode,
             @QueryParam("refreshCache") final boolean refreshCache,
             @QueryParam("limit") final int limit
     ) {
@@ -74,7 +73,7 @@ public class AnnouncementsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final List<Announcement> announcements = helper.getAnnouncements(langIdOrCode, refreshCache , limit, user);
+            final List<Announcement> announcements = helper.getAnnouncements(refreshCache , limit, user);
             return new ResponseEntityView<>(announcements); // 200
     }
 

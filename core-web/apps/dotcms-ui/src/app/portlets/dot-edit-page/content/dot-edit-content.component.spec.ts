@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { mockProvider } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -30,6 +31,7 @@ import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/te
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
+    DotContentTypeService,
     DotEditPageService,
     DotESContentService,
     DotEventsService,
@@ -299,6 +301,7 @@ describe('DotEditContentComponent', () => {
                 DotExperimentsService,
                 DotSeoMetaTagsService,
                 DotSeoMetaTagsUtilService,
+                mockProvider(DotContentTypeService),
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock

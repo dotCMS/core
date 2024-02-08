@@ -1,5 +1,5 @@
 import { MonacoEditorComponent, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { MockComponent } from 'ng-mocks';
 
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '@dotcms/edit-content';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './dot-binary-field-editor.component';
@@ -89,7 +90,10 @@ describe('DotBinaryFieldEditorComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            detectChanges: false
+            detectChanges: false,
+            props: {
+                allowFileNameEdit: true
+            }
         });
 
         component = spectator.component;
@@ -115,28 +119,49 @@ describe('DotBinaryFieldEditorComponent', () => {
         expect(stopPropagationSpy).toHaveBeenCalled();
     });
 
-    describe('label', () => {
+    describe('input', () => {
         it('should set label and have css class required', () => {
             const label = spectator.query(byTestId('editor-label'));
 
             expect(label.innerHTML.trim()).toBe('File Name');
             expect(label.className).toBe('p-label-input-required');
         });
+
+        it('should show the file name editor', () => {
+            const input = spectator.query(byTestId('editor-file-name'));
+
+            expect(input).not.toBeNull();
+        });
+
+        it('should not show the file name editor', () => {
+            spectator.setInput('allowFileNameEdit', false);
+            spectator.detectChanges();
+
+            const input = spectator.query(byTestId('editor-file-name'));
+
+            expect(input).toBeNull();
+        });
     });
 
     describe('Editor', () => {
         it('should set editor language', fakeAsync(() => {
+            const expectedMonacoOptions = {
+                ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
+                language: 'javascript'
+            };
+
+            spectator.detectChanges();
+
             component.form.setValue({
                 name: 'script.js',
                 content: 'test'
             });
 
-            tick(1000);
+            spectator.detectComponentChanges();
 
-            expect(component.editorOptions).toEqual({
-                ...component.editorOptions,
-                language: 'javascript'
-            });
+            tick(355); //due to debounceTime
+
+            expect(component.monacoOptions()).toEqual(expectedMonacoOptions);
             expect(component.mimeType).toBe('text/javascript');
         }));
 

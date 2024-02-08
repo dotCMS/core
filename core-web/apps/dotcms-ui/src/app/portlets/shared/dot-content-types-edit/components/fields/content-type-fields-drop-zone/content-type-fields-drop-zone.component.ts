@@ -106,11 +106,11 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         }
     }
 
-    get isBlockEditorField() {
-        return (
-            this.currentFieldType?.clazz ===
-            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-        );
+    get isFieldWithSettings() {
+        return [
+            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+            'com.dotcms.contenttype.model.field.ImmutableBinaryField'
+        ].includes(this.currentFieldType?.clazz);
     }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
@@ -400,7 +400,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
         this.hideButtons =
             index !== this.OVERVIEW_TAB_INDEX &&
-            !(index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isBlockEditorField);
+            !(index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isFieldWithSettings);
     }
 
     /**
@@ -433,7 +433,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
     }
 
-    private toggleDialog(): void {
+    protected toggleDialog(): void {
         this.dialogActions = this.defaultDialogActions;
         this.activeTab = this.OVERVIEW_TAB_INDEX;
         this.displayDialog = !this.displayDialog;

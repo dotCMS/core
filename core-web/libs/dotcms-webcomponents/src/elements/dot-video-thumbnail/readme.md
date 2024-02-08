@@ -9,6 +9,7 @@
 | `contentlet` | --         |                                  | `DotContentletItem` | `undefined` |
 | `cover`      | `cover`    |                                  | `boolean`           | `true`      |
 | `playable`   | `playable` | If the video is playable or not. | `boolean`           | `false`     |
+| `variable`   | `variable` |                                  | `string`            | `undefined` |
 
 ## Dependencies
 
