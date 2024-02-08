@@ -590,6 +590,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
 
         this.store.updateEditorState(EDITOR_STATE.LOADED);
+        this.dialog.resetDialog();
     }
 
     /**
