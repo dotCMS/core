@@ -27,31 +27,17 @@
       "@dotcms/dot-layout-grid": ["libs/dot-layout-grid/src/public_api.ts"],
       "@dotcms/dot-rules": ["libs/dot-rules/src/public_api.ts"],
       "@dotcms/dotcms": ["libs/dotcms/src/index.ts"],
-      "@dotcms/dotcms-field-elements": [
-        "libs/dotcms-field-elements/src/index.ts"
-      ],
-      "@dotcms/dotcms-field-elements/loader": [
-        "dist/libs/dotcms-field-elements/loader"
-      ],
+      "@dotcms/dotcms-field-elements": ["libs/dotcms-field-elements/src/index.ts"],
+      "@dotcms/dotcms-field-elements/loader": ["dist/libs/dotcms-field-elements/loader"],
       "@dotcms/dotcms-js": ["libs/dotcms-js/src/public_api.ts"],
       "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"],
-      "@dotcms/dotcms-webcomponents": [
-        "libs/dotcms-webcomponents/src/index.ts"
-      ],
-      "@dotcms/dotcms-webcomponents/loader": [
-        "dist/libs/dotcms-webcomponents/loader"
-      ],
+      "@dotcms/dotcms-webcomponents": ["libs/dotcms-webcomponents/src/index.ts"],
+      "@dotcms/dotcms-webcomponents/loader": ["dist/libs/dotcms-webcomponents/loader"],
       "@dotcms/edit-content": ["libs/edit-content/src/index.ts"],
-      "@dotcms/portlets/dot-ema": [
-        "libs/portlets/edit-ema/portlet/src/index.ts"
-      ],
+      "@dotcms/portlets/dot-ema": ["libs/portlets/edit-ema/portlet/src/index.ts"],
       "@dotcms/portlets/dot-ema/ui": ["libs/portlets/edit-ema/ui/src/index.ts"],
-      "@dotcms/portlets/dot-experiments/data-access": [
-        "libs/portlets/dot-experiments/data-access/src/index.ts"
-      ],
-      "@dotcms/portlets/dot-experiments/portlet": [
-        "libs/portlets/dot-experiments/portlet/src/index.ts"],
-
+      "@dotcms/portlets/dot-experiments/data-access": ["libs/portlets/dot-experiments/data-access/src/index.ts"],
+      "@dotcms/portlets/dot-experiments/portlet": ["libs/portlets/dot-experiments/portlet/src/index.ts"],
       "@dotcms/react": ["libs/sdk/react/src/index.ts"],
       "@dotcms/react/mocks": ["libs/sdk/react/src/lib/mocks/index.ts"],
       "@dotcms/sdk/experiments": ["libs/sdk/experiments/src/index.ts"],
