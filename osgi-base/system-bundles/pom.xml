@@ -46,16 +46,6 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <id>dotcms-plugins</id>
-            <url>https://repo.dotcms.com/artifactory/lib-release-local/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
             <id>jitpack</id>
             <url>https://jitpack.io</url>
         </repository>
