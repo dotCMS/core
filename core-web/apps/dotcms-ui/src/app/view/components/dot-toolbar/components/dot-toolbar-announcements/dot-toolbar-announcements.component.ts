@@ -1,7 +1,17 @@
-import { NgClass, NgForOf } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { NgClass, NgForOf, CommonModule } from '@angular/common';
+import { Component, Input, OnInit, Signal, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { skip } from 'rxjs/operators';
+
+import {
+    Announcement,
+    TypesIcons,
+    AnnouncementsStore,
+    AnnouncementLink
+} from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
+import { DotMessageService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
@@ -9,60 +19,35 @@ import { DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-    imports: [NgForOf, NgClass, DotMessagePipe, RouterLink]
+    imports: [NgForOf, NgClass, DotMessagePipe, RouterLink, CommonModule],
+    providers: [AnnouncementsStore]
 })
-export class DotToolbarAnnouncementsComponent {
-    @Output() hideOverlayPanel = new EventEmitter<string>();
+export class DotToolbarAnnouncementsComponent implements OnInit {
+    announcementsStore = inject(AnnouncementsStore);
+    dotMessageService = inject(DotMessageService);
+    siteService = inject(SiteService);
 
-    announcementsData = [
-        {
-            iconClass: 'pi pi-comment',
-            label: 'Get more out of the Block Editor',
-            date: '20 Jul 2023'
-        },
-        {
-            iconClass: 'pi pi-book',
-            label: '12 Reasons You Should Migrate to dotCMS Cloud.',
-            date: '27 Jul 2023'
-        },
-        {
-            iconClass: 'pi pi-megaphone',
-            label: 'Release 22.03 Designated as LTS Release',
-            date: '17 Jul 2023'
-        },
-        {
-            iconClass: 'pi pi-comment',
-            label: 'Which page rendering strategy is right for you?',
-            date: '10 Feb 2023'
-        },
-        { iconClass: 'pi pi-megaphone', label: 'New in Release 22.01', date: '07 Jan 2023' }
-    ];
+    @Input() showUnreadAnnouncement: boolean;
+    announcements: Signal<Announcement[]> = this.announcementsStore.announcementsSignal;
+    contactLinks: Signal<AnnouncementLink[]> = this.announcementsStore.selectContactLinks;
+    knowledgeCenterLinks: Signal<AnnouncementLink[]> =
+        this.announcementsStore.selectKnowledgeCenterLinks;
+    linkToDotCms: Signal<string> = this.announcementsStore.selectLinkToDotCms;
 
-    knowledgeCenterLinks = [
-        {
-            label: 'Documentation',
-            url: 'https://www.dotcms.com/docs/latest/table-of-contents?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
-        },
-        {
-            label: 'Blog',
-            url: 'https://www.dotcms.com/blog/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
-        },
-        { label: 'User Forums', url: 'https://groups.google.com/g/dotcms' }
-    ];
+    ngOnInit(): void {
+        this.announcementsStore.load();
 
-    contactLinks = [
-        {
-            label: 'Customer Support',
-            url: 'https://www.dotcms.com/services/support/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
-        },
-        {
-            label: 'Professional Services',
-            url: 'https://www.dotcms.com/services/professional-services/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
-        }
-    ];
-    protected linkToAddDevice = '/c/starter';
-
-    close(): void {
-        this.hideOverlayPanel.emit();
+        this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
+            this.announcementsStore.refreshUtmParameters();
+            this.announcementsStore.load();
+        });
     }
+
+    typesIcons = {
+        tip: TypesIcons.Tip,
+        release: TypesIcons.Release,
+        announcement: TypesIcons.Announcement,
+        article: TypesIcons.Article,
+        important: TypesIcons.Important
+    };
 }

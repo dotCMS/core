@@ -732,6 +732,24 @@
                 }
             
                 %>
+            
+
+            <div id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>" dojoType="dijit.Dialog" >
+                <div dojoType="dijit.layout.ContentPane" style="text-align:center;height:auto;" class="box" hasShadow="true" id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>CP">
+                    <p style="margin:0;max-width:600px;word-wrap: break-word">
+                        <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %> 
+                        "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue"> </span>" 
+                        <%= LanguageUtil.get(pageContext, "with") %>  
+                        "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-newValue"></span>""
+                        <br>&nbsp;<br>
+                    </p>
+                    <div class="buttonRow">
+                        <button dojoType="dijit.form.Button" onClick="confirmReplaceName()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "yes") %></button>
+
+                        <button dojoType="dijit.form.Button" onClick="closeConfirmReplaceName()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "no") %></button>
+                    </div>
+                </div>
+            </div>
 
             <div id="container-binary-field-<%=field.getVelocityVarName()%>">
                 <div class="spinner-container">
@@ -740,6 +758,20 @@
             </div>
             <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
 
+            <script>
+                function confirmReplaceName(){
+                    let titleField = dijit.byId("title");
+                    let fileNameField = dijit.byId("fileName");
+
+                    titleField?.setValue(newFileName);
+                    fileNameField?.setValue(newFileName);
+                    dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").hide();
+                }
+                
+                function closeConfirmReplaceName(){
+                    dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").hide();
+                }
+            </script>
             <script>
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
                 (function autoexecute() {
@@ -760,13 +792,23 @@
                     .then(({ entity: contentlet }) => {
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
-                        const fieldData = {
-                            ...(<%=jsonField%>),
-                            hint: '<%=hint%>',
-                            variable,
-                            fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
-                        }
 
+                        let fieldData;
+                        try {
+                            fieldData = {
+                                ...(<%=jsonField%>),
+                                hint: '<%=hint%>',
+                                variable,
+                                fieldVariables: <%=fieldVariablesContent%>
+                            }
+                        } catch (error) {
+                            fieldData = {
+                                 ...(<%=jsonField%>),
+                                 hint: '<%=hint%>',
+                                 variable
+                            }
+                            console.warn('Error parsing the field variables', error);
+                        }
                         // Setting the value of the field
                         field.value = "<%=value%>"
 
@@ -788,8 +830,16 @@
                             if(contentBaseType === 4){ // FileAsset
                                 let titleField = dijit.byId("title");
                                 let fileNameField = dijit.byId("fileName");
-                                if(!titleField.value ){
+                                window.newFileName = fileName; //To use in confirmReplaceName function 
+                                
+                                if(!fileNameField.value){
                                     titleField?.setValue(fileName);
+                                }
+    
+                                if(fileNameField.value && fileName && fileNameField.value !== fileName) {
+                                    document.getElementById("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue").innerHTML = fileNameField.value;
+                                    document.getElementById("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-newValue").innerHTML = fileName;
+                                    dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").show();
                                 }
 
                                 if(!fileNameField.value){
@@ -820,7 +870,6 @@
                         binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
                     })
                 })();
-
             </script>
         <%}else{%>
 

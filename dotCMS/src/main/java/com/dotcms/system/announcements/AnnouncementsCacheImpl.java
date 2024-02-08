@@ -5,7 +5,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.Expirable;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
@@ -18,7 +17,7 @@ public class AnnouncementsCacheImpl implements AnnouncementsCache {
     static final Lazy<Integer> ANNOUNCEMENTS_TTL =
             Lazy.of(() -> Config.getIntProperty("ANNOUNCEMENTS_TTL", 3600 ));
 
-    static final String ANNOUNCEMENTS = "announcements::%s";
+    static final String ANNOUNCEMENTS_KEY = "dot::announcements";
     private final SystemCache systemCache;
 
     public AnnouncementsCacheImpl() {
@@ -28,32 +27,27 @@ public class AnnouncementsCacheImpl implements AnnouncementsCache {
 
     @Override
     public void clearCache() {
-        systemCache.clearCache();
-    }
-
-    private String hashKey(Language language) {
-        return String.format(ANNOUNCEMENTS, language.getIsoCode());
+        systemCache.remove(ANNOUNCEMENTS_KEY);
     }
 
     @Override
-    public void put(final Language language, final List<Announcement> announcements) {
-        this.put(language, announcements, ANNOUNCEMENTS_TTL.get());
+    public void put(final List<Announcement> announcements) {
+        this.put(announcements, ANNOUNCEMENTS_TTL.get());
     }
 
     @VisibleForTesting
-    public void put(final Language language, final List<Announcement> announcements , final long ttl) {
-        systemCache.put(hashKey(language), new CacheEntryImpl(announcements,ttl));
+    public void put(final List<Announcement> announcements , final long ttl) {
+        systemCache.put(ANNOUNCEMENTS_KEY, new CacheEntryImpl(announcements,ttl));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<Announcement> get(final Language language) {
-        final String key = String.format(ANNOUNCEMENTS, language.getIsoCode());
-        final Object object = systemCache.get(key);
+    public List<Announcement> get() {
+        final Object object = systemCache.get(ANNOUNCEMENTS_KEY);
         if (object instanceof Expirable) {
             final CacheEntryImpl entry = (CacheEntryImpl) object;
             if (entry.isExpired()) {
-                systemCache.remove(key);
+                systemCache.remove(ANNOUNCEMENTS_KEY);
                 return List.of();
             }
             return entry.getAnnouncements();

@@ -25,7 +25,7 @@ function Activity({ title, description, image, urlTitle }) {
             <div className="px-6 pt-4 pb-2">
                 <Link
                     href={`/activities/${urlTitle || '#'}`}
-                    className="inline-block px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-700">
+                    className="inline-block px-4 py-2 font-bold text-white bg-purple-500 rounded-full hover:bg-purple-700">
                     Link to detail →
                 </Link>
             </div>

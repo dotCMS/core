@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.vtl;
 
+import com.dotcms.rendering.util.ScriptingReaderParams;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
@@ -21,5 +22,5 @@ public interface VelocityReader {
      * @throws IOException
      * @throws DotDataException
      */
-    Reader getVelocity(final VTLResource.VelocityReaderParams params) throws DotSecurityException, IOException, DotDataException;
+    Reader getVelocity(final ScriptingReaderParams params) throws DotSecurityException, IOException, DotDataException;
 }

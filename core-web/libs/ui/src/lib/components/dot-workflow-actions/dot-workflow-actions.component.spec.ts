@@ -58,6 +58,13 @@ const messageServiceMock = new MockDotMessageService({
     Loading: 'loading'
 });
 
+const getComponents = (spectator: Spectator<DotWorkflowActionsComponent>) => {
+    return {
+        button: spectator.query(Button),
+        splitButton: spectator.query(SplitButton)
+    };
+};
+
 describe('DotWorkflowActionsComponent', () => {
     let spectator: Spectator<DotWorkflowActionsComponent>;
 
@@ -77,7 +84,9 @@ describe('DotWorkflowActionsComponent', () => {
         spectator = createComponent({
             props: {
                 actions: WORKFLOW_ACTIONS_MOCK,
-                groupAction: true
+                groupAction: true,
+                loading: false,
+                size: 'normal'
             }
         });
         spectator.detectComponentChanges();
@@ -178,6 +187,43 @@ describe('DotWorkflowActionsComponent', () => {
 
             expect(button.loading).toBeTruthy();
             expect(splitButton.disabled).toBeTruthy();
+        });
+    });
+
+    describe('size', () => {
+        beforeEach(() => {
+            spectator.setInput('actions', [
+                mockWorkflowsActions[0],
+                WORKFLOW_ACTIONS_SEPARATOR_MOCK,
+                ...mockWorkflowsActions
+            ]);
+            spectator.detectChanges();
+        });
+
+        it('should have default size', () => {
+            const { button, splitButton } = getComponents(spectator);
+            expect(button.styleClass.trim()).toBe('');
+            expect(splitButton.styleClass.trim()).toBe('p-button-outlined');
+        });
+
+        it('should set style class p-button-sm', () => {
+            spectator.setInput('size', 'small');
+            spectator.detectChanges();
+
+            const { button, splitButton } = getComponents(spectator);
+
+            expect(splitButton.styleClass.trim()).toBe('p-button-sm p-button-outlined');
+            expect(button.styleClass.trim()).toBe('p-button-sm');
+        });
+
+        it('should set style class p-button-lg', () => {
+            spectator.setInput('size', 'large');
+            spectator.detectChanges();
+
+            const { button, splitButton } = getComponents(spectator);
+
+            expect(button.styleClass.trim()).toBe('p-button-lg');
+            expect(splitButton.styleClass.trim()).toBe('p-button-lg p-button-outlined');
         });
     });
 });
