@@ -30,6 +30,9 @@ export class DotContentletThumbnail {
     @Prop()
     contentlet: DotContentletItem;
 
+    @Prop({ reflect: true })
+    fieldVariable = '';
+
     @State() renderImage: boolean;
 
     componentWillLoad() {
@@ -54,6 +57,7 @@ export class DotContentletThumbnail {
                 {this.shouldShowVideoThumbnail() ? (
                     <dot-video-thumbnail
                         contentlet={this.contentlet}
+                        variable={this.fieldVariable}
                         cover={this.cover}
                         playable={this.playableVideo}
                     />
@@ -79,10 +83,20 @@ export class DotContentletThumbnail {
 
     private getImageURL(): string {
         return this.contentlet.mimeType === 'application/pdf'
-            ? `/contentAsset/image/${this.contentlet.inode}/${this.contentlet.titleImage}/pdf_page/1/resize_w/250/quality_q/45`
-            : `/dA/${this.contentlet.inode}/500w/50q?r=${
+            ? `/contentAsset/image/${this.contentlet.inode}/${
+                  this.fieldVariable || this.contentlet.titleImage
+              }/pdf_page/1/resize_w/250/quality_q/45`
+            : `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
                   this.contentlet.modDateMilis || this.contentlet.modDate
               }`;
+    }
+
+    private fieldVariablePath(): string {
+        if (!this.fieldVariable) {
+            return '';
+        }
+
+        return `${this.fieldVariable || this.contentlet.titleImage}/`;
     }
 
     private switchToIcon(): any {
