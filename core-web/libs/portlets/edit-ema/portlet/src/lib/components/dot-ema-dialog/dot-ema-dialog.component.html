@@ -10,7 +10,10 @@
     data-testId="dialog"
     styleClass="edit-ema-dialog">
     <ng-container [ngSwitch]="ds.type">
-        <dot-ema-form-selector *ngSwitchCase="'form'" (selected)="onFormSelected($event)" />
+        <dot-ema-form-selector
+            *ngSwitchCase="'form'"
+            (selected)="onFormSelected($event)"
+            data-testId="form-selector" />
 
         <ng-container *ngSwitchCase="'content'">
             <iframe

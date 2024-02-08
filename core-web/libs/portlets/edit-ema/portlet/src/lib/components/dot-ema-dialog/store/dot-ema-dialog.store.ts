@@ -35,7 +35,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof EditEmaStore
      */
-    readonly createContentFromPalette = this.effect(
+    readonly createContentletFromPalette = this.effect(
         (
             contentTypeVariable$: Observable<{
                 variable: string;

@@ -147,7 +147,7 @@ describe('DotEmaDialogStoreService', () => {
 
         dotActionUrlService.getCreateContentletUrl.andReturn(of('https://demo.dotcms.com/jsp.jsp'));
 
-        spectator.service.createContentFromPalette({
+        spectator.service.createContentletFromPalette({
             variable: 'blogPost',
             name: 'Blog',
             payload: PAYLOAD_MOCK

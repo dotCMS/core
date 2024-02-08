@@ -51,7 +51,7 @@ export class DotEmaDialogComponent {
 
     protected readonly dialogState = toSignal(this.store.dialogState$);
 
-    get ds() {
+    protected get ds() {
         return this.dialogState();
     }
 
@@ -151,7 +151,7 @@ export class DotEmaDialogComponent {
         name: string;
         payload: ActionPayload;
     }) {
-        this.store.createContentFromPalette({
+        this.store.createContentletFromPalette({
             variable,
             name,
             payload
