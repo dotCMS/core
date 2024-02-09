@@ -5,10 +5,6 @@ on:
       version:
         description: 'Release version'
         required: true
-      publishNpmPackage:
-        description: 'Publish NPM Package'
-        required: false
-        default: 'false'
       skipTests:
         description: 'Skip tests'
         default: 'true'
@@ -324,7 +320,7 @@ jobs:
 
   publish-npm-package:
     name: "Publish NPM Package"
-    if: github.event.inputs.publishNpmPackage == 'true' && success()  # Run only if explicitly indicated and successful
+    if: success()  # Run only if explicitly indicated and successful
     needs: [ build, release ]
     runs-on: ubuntu-latest
     steps:
@@ -421,9 +417,14 @@ jobs:
   clean-up:
     name: "Clean Up"
     if: always()
-    needs: [ precheck ]
+    needs: [ precheck, build, release, publish-npm-package ]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.precheck.outputs.HEAD }}
+
       - name: 'Delete release auxiliary branch - ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}'
         run: |
           git push origin --delete ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}      
