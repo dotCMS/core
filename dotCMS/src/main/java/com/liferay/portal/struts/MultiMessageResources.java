@@ -73,8 +73,9 @@ public class MultiMessageResources extends PropertyMessageResources {
             return ImmutableMap.copyOf(messages);
         }
     }
-
-    // Lifted this code directly from com.oroad.stxx.util.PropertyMessageResource.class_v.1.3
+    // START-NOSCAN
+    // Lifted this code directly from com.oroad.stxx.util.PropertyMessageResource.class v.1.3
+    // which this class used to extend. This method does not exist in struts PropertyMessageResource
     public Map getMessages(Locale locale) {
         String localeKey = locale.toString();
         HashMap result = null;
@@ -142,7 +143,7 @@ public class MultiMessageResources extends PropertyMessageResources {
             }
         }
     }
-
+    // END-NOSCAN
 
     public void setServletContext(ServletContext servletContext) {
         _servletContext = servletContext;
