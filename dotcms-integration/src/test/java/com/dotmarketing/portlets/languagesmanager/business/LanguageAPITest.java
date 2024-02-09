@@ -17,11 +17,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotLanguageException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
@@ -112,7 +110,7 @@ public class LanguageAPITest {
 		try{
 			// Using the provided Language Variable Content Type
 			final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser)
-					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
+					.find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
 			contentletEnglish = createTestKeyValueContent(
 					KEY_1, VALUE_1, language.getId(),
 					languageVariableContentType, systemUser);
@@ -147,7 +145,7 @@ public class LanguageAPITest {
 
 			// Using the provided Language Variable Content Type
 			final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser)
-					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
+					.find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
 			contentletEnglish = createTestKeyValueContent(
 					KEY_1, VALUE_1, 1,
 					languageVariableContentType, systemUser);

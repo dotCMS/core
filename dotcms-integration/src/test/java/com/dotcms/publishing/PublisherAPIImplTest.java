@@ -124,7 +124,7 @@ public class PublisherAPIImplTest {
         final List<Contentlet> langVariables = getLanguageVariables();
 
         final ContentType languageVariableContentType =
-                APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+                APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
 
         if (langVariables.isEmpty()) {
             final Language language = new com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen().nextPersisted();
@@ -975,7 +975,7 @@ public class PublisherAPIImplTest {
 
     public static List<Contentlet> getLanguageVariables() throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
-        final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE;
+        final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME;
         return APILocator.getContentletAPI().search(langVarsQuery, 0, -1,
                 StringPool.BLANK, systemUser, false);
     }
@@ -1082,7 +1082,7 @@ public class PublisherAPIImplTest {
 
         final User systemUser = APILocator.systemUser();
 
-        return APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+        return APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
     }
 
     private static Collection<Object> getLanguageVariable(final Contentlet langVariable,

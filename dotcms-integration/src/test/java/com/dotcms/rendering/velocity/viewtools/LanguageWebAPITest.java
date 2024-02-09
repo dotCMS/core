@@ -57,7 +57,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		//Setting web app environment
 		IntegrationTestInitService.getInstance().init();
 		final User systemUser = APILocator.systemUser();
-		final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE;
+		final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME;
 
 		ContentType languageVariableContentType;
 		try {
