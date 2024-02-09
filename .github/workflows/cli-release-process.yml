@@ -312,11 +312,11 @@ jobs:
           git config user.email "dotCMS-Machine-User@dotcms.com"
 
       - name: 'Tag release version in ${{ github.ref }}'
-        if: ${{ contains(github.event.inputs.version, 'SNAPSHOT') }}
+        if: ${{ !contains(github.event.inputs.version, 'SNAPSHOT') }}
         run: |
-          git checkout ${{ github.ref }}
-          git tag -a "${{ steps.precheck.outputs.RELEASE_VERSION }}" -m "Release dotCLI version ${{ steps.precheck.outputs.RELEASE_VERSION }}"
-          git push origin "${{ github.ref }}"
+          git checkout ${{ needs.precheck.outputs.HEAD }}
+          git tag -a "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}" -m "Release dotCLI version ${{ needs.precheck.outputs.RELEASE_VERSION }}"
+          git push origin "${{ needs.precheck.outputs.HEAD }}"
 
   publish-npm-package:
     name: "Publish NPM Package"
@@ -327,7 +327,7 @@ jobs:
       - name: 'Checkout code'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ needs.precheck.outputs.HEAD }}
 
       - name: 'Set up Node.js'
         uses: actions/setup-node@v4
