@@ -25,7 +25,6 @@ defaults:
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
-  NEXT_VERSION: '1.0.0-SNAPSHOT'
   GRAALVM_VERSION: '22.1.0'
   MVN_PACKAGE_TYPE: 'uber-jar'
   NPM_PACKAGE_NAME: 'dotcli'
@@ -38,7 +37,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
-      NEXT_VERSION: ${{ steps.version.outputs.NEXT_VERSION }}
       HEAD: ${{ steps.version.outputs.HEAD }}
       AUXILIARY_BRANCH: ${{ steps.version.outputs.AUXILIARY_BRANCH }}
     steps:
@@ -84,7 +82,6 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           RELEASE_VERSION=${{ github.event.inputs.version }}
-          NEXT_VERSION=${{ env.NEXT_VERSION }}
           HEAD=${{ github.ref_name }}
 
           # Create a release branch for versioning updates
@@ -99,7 +96,6 @@ jobs:
           git push origin $AUXILIARY_BRANCH
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
-          echo "NEXT_VERSION=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
           echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
           echo "AUXILIARY_BRANCH=$AUXILIARY_BRANCH" >> "$GITHUB_OUTPUT"
 
