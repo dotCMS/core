@@ -9,8 +9,13 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/libs/sdk/experiments",
-        "main": "libs/sdk/experiments/src/index.ts",
         "tsConfig": "libs/sdk/experiments/tsconfig.lib.json",
+        "project": "libs/sdk/experiments/package.json",
+        "entryFile": "libs/sdk/experiments/src/index.ts",
+        "external": ["react/jsx-runtime"],
+        "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+        "compiler": "babel",
+        "extractCss": false,
         "assets": [
           {
             "glob": "libs/sdk/experiments/README.md",
@@ -18,8 +23,6 @@
             "output": "."
           }
         ],
-        "project": "libs/sdk/experiments/package.json",
-        "compiler": "swc",
         "format": ["cjs", "esm"]
       }
     },
