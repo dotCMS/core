@@ -420,11 +420,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.stxx</artifactId>
-                <version>1.3_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.Tidy</artifactId>
                 <version>ukv_2</version>
             </dependency>
