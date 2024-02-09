@@ -1289,8 +1289,7 @@ dojo.declare(
             dojo.parser.parse(this.results_table);
 
             if (this.multiple == 'false') {
-                for (var i = 0; i < data.length; i++) {
-                    var asset = data[i];
+                data.map(asset => {
                     var selectButton = dojo.byId(
                         this.searchCounter + asset.inode
                     );
@@ -1300,7 +1299,7 @@ dojo.declare(
                             selected(this, asset);
                         });
                     }
-                }
+                })
             }
 
             // Header based sorting functionality

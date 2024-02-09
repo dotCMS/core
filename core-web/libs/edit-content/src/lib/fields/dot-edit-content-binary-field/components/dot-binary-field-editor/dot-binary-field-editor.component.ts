@@ -61,6 +61,8 @@ const DEFAULT_FILE_TYPE = 'text';
 export class DotBinaryFieldEditorComponent implements OnInit {
     @Input() fileName = '';
     @Input() fileContent = '';
+    @Input() allowFileNameEdit = false;
+
     @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
     @Output() readonly cancel = new EventEmitter<void>();
     @ViewChild('editorRef', { static: true }) editorRef!: MonacoEditorComponent;
