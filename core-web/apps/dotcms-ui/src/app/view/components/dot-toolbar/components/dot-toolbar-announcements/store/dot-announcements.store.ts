@@ -16,6 +16,7 @@ export type Announcement = {
     identifier: string;
     inode: string;
     url: string;
+    hasBeenRead: boolean;
 };
 
 export type AnnouncementLink = {
@@ -60,7 +61,7 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
             return this.http.get<Announcement[]>(this.announcementsUrl).pipe(
                 pluck('entity'),
                 tap((announcements: Announcement[]) => {
-                    const modifiedAnnouncements = this.appendUtmParameters(announcements);
+                    const modifiedAnnouncements = this.updateWithUtmAndReadStatus(announcements);
 
                     this.setState({
                         announcements: modifiedAnnouncements,
@@ -138,16 +139,23 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
     readonly selectLinkToDotCms: Signal<string> = this.selectSignal((state) => {
         return `https://www.dotcms.com/announcement-menu-show-all?${state.utmParameters}`;
     });
-
+    /**
+     * Mark announcements as read, validating it doesn't have any announcements
+     *
+     * @memberof AnnouncementsStore
+     */
     readonly markAnnouncementsAsRead = this.updater((state) => {
-        this.localStoreService.storeValue(
-            'dotAnnouncementsData',
-            JSON.stringify(state.announcements)
-        );
+        if (state.announcements.length !== 0) {
+            this.localStoreService.storeValue(
+                'dotAnnouncementsData',
+                JSON.stringify(state.announcements.map((announcement) => announcement.inode))
+            );
+        }
 
         return {
             ...state,
-            showUnreadAnnouncement: this.hasUnreadAnnouncements(state.announcements)
+            showUnreadAnnouncement: this.hasUnreadAnnouncements(state.announcements),
+            announcements: this.updateWithUtmAndReadStatus(state.announcements)
         };
     });
 
@@ -162,29 +170,34 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         return `utm_source=platform&utm_medium=announcement&utm_campaign=${this.siteService.currentSite.hostname}`;
     }
 
-    private appendUtmParameters(announcements: Announcement[]): Announcement[] {
+    private updateWithUtmAndReadStatus(announcements: Announcement[]): Announcement[] {
+        const storedAnnouncements = this.getStoredAnnouncements();
+
         const modifiedAnnouncements = announcements.map((announcement) => {
             return {
                 ...announcement,
-                url: `${announcement.url}?${this.generateUtmQueryString()}`
+                url: `${announcement.url}?${this.generateUtmQueryString()}`,
+                hasBeenRead: storedAnnouncements.includes(announcement.inode)
             };
         });
 
         return modifiedAnnouncements;
     }
 
-    private hasUnreadAnnouncements(announcements: Announcement[]): boolean {
+    private getStoredAnnouncements(): string[] {
         const storedAnnouncementsJson = this.localStoreService.getValue('dotAnnouncementsData');
-        const storedAnnouncements: Announcement[] = storedAnnouncementsJson
-            ? JSON.parse(storedAnnouncementsJson)
-            : [];
+
+        return storedAnnouncementsJson ? JSON.parse(storedAnnouncementsJson) : [];
+    }
+
+    private hasUnreadAnnouncements(announcements: Announcement[]): boolean {
+        const storedAnnouncements: string[] = this.getStoredAnnouncements();
 
         const newAnnouncements = announcements || [];
         const newAnnouncementIds = newAnnouncements.map((announcement) => announcement.inode);
-        const storedAnnouncementIds = storedAnnouncements.map((announcement) => announcement.inode);
 
         const isNewAnnouncement = newAnnouncementIds.some(
-            (id) => !storedAnnouncementIds.includes(id)
+            (id) => !storedAnnouncements.includes(id)
         );
 
         return isNewAnnouncement;
