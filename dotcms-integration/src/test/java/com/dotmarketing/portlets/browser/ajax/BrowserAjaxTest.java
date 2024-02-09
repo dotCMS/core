@@ -21,6 +21,8 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ThreadUtils;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.servlet.SessionMessages;
@@ -331,7 +333,7 @@ public class BrowserAjaxTest {
      * @throws Exception
      */
     @Test
-    public void test_getHosts_ShoudlRetrieveSystemHosts() throws Exception {
+    public void test_getHosts_ShoudlRetrieveSystemHosts() throws DotDataException, DotSecurityException {
         final BrowserAjax browserAjax = new BrowserAjax();
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
@@ -350,12 +352,17 @@ public class BrowserAjaxTest {
         UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
         User loggedInUser = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
         //method to test
-        List<Map<String, Object>> hosts = browserAjax.getHosts();
 
-        assertNotNull(hosts);
-        assertTrue(hosts.size() > 0);
-        //should contain the system host as a limited user
-        assertTrue(hosts.stream().anyMatch(host -> host.get("identifier").equals(APILocator.systemHost().getIdentifier())) && loggedInUser.getFirstName().equals(user.getFirstName()) );
+        try {
+            List<Map<String, Object>> hosts = browserAjax.getHosts();
+            assertNotNull(hosts);
+            assertTrue(hosts.size() > 0);
+            //should contain the system host as a limited user
+            assertTrue(hosts.stream().anyMatch(host -> host.get("identifier").equals(APILocator.systemHost().getIdentifier())) && loggedInUser.getFirstName().equals(user.getFirstName()) );
 
+        } catch (PortalException | SystemException e) {
+            throw new RuntimeException(e);
+        }
+        setUpDwrContext(APILocator.systemUser());
     }
 }

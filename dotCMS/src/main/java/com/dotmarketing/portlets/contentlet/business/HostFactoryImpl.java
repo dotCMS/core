@@ -796,8 +796,9 @@ public class HostFactoryImpl implements HostFactory {
             final Host systemHost = APILocator.systemHost();
             //Check if we need to include it, if we have the permissions and if it is in the list.
             final boolean sysHostPermission = showSystemHost
-                    && APILocator.getPermissionAPI().doesSystemHostHavePermissions(systemHost, user, respectFrontendRoles, Host.class.getCanonicalName())
-                    && !hostList.contains(systemHost);
+                    && !hostList.contains(systemHost)
+                    && APILocator.getPermissionAPI().doesSystemHostHavePermissions(systemHost, user, respectFrontendRoles, Host.class.getCanonicalName());
+
             if(sysHostPermission){
                 hostList.add(systemHost);
             }
