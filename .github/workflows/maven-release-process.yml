@@ -24,7 +24,7 @@ on:
         default: false
         required: false
 env:
-  JAVA_VERSION: 11
+  JAVA_VERSION: 17
   JAVA_DISTRO: temurin
   JVM_TEST_MAVEN_OPTS: '-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
   NODE_VERSION: 16
@@ -33,7 +33,7 @@ jobs:
   prepare-release:
     if: ${{ !startsWith(github.event.release.name, 'dotcms-cli') }}
     name: Prepare Release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       release_version: ${{ steps.set-common-vars.outputs.release_version }}
       release_tag: ${{ steps.set-common-vars.outputs.release_tag }}
