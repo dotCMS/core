@@ -193,3 +193,5 @@ This maintenance release includes the following code fixes:
 157. https://github.com/dotCMS/core/issues/26693 : Edit Permissions Individually stuck when editing folder with legacy ID #26693
 158. https://github.com/dotCMS/core/issues/26640 : Cyrillic URLs encoding issue when configured by Vanity URL Redirect #26640
 159. https://github.com/dotCMS/core/issues/27007 : Content export with Publish Date Parameter leads to 400 Bad Request error #27007
+
+**Release-23.01.12**
