@@ -802,28 +802,6 @@
             <artifactId>jaxb-runtime</artifactId>
         </dependency>
 
-        <!-- Castor: Replace with JaxB -->
-       <dependency>
-           <groupId>org.codehaus.castor</groupId>
-           <artifactId>castor-core</artifactId>
-           <scope>compile</scope>
-       </dependency>
-
-       <dependency>
-           <groupId>org.codehaus.castor</groupId>
-           <artifactId>castor-xml</artifactId>
-           <scope>compile</scope>
-           <exclusions>
-               <exclusion>
-                   <groupId>javax.inject</groupId>
-                   <artifactId>javax.inject</artifactId>
-               </exclusion>
-               <exclusion>
-                   <groupId>org.springframework</groupId>
-                   <artifactId>spring-context</artifactId>
-               </exclusion>
-           </exclusions>
-       </dependency>
 
 
         <!--
@@ -2323,4 +2301,3 @@
         </plugins>
     </reporting>
 </project>
-
