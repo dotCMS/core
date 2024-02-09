@@ -1,0 +1,45 @@
+{
+  "name": "sdk-experiments",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/sdk/experiments/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/sdk/experiments",
+        "main": "libs/sdk/experiments/src/index.ts",
+        "tsConfig": "libs/sdk/experiments/tsconfig.lib.json",
+        "assets": [
+          {
+            "glob": "libs/sdk/experiments/README.md",
+            "input": ".",
+            "output": "."
+          }
+        ],
+        "project": "libs/sdk/experiments/package.json",
+        "compiler": "swc",
+        "format": ["cjs", "esm"]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/sdk/experiments/jest.config.ts"
+      }
+    },
+    "configurations": {
+      "ci": {
+        "ci": true,
+        "codeCoverage": true
+      }
+    }
+  },
+  "tags": ["scope:sdk", "type:feature", "feature:experiments"]
+}
