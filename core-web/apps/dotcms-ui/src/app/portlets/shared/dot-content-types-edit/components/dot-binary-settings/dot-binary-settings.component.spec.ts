@@ -23,7 +23,6 @@ const messageServiceMock = new MockDotMessageService({
 
 const SYSTEM_OPTIONS = JSON.stringify({
   allowURLImport: false,
-  allowFileNameEdit: false,
   allowCodeWrite: true,
 });
 
