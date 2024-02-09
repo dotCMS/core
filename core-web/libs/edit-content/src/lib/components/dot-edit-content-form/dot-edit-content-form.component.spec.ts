@@ -89,6 +89,10 @@ describe('DotFormComponent', () => {
             const fields = spectator.queryAll(DotEditContentFieldComponent);
             JUST_FIELDS_MOCKS.forEach((field, index) => {
                 expect(fields[index].field).toEqual(field);
+                expect(fields[index].contentType).toEqual(
+                    CONTENT_FORM_DATA_MOCK.contentType.variable
+                );
+                expect(fields[index].contentlet).toEqual(CONTENT_FORM_DATA_MOCK.contentlet);
             });
         });
 

@@ -6,6 +6,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -163,10 +164,22 @@ public class SecretTool implements ViewTool {
 		if (UtilMethods.isSet(resourcePath)) {
 			String contentletInode = StringPool.BLANK;
 			try {
+
 				contentletInode = CMSUrlUtil.getInstance().getInodeFromUrlPath(resourcePath);
-				final Contentlet contentlet = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
-				final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
-				hasRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
+				Versionable versionable = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
+
+				if (null == versionable) {
+					versionable = APILocator.getContainerAPI().getLiveContainerById(contentletInode, APILocator.systemUser(), true);
+				}
+
+				if (null == versionable) {
+					versionable = APILocator.getTemplateAPI().findLiveTemplate(contentletInode, APILocator.systemUser(), true);
+				}
+
+				if (null != versionable) {
+					final User lastModifiedUser = APILocator.getUserAPI().loadUserById(versionable.getModUser(), APILocator.systemUser(), true);
+					hasRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
+				}
 			} catch (final Exception e) {
 				Logger.warnAndDebug(SecretTool.class, String.format("Failed to find last " +
 						"modification user from Retrieved ID '%s' in URL Path '%s': %s",

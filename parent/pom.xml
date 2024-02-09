@@ -76,7 +76,7 @@
         <version.rewrite-maven-plugin>4.46.0</version.rewrite-maven-plugin>
         <version.shade.plugin>3.2.1</version.shade.plugin>
         <version.site.plugin>4.0.0-M8</version.site.plugin>
-        <version.sonar.plugin>3.7.0.1746</version.sonar.plugin>
+        <version.sonar.plugin>3.10.0.2594</version.sonar.plugin>
         <version.source.plugin>3.1.0</version.source.plugin>
 
         <version.versions.plugin>2.8.1</version.versions.plugin>
