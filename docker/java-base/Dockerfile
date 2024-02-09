@@ -1,12 +1,12 @@
 # ----------------------------------------------
 # Stage 1:  Minimal java image with sdkman + Ubuntu LTS
 # ----------------------------------------------
-FROM mcr.microsoft.com/openjdk/jdk:11-ubuntu as base-builder
+FROM mcr.microsoft.com/openjdk/jdk:17-ubuntu as base-builder
 
 WORKDIR /srv
 
 # Defining default Java, can be any java provided by sdkman
-ARG JAVA_VERSION="11.0.17-amzn"
+
 
 ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
