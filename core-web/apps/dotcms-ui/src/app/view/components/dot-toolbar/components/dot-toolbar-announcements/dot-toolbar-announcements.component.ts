@@ -1,5 +1,5 @@
 import { NgClass, NgForOf, CommonModule } from '@angular/common';
-import { Component, Input, OnInit, Signal, inject } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, Signal, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { skip } from 'rxjs/operators';
@@ -22,7 +22,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     imports: [NgForOf, NgClass, DotMessagePipe, RouterLink, CommonModule],
     providers: [AnnouncementsStore]
 })
-export class DotToolbarAnnouncementsComponent implements OnInit {
+export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
     announcementsStore = inject(AnnouncementsStore);
     dotMessageService = inject(DotMessageService);
     siteService = inject(SiteService);
@@ -41,6 +41,10 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
             this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.load();
         });
+    }
+
+    ngOnChanges(): void {
+        this.announcementsStore.markAnnouncementsAsRead();
     }
 
     typesIcons = {

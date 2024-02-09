@@ -528,7 +528,7 @@ public class ExperimentsResource {
             @Context final HttpServletResponse response)
             throws DotDataException, DotSecurityException, SystemException, PortalException {
 
-        getInitData(request, response);
+        final InitDataObject initData = getInitData(request, response);
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
         final AnalyticsApp analyticsApp = Try.of(()->AnalyticsHelper.get().appFromHost(host))
                 .getOrNull();
@@ -538,7 +538,7 @@ public class ExperimentsResource {
         }
 
         try {
-            final EventLogRunnable eventLogRunnable = new EventLogRunnable(analyticsApp);
+            final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
             Optional<CircuitBreakerUrl.Response<String>> responseOptional  = eventLogRunnable.sendTestEvent();
 
             return new ResponseEntityView<>(Map.of(HEALTH_KEY, responseOptional.isPresent()
@@ -547,8 +547,6 @@ public class ExperimentsResource {
         } catch (IllegalStateException e) {
             return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.CONFIGURATION_ERROR));
         }
-
-
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

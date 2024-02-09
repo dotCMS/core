@@ -11,6 +11,8 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - name: Cleanup
+        uses: ./.github/actions/cleanup-runner
       -
         name: Checkout
         uses: actions/checkout@v3
