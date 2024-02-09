@@ -29,7 +29,7 @@
 
         <clean.docker.volumes>false</clean.docker.volumes>
         <!-- Tomcat -->
-        <tomcat.version>9.0.60</tomcat.version>
+        <tomcat.version>9.0.85</tomcat.version>
         <enableDebug>true</enableDebug>
         <debugPort>8000</debugPort>
         <debugHost>localhost</debugHost>
