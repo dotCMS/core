@@ -8,6 +8,7 @@ import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 import com.dotcms.api.client.FileHashCalculatorService;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.HiddenFileFilter;
 import com.dotcms.common.LocalPathStructure;
@@ -41,7 +42,7 @@ import org.jboss.logging.Logger;
  * allowing for faster traversal of large directory structures.
  */
 @Dependent
-public class LocalFolderTraversalTask extends TraversalTaskProcessor {
+public class LocalFolderTraversalTask extends TaskProcessor {
 
     private final ManagedExecutor executor;
 

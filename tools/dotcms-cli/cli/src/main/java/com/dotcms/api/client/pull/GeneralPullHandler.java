@@ -10,7 +10,6 @@ import com.dotcms.model.pull.PullOptions;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import javax.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
@@ -70,19 +69,23 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
                                     .orElse(InputOutputFormat.defaultFormat().toString())
                     );
 
-                    var forkJoinPool = ForkJoinPool.commonPool();
-                    var task = new PullTask<>(PullTaskParams.<T>builder().
+                    PullTask<T> task = new PullTask<>(
+                            logger,
+                            mapperService,
+                            executor
+                    );
+
+                    task.setTaskParams(PullTaskParams.<T>builder().
                             destination(pullOptions.destination()).
                             contents(contents).
                             format(format).
                             failFast(pullOptions.failFast()).
                             pullHandler(this).
-                            mapperService(mapperService).
                             output(output).
-                            logger(logger).
                             progressBar(progressBar).build()
                     );
-                    return forkJoinPool.invoke(task);
+
+                    return task.compute();
                 });
         progressBar.setFuture(pullFuture);
 

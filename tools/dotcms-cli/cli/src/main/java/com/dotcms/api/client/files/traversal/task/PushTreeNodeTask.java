@@ -7,6 +7,7 @@ import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 import com.dotcms.api.client.files.traversal.data.Pusher;
 import com.dotcms.api.client.files.traversal.exception.SiteCreationException;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.command.PushContext;
 import com.dotcms.model.asset.AssetView;
@@ -29,7 +30,7 @@ import org.jboss.logging.Logger;
  * Represents a task that pushes the contents of a tree node to a remote server.
  */
 @Dependent
-public class PushTreeNodeTask extends TraversalTaskProcessor {
+public class PushTreeNodeTask extends TaskProcessor {
 
     private final ManagedExecutor executor;
 
@@ -151,7 +152,7 @@ public class PushTreeNodeTask extends TraversalTaskProcessor {
             }
 
             // Wait for all tasks to complete and gather the results
-            processTasks(toProcessCount, completionService, errors);
+            errors.addAll(processTasks(toProcessCount, completionService));
         }
     }
 

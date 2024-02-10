@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -243,22 +242,23 @@ public class PushServiceImpl implements PushService {
 
             CompletableFuture<List<Exception>> pushFuture = executor.supplyAsync(
                     () -> {
-                        var forkJoinPool = ForkJoinPool.commonPool();
 
-                        var task = new PushTask<>(
-                                PushTaskParams.<T>builder().
-                                        results(analysisResults).
-                                        allowRemove(options.allowRemove()).
-                                        disableAutoUpdate(options.disableAutoUpdate()).
-                                        failFast(options.failFast()).
-                                        customOptions(customOptions).
-                                        pushHandler(pushHandler).
-                                        mapperService(mapperService).
-                                        logger(logger).
-                                        progressBar(progressBar).
-                                        build()
+                        PushTask<T> task = new PushTask<>(
+                                logger, mapperService, executor
                         );
-                        return forkJoinPool.invoke(task);
+
+                        task.setTaskParams(PushTaskParams.<T>builder().
+                                results(analysisResults).
+                                allowRemove(options.allowRemove()).
+                                disableAutoUpdate(options.disableAutoUpdate()).
+                                failFast(options.failFast()).
+                                customOptions(customOptions).
+                                pushHandler(pushHandler).
+                                progressBar(progressBar).
+                                build()
+                        );
+
+                        return task.compute();
                     });
             progressBar.setFuture(pushFuture);
 

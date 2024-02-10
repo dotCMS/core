@@ -1,4 +1,4 @@
-package com.dotcms.api.client.files.traversal.task;
+package com.dotcms.api.client.task;
 
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
@@ -10,22 +10,25 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class TraversalTaskProcessor {
+public class TaskProcessor {
+
+    private static final int MAX_RETRIES = 3;// Maximum number of retries for a single task
+    private static final int TASK_TIMEOUT = 15;// In seconds
+    protected static final int THRESHOLD = 10;
 
     /**
      * Processes and waits for the results of the tasks submitted to the completion service.
      *
      * @param toProcessCount    The number of tasks to process.
-     * @param completionService The CompletionService for parallel execution of pull tasks.
-     * @param errors            The list of exceptions to which any error should be added.
+     * @param completionService The CompletionService for parallel execution of tasks.
      */
-    protected void processTasks(int toProcessCount,
-            CompletionService<List<Exception>> completionService,
-            ArrayList<Exception> errors) {
+    protected <T> List<T> processTasks(int toProcessCount,
+            CompletionService<List<T>> completionService) {
+
+        List<T> results = new ArrayList<>();
 
         boolean interrupted = false;
         int retryCount = 0;
-        int maxRetries = 3; // Maximum number of retries for a single task
         int taskCount = 0;
 
         // Wait for all tasks to complete and gather the results
@@ -33,19 +36,19 @@ public class TraversalTaskProcessor {
 
             try {
 
-                Future<List<Exception>> future = completionService.poll(
-                        15, TimeUnit.SECONDS
+                Future<List<T>> future = completionService.poll(
+                        TASK_TIMEOUT, TimeUnit.SECONDS
                 );
                 if (future != null) {
                     // Task completed, process the result
-                    List<Exception> taskResult = future.get();
-                    errors.addAll(taskResult);
+                    List<T> taskResult = future.get();
+                    results.addAll(taskResult);
 
                     taskCount++;
                     retryCount = 0; // Reset retry count after a successful operation
                 } else {
                     // No task was completed in the given timeframe
-                    if (retryCount < maxRetries) {
+                    if (retryCount < MAX_RETRIES) {
                         retryCount++;
                     } else {
                         throw new TraversalTaskException(
@@ -65,6 +68,8 @@ public class TraversalTaskProcessor {
         if (interrupted) {
             handleInterrupt();
         }
+
+        return results;
     }
 
     /**
@@ -81,7 +86,6 @@ public class TraversalTaskProcessor {
 
         boolean interrupted = false;
         int retryCount = 0;
-        int maxRetries = 3; // Maximum number of retries for a single task
         int taskCount = 0;
 
         // Wait for all tasks to complete and gather the results
@@ -90,7 +94,7 @@ public class TraversalTaskProcessor {
             try {
 
                 Future<Pair<List<Exception>, TreeNode>> future = completionService.poll(
-                        15, TimeUnit.SECONDS
+                        TASK_TIMEOUT, TimeUnit.SECONDS
                 );
                 if (future != null) {
                     // Task completed, process the result
@@ -102,7 +106,7 @@ public class TraversalTaskProcessor {
                     retryCount = 0; // Reset retry count after a successful operation
                 } else {
                     // No task was completed in the given timeframe
-                    if (retryCount < maxRetries) {
+                    if (retryCount < MAX_RETRIES) {
                         retryCount++;
                     } else {
                         throw new TraversalTaskException(

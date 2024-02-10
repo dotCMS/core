@@ -2,6 +2,7 @@ package com.dotcms.api.client.files.traversal.task;
 
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.model.asset.FolderView;
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ import org.jboss.logging.Logger;
  * that can be executed in parallel, allowing for faster traversal of large directory structures.
  */
 @Dependent
-public class RemoteFolderTraversalTask extends TraversalTaskProcessor {
+public class RemoteFolderTraversalTask extends TaskProcessor {
 
     private final ManagedExecutor executor;
     private final Logger logger;

@@ -7,6 +7,7 @@ import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 import com.dotcms.api.client.FileHashCalculatorService;
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.AssetView;
@@ -26,7 +27,7 @@ import org.jboss.logging.Logger;
  * Recursive task for pulling the contents of a tree node from a remote server.
  */
 @Dependent
-public class PullTreeNodeTask extends TraversalTaskProcessor {
+public class PullTreeNodeTask extends TaskProcessor {
 
     private final ManagedExecutor executor;
 
@@ -133,7 +134,7 @@ public class PullTreeNodeTask extends TraversalTaskProcessor {
             }
 
             // Wait for all tasks to complete and gather the results
-            processTasks(toProcessCount, completionService, errors);
+            errors.addAll(processTasks(toProcessCount, completionService));
         }
 
         return errors;
