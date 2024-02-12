@@ -56,11 +56,12 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
 
     form: FormGroup;
 
-    private fb: FormBuilder = inject(FormBuilder);
-    private fieldVariablesService = inject(DotFieldVariablesService);
-    private dotMessageService = inject(DotMessageService);
-    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly fb: FormBuilder = inject(FormBuilder);
+    private readonly fieldVariablesService = inject(DotFieldVariablesService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly destroyRef = inject(DestroyRef);
+
     private FIELD_VARIABLES: Record<string, DotFieldVariable> = {};
 
     protected readonly systemOptions = [
@@ -71,10 +72,6 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
         {
             key: 'allowCodeWrite',
             message: 'binary-field.settings.system.options.allow.code.write'
-        },
-        {
-            key: 'allowFileNameEdit',
-            message: 'binary-field.settings.system.options.allow.file.name.edit'
         }
     ];
 
@@ -89,9 +86,8 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
         this.form = this.fb.group({
             accept: '',
             systemOptions: this.fb.group({
-                allowURLImport: false,
-                allowCodeWrite: false,
-                allowFileNameEdit: false
+                allowURLImport: true,
+                allowCodeWrite: true
             })
         });
 
