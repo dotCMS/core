@@ -13,7 +13,6 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
-        <tomcat.version>9.0.85</tomcat.version>
         <db.port>5432</db.port>
         <es.port>9200</es.port>
         <tomcat.port>8080</tomcat.port>
