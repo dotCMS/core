@@ -15,9 +15,8 @@ import {
 
 import { EditEmaStore } from './dot-ema.store';
 
-import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
-import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { DEFAULT_PERSONA } from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload } from '../../shared/models';
 
@@ -55,7 +54,7 @@ describe('EditEmaStore', () => {
 
     const createService = createServiceFactory({
         service: EditEmaStore,
-        mocks: [DotPageApiService, DotActionUrlService],
+        mocks: [DotPageApiService],
         providers: [
             MessageService,
             {
@@ -126,177 +125,9 @@ describe('EditEmaStore', () => {
                 });
             });
         });
-
-        it('should update editIframeLoading', (done) => {
-            spectator.service.setDialogIframeLoading(true);
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    clientHost: 'http://localhost:3000',
-                    editor: mockResponse,
-                    dialogIframeURL: '',
-                    dialogIframeLoading: true,
-                    dialogHeader: '',
-                    isEnterpriseLicense: true,
-                    dialogType: null,
-                    editorState: EDITOR_STATE.LOADING
-                });
-                done();
-            });
-        });
-
-        it('should reset editIframe properties', (done) => {
-            spectator.service.setDialogIframeLoading(true);
-
-            spectator.service.resetDialog();
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: mockResponse,
-                    clientHost: 'http://localhost:3000',
-                    dialogIframeURL: '',
-                    dialogIframeLoading: false,
-                    dialogHeader: '',
-                    isEnterpriseLicense: true,
-                    dialogType: null,
-                    editorState: EDITOR_STATE.LOADING
-                });
-                done();
-            });
-        });
-
-        it('should initialize editAction properties', (done) => {
-            spectator.service.initActionEdit({
-                inode: '123',
-                title: 'test',
-                type: 'content'
-            });
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: mockResponse,
-                    clientHost: 'http://localhost:3000',
-                    dialogIframeURL: EDIT_CONTENTLET_URL + '123',
-                    dialogIframeLoading: true,
-                    dialogHeader: 'test',
-                    isEnterpriseLicense: true,
-                    dialogType: 'content',
-                    editorState: EDITOR_STATE.LOADING
-                });
-                done();
-            });
-        });
-
-        it('should initialize addAction properties', (done) => {
-            spectator.service.initActionAdd({
-                containerId: '1234',
-                acceptTypes: 'test',
-                language_id: '1'
-            });
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: mockResponse,
-                    clientHost: 'http://localhost:3000',
-                    dialogIframeURL:
-                        '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1',
-                    dialogIframeLoading: true,
-                    dialogHeader: 'Search Content',
-                    dialogType: 'content',
-                    isEnterpriseLicense: true,
-                    editorState: EDITOR_STATE.LOADING
-                });
-                done();
-            });
-        });
-
-        it('should initialize createAction properties', (done) => {
-            spectator.service.initActionCreate({
-                contentType: 'test',
-                url: 'some/really/long/url'
-            });
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: mockResponse,
-                    clientHost: 'http://localhost:3000',
-                    dialogIframeURL: 'some/really/long/url',
-                    dialogIframeLoading: true,
-                    dialogHeader: 'test',
-                    dialogType: 'content',
-                    isEnterpriseLicense: true,
-                    editorState: EDITOR_STATE.LOADING
-                });
-                done();
-            });
-        });
-
-        it('should update dialog state', (done) => {
-            spectator.service.setDialogForCreateContent({
-                url: 'some/really/long/url',
-                name: 'Blog Posts'
-            });
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state.dialogHeader).toBe('Create Blog Posts');
-                expect(state.dialogIframeLoading).toBe(true);
-                expect(state.dialogIframeURL).toBe('some/really/long/url');
-                expect(state.dialogType).toBe('content');
-                done();
-            });
-        });
     });
 
     describe('effects', () => {
-        it('should update state to show dialog for create content from palette', (done) => {
-            const dotPageApiService = spectator.inject(DotPageApiService);
-            const dotActionUrlService = spectator.inject(DotActionUrlService);
-
-            dotPageApiService.get.andReturn(
-                of({
-                    page: {
-                        title: 'Test Page',
-                        identifier: '123',
-                        pageURI: 'page-url'
-                    },
-                    viewAs: {
-                        language: {
-                            id: 1,
-                            language: '',
-                            countryCode: '',
-                            languageCode: '',
-                            country: ''
-                        }
-                    }
-                })
-            );
-            dotActionUrlService.getCreateContentletUrl.andReturn(
-                of('https://demo.dotcms.com/jsp.jsp')
-            );
-
-            spectator.service.load({
-                clientHost: 'http://localhost:3000',
-                language_id: 'en',
-                url: 'test-url',
-                'com.dotmarketing.persona.id': '123'
-            });
-
-            spectator.service.createContentFromPalette({
-                variable: 'blogPost',
-                name: 'Blog'
-            });
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state.dialogHeader).toBe('Create Blog');
-                expect(state.dialogIframeLoading).toBe(true);
-                expect(state.dialogIframeURL).toBe('https://demo.dotcms.com/jsp.jsp');
-                expect(state.dialogType).toBe('content');
-                done();
-            });
-
-            expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost');
-        });
-
         it('should handle successful data loading', (done) => {
             const dotPageApiService = spectator.inject(DotPageApiService);
 
@@ -313,10 +144,6 @@ describe('EditEmaStore', () => {
                 expect(state as unknown).toEqual({
                     clientHost: 'http://localhost:3000',
                     editor: mockResponse,
-                    dialogIframeURL: '',
-                    dialogIframeLoading: false,
-                    dialogHeader: '',
-                    dialogType: null,
                     isEnterpriseLicense: true,
                     editorState: EDITOR_STATE.LOADING
                 });
