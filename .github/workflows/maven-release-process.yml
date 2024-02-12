@@ -52,10 +52,12 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
       - name: Checkout core
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.CI_MACHINE_TOKEN }}
+
+      - uses: ./.github/actions/cleanup-runner
 
       - name: Set Common Vars
         id: set-common-vars
@@ -246,9 +248,11 @@ jobs:
     if: success()
     steps:
       - name: Checkout core
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.prepare-release.outputs.release_tag }}
+
+      - uses: ./.github/actions/cleanup-runner
 
       - name: Restore Maven Repository
         id: restore-maven
@@ -339,7 +343,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Checkout Plugins
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: dotCMS/plugin-seeds
           ref: master
@@ -398,10 +402,12 @@ jobs:
       FETCH_VALUE: 'Next Release'
     steps:
       - name: Checkout core
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.prepare-release.outputs.release_branch }}
           token: ${{ secrets.CI_MACHINE_TOKEN }}
+
+      - uses: ./.github/actions/cleanup-runner
 
       - name: Set Next Version
         run: |
