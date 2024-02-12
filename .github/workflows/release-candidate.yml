@@ -38,10 +38,12 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
       -
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
+      -
+        uses: ./.github/actions/cleanup-runner
       -
         name: Generate changelog
         id: changelog

@@ -2,9 +2,7 @@ package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -26,7 +24,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
@@ -303,13 +300,13 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         final User systemUser = APILocator.systemUser();
 
         try {
-            ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+            ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
 
             if (languageVariableContentType == null) {
                 final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen();
 
                 languageVariableContentType =  contentTypeDataGen.baseContentType(BaseContentType.KEY_VALUE)
-                        .name(LanguageVariableAPI.LANGUAGEVARIABLE)
+                        .name(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME)
                         .nextPersisted();
             }
 
