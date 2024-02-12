@@ -65,11 +65,15 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
       - name: Checkout core
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+
+      - uses: ./.github/actions/cleanup-runner
+
       - name: Cleanup
         uses: ./.github/actions/cleanup-runner
+
       - name: Restore Docker Context
         id: restore-docker-context
         uses: actions/cache/restore@v3

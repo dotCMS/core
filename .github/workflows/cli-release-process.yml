@@ -42,7 +42,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.CI_MACHINE_TOKEN }}
-          fetch-depth: 0
+
+      - uses: ./.github/actions/cleanup-runner
 
       - name: 'Setup Java'
         uses: actions/setup-java@v4
@@ -100,7 +101,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.precheck.outputs.HEAD }}
-          fetch-depth: 0
+
+      - uses: ./.github/actions/cleanup-runner
 
       - name: 'Set up GraalVM for (Linux/MacOS)'
         if: ${{ matrix.os != 'windows-latest' }}
@@ -242,7 +244,8 @@ jobs:
         with:
           token: ${{ secrets.CI_MACHINE_TOKEN }}
           ref: ${{ needs.precheck.outputs.HEAD }}
-          fetch-depth: 0
+
+      - uses: ./.github/actions/cleanup-runner
 
       - name: 'Create artifacts directory'
         run: |
@@ -312,7 +315,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-          fetch-depth: 0
+
+      - uses: ./.github/actions/cleanup-runner
 
       - name: 'Set up Node.js'
         uses: actions/setup-node@v4

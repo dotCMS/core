@@ -19,7 +19,6 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -203,7 +202,7 @@ public class ContentletAjaxTest {
 			long time = System.currentTimeMillis();
 
 			final ContentType languageVariableContentType = contentTypeAPI
-					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
+					.find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
 			languageVariable1 = createTestKeyValueContent(
 					"brought.you.by.IT"+time, "hello world", language.getId(),
 					languageVariableContentType, systemUser);
