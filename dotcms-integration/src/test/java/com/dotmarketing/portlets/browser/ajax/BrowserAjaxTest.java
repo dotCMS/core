@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -303,9 +304,9 @@ public class BrowserAjaxTest {
      */
     @Test
     public void test_getFolderSubfolders() throws Exception {
-        final User adminUser = TestUserUtils.getAdminUser();
+        final User sysUser = APILocator.getUserAPI().getSystemUser();
         final Host host = new SiteDataGen().nextPersisted();
-        final Folder mainFolder = new FolderDataGen().site(host).nextPersisted();
+        final Folder mainFolder = new FolderDataGen().name("mainFolder"+System.currentTimeMillis()).site(host).nextPersisted();
         final Folder subFolderC = new FolderDataGen().name("c"+System.currentTimeMillis()).parent(mainFolder).nextPersisted();
         final Folder subFolderB = new FolderDataGen().name("b"+System.currentTimeMillis()).parent(mainFolder).nextPersisted();
         final Folder subFolderA = new FolderDataGen().name("a"+System.currentTimeMillis()).parent(mainFolder).nextPersisted();
@@ -315,7 +316,7 @@ public class BrowserAjaxTest {
         //assert all the subfolders are alphabetical sorted by name
         assertEquals(folderContent.get(0).get("name"),subFolderA.getName());
         //rename the subfolderA to z...
-        APILocator.getFolderAPI().renameFolder(subFolderA, "z"+System.currentTimeMillis(), adminUser , false);
+        APILocator.getFolderAPI().renameFolder(subFolderA, "z"+System.currentTimeMillis(), sysUser , false);
         //method to test
         folderContent = browserAjax.getFolderSubfolders(mainFolder.getIdentifier());
         //now to subFolderA should be the last one
@@ -333,7 +334,7 @@ public class BrowserAjaxTest {
      * @throws Exception
      */
     @Test
-    public void test_getHosts_ShoudlRetrieveSystemHosts() throws DotDataException, DotSecurityException {
+    public void test_getHosts_ShoudlRetrieveSystemHosts() throws DotDataException, DotSecurityException, SystemException, PortalException {
         final BrowserAjax browserAjax = new BrowserAjax();
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
@@ -352,17 +353,14 @@ public class BrowserAjaxTest {
         UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
         User loggedInUser = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
         //method to test
+        Logger.info(this,"createdUser: "+user.getFullName());
 
-        try {
             List<Map<String, Object>> hosts = browserAjax.getHosts();
             assertNotNull(hosts);
             assertTrue(hosts.size() > 0);
             //should contain the system host as a limited user
             assertTrue(hosts.stream().anyMatch(host -> host.get("identifier").equals(APILocator.systemHost().getIdentifier())) && loggedInUser.getFirstName().equals(user.getFirstName()) );
 
-        } catch (PortalException | SystemException e) {
-            throw new RuntimeException(e);
-        }
         setUpDwrContext(APILocator.systemUser());
     }
 }

@@ -1882,6 +1882,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	}
 
 	@Override
+	@CloseDBIfOpened
 	public boolean doesSystemHostHavePermissions(final Permissionable systemHost, final User user, final boolean respectFrontendRoles, final String expectedPermissionType) throws DotDataException {
 		final List<Permission> systemHostPermissions = getInheritablePermissions(systemHost);
 

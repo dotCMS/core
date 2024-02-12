@@ -2101,6 +2101,7 @@ public class BrowserAjax {
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
     	WebContext ctx = WebContextFactory.get();
         User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
+		Logger.info(this,"currentLoggedUser: " + user.getFullName()+" - id"+user.getUserId());
         Role[] roles = new Role[]{};
 		try {
 			roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
