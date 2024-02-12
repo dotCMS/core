@@ -1,5 +1,5 @@
 <p-dialog
-    [visible]="ds.visible"
+    [visible]="ds.status !== dialogStatus.IDLE"
     [style]="{ height: '90vh', width: '90vw' }"
     [header]="ds.header"
     [draggable]="false"
@@ -20,7 +20,7 @@
                 #iframe
                 [style]="{
                     border: 'none',
-                    display: ds.loading ? 'none' : 'block'
+                    display: ds.status !== dialogStatus.INIT ? 'none' : 'block'
                 }"
                 [src]="ds.url | safeUrl"
                 (load)="onIframeLoad()"
@@ -29,7 +29,7 @@
                 width="100%"
                 height="100%"></iframe>
             <dot-spinner
-                *ngIf="ds.loading"
+                *ngIf="ds.status === dialogStatus.LOADING"
                 [ngStyle]="{ position: 'absolute', top: '50%' }"
                 data-testId="spinner"></dot-spinner>
         </ng-container>

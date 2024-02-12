@@ -18,7 +18,11 @@ import { DialogModule } from 'primeng/dialog';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
-import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
+import {
+    CreateFromPaletteAction,
+    DialogStatus,
+    DotEmaDialogStore
+} from './store/dot-ema-dialog.store';
 
 import { ActionPayload } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
@@ -50,6 +54,7 @@ export class DotEmaDialogComponent {
     private readonly store = inject(DotEmaDialogStore);
 
     protected readonly dialogState = toSignal(this.store.dialogState$);
+    protected readonly dialogStatus = DialogStatus;
 
     protected get ds() {
         return this.dialogState();
@@ -131,26 +136,10 @@ export class DotEmaDialogComponent {
     /**
      * Create contentlet from palette
      *
-     * @param {{
-     *         variable: string;
-     *         name: string;
-     *         payload: ActionPayload;
-     *     }} {
-     *         variable,
-     *         name,
-     *         payload
-     *     }
+     * @param {CreateFromPaletteAction} { variable, name, payload }
      * @memberof DotEmaDialogComponent
      */
-    createContentletFromPalette({
-        variable,
-        name,
-        payload
-    }: {
-        variable: string;
-        name: string;
-        payload: ActionPayload;
-    }) {
+    createContentletFromPalette({ variable, name, payload }: CreateFromPaletteAction) {
         this.store.createContentletFromPalette({
             variable,
             name,
@@ -165,7 +154,7 @@ export class DotEmaDialogComponent {
      * @memberof DotEmaDialogComponent
      */
     protected onIframeLoad() {
-        this.store.setLoading(false);
+        this.store.setStatus(this.dialogStatus.INIT);
         // This event is destroyed when you close the dialog
 
         fromEvent(

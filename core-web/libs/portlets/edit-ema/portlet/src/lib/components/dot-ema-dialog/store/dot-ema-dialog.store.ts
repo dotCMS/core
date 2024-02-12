@@ -13,19 +13,31 @@ import { ActionPayload } from '../../../shared/models';
 
 type DialogType = 'content' | 'form' | 'widget' | null;
 
+export enum DialogStatus {
+    IDLE = 'IDLE',
+    LOADING = 'LOADING',
+    INIT = 'INIT'
+}
+
 export interface EditEmaDialogState {
-    visible: boolean;
     header: string;
-    loading: boolean;
+    status: DialogStatus;
     url: string;
     type: DialogType;
     payload?: ActionPayload;
 }
 
+// We can modify this if we add more events, for now I think is enough
+export interface CreateFromPaletteAction {
+    variable: string;
+    name: string;
+    payload: ActionPayload;
+}
+
 @Injectable()
 export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     constructor() {
-        super({ header: '', loading: false, url: '', type: null, visible: false });
+        super({ header: '', url: '', type: null, status: DialogStatus.IDLE });
     }
 
     private dotActionUrlService = inject(DotActionUrlService);
@@ -40,13 +52,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof EditEmaStore
      */
     readonly createContentletFromPalette = this.effect(
-        (
-            contentTypeVariable$: Observable<{
-                variable: string;
-                name: string;
-                payload: ActionPayload;
-            }>
-        ) => {
+        (contentTypeVariable$: Observable<CreateFromPaletteAction>) => {
             return contentTypeVariable$.pipe(
                 switchMap(({ name, variable, payload }) => {
                     return this.dotActionUrlService.getCreateContentletUrl(variable).pipe(
@@ -89,9 +95,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                     'contenttypes.content.create.contenttype',
                     contentType
                 ),
-                loading: true,
+                status: DialogStatus.LOADING,
                 type: 'content',
-                visible: true,
                 payload
             };
         }
@@ -106,10 +111,9 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         return {
             ...state,
             header: payload.title,
-            loading: true,
+            status: DialogStatus.LOADING,
             url: this.createEditContentletUrl(payload.inode),
-            type: 'content',
-            visible: true
+            type: 'content'
         };
     });
 
@@ -131,10 +135,9 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             return {
                 ...state,
                 header: this.dotMessageService.get('edit.ema.page.dialog.header.search.content'),
-                loading: true,
+                status: DialogStatus.LOADING,
                 url: this.createAddContentletUrl(data),
                 type: 'content',
-                visible: true,
                 payload: data.payload
             };
         }
@@ -149,10 +152,9 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         return {
             ...state,
             header: this.dotMessageService.get('edit.ema.page.dialog.header.search.form'),
-            loading: true,
+            status: DialogStatus.LOADING,
             url: null,
             type: 'form',
-            visible: true,
             payload
         };
     });
@@ -167,9 +169,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             ...state,
             url: '',
             header: '',
-            loading: false,
+            status: DialogStatus.IDLE,
             type: null,
-            visible: false,
             payload: undefined
         };
     });
@@ -179,10 +180,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly setLoading = this.updater((state, loading: boolean) => {
+    readonly setStatus = this.updater((state, status: DialogStatus) => {
         return {
             ...state,
-            loading: loading
+            status
         };
     });
 
