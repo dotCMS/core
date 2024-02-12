@@ -10,6 +10,10 @@ on:
         default: 'true'
         required: false
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
@@ -17,7 +21,6 @@ defaults:
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
-  NEXT_VERSION: '1.0.0-SNAPSHOT'
   GRAALVM_VERSION: '22.1.0'
   MVN_PACKAGE_TYPE: 'uber-jar'
   NPM_PACKAGE_NAME: 'dotcli'
@@ -30,8 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
-      NEXT_VERSION: ${{ steps.version.outputs.NEXT_VERSION }}
       HEAD: ${{ steps.version.outputs.HEAD }}
+      AUXILIARY_BRANCH: ${{ steps.version.outputs.AUXILIARY_BRANCH }}
     steps:
       - name: 'Log GitHub context'
         env:
@@ -69,22 +72,29 @@ jobs:
           git config user.name "${{ secrets.CI_MACHINE_USER }}"
           git config user.email "dotCMS-Machine-User@dotcms.com"
 
+      # Sets the release version and the next version
+      # Creates an auxiliary branch for versioning updates
       - name: 'Set release version'
         id: version
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           RELEASE_VERSION=${{ github.event.inputs.version }}
-          NEXT_VERSION=${{ env.NEXT_VERSION }}
           HEAD=${{ github.ref_name }}
 
+          # Create a release branch for versioning updates
+          AUXILIARY_BRANCH=version-update-${RELEASE_VERSION}-${{ github.run_id }}
+          git checkout -b $AUXILIARY_BRANCH
+          
+          # Update version in pom.xml
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
-
-          git commit --allow-empty -a -m "🏁 Releasing CLI version $RELEASE_VERSION"
-          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+               
+          # Commit version changes
+          git commit --allow-empty -a -m "Update dotCLI version to $RELEASE_VERSION"
+          git push origin $AUXILIARY_BRANCH
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
-          echo "NEXT_VERSION=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
           echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
+          echo "AUXILIARY_BRANCH=$AUXILIARY_BRANCH" >> "$GITHUB_OUTPUT"
 
   # Build native executable per runner
   build:
@@ -100,10 +110,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.precheck.outputs.HEAD }}
+          ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
 
       - uses: ./.github/actions/cleanup-runner
 
+      # Sets up GraalVM for native image compilation (Linux/macOS)
+      # Downloads and installs GraalVM
+      # Configures environment variables
       - name: 'Set up GraalVM for (Linux/MacOS)'
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
@@ -203,12 +216,16 @@ jobs:
         run: |
           ./mvnw package -Dquarkus.package.type=${{ env.MVN_PACKAGE_TYPE }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
+      # Builds a native image of the CLI using GraalVM (Linux/macOS)
+      # Runs on a matrix for different operating systems
       - name: 'Build Native Image (Linux/MacOS)'
         if: ${{ matrix.os != 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
+      # Builds a native image of the CLI using GraalVM on Windows
+      # Uses PowerShell for setup and execution
       - name: 'Build Native Image (Windows)'
         if: ${{ matrix.os == 'windows-latest' }}
         working-directory: ${{ github.workspace }}
@@ -243,7 +260,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.CI_MACHINE_TOKEN }}
-          ref: ${{ needs.precheck.outputs.HEAD }}
+          ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
 
       - uses: ./.github/actions/cleanup-runner
 
@@ -276,6 +293,10 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
+      # Creates automated releases using JReleaser
+      # Generates builds for different platforms
+      # Signs artifacts
+      # Publishes to artifact repositories
       - name: 'JReleaser'
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -293,28 +314,23 @@ jobs:
           git config user.name "${{ secrets.CI_MACHINE_USER }}"
           git config user.email "dotCMS-Machine-User@dotcms.com"
 
-      - name: 'Set next version'
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+      - name: 'Tag release version in ${{ github.ref }}'
+        if: ${{ !contains(github.event.inputs.version, 'SNAPSHOT') }}
         run: |
-          RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
-          NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
-          HEAD=${{ needs.precheck.outputs.HEAD }}
-
-          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
-
-          git commit --allow-empty -a -m "⬆️  Next CLI version $NEXT_VERSION"
-          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+          git checkout ${{ needs.precheck.outputs.HEAD }}
+          git tag -a "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}" -m "Release dotCLI version ${{ needs.precheck.outputs.RELEASE_VERSION }}"
+          git push origin "${{ needs.precheck.outputs.HEAD }}"
 
   publish-npm-package:
     name: "Publish NPM Package"
-    if: success()
+    if: success()  # Run only if explicitly indicated and successful
     needs: [ build, release ]
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ needs.precheck.outputs.HEAD }}
 
       - uses: ./.github/actions/cleanup-runner
 
@@ -333,6 +349,8 @@ jobs:
           pattern: artifacts-*
           merge-multiple: true
 
+      # Determines the NPM package version suffix (RC_SUFFIX)
+      # Distinguishes between snapshots and releases
       - name: 'Generate package version suffix'
         id: generate-version-suffix
         env:
@@ -364,6 +382,10 @@ jobs:
           echo "NPM_PACKAGE_VERSION=${VERSION}${RC_SUFFIX}" >> $GITHUB_ENV
           echo "NPM_PACKAGE_VERSION_TAG=$TAG" >> $GITHUB_ENV
 
+      # Sets up the NPM package
+      # Creates the bin folder with the binaries
+      # Adds the postinstall.js script
+      # Generates the package.json file with Jinja2
       - name: 'NPM Package setup'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
@@ -390,8 +412,24 @@ jobs:
         run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
 
       - name: 'Publish to NPM registry'
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
         run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
           npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
+
+  clean-up:
+    name: "Clean Up"
+    if: always()
+    needs: [ precheck, build, release, publish-npm-package ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.precheck.outputs.HEAD }}
+
+      - name: 'Delete release auxiliary branch - ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}'
+        run: |
+          git push origin --delete ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}      
