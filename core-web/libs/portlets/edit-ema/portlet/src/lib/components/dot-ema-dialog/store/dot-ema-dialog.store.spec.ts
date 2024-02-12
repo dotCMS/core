@@ -2,6 +2,9 @@ import { expect, it, describe } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotEmaDialogStore } from './dot-ema-dialog.store';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
@@ -12,7 +15,13 @@ describe('DotEmaDialogStoreService', () => {
 
     const createService = createServiceFactory({
         service: DotEmaDialogStore,
-        mocks: [DotActionUrlService]
+        mocks: [DotActionUrlService],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            }
+        ]
     });
 
     beforeEach(() => {
