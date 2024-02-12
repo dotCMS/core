@@ -1450,14 +1450,14 @@
                 <!-- Jasper is the Tomcat JSP Engine -->
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-jasper</artifactId>
-                <version>9.0.73</version>
+                <version>${tomcat.version}</version>
             </dependency>
 
 
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-jdbc</artifactId>
-                <version>9.0.73</version>
+                <version>${tomcat.version}</version>
             </dependency>
 
 

@@ -29,7 +29,6 @@
 
         <clean.docker.volumes>false</clean.docker.volumes>
         <!-- Tomcat -->
-        <tomcat.version>9.0.85</tomcat.version>
         <enableDebug>true</enableDebug>
         <debugPort>8000</debugPort>
         <debugHost>localhost</debugHost>
@@ -78,7 +77,6 @@
         <docker.platforms></docker.platforms>
 
         <tomcat.redis-session-manager.version>1.1</tomcat.redis-session-manager.version>
-        <tomcat.catalina.version>9.0.41</tomcat.catalina.version>
         <commons-pool2.version>2.11.1</commons-pool2.version>
         <org.slfj4.version>1.7.36</org.slfj4.version>
         <jedis.version>4.4.6</jedis.version>
@@ -166,7 +164,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-jci-eclipse</artifactId>
-            <version>3.2.0.666_2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -176,7 +173,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-pool</artifactId>
-            <version>1.5.4_2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -210,7 +206,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.gif89</artifactId>
-            <version>ukv_2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -224,7 +219,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate</artifactId>
-            <version>2.1.7_3</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -238,7 +232,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.httpclient</artifactId>
-            <version>4.2.2_2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -430,7 +423,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.quartz-all</artifactId>
-            <version>1.8.6_2</version>
             <scope>compile</scope>
         </dependency>
 
@@ -1078,7 +1070,6 @@
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.http.api</artifactId>
-            <version>3.0.0</version>
             <scope>compile</scope>
         </dependency>
 
@@ -1258,17 +1249,6 @@
             <artifactId>value</artifactId>
             <scope>provided</scope>
         </dependency>
-
-        <!--
-
-        Are we using this?
-        <dependency>
-             <groupId>org.openjdk.jmh</groupId>
-             <artifactId>jmh-core</artifactId>
-             <version>0.1</version>
-             <scope>compile</scope>
-         </dependency>-->
-
 
         <dependency>
             <!-- Helps to load native libraries from JAR files -->
@@ -1519,14 +1499,6 @@
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>tomcat-redis-session-manager</artifactId>
                                     <version>${tomcat.redis-session-manager.version}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.apache.tomcat</groupId>
-                                    <artifactId>tomcat-catalina</artifactId>
-                                    <version>${tomcat.catalina.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${tomcat-lib-folder}</outputDirectory>
