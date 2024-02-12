@@ -43,7 +43,7 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
 export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
 
-    @Output() customEvent = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
+    @Output() action = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
     @Output() formSelected = new EventEmitter<{ identifier: string; payload: ActionPayload }>();
 
     private readonly destroyRef$ = inject(DestroyRef);
@@ -175,7 +175,7 @@ export class DotEmaDialogComponent {
         )
             .pipe(takeUntilDestroyed(this.destroyRef$))
             .subscribe((event: CustomEvent) => {
-                this.customEvent.emit({ event, payload: this.dialogState().payload });
+                this.action.emit({ event, payload: this.dialogState().payload });
             });
     }
 

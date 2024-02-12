@@ -715,7 +715,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    triggerCustomEvent(dialog, 'customEvent', {
+                    triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.SAVE_PAGE,
@@ -770,7 +770,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    triggerCustomEvent(dialog, 'customEvent', {
+                    triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
@@ -784,7 +784,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectChanges();
 
-                    triggerCustomEvent(dialog, 'customEvent', {
+                    triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.SAVE_PAGE,
@@ -834,7 +834,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    triggerCustomEvent(dialog, 'customEvent', {
+                    triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
@@ -848,7 +848,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectChanges();
 
-                    triggerCustomEvent(dialog, 'customEvent', {
+                    triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.SAVE_PAGE,
@@ -921,7 +921,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    triggerCustomEvent(dialog, 'customEvent', {
+                    triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
@@ -1002,7 +1002,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    triggerCustomEvent(dialog, 'customEvent', {
+                    triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
@@ -1076,7 +1076,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    triggerCustomEvent(dialog, 'customEvent', {
+                    triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
@@ -1157,7 +1157,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    triggerCustomEvent(dialog, 'customEvent', {
+                    triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,

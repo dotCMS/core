@@ -199,7 +199,7 @@ describe('DotEmaShellComponent', () => {
 
                 const dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
 
-                spectator.triggerEventHandler(dialog, 'customEvent', {
+                spectator.triggerEventHandler(dialog, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.SAVE_PAGE,
@@ -226,7 +226,7 @@ describe('DotEmaShellComponent', () => {
 
                 const dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
 
-                spectator.triggerEventHandler(dialog, 'customEvent', {
+                spectator.triggerEventHandler(dialog, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.SAVE_PAGE,

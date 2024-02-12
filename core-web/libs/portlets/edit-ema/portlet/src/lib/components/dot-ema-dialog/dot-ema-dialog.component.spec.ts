@@ -94,7 +94,7 @@ describe('DotEmaDialogComponent', () => {
 
     describe('outputs', () => {
         it('should dispatch custom events', () => {
-            const customEventSpy = jest.spyOn(component.customEvent, 'emit');
+            const customEventSpy = jest.spyOn(component.action, 'emit');
 
             component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
             spectator.detectChanges();
@@ -129,12 +129,12 @@ describe('DotEmaDialogComponent', () => {
     });
 
     describe('component methods', () => {
-        it('should trigger openAddIframe in the store', () => {
-            const openAddIframeSpy = jest.spyOn(storeSpy, 'openAddIframe');
+        it('should trigger addContentlet in the store', () => {
+            const addContentletSpy = jest.spyOn(storeSpy, 'addContentlet');
 
             component.addContentlet(PAYLOAD_MOCK);
 
-            expect(openAddIframeSpy).toHaveBeenCalledWith({
+            expect(addContentletSpy).toHaveBeenCalledWith({
                 containerId: PAYLOAD_MOCK.container.identifier,
                 acceptTypes: PAYLOAD_MOCK.container.acceptTypes,
                 language_id: PAYLOAD_MOCK.language_id,
@@ -142,45 +142,45 @@ describe('DotEmaDialogComponent', () => {
             });
         });
 
-        it('should trigger openAddFormIframe in the store', () => {
-            const openAddFormIframeSpy = jest.spyOn(storeSpy, 'openAddFormIframe');
+        it('should trigger addFormContentlet in the store', () => {
+            const addFormContentletSpy = jest.spyOn(storeSpy, 'addFormContentlet');
 
             component.addForm(PAYLOAD_MOCK);
 
-            expect(openAddFormIframeSpy).toHaveBeenCalledWith(PAYLOAD_MOCK);
+            expect(addFormContentletSpy).toHaveBeenCalledWith(PAYLOAD_MOCK);
         });
 
-        it('should trigger openAddWidgetIframeSpy in the store', () => {
-            const openAddWidgetIframeSpy = jest.spyOn(storeSpy, 'openAddIframe');
+        it('should trigger addContentletSpy in the store for widget', () => {
+            const addContentletSpy = jest.spyOn(storeSpy, 'addContentlet');
 
             component.addWidget(PAYLOAD_MOCK);
 
-            expect(openAddWidgetIframeSpy).toHaveBeenCalledWith({
+            expect(addContentletSpy).toHaveBeenCalledWith({
                 containerId: PAYLOAD_MOCK.container.identifier,
                 acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
                 language_id: PAYLOAD_MOCK.language_id,
                 payload: PAYLOAD_MOCK
             });
         });
-        it('should trigger openEditIframe in the store', () => {
-            const openEditIframeSpy = jest.spyOn(storeSpy, 'openEditIframe');
+        it('should trigger editContentlet in the store', () => {
+            const editContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
 
             component.editContentlet(PAYLOAD_MOCK);
 
-            expect(openEditIframeSpy).toHaveBeenCalledWith({
+            expect(editContentletSpy).toHaveBeenCalledWith({
                 inode: PAYLOAD_MOCK.contentlet.inode,
                 title: PAYLOAD_MOCK.contentlet.title
             });
         });
-        it('should trigger openCreateIframe in the store', () => {
-            const openCreateIframeSpy = jest.spyOn(storeSpy, 'openCreateIframe');
+        it('should trigger createContentlet in the store', () => {
+            const createContentletSpy = jest.spyOn(storeSpy, 'createContentlet');
 
             component.createContentlet({
                 url: 'https://demo.dotcms.com/jsp.jsp',
                 contentType: 'test'
             });
 
-            expect(openCreateIframeSpy).toHaveBeenCalledWith({
+            expect(createContentletSpy).toHaveBeenCalledWith({
                 contentType: 'test',
                 url: 'https://demo.dotcms.com/jsp.jsp'
             });
