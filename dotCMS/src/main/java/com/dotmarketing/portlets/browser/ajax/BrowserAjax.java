@@ -2111,9 +2111,19 @@ public class BrowserAjax {
         boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts = hostAPI.findAll(user, respectFrontendRoles);
+		Logger.info(this,"hosts: " + hosts.size());
+		Logger.info(this,"contains: " + hosts.contains(APILocator.systemHost()));
 		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
 		Collections.sort(hosts, new HostNameComparator());
 		for (Host h: hosts) {
+			/**
+			 * When we created the provided host list, we already validated the user's permission over the system host.
+			 * Therefore, there is no need to validate it again.
+			 **/
+			if (h.isSystemHost()){
+				hostsToReturn.add(hostMap(h));
+				continue;
+			}
 			List permissions = new ArrayList();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(h, roles, user);
@@ -2124,15 +2134,6 @@ public class BrowserAjax {
 			    hostsToReturn.add(hostMap(h));
 			}
 		}
-		//We want to include the system host in the list of hosts
-		final Host systemHost = APILocator.systemHost();
-		final boolean sysHostHavePerms = APILocator.getPermissionAPI().doesSystemHostHavePermissions(systemHost, user, respectFrontendRoles, Host.class.getCanonicalName());
-		final Map<String, Object> mappedSysHost = hostMap(systemHost);
-		//Check if the host has the expected permission and if it's already in the list.
-		if(sysHostHavePerms && !hostsToReturn.contains(mappedSysHost)){
-			hostsToReturn.add(mappedSysHost);
-		}
-
 		return hostsToReturn;
 	}
 
@@ -2298,6 +2299,7 @@ public class BrowserAjax {
 	@CloseDBIfOpened
 	public List<Map<String, Object>> getFolderSubfolders(final String parentFolderId) throws DotDataException, DotSecurityException {
 		final User user = this.getLoggedInUser();
+		Logger.info(this, "subFoldersUSer" + user.getUserId());
 		final Role[] roles = DwrUtil.getUserRoles(user);
 		final Folder parentFolder = this.folderAPI.find(parentFolderId, user, false);
 		final List<Folder> subFolders = this.folderAPI.findSubFolders(parentFolder, user, false);

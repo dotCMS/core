@@ -82,7 +82,7 @@ public class BrowserAjaxTest {
         childFolderOne = new FolderDataGen().site(testSite).parent(parentFolderOne).name("child-one").nextPersisted();
         childFolderTwo = new FolderDataGen().site(testSite).parent(childFolderOne).name("child-two").nextPersisted();
 
-        setUpDwrContext(APILocator.systemUser());
+        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
     }
 
     /**
@@ -304,6 +304,7 @@ public class BrowserAjaxTest {
      */
     @Test
     public void test_getFolderSubfolders() throws Exception {
+        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
         final User sysUser = APILocator.getUserAPI().getSystemUser();
         final Host host = new SiteDataGen().nextPersisted();
         final Folder mainFolder = new FolderDataGen().name("mainFolder"+System.currentTimeMillis()).site(host).nextPersisted();
@@ -354,13 +355,13 @@ public class BrowserAjaxTest {
         User loggedInUser = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
         //method to test
         Logger.info(this,"createdUser: "+user.getFullName());
+        Host nsite = new SiteDataGen().nextPersisted();
+        List<Map<String, Object>> hosts = browserAjax.getHosts();
+        assertNotNull(hosts);
+        assertTrue(hosts.size() > 0);
+        //should contain the system host as a limited user
+        assertTrue(hosts.stream().anyMatch(host -> host.get("identifier").equals(APILocator.systemHost().getIdentifier())) && loggedInUser.getFirstName().equals(user.getFirstName()) );
 
-            List<Map<String, Object>> hosts = browserAjax.getHosts();
-            assertNotNull(hosts);
-            assertTrue(hosts.size() > 0);
-            //should contain the system host as a limited user
-            assertTrue(hosts.stream().anyMatch(host -> host.get("identifier").equals(APILocator.systemHost().getIdentifier())) && loggedInUser.getFirstName().equals(user.getFirstName()) );
-
-        setUpDwrContext(APILocator.systemUser());
+        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
     }
 }
