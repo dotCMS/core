@@ -36,14 +36,14 @@
 
         <div class="binary-field__actions">
             <p-button
-                *ngIf="systemOptions?.allowURLImport"
+                *ngIf="systemOptions.allowURLImport"
                 [label]="'dot.binary.field.action.import.from.url' | dm"
                 (click)="openDialog(BinaryFieldMode.URL)"
                 data-testId="action-url-btn"
                 icon="pi pi-link"
                 styleClass="p-button-link p-button-secondary p-button-sm"></p-button>
             <p-button
-                *ngIf="systemOptions?.allowCodeWrite"
+                *ngIf="systemOptions.allowCodeWrite"
                 [label]="'dot.binary.field.action.create.new.file' | dm"
                 (click)="openDialog(BinaryFieldMode.EDITOR)"
                 data-testId="action-editor-btn"
