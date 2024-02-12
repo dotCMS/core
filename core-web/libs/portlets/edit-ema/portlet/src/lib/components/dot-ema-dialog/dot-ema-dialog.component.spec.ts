@@ -6,8 +6,10 @@ import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaDialogComponent } from './dot-ema-dialog.component';
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
@@ -62,6 +64,10 @@ describe('DotEmaDialogComponent', () => {
                 useValue: {
                     requestView: jest.fn().mockReturnValue(of({}))
                 }
+            },
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
             }
         ]
     });
