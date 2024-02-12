@@ -114,24 +114,6 @@ describe('DotEmaDialogComponent', () => {
                 payload: PAYLOAD_MOCK
             });
         });
-
-        it('should dispatch formSelected', () => {
-            const formSelectedSpy = jest.spyOn(component.formSelected, 'emit');
-
-            component.addForm(PAYLOAD_MOCK); // This is to make the dialog open
-            spectator.detectChanges();
-
-            const formSelector = spectator.debugElement.query(
-                By.css('[data-testId="form-selector"]')
-            );
-
-            formSelector.triggerEventHandler('selected', '123');
-
-            expect(formSelectedSpy).toHaveBeenCalledWith({
-                identifier: '123',
-                payload: PAYLOAD_MOCK
-            });
-        });
     });
 
     describe('component methods', () => {

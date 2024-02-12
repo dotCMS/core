@@ -24,6 +24,7 @@ import {
     DotEmaDialogStore
 } from './store/dot-ema-dialog.store';
 
+import { NG_CUSTOM_EVENTS } from '../../shared/enums';
 import { ActionPayload } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
@@ -48,7 +49,6 @@ export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
 
     @Output() action = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
-    @Output() formSelected = new EventEmitter<{ identifier: string; payload: ActionPayload }>();
 
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly store = inject(DotEmaDialogStore);
@@ -176,6 +176,15 @@ export class DotEmaDialogComponent {
      * @memberof DotEmaDialogComponent
      */
     protected onFormSelected(identifier: string) {
-        this.formSelected.emit({ identifier, payload: this.dialogState().payload });
+        const customEvent = new CustomEvent('ng-event', {
+            detail: {
+                name: NG_CUSTOM_EVENTS.FORM_SELECTED,
+                data: {
+                    identifier
+                }
+            }
+        });
+
+        this.action.emit({ event: customEvent, payload: this.dialogState().payload });
     }
 }

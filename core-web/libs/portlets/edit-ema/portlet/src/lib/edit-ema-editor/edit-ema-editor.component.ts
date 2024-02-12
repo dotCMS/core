@@ -344,22 +344,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         this.dialog.createContentletFromPalette({ ...this.draggedPayload.item, payload });
     }
-    /**
-     * Add selected form
-     *
-     * @param {string} identifier
-     * @memberof EditEmaEditorComponent
-     */
-    addSelectedForm({ identifier, payload }: { identifier: string; payload: ActionPayload }): void {
-        this.store.saveFormToPage({
-            payload,
-            formId: identifier,
-            whenSaved: () => {
-                this.dialog.resetDialog();
-                this.reloadIframe();
-            }
-        });
-    }
 
     /**
      * Delete contentlet
@@ -454,6 +438,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     url: detail.data.url
                 });
                 this.cd.detectChanges();
+            },
+            [NG_CUSTOM_EVENTS.FORM_SELECTED]: () => {
+                const identifier = detail.data.identifier;
+
+                this.store.saveFormToPage({
+                    payload,
+                    formId: identifier,
+                    whenSaved: () => {
+                        this.dialog.resetDialog();
+                        this.reloadIframe();
+                    }
+                });
             }
         })[detail.name];
     }
