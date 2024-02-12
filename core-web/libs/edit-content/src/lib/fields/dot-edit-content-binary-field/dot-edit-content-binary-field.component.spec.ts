@@ -102,31 +102,10 @@ describe('DotEditContentBinaryFieldComponent', () => {
     });
 
     beforeEach(() => {
-        const systemOptions = {
-            allowURLImport: true,
-            allowCodeWrite: true
-        };
-
-        const JSONString = JSON.stringify(systemOptions);
-
-        const newField = {
-            ...FIELD,
-            fieldVariables: [
-                ...FIELD.fieldVariables,
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-                    fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
-                    id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
-                    key: 'systemOptions',
-                    value: JSONString
-                }
-            ]
-        };
-
         spectator = createComponent({
             detectChanges: false,
             props: {
-                field: newField,
+                field: FIELD,
                 contentlet: null
             }
         });
