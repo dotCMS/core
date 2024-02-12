@@ -103,8 +103,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
     beforeEach(() => {
         const systemOptions = {
-            allowURLImport: true,
-            allowCodeWrite: true
+            allowURLImport: false,
+            allowCodeWrite: false
         };
 
         const JSONString = JSON.stringify(systemOptions);
@@ -135,6 +135,17 @@ describe('DotEditContentBinaryFieldComponent', () => {
         ngZone = spectator.inject(NgZone);
     });
 
+    it('shouldnt show url import button if not setted in settings', () => {
+        const importFromURLButton = spectator.query(byTestId('action-url-btn'));
+
+        expect(importFromURLButton).toBeNull();
+    });
+
+    it('shouldnt show code editor button if not setted in settings', async () => {
+        const codeEditorButton = spectator.query(byTestId('action-editor-btn'));
+
+        expect(codeEditorButton).toBeNull();
+    });
     it('should emit temp file', () => {
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
         spectator.detectChanges();
@@ -349,16 +360,16 @@ describe('DotEditContentBinaryFieldComponent', () => {
             });
         });
 
-        it("shouldn't show url import button if not setted in settings", () => {
+        it('should show url import button if not setted in settings', () => {
             const importFromURLButton = spectator.query(byTestId('action-url-btn'));
 
-            expect(importFromURLButton).toBeNull();
+            expect(importFromURLButton).not.toBeNull();
         });
 
-        it("shouldn't show code editor button if not setted in settings", async () => {
+        it('should show code editor button if not setted in settings', async () => {
             const codeEditorButton = spectator.query(byTestId('action-editor-btn'));
 
-            expect(codeEditorButton).toBeNull();
+            expect(codeEditorButton).not.toBeNull();
         });
     });
 
