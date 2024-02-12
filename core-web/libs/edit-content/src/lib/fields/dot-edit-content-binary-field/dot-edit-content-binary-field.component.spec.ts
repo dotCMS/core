@@ -103,8 +103,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
     beforeEach(() => {
         const systemOptions = {
-            allowURLImport: false,
-            allowCodeWrite: false
+            allowURLImport: true,
+            allowCodeWrite: true
         };
 
         const JSONString = JSON.stringify(systemOptions);
@@ -349,12 +349,33 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
     });
 
-    describe('No systemOptions', () => {
+    describe('systemOptions all false', () => {
         beforeEach(() => {
+            const systemOptions = {
+                allowURLImport: false,
+                allowCodeWrite: false
+            };
+
+            const JSONString = JSON.stringify(systemOptions);
+
+            const newField = {
+                ...FIELD,
+                fieldVariables: [
+                    ...FIELD.fieldVariables,
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
+                        id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
+                        key: 'systemOptions',
+                        value: JSONString
+                    }
+                ]
+            };
+
             spectator = createComponent({
                 detectChanges: false,
                 props: {
-                    field: FIELD,
+                    field: newField,
                     contentlet: null
                 }
             });
@@ -364,20 +385,21 @@ describe('DotEditContentBinaryFieldComponent', () => {
             spectator.detectChanges();
             const importFromURLButton = spectator.query(byTestId('action-url-btn'));
 
-            expect(importFromURLButton).not.toBeNull();
+            expect(importFromURLButton).toBeNull();
         });
 
         it('should show code editor button if not setted in settings', async () => {
             spectator.detectChanges();
             const codeEditorButton = spectator.query(byTestId('action-editor-btn'));
 
-            expect(codeEditorButton).not.toBeNull();
+            expect(codeEditorButton).toBeNull();
         });
     });
 
     describe('Dialog', () => {
         beforeEach(async () => {
             jest.spyOn(store, 'setFileFromContentlet').mockReturnValue(of(null).subscribe());
+
             spectator.detectChanges();
             await spectator.fixture.whenStable();
             spectator.detectChanges();
