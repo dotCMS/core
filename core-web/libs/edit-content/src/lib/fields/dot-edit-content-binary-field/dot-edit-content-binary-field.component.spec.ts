@@ -361,12 +361,14 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
 
         it('should show url import button if not setted in settings', () => {
+            spectator.detectChanges();
             const importFromURLButton = spectator.query(byTestId('action-url-btn'));
 
             expect(importFromURLButton).not.toBeNull();
         });
 
         it('should show code editor button if not setted in settings', async () => {
+            spectator.detectChanges();
             const codeEditorButton = spectator.query(byTestId('action-editor-btn'));
 
             expect(codeEditorButton).not.toBeNull();
