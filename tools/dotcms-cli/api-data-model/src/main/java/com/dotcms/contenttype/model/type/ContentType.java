@@ -167,7 +167,7 @@ public abstract class ContentType {
     @Nullable
     @Value.Default
     public Map<String, ? extends Object> metadata() {
-        return null;
+        return Collections.emptyMap();
     }
 
     @Value.Default
