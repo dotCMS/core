@@ -1,12 +1,8 @@
 {
   "name": "@dotcms/experiments",
   "version": "0.0.1-alpha",
-  "dependencies": {
-    "react": "^18.2.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.55"
-  },
+  "dependencies": {},
+  "devDependencies": {},
   "description": "Official JavaScript library to use Experiments with DotCMS.",
   "type": "module",
   "main": "./index.cjs",
@@ -22,9 +18,7 @@
     "A/B testing",
     "Experiments"
   ],
-  "peerDependencies": {
-    "react": ">=17"
-  },
+  "peerDependencies": {},
   "author": "dotcms <dev@dotcms.com>",
   "license": "MIT",
   "bugs": {
