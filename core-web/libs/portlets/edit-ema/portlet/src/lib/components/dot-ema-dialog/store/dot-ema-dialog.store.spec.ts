@@ -53,7 +53,7 @@ describe('DotEmaDialogStoreService', () => {
     });
 
     it('should initialize with edit iframe properties', (done) => {
-        spectator.service.openEditIframe({
+        spectator.service.editContentlet({
             inode: '123',
             title: 'test'
         });
@@ -71,7 +71,7 @@ describe('DotEmaDialogStoreService', () => {
     });
 
     it('should initialize with addA iframe properties', (done) => {
-        spectator.service.openAddIframe({
+        spectator.service.addContentlet({
             containerId: '1234',
             acceptTypes: 'test',
             language_id: '1',
@@ -92,7 +92,7 @@ describe('DotEmaDialogStoreService', () => {
     });
 
     it('should initialize with Form Iframe properties', (done) => {
-        spectator.service.openAddFormIframe(PAYLOAD_MOCK);
+        spectator.service.addFormContentlet(PAYLOAD_MOCK);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -108,7 +108,7 @@ describe('DotEmaDialogStoreService', () => {
     });
 
     it('should initialize with create iframe properties', (done) => {
-        spectator.service.openCreateIframe({
+        spectator.service.createContentlet({
             contentType: 'test',
             url: 'some/really/long/url'
         });
@@ -127,7 +127,7 @@ describe('DotEmaDialogStoreService', () => {
     });
 
     it('should update dialog state', (done) => {
-        spectator.service.openCreateIframe({
+        spectator.service.createContentlet({
             url: 'some/really/long/url',
             contentType: 'Blog Posts'
         });

@@ -70,7 +70,7 @@ export class DotEmaDialogComponent {
      * @memberof EditEmaEditorComponent
      */
     addContentlet(payload: ActionPayload): void {
-        this.store.openAddIframe({
+        this.store.addContentlet({
             containerId: payload.container.identifier,
             acceptTypes: payload.container.acceptTypes ?? '*',
             language_id: payload.language_id,
@@ -85,7 +85,7 @@ export class DotEmaDialogComponent {
      * @memberof EditEmaEditorComponent
      */
     addForm(payload: ActionPayload): void {
-        this.store.openAddFormIframe(payload);
+        this.store.addFormContentlet(payload);
     }
 
     /**
@@ -95,7 +95,7 @@ export class DotEmaDialogComponent {
      * @memberof EditEmaEditorComponent
      */
     addWidget(payload: ActionPayload): void {
-        this.store.openAddIframe({
+        this.store.addContentlet({
             containerId: payload.container.identifier,
             acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
             language_id: payload.language_id,
@@ -109,7 +109,7 @@ export class DotEmaDialogComponent {
      * @memberof EditEmaEditorComponent
      */
     editContentlet(payload: Partial<ActionPayload>) {
-        this.store.openEditIframe({
+        this.store.editContentlet({
             inode: payload.contentlet.inode,
             title: payload.contentlet.title
         });
@@ -122,7 +122,7 @@ export class DotEmaDialogComponent {
      * @memberof DotEmaDialogComponent
      */
     createContentlet({ url, contentType }: { url: string; contentType: string }) {
-        this.store.openCreateIframe({
+        this.store.createContentlet({
             url,
             contentType
         });

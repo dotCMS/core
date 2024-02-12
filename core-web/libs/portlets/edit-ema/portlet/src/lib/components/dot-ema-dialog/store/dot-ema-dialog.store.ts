@@ -5,18 +5,20 @@ import { Injectable, inject } from '@angular/core';
 
 import { switchMap } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
+
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
 import { EDIT_CONTENTLET_URL, ADD_CONTENTLET_URL } from '../../../shared/consts';
 import { ActionPayload } from '../../../shared/models';
 
-type dialogType = 'content' | 'form' | 'widget' | null;
+type DialogType = 'content' | 'form' | 'widget' | null;
 
 export interface EditEmaDialogState {
     visible: boolean;
     header: string;
     loading: boolean;
     url: string;
-    type: dialogType;
+    type: DialogType;
     payload?: ActionPayload;
 }
 
@@ -26,7 +28,9 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         super({ header: '', loading: false, url: '', type: null, visible: false });
     }
 
-    private dotActionUrl = inject(DotActionUrlService);
+    private dotActionUrlService = inject(DotActionUrlService);
+
+    private dotMessageService = inject(DotMessageService);
 
     readonly dialogState$ = this.select((state) => state);
 
@@ -45,10 +49,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         ) => {
             return contentTypeVariable$.pipe(
                 switchMap(({ name, variable, payload }) => {
-                    return this.dotActionUrl.getCreateContentletUrl(variable).pipe(
+                    return this.dotActionUrlService.getCreateContentletUrl(variable).pipe(
                         tapResponse(
                             (url) => {
-                                this.openCreateIframe({
+                                this.createContentlet({
                                     url,
                                     contentType: name,
                                     payload
@@ -64,8 +68,12 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         }
     );
 
-    // This method is called when the user clicks in the + button in the jsp dialog or drag a contentType from the palette
-    readonly openCreateIframe = this.updater(
+    /**
+     * This method is called when the user clicks in the + button in the jsp dialog or drag a contentType from the palette
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly createContentlet = this.updater(
         (
             state,
             {
@@ -77,7 +85,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             return {
                 ...state,
                 url: url,
-                header: `Create ${contentType}`,
+                header: this.dotMessageService.get(
+                    'contenttypes.content.create.contenttype',
+                    contentType
+                ),
                 loading: true,
                 type: 'content',
                 visible: true,
@@ -86,8 +97,12 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         }
     );
 
-    // This method is called when the user clicks on the edit button
-    readonly openEditIframe = this.updater((state, payload: { inode: string; title: string }) => {
+    /**
+     * This method is called when the user clicks on the edit button
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly editContentlet = this.updater((state, payload: { inode: string; title: string }) => {
         return {
             ...state,
             header: payload.title,
@@ -98,8 +113,12 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         };
     });
 
-    // This method is called when the user clicks on the [+ add] button
-    readonly openAddIframe = this.updater(
+    /**
+     * This method is called when the user clicks on the [+ add] button
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly addContentlet = this.updater(
         (
             state,
             data: {
@@ -111,7 +130,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         ) => {
             return {
                 ...state,
-                header: 'Search Content', // Does this need translation?
+                header: this.dotMessageService.get('edit.ema.page.dialog.header.search.content'),
                 loading: true,
                 url: this.createAddContentletUrl(data),
                 type: 'content',
@@ -121,10 +140,15 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         }
     );
 
-    readonly openAddFormIframe = this.updater((state, payload: ActionPayload) => {
+    /**
+     * This method is called when the user clicks on the [+ add] button and selects form as content type
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly addFormContentlet = this.updater((state, payload: ActionPayload) => {
         return {
             ...state,
-            header: 'Search Forms', // Does this need translation?
+            header: this.dotMessageService.get('edit.ema.page.dialog.header.search.form'),
             loading: true,
             url: null,
             type: 'form',
@@ -133,7 +157,11 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         };
     });
 
-    // This method resets the properties that are being used in for the dialog
+    /**
+     *  This method resets the properties that are being used in for the dialog
+     *
+     * @memberof DotEmaDialogStore
+     */
     readonly resetDialog = this.updater((state) => {
         return {
             ...state,
@@ -146,7 +174,11 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         };
     });
 
-    // This method sets the loading property
+    /**
+     * This method sets the loading property
+     *
+     * @memberof DotEmaDialogStore
+     */
     readonly setLoading = this.updater((state, loading: boolean) => {
         return {
             ...state,
