@@ -61,7 +61,7 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
     try {
 
       // get the content type LANGUAGEVARIABLE
-      final ContentType languageVariableContentType = APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE);
+      final ContentType languageVariableContentType = APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE_VAR_NAME);
 
       languageValue = this.getValueFromUserLanguage(key, languageId, user, respectFrontendRoles, languageVariableContentType, live);
 
@@ -86,7 +86,7 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
   @Override
   public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key, final long languageId, final User user, final int limit)
       throws DotDataException, DotSecurityException {
-    return this.keyValueAPI.getKeyValuesByKeyStartingWith(key, languageId, APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE), user,
+    return this.keyValueAPI.getKeyValuesByKeyStartingWith(key, languageId, APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE_VAR_NAME), user,
         false, limit);
   }
 

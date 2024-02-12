@@ -37,11 +37,7 @@ import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
-import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
-import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
-import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
-import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
-import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
+import com.dotmarketing.startup.runonce.*;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
@@ -203,7 +199,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleResourceTest.class,
         IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
-        GoogleTranslationServiceIntegrationTest.class
+        GoogleTranslationServiceIntegrationTest.class,
+        Task240131UpdateLanguageVariableContentTypeTest.class
 })
 
 public class MainSuite2a {
