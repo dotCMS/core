@@ -319,7 +319,7 @@ jobs:
         run: |
           git checkout ${{ needs.precheck.outputs.HEAD }}
           git tag -a "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}" -m "Release dotCLI version ${{ needs.precheck.outputs.RELEASE_VERSION }}"
-          git push origin "${{ needs.precheck.outputs.HEAD }}"
+          git push origin "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}"
 
   publish-npm-package:
     name: "Publish NPM Package"
