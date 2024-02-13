@@ -15,7 +15,7 @@
 
 ### Used by
 
--   [dot-contentlet-thumbnail](../dot-contentlet-thumbnail)
+- [dot-contentlet-thumbnail](../dot-contentlet-thumbnail)
 
 ### Graph
 
