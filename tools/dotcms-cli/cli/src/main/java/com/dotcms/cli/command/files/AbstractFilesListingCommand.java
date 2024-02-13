@@ -44,10 +44,18 @@ public abstract class AbstractFilesListingCommand extends AbstractFilesCommand {
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
 
-        var includeFolderPatterns = parsePatternOption(filesMixin.includeFolderPatternsOption);
-        var includeAssetPatterns = parsePatternOption(filesMixin.includeAssetPatternsOption);
-        var excludeFolderPatterns = parsePatternOption(filesMixin.excludeFolderPatternsOption);
-        var excludeAssetPatterns = parsePatternOption(filesMixin.excludeAssetPatternsOption);
+        var includeFolderPatterns = parsePatternOption(
+                filesMixin.globMixin.includeFolderPatternsOption
+        );
+        var includeAssetPatterns = parsePatternOption(
+                filesMixin.globMixin.includeAssetPatternsOption
+        );
+        var excludeFolderPatterns = parsePatternOption(
+                filesMixin.globMixin.excludeFolderPatternsOption
+        );
+        var excludeAssetPatterns = parsePatternOption(
+                filesMixin.globMixin.excludeAssetPatternsOption
+        );
 
         CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = executor.supplyAsync(
                 () ->

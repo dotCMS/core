@@ -103,10 +103,18 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
             );
         }
 
-        var includeFolderPatterns = parsePatternOption(filePullMixin.includeFolderPatternsOption);
-        var includeAssetPatterns = parsePatternOption(filePullMixin.includeAssetPatternsOption);
-        var excludeFolderPatterns = parsePatternOption(filePullMixin.excludeFolderPatternsOption);
-        var excludeAssetPatterns = parsePatternOption(filePullMixin.excludeAssetPatternsOption);
+        var includeFolderPatterns = parsePatternOption(
+                filePullMixin.globMixin.includeFolderPatternsOption
+        );
+        var includeAssetPatterns = parsePatternOption(
+                filePullMixin.globMixin.includeAssetPatternsOption
+        );
+        var excludeFolderPatterns = parsePatternOption(
+                filePullMixin.globMixin.excludeFolderPatternsOption
+        );
+        var excludeAssetPatterns = parsePatternOption(
+                filePullMixin.globMixin.excludeAssetPatternsOption
+        );
 
         var customOptions = Map.of(
                 INCLUDE_FOLDER_PATTERNS, includeFolderPatterns,
