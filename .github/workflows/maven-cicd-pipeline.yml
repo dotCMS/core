@@ -41,6 +41,7 @@ jobs:
       cli: ${{ steps.filter-rewrite.outputs.cli }}
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/cleanup-runner
       - uses: dorny/paths-filter@v2.11.1
         id: filter
         with:

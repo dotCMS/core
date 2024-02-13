@@ -30,7 +30,8 @@ describe('AnnouncementsStore', () => {
                                 announcementDateAsISO8601: '2024-01-31T17:51',
                                 identifier: 'test-announcement-id',
                                 inode: '123',
-                                url: 'https://www.example.com'
+                                url: 'https://www.example.com',
+                                hasBeenRead: false
                             }
                         ]
                     })
@@ -44,6 +45,7 @@ describe('AnnouncementsStore', () => {
     });
 
     it('should fetch announcements', (done) => {
+        localStorage.removeItem('dotAnnouncementsData');
         const mockAnnouncements: Announcement[] = [
             {
                 title: 'Test Announcement',
@@ -51,12 +53,14 @@ describe('AnnouncementsStore', () => {
                 announcementDateAsISO8601: '2024-01-31T17:51',
                 identifier: 'test-announcement-id',
                 inode: '123',
+                hasBeenRead: false,
                 url: 'https://www.example.com?utm_source=platform&utm_medium=announcement&utm_campaign=demo.dotcms.com'
             }
         ];
         spectator.service.load();
         spectator.service.state$.subscribe((state) => {
             expect(state.announcements).toEqual(mockAnnouncements);
+            expect(state.announcements[0].hasBeenRead).toBe(false);
             done();
         });
     });
@@ -68,6 +72,7 @@ describe('AnnouncementsStore', () => {
 
         spectator.service.state$.subscribe((state) => {
             expect(state.showUnreadAnnouncement).toBe(false);
+            expect(state.announcements[0].hasBeenRead).toBe(true);
             done();
         });
     });
