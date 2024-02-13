@@ -9,9 +9,14 @@ import {
     ElementRef,
     OnDestroy,
     OnInit,
+    Signal,
     ViewChild,
-    inject
+    WritableSignal,
+    computed,
+    inject,
+    signal
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
@@ -39,6 +44,7 @@ import {
     ContentletArea,
     EmaDragItem,
     EmaPageDropzoneComponent,
+    HeadlessContentletArea,
     Row
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
 
@@ -46,7 +52,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
-import { ActionPayload, SetUrlPayload } from '../shared/models';
+import { ActionPayload, HeadlessData, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
 interface BasePayload {
@@ -118,6 +124,33 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
 
+    readonly pageData = toSignal(this.store.pageData$);
+
+    readonly headlessData: WritableSignal<HeadlessData> = signal(undefined);
+
+    readonly actionPayload: Signal<ActionPayload> = computed(() => {
+        const headlessData = this.headlessData();
+        const { containers, languageId, id, personaTag } = this.pageData();
+        const contentletsId = containers.find((container) => {
+            return (
+                container.identifier === headlessData.container.identifier &&
+                container.uuid === headlessData.container.uuid
+            );
+        }).contentletsId;
+
+        return {
+            language_id: languageId.toString(),
+            pageId: id,
+            pageContainers: containers,
+            personaTag,
+            ...headlessData,
+            container: {
+                ...headlessData.container,
+                contentletsId
+            }
+        } as ActionPayload;
+    });
+
     readonly host = '*';
     readonly editorState = EDITOR_STATE;
 
@@ -138,6 +171,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
+                // event.origin.includes('3000') && console.log('event', event);
+
                 this.handlePostMessage(event)?.();
             });
 
@@ -155,8 +190,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {{ event: CustomEvent; payload: ActionPayload }} { event, payload }
      * @memberof EditEmaEditorComponent
      */
-    onCustomEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
-        this.handleNgEvent({ event, payload })?.();
+    onCustomEvent({ event, payload }: { event: CustomEvent; payload: HeadlessData }) {
+        this.headlessData.set(payload);
+
+        this.handleNgEvent({ event, payload: this.actionPayload() })?.();
     }
 
     /**
@@ -469,7 +506,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Row[] | ContentletArea;
+            payload: ActionPayload | SetUrlPayload | Row[] | HeadlessContentletArea;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -506,7 +543,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
-                this.contentlet = <ContentletArea>data.payload;
+                const contentletArea = <HeadlessContentletArea>data.payload;
+
+                this.headlessData.set(contentletArea.payload);
+
+                this.contentlet = {
+                    ...contentletArea,
+                    payload: this.actionPayload()
+                };
+
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {

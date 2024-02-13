@@ -112,6 +112,17 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         error: state.error
     }));
 
+    readonly pageData$ = this.select((state) => {
+        const containers = this.getPageContainers(state.editor.containers);
+
+        return {
+            containers,
+            id: state.editor.page.identifier,
+            languageId: state.editor.viewAs.language.id,
+            personaTag: state.editor.viewAs.persona?.keyTag
+        };
+    });
+
     /**
      * Concurrently loads page and license data to updat the state.
      *
@@ -360,4 +371,41 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             editorState: EDITOR_STATE.LOADED
         });
     }
+
+    /**
+     * Get the containers data
+     *
+     * @private
+     * @param {ContainerData} containers
+     * @memberof EditEmaStore
+     */
+    private getPageContainers = (containers: DotPageContainerStructure) => {
+        return Object.keys(containers).reduce(
+            (
+                acc: {
+                    identifier: string;
+                    uuid: string;
+                    contentletsId: string[];
+                }[],
+                container
+            ) => {
+                const contentlets = containers[container].contentlets;
+
+                const contentletsKeys = Object.keys(contentlets);
+
+                contentletsKeys.forEach((key) => {
+                    acc.push({
+                        identifier:
+                            containers[container].container.path ??
+                            containers[container].container.identifier,
+                        uuid: key.replace('uuid-', ''),
+                        contentletsId: contentlets[key].map((contentlet) => contentlet.identifier)
+                    });
+                });
+
+                return acc;
+            },
+            []
+        );
+    };
 }
