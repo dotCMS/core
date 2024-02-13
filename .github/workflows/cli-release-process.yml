@@ -23,6 +23,7 @@ env:
   JAVA_DISTRO: temurin
   GRAALVM_VERSION: '22.1.0'
   MVN_PACKAGE_TYPE: 'uber-jar'
+  NPM_PACKAGE_SCOPE: '@dotcms'
   NPM_PACKAGE_NAME: 'dotcli'
   MVN_PACKAGE_NAME: 'dotcms-cli'
   NODE_VERSION: 19
@@ -365,16 +366,18 @@ jobs:
           if [ "$IS_SNAPSHOT_VERSION" = "true" ]; then
               echo "Snapshot version found.";
               TAG="rc"
-              if npm view $NPM_PACKAGE_NAME &> /dev/null; then
-                echo "${NPM_PACKAGE_NAME} found.";
-                LAST_RC_VERSION=$(npm view $NPM_PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+              PACKAGE_FULL_NAME="${NPM_PACKAGE_SCOPE}/${NPM_PACKAGE_NAME}"
+          
+              if npm view $PACKAGE_FULL_NAME &> /dev/null; then
+                echo "${PACKAGE_FULL_NAME} found.";
+                LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
                 echo $LAST_RC_VERSION
                 NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
                 echo $NEXT_RC_VERSION
                 RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
                 echo $RC_SUFFIX
               else
-                echo "${NPM_PACKAGE_NAME} not found.";
+                echo "${PACKAGE_FULL_NAME} not found.";
                 RC_SUFFIX="-rc1"
               fi;
           else
