@@ -23,6 +23,7 @@ env:
   JAVA_DISTRO: temurin
   GRAALVM_VERSION: '22.1.0'
   MVN_PACKAGE_TYPE: 'uber-jar'
+  NPM_PACKAGE_SCOPE: '@dotcms'
   NPM_PACKAGE_NAME: 'dotcli'
   MVN_PACKAGE_NAME: 'dotcms-cli'
   NODE_VERSION: 19
@@ -65,7 +66,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+          key: maven-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
 
       - name: 'Setup git config'
         run: |
@@ -112,7 +113,9 @@ jobs:
         with:
           ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
 
-      - uses: ./.github/actions/cleanup-runner
+      - name: 'Cleanup Runner'
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        uses: ./.github/actions/cleanup-runner
 
       # Sets up GraalVM for native image compilation (Linux/macOS)
       # Downloads and installs GraalVM
@@ -194,8 +197,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          key: maven-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
 
       - name: 'Prepare dotCMS license'
         env:
@@ -290,8 +292,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          key: maven-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
 
       # Creates automated releases using JReleaser
       # Generates builds for different platforms
@@ -319,7 +320,7 @@ jobs:
         run: |
           git checkout ${{ needs.precheck.outputs.HEAD }}
           git tag -a "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}" -m "Release dotCLI version ${{ needs.precheck.outputs.RELEASE_VERSION }}"
-          git push origin "${{ needs.precheck.outputs.HEAD }}"
+          git push origin "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}"
 
   publish-npm-package:
     name: "Publish NPM Package"
@@ -360,16 +361,18 @@ jobs:
           if [ "$IS_SNAPSHOT_VERSION" = "true" ]; then
               echo "Snapshot version found.";
               TAG="rc"
-              if npm view $NPM_PACKAGE_NAME &> /dev/null; then
-                echo "${NPM_PACKAGE_NAME} found.";
-                LAST_RC_VERSION=$(npm view $NPM_PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+              PACKAGE_FULL_NAME="${NPM_PACKAGE_SCOPE}/${NPM_PACKAGE_NAME}"
+          
+              if npm view $PACKAGE_FULL_NAME &> /dev/null; then
+                echo "${PACKAGE_FULL_NAME} found.";
+                LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
                 echo $LAST_RC_VERSION
                 NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
                 echo $NEXT_RC_VERSION
                 RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
                 echo $RC_SUFFIX
               else
-                echo "${NPM_PACKAGE_NAME} not found.";
+                echo "${PACKAGE_FULL_NAME} not found.";
                 RC_SUFFIX="-rc1"
               fi;
           else
