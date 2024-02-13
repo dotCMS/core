@@ -51,7 +51,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
             .thenComparing(ServiceBean::name);
 
     @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
+    OutputOptionMixin output;
 
     @CommandLine.Mixin
     HelpOptionMixin helpOption;
@@ -70,6 +70,9 @@ public class InitCommand implements Callable<Integer>, DotCommand {
     @SecuredPassword
     ServiceManager serviceManager;
 
+    @Inject
+    Prompt prompt;
+
     @Override
     public OutputOptionMixin getOutput() {
         return output;
@@ -87,12 +90,15 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         //Default action prints the current configuration
         final List<ServiceBean> services = serviceManager.services();
         if(services.isEmpty()){
+            //Running the command with the -d option and no configuration file is a no-op
             if(delete){
                 output.info("No configuration file found. Nothing to delete. Re-run the command without the -d option.");
                 return ExitCode.OK;
             }
+            //We're running the command for the first time
             freshInit();
         } else {
+            //Running the command with the -d option and a configuration file will delete the file
            if(delete) {
                performDelete();
                return ExitCode.OK;
@@ -114,7 +120,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         output.info("The CLI has been already initialized.");
         while (true) {
             printServices(beansForUpdate);
-            final int index = Prompt.readInput(-1,
+            final int index = prompt.readInput(-1,
                     "Select the number of the profile you want to @|bold edit|@ or press enter to exit. ");
             if (-1 == index) {
                 break;
@@ -143,9 +149,9 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                 .filter(bean -> !bean.name().equals(name))
                 .collect(Collectors.toMap(ServiceBean::name, Function.identity()));
         while (true) {
-            final String newName = Prompt.readInput(name, "Enter the new name for the profile [%s]. ", name);
-            final String newUrl = Prompt.readInput(url, "Enter the new URL for the profile [%s]. ", url);
-            final boolean valuesOK = Prompt.yesOrNo(true, "Are these values OK? (Enter to confirm or N to cancel) ");
+            final String newName = prompt.readInput(name, "Enter the new name for the profile [%s]. ", name);
+            final String newUrl = prompt.readInput(url, "Enter the new URL for the profile [%s]. ", url);
+            final boolean valuesOK = prompt.yesOrNo(true, "Are these values OK? (Enter to confirm or N to cancel) ");
             if (valuesOK) {
                 try {
                     final ServiceBean newService = createService(selected, newName, newUrl, validationMap);
@@ -153,7 +159,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                     persist(beansForUpdate);
                     output.info("The profile [" + newName + "] has been updated.");
                     beansForUpdate = new ArrayList<>(serviceManager.services());
-                    final boolean yes = Prompt.yesOrNo(false, "Do you want to update the @|bold current active|@ instance? ");
+                    final boolean yes = prompt.yesOrNo(false, "Do you want to update the @|bold current active|@ instance? ");
                     if(yes) {
                         makeActive(beansForUpdate);
                     }
@@ -167,7 +173,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         return beansForUpdate;
     }
 
-    private void freshInit() throws IOException {
+     void freshInit() throws IOException {
         //We don't have a configuration file, let's create one
         final Map<String, String> suggestedValues = new HashMap<>(values);
         final Map<String,ServiceBean> capturedValues = new HashMap<>();
@@ -189,7 +195,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                 suggestedValues.put(INSTANCE_NAME, String.format("%s#%d" , cleanSuggestions(name), ++capturedCount));
                 suggestedValues.put(INSTANCE_URL, baseURL);
 
-                final boolean yes = Prompt.yesOrNo(true, "Do you want to continue adding another dotCMS instance? ");
+                final boolean yes = prompt.yesOrNo(true, "Do you want to continue adding another dotCMS instance? ");
                 if (!yes) {
                     break;
                 }   
@@ -210,16 +216,16 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         while (true) {
             final String suggestedName = suggestedValues.get(INSTANCE_NAME);
             final String suggestedUrl = suggestedValues.get(INSTANCE_URL);
-            name = Prompt.readInput(suggestedName,
+            name = prompt.readInput(suggestedName,
                     "Enter the key/name that will serve to identify the dotCMS instance (must be unique) [%s].  ",
                     suggestedName);
             output.info(String.format("The name is [@|bold, %s|@]", name));
 
-            baseURL = Prompt.readInput(suggestedUrl,
+            baseURL = prompt.readInput(suggestedUrl,
                     "Enter the dotCMS base URL (must be a valid URL starting protocol http or https) [%s] ", suggestedUrl);
             output.info(String.format("The URL is [@|bold, %s|@]", baseURL));
 
-            final boolean valuesOK = Prompt.yesOrNo(true, "Are these values OK? ");
+            final boolean valuesOK = prompt.yesOrNo(true, "Are these values OK? (Enter to confirm or N to cancel) ");
             if (valuesOK) {
                 break;
             }
@@ -250,7 +256,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                 final List<ServiceBean> serviceBeans = new ArrayList<>(capturedValues);
                 printServices(serviceBeans);
                 output.info("One of these profiles needs to be made the current active one. Please select the number of the profile you want to activate.");
-                final int index = Prompt.readInput(-1,
+                final int index = prompt.readInput(-1,
                         "Enter the number of the profile to be made default or press enter to exit. ");
                 if (-1 == index) {
                     running = false;
@@ -282,7 +288,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         while (running) {
             final List<ServiceBean> serviceBeans = new ArrayList<>(serviceManager.services());
             printServices(serviceBeans);
-            final int index = Prompt.readInput(-1, "Enter the number of the profile to @|bold delete|@ press enter to exit. ");
+            final int index = prompt.readInput(-1, "Enter the number of the profile to @|bold delete|@ press enter to exit. ");
             if (index == -1) {
                 running = false;
             } else {
@@ -291,7 +297,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                 } else {
                     serviceBeans.remove(index);
                     persist(serviceBeans);
-                    if (!Prompt.yesOrNo(false, "Do you want to delete another profile? ")) {
+                    if (!prompt.yesOrNo(false, "Do you want to delete another profile? ")) {
                         break;
                     }
                 }

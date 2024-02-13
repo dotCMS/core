@@ -5,12 +5,13 @@ import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.Prompt;
+import com.dotcms.cli.common.PromptImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import java.util.List;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import org.apache.commons.lang3.BooleanUtils;
+import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
@@ -29,6 +30,9 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
 
     @CommandLine.Mixin
     InteractiveOptionMixin interactiveOption;
+
+    @Inject
+    Prompt prompt;
 
     /**
      * Here we encapsulate Filter endpoint options
@@ -103,7 +107,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
             }
             page++;
 
-            if(interactiveOption.isInteractive() && !Prompt.yesOrNo(true,"Load next page? y/n:")){
+            if(interactiveOption.isInteractive() && !prompt.yesOrNo(true,"Load next page? y/n:")){
                 break;
             }
 
