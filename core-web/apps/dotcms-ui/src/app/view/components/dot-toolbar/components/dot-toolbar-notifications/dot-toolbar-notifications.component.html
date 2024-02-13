@@ -27,10 +27,10 @@
         *ngIf="notificationsUnreadCount"></span>
     <dot-dropdown-component
         id="dot-toolbar-notifications"
-        [disabled]="!notifications.length"
         (shutdown)="iframeOverlayService.hide()"
         (wasOpen)="iframeOverlayService.show()"
         (toggle)="toggleNotifications()"
+        data-testId="dot-toolbar-notifications"
         icon="pi pi-bell"
         position="right">
         <div class="toolbar-notifications">
@@ -40,10 +40,19 @@
                 </h3>
                 <p-button
                     id="dot-toolbar-notifications-button-dismiss-all"
+                    *ngIf="notifications.length"
                     (click)="dismissAllNotifications()"
                     label="{{ 'notifications_clear_all' | dm }}"
                     icon="pi pi-trash"
                     styleClass="p-button-rounded p-button-text p-button-sm p-button-primary"></p-button>
+            </div>
+            <div class="dot-toolbar-notifications__empty" *ngIf="!notifications.length">
+                <span class="dot-toolbar-notifications__empty-title">
+                    {{ 'notifications_no_notifications_title' | dm }}
+                </span>
+                <span class="dot-toolbar-notifications__empty-info">
+                    {{ 'notifications_no_notifications' | dm }}
+                </span>
             </div>
             <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
                 <dot-notifications-list
