@@ -7,6 +7,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CollectionsUtils;
@@ -69,18 +70,8 @@ import io.vavr.control.Try;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-
 import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.ACTIVE_FOLDER_ID;
 import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.OPEN_FOLDER_IDS;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
@@ -2111,16 +2102,9 @@ public class BrowserAjax {
         boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts = hostAPI.findAll(user, respectFrontendRoles);
-		Logger.info(this,"hosts: " + hosts.size());
-		Logger.info(this,"contains: " + hosts.contains(APILocator.systemHost()));
+		// Remove invalid hosts, before sorting the list
+		hosts.removeIf(host -> Objects.isNull(host) || Strings.isNullOrEmpty(host.getHostname()));
 		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
-
-		int originalSize = hosts.size();
-		hosts.removeIf(host -> host == null || host.getHostname() == null || "".equals(host.getHostname()));
-		if (hosts.size() < originalSize) {
-			Logger.info(this,"some host were removed");
-		}
-
 		Collections.sort(hosts, new HostNameComparator());
 		for (Host h: hosts) {
 			/**
