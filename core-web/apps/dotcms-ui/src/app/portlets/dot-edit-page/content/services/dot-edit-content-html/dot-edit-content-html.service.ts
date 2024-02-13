@@ -1058,15 +1058,6 @@ export class DotEditContentHtmlService {
             /* Get Copy content Data from the contentlet and Container*/
             const { dotIdentifier: contentId, dotVariant: variantId } = contentlet.dataset;
             const { dotUuid: relationType, dotIdentifier: containerId } = container.dataset;
-            /**
-             *
-             * uuid [Checked]
-             * contentId [Checked]
-             * containerId [Checked]
-             * variantId [Unchecked]
-             * pageId [Checked]
-             * treeOrder [Checked]
-             */
 
             return {
                 pageId: this.currentPage.identifier,

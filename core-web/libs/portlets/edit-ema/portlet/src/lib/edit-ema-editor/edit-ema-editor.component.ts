@@ -1,4 +1,4 @@
-import { Subject, fromEvent } from 'rxjs';
+import { Subject, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
@@ -20,10 +20,14 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { takeUntil } from 'rxjs/operators';
+import { switchMap, takeUntil } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
-import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotPersonalizeService,
+    DotMessageService,
+    DotCopyContentService
+} from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -31,7 +35,12 @@ import {
     DotPersona
 } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
+import {
+    SafeUrlPipe,
+    DotSpinnerModule,
+    DotMessagePipe,
+    DotCopyContentModalService
+} from '@dotcms/ui';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -83,6 +92,7 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
     templateUrl: './edit-ema-editor.component.html',
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [DotCopyContentModalService],
     imports: [
         CommonModule,
         FormsModule,
@@ -116,6 +126,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly activatedRouter = inject(ActivatedRoute);
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
+    private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
+    private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly personalizeService = inject(DotPersonalizeService);
     private readonly messageService = inject(MessageService);
@@ -473,11 +485,46 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     editContentlet(payload: ActionPayload) {
+        const { contentlet, isInMultiplePages, treeNode } = payload;
+
+        if (isInMultiplePages) {
+            this.askToCopy({ treeNode, contentlet });
+
+            return;
+        }
+
         this.store.initActionEdit({
-            inode: payload.contentlet.inode,
-            title: payload.contentlet.title,
+            inode: contentlet.inode,
+            title: contentlet.title,
             type: 'content'
         });
+    }
+
+    /**
+     * Ask to copy the contentlet
+     *
+     * @private
+     * @param {*} { treeNode, contentlet }
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    private askToCopy({ treeNode, contentlet }) {
+        return this.dotCopyContentModalService
+            .open(() => this.store.setDialogIframeLoading(true))
+            .pipe(
+                switchMap(({ shouldCopy }) => {
+                    return shouldCopy
+                        ? this.dotCopyContentService.copyInPage(treeNode)
+                        : of(contentlet as DotCMSContentlet);
+                })
+            )
+            .subscribe(({ inode, title }) => {
+                this.store.initActionEdit({
+                    inode: inode,
+                    title: title,
+                    type: 'content'
+                });
+            });
     }
 
     /**

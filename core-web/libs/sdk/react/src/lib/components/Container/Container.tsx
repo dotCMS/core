@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 
 import { PageContext } from '../../contexts/PageContext';
-import { getContainersData } from '../../utils/utils';
+import { getContainersData, getPersonalization } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
 const FAKE_CONTENLET = {
@@ -11,7 +11,8 @@ const FAKE_CONTENLET = {
     title: 'TEMP_EMPTY_CONTENTLET',
     contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
     inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
-    widgetTitle: 'TEMP_EMPTY_CONTENTLET'
+    widgetTitle: 'TEMP_EMPTY_CONTENTLET',
+    onNumberOfPages: 1
 };
 
 function EmptyContainer() {
@@ -47,10 +48,8 @@ export function Container({ containerRef }: ContainerProps) {
     const { containers, page, viewAs, components, isInsideEditor } =
         useContext<PageProviderContext | null>(PageContext) as PageProviderContext;
 
-    const { acceptTypes, contentlets, maxContentlets, pageContainers, path } = getContainersData(
-        containers,
-        containerRef
-    );
+    const { acceptTypes, contentlets, maxContentlets, pageContainers, path, variantId } =
+        getContainersData(containers, containerRef);
 
     const updatedContentlets =
         contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
@@ -62,6 +61,7 @@ export function Container({ containerRef }: ContainerProps) {
         contentletsId,
         identifier: path ?? identifier,
         maxContentlets,
+        variantId,
         uuid
     };
 
@@ -85,9 +85,7 @@ export function Container({ containerRef }: ContainerProps) {
         }
 
         const { x, y, width, height } = target.getBoundingClientRect();
-
         const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
-
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_CONTENTLET,
             payload: {
@@ -100,8 +98,10 @@ export function Container({ containerRef }: ContainerProps) {
         });
     }
 
-    const renderContentlets = updatedContentlets.map((contentlet) => {
+    const renderContentlets = updatedContentlets.map((contentlet, treeOrder) => {
         const ContentTypeComponent = components[contentlet.contentType] || NoContent;
+        const pageId = page.identifier;
+        const isInMultiplePages = (contentlet.onNumberOfPages as number) > 1;
 
         const Component =
             contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
@@ -115,10 +115,20 @@ export function Container({ containerRef }: ContainerProps) {
                 title: contentlet.widgetTitle || contentlet.title,
                 inode: contentlet.inode
             },
+            treeNode: {
+                containerId: container.identifier,
+                contentId: contentlet.identifier,
+                relationType: container.uuid,
+                variantId: container.variantId,
+                personalization: getPersonalization(viewAs.persona),
+                treeOrder,
+                pageId
+            },
             language_id: viewAs.language.id,
+            personaTag: viewAs.persona?.keyTag,
+            isInMultiplePages,
             pageContainers,
-            pageId: page.identifier,
-            personaTag: viewAs.persona?.keyTag
+            pageId
         };
 
         return isInsideEditor ? (

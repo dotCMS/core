@@ -126,7 +126,8 @@ export const getContainersData = (
 ) => {
     const { identifier, uuid } = containerRef;
 
-    const { containerStructures } = containers[identifier];
+    const { containerStructures, container } = containers[identifier];
+    const { variantId } = container?.parentPermissionable || {};
 
     // Get accepts types of content types for this container
     const acceptTypes = containerStructures.map((structure) => structure.contentTypeVar).join(',');
@@ -140,8 +141,17 @@ export const getContainersData = (
         ...containers[identifier].container,
         acceptTypes,
         contentlets,
-        pageContainers
+        pageContainers,
+        variantId
     };
+};
+
+export const getPersonalization = (persona: Record<string, string>) => {
+    if (!persona) {
+        return `dot:default`;
+    }
+
+    return `dot:${persona.contentType}:${persona.keyTag}`;
 };
 
 export const combineClasses = (classes: string[]) => classes.filter(Boolean).join(' ');

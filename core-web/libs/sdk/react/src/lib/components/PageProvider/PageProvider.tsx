@@ -14,6 +14,7 @@ export interface ContainerData {
             path: string;
             identifier: string;
             maxContentlets: number;
+            parentPermissionable: Record<string, string>;
         };
         containerStructures: {
             contentTypeVar: string;
@@ -25,6 +26,7 @@ export interface ContainerData {
                 title: string;
                 inode: string;
                 widgetTitle?: string;
+                onNumberOfPages?: number;
             }[];
         };
     };

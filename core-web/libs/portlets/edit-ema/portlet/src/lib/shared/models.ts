@@ -1,3 +1,5 @@
+import { DotTreeNode } from '@dotcms/dotcms-models';
+
 export interface ActionPayload {
     container: ContainerPayload;
     contentlet?: ContentletPayload;
@@ -6,6 +8,8 @@ export interface ActionPayload {
     pageId: string;
     personaTag?: string;
     position?: 'before' | 'after';
+    treeNode?: DotTreeNode;
+    isInMultiplePages?: boolean;
     newContentletId?: string;
 }
 
@@ -21,6 +25,7 @@ export interface ContainerPayload {
     identifier: string;
     contentletsId: string[];
     maxContentlets: number;
+    variantId: string;
     uuid: string;
 }
 
