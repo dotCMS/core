@@ -195,3 +195,6 @@ This maintenance release includes the following code fixes:
 159. https://github.com/dotCMS/core/issues/27007 : Content export with Publish Date Parameter leads to 400 Bad Request error #27007
 
 **Release-23.01.12**
+
+160. https://github.com/dotCMS/core/issues/22372 : Users can create fields with reserved var names #22372
+161. https://github.com/dotCMS/core/issues/26796 : Reserved names fields should be compared in a case-insensitive manner to avoid errors and inconsistencies. #26796
