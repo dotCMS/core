@@ -112,7 +112,12 @@ jobs:
         with:
           ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
 
-      - uses: ./.github/actions/cleanup-runner
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        uses: ./.github/actions/cleanup-runner
+
+      - run: |
+          ls -la /
+          ls -la /opt
 
       # Sets up GraalVM for native image compilation (Linux/macOS)
       # Downloads and installs GraalVM
