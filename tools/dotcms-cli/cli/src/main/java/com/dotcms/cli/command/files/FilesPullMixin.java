@@ -2,7 +2,7 @@ package com.dotcms.cli.command.files;
 
 import picocli.CommandLine;
 
-public class FilePullMixin {
+public class FilesPullMixin {
 
     @CommandLine.Parameters(index = "0", arity = "0..1", paramLabel = "path",
             description = "dotCMS path to a specific site, directory or file to pull. "
@@ -27,5 +27,5 @@ public class FilePullMixin {
 
     @CommandLine.Mixin
     FilesGlobMixin globMixin;
-    
+
 }
