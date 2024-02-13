@@ -9339,42 +9339,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotStateException
      * @throws DotSecurityException
      */
-    private String generateCopySuffix(Contentlet contentlet, Host host, Folder folder)
+    private String generateCopySuffix(final Contentlet contentlet, final Host host, final Folder folder)
             throws DotDataException, DotStateException, DotSecurityException {
-        String assetNameSuffix = StringPool.BLANK;
-
-        final boolean diffHost = ((host != null && contentlet.getHost() != null)
-                && !contentlet.getHost()
-                .equalsIgnoreCase(host.getIdentifier()));
-
-        // if different host we really don't need to
-        if ((!contentlet.isFileAsset() && !contentlet.isHTMLPage()) && (
-                diffHost || (folder != null && contentlet.getHost() != null) && !folder.getHostId()
-                        .equalsIgnoreCase(contentlet.getHost()))) {
-            return assetNameSuffix;
-        }
-
-        final String sourcef = (UtilMethods.isSet(contentlet.getFolder())) ? contentlet.getFolder()
-                : APILocator.getFolderAPI().findSystemFolder().getInode();
-        final String destf = (UtilMethods.isSet(folder)) ? folder.getInode()
-                : APILocator.getFolderAPI().findSystemFolder().getInode();
-
-        if (!diffHost && sourcef.equals(destf)) { // is copying in the same folder and samehost?
-            assetNameSuffix = "_copy";
-
-            // We need to verify if already exist a content with suffix "_copy",
-            // if already exists we need to append a timestamp
-            if (isContentletUrlAlreadyUsed(contentlet, host, folder, assetNameSuffix)) {
-                assetNameSuffix += "_" + System.currentTimeMillis();
-            }
-        } else {
-            if (isContentletUrlAlreadyUsed(contentlet, host, folder, assetNameSuffix)) {
-                throw new DotDataException(
-                        Sneaky.sneak(() -> LanguageUtil.get("error.copy.url.conflict")));
-            }
-        }
-
-        return assetNameSuffix;
+        return ContentletUtil.generateCopySuffix(contentlet, host, folder);
     }
 
     /**
@@ -9394,49 +9361,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean isContentletUrlAlreadyUsed(Contentlet contentlet, Host destinationHost,
             Folder destinationFolder, final String assetNameSuffix)
             throws DotStateException, DotDataException, DotSecurityException {
-        Identifier contentletId = APILocator.getIdentifierAPI().find(contentlet);
-
-        // Create new asset name
-        final String contentletIdAssetName = contentletId.getAssetName();
-        String fileExtension = StringPool.BLANK;
-        if (contentlet.hasAssetNameExtension()) {
-            final String ext = UtilMethods.getFileExtension(contentletIdAssetName);
-            if (UtilMethods.isSet(ext)) {
-                fileExtension = '.' + ext;
-            }
-        }
-        final String futureAssetNameWithSuffix =
-                UtilMethods.getFileName(contentletIdAssetName) + assetNameSuffix + fileExtension;
-
-        // Check if page url already exist
-        Identifier identifierWithSameUrl = null;
-        if (UtilMethods.isSet(destinationFolder) && InodeUtils.isSet(
-                destinationFolder.getInode())) { // Folders
-            // Create new path
-            Identifier folderId = APILocator.getIdentifierAPI()
-                    .find(destinationFolder.getIdentifier());
-            final String path = (destinationFolder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? "/"
-                    : folderId.getPath()) + futureAssetNameWithSuffix;
-
-            final Host host =
-                    destinationFolder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? destinationHost
-                            : APILocator.getHostAPI()
-                                    .find(destinationFolder.getHostId(),
-                                            APILocator.getUserAPI().getSystemUser(), false);
-            identifierWithSameUrl = APILocator.getIdentifierAPI().find(host, path);
-        } else if (UtilMethods.isSet(destinationHost) && InodeUtils.isSet(
-                destinationHost.getInode())) { // Hosts
-            identifierWithSameUrl = APILocator.getIdentifierAPI()
-                    .find(destinationHost, "/" + futureAssetNameWithSuffix);
-        } else {
-            // Host or folder object MUST be define
-            Logger.error(this,
-                    "Host or folder destination are invalid, please check that one of those values are set propertly.");
-            throw new DotDataException(
-                    "Host or folder destination are invalid, please check that one of those values are set propertly.");
-        }
-
-        return InodeUtils.isSet(identifierWithSameUrl.getId());
+        return ContentletUtil.isContentletUrlAlreadyUsed(contentlet, destinationHost,
+                destinationFolder, assetNameSuffix);
     }
 
     /**

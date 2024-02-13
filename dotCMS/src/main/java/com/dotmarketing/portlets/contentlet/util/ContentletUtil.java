@@ -3,8 +3,10 @@ package com.dotmarketing.portlets.contentlet.util;
 import com.dotcms.business.Unexportable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -16,8 +18,12 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -169,6 +175,127 @@ public class ContentletUtil {
 				contentlet.getIdentifier(),
 				contentlet.getInode()
 		);
+	}
+
+	/**
+	 * This method generates the copy suffix when there is a contentlet that already has the same
+	 * URL.
+	 * <ul>
+	 * <li>if the new contentlet URL is NOT used then returns an empty suffix.</li>
+	 * <li>if the new contentlet URL without "_copy" is used then returns a
+	 * "_copy" suffix.</li>
+	 * <li>if the new contentlet URL with or without "_copy" is used then
+	 * returns a "_copy" plus timestamp in millis (example: "_copy_2122313123")
+	 * suffix.</li>
+	 * </ul>
+	 *
+	 * @param contentlet the contentlet that we are going to copy or move
+	 * @param host
+	 * @param folder     the destination folder
+	 * @return the generated contentlet asset name suffix
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	public static String generateCopySuffix(final Contentlet contentlet, final Host host, final Folder folder)
+			throws DotDataException, DotStateException, DotSecurityException {
+
+		String assetNameSuffix = StringPool.BLANK;
+
+		final boolean diffHost = ((host != null && contentlet.getHost() != null)
+				&& !contentlet.getHost()
+				.equalsIgnoreCase(host.getIdentifier()));
+
+		// if different host we really don't need to
+		if ((!contentlet.isFileAsset() && !contentlet.isHTMLPage()) && (
+				diffHost || (folder != null && contentlet.getHost() != null) && !folder.getHostId()
+						.equalsIgnoreCase(contentlet.getHost()))) {
+			return assetNameSuffix;
+		}
+
+		final String sourcef = (UtilMethods.isSet(contentlet.getFolder())) ? contentlet.getFolder()
+				: APILocator.getFolderAPI().findSystemFolder().getInode();
+		final String destf = (UtilMethods.isSet(folder)) ? folder.getInode()
+				: APILocator.getFolderAPI().findSystemFolder().getInode();
+
+		if (!diffHost && sourcef.equals(destf)) { // is copying in the same folder and samehost?
+			assetNameSuffix = "_copy";
+
+			// We need to verify if already exist a content with suffix "_copy",
+			// if already exists we need to append a timestamp
+			if (isContentletUrlAlreadyUsed(contentlet, host, folder, assetNameSuffix)) {
+				assetNameSuffix += "_" + System.currentTimeMillis();
+			}
+		} else {
+			if (isContentletUrlAlreadyUsed(contentlet, host, folder, assetNameSuffix)) {
+				throw new DotDataException(
+						Sneaky.sneak(() -> LanguageUtil.get("error.copy.url.conflict")));
+			}
+		}
+
+		return assetNameSuffix;
+	}
+
+	/**
+	 * This method verifies if the contentlet that we are going to copy or cut into a folder doesn't
+	 * have conflict with other contentlet that has the same URL.
+	 *
+	 * @param contentlet        the contentlet that we are going to copy or move
+	 * @param destinationHost   the destination host
+	 * @param destinationFolder the destination folder
+	 * @param assetNameSuffix   the suffix string that we will append in the asset name. Sometimes
+	 *                          you need to know if a asset name with a suffix is used or not
+	 * @return true if the contentlet URL is already used otherwise returns false
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public static boolean isContentletUrlAlreadyUsed(final Contentlet contentlet, final Host destinationHost,
+											   final Folder destinationFolder, final String assetNameSuffix)
+			throws DotStateException, DotDataException, DotSecurityException {
+		Identifier contentletId = APILocator.getIdentifierAPI().find(contentlet);
+
+		// Create new asset name
+		final String contentletIdAssetName = contentletId.getAssetName();
+		String fileExtension = StringPool.BLANK;
+		if (contentlet.hasAssetNameExtension()) {
+			final String ext = UtilMethods.getFileExtension(contentletIdAssetName);
+			if (UtilMethods.isSet(ext)) {
+				fileExtension = '.' + ext;
+			}
+		}
+		final String futureAssetNameWithSuffix =
+				UtilMethods.getFileName(contentletIdAssetName) + assetNameSuffix + fileExtension;
+
+		// Check if page url already exist
+		Identifier identifierWithSameUrl = null;
+		if (UtilMethods.isSet(destinationFolder) && InodeUtils.isSet(
+				destinationFolder.getInode())) { // Folders
+			// Create new path
+			Identifier folderId = APILocator.getIdentifierAPI()
+					.find(destinationFolder.getIdentifier());
+			final String path = (destinationFolder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? "/"
+					: folderId.getPath()) + futureAssetNameWithSuffix;
+
+			final Host host =
+					destinationFolder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? destinationHost
+							: APILocator.getHostAPI()
+							.find(destinationFolder.getHostId(),
+									APILocator.getUserAPI().getSystemUser(), false);
+			identifierWithSameUrl = APILocator.getIdentifierAPI().find(host, path);
+		} else if (UtilMethods.isSet(destinationHost) && InodeUtils.isSet(
+				destinationHost.getInode())) { // Hosts
+			identifierWithSameUrl = APILocator.getIdentifierAPI()
+					.find(destinationHost, "/" + futureAssetNameWithSuffix);
+		} else {
+			// Host or folder object MUST be define
+			Logger.error(ContentletUtil.class,
+					"Host or folder destination are invalid, please check that one of those values are set propertly.");
+			throw new DotDataException(
+					"Host or folder destination are invalid, please check that one of those values are set propertly.");
+		}
+
+		return InodeUtils.isSet(identifierWithSameUrl.getId());
 	}
 
 }
