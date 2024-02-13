@@ -194,20 +194,20 @@ export class DotSeoMetaTagsUtilService {
      * @returns
      */
     getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
-        if (!imageUrl) {
-            return of({
-                length: 0,
-                url: IMG_NOT_FOUND_KEY
-            });
-        }
+        return from(
+            fetch(imageUrl).catch(() => {
+                imageUrl = IMG_NOT_FOUND_KEY;
 
-        return from(fetch(imageUrl)).pipe(
+                return of({
+                    status: 404,
+                    url: IMG_NOT_FOUND_KEY
+                });
+            })
+        ).pipe(
             switchMap((response) => {
-                if (response.status === 404) {
-                    imageUrl = IMG_NOT_FOUND_KEY;
-                }
+                const res = response as Response;
 
-                return response.clone().blob();
+                return res.clone().blob();
             }),
             map(({ size }) => {
                 return {
@@ -216,6 +216,13 @@ export class DotSeoMetaTagsUtilService {
                 };
             }),
             catchError(() => {
+                if (imageUrl === IMG_NOT_FOUND_KEY) {
+                    return of({
+                        length: 0,
+                        url: IMG_NOT_FOUND_KEY
+                    });
+                }
+
                 return from(this.dotUploadService.uploadFile({ file: imageUrl })).pipe(
                     catchError((uploadError) => {
                         console.warn('Error while uploading:', uploadError);
