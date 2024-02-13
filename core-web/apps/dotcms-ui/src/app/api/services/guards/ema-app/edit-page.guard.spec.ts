@@ -83,6 +83,42 @@ describe('EditPageGuard', () => {
         });
     });
 
+    it('should navgate to "edit-ema" when have a EMA App configuration', async () => {
+        properties.getFeatureFlag.and.returnValue(of(false));
+        emaAppConfigurationService.get.and.returnValue(
+            of({
+                pattern: 'some-pattern',
+                url: 'https://example.com',
+                options: {
+                    authenticationToken: '12345',
+                    additionalOption1: 'value1',
+                    additionalOption2: 'value2'
+                    // Add more key-value pairs as needed
+                }
+            })
+        );
+
+        const route: ActivatedRouteSnapshot = {
+            queryParams: { url: '/some-url' }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+
+        const result = await TestBed.runInInjectionContext(
+            () => editPageGuard(route, state) as Observable<boolean>
+        );
+
+        result.subscribe((canActivate) => {
+            expect(router.navigate).toHaveBeenCalledWith(['edit-ema'], {
+                queryParams: {
+                    url: 'some-url',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    language_id: 1
+                }
+            });
+            expect(canActivate).toBe(false);
+        });
+    })
+
     it('should not update the queryParams on navigate', async () => {
         properties.getFeatureFlag.and.returnValue(of(true));
         emaAppConfigurationService.get.and.returnValue(
