@@ -1,4 +1,4 @@
-import { getPageElementBound } from './utils'; // Adjust the import path based on your file structure.
+import { getPageElementBound, getPersonalization } from './utils'; // Adjust the import path based on your file structure.
 
 describe('getPageElementBound', () => {
     beforeAll(() => {
@@ -48,6 +48,22 @@ describe('getPageElementBound', () => {
                 ]
             }
         ]);
+    });
+
+    describe('personalization', () => {
+        it('should return the correct personalization when persona exists', () => {
+            const personalization = getPersonalization({
+                contentType: 'persona',
+                keyTag: 'adminUser'
+            });
+
+            expect(personalization).toBe('dot:persona:adminUser');
+        });
+
+        it('should return the correct personalization when persona does not exist', () => {
+            const personalization = getPersonalization({});
+            expect(personalization).toBe('dot:default');
+        });
     });
 
     // Add more test cases as needed...

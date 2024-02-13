@@ -18,6 +18,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     DotContentTypeService,
+    DotCopyContentService,
     DotCurrentUserService,
     DotDevicesService,
     DotESContentService,
@@ -28,6 +29,7 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import { DotCopyContentModalService } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -83,6 +85,24 @@ const dragEventMock = {
 const PAGE_INODE_MOCK = '1234';
 const QUERY_PARAMS_MOCK = { language_id: 1, url: 'page-one' };
 
+const dispatchCustomEventInDialogIframe = (
+    spectator: SpectatorRouting<EditEmaEditorComponent>,
+    event: NG_CUSTOM_EVENTS
+) => {
+    const dialogIframe = spectator.debugElement.query(By.css('[data-testId="dialog-iframe"]'));
+
+    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+    dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+        new CustomEvent('ng-event', {
+            detail: {
+                name: event
+            }
+        })
+    );
+    spectator.detectChanges();
+};
+
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
@@ -96,6 +116,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             DotFavoritePageService,
             DotESContentService,
             DialogService,
+            DotCopyContentModalService,
+            DotCopyContentService,
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
@@ -230,6 +252,8 @@ describe('EditEmaEditorComponent', () => {
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
         let addMessageSpy: jest.SpyInstance;
+        let dotCopyContentModalService: DotCopyContentModalService;
+        let dotCopyContentService: DotCopyContentService;
 
         const createComponent = createRouting({ canEdit: true, canRead: true });
 
@@ -246,6 +270,8 @@ describe('EditEmaEditorComponent', () => {
             store = spectator.inject(EditEmaStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
+            dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
+            dotCopyContentService = spectator.inject(DotCopyContentService, true);
             addMessageSpy = jest.spyOn(messageService, 'add');
 
             store.load({
@@ -605,7 +631,8 @@ describe('EditEmaEditorComponent', () => {
                             uuid: '123',
                             acceptTypes: 'test',
                             maxContentlets: 1,
-                            contentletsId: ['123']
+                            contentletsId: ['123'],
+                            variantId: '123'
                         },
                         pageContainers: [
                             {
@@ -686,7 +713,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'test',
                             maxContentlets: 1,
-                            contentletsId: ['123']
+                            contentletsId: ['123'],
+                            variantId: '123'
                         },
                         pageId: 'test'
                     };
@@ -737,6 +765,149 @@ describe('EditEmaEditorComponent', () => {
                         }
                     );
                 });
+
+                describe('copy content', () => {
+                    let initiEditIframeDialogMock;
+                    let dialog;
+                    let spyCopyContent;
+
+                    const initEditContentMock = {
+                        inode: 'inode-123',
+                        title: 'New Hello World',
+                        type: 'content'
+                    };
+
+                    const treeNodeMock = {
+                        containerId: '123',
+                        contentId: '123',
+                        pageId: '123',
+                        relationType: 'test',
+                        treeOrder: '1',
+                        variantId: 'test',
+                        personalization: 'dot:default'
+                    };
+
+                    const payload: ActionPayload = {
+                        language_id: '1',
+                        pageContainers: [
+                            {
+                                identifier: 'test',
+                                uuid: 'test',
+                                contentletsId: []
+                            }
+                        ],
+                        treeNode: treeNodeMock,
+                        contentlet: {
+                            identifier: 'contentlet-identifier-123',
+                            inode: 'contentlet-inode-123',
+                            title: 'Hello World'
+                        },
+                        container: {
+                            identifier: 'test',
+                            acceptTypes: 'test',
+                            uuid: 'test',
+                            maxContentlets: 1,
+                            contentletsId: ['123'],
+                            variantId: '123'
+                        },
+                        isInMultiplePages: true,
+                        pageId: 'test'
+                    };
+
+                    const contentletPayloadMock = {
+                        x: 100,
+                        y: 100,
+                        width: 500,
+                        height: 500,
+                        payload
+                    };
+
+                    beforeEach(() => {
+                        spectator.detectChanges();
+                        initiEditIframeDialogMock = jest.spyOn(store, 'initActionEdit');
+                        dialog = spectator.query(byTestId('dialog'));
+                        spyCopyContent = jest
+                            .spyOn(dotCopyContentService, 'copyInPage')
+                            .mockReturnValue(
+                                of({
+                                    ...dotcmsContentletMock,
+                                    ...initEditContentMock
+                                })
+                            );
+                    });
+
+                    it('should copy content when contentlet is in multiple pages', (done) => {
+                        const spyCopyDialog = jest
+                            .spyOn(dotCopyContentModalService, 'open')
+                            .mockReturnValue(of({ shouldCopy: true }));
+
+                        spectator.setInput('contentlet', contentletPayloadMock);
+
+                        spectator.detectComponentChanges();
+                        spectator.triggerEventHandler(EmaContentletToolsComponent, 'edit', payload);
+                        spectator.detectComponentChanges();
+
+                        expect(spyCopyDialog).toHaveBeenCalled();
+                        expect(spyCopyContent).toHaveBeenCalledWith(treeNodeMock);
+
+                        expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+                        expect(initiEditIframeDialogMock).toHaveBeenCalledWith(initEditContentMock);
+
+                        dispatchCustomEventInDialogIframe(spectator, NG_CUSTOM_EVENTS.SAVE_PAGE);
+
+                        const iframe = spectator.debugElement.query(
+                            By.css('[data-testId="iframe"]')
+                        );
+
+                        iframe.nativeElement.contentWindow.addEventListener(
+                            'message',
+                            (event: MessageEvent) => {
+                                expect(event).toBeTruthy();
+                                done();
+                            }
+                        );
+                    });
+
+                    it('should not copy content when contentlet is in multiple pages', (done) => {
+                        const spyCopyDialog = jest
+                            .spyOn(dotCopyContentModalService, 'open')
+                            .mockReturnValue(of({ shouldCopy: false }));
+
+                        spectator.setInput('contentlet', contentletPayloadMock);
+
+                        spectator.detectComponentChanges();
+                        spectator.triggerEventHandler(EmaContentletToolsComponent, 'edit', payload);
+                        spectator.detectComponentChanges();
+
+                        expect(spyCopyDialog).toHaveBeenCalled();
+                        expect(spyCopyContent).not.toHaveBeenCalled();
+
+                        expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+                        expect(initiEditIframeDialogMock).toHaveBeenCalledWith({
+                            inode: 'contentlet-inode-123',
+                            title: 'Hello World',
+                            type: 'content'
+                        });
+
+                        dispatchCustomEventInDialogIframe(spectator, NG_CUSTOM_EVENTS.SAVE_PAGE);
+
+                        const iframe = spectator.debugElement.query(
+                            By.css('[data-testId="iframe"]')
+                        );
+
+                        iframe.nativeElement.contentWindow.addEventListener(
+                            'message',
+                            (event: MessageEvent) => {
+                                expect(event).toBeTruthy();
+                                done();
+                            }
+                        );
+                    });
+                });
+
+                beforeEach(() => {
+                    jest.clearAllMocks();
+                });
             });
 
             describe('add', () => {
@@ -759,7 +930,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'test',
                             maxContentlets: 1,
-                            contentletsId: ['123']
+                            contentletsId: ['123'],
+                            variantId: '123'
                         },
                         contentlet: {
                             inode: '123',
@@ -869,7 +1041,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'test',
                             maxContentlets: 1,
-                            contentletsId: ['123', '456']
+                            contentletsId: ['123', '456'],
+                            variantId: '123'
                         },
                         contentlet: {
                             inode: '123',
@@ -975,7 +1148,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 1,
-                            contentletsId: ['123']
+                            contentletsId: ['123'],
+                            variantId: '123'
                         },
                         pageId: 'test'
                     };
@@ -1057,7 +1231,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 1,
-                            contentletsId: ['contentlet-identifier-123']
+                            contentletsId: ['contentlet-identifier-123'],
+                            variantId: '123'
                         },
                         pageId: 'test'
                     };
@@ -1131,7 +1306,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 1,
-                            contentletsId: ['123']
+                            contentletsId: ['123'],
+                            variantId: '123'
                         },
                         pageId: 'test'
                     };
@@ -1221,7 +1397,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 1,
-                            contentletsId: ['contentlet-identifier-123']
+                            contentletsId: ['contentlet-identifier-123'],
+                            variantId: '123'
                         },
                         pageId: 'test'
                     };
@@ -1339,7 +1516,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'test',
                             maxContentlets: 1,
-                            contentletsId: ['123']
+                            contentletsId: ['123'],
+                            variantId: '123'
                         },
                         pageId: 'test'
                     };
@@ -1410,7 +1588,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'test',
                             maxContentlets: 1,
-                            contentletsId: ['123']
+                            contentletsId: ['123'],
+                            variantId: '123'
                         },
                         pageId: 'test'
                     };
@@ -1452,7 +1631,8 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'test',
                             maxContentlets: 1,
-                            contentletsId: ['123']
+                            contentletsId: ['123'],
+                            variantId: '123'
                         },
                         pageId: 'test'
                     };

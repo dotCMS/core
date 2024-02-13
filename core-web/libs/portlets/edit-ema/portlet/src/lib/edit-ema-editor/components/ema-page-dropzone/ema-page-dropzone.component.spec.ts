@@ -16,7 +16,8 @@ const ACTION_MOCK: ActionPayload = {
         identifier: '789',
         maxContentlets: 100,
         uuid: '2',
-        contentletsId: ['123', '455']
+        contentletsId: ['123', '455'],
+        variantId: '1'
     },
     language_id: '1',
     pageContainers: [

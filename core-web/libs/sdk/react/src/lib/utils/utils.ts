@@ -147,7 +147,7 @@ export const getContainersData = (
 };
 
 export const getPersonalization = (persona: Record<string, string>) => {
-    if (!persona) {
+    if (!persona || (!persona.contentType && !persona.keyTag)) {
         return `dot:default`;
     }
 
