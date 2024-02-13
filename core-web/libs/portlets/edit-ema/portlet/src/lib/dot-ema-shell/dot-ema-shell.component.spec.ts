@@ -142,7 +142,46 @@ describe('DotEmaShellComponent', () => {
         describe('DOM', () => {
             it('should have a navigation bar', () => {
                 spectator.detectChanges();
-                expect(spectator.query('dot-edit-ema-navigation-bar')).not.toBeNull();
+                expect(spectator.query(byTestId('ema-nav-bar'))).not.toBeNull();
+            });
+
+            it('should have nav bar with items', () => {
+                const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
+
+                expect(navBarComponent.items).toEqual([
+                    {
+                        icon: 'pi-file',
+                        label: 'editema.editor.navbar.content',
+                        href: 'content'
+                    },
+                    {
+                        icon: 'pi-table',
+                        label: 'editema.editor.navbar.layout',
+                        href: 'layout',
+                        isDisabled: false
+                    },
+                    {
+                        icon: 'pi-sliders-h',
+                        label: 'editema.editor.navbar.rules',
+                        href: `rules/123`,
+                        isDisabled: false
+                    },
+                    {
+                        iconURL: 'experiments',
+                        label: 'editema.editor.navbar.experiments',
+                        href: 'experiments'
+                    },
+                    {
+                        icon: 'pi-th-large',
+                        label: 'editema.editor.navbar.page-tools',
+                        action: expect.any(Function)
+                    },
+                    {
+                        icon: 'pi-ellipsis-v',
+                        label: 'editema.editor.navbar.properties',
+                        action: expect.any(Function)
+                    }
+                ]);
             });
         });
 
@@ -192,38 +231,15 @@ describe('DotEmaShellComponent', () => {
         });
 
         describe('page properties', () => {
-            it('should open the dialog when triggering store.initEditAction with shell as context', () => {
-                spectator.detectChanges();
-
-                store.initActionEdit({
-                    inode: '123',
-                    title: 'hello world',
-                    type: 'shell'
-                });
-                spectator.detectChanges();
-
-                expect(spectator.query(byTestId('dialog-iframe'))).not.toBeNull();
-            });
-
             it('should trigger a navigate when saving and the url changed', () => {
                 const navigate = jest.spyOn(router, 'navigate');
 
                 spectator.detectChanges();
-                store.initActionEdit({
-                    inode: '123',
-                    title: 'hello world',
-                    type: 'shell'
-                });
-                spectator.detectChanges();
 
-                const dialogIframe = spectator.debugElement.query(
-                    By.css('[data-testId="dialog-iframe"]')
-                );
+                const dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
 
-                spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
-
-                dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
-                    new CustomEvent('ng-event', {
+                spectator.triggerEventHandler(dialog, 'action', {
+                    event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                             payload: {
@@ -231,7 +247,7 @@ describe('DotEmaShellComponent', () => {
                             }
                         }
                     })
-                );
+                });
                 spectator.detectChanges();
 
                 expect(navigate).toHaveBeenCalledWith([], {
@@ -246,29 +262,20 @@ describe('DotEmaShellComponent', () => {
                 const loadMock = jest.spyOn(store, 'load');
 
                 spectator.detectChanges();
-                store.initActionEdit({
-                    inode: '123',
-                    title: 'hello world',
-                    type: 'shell'
-                });
-                spectator.detectChanges();
 
-                const dialogIframe = spectator.debugElement.query(
-                    By.css('[data-testId="dialog-iframe"]')
-                );
+                const dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
 
-                spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
-
-                dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
-                    new CustomEvent('ng-event', {
+                spectator.triggerEventHandler(dialog, 'action', {
+                    event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                             payload: {
-                                htmlPageReferer: '/index'
+                                htmlPageReferer: '/my-awesome-page'
                             }
                         }
                     })
-                );
+                });
+
                 spectator.detectChanges();
 
                 expect(loadMock).toHaveBeenCalledWith({
