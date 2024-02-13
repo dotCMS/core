@@ -13,6 +13,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface AbstractPullTreeNodeTaskParams extends Serializable {
 
+    // START-NOSCAN
+
     /**
      * Returns the root node of the file system tree as a {@link TreeNode}.
      *
@@ -61,4 +63,7 @@ public interface AbstractPullTreeNodeTaskParams extends Serializable {
      * @return the {@link ConsoleProgressBar}
      */
     ConsoleProgressBar progressBar();
+
+    // END-NOSCAN
+
 }

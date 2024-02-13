@@ -13,6 +13,8 @@ import org.immutables.value.Value.Default;
 @Value.Immutable
 public interface AbstractLocalFolderTraversalTaskParams extends Serializable {
 
+    // START-NOSCAN
+
     /**
      * Returns a boolean indicating whether the site exists.
      *
@@ -64,4 +66,7 @@ public interface AbstractLocalFolderTraversalTaskParams extends Serializable {
      * @return true if the operation should fail fast, false otherwise.
      */
     boolean failFast();
+
+    // END-NOSCAN
+
 }

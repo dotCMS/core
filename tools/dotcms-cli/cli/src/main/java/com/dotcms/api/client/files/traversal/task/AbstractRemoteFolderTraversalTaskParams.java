@@ -13,6 +13,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface AbstractRemoteFolderTraversalTaskParams extends Serializable {
 
+    // START-NOSCAN
+
     /**
      * Retrieves the {@link Filter} instance used to include or exclude folders and assets.
      *
@@ -55,4 +57,7 @@ public interface AbstractRemoteFolderTraversalTaskParams extends Serializable {
      * @return true if the traversal task should fail fast, false otherwise.
      */
     boolean failFast();
+
+    // END-NOSCAN
+
 }

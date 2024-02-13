@@ -16,6 +16,8 @@ import org.immutables.value.Value.Default;
 @Value.Immutable
 public interface AbstractPushTreeNodeTaskParams extends Serializable {
 
+    // START-NOSCAN
+
     /**
      * Returns the path to the workspace directory.
      *
@@ -74,5 +76,7 @@ public interface AbstractPushTreeNodeTaskParams extends Serializable {
      */
     @Nullable
     ConsoleProgressBar progressBar();
+
+    // END-NOSCAN
 
 }
