@@ -28,6 +28,9 @@
         <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
         <skip.npm.install>false</skip.npm.install>
         <sonar.sources>apps,libs</sonar.sources>
+        <sonar.exclusions>**/node_modules/**,**/*.spec.ts</sonar.exclusions>
+        <sonar.tests>apps,libs</sonar.tests>
+        <sonar.test.inclusions>**/*.spec.ts</sonar.test.inclusions>
     </properties>
 
     <dependencies>

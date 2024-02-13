@@ -6,7 +6,6 @@ import static com.dotmarketing.portlets.templates.model.Template.SYSTEM_TEMPLATE
 import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -68,7 +67,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import org.apache.commons.math3.analysis.function.Exp;
 
 /**
  * Implementation class for the {@link DependencyProcessor} interface.
@@ -665,7 +663,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private void processLanguage(final Language language) throws DotBundleException {
         try{
             final long lang = language.getId();
-            final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
+            final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME + " +languageId:" + lang;
             final List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
                     .search(keyValueQuery,0, -1, StringPool.BLANK, user, false);
 
@@ -1045,7 +1043,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_SYSTEM_OBJECT);
         }
 
-        if (isExcludeByFilter(pusheableAsset)) {
+        if (!isTemplateLayout(asset) && isExcludeByFilter(pusheableAsset)) {
             config.exclude(asset, pusheableAsset, ManifestReason.EXCLUDE_BY_FILTER.getMessage());
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_FILTER);
         }
@@ -1071,6 +1069,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     ManifestReason.EXCLUDE_BY_MOD_DATE.getMessage(asset.getClass()));
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_MOD_DATE);
         }
+    }
+
+    /**
+     * Determines if the provided asset is a template layout.
+     * We can identify it by the title, it always contains the acronym Template.ANONYMOUS_PREFIX
+     * @param asset The asset to check
+     * @return If the Asset is a {@link Template} object and the title
+     * contains {@code Template.ANONYMOUS_PREFIX}, return {@code true}.
+     */
+    private boolean isTemplateLayout(final Object asset){
+        return asset instanceof Template && Template.class.cast(asset).getTitle().contains(Template.ANONYMOUS_PREFIX);
     }
 
     private <T> boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
@@ -1102,7 +1111,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         try{
             //We're no longer filtering by language here..
             //The reason is We're simply collecting all available lang variables so we can infer additional languages used. see #15359
-            final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE ;
+            final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME;
             final List<Contentlet> langVariables = contentletAPI.search(langVarsQuery, 0, -1, StringPool.BLANK, user, false);
 
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, langVariables,

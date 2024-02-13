@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -461,13 +462,18 @@ public class DependencyManagerTest {
 
     }
 
+    private void createBundle(final PushPublisherConfig config, final Contentlet contentlet)
+            throws DotDataException {
+        createBundle(config,contentlet,"");
+    }
+
     /**
      * Creates a bundle with one contentlet
      */
-    private void createBundle(final PushPublisherConfig config, final Contentlet contentlet)
+    private void createBundle(final PushPublisherConfig config, final Contentlet contentlet,final String filterKey)
             throws DotDataException {
         final String bundleName = "testDependencyManagerBundle" + System.currentTimeMillis();
-        Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId());
+        Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId(),false,filterKey);
         bundleAPI.saveBundle(bundle);
         bundle = bundleAPI.getBundleByName(bundleName);
 
@@ -524,16 +530,75 @@ public class DependencyManagerTest {
         return contentType;
     }
     
-    
-    
-    
-
     private static void createFilter(){
         final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"forcePush",false);
         final FilterDescriptor filterDescriptor =
                 new FilterDescriptor("filterKey.yml","Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+    }
+
+    private static void createShallowPushFilter(){
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",false,"relationships",false,"forcePush",false);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("ShallowPush.yml","Only Selected Items",filtersMap,false,"DOTCMS_BACK_END_USER");
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+    }
+
+    /**
+     * <b>Method to test:</b> PushPublishigDependencyProcesor.tryToAdd(PusheableAsset, Object, String) <p>
+     * <b>Given Scenario:</b> Push publish a page with the filter 'Only Selected Items' selected.<p>
+     * <b>ExpectedResult:</b> The template should not be included in the dependencies.
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_PP_page_should_not_contain_template_in_dependencies_when_filter_set() throws DotDataException, DotBundleException, DotSecurityException {
+        final PushPublisherConfig config = new PushPublisherConfig();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        //Create a bundle with filter 'Only Selected Items'
+        final String filterKey = "ShallowPush.yml";
+        if(!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)){
+            createShallowPushFilter();
+        }
+        createBundle(config, htmlPageAsset, filterKey);
+        DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
+        dependencyManager.setDependencies();
+
+        assertFalse(APILocator.getPublisherAPI().getFilterDescriptorByKey("ShallowPush.yml").toString(),
+                dependencyManager.getTemplates().contains(template.getIdentifier()));
+    }
+
+    /**
+     * <b>Method to test:</b> PushPublishigDependencyProcesor.tryToAdd(PusheableAsset, Object, String) <p>
+     * <b>Given Scenario:</b>  Custom templates be should considered part of the page. <p>
+     * <b>ExpectedResult:</b> The layout should be included in the dependencies regardless of the selected filter.
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_PP_page_should_contains_layout_in_dependencies() throws DotDataException, DotBundleException, DotSecurityException {
+        final PushPublisherConfig config = new PushPublisherConfig();
+        //Layout templates are identified by the prefix 'anonymous_layout_'
+        final Template template = new TemplateDataGen().title(Template.ANONYMOUS_PREFIX+"shouldBeIncluded").nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        //Create a bundle with filter 'Only Selected Items'
+        final String filterKey = "ShallowPush.yml";
+        if(!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)){
+            createShallowPushFilter();
+        }
+        createBundle(config, htmlPageAsset, filterKey);
+        createBundle(config, htmlPageAsset, "ShallowPush.yml");
+        DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
+        dependencyManager.setDependencies();
+
+        assertTrue(dependencyManager.getTemplates().contains(template.getIdentifier()));
     }
 
 }

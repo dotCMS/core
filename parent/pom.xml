@@ -9,6 +9,7 @@
     <packaging>pom</packaging>
     <description>DotCMS</description>
     <properties>
+        <tomcat.version>9.0.85</tomcat.version>
         <dependency-check-maven.version>8.3.1</dependency-check-maven.version>
         <surefire-report-maven.version>3.1.0</surefire-report-maven.version>
         <project-info-reports.version>3.4.5</project-info-reports.version>
@@ -86,7 +87,7 @@
         <test.working.dir>${project.build.directory}/testdata</test.working.dir>
         <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
 
-        <starter.version>empty_20230525</starter.version>
+        <starter.version>empty_20240201</starter.version>
         <!--<starter.version>empty_20230509</starter.version>-->
 
         <sonar.projectKey>core-maven:${project.groupId}:${project.artifactId}</sonar.projectKey>
