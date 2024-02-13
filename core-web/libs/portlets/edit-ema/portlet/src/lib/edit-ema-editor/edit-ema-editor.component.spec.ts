@@ -57,6 +57,10 @@ import { DEFAULT_PERSONA, WINDOW, HOST, PAYLOAD_MOCK } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
 
+global.URL.createObjectURL = jest.fn(
+    () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
+);
+
 const messagesMock = {
     'editpage.content.contentlet.remove.confirmation_message.header': 'Deleting Content',
     'editpage.content.contentlet.remove.confirmation_message.message':

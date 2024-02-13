@@ -18,7 +18,6 @@ type EmaQueryParams = {
 };
 
 export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-    console.log('editEmaGuard');
     const [content] = route.firstChild.url;
 
     const router = inject(Router);
@@ -32,7 +31,6 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
         .get(url)
         .pipe(
             switchMap((value) => {
-                console.log('EditEMA isHeadless?', value);
                 if (value) {
                     if (didQueryParamsGetCompleted) {
                         router.navigate([`/edit-ema/${content.path}`], {
@@ -49,16 +47,9 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
                     return of(true);
                 }
 
-                console.log('EditEMA is VTL');
-
                 return properties.getFeatureFlag('FEATURE_FLAG_NEW_EDIT_PAGE').pipe(
                     map((flag) => {
-                        console.log('EditEMA FF Enabled?: ', flag);
                         if (!flag) {
-                            console.log(
-                                'Not enabled, go to EditPage, with queryParams: ',
-                                route.queryParams
-                            );
                             //Go to EditPage
                             router.navigate(['/edit-page/content'], {
                                 queryParams: route.queryParams
@@ -76,8 +67,6 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
                                 replaceUrl: true
                             });
                         }
-
-                        console.log('Enabled, go to Edit EMA');
 
                         return true;
                     })

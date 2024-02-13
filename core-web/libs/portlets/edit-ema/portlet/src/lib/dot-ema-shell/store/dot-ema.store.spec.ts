@@ -77,6 +77,10 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     containers: mockDotContainers()
 };
 
+global.URL.createObjectURL = jest.fn(
+    () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
+);
+
 describe('EditEmaStore', () => {
     describe('EditEmaStore Headless', () => {
         let spectator: SpectatorService<EditEmaStore>;
@@ -129,7 +133,8 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
-                        iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona`,
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADING
@@ -140,7 +145,7 @@ describe('EditEmaStore', () => {
         });
 
         describe('updaters', () => {
-            it('should update the editorState', () => {
+            it('should update the editorState', (done) => {
                 spectator.service.updateEditorState(EDITOR_STATE.LOADED);
 
                 spectator.service.editorState$.subscribe((state) => {
@@ -148,11 +153,13 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
-                        iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona`,
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED
                     });
+                    done();
                 });
             });
         });
@@ -175,7 +182,6 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        vtlIframeContent: null,
                         editorState: EDITOR_STATE.LOADING
                     });
                     done();
@@ -374,7 +380,8 @@ describe('EditEmaStore', () => {
                         editor: MOCK_RESPONSE_VTL,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
                         iframeURL:
-                            'data:text/html;base64,PGh0bWw+PGJvZHk+PGgxPkhlbGxvLCBXb3JsZCE8L2gxPjwvYm9keT48L2h0bWw+',
+                            'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012',
+
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED
@@ -385,19 +392,21 @@ describe('EditEmaStore', () => {
         });
 
         describe('updaters', () => {
-            it('should update the editorState', () => {
+            it('should update the editorState', (done) => {
                 spectator.service.updateEditorState(EDITOR_STATE.LOADED);
 
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
-                        clientHost: 'http://localhost:3000',
+                        clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
-                        iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona`,
+                        iframeURL:
+                            'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED
                     });
+                    done();
                 });
             });
         });
@@ -419,8 +428,6 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         isEnterpriseLicense: true,
-                        vtlIframeContent:
-                            'data:text/html;base64,PGh0bWw+PGJvZHk+PGgxPkhlbGxvLCBXb3JsZCE8L2gxPjwvYm9keT48L2h0bWw+',
                         editorState: EDITOR_STATE.LOADED
                     });
                     done();

@@ -268,15 +268,12 @@ describe('utils functions', () => {
         });
     });
 
-    describe('Create IframeURL by Rendered page', () => {
-        describe('createIframeUrlByRenderedPage', () => {
-            it('should return the correct iframe URL', () => {
-                const rendered = '<html><body><h1>Hello, World!</h1></body></html>';
-                const expectedUrl =
-                    'data:text/html;base64,PGh0bWw+PGJvZHk+PGgxPkhlbGxvLCBXb3JsZCE8L2gxPjwvYm9keT48L2h0bWw+';
-                const result = createIframeUrlByRenderedPage(rendered);
-                expect(result).toEqual(expectedUrl);
-            });
+    describe('createIframeUrlByRenderedPage', () => {
+        it('should create iframe URL from rendered page', () => {
+            const rendered = '<html><body><h1>Hello, World!</h1></body></html>';
+            global.URL.createObjectURL = jest.fn();
+            createIframeUrlByRenderedPage(rendered);
+            expect(global.URL.createObjectURL).toHaveBeenCalled();
         });
     });
 });

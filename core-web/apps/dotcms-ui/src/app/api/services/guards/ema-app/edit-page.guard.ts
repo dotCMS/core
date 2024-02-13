@@ -1,10 +1,11 @@
+import { combineLatest } from 'rxjs';
+
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
 import { DotPropertiesService, EmaAppConfigurationService } from '@dotcms/data-access';
-import { combineLatest } from 'rxjs';
 
 export const editPageGuard: CanActivateFn = (route) => {
     const properties = inject(DotPropertiesService);
@@ -16,7 +17,6 @@ export const editPageGuard: CanActivateFn = (route) => {
         emaConfiguration.get(route.queryParams.url)
     ]).pipe(
         map(([flag, value]) => {
-            console.log('EditPage FF or is Headless: ', flag || value);
             if (flag || value) {
                 router.navigate(['edit-ema'], {
                     queryParams: getUpdatedQueryParams(route)

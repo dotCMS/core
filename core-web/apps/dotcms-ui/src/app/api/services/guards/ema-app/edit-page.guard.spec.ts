@@ -117,7 +117,7 @@ describe('EditPageGuard', () => {
             });
             expect(canActivate).toBe(false);
         });
-    })
+    });
 
     it('should not update the queryParams on navigate', async () => {
         properties.getFeatureFlag.and.returnValue(of(true));

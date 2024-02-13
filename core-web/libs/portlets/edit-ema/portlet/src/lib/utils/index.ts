@@ -149,7 +149,8 @@ export function sanitizeURL(url: string): string {
 }
 
 export function createIframeUrlByRenderedPage(rendered: string) {
-    const base64EncodedHtml = btoa(rendered);
+    const blob = new Blob([rendered], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
 
-    return `data:text/html;base64,${base64EncodedHtml}`;
+    return url;
 }

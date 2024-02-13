@@ -31,7 +31,6 @@ export interface EditEmaState {
     editor: DotPageApiResponse;
     isEnterpriseLicense: boolean;
     editorState: EDITOR_STATE;
-    vtlIframeContent?: string;
 }
 
 function getFormId(dotPageApiService: DotPageApiService) {
@@ -84,11 +83,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             siteId: state.editor.site.identifier
         });
 
+        const iframeURL = state.clientHost
+            ? `${state.clientHost}/${pageURL}`
+            : createIframeUrlByRenderedPage(state.editor.page.rendered);
+
         return {
             clientHost: state.clientHost,
             favoritePageURL,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-            iframeURL: state.vtlIframeContent ?? `${state.clientHost}/${pageURL}`,
+            iframeURL,
             editor: {
                 ...state.editor,
                 viewAs: {
@@ -139,9 +142,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 this.setState({
                                     clientHost: params.clientHost,
                                     editor: pageData,
-                                    vtlIframeContent: isHeadlessPage
-                                        ? null
-                                        : createIframeUrlByRenderedPage(pageData.page.rendered),
                                     isEnterpriseLicense: licenseData,
                                     //This to stop the progress bar. Testing yet
                                     editorState: isHeadlessPage
