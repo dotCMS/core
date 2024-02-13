@@ -20,12 +20,12 @@
 
 ### Used by
 
-- [dot-card-contentlet](../../components/dot-card-contentlet)
+-   [dot-card-contentlet](../../components/dot-card-contentlet)
 
 ### Depends on
 
-- [dot-video-thumbnail](../dot-video-thumbnail)
-- [dot-contentlet-icon](../dot-contentlet-icon)
+-   [dot-video-thumbnail](../dot-video-thumbnail)
+-   [dot-contentlet-icon](../dot-contentlet-icon)
 
 ### Graph
 

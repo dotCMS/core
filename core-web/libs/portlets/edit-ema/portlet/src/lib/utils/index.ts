@@ -11,32 +11,35 @@ import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models
  * }}
  */
 export function insertContentletInContainer(action: ActionPayload): {
-  pageContainers: PageContainer[];
-  didInsert: boolean;
+    pageContainers: PageContainer[];
+    didInsert: boolean;
 } {
-  if (action.position) {
-    return insertPositionedContentletInContainer(action);
-  }
-
-  let didInsert = false;
-
-  const { pageContainers, container, personaTag, newContentletId } = action;
-
-  const newPageContainers = pageContainers.map((pageContainer) => {
-    if (areContainersEquals(pageContainer, container) && !pageContainer.contentletsId.includes(newContentletId)) {
-      pageContainer.contentletsId.push(newContentletId);
-      didInsert = true;
+    if (action.position) {
+        return insertPositionedContentletInContainer(action);
     }
 
-    pageContainer.personaTag = personaTag;
+    let didInsert = false;
 
-    return pageContainer;
-  });
+    const { pageContainers, container, personaTag, newContentletId } = action;
 
-  return {
-    pageContainers: newPageContainers,
-    didInsert,
-  };
+    const newPageContainers = pageContainers.map((pageContainer) => {
+        if (
+            areContainersEquals(pageContainer, container) &&
+            !pageContainer.contentletsId.includes(newContentletId)
+        ) {
+            pageContainer.contentletsId.push(newContentletId);
+            didInsert = true;
+        }
+
+        pageContainer.personaTag = personaTag;
+
+        return pageContainer;
+    });
+
+    return {
+        pageContainers: newPageContainers,
+        didInsert
+    };
 }
 
 /**
@@ -47,19 +50,21 @@ export function insertContentletInContainer(action: ActionPayload): {
  * @return {*}  {PageContainer[]}
  */
 export function deleteContentletFromContainer(action: ActionPayload): PageContainer[] {
-  const { pageContainers, container, contentlet, personaTag } = action;
+    const { pageContainers, container, contentlet, personaTag } = action;
 
-  return pageContainers.map((currentContainer) => {
-    if (areContainersEquals(currentContainer, container)) {
-      return {
-        ...currentContainer,
-        contentletsId: currentContainer.contentletsId.filter((id) => id !== contentlet.identifier),
-        personaTag,
-      };
-    }
+    return pageContainers.map((currentContainer) => {
+        if (areContainersEquals(currentContainer, container)) {
+            return {
+                ...currentContainer,
+                contentletsId: currentContainer.contentletsId.filter(
+                    (id) => id !== contentlet.identifier
+                ),
+                personaTag
+            };
+        }
 
-    return currentContainer;
-  });
+        return currentContainer;
+    });
 }
 
 /**
@@ -69,8 +74,14 @@ export function deleteContentletFromContainer(action: ActionPayload): PageContai
  * @param {ContainerPayload} containerToFind
  * @return {*}  {boolean}
  */
-function areContainersEquals(currentContainer: PageContainer, containerToFind: ContainerPayload): boolean {
-  return currentContainer.identifier === containerToFind.identifier && currentContainer.uuid === containerToFind.uuid;
+function areContainersEquals(
+    currentContainer: PageContainer,
+    containerToFind: ContainerPayload
+): boolean {
+    return (
+        currentContainer.identifier === containerToFind.identifier &&
+        currentContainer.uuid === containerToFind.uuid
+    );
 }
 
 /**
@@ -84,37 +95,41 @@ function areContainersEquals(currentContainer: PageContainer, containerToFind: C
  * }}
  */
 function insertPositionedContentletInContainer(payload: ActionPayload): {
-  pageContainers: PageContainer[];
-  didInsert: boolean;
+    pageContainers: PageContainer[];
+    didInsert: boolean;
 } {
-  let didInsert = false;
+    let didInsert = false;
 
-  const { pageContainers, container, contentlet, personaTag, newContentletId, position } = payload;
+    const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
+        payload;
 
-  const newPageContainers = pageContainers.map((pageContainer) => {
-    if (areContainersEquals(pageContainer, container) && !pageContainer.contentletsId.includes(newContentletId)) {
-      const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
+    const newPageContainers = pageContainers.map((pageContainer) => {
+        if (
+            areContainersEquals(pageContainer, container) &&
+            !pageContainer.contentletsId.includes(newContentletId)
+        ) {
+            const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
 
-      if (index !== -1) {
-        const offset = position === 'before' ? index : index + 1;
-        pageContainer.contentletsId.splice(offset, 0, newContentletId);
+            if (index !== -1) {
+                const offset = position === 'before' ? index : index + 1;
+                pageContainer.contentletsId.splice(offset, 0, newContentletId);
 
-        didInsert = true;
-      } else {
-        pageContainer.contentletsId.push(newContentletId);
-        didInsert = true;
-      }
-    }
+                didInsert = true;
+            } else {
+                pageContainer.contentletsId.push(newContentletId);
+                didInsert = true;
+            }
+        }
 
-    pageContainer.personaTag = personaTag;
+        pageContainer.personaTag = personaTag;
 
-    return pageContainer;
-  });
+        return pageContainer;
+    });
 
-  return {
-    pageContainers: newPageContainers,
-    didInsert,
-  };
+    return {
+        pageContainers: newPageContainers,
+        didInsert
+    };
 }
 
 /**
@@ -124,17 +139,17 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
  * @return {*}  {string}
  */
 export function sanitizeURL(url: string): string {
-  return url
-    .replace(/^\/|\/$/g, '') // Remove slashes from the beginning and end of the url
-    .split('/')
-    .filter((part, i) => {
-      return !i || part !== 'index'; // Filter the index from the url if it is at the last position
-    })
-    .join('/');
+    return url
+        .replace(/^\/|\/$/g, '') // Remove slashes from the beginning and end of the url
+        .split('/')
+        .filter((part, i) => {
+            return !i || part !== 'index'; // Filter the index from the url if it is at the last position
+        })
+        .join('/');
 }
 
 export function createIframeUrlByRenderedPage(rendered: string) {
-  const base64EncodedHtml = btoa(rendered);
+    const base64EncodedHtml = btoa(rendered);
 
-  return `data:text/html;base64,${base64EncodedHtml}`;
+    return `data:text/html;base64,${base64EncodedHtml}`;
 }
