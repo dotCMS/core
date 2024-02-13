@@ -12,7 +12,7 @@ import {
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
-import { ActionPayload, ContainerPayload } from '../../../shared/models';
+import { ActionPayload, ContainerPayload, HeadlessData } from '../../../shared/models';
 
 export interface ContentletArea {
     x: number;
@@ -22,13 +22,21 @@ export interface ContentletArea {
     payload: ActionPayload;
 }
 
+export interface HeadlessContentletArea {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    payload: HeadlessData;
+}
+
 interface Container {
     x: number;
     y: number;
     width: number;
     height: number;
     contentlets: ContentletArea[];
-    payload: ActionPayload | string;
+    payload: HeadlessData | string;
 }
 
 interface Column {
@@ -158,7 +166,7 @@ export class EmaPageDropzoneComponent {
      * @return {*}  {boolean}
      * @memberof EmaPageDropzoneComponent
      */
-    getErrorMessage(paylaod: ActionPayload | string): string {
+    getErrorMessage(paylaod: HeadlessData | string): string {
         const { container = {} } =
             typeof paylaod === 'string' ? JSON.parse(paylaod) : paylaod || {};
         const { acceptTypes = '', maxContentlets } = container;
