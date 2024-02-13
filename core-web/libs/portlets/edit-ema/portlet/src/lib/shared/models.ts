@@ -1,15 +1,12 @@
-export interface HeadlessData {
-    contentlet?: ContentletPayload;
-    newContentletId?: string;
-    position?: 'before' | 'after';
+export interface ActionPayload {
     container: ContainerPayload;
-}
-
-export interface ActionPayload extends HeadlessData {
+    contentlet?: ContentletPayload;
     language_id: string;
     pageContainers: PageContainer[];
     pageId: string;
     personaTag?: string;
+    position?: 'before' | 'after';
+    newContentletId?: string;
 }
 
 export interface PageContainer {
@@ -22,7 +19,7 @@ export interface PageContainer {
 export interface ContainerPayload {
     acceptTypes: string;
     identifier: string;
-    contentletsId?: string[];
+    contentletsId: string[];
     maxContentlets: number;
     uuid: string;
 }
