@@ -2,8 +2,12 @@ package com.dotcms.cli.common;
 
 import java.io.Console;
 import java.util.Optional;
+import picocli.CommandLine.Help;
 
 public final class Prompt {
+
+    static Help.ColorScheme colorScheme = Help.defaultColorScheme(Help.Ansi.AUTO);
+
 
     private Prompt() {
         //Utility
@@ -20,13 +24,12 @@ public final class Prompt {
      *         response.
      */
     public static boolean yesOrNo(boolean defaultValue, String prompt, String... args) {
-        String choices = defaultValue ? " (Y/n)" : " (y/N)";
-        String optionalQuestionMark = prompt.matches(".*\\?\\s*$") ? " " : " ? ";
+        final String choices = defaultValue ? " (Y/n)" : " (y/N)";
         while (true) {
             try {
                 Optional<Console> console = Optional.ofNullable(System.console());
                 String response = console
-                        .map(c -> c.readLine(prompt + choices + optionalQuestionMark, args).trim().toLowerCase())
+                        .map(c -> c.readLine( withColor( prompt + choices), args).trim().toLowerCase())
                         .orElse(defaultValue ? "y" : "n");
                 if (response.isBlank()) {
                     return defaultValue;
@@ -42,4 +45,62 @@ public final class Prompt {
             }
         }
     }
+
+    /**
+     * Utility to prompt user for input.
+     * @param defaultValue The default value to return if user provides a blank response.
+     * @param prompt The text to display
+     * @param args Formatting args for the prompt
+     * @return The string value of the user input or the defaultValue if user provided a blank response.
+     */
+    public static String readInput(String defaultValue, String prompt, String... args) {
+        try {
+            Optional<Console> console = Optional.ofNullable(System.console());
+            String response = console
+                    .map(c -> c.readLine( withColor(prompt), args).trim().toLowerCase())
+                    .orElse(defaultValue);
+            if (response.isBlank()) {
+                return defaultValue;
+            }
+            return response;
+        } catch (Exception ignore) {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Utility to prompt user for input.
+     * @param defaultValue The default value to return if user provides a blank response.
+     * @param prompt The text to display
+     * @param args Formatting args for the prompt
+     * @return The integer value of the user input or the defaultValue if user provided a blank response.
+     */
+    public static int readInput(int defaultValue, String prompt, String... args) {
+        while(true) {
+            try {
+                Optional<Console> console = Optional.ofNullable(System.console());
+                String response = console
+                        .map(c -> c.readLine(withColor(prompt), args).trim()
+                                .toLowerCase())
+                        .orElse(String.valueOf(defaultValue));
+                if (response.isBlank()) {
+                    return defaultValue;
+                }
+                return Integer.parseInt(response);
+            } catch (Exception ignore) {
+                //loop until we get a valid response
+            }
+        }
+    }
+
+    /**
+     * Add color to the text
+     * @param text The text to colorize
+     * @return The colorized text
+     */
+    static String withColor(final String text) {
+        return colorScheme.ansi().new Text(text, colorScheme).toString();
+    }
+
+
 }

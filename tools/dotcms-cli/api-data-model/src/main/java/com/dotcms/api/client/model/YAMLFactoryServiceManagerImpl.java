@@ -12,8 +12,10 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -56,6 +58,12 @@ public class YAMLFactoryServiceManagerImpl implements ServiceManager {
             cached = mapper.readValue(inputStream, new TypeReference<>() {
             });
         }
+
+        cached = cached.stream().sorted(
+                Comparator.comparing(ServiceBean::active).reversed()
+                        .thenComparing(ServiceBean::name)
+        ).collect(Collectors.toList());
+
         return cached;
     }
 
