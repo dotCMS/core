@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.function.Function;
 import javax.enterprise.context.Dependent;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
@@ -92,7 +93,11 @@ public class PushTask<T> extends TaskProcessor {
             int toProcessCount = splitTasks(completionService);
 
             // Wait for all tasks to complete and gather the results
-            errors.addAll(processTasks(toProcessCount, completionService));
+            Function<List<Exception>, Void> processFunction = taskResult -> {
+                errors.addAll(taskResult);
+                return null;
+            };
+            processTasks(toProcessCount, completionService, processFunction);
         }
 
         return errors;

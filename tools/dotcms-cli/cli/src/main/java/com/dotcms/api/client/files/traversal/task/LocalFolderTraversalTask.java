@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import javax.enterprise.context.Dependent;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.tuple.Pair;
@@ -103,12 +105,12 @@ public class LocalFolderTraversalTask extends TaskProcessor {
 
         File folderOrFile = new File(traversalTaskParams.sourcePath());
 
-        TreeNode currentNode = null;
+        AtomicReference<TreeNode> currentNode = new AtomicReference<>();
         try {
             final var localPathStructure = parseLocalPath(traversalTaskParams.workspace(),
                     folderOrFile);
-            currentNode = gatherSyncInformation(traversalTaskParams.workspace(), folderOrFile,
-                    localPathStructure);
+            currentNode.set(gatherSyncInformation(traversalTaskParams.workspace(), folderOrFile,
+                    localPathStructure));
         } catch (Exception e) {
             if (traversalTaskParams.failFast()) {
                 throw e;
@@ -117,7 +119,7 @@ public class LocalFolderTraversalTask extends TaskProcessor {
             }
         }
 
-        if (null != currentNode && folderOrFile.isDirectory()) {
+        if (null != currentNode.get() && folderOrFile.isDirectory()) {
 
             File[] files = folderOrFile.listFiles(new HiddenFileFilter());
 
@@ -145,11 +147,16 @@ public class LocalFolderTraversalTask extends TaskProcessor {
                 }
 
                 // Wait for all tasks to complete and gather the results
-                processTasks(toProcessCount, completionService, errors, currentNode);
+                Function<Pair<List<Exception>, TreeNode>, Void> processFunction = taskResult -> {
+                    errors.addAll(taskResult.getLeft());
+                    currentNode.get().addChild(taskResult.getRight());
+                    return null;
+                };
+                processTasks(toProcessCount, completionService, processFunction);
             }
         }
 
-        return Pair.of(errors, currentNode);
+        return Pair.of(errors, currentNode.get());
     }
 
     /**

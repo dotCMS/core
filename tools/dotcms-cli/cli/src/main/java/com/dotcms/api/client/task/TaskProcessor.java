@@ -1,14 +1,11 @@
 package com.dotcms.api.client.task;
 
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
-import com.dotcms.api.traversal.TreeNode;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang3.tuple.Pair;
+import java.util.function.Function;
 
 public class TaskProcessor {
 
@@ -21,11 +18,11 @@ public class TaskProcessor {
      *
      * @param toProcessCount    The number of tasks to process.
      * @param completionService The CompletionService for parallel execution of tasks.
+     * @param processFunction   The function to apply on each task result.
+     * @param <T>               The type of the task result.
      */
-    protected <T> List<T> processTasks(int toProcessCount,
-            CompletionService<List<T>> completionService) {
-
-        List<T> results = new ArrayList<>();
+    protected <T> void processTasks(int toProcessCount, CompletionService<T> completionService,
+            Function<T, Void> processFunction) {
 
         boolean interrupted = false;
         int retryCount = 0;
@@ -36,71 +33,13 @@ public class TaskProcessor {
 
             try {
 
-                Future<List<T>> future = completionService.poll(
+                Future<T> future = completionService.poll(
                         TASK_TIMEOUT, TimeUnit.SECONDS
                 );
                 if (future != null) {
                     // Task completed, process the result
-                    List<T> taskResult = future.get();
-                    results.addAll(taskResult);
-
-                    taskCount++;
-                    retryCount = 0; // Reset retry count after a successful operation
-                } else {
-                    // No task was completed in the given timeframe
-                    if (retryCount < MAX_RETRIES) {
-                        retryCount++;
-                    } else {
-                        throw new TraversalTaskException(
-                                "Maximum retries reached for fetching task result"
-                        );
-                    }
-                }
-            } catch (InterruptedException e) {
-                // Thread was interrupted, handle it outside the loop
-                interrupted = true;
-                Thread.currentThread().interrupt(); // Preserve interrupt status
-            } catch (ExecutionException e) {
-                handleExecutionException(e);
-            }
-        }
-
-        if (interrupted) {
-            handleInterrupt();
-        }
-
-        return results;
-    }
-
-    /**
-     * Processes and waits for the results of the tasks submitted to the completion service.
-     *
-     * @param toProcessCount    The number of tasks to process.
-     * @param completionService The CompletionService for parallel execution of traversal tasks.
-     * @param errors            The list of exceptions to which any error should be added.
-     * @param currentNode       The current TreeNode representing the current folder.
-     */
-    protected void processTasks(int toProcessCount,
-            CompletionService<Pair<List<Exception>, TreeNode>> completionService,
-            ArrayList<Exception> errors, TreeNode currentNode) {
-
-        boolean interrupted = false;
-        int retryCount = 0;
-        int taskCount = 0;
-
-        // Wait for all tasks to complete and gather the results
-        while (taskCount < toProcessCount) {
-
-            try {
-
-                Future<Pair<List<Exception>, TreeNode>> future = completionService.poll(
-                        TASK_TIMEOUT, TimeUnit.SECONDS
-                );
-                if (future != null) {
-                    // Task completed, process the result
-                    Pair<List<Exception>, TreeNode> taskResult = future.get();
-                    errors.addAll(taskResult.getLeft());
-                    currentNode.addChild(taskResult.getRight());
+                    T taskResult = future.get();
+                    processFunction.apply(taskResult);
 
                     taskCount++;
                     retryCount = 0; // Reset retry count after a successful operation

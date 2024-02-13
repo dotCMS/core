@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.function.Function;
 import javax.enterprise.context.Dependent;
 import org.eclipse.microprofile.context.ManagedExecutor;
 
@@ -78,7 +79,13 @@ public class HttpRequestTask extends TaskProcessor {
             int toProcessCount = splitTasks(contentTypes, completionService);
 
             // Wait for all tasks to complete and gather the results
-            return processTasks(toProcessCount, completionService);
+            final var foundContentTypes = new ArrayList<ContentType>();
+            Function<List<ContentType>, Void> processFunction = taskResult -> {
+                foundContentTypes.addAll(taskResult);
+                return null;
+            };
+            processTasks(toProcessCount, completionService, processFunction);
+            return foundContentTypes;
         }
     }
 

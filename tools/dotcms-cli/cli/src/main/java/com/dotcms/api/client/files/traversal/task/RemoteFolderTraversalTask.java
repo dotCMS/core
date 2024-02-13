@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.function.Function;
 import javax.enterprise.context.Dependent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.context.ManagedExecutor;
@@ -92,7 +93,12 @@ public class RemoteFolderTraversalTask extends TaskProcessor {
         );
 
         // Wait for all tasks to complete and gather the results
-        processTasks(toProcessCount, completionService, errors, currentNode);
+        Function<Pair<List<Exception>, TreeNode>, Void> processFunction = taskResult -> {
+            errors.addAll(taskResult.getLeft());
+            currentNode.addChild(taskResult.getRight());
+            return null;
+        };
+        processTasks(toProcessCount, completionService, processFunction);
 
         return Pair.of(errors, currentNode);
     }
