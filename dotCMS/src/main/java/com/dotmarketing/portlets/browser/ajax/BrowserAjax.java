@@ -2114,6 +2114,13 @@ public class BrowserAjax {
 		Logger.info(this,"hosts: " + hosts.size());
 		Logger.info(this,"contains: " + hosts.contains(APILocator.systemHost()));
 		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
+
+		int originalSize = hosts.size();
+		hosts.removeIf(host -> host == null || host.getHostname() == null || "".equals(host.getHostname()));
+		if (hosts.size() < originalSize) {
+			Logger.info(this,"some host were removed");
+		}
+
 		Collections.sort(hosts, new HostNameComparator());
 		for (Host h: hosts) {
 			/**
