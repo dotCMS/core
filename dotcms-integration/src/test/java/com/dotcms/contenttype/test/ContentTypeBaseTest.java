@@ -132,7 +132,7 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 		//Test news content type
 		newsLikeContentType = TestDataUtils.getNewsLikeContentType();
 
-		final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE;
+		final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME;
 		try {
 			// Using the provided Language Variable Content Type
 			languageVariableContentType = APILocator.getContentTypeAPI(user)

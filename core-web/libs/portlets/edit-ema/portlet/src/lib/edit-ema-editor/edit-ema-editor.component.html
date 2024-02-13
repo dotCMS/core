@@ -115,11 +115,11 @@
                     es.state === editorState.LOADED
                 "
                 [contentlet]="contentlet"
-                (edit)="editContentlet($event)"
+                (edit)="dialog.editContentlet($event)"
                 (delete)="deleteContentlet($event)"
-                (addWidget)="addWidget($event)"
-                (addForm)="addForm($event)"
-                (addContent)="addContentlet($event)"
+                (addWidget)="dialog.addWidget($event)"
+                (addForm)="dialog.addForm($event)"
+                (addContent)="dialog.addContentlet($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
@@ -140,42 +140,11 @@
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 </ng-container>
-<p-dialog
+<dot-edit-ema-dialog
     #dialog
-    *ngIf="!currentDevice && dialogState$ | async as ds"
-    [visible]="!!ds.type && ds.type !== 'shell'"
-    [style]="{ height: '90vh', width: '90vw' }"
-    [header]="ds.header"
-    [draggable]="false"
-    [resizable]="false"
-    [maximizable]="true"
-    [modal]="true"
-    (visibleChange)="resetDialogIframeData()"
-    data-testId="dialog"
-    styleClass="edit-ema-dialog">
-    <ng-container [ngSwitch]="ds.type">
-        <dot-ema-form-selector *ngSwitchCase="'form'" (selected)="addSelectedForm($event)" />
-
-        <ng-container *ngSwitchCase="'content'">
-            <iframe
-                #dialogIframe
-                [style]="{
-                    border: 'none',
-                    display: ds.iframeLoading ? 'none' : 'block'
-                }"
-                [src]="ds.iframeURL | safeUrl"
-                (load)="onIframeLoad()"
-                title="dialog"
-                data-testId="dialog-iframe"
-                width="100%"
-                height="100%"></iframe>
-            <dot-spinner
-                *ngIf="ds.iframeLoading"
-                [ngStyle]="{ position: 'absolute', top: '50%' }"
-                data-testId="spinner"></dot-spinner>
-        </ng-container>
-    </ng-container>
-</p-dialog>
+    *ngIf="!currentDevice"
+    (action)="onCustomEvent($event)"
+    data-testId="ema-dialog"></dot-edit-ema-dialog>
 <p-confirmDialog
     *ngIf="!currentDevice"
     [style]="{
