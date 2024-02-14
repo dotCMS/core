@@ -1,4 +1,4 @@
-import { fromEvent } from 'rxjs';
+import { fromEvent, of } from 'rxjs';
 
 import { NgIf, NgStyle, NgSwitch, NgSwitchCase } from '@angular/common';
 import {
@@ -15,8 +15,11 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 import { DialogModule } from 'primeng/dialog';
 
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
-import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { switchMap } from 'rxjs/operators';
+
+import { DotCopyContentService } from '@dotcms/data-access';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCopyContentModalService, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import {
     CreateFromPaletteAction,
@@ -43,7 +46,7 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
         DialogModule,
         DotSpinnerModule
     ],
-    providers: [DotEmaDialogStore]
+    providers: [DotEmaDialogStore, DotCopyContentService, DotCopyContentModalService]
 })
 export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
@@ -52,6 +55,8 @@ export class DotEmaDialogComponent {
 
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly store = inject(DotEmaDialogStore);
+    private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
+    private readonly dotCopyContentService = inject(DotCopyContentService);
 
     protected readonly dialogState = toSignal(this.store.dialogState$);
     protected readonly dialogStatus = DialogStatus;
@@ -114,9 +119,17 @@ export class DotEmaDialogComponent {
      * @memberof EditEmaEditorComponent
      */
     editContentlet(payload: Partial<ActionPayload>) {
+        const { contentlet, isInMultiplePages, treeNode } = payload;
+
+        if (isInMultiplePages) {
+            this.askToCopy({ treeNode, contentlet });
+
+            return;
+        }
+
         this.store.editContentlet({
-            inode: payload.contentlet.inode,
-            title: payload.contentlet.title
+            inode: contentlet.inode,
+            title: contentlet.title
         });
     }
 
@@ -186,5 +199,31 @@ export class DotEmaDialogComponent {
         });
 
         this.action.emit({ event: customEvent, payload: this.dialogState().payload });
+    }
+
+    /**
+     * Ask to copy the contentlet
+     *
+     * @private
+     * @param {*} { treeNode, contentlet }
+     * @return {*}
+     * @memberof DotEmaDialogComponent
+     */
+    private askToCopy({ treeNode, contentlet }) {
+        return this.dotCopyContentModalService
+            .open()
+            .pipe(
+                switchMap(({ shouldCopy }) => {
+                    return shouldCopy
+                        ? this.dotCopyContentService.copyInPage(treeNode)
+                        : of(contentlet as DotCMSContentlet);
+                })
+            )
+            .subscribe(({ inode, title }) => {
+                this.store.editContentlet({
+                    inode,
+                    title
+                });
+            });
     }
 }

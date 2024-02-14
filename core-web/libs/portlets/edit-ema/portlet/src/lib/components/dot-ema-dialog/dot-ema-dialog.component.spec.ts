@@ -1,15 +1,18 @@
 import { describe, it, expect } from '@jest/globals';
 import { Spectator, createComponentFactory, SpyObject, byTestId } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { DotCopyContentService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCopyContentModalService, ModelCopyContentResponse } from '@dotcms/ui';
+import { MockDotMessageService, dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotEmaDialogComponent } from './dot-ema-dialog.component';
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
@@ -22,6 +25,8 @@ describe('DotEmaDialogComponent', () => {
     let spectator: Spectator<DotEmaDialogComponent>;
     let component: DotEmaDialogComponent;
     let storeSpy: SpyObject<DotEmaDialogStore>;
+    let dotCopyContentService: DotCopyContentService;
+    let dotCopyContentModalService: DotCopyContentModalService;
 
     const triggerIframeCustomEvent = (
         customEvent = {
@@ -51,6 +56,9 @@ describe('DotEmaDialogComponent', () => {
         providers: [
             DotEmaDialogStore,
             HttpClient,
+            DialogService,
+            DotCopyContentService,
+            DotCopyContentModalService,
             {
                 provide: DotActionUrlService,
                 useValue: {
@@ -76,6 +84,8 @@ describe('DotEmaDialogComponent', () => {
         spectator = createComponent();
         component = spectator.component;
         storeSpy = spectator.inject(DotEmaDialogStore, true);
+        dotCopyContentService = spectator.inject(DotCopyContentService, true);
+        dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
     });
 
     describe('DOM', () => {
@@ -199,6 +209,76 @@ describe('DotEmaDialogComponent', () => {
             component.resetDialog();
 
             expect(resetSpy).toHaveBeenCalled();
+        });
+
+        describe('Copy content', () => {
+            const treeNodeMock = {
+                containerId: '123',
+                contentId: '123',
+                pageId: '123',
+                relationType: 'test',
+                treeOrder: '1',
+                variantId: 'test',
+                personalization: 'dot:default'
+            };
+            const newContentlet = {
+                ...dotcmsContentletMock,
+                inode: '123',
+                title: 'test'
+            };
+
+            let modalSpy: jest.SpyInstance<Observable<ModelCopyContentResponse>>;
+            let copySpy: jest.SpyInstance<Observable<DotCMSContentlet>>;
+            let editContentletSpy: jest.SpyInstance;
+
+            const PAYLOAD_MOCK_WITH_TREE_NODE = {
+                ...PAYLOAD_MOCK,
+                isInMultiplePages: true,
+                treeNode: treeNodeMock
+            };
+
+            beforeEach(() => {
+                editContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
+                modalSpy = jest.spyOn(dotCopyContentModalService, 'open');
+                copySpy = jest
+                    .spyOn(dotCopyContentService, 'copyInPage')
+                    .mockReturnValue(of(newContentlet));
+            });
+
+            it('should copy and trigger editContentlet in the store', () => {
+                modalSpy.mockReturnValue(
+                    of({
+                        shouldCopy: true
+                    })
+                );
+                component.editContentlet(PAYLOAD_MOCK_WITH_TREE_NODE);
+
+                expect(editContentletSpy).toHaveBeenCalledWith({
+                    inode: newContentlet.inode,
+                    title: newContentlet.title
+                });
+
+                expect(modalSpy).toHaveBeenCalled();
+                expect(copySpy).toHaveBeenCalledWith(treeNodeMock);
+            });
+
+            it('should not copy and trigger editContentlet in the store', () => {
+                modalSpy.mockReturnValue(
+                    of({
+                        shouldCopy: false
+                    })
+                );
+
+                component.editContentlet(PAYLOAD_MOCK_WITH_TREE_NODE);
+
+                expect(editContentletSpy).toHaveBeenCalledWith({
+                    inode: PAYLOAD_MOCK_WITH_TREE_NODE.contentlet.inode,
+                    title: PAYLOAD_MOCK_WITH_TREE_NODE.contentlet.title
+                });
+
+                expect(modalSpy).toHaveBeenCalled();
+                expect(copySpy).not.toHaveBeenCalledWith();
+            });
         });
     });
 });

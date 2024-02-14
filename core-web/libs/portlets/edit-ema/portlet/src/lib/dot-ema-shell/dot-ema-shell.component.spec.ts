@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
 import {
@@ -51,6 +52,7 @@ describe('DotEmaShellComponent', () => {
             ConfirmationService,
             DotActionUrlService,
             DotMessageService,
+            DialogService,
             {
                 provide: DotLanguagesService,
                 useValue: new DotLanguagesServiceMock()

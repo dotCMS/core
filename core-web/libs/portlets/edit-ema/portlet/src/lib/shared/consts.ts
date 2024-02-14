@@ -49,7 +49,8 @@ export const PAYLOAD_MOCK: ActionPayload = {
         contentletsId: ['19c5ecc0c59b17b5780acd624ad52444', '2e5d54e6-7ea3-4d72-8577-b8731b206ca0'],
         identifier: '//demo.dotcms.com/application/containers/banner/',
         maxContentlets: 25,
-        uuid: '1'
+        uuid: '1',
+        variantId: '1'
     },
     contentlet: {
         identifier: '19c5ecc0c59b17b5780acd624ad52444',
