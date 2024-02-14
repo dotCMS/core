@@ -32,6 +32,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ env.BUILD_ID }}
+      - uses: ./.github/actions/cleanup-runner
       - name: Set Common Vars
         run: |
           BUILD_HASH=$(git log -1 --pretty=%h)

@@ -15,6 +15,8 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
       -
+        uses: ./.github/actions/cleanup-runner
+      -
         name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
