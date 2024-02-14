@@ -50,9 +50,10 @@ import {
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
-import { ActionPayload, HeadlessData, SetUrlPayload } from '../shared/models';
+import { ActionPayload, PositionPayload, HeadlessData, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
 interface BasePayload {
@@ -131,19 +132,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const headlessData = this.headlessData();
         const { containers, languageId, id, personaTag } = this.pageData();
-        const contentletsId = containers.find((container) => {
+        const { contentletsId } = containers.find((container) => {
             return (
                 container.identifier === headlessData.container.identifier &&
                 container.uuid === headlessData.container.uuid
             );
-        }).contentletsId;
+        });
 
         return {
+            ...headlessData,
             language_id: languageId.toString(),
             pageId: id,
             pageContainers: containers,
             personaTag,
-            ...headlessData,
             container: {
                 ...headlessData.container,
                 contentletsId
@@ -190,10 +191,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {{ event: CustomEvent; payload: ActionPayload }} { event, payload }
      * @memberof EditEmaEditorComponent
      */
-    onCustomEvent({ event, payload }: { event: CustomEvent; payload: HeadlessData }) {
-        this.headlessData.set(payload);
-
-        this.handleNgEvent({ event, payload: this.actionPayload() })?.();
+    onCustomEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
+        this.handleNgEvent({ event, payload: payload })?.();
     }
 
     /**
@@ -350,11 +349,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     /**
      * When the user drop a palette item in the dropzone
      *
-     * @param {ActionPayload} event
+     * @param {PositionPayload} positionPayload
      * @return {*}  {void}
      * @memberof EditEmaEditorComponent
      */
-    onPlaceItem(payload: ActionPayload): void {
+    onPlaceItem(positionPayload: PositionPayload): void {
+        this.headlessData.set(positionPayload);
+
+        const payload = this.actionPayload();
+
         if (this.draggedPayload.type === 'contentlet') {
             const { pageContainers, didInsert } = insertContentletInContainer({
                 ...payload,
@@ -370,6 +373,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.store.savePage({
                 pageContainers,
                 pageId: payload.pageId,
+                params: this.queryParams as DotPageApiParams,
                 whenSaved: () => {
                     this.reloadIframe();
                     this.draggedPayload = undefined;
@@ -404,6 +408,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.savePage({
                     pageContainers: newPageContainers,
                     pageId: payload.pageId,
+                    params: this.queryParams as DotPageApiParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
                         this.reloadIframe();
@@ -436,6 +441,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.savePage({
                     pageContainers,
                     pageId: payload.pageId,
+                    params: this.queryParams as DotPageApiParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
                         this.reloadIframe();
@@ -460,6 +466,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.store.savePage({
                         pageContainers,
                         pageId: payload.pageId,
+                        params: this.queryParams as DotPageApiParams,
                         whenSaved: () => {
                             this.dialog.resetDialog();
                             this.reloadIframe();
@@ -482,6 +489,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.saveFormToPage({
                     payload,
                     formId: identifier,
+                    params: this.queryParams as DotPageApiParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
                         this.reloadIframe();

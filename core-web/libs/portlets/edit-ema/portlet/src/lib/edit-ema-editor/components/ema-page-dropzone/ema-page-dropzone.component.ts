@@ -12,7 +12,12 @@ import {
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
-import { ActionPayload, ContainerPayload, HeadlessData } from '../../../shared/models';
+import {
+    ActionPayload,
+    ContainerPayload,
+    PositionPayload,
+    HeadlessData
+} from '../../../shared/models';
 
 export interface ContentletArea {
     x: number;
@@ -71,7 +76,7 @@ export interface Row {
 export class EmaPageDropzoneComponent {
     @Input() rows: Row[] = [];
     @Input() item: EmaDragItem;
-    @Output() place = new EventEmitter<ActionPayload>();
+    @Output() place = new EventEmitter<PositionPayload>();
 
     private readonly dotMessageService: DotMessageService = inject(DotMessageService);
 
@@ -110,10 +115,10 @@ export class EmaPageDropzoneComponent {
      */
     onDrop(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
-        const data = JSON.parse(target.dataset.payload);
+        const data: HeadlessData = JSON.parse(target.dataset.payload);
         const isTop = this.isTop(event);
 
-        const payload = <ActionPayload>{
+        const payload = <PositionPayload>{
             ...data,
             position: isTop ? 'before' : 'after'
         };
