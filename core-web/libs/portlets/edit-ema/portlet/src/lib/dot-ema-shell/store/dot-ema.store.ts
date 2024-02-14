@@ -183,21 +183,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             this.updateEditorState(EDITOR_STATE.ERROR);
                         }
                     ),
-                    switchMap(() =>
-                        this.dotPageApiService.get(payload.params).pipe(
-                            tapResponse(
-                                (pageData: DotPageApiResponse) => {
-                                    this.patchState((state) => ({
-                                        ...state,
-                                        editor: pageData
-                                    }));
-                                },
-                                (e) => {
-                                    console.error(e);
-                                }
-                            )
-                        )
-                    )
+                    switchMap(() => this.syncEditorData(payload.params))
                 );
             })
         );
@@ -255,7 +241,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             tapResponse(
                                 () => {
                                     whenSaved?.();
-                                    this.updateEditorState(EDITOR_STATE.LOADED);
                                 },
                                 (e) => {
                                     console.error(e);
@@ -263,21 +248,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     this.updateEditorState(EDITOR_STATE.ERROR);
                                 }
                             ),
-                            switchMap(() =>
-                                this.dotPageApiService.get(params).pipe(
-                                    tapResponse(
-                                        (pageData: DotPageApiResponse) => {
-                                            this.patchState((state) => ({
-                                                ...state,
-                                                editor: pageData
-                                            }));
-                                        },
-                                        (e) => {
-                                            console.error(e);
-                                        }
-                                    )
-                                )
-                            )
+                            switchMap(() => this.syncEditorData(params))
                         );
                 })
             );
@@ -315,6 +286,30 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         ...state,
         editorState
     }));
+
+    /**
+     * Update the page containers
+     *
+     * @private
+     * @param {DotPageApiParams} params
+     * @memberof EditEmaStore
+     */
+    private syncEditorData = (params: DotPageApiParams) => {
+        return this.dotPageApiService.get(params).pipe(
+            tapResponse(
+                (pageData: DotPageApiResponse) => {
+                    this.patchState((state) => ({
+                        ...state,
+                        editor: pageData
+                    }));
+                    this.updateEditorState(EDITOR_STATE.LOADED);
+                },
+                (e) => {
+                    console.error(e);
+                }
+            )
+        );
+    };
 
     /**
      * Create the url to add a page to favorites
