@@ -4,13 +4,12 @@ import static com.dotcms.common.AssetsUtils.isMarkedForDelete;
 import static com.dotcms.common.AssetsUtils.isMarkedForPush;
 import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 
-import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.data.Pusher;
 import com.dotcms.api.client.files.traversal.exception.SiteCreationException;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.command.PushContext;
-import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.site.SiteView;
@@ -19,43 +18,80 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.function.Function;
+import javax.enterprise.context.Dependent;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.WebApplicationException;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
  * Represents a task that pushes the contents of a tree node to a remote server.
  */
-public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
+@Dependent
+public class PushTreeNodeTask extends TaskProcessor {
 
-    private final PushTraverseParams params;
+    private final ManagedExecutor executor;
+
+    private final PushContext pushContext;
+
     private final Pusher pusher;
+
     private final Logger logger;
-    private final transient ConsoleProgressBar progressBar;
+
+    private PushTreeNodeTaskParams traversalTaskParams;
 
     /**
      * Constructs a new PushTreeNodeTask with the specified parameters.
-     * @param traverseParams  the parameters for the task
+     *
+     * @param logger               logger for logging messages
+     * @param executor             the executor for parallel execution of pushing tasks
+     * @param pushContext          the push shared Context
+     * @param pusher               the pusher to use for pushing the contents of the tree node
      */
-    public PushTreeNodeTask(final PushTraverseParams traverseParams) {
-        this.params = traverseParams;
-        this.pusher = traverseParams.pusher();
-        this.logger = traverseParams.logger();
-        this.progressBar = traverseParams.progressBar();
+    public PushTreeNodeTask(final Logger logger,
+            final ManagedExecutor executor,
+            final PushContext pushContext,
+            final Pusher pusher) {
+        this.executor = executor;
+        this.pushContext = pushContext;
+        this.pusher = pusher;
+        this.logger = logger;
     }
 
-    @Override
-    protected List<Exception> compute() {
-        var pushContext = params.pushContext();
+    /**
+     * Sets the traversal parameters for the PushTreeNodeTask. This method provides a way to inject
+     * necessary configuration after the instance of PushTreeNodeTask has been created by the
+     * container, which is a common pattern when working with frameworks like Quarkus that manage
+     * object creation and dependency injection in a specific manner.
+     * <p>
+     * This method is used as an alternative to constructor injection, which is not feasible due to
+     * the limitations or constraints of the framework's dependency injection mechanism. It allows
+     * for the explicit setting of traversal parameters after the object's instantiation, ensuring
+     * that the executor is properly configured before use.
+     *
+     * @param params The traversal parameters
+     */
+    public void setTraversalParams(final PushTreeNodeTaskParams params) {
+        this.traversalTaskParams = params;
+    }
+
+    public List<Exception> compute() {
+
+        CompletionService<List<Exception>> completionService =
+                new ExecutorCompletionService<>(executor);
+
         var errors = new ArrayList<Exception>();
-        final TreeNode rootNode = params.rootNode();
+        final TreeNode rootNode = traversalTaskParams.rootNode();
+
         // Handle the folder for the current node
         try {
             processFolder(rootNode.folder(), pushContext);
         } catch (Exception e) {
 
-            if (params.failFast()) {
+            if (traversalTaskParams.failFast()) {
                 throw e;
             } else {
                 errors.add(e);
@@ -72,9 +108,9 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
             try {
                 processAsset(rootNode.folder(), asset, pushContext);
             } catch (Exception e) {
-                if (params.failFast()) {
+                if (traversalTaskParams.failFast()) {
                     //This adds a line so when the exception gets written to the console it looks consistent
-                    progressBar.done();
+                    traversalTaskParams.progressBar().done();
                     throw e;
                 } else {
                     errors.add(e);
@@ -82,37 +118,46 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
             }
         }
 
-        handleChildren(errors, rootNode);
+        handleChildren(errors, rootNode, completionService);
 
         return errors;
     }
 
     /**
      * Recursively build the file system tree for the children nodes
-     * @param errors the list of errors to add to
+     *
+     * @param errors   the list of errors to add to
      * @param rootNode the root node to process
      */
-    private void handleChildren(ArrayList<Exception> errors, TreeNode rootNode) {
+    private void handleChildren(ArrayList<Exception> errors, TreeNode rootNode,
+            CompletionService<List<Exception>> completionService) {
 
         if (rootNode.children() != null && !rootNode.children().isEmpty()) {
 
-            List<PushTreeNodeTask> tasks = new ArrayList<>();
+            var toProcessCount = 0;
 
             for (TreeNode child : rootNode.children()) {
 
                 var task = new PushTreeNodeTask(
-                        PushTraverseParams.builder()
-                        .from(params).rootNode(child).build()
+                        logger,
+                        executor,
+                        pushContext,
+                        pusher
+                );
+                task.setTraversalParams(PushTreeNodeTaskParams.builder()
+                        .from(traversalTaskParams).rootNode(child).build()
                 );
 
-                task.fork();
-                tasks.add(task);
+                completionService.submit(task::compute);
+                toProcessCount++;
             }
 
-            for (var task : tasks) {
-                var taskErrors = task.join();
-                errors.addAll(taskErrors);
-            }
+            // Wait for all tasks to complete and gather the results
+            Function<List<Exception>, Void> processFunction = taskResult -> {
+                errors.addAll(taskResult);
+                return null;
+            };
+            processTasks(toProcessCount, completionService, processFunction);
         }
     }
 
@@ -123,33 +168,34 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
      */
     private void processFolder(final FolderView folder, PushContext pushContext) {
 
-            if (isMarkedForDelete(folder)) {// Delete
-                doDeleteFolder(folder, pushContext);
-            } else if (isMarkedForPush(folder)) {// Push
-                doPushFolder(folder, pushContext);
-            }
+        if (isMarkedForDelete(folder)) {// Delete
+            doDeleteFolder(folder, pushContext);
+        } else if (isMarkedForPush(folder)) {// Push
+            doPushFolder(folder, pushContext);
+        }
 
     }
 
     /**
      * Processes the asset associated with the specified AssetView.
-     * @param folder the folder associated with the asset
+     *
+     * @param folder      the folder associated with the asset
      * @param pushContext the push context
      */
-    private void doPushFolder(FolderView folder,  PushContext pushContext) {
+    private void doPushFolder(FolderView folder, PushContext pushContext) {
         var isSite = Objects.equals(folder.path(), "/") && Objects.equals(folder.name(), "/");
         try {
             if (isSite) {
-                final String status = params.localPaths().status();
+                final String status = traversalTaskParams.localPaths().status();
                 // And we need to create the non-existing site
                 final Optional<SiteView> optional = pushContext.execPush(folder.host(),
                         () -> Optional.of(
                                 pusher.pushSite(folder.host(), status))
                 );
-                if (optional.isPresent()){
-                   logger.debug(String.format("Site [%s] created", folder.host()));
+                if (optional.isPresent()) {
+                    logger.debug(String.format("Site [%s] created", folder.host()));
                 } else {
-                   logger.debug(String.format("Site [%s] already pushed", folder.host()));
+                    logger.debug(String.format("Site [%s] already pushed", folder.host()));
                 }
             } else {
 
@@ -164,11 +210,11 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                             }
                             return Optional.empty();
                         });
-               if (optional.isPresent()) {
-                   logger.debug(String.format("Folder [%s] created", folder.path()));
-               } else {
-                   logger.debug(String.format("Folder [%s] already exist", folder.path()));
-               }
+                if (optional.isPresent()) {
+                    logger.debug(String.format("Folder [%s] created", folder.path()));
+                } else {
+                    logger.debug(String.format("Folder [%s] already exist", folder.path()));
+                }
             }
         } catch (Exception e) {
             var message = String.format("Error creating %s [%s]",
@@ -181,7 +227,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                 var alreadyExist = checkIfSiteAlreadyExist(e);
 
                 // If we are trying to create a site that already exist we could ignore the error on retries
-                if (!params.isRetry() || !alreadyExist) {
+                if (!traversalTaskParams.isRetry() || !alreadyExist) {
                     logger.error(message, e);
                     throw new SiteCreationException(message, e);
                 }
@@ -190,25 +236,27 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                 var alreadyExist = checkIfAssetOrFolderAlreadyExist(e);
 
                 // If we are trying to create a folder that already exist we could ignore the error on retries
-                if (!params.isRetry() || !alreadyExist) {
+                if (!traversalTaskParams.isRetry() || !alreadyExist) {
                     logger.error(message, e);
                     throw new TraversalTaskException(message, e);
                 }
             }
         } finally {
             // Folder processed, updating the progress bar
-            progressBar.incrementStep();
+            traversalTaskParams.progressBar().incrementStep();
         }
     }
 
     /**
      * Performs the deletion of the specified folder.
-     * @param folder the folder to check
+     *
+     * @param folder      the folder to check
      * @param pushContext the push context
      */
     private void doDeleteFolder(FolderView folder, PushContext pushContext) {
         try {
-            final Optional<Boolean> delete = pushContext.execDelete(String.format("%s/%s",folder.host(),folder.path()),
+            final Optional<Boolean> delete = pushContext.execDelete(
+                    String.format("%s/%s", folder.host(), folder.path()),
                     () -> Optional.of(pusher.deleteFolder(folder.host(), folder.path())));
             if (delete.isPresent()) {
                 logger.debug(String.format("Folder [%s] deleted", folder.path()));
@@ -219,7 +267,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         } catch (Exception e) {
 
             // If we are trying to delete a folder that does not exist anymore we could ignore the error on retries
-            if (!params.isRetry() || !(e instanceof NotFoundException)) {
+            if (!traversalTaskParams.isRetry() || !(e instanceof NotFoundException)) {
 
                 var message = String.format("Error deleting folder [%s]", folder.path());
                 logger.error(message, e);
@@ -228,7 +276,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
         } finally {
             // Folder processed, updating the progress bar
-            this.progressBar.incrementStep();
+            traversalTaskParams.progressBar().incrementStep();
         }
     }
 
@@ -238,7 +286,8 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
      * @param folder the folder containing the asset
      * @param asset  the asset to process
      */
-    private void processAsset(final FolderView folder, final AssetView asset, final PushContext pushContext) {
+    private void processAsset(final FolderView folder, final AssetView asset,
+            final PushContext pushContext) {
         if (isMarkedForDelete(asset)) {
             doDeleteAsset(folder, asset, pushContext);
         } else if (isMarkedForPush(asset)) {
@@ -248,8 +297,9 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
     /**
      * Performs a push operation on the specified asset.
-     * @param folder the folder containing the asset
-     * @param asset the asset to push
+     *
+     * @param folder      the folder containing the asset
+     * @param asset       the asset to push
      * @param pushContext the push context
      */
     private void doPushAsset(FolderView folder, AssetView asset, PushContext pushContext) {
@@ -260,19 +310,20 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                     pushAssetKey,
                     () -> {
                         // Pushing the asset (and creating the folder if needed
-                        final AssetView assetView = pusher.push(params.workspacePath(),
-                                params.localPaths().status(),
-                                params.localPaths().language(),
-                                params.localPaths().site(),
+                        final AssetView assetView = pusher.push(traversalTaskParams.workspacePath(),
+                                traversalTaskParams.localPaths().status(),
+                                traversalTaskParams.localPaths().language(),
+                                traversalTaskParams.localPaths().site(),
                                 folder.path(), asset.name()
                         );
                         return Optional.of(assetView);
                     });
 
-            if(optional.isPresent()){
-               logger.debug(String.format("Asset [%s%s] pushed", folder.path(), asset.name()));
+            if (optional.isPresent()) {
+                logger.debug(String.format("Asset [%s%s] pushed", folder.path(), asset.name()));
             } else {
-                logger.debug(String.format("Asset [%s%s] already pushed", folder.path(), asset.name()));
+                logger.debug(
+                        String.format("Asset [%s%s] already pushed", folder.path(), asset.name()));
             }
         } catch (Exception e) {
 
@@ -280,30 +331,34 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
             var alreadyExist = checkIfAssetOrFolderAlreadyExist(e);
 
             // If we are trying to push an asset that already exist we could ignore the error on retries
-            if (!params.isRetry() || !alreadyExist) {
-                var message = String.format("Error pushing asset [%s%s]", folder.path(), asset.name());
+            if (!traversalTaskParams.isRetry() || !alreadyExist) {
+                var message = String.format("Error pushing asset [%s%s]", folder.path(),
+                        asset.name());
                 logger.error(message, e);
                 throw new TraversalTaskException(message, e);
             }
 
         } finally {
             // Asset processed, updating the progress bar
-            this.progressBar.incrementStep();
+            traversalTaskParams.progressBar().incrementStep();
         }
     }
 
     /**
      * Performs a delete operation on the specified asset.
-     * @param folder the folder containing the asset
-     * @param asset the asset to delete
+     *
+     * @param folder      the folder containing the asset
+     * @param asset       the asset to delete
      * @param pushContext the push context
      */
-    private void doDeleteAsset(final FolderView folder, final AssetView asset, final PushContext pushContext) {
+    private void doDeleteAsset(final FolderView folder, final AssetView asset,
+            final PushContext pushContext) {
         try {
             // Check if we already deleted the folder
             if (isMarkedForDelete(folder)) {
                 // Folder already deleted, we don't need to delete the asset
-                logger.debug(String.format("Folder [%s] already deleted, ignoring deletion of [%s] asset",
+                logger.debug(String.format(
+                        "Folder [%s] already deleted, ignoring deletion of [%s] asset",
                         folder.path(), asset.name()));
             } else {
                 final Optional<Boolean> optional = pushContext.execArchive(
@@ -317,24 +372,27 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                             return Optional.empty();
                         });
                 if (optional.isPresent()) {
-                    logger.debug(String.format("Asset [%s%s] archived", folder.path(), asset.name()));
+                    logger.debug(
+                            String.format("Asset [%s%s] archived", folder.path(), asset.name()));
                 } else {
-                    logger.debug(String.format("Asset [%s%s] already archived", folder.path(), asset.name()));
+                    logger.debug(String.format("Asset [%s%s] already archived", folder.path(),
+                            asset.name()));
                 }
             }
         } catch (Exception e) {
 
             // If we are trying to delete an asset that does not exist anymore we could ignore the error on retries
-            if (!params.isRetry() || !(e instanceof NotFoundException)) {
+            if (!traversalTaskParams.isRetry() || !(e instanceof NotFoundException)) {
 
-                var message = String.format("Error deleting asset [%s%s]", folder.path(), asset.name());
+                var message = String.format("Error deleting asset [%s%s]", folder.path(),
+                        asset.name());
                 logger.error(message, e);
                 throw new TraversalTaskException(message, e);
             }
 
         } finally {
             // Asset processed, updating the progress bar
-            this.progressBar.incrementStep();
+            traversalTaskParams.progressBar().incrementStep();
         }
     }
 
@@ -353,7 +411,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         //  order, live first, working second.
         //  If already pushed and the order is respected, we don't need to push the same file again.
         return String.format("%s/%s/%s/%s/%s",
-                params.localPaths().language(),
+                traversalTaskParams.localPaths().language(),
                 folder.host(),
                 folder.path(),
                 asset.name(),
