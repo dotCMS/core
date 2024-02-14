@@ -32,7 +32,7 @@ export interface EditEmaState {
 function getFormId(dotPageApiService: DotPageApiService) {
     return (source: Observable<unknown>) =>
         source.pipe(
-            switchMap(({ payload, formId, whenSaved }) => {
+            switchMap(({ payload, formId, whenSaved, params }) => {
                 return dotPageApiService
                     .getFormIndetifier(payload.container.identifier, formId)
                     .pipe(
@@ -42,7 +42,8 @@ function getFormId(dotPageApiService: DotPageApiService) {
                                     ...payload,
                                     newContentletId: newFormId
                                 },
-                                whenSaved
+                                whenSaved,
+                                params
                             };
                         })
                     );
@@ -181,6 +182,21 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             payload.whenSaved?.();
                             this.updateEditorState(EDITOR_STATE.ERROR);
                         }
+                    ),
+                    switchMap(() =>
+                        this.dotPageApiService.get(payload.params).pipe(
+                            tapResponse(
+                                (pageData: DotPageApiResponse) => {
+                                    this.patchState((state) => ({
+                                        ...state,
+                                        editor: pageData
+                                    }));
+                                },
+                                (e) => {
+                                    console.error(e);
+                                }
+                            )
+                        )
                     )
                 );
             })
@@ -198,6 +214,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             payload$: Observable<{
                 payload: ActionPayload;
                 formId: string;
+                params: DotPageApiParams;
                 whenSaved?: () => void;
             }>
         ) => {
@@ -206,7 +223,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     this.updateEditorState(EDITOR_STATE.LOADING);
                 }),
                 getFormId(this.dotPageApiService),
-                switchMap(({ whenSaved, payload }) => {
+                switchMap(({ whenSaved, payload, params }) => {
                     const { pageContainers, didInsert } = insertContentletInContainer(payload);
 
                     // This should not be called here but since here is where we get the form contentlet
@@ -231,7 +248,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     return this.dotPageApiService
                         .save({
                             pageContainers,
-                            pageId: payload.pageId
+                            pageId: payload.pageId,
+                            params
                         })
                         .pipe(
                             tapResponse(
@@ -244,6 +262,21 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     whenSaved?.();
                                     this.updateEditorState(EDITOR_STATE.ERROR);
                                 }
+                            ),
+                            switchMap(() =>
+                                this.dotPageApiService.get(params).pipe(
+                                    tapResponse(
+                                        (pageData: DotPageApiResponse) => {
+                                            this.patchState((state) => ({
+                                                ...state,
+                                                editor: pageData
+                                            }));
+                                        },
+                                        (e) => {
+                                            console.error(e);
+                                        }
+                                    )
+                                )
                             )
                         );
                 })
