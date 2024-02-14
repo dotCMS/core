@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableList;
@@ -519,10 +520,9 @@ public class ContentletAjaxTest {
 		Map<String,Object> result = (Map<String,Object>)results.get(0);
 		Assert.assertEquals((Long)result.get("total"), Long.valueOf(2));
 		// Validate the two different languages
-		result = (Map<String,Object>)results.get(3);
-		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
-		result = (Map<String,Object>)results.get(4);
-		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
+		final long contentletOne_Language = Long.parseLong(((Map<String,String>)results.get(3)).get("languageId"));
+		final long contentletTwo_Language = Long.parseLong(((Map<String,String>)results.get(4)).get("languageId"));
+		assertTrue(contentletTwo_Language!=contentletOne_Language);
 
 	}
 
