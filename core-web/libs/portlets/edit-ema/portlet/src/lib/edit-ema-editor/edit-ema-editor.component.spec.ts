@@ -1582,6 +1582,29 @@ describe('EditEmaEditorComponent', () => {
                 expect(routerSpy).not.toHaveBeenCalled();
             });
         });
+
+        describe('Dialog loading', () => {
+            let spy: jest.SpyInstance;
+            let dialog: DebugElement;
+
+            beforeEach(() => {
+                spy = jest.spyOn(store, 'updateEditorState');
+                spectator.detectChanges();
+                dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
+            });
+
+            it('should update to Loading state', () => {
+                triggerCustomEvent(dialog, 'loading', true);
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+            });
+
+            it('should update to Loaded state', () => {
+                triggerCustomEvent(dialog, 'loading', false);
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+            });
+        });
     });
 
     describe('without edit permission', () => {
