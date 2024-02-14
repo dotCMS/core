@@ -2,10 +2,13 @@ package com.dotcms.api.client.files.traversal;
 
 import static com.dotcms.common.AssetsUtils.parseLocalPath;
 
+import com.dotcms.api.client.FileHashCalculatorService;
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
+import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTaskParams;
 import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
+import com.dotcms.api.client.files.traversal.task.PullTreeNodeTaskParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.AssetsUtils;
@@ -14,11 +17,11 @@ import io.quarkus.arc.DefaultBean;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.concurrent.ForkJoinPool;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
@@ -38,6 +41,12 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
     @Inject
     protected Downloader downloader;
+
+    @Inject
+    ManagedExecutor executor;
+
+    @Inject
+    FileHashCalculatorService fileHashCalculatorService;
 
     /**
      * Traverses the file system directory at the specified path and builds a hierarchical tree
@@ -84,16 +93,25 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
             logger.debug(String.format("Language [%s] doesn't exist on remote server.", localPath.language()));
         }
 
-        var forkJoinPool = ForkJoinPool.commonPool();
+        var task = new LocalFolderTraversalTask(
+                logger,
+                executor,
+                retriever,
+                fileHashCalculatorService
+        );
 
-        var task = new LocalFolderTraversalTask(LocalTraverseParams.builder()
-                .from(params)
-                .logger(logger)
-                .retriever(retriever)
+        task.setTraversalParams(LocalFolderTraversalTaskParams.builder()
                 .siteExists(siteExists)
+                .sourcePath(params.sourcePath())
+                .workspace(params.workspace())
+                .removeAssets(params.removeAssets())
+                .removeFolders(params.removeFolders())
+                .ignoreEmptyFolders(params.ignoreEmptyFolders())
+                .failFast(params.failFast())
                 .build()
         );
-        var result = forkJoinPool.invoke(task);
+
+        var result = task.compute();
         return TraverseResult.builder()
                 .exceptions(result.getLeft())
                 .localPaths(localPath)
@@ -125,18 +143,25 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 rootNode.folder().host());
 
         // ---
-        var forkJoinPool = ForkJoinPool.commonPool();
         var task = new PullTreeNodeTask(
                 logger,
+                executor,
                 downloader,
-                filteredRoot,
-                rootPath.toString(),
-                overwrite,
-                generateEmptyFolders,
-                failFast,
-                language,
-                progressBar);
-        return forkJoinPool.invoke(task);
+                fileHashCalculatorService
+        );
+
+        task.setTraversalParams(PullTreeNodeTaskParams.builder()
+                .rootNode(filteredRoot)
+                .destination(rootPath.toString())
+                .overwrite(overwrite)
+                .generateEmptyFolders(generateEmptyFolders)
+                .failFast(failFast)
+                .language(language)
+                .progressBar(progressBar)
+                .build()
+        );
+
+        return task.compute();
     }
 
 }

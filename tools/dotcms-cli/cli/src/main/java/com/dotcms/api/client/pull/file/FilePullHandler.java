@@ -23,6 +23,7 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
@@ -41,6 +42,9 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
 
     @Inject
     Puller puller;
+
+    @Inject
+    ManagedExecutor executor;
 
     @Override
     public String title() {
@@ -158,7 +162,7 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
         // ConsoleProgressBar instance to handle the download progress bar
         ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
 
-        CompletableFuture<List<Exception>> treeBuilderFuture = CompletableFuture.supplyAsync(
+        CompletableFuture<List<Exception>> treeBuilderFuture = executor.supplyAsync(
                 () -> puller.pull(
                         tree,
                         treeNodeInfo,
@@ -171,7 +175,7 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
 
         progressBar.setFuture(treeBuilderFuture);
 
-        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+        CompletableFuture<Void> animationFuture = executor.runAsync(
                 progressBar
         );
 

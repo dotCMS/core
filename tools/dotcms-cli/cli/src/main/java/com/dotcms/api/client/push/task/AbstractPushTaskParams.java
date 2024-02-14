@@ -1,6 +1,5 @@
 package com.dotcms.api.client.push.task;
 
-import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.push.PushHandler;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.model.annotation.ValueType;
@@ -9,7 +8,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import org.immutables.value.Value;
-import org.jboss.logging.Logger;
 
 /**
  * Interface representing the parameters for the PushTask.
@@ -33,13 +31,6 @@ public interface AbstractPushTaskParams<T> extends Serializable {
      * @return the push handler.
      */
     PushHandler<T> pushHandler();
-
-    /**
-     * Retrieves the mapper service used to map the content to the output format.
-     *
-     * @return the mapper service.
-     */
-    MapperService mapperService();
 
     /**
      * Retrieves the custom push options.
@@ -73,12 +64,5 @@ public interface AbstractPushTaskParams<T> extends Serializable {
      * @return the progress bar.
      */
     ConsoleProgressBar progressBar();
-
-    /**
-     * Retrieves the logger for the pull operation.
-     *
-     * @return the logger.
-     */
-    Logger logger();
 
 }
