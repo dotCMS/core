@@ -13,7 +13,8 @@ describe('utils functions', () => {
                     acceptTypes: 'test',
                     uuid: 'test',
                     maxContentlets: 1,
-                    contentletsId: ['test']
+                    contentletsId: ['test'],
+                    variantId: '1'
                 },
                 pageContainers: [
                     {
@@ -56,7 +57,8 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['test'],
                 maxContentlets: 1,
-                acceptTypes: 'test'
+                acceptTypes: 'test',
+                variantId: '1'
             };
 
             // Contentlet to delete
@@ -102,7 +104,8 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'container-uui-123',
                 contentletsId: ['contentlet-mark-123'],
-                maxContentlets: 1
+                maxContentlets: 1,
+                variantId: '1'
             };
 
             // Contentlet position mark
@@ -150,7 +153,8 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1
+                maxContentlets: 1,
+                variantId: '1'
             };
 
             // Contentlet to insert
@@ -199,7 +203,8 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1
+                maxContentlets: 1,
+                variantId: '1'
             };
 
             // Contentlet to insert
