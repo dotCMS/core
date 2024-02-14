@@ -188,6 +188,32 @@ describe('EditEmaStore', () => {
             });
         });
 
+        it("should call get method from dotPageApiService when 'save' action is dispatched", () => {
+            const dotPageApiService = spectator.inject(DotPageApiService);
+
+            dotPageApiService.save.andReturn(of({}));
+
+            spectator.service.savePage({
+                pageContainers: [],
+                pageId: '789',
+                params: {
+                    language_id: '2',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '456'
+                },
+                whenSaved: () => {
+                    /** */
+                }
+            });
+
+            // This get called twice, once for the load in the before each and once for the save
+            expect(dotPageApiService.get).toHaveBeenNthCalledWith(2, {
+                language_id: '2',
+                url: 'test-url',
+                'com.dotmarketing.persona.id': '456'
+            });
+        });
+
         it('should add form to page and save', () => {
             const payload: ActionPayload = {
                 pageId: 'page-identifier-123',
@@ -254,6 +280,64 @@ describe('EditEmaStore', () => {
                     'com.dotmarketing.persona.id': '123'
                 },
                 pageId: 'page-identifier-123'
+            });
+        });
+
+        it('should add form to page, save and perform a get afterwards', () => {
+            const payload: ActionPayload = {
+                pageId: 'page-identifier-123',
+                language_id: '1',
+                container: {
+                    identifier: 'container-identifier-123',
+                    uuid: '123',
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    contentletsId: ['existing-contentlet-123']
+                },
+                pageContainers: [
+                    {
+                        identifier: 'container-identifier-123',
+                        uuid: '123',
+                        contentletsId: ['existing-contentlet-123']
+                    }
+                ],
+                contentlet: {
+                    identifier: 'existing-contentlet-123',
+                    inode: 'existing-contentlet-inode-456',
+                    title: 'Hello World'
+                }
+            };
+            const dotPageApiService = spectator.inject(DotPageApiService);
+            dotPageApiService.save.andReturn(of({}));
+            dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
+
+            spectator.service.load({
+                clientHost: 'http://localhost:3000',
+                language_id: '1',
+                url: 'test-url',
+                'com.dotmarketing.persona.id': '123'
+            });
+            spectator.service.saveFormToPage({
+                payload,
+                formId: 'form-identifier-789',
+                params: {
+                    language_id: '2',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '456'
+                },
+                whenSaved: () => {
+                    /* */
+                }
+            });
+
+            expect(dotPageApiService.getFormIndetifier).toHaveBeenCalledWith(
+                payload.container.identifier,
+                'form-identifier-789'
+            );
+            expect(dotPageApiService.get).toHaveBeenCalledWith({
+                language_id: '2',
+                url: 'test-url',
+                'com.dotmarketing.persona.id': '456'
             });
         });
 
