@@ -77,6 +77,7 @@ import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CopyToActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
@@ -268,6 +269,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				SaveContentActionlet.class,
 				SaveContentAsDraftActionlet.class,
 				CopyActionlet.class,
+				CopyToActionlet.class,
 				MessageActionlet.class,
 				VelocityScriptActionlet.class,
 				JsScriptActionlet.class,
