@@ -30,7 +30,6 @@
         <clean.docker.volumes>true</clean.docker.volumes>
 
         <!-- Tomcat -->
-        <tomcat.version>9.0.53</tomcat.version>
         <enableDebug>true</enableDebug>
         <debugPort>8000</debugPort>
         <debugHost>localhost</debugHost>
@@ -124,25 +123,21 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>3.1.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet.jsp</groupId>
             <artifactId>javax.servlet.jsp-api</artifactId>
-            <version>2.2.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-jasper</artifactId>
-            <version>9.0.73</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.5.1</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -154,13 +149,11 @@
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>7.4.1.jre8</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>3.0.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -173,25 +166,21 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>2.28.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito2</artifactId>
-            <version>2.0.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>2.0.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.tngtech.junit.dataprovider</groupId>
             <artifactId>junit4-dataprovider</artifactId>
-            <version>2.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -264,7 +253,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${version.compiler.plugin}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
