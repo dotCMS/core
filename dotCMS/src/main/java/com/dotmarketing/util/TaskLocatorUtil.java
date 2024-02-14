@@ -373,6 +373,7 @@ public class TaskLocatorUtil {
 		ret.add(Task230701AddHashIndicesToWorkflowTables.class);
 		ret.add(Task231207AddInodeAndIdentifierLeftIndexes.class);
 		ret.add(Task231109AddPublishDateToContentletVersionInfo.class);
+		ret.add(Task240102AlterVarcharLengthOfRelationType.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

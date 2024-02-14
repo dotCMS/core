@@ -200,3 +200,4 @@ This maintenance release includes the following code fixes:
 161. https://github.com/dotCMS/core/issues/26796 : Reserved names fields should be compared in a case-insensitive manner to avoid errors and inconsistencies. #26796
 162. https://github.com/dotCMS/core/issues/26459 : Unable to copy a contentlet having Site/Folder Field #26459
 163. https://github.com/dotCMS/core/issues/22921 : Workflow API unable to archive contentlet #22921
+164. https://github.com/dotCMS/core/issues/26605 : Relation_type field too small #26605
