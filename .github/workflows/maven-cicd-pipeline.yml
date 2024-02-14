@@ -41,6 +41,7 @@ jobs:
       cli: ${{ steps.filter-rewrite.outputs.cli }}
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/cleanup-runner
       - uses: dorny/paths-filter@v2.11.1
         id: filter
         with:
@@ -294,7 +295,8 @@ jobs:
             maven_args: ""
           }
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/cleanup-runner
       - name: Set up JDK ${{ matrix.java.name }}
         uses: actions/setup-java@v3
         with:
@@ -639,7 +641,7 @@ jobs:
   clean-up:
     name: Clean up
     runs-on: ubuntu-latest
-    needs: [build-jdk11, linux-postman-tests]
+    needs: linux-postman-tests
     if: (success() || failure()) && (github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master'))
     steps:
       - uses: actions/checkout@v4
