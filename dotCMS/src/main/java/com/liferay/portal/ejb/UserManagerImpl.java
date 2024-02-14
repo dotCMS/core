@@ -306,7 +306,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             throw new PrincipalException();
         }
 
-        UserConfig userConfig = AdminConfigManagerUtil.getUserConfig(companyId);
+        UserConfig userConfig = new UserConfig();
 
         EmailConfig registrationEmail = userConfig.getRegistrationEmail();
 

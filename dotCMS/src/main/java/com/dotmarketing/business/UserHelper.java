@@ -166,12 +166,7 @@ public class UserHelper {
                 Logger.warn(this, "Error loading user with id " + userId);
             }
 
-            final UserConfig userConfig =
-                    AdminConfigManagerUtil.getUserConfig(companyId);
 
-            if (userConfig.hasReservedUserId(userId)) {
-                throw new ReservedUserIdException();
-            }
         }
 
         if (!Validator.isEmailAddress(emailAddress)) {
@@ -188,12 +183,7 @@ public class UserHelper {
             catch (NoSuchUserException nsue) {
             }
 
-            final UserConfig userConfig =
-                    AdminConfigManagerUtil.getUserConfig(companyId);
 
-            if (userConfig.hasReservedUserEmailAddress(emailAddress)) {
-                throw new ReservedUserEmailAddressException();
-            }
         }
 
         if (!autoPassword) {

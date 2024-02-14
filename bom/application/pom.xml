@@ -927,28 +927,6 @@
             </dependency>
 
 
-            <!-- Castor:  Replace with JaxB -->
-            <dependency>
-                <groupId>org.codehaus.castor</groupId>
-                <artifactId>castor-core</artifactId>
-                <version>1.4.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.castor</groupId>
-                <artifactId>castor-xml</artifactId>
-                <version>1.4.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.inject</groupId>
-                        <artifactId>javax.inject</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.springframework</groupId>
-                        <artifactId>spring-context</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
 
             <!--
              *****************************
@@ -1450,14 +1428,14 @@
                 <!-- Jasper is the Tomcat JSP Engine -->
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-jasper</artifactId>
-                <version>9.0.73</version>
+                <version>${tomcat.version}</version>
             </dependency>
 
 
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-jdbc</artifactId>
-                <version>9.0.73</version>
+                <version>${tomcat.version}</version>
             </dependency>
 
 

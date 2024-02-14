@@ -2,7 +2,6 @@ package com.dotcms.keyvalue.busines;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.integrationtestutil.content.ContentUtils;
-import com.dotcms.keyvalue.business.KeyValueAPIImpl;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
@@ -30,7 +29,7 @@ public class KeyValueAPIImplTest {
     @Test
     public void shouldReturnLiveVersion() throws DotSecurityException, DotDataException {
         final User systemUser = APILocator.systemUser();
-        final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+        final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
 
         final String key = String.format("test%d", new Date().getTime());
         final String value = "test";
@@ -56,7 +55,7 @@ public class KeyValueAPIImplTest {
     @Test
     public void shouldReturnNull() throws DotSecurityException, DotDataException {
         final User systemUser = APILocator.systemUser();
-        final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+        final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
 
         final String key = String.format("test%d", new Date().getTime());
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -70,7 +69,7 @@ public class KeyValueAPIImplTest {
     @Test
     public void shouldReturnWorkingVersion() throws DotSecurityException, DotDataException, InterruptedException {
         final User systemUser = APILocator.systemUser();
-        final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+        final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
 
         final String key = String.format("test%d", new Date().getTime());
         final String liveValue = "test";

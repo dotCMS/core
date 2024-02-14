@@ -1,12 +1,11 @@
-import { Observable, Subject, combineLatest, fromEvent } from 'rxjs';
+import { Observable, Subject, combineLatest } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
@@ -28,6 +27,7 @@ import { DotInfoPageComponent, DotNotLicenseComponent, InfoPage, SafeUrlPipe } f
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaEditorComponent } from '../edit-ema-editor/edit-ema-editor.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
@@ -65,14 +65,14 @@ import { NavigationBarItem } from '../shared/models';
         EditEmaNavigationBarComponent,
         RouterModule,
         DotPageToolsSeoComponent,
-        DialogModule,
+        DotEmaDialogComponent,
         SafeUrlPipe,
         DotInfoPageComponent,
         DotNotLicenseComponent
     ]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
-    @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
 
     private readonly activatedRoute = inject(ActivatedRoute);
@@ -110,8 +110,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
         };
     }
-
-    dialogState$ = this.store.dialogState$;
 
     // We can internally navigate, so the PageID can change
     // We need to move the logic to a function, we still need to add enterprise logic
@@ -156,10 +154,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     icon: 'pi-ellipsis-v',
                     label: 'editema.editor.navbar.properties',
                     action: () => {
-                        this.store.initActionEdit({
-                            inode: page.inode,
-                            title: page.title,
-                            type: 'shell'
+                        this.dialog.editContentlet({
+                            contentlet: {
+                                inode: page.inode,
+                                title: page.title,
+                                identifier: page.identifier
+                            }
                         });
                     }
                 }
@@ -200,39 +200,29 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.currentComponent = event;
     }
 
-    onIframeLoad() {
-        this.store.setDialogIframeLoading(false);
+    handleNgEvent({ event }: { event: CustomEvent }) {
+        if (event.detail.name === NG_CUSTOM_EVENTS.SAVE_PAGE) {
+            const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
 
-        fromEvent(
-            // The events are getting sended to the document
-            this.dialogIframe.nativeElement.contentWindow.document,
-            'ng-event'
-        )
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((event: CustomEvent) => {
-                if (event.detail.name === NG_CUSTOM_EVENTS.SAVE_PAGE) {
-                    const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
+            if (this.queryParams.url !== url) {
+                this.navigate({
+                    url
+                });
 
-                    if (this.queryParams.url !== url) {
-                        this.navigate({
-                            url
-                        });
+                return;
+            }
 
-                        return;
-                    }
+            if (this.currentComponent instanceof EditEmaEditorComponent) {
+                this.currentComponent.reloadIframe();
+            }
 
-                    if (this.currentComponent instanceof EditEmaEditorComponent) {
-                        this.currentComponent.reloadIframe();
-                    }
-
-                    this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
-                        this.store.load({
-                            clientHost: data.url,
-                            ...this.queryParams
-                        });
-                    });
-                }
+            this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
+                this.store.load({
+                    clientHost: data.url,
+                    ...this.queryParams
+                });
             });
+        }
     }
 
     private navigate(queryParams) {
