@@ -300,9 +300,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 (pageData: DotPageApiResponse) => {
                     this.patchState((state) => ({
                         ...state,
-                        editor: pageData
+                        editor: pageData,
+                        editorState: EDITOR_STATE.LOADED
                     }));
-                    this.updateEditorState(EDITOR_STATE.LOADED);
                 },
                 (e) => {
                     console.error(e);
