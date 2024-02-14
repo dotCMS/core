@@ -31,7 +31,8 @@ const payload: ActionPayload = {
         maxContentlets: 1,
         contentletsId: []
     },
-    pageId: 'test'
+    pageId: 'test',
+    position: 'after'
 };
 
 const contentletAreaMock = { x: 100, y: 100, width: 500, height: 100, payload };
@@ -245,7 +246,8 @@ describe('EmaContentletToolsComponent', () => {
                                 container: undefined,
                                 language_id: '1',
                                 pageContainers: [],
-                                pageId: '1'
+                                pageId: '1',
+                                position: 'after'
                             }
                         }
                     }

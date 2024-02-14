@@ -162,19 +162,29 @@ describe('EditEmaStore', () => {
 
             spectator.service.load({
                 clientHost: 'http://localhost:3000',
-                language_id: 'en',
+                language_id: '1',
                 url: 'test-url',
                 'com.dotmarketing.persona.id': '123'
             });
 
             spectator.service.savePage({
                 pageContainers: [],
-                pageId: '789'
+                pageId: '789',
+                params: {
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                }
             });
 
             expect(dotPageApiService.save).toHaveBeenCalledWith({
                 pageContainers: [],
-                pageId: '789'
+                pageId: '789',
+                params: {
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                }
             });
         });
 
@@ -208,15 +218,21 @@ describe('EditEmaStore', () => {
 
             spectator.service.load({
                 clientHost: 'http://localhost:3000',
-                language_id: 'en',
+                language_id: '1',
                 url: 'test-url',
                 'com.dotmarketing.persona.id': '123'
             });
             spectator.service.saveFormToPage({
                 payload,
                 formId: 'form-identifier-789',
-                // eslint-disable-next-line @typescript-eslint/no-empty-function
-                whenSaved: () => {}
+                params: {
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                },
+                whenSaved: () => {
+                    /* */
+                }
             });
 
             expect(dotPageApiService.getFormIndetifier).toHaveBeenCalledWith(
@@ -232,6 +248,11 @@ describe('EditEmaStore', () => {
                         uuid: '123'
                     }
                 ],
+                params: {
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                },
                 pageId: 'page-identifier-123'
             });
         });
@@ -270,15 +291,21 @@ describe('EditEmaStore', () => {
 
             spectator.service.load({
                 clientHost: 'http://localhost:3000',
-                language_id: 'en',
+                language_id: '1',
                 url: 'test-url',
                 'com.dotmarketing.persona.id': '123'
             });
             spectator.service.saveFormToPage({
                 payload,
                 formId: 'form-identifier-789',
-                // eslint-disable-next-line @typescript-eslint/no-empty-function
-                whenSaved: () => {}
+                params: {
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                },
+                whenSaved: () => {
+                    /** */
+                }
             });
 
             expect(addMessageSpy).toHaveBeenCalledWith({

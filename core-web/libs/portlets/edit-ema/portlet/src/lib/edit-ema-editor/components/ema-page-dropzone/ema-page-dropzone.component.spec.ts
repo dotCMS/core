@@ -26,7 +26,8 @@ const ACTION_MOCK: ActionPayload = {
             contentletsId: ['123', '455']
         }
     ],
-    pageId: '123'
+    pageId: '123',
+    position: 'after'
 };
 
 const ITEM_MOCK = {

@@ -6,7 +6,7 @@ export interface HeadlessData {
 }
 
 export interface PositionPayload extends HeadlessData {
-    position: 'before' | 'after';
+    position?: 'before' | 'after';
 }
 
 export interface ActionPayload extends PositionPayload {
@@ -43,7 +43,7 @@ export interface SetUrlPayload {
 
 export interface SavePagePayload {
     pageContainers: PageContainer[];
-    params: DotPageApiParams;
+    params?: DotPageApiParams;
     pageId: string;
     whenSaved?: () => void;
 }

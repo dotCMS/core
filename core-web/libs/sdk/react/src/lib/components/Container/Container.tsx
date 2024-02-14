@@ -63,10 +63,6 @@ export function Container({ containerRef }: ContainerProps) {
         uuid
     };
 
-    const containerPayload = {
-        container
-    };
-
     function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
         let target = e.target as HTMLElement;
 
@@ -125,9 +121,7 @@ export function Container({ containerRef }: ContainerProps) {
     });
 
     return isInsideEditor ? (
-        <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
-            {renderContentlets}
-        </div>
+        <div data-dot="container">{renderContentlets}</div>
     ) : (
         // eslint-disable-next-line react/jsx-no-useless-fragment
         <>{renderContentlets}</>

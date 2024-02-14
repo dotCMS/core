@@ -627,7 +627,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: '123',
                             inode: '456',
                             title: 'Hello World'
-                        }
+                        },
+                        position: 'after'
                     };
 
                     spectator.setInput('contentlet', {
@@ -664,7 +665,11 @@ describe('EditEmaEditorComponent', () => {
                             }
                         ],
                         pageId: '123',
-                        whenSaved: expect.any(Function)
+                        whenSaved: expect.any(Function),
+                        params: {
+                            language_id: 1,
+                            url: 'page-one'
+                        }
                     });
                 });
             });
@@ -698,7 +703,8 @@ describe('EditEmaEditorComponent', () => {
                             maxContentlets: 1,
                             contentletsId: ['123']
                         },
-                        pageId: 'test'
+                        pageId: 'test',
+                        position: 'before'
                     };
 
                     spectator.setInput('contentlet', {
@@ -801,7 +807,11 @@ describe('EditEmaEditorComponent', () => {
                     expect(savePageMock).toHaveBeenCalledWith({
                         pageContainers: PAYLOAD_MOCK.pageContainers,
                         pageId: PAYLOAD_MOCK.pageId,
-                        whenSaved: expect.any(Function)
+                        whenSaved: expect.any(Function),
+                        params: {
+                            language_id: 1,
+                            url: 'page-one'
+                        }
                     });
 
                     spectator.detectChanges();
@@ -896,7 +906,8 @@ describe('EditEmaEditorComponent', () => {
                             maxContentlets: 1,
                             contentletsId: ['123']
                         },
-                        pageId: 'test'
+                        pageId: 'test',
+                        position: 'after'
                     };
 
                     spectator.setInput('contentlet', {
@@ -949,7 +960,11 @@ describe('EditEmaEditorComponent', () => {
                             }
                         ],
                         pageId: 'test',
-                        whenSaved: expect.any(Function)
+                        whenSaved: expect.any(Function),
+                        params: {
+                            language_id: 1,
+                            url: 'page-one'
+                        }
                     });
                 });
 
@@ -977,7 +992,8 @@ describe('EditEmaEditorComponent', () => {
                             maxContentlets: 1,
                             contentletsId: ['contentlet-identifier-123']
                         },
-                        pageId: 'test'
+                        pageId: 'test',
+                        position: 'before'
                     };
 
                     spectator.setInput('contentlet', {
@@ -1051,7 +1067,8 @@ describe('EditEmaEditorComponent', () => {
                             maxContentlets: 1,
                             contentletsId: ['123']
                         },
-                        pageId: 'test'
+                        pageId: 'test',
+                        position: 'after'
                     };
 
                     spectator.setInput('contentlet', {
@@ -1104,7 +1121,11 @@ describe('EditEmaEditorComponent', () => {
                             }
                         ],
                         pageId: 'test',
-                        whenSaved: expect.any(Function)
+                        whenSaved: expect.any(Function),
+                        params: {
+                            language_id: 1,
+                            url: 'page-one'
+                        }
                     });
                 });
 
@@ -1132,7 +1153,8 @@ describe('EditEmaEditorComponent', () => {
                             maxContentlets: 1,
                             contentletsId: ['contentlet-identifier-123']
                         },
-                        pageId: 'test'
+                        pageId: 'test',
+                        position: 'before'
                     };
 
                     spectator.setInput('contentlet', {
