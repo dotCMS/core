@@ -144,6 +144,7 @@
     #dialog
     *ngIf="!currentDevice"
     (action)="onCustomEvent($event)"
+    (loading)="handleLoading($event)"
     data-testId="ema-dialog"></dot-edit-ema-dialog>
 <p-confirmDialog
     *ngIf="!currentDevice"

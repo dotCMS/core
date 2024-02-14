@@ -566,6 +566,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Update editor state to loading
+     *
+     * @protected
+     * @param {boolean} isLoading
+     * @memberof EditEmaEditorComponent
+     */
+    protected handleLoading(isLoading: boolean) {
+        this.store.updateEditorState(isLoading ? EDITOR_STATE.LOADING : EDITOR_STATE.LOADED);
+    }
+
+    /**
      * Update the query params
      *
      * @private

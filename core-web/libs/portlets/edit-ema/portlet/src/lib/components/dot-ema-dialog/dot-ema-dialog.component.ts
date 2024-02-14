@@ -52,6 +52,7 @@ export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
 
     @Output() action = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
+    @Output() loading = new EventEmitter<boolean>();
 
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly store = inject(DotEmaDialogStore);
@@ -211,7 +212,7 @@ export class DotEmaDialogComponent {
      */
     private askToCopy({ treeNode, contentlet }) {
         return this.dotCopyContentModalService
-            .open()
+            .open(() => this.loading.emit(true))
             .pipe(
                 switchMap(({ shouldCopy }) => {
                     return shouldCopy
@@ -220,6 +221,7 @@ export class DotEmaDialogComponent {
                 })
             )
             .subscribe(({ inode, title }) => {
+                this.loading.emit(false);
                 this.store.editContentlet({
                     inode,
                     title
