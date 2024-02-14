@@ -7,7 +7,7 @@
         <span class="announcements__badge" *ngIf="!item.hasBeenRead"></span>
         <span
             class="announcements__image pi"
-            [ngClass]="typesIcons[item.type] || typesIcons['important']"></span>
+            [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"></span>
         <a
             class="announcements__url"
             [href]="item.url"
