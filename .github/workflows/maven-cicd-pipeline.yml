@@ -526,7 +526,7 @@ jobs:
   clean-up:
     name: Clean up
     runs-on: ubuntu-latest
-    needs: linux-postman-tests
+    needs: [ build-jdk11, linux-postman-tests ]
     if: (success() || failure()) && (github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master'))
     steps:
       - uses: actions/checkout@v4
@@ -543,7 +543,7 @@ jobs:
   prepare-report-data:
     name: Prepare Report Data
     runs-on: ubuntu-20.04
-    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-postman-tests,sonarqube ]
+    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-postman-tests ]
     if: always()
     outputs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
