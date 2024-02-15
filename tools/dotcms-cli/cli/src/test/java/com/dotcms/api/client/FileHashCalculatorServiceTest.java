@@ -1,17 +1,19 @@
-package com.dotcms.cli.security;
+package com.dotcms.api.client;
 
-import com.dotcms.security.Utils;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import javax.inject.Inject;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class UtilsTest {
+class FileHashCalculatorServiceTest {
+
+    @Inject
+    FileHashCalculatorService fileHashCalculatorService;
 
     @Test
     void testSha256toUnixHash_withValidFile_returnsCorrectHash() throws Exception {
@@ -23,7 +25,7 @@ class UtilsTest {
             Files.write(path, "Hello, world!".getBytes());
 
             String expectedHash = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3";
-            String actualHash = Utils.Sha256toUnixHash(path);
+            String actualHash = fileHashCalculatorService.sha256toUnixHash(path);
 
             Assertions.assertEquals(expectedHash, actualHash);
         } finally {
@@ -43,13 +45,13 @@ class UtilsTest {
             originalPath = Files.createTempFile("test", ".txt");
             Files.write(originalPath, "Hello, world!".getBytes());
 
-            var originalHash = Utils.Sha256toUnixHash(originalPath);
+            var originalHash = fileHashCalculatorService.sha256toUnixHash(originalPath);
             Assertions.assertNotNull(originalHash);
 
             renamePath = Files.createTempFile("new-test", ".txt");
             Files.move(originalPath, renamePath, StandardCopyOption.REPLACE_EXISTING);
 
-            var newHash = Utils.Sha256toUnixHash(renamePath);
+            var newHash = fileHashCalculatorService.sha256toUnixHash(renamePath);
             Assertions.assertNotNull(newHash);
 
             Assertions.assertEquals(originalHash, newHash);
@@ -69,16 +71,17 @@ class UtilsTest {
         Path path = Path.of("nonexistent.txt");
 
         try {
-            Utils.Sha256toUnixHash(path);
+            fileHashCalculatorService.sha256toUnixHash(path);
             Assertions.fail("Expected NoSuchFileException to be thrown");
         } catch (Exception e) {
-            Assertions.assertTrue(e.getCause() instanceof NoSuchFileException);
+            Assertions.assertInstanceOf(NoSuchFileException.class, e.getCause());
         }
     }
 
     @Test
     void testSha256toUnixHash_withNullPath_throwsNullPointerException() {
-        Assertions.assertThrows(NullPointerException.class, () -> Utils.Sha256toUnixHash(null));
+        Assertions.assertThrows(NullPointerException.class,
+                () -> fileHashCalculatorService.sha256toUnixHash(null));
     }
 
 }

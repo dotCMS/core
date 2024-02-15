@@ -21,11 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
@@ -46,6 +46,9 @@ public class PushServiceImpl implements PushService {
 
     @Inject
     Logger logger;
+
+    @Inject
+    ManagedExecutor executor;
 
     /**
      * Analyzes and pushes the changes to a remote repository.
@@ -158,7 +161,7 @@ public class PushServiceImpl implements PushService {
             final ContentComparator<T> comparator) {
 
         CompletableFuture<List<PushAnalysisResult<T>>>
-                pushAnalysisServiceFuture = CompletableFuture.supplyAsync(
+                pushAnalysisServiceFuture = executor.supplyAsync(
                 () ->
                         // Analyzing what push operations need to be performed
                         pushAnalysisService.analyze(
@@ -175,7 +178,7 @@ public class PushServiceImpl implements PushService {
                 pushAnalysisServiceFuture
         );
 
-        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+        CompletableFuture<Void> animationFuture = executor.runAsync(
                 consoleLoadingAnimation
         );
 
@@ -237,28 +240,29 @@ public class PushServiceImpl implements PushService {
                     summary.total
             );
 
-            CompletableFuture<List<Exception>> pushFuture = CompletableFuture.supplyAsync(
+            CompletableFuture<List<Exception>> pushFuture = executor.supplyAsync(
                     () -> {
-                        var forkJoinPool = ForkJoinPool.commonPool();
 
-                        var task = new PushTask<>(
-                                PushTaskParams.<T>builder().
-                                        results(analysisResults).
-                                        allowRemove(options.allowRemove()).
-                                        disableAutoUpdate(options.disableAutoUpdate()).
-                                        failFast(options.failFast()).
-                                        customOptions(customOptions).
-                                        pushHandler(pushHandler).
-                                        mapperService(mapperService).
-                                        logger(logger).
-                                        progressBar(progressBar).
-                                        build()
+                        PushTask<T> task = new PushTask<>(
+                                logger, mapperService, executor
                         );
-                        return forkJoinPool.invoke(task);
+
+                        task.setTaskParams(PushTaskParams.<T>builder().
+                                results(analysisResults).
+                                allowRemove(options.allowRemove()).
+                                disableAutoUpdate(options.disableAutoUpdate()).
+                                failFast(options.failFast()).
+                                customOptions(customOptions).
+                                pushHandler(pushHandler).
+                                progressBar(progressBar).
+                                build()
+                        );
+
+                        return task.compute();
                     });
             progressBar.setFuture(pushFuture);
 
-            CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+            CompletableFuture<Void> animationFuture = executor.runAsync(
                     progressBar
             );
 

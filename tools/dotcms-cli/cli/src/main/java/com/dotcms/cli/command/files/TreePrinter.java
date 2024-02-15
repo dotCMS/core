@@ -10,7 +10,6 @@ import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
-
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -244,6 +243,7 @@ public class TreePrinter {
 
         if (includeAssets) {
             // Adds the names of the node's files to the string representation.
+            node.sortAssets();
             int assetCount = node.assets().size();
             for (int i = 0; i < assetCount; i++) {
 
@@ -275,6 +275,7 @@ public class TreePrinter {
         }
 
         // Recursively creates string representations for the node's children.
+        node.sortChildren();
         int childCount = node.children().size();
         for (int i = 0; i < childCount; i++) {
             TreeNode child = node.children().get(i);
