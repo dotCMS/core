@@ -303,7 +303,8 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 *
 	 * @return A Map containing the File Asset's attributes.
 	 */
-	 public Map<String, Object> getMap() {
+	@Override
+	public Map<String, Object> getMap() {
 		final Map<String,Object> map = super.getMap();
 		boolean live =  false;
 		boolean working =  false;
