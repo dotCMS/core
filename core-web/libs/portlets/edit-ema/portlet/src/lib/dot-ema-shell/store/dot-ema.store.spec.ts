@@ -379,9 +379,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
-                        iframeURL:
-                            'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012',
-
+                        iframeURL: null,
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED
@@ -400,8 +398,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
-                        iframeURL:
-                            'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012',
+                        iframeURL: null,
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED
@@ -444,7 +441,6 @@ describe('EditEmaStore', () => {
                 dotPageApiService.get.andReturn(of(mockResponse));
 
                 spectator.service.load({
-                    clientHost: 'http://localhost:3000',
                     language_id: 'en',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
@@ -490,7 +486,6 @@ describe('EditEmaStore', () => {
                 dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
 
                 spectator.service.load({
-                    clientHost: 'http://localhost:3000',
                     language_id: 'en',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
@@ -552,7 +547,6 @@ describe('EditEmaStore', () => {
                 dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
 
                 spectator.service.load({
-                    clientHost: 'http://localhost:3000',
                     language_id: 'en',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'

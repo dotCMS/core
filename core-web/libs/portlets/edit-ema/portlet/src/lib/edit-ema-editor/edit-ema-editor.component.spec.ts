@@ -52,7 +52,7 @@ import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST, PAYLOAD_MOCK } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
@@ -140,6 +140,29 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 useValue: {
                     get({ language_id }) {
                         return {
+                            3: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    rendered: '<div>hello world</div>'
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 3,
+                                        language: 'German',
+                                        countryCode: 'DE',
+                                        languageCode: 'de',
+                                        country: 'Germany'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                }
+                            }),
                             2: of({
                                 page: {
                                     title: 'hello world',
@@ -1245,13 +1268,34 @@ describe('EditEmaEditorComponent', () => {
 
                 expect(progressbar).not.toBeNull();
             });
-            it('iframe should have the correct src', () => {
+            it('iframe should have the correct src when is HEADLESS', () => {
                 spectator.detectChanges();
 
                 const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                 expect(iframe.nativeElement.src).toBe(
                     'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+            });
+
+            it('iframe should have the correct content when is VTL', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '3',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+                spectator.detectChanges();
+
+                spectator.component.onIframePageLoad({
+                    clientHost: '',
+                    editor: { page: { rendered: '<div>hello world</div>' } }
+                } as { clientHost: string; editor: DotPageApiResponse }); // I didn't find another way to mock the iframe loading
+
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                    '<div>hello world</div>'
                 );
             });
 

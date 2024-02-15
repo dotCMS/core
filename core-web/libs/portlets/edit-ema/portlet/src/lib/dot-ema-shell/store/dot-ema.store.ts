@@ -19,11 +19,7 @@ import {
 import { DEFAULT_PERSONA } from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
-import {
-    createIframeUrlByRenderedPage,
-    insertContentletInContainer,
-    sanitizeURL
-} from '../../utils';
+import { insertContentletInContainer, sanitizeURL } from '../../utils';
 
 export interface EditEmaState {
     clientHost: string;
@@ -83,9 +79,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             siteId: state.editor.site.identifier
         });
 
-        const iframeURL = state.clientHost
-            ? `${state.clientHost}/${pageURL}`
-            : createIframeUrlByRenderedPage(state.editor.page.rendered);
+        const iframeURL = state.clientHost ? `${state.clientHost}/${pageURL}` : null;
 
         return {
             clientHost: state.clientHost,

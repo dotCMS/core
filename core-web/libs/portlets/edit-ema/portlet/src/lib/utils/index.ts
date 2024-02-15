@@ -147,10 +147,3 @@ export function sanitizeURL(url: string): string {
         })
         .join('/');
 }
-
-export function createIframeUrlByRenderedPage(rendered: string) {
-    const blob = new Blob([rendered], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-
-    return url;
-}

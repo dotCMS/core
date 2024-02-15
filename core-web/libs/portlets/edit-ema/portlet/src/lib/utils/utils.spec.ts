@@ -1,9 +1,4 @@
-import {
-    createIframeUrlByRenderedPage,
-    deleteContentletFromContainer,
-    insertContentletInContainer,
-    sanitizeURL
-} from '.';
+import { deleteContentletFromContainer, insertContentletInContainer, sanitizeURL } from '.';
 
 describe('utils functions', () => {
     describe('delete contentlet from container', () => {
@@ -265,15 +260,6 @@ describe('utils functions', () => {
 
         it('should leave as it is for a nested valid url', () => {
             expect(sanitizeURL('hello-there/general-kenobi')).toEqual('hello-there/general-kenobi');
-        });
-    });
-
-    describe('createIframeUrlByRenderedPage', () => {
-        it('should create iframe URL from rendered page', () => {
-            const rendered = '<html><body><h1>Hello, World!</h1></body></html>';
-            global.URL.createObjectURL = jest.fn();
-            createIframeUrlByRenderedPage(rendered);
-            expect(global.URL.createObjectURL).toHaveBeenCalled();
         });
     });
 });
