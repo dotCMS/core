@@ -26,8 +26,8 @@ export default {
   props: {
     image: String,
     title: String,
-    salePrice: Number,
-    retailPrice: Number,
+    salePrice: String,
+    retailPrice: String,
     urlTitle: String
   },
   inject: ['data'], // Assuming 'data' is provided and contains 'viewAs' with 'language'
