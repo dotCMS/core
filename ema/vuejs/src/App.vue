@@ -67,5 +67,3 @@ export default {
     <MyFooter v-if="data?.layout.footer" />
   </div>
 </template>
-
-<style scoped></style>

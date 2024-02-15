@@ -1,13 +1,14 @@
 <script>
-export default {
-  inject: ['data'],
+import Row from '../components/Row.vue'
 
-  mounted() {
-    console.log(this.data) // This should now reflect updates
-  }
+export default {
+  components: {
+    Row
+  },
+  inject: ['data']
 }
 </script>
 
 <template>
-  <p>{{ data?.page.friendlyName }}</p>
+  <Row v-for="row in data?.layout.body.rows" :key="row.id" :row="row">{{ row.title }}</Row>
 </template>
