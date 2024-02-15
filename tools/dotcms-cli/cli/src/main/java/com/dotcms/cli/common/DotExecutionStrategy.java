@@ -2,7 +2,6 @@ package com.dotcms.cli.common;
 
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.InitCommand;
-import com.dotcms.cli.exception.UninitializedStateException;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.arc.Arc;
 import java.io.IOException;
