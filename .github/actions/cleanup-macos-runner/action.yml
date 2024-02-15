@@ -25,40 +25,36 @@ runs:
     - name: Check directory
       shell: bash
       run: |
-        exists() {
+        removeIfExists() {
           local file=$1
-          [[ -e $file ]] && echo "$file exists" || echo "$file does not exist"
+          [[ -e $file ]] && time sudo rm -rf $1 || true
         }
         
-        exists ${HOME}/.cache
-        exists ${HOME}/Library/Logs
-        exists ${HOME}/Library/Caches  
-        exists ${HOME}/work/_temp
-        exists ${HOME}/.cargo/bin/cargo
-        exists ${HOME}/.ghcup/bin/ghc
-        exists ${HOME}/Library/Android/sdk/tools/android
-             
-        exists /usr/local/bin/pipx             
-        exists /usr/bin/swift
-        exists /usr/local/bin/dotnet
-        exists /usr/local/Caskroom/
+        removeIfExists ${HOME}/.cache
+        removeIfExists ${HOME}/Library/Logs
+        removeIfExists ${HOME}/Library/Caches  
+        removeIfExists ${HOME}/work/_temp
+        removeIfExists ${HOME}/.cargo/bin/cargo
+        removeIfExists ${HOME}/.ghcup/bin/ghc
+        removeIfExists ${HOME}/Library/Android/sdk/tools/android
         
-        exists /Applications/
+        removeIfExists /usr/local/bin/pipx             
+        removeIfExists /usr/bin/swift
+        removeIfExists /usr/local/bin/dotnet
+        removeIfExists /usr/local/Caskroom/
+        
+        ls -la /Applications/
 
-        ls -la ${HOME}/hostedtoolcache
-        ls -la 	/Users/runner/Library/Android/sdk
+#        ls -la ${HOME}/hostedtoolcache
+#        ls -la /Users/runner/Library/Android/sdk
 
 # [[ -e $file ]] && time sudo rm -rf $1 || true
+# [[ -e $file ]] && echo "$file exists" || echo "$file does not exist"
 
-#
 #        removeIfExists /opt/hostedtoolcache/CodeQL
 #        removeIfExists /imagegeneration/installers/go-*
 #        removeIfExists /imagegeneration/installers/node-*
 #        removeIfExists /imagegeneration/installers/python-*
-#
-#        removeIfExists /home/runner/work/_temp/*
-#        removeIfExists /home/runner/work/_tool/*
-#        removeIfExists /home/runner/work/_config/*
 #
     - name: Show Disk Usage
       shell: bash
