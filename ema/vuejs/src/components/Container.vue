@@ -1,11 +1,3 @@
-<template>
-  <div data-dot="container">
-    <p v-for="contentlet in contentlets" :key="contentlet.identifier">
-      <component v-bind="contentlet" :is="getComponent(contentlet)"></component>
-    </p>
-  </div>
-</template>
-
 <script>
 import FallbackComponent from './FallbackComponent.vue'
 
@@ -16,9 +8,6 @@ export default {
   inject: ['data'],
   props: {
     containerRef: Object
-  },
-  mounted() {
-    console.log() // Logs the list of registered component names
   },
   computed: {
     containers() {
@@ -39,3 +28,11 @@ export default {
   }
 }
 </script>
+
+<template>
+  <div class="flex flex-col gap-4" data-dot="container">
+    <p v-for="contentlet in contentlets" :key="contentlet.identifier">
+      <component v-bind="contentlet" :is="getComponent(contentlet)"></component>
+    </p>
+  </div>
+</template>

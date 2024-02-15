@@ -1,11 +1,14 @@
-<script>
-import { RouterView } from 'vue-router'
-import { ref, watch, provide, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+<script setup>
+import { ref, watch, onMounted, provide } from 'vue'
+import { useRoute, RouterView } from 'vue-router'
 import { client } from './utils/client'
 import MyHeader from './components/MyHeader.vue'
 import MyFooter from './components/MyFooter.vue'
 import Navigation from './components/Navigation.vue'
+
+const route = useRoute()
+const data = ref(null)
+const nav = ref(null)
 
 async function fetchData(routePath) {
   const data = await client.page
@@ -18,48 +21,28 @@ async function fetchData(routePath) {
   return data
 }
 
-export default {
-  components: {
-    MyHeader,
-    RouterView,
-    Navigation,
-    MyFooter
-  },
-  inject: ['data'],
-  setup() {
-    const data = ref(null)
-    const nav = ref(null)
-    const route = useRoute()
+onMounted(async () => {
+  nav.value = await client.nav.get({ path: '/', depth: '2' }).then(({ entity }) => entity.children)
+})
 
-    provide('data', data)
-
-    onMounted(() => {
-      client.nav.get({ path: '/', depth: '2' }).then(({ entity }) => {
-        nav.value = entity.children
-      })
-    })
-
-    watch(
-      () => route.path,
-      async (newPath) => {
-        // React to route changes
-        const fetchedData = await fetchData(newPath)
-        data.value = fetchedData
-      }
-    )
-
-    return { data, nav }
+watch(
+  () => route.path,
+  async (newPath) => {
+    data.value = await fetchData(newPath)
   }
-}
+)
+
+// Provides the page api response (data) object to child components.
+provide('data', data)
 </script>
 
 <template>
-  <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
+  <div class="flex flex-col min-h-screen gap-6 bg-lime-50">
     <MyHeader v-if="data?.layout.header">
       <Navigation v-if="nav" :nav="nav" />
     </MyHeader>
 
-    <main className="container flex flex-col gap-8 m-auto">
+    <main class="container flex flex-col gap-8 m-auto">
       <RouterView />
     </main>
 
