@@ -10,17 +10,20 @@ import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.ServiceBean;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import org.apache.commons.lang3.tuple.Pair;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Option;
@@ -45,6 +48,11 @@ public class InitCommand implements Callable<Integer>, DotCommand {
     public static final String NAME = "init";
     public static final String INSTANCE_NAME = "name";
     public static final String INSTANCE_URL = "url";
+
+    //Let's give the user a chance to get it right.
+    // No seriously, 100 attempts is a crazy high number,
+    // but I rather have a limit rather than use a while(true) loop.
+    public static final int MAX_ATTEMPTS = 100;
 
     public static final Comparator<ServiceBean> comparator = Comparator.comparing(
                     ServiceBean::active).reversed()
@@ -115,7 +123,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
      * @param services the services
      * @throws IOException if an error occurs
      */
-    private void performUpdate(List<ServiceBean> services) throws IOException {
+    void performUpdate(List<ServiceBean> services) throws IOException {
         List<ServiceBean> beansForUpdate = new ArrayList<>(services);
         output.info("The CLI has been already initialized.");
         while (true) {
@@ -160,7 +168,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                     output.info("The profile [" + newName + "] has been updated.");
                     beansForUpdate = new ArrayList<>(serviceManager.services());
                     final boolean yes = prompt.yesOrNo(false, "Do you want to update the @|bold current active|@ instance? ");
-                    if(yes) {
+                    if(yes && !beansForUpdate.isEmpty()) {
                         makeActive(beansForUpdate);
                     }
                     beansForUpdate = new ArrayList<>(serviceManager.services());
@@ -173,36 +181,57 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         return beansForUpdate;
     }
 
+    /**
+     * This method is used to perform a fresh init
+     * @throws IOException if an error occurs
+     */
      void freshInit() throws IOException {
-        //We don't have a configuration file, let's create one
+         //We don't have a configuration file, let's create one
+         try {
+             final Map<String, ServiceBean> capturedValues = captureForInit();
+             if(!capturedValues.isEmpty()) {
+                 makeActive(capturedValues.values().stream().sorted(
+                         comparator).collect(Collectors.toList()));
+             }
+         } catch (IllegalStateException e) {
+             output.error("Too many attempts to capture the values. Exiting.");
+         }
+    }
+
+    /**
+     * This method serves as the loop to capture the values for the dotCMS instance
+     * @return the captured values
+     */
+    private Map<String, ServiceBean> captureForInit() {
         final Map<String, String> suggestedValues = new HashMap<>(values);
         final Map<String,ServiceBean> capturedValues = new HashMap<>();
-
-        int capturedCount = 0;
+        int count = 0;
+        int captures = 0; //We're going to use this to append a number to the suggested name
         while (true) {
-            final Map<String, String> captured = captureValues(suggestedValues);
-            String name = captured.get(INSTANCE_NAME);
-            String baseURL = captured.get(INSTANCE_URL);
+            final Pair<String, String> captured = captureValues(suggestedValues);
+            final String name = captured.getKey();
+            final String baseURL = captured.getValue();
             ServiceBean service = null;
             try {
                 service = createService(name, baseURL, capturedValues);
+                //if we got here, the service is valid the values we captured are good. they're error free
+                if(null != service){
+                    capturedValues.put(name, service);
+                    suggestedValues.put(INSTANCE_NAME, String.format("%s#%d" , cleanSuggestions(name), ++captures));
+                    suggestedValues.put(INSTANCE_URL, baseURL);
+                    final boolean yes = prompt.yesOrNo(true, "Do you want to continue adding another dotCMS instance? ");
+                    if (!yes) {
+                        break;
+                    }
+                }
             } catch (IllegalArgumentException e) {
                 output.error("There are errors in the captured values : " +e.getMessage());
             }
-            if(null != service){
-                capturedValues.put(name, service);
-                capturedCount++;
-                suggestedValues.put(INSTANCE_NAME, String.format("%s#%d" , cleanSuggestions(name), ++capturedCount));
-                suggestedValues.put(INSTANCE_URL, baseURL);
-
-                final boolean yes = prompt.yesOrNo(true, "Do you want to continue adding another dotCMS instance? ");
-                if (!yes) {
-                    break;
-                }   
+            if (++count >= maxCaptureAttempts()) {
+                throw new IllegalStateException("Too many attempts to capture the values.");
             }
         }
-        makeActive(capturedValues.values().stream().sorted(
-                comparator).collect(Collectors.toList()));
+        return capturedValues;
     }
 
     /**
@@ -210,9 +239,11 @@ public class InitCommand implements Callable<Integer>, DotCommand {
      * @param suggestedValues the suggested values
      * @return the captured values
      */
-    Map<String,String> captureValues(final Map<String, String> suggestedValues){
+    Pair<String,String> captureValues(final Map<String, String> suggestedValues){
+
         String name;
         String baseURL;
+        int count = 0;
         while (true) {
             final String suggestedName = suggestedValues.get(INSTANCE_NAME);
             final String suggestedUrl = suggestedValues.get(INSTANCE_URL);
@@ -229,8 +260,12 @@ public class InitCommand implements Callable<Integer>, DotCommand {
             if (valuesOK) {
                 break;
             }
+            //This allows us to break the loop if we've tried too many and this gives us a chance to exit gracefully but also makes this code testable too
+            if(++count >= maxCaptureAttempts()){
+                throw new IllegalStateException("Too many attempts to capture the values.");
+            }
         }
-        return Map.of(INSTANCE_NAME, name, INSTANCE_URL, baseURL);
+        return  Pair.of(name, baseURL);
     }
 
     /**
@@ -238,7 +273,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
      * @param capturedValues the captured values
      * @throws IOException if an error occurs
      */
-    private void makeActive(final List<ServiceBean> capturedValues) throws IOException {
+     void makeActive(final List<ServiceBean> capturedValues) throws IOException {
         if (capturedValues.isEmpty()) {
             return;
         }
@@ -259,6 +294,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                 final int index = prompt.readInput(-1,
                         "Enter the number of the profile to be made default or press enter to exit. ");
                 if (-1 == index) {
+                    persist(serviceBeans);
                     running = false;
                 } else {
                     if (index < 0 || index >= capturedValues.size()) {
@@ -287,18 +323,24 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         boolean running = true;
         while (running) {
             final List<ServiceBean> serviceBeans = new ArrayList<>(serviceManager.services());
-            printServices(serviceBeans);
-            final int index = prompt.readInput(-1, "Enter the number of the profile to @|bold delete|@ press enter to exit. ");
-            if (index == -1) {
+            if (serviceBeans.isEmpty()) {
+                output.info("All configurations were removed.");
                 running = false;
             } else {
-                if (index < 0 || index >= serviceBeans.size()) {
-                    output.error("No profile was selected.");
+                printServices(serviceBeans);
+                final int index = prompt.readInput(-1,
+                        "Enter the number of the profile to @|bold delete|@ press enter to exit. ");
+                if (index == -1) {
+                    running = false;
                 } else {
-                    serviceBeans.remove(index);
-                    persist(serviceBeans);
-                    if (!prompt.yesOrNo(false, "Do you want to delete another profile? ")) {
-                        break;
+                    if (index < 0 || index >= serviceBeans.size()) {
+                        output.error("No profile was selected.");
+                    } else {
+                        serviceBeans.remove(index);
+                        persist(serviceBeans);
+                        if (!prompt.yesOrNo(false, "Do you want to delete another profile? ")) {
+                            break;
+                        }
                     }
                 }
             }
@@ -310,7 +352,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
      * @param serviceBeans the service beans
      * @throws IOException if an error occurs
      */
-    private void persist(final List<ServiceBean> serviceBeans) throws IOException {
+    void persist(final List<ServiceBean> serviceBeans) throws IOException {
         serviceManager.removeAll();
         for ( ServiceBean serviceBean : serviceBeans) {
             serviceManager.persist(serviceBean);
@@ -358,11 +400,8 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         if(capturedValues.containsKey(nameLower)){
             throw new IllegalArgumentException("The name [" + name + "] is already in use.");
         }
-        try {
-            return ServiceBean.builder().name(nameLower).url(new URL(url)).build();
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Invalid URL", e);
-        }
+         return ServiceBean.builder().name(nameLower).url(createURL(url)).build();
+
     }
 
     /**
@@ -373,7 +412,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
      * @param capturedValues the captured values map to check for duplicates etc.
      * @return the service bean
      */
-    ServiceBean createService(ServiceBean savedBean, String name, String url, final Map<String,ServiceBean> capturedValues) {
+    ServiceBean createService(final ServiceBean savedBean, final String name, final String url, final Map<String,ServiceBean> capturedValues) {
         if(name == null || name.isBlank()){
             throw new IllegalArgumentException("The name cannot be empty.");
         }
@@ -381,11 +420,24 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         if(capturedValues.containsKey(nameLower)){
             throw new IllegalArgumentException("The name [" + name + "] is already in use.");
         }
+
+        //Don't forget that when merging we need to copy credentials and active status
+        return ServiceBean.builder().from(savedBean).name(nameLower).url(createURL(url)).build();
+
+    }
+
+    /**
+     * This method is used to create a URL
+     * @param urlString the url string
+     * @return the url
+     */
+    URL createURL(final String urlString) {
         try {
-            //Don't forget that when merging we need to copy credentials and active status
-            return ServiceBean.builder().from(savedBean).name(nameLower).url(new URL(url)).build();
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Invalid URL", e);
+            final URL url = new URL(urlString);
+            url.toURI(); //We're not going to use the URI, but this will throw an exception if the URL is invalid
+            return url;
+        } catch (MalformedURLException | URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid URL: "+urlString, e);
         }
     }
 
@@ -397,4 +449,9 @@ public class InitCommand implements Callable<Integer>, DotCommand {
     String cleanSuggestions(String suggestedName) {
         return suggestedName.replaceAll("#\\d+$", "");
     }
+
+    int maxCaptureAttempts() {
+        return MAX_ATTEMPTS;
+    }
+
 }
