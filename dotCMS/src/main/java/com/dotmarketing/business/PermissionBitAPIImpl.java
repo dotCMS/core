@@ -380,21 +380,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
             return false;
         }
 
-		final Set<Role> roles = new HashSet<>(Try
-			.of(() -> APILocator.getRoleAPI().loadRolesForUser(user.getUserId()))
-			.getOrElse(List.of()));
-
-		// remove front end user access for anon user (e.g, /intranet)
-		// Note to selves: it was a mistake to add this role to the Anon user in 5.2.0
-		if (user.isAnonymousUser()) {
-            roles.remove(frontEndUserRole);
-        }
-		if (!respectFrontendRoles) {
-		    roles.remove(frontEndUserRole);
-		    roles.remove(anonRole);
-		    roles.remove(APILocator.getRoleAPI().loadRoleByKey("anonymous"));
-		}
-		final Set<String> userRoleIds = roles.stream().map(Role::getId).collect(Collectors.toSet());
+		final Set<String> userRoleIds = filterUserRoles(user, respectFrontendRoles).stream().map(Role::getId).collect(Collectors.toSet());
         
 		return doRolesHavePermission(userRoleIds, getPermissions(permissionable, true), expecterPermissionType);
 	}
@@ -1868,6 +1854,47 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@CloseDBIfOpened
 	public boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException {
 		return permissionFactory.isInheritingPermissions(permissionable);
+	}
+
+	/**
+	 * Retrieves a filtered list of roles by removing front-end roles when unnecessary.
+	 **/
+	private Set<Role> filterUserRoles(final User user, final boolean respectFrontendRoles) throws DotDataException {
+		final Role anonymousRoleRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
+		final Role frontEndUserRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
+
+		final Set<Role> roles = new HashSet<>(Try
+				.of(() -> APILocator.getRoleAPI().loadRolesForUser(user.getUserId()))
+				.getOrElse(List.of()));
+
+		// remove front end user access for anon user (e.g, /intranet)
+		// Note to selves: it was a mistake to add this role to the Anon user in 5.2.0
+		if (user.isAnonymousUser()) {
+			roles.remove(frontEndUserRole);
+		}
+		if (!respectFrontendRoles) {
+			roles.remove(frontEndUserRole);
+			roles.remove(anonymousRoleRole);
+			roles.remove(APILocator.getRoleAPI().loadRoleByKey("anonymous"));
+		}
+
+		return roles;
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean doesSystemHostHavePermissions(final Permissionable systemHost, final User user, final boolean respectFrontendRoles, final String expectedPermissionType) throws DotDataException {
+		final List<Permission> systemHostPermissions = getInheritablePermissions(systemHost);
+
+		final Set<String> userRoleIds = filterUserRoles(user, respectFrontendRoles).stream().map(Role::getId).collect(Collectors.toSet());
+
+		for(final Permission perm : systemHostPermissions){
+			if(perm.getType().equals(expectedPermissionType) && userRoleIds.contains(perm.getRoleId()) ){
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 }
