@@ -1,16 +1,8 @@
 <script>
-import { dotcmsClient } from '@dotcms/client'
+import { client } from '../utils/client'
 
 // Define fetchData as a standalone function
 async function fetchData(routePath, callback) {
-  const client = dotcmsClient.init({
-    dotcmsUrl: import.meta.env.VITE_DOTCMS_HOST,
-    authToken: import.meta.env.VITE_DOTCMS_TOKEN,
-    requestOptions: {
-      cache: 'no-cache'
-    }
-  })
-
   const data = await client.page
     .get({
       path: routePath || 'index', // Adjust based on your routing logic
