@@ -1,5 +1,6 @@
 <script>
 import { computed } from 'vue'
+import Container from './Container.vue'
 
 const endClassMap = {
   1: 'col-end-1',
@@ -33,6 +34,9 @@ const startClassMap = {
 }
 
 export default {
+  components: {
+    Container
+  },
   props: {
     column: Object
   },
@@ -50,24 +54,21 @@ export default {
     )
 
     const combinedClasses = computed(() => {
-      const classes = [startClass, endClass, props.column.styleClass].filter(Boolean).join(' ')
-      console.log('combinedClasses:', classes)
-      return classes
+      return [startClass, endClass, props.column.styleClass].filter(Boolean).join(' ')
     })
 
-    const columnProps = {
-      'data-dot': 'column',
-      'data-testid': 'column'
-    }
-
-    return { combinedClasses, columnProps }
+    return { combinedClasses }
   }
 }
 </script>
 
 <template>
-  <div v-bind="columnProps" :class="combinedClasses">
-    <h1 v-for="container in column.containers" :key="container.id">Column</h1>
+  <div v-bind="columnProps" data-dot="column" :class="combinedClasses">
+    <Container
+      v-for="container in column.containers"
+      :key="container.id"
+      :containerRef="container"
+    />
   </div>
 </template>
 
