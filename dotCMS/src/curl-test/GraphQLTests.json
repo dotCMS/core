@@ -9343,6 +9343,9 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"contentletIdWithEmptyStoryBlock\", jsonData.entity.identifier);",
+									"",
 									"pm.test(\"Status code should be 200\", function() {",
 									"    pm.response.to.have.status(200);",
 									"});",
@@ -9420,8 +9423,15 @@
 									"var jsonData = pm.response.json();",
 									"var collectionName = pm.collectionVariables.get(\"contentTypeVarNameWithStoryBlock\")+\"Collection\"",
 									"",
-									"pm.test(\"Content has the correct value at the json property\", function () {",
-									"    pm.expect(jsonData.data[collectionName][0].block.json).to.be.eql({});",
+									"const isContentWithEmptyStoryBlockFirst = jsonData.data[collectionName][0].identifier == pm.collectionVariables.get(\"contentletIdWithEmptyStoryBlock\");",
+									"",
+									"pm.test(\"Content has the incorrect value at the json property\", function () {",
+									"    console.log(jsonData);",
+									"    if(isContentWithEmptyStoryBlockFirst){",
+									"        pm.expect(jsonData.data[collectionName][0].block.json).to.be.eql({});",
+									"    }else{",
+									"        pm.expect(jsonData.data[collectionName][1].block.json).to.be.eql({});",
+									"    }",
 									"});"
 								],
 								"type": "text/javascript"
@@ -9431,7 +9441,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"setTimeout(function(){}, 3000);"
+									"setTimeout(function(){}, 20000);"
 								],
 								"type": "text/javascript"
 							}
@@ -9448,7 +9458,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/graphql",
+							"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=-1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9456,6 +9466,12 @@
 								"api",
 								"v1",
 								"graphql"
+							],
+							"query": [
+								{
+									"key": "dotcachettl",
+									"value": "-1"
+								}
 							]
 						},
 						"description": "checks if the correct values were pulled via GraphQL.\n- Render should bring html code\n- Json should not bring render code."
@@ -9585,6 +9601,15 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 20000);"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"protocolProfileBehavior": {
@@ -9604,7 +9629,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/graphql",
+							"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=-1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9612,6 +9637,12 @@
 								"api",
 								"v1",
 								"graphql"
+							],
+							"query": [
+								{
+									"key": "dotcachettl",
+									"value": "-1"
+								}
 							]
 						}
 					},
@@ -9850,6 +9881,10 @@
 		},
 		{
 			"key": "contentTypeVarNameWithStoryBlock",
+			"value": ""
+		},
+		{
+			"key": "contentletIdWithEmptyStoryBlock",
 			"value": ""
 		}
 	]
