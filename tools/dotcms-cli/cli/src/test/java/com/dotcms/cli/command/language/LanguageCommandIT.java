@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -132,7 +131,6 @@ class LanguageCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error reading the JSON language file
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Language_Pull_By_IsoCode_Checking_JSON_DotCMS_Type() throws IOException {
 
@@ -299,7 +297,6 @@ class LanguageCommandIT extends CommandTest {
      * A new language with iso code "it-IT" will be created.<br>
      * <b>Expected Result:</b> The language returned should be Italian
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Language_Push_byFile_JSON() throws IOException {
 
@@ -349,7 +346,6 @@ class LanguageCommandIT extends CommandTest {
      * <p>
      * <b>Expected Result:</b> The language returned should be Italian
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Language_Push_byFile_JSON_Checking_Auto_Update() throws IOException {
 
@@ -419,7 +415,6 @@ class LanguageCommandIT extends CommandTest {
      * A new language with iso code "it-IT" will be created. <br>
      * <b>Expected Result:</b> The language returned should be Italian
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Language_Push_byFile_YAML() throws IOException {
 
@@ -538,7 +533,6 @@ class LanguageCommandIT extends CommandTest {
      * Expected result: The WorkspaceManager should be able to create and destroy a workspace
      * @throws IOException
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Pull_Same_Language_Multiple_Times() throws IOException {
         final Workspace workspace = workspaceManager.getOrCreate(Path.of(""));
@@ -572,7 +566,6 @@ class LanguageCommandIT extends CommandTest {
      * This tests will test the functionality of the language push command when pushing a folder,
      * checking that the languages are properly add, updated and removed on the remote server.
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Language_Folder_Push() throws IOException {
 
@@ -876,7 +869,6 @@ class LanguageCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error pulling the languages
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Language_Pull_Pull_All_YAML_Format() throws IOException {
 
@@ -1001,7 +993,6 @@ class LanguageCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error pulling the languages
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Language_Pull_Pull_All_Twice() throws IOException {
 

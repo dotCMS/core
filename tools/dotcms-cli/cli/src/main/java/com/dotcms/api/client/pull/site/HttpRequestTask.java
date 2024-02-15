@@ -1,30 +1,65 @@
 package com.dotcms.api.client.pull.site;
 
+import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.model.site.Site;
 import com.dotcms.model.site.SiteView;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.function.Function;
+import javax.enterprise.context.Dependent;
+import org.eclipse.microprofile.context.ManagedExecutor;
 
 /**
- * Represents a task that performs HTTP requests concurrently using the Fork/Join framework. It
- * extends the RecursiveTask class and returns a list of SiteView objects.
+ * Represents a task that performs HTTP requests concurrently.
  */
-public class HttpRequestTask extends RecursiveTask<List<SiteView>> {
+@Dependent
+public class HttpRequestTask extends TaskProcessor {
 
     private final SiteFetcher siteFetcher;
 
-    private final List<Site> sites;
+    private List<Site> sites;
 
-    private static final int THRESHOLD = 10;
-
-    public HttpRequestTask(final List<Site> sites, final SiteFetcher siteFetcher) {
-        this.sites = sites;
+    private final ManagedExecutor executor;
+    
+    public HttpRequestTask(final SiteFetcher siteFetcher,
+            final ManagedExecutor executor) {
         this.siteFetcher = siteFetcher;
+        this.executor = executor;
     }
 
-    @Override
-    protected List<SiteView> compute() {
+    /**
+     * Sets the parameters for the HttpRequestTask. This method provides a way to inject necessary
+     * configuration after the instance of HttpRequestTask has been created by the container, which
+     * is a common pattern when working with frameworks like Quarkus that manage object creation and
+     * dependency injection in a specific manner.
+     * <p>
+     * This method is used as an alternative to constructor injection, which is not feasible due to
+     * the limitations or constraints of the framework's dependency injection mechanism. It allows
+     * for the explicit setting of traversal parameters after the object's instantiation, ensuring
+     * that the executor is properly configured before use.
+     *
+     * @param sites List of Site objects to process.
+     */
+    public void setTaskParams(final List<Site> sites) {
+        this.sites = sites;
+    }
+
+    /**
+     * Processes a list of Site objects, either sequantially or in parallel, depending on the list
+     * size. If the size of the list is under a predefined threshold, items are processed
+     * individually in order. For larger lists, the work is divided into separate concurrent tasks,
+     * which are processed in parallel.
+     * <p>
+     * Each Site object in the list is processed by making a request to fetch its full version.
+     *
+     * @return A List of fully fetched SiteView objects.
+     */
+    public List<SiteView> compute() {
+
+        CompletionService<List<SiteView>> completionService =
+                new ExecutorCompletionService<>(executor);
 
         if (sites.size() <= THRESHOLD) {
 
@@ -38,24 +73,44 @@ public class HttpRequestTask extends RecursiveTask<List<SiteView>> {
 
         } else {
 
-            // If the list is large, split it into two smaller tasks
-            int mid = sites.size() / 2;
-            HttpRequestTask task1 = new HttpRequestTask(sites.subList(0, mid), siteFetcher);
-            HttpRequestTask task2 = new HttpRequestTask(sites.subList(mid, sites.size()),
-                    siteFetcher);
+            // If the list is large, split it into smaller tasks
+            int toProcessCount = splitTasks(sites, completionService);
 
-            // Start the first subtask in a new thread
-            task1.fork();
-
-            // Start the second subtask and wait for it to finish
-            List<SiteView> task2Result = task2.compute();
-
-            // Wait for the first subtask to finish and combine the results
-            List<SiteView> task1Result = task1.join();
-            task1Result.addAll(task2Result);
-
-            return task1Result;
+            // Wait for all tasks to complete and gather the results
+            final var foundSites = new ArrayList<SiteView>();
+            Function<List<SiteView>, Void> processFunction = taskResult -> {
+                foundSites.addAll(taskResult);
+                return null;
+            };
+            processTasks(toProcessCount, completionService, processFunction);
+            return foundSites;
         }
+    }
+
+    /**
+     * Splits a list of Site objects into separate tasks.
+     *
+     * @param sites             List of Site objects to process.
+     * @param completionService The CompletionService to submit tasks to.
+     * @return The number of tasks to process.
+     */
+    private int splitTasks(List<Site> sites,
+            CompletionService<List<SiteView>> completionService) {
+
+        int mid = sites.size() / 2;
+        var subList1 = sites.subList(0, mid);
+        var subList2 = sites.subList(mid, sites.size());
+
+        var task1 = new HttpRequestTask(siteFetcher, executor);
+        task1.setTaskParams(subList1);
+
+        var task2 = new HttpRequestTask(siteFetcher, executor);
+        task2.setTaskParams(subList2);
+
+        completionService.submit(task1::compute);
+        completionService.submit(task2::compute);
+
+        return 2;
     }
 
 }

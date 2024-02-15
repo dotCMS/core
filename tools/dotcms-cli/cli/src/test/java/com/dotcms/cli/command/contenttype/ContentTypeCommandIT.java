@@ -40,7 +40,6 @@ import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
@@ -272,7 +271,6 @@ class ContentTypeCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error reading the YAML content type file
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Content_Type_Pull_Checking_YAML_DotCMS_Type() throws IOException {
 
@@ -348,7 +346,6 @@ class ContentTypeCommandIT extends CommandTest {
      *
      * @throws IOException
      */
-    @Disabled("This test is index dependent therefore there's a chance to see it fail from time to time")
     @Test
     void Test_Push_New_Content_Type_From_File_Then_Remove() throws IOException {
 
@@ -431,7 +428,6 @@ class ContentTypeCommandIT extends CommandTest {
      *
      * @throws IOException
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Pull_Same_Content_Type_Multiple_Times() throws IOException {
         // Create a temporal folder for the workspace
@@ -469,7 +465,6 @@ class ContentTypeCommandIT extends CommandTest {
      * folder, checking the content types are properly add, updated and removed on the remote
      * server.
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Content_Type_Folder_Push() throws IOException {
 
@@ -666,7 +661,6 @@ class ContentTypeCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error pulling the content types
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Content_Type_Pull_Pull_All_Default_Format() throws IOException {
 
@@ -749,7 +743,6 @@ class ContentTypeCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error pulling the content types
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     @Order(13)
     void Test_Command_Content_Type_Pull_Pull_All_YAML_Format() throws IOException {
@@ -833,7 +826,6 @@ class ContentTypeCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error pulling the content types
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     @Order(14)
     void Test_Command_Content_Type_Pull_Pull_All_Twice() throws IOException {

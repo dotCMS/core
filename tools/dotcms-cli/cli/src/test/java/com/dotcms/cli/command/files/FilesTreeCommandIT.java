@@ -11,7 +11,6 @@ import java.io.StringWriter;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -112,7 +111,6 @@ public class FilesTreeCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Folders2() {
 
@@ -141,7 +139,6 @@ public class FilesTreeCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Folders4() {
 
@@ -184,7 +181,6 @@ public class FilesTreeCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Assets() {
 
@@ -199,7 +195,6 @@ public class FilesTreeCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Assets2() {
 
@@ -228,7 +223,6 @@ public class FilesTreeCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Tree_Option_Glob_Exclude_Assets4() {
 
@@ -271,7 +265,6 @@ public class FilesTreeCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Folders() {
 
@@ -300,7 +293,6 @@ public class FilesTreeCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Tree_Option_Glob_Include_Folders3() {
 
