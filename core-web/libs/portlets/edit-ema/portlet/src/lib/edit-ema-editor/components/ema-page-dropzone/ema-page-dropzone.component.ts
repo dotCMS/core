@@ -12,12 +12,7 @@ import {
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
-import {
-    ActionPayload,
-    ContainerPayload,
-    PositionPayload,
-    HeadlessData
-} from '../../../shared/models';
+import { ActionPayload, PositionPayload, HeadlessData } from '../../../shared/models';
 
 export interface ContentletArea {
     x: number;
@@ -171,9 +166,9 @@ export class EmaPageDropzoneComponent {
      * @return {*}  {boolean}
      * @memberof EmaPageDropzoneComponent
      */
-    getErrorMessage(paylaod: HeadlessData | string): string {
+    getErrorMessage(headlessData: HeadlessData | string, contentletsLength: number): string {
         const { container = {} } =
-            typeof paylaod === 'string' ? JSON.parse(paylaod) : paylaod || {};
+            typeof headlessData === 'string' ? JSON.parse(headlessData) : headlessData || {};
         const { acceptTypes = '', maxContentlets } = container;
 
         if (!this.isValidContentType(acceptTypes)) {
@@ -183,7 +178,7 @@ export class EmaPageDropzoneComponent {
             );
         }
 
-        if (!this.contentCanFitInContainer(container)) {
+        if (!this.contentCanFitInContainer(container.maxContentlets, contentletsLength)) {
             const message =
                 maxContentlets === 1
                     ? 'edit.ema.page.dropzone.one.max.contentlet'
@@ -213,9 +208,7 @@ export class EmaPageDropzoneComponent {
         return acceptTypesArr.includes(this.item.contentType);
     }
 
-    private contentCanFitInContainer({ contentletsId, maxContentlets }: ContainerPayload): boolean {
-        const amountOfContentlets = contentletsId?.length || 0;
-
-        return amountOfContentlets < maxContentlets;
+    private contentCanFitInContainer(maxContentlets: number, contentletsLength: number): boolean {
+        return contentletsLength < maxContentlets;
     }
 }

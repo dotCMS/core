@@ -8,26 +8,15 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EmaPageDropzoneComponent, Row } from './ema-page-dropzone.component';
 
-import { ActionPayload } from '../../../shared/models';
+import { HeadlessData } from '../../../shared/models';
 
-const ACTION_MOCK: ActionPayload = {
+const ACTION_MOCK: HeadlessData = {
     container: {
         acceptTypes: 'file',
         identifier: '789',
         maxContentlets: 100,
-        uuid: '2',
-        contentletsId: ['123', '455']
-    },
-    language_id: '1',
-    pageContainers: [
-        {
-            identifier: '123',
-            uuid: '1',
-            contentletsId: ['123', '455']
-        }
-    ],
-    pageId: '123',
-    position: 'after'
+        uuid: '2'
+    }
 };
 
 const ITEM_MOCK = {
@@ -35,7 +24,7 @@ const ITEM_MOCK = {
     baseType: 'FILEASSET'
 };
 
-const getBoundsMock = (payload: ActionPayload): Row[] => {
+const getBoundsMock = (payload: HeadlessData): Row[] => {
     return [
         {
             x: 0,
@@ -57,6 +46,13 @@ const getBoundsMock = (payload: ActionPayload): Row[] => {
                             contentlets: [
                                 {
                                     x: 20,
+                                    y: 20,
+                                    width: 940,
+                                    height: 140,
+                                    payload: null
+                                },
+                                {
+                                    x: 40,
                                     y: 20,
                                     width: 940,
                                     height: 140,
