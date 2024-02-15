@@ -20,7 +20,7 @@ export default {
 <template>
   <div data-dot="container">
     <p v-for="contentlet in contentlets" :key="contentlet.identifier">
-      {{ contentlet.identifier }}
+      <component v-bind="contentlet" :is="contentlet.contentType"></component>
     </p>
   </div>
 </template>

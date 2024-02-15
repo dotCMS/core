@@ -34,7 +34,6 @@ export default {
     provide('data', data)
 
     onMounted(() => {
-      console.log('mounted')
       client.nav.get({ path: '/', depth: '2' }).then(({ entity }) => {
         nav.value = entity.children
       })

@@ -14,18 +14,13 @@ export default {
       return [props.row.styleClass].filter(Boolean).join(' ')
     })
 
-    const rowProps = {
-      'data-dot': 'row',
-      'data-testid': 'row'
-    }
-
-    return { combinedClasses, rowProps }
+    return { combinedClasses }
   }
 }
 </script>
 
 <template>
-  <div class="row" v-bind="rowProps">
+  <div class="row" data-dot="row">
     <Column v-for="(column, index) in row.columns" :key="index" :column="column" />
   </div>
 </template>

@@ -63,7 +63,7 @@ export default {
 </script>
 
 <template>
-  <div v-bind="columnProps" data-dot="column" :class="combinedClasses">
+  <div data-dot="column" :class="combinedClasses">
     <Container
       v-for="container in column.containers"
       :key="container.id"
