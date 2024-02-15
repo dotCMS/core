@@ -6,11 +6,12 @@ import router from './router'
 
 import Banner from './components/Banner.vue'
 import Activity from './components/Activity.vue'
+import Image from './components/Image.vue'
 
 const app = createApp(App)
 
 app.use(router)
 
-app.component('Banner', Banner).component('Activity', Activity)
+app.component('Banner', Banner).component('Activity', Activity).component('Image', Image)
 
 app.mount('#app')
