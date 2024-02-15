@@ -17,7 +17,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -49,14 +48,17 @@ public class InitCommand implements Callable<Integer>, DotCommand {
     public static final String INSTANCE_NAME = "name";
     public static final String INSTANCE_URL = "url";
 
-    //Let's give the user a chance to get it right.
-    // No seriously, 100 attempts is a crazy high number,
-    // but I rather have a limit rather than use a while(true) loop.
+    /**
+     Let's give the user a chance to get it right.
+     No seriously, 100 attempts is a crazy high number,
+     but I rather have a limit rather than use a while-true construct.
+    */
     public static final int MAX_ATTEMPTS = 100;
 
     public static final Comparator<ServiceBean> comparator = Comparator.comparing(
                     ServiceBean::active).reversed()
             .thenComparing(ServiceBean::name);
+    public static final String NO_PROFILE_WAS_SELECTED = "No profile was selected.";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
@@ -134,7 +136,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                 break;
             }
             if (index < 0 || index >= beansForUpdate.size()) {
-                output.error("No profile was selected.");
+                output.error(NO_PROFILE_WAS_SELECTED);
             } else {
                 beansForUpdate = captureValuesThenUpdate(beansForUpdate, index);
             }
@@ -298,7 +300,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                     running = false;
                 } else {
                     if (index < 0 || index >= capturedValues.size()) {
-                        output.error("No profile was selected.");
+                        output.error(NO_PROFILE_WAS_SELECTED);
                     } else {
                         final ServiceBean selectedService = serviceBeans.get(index);
                         final ServiceBean activeBean = ServiceBean.builder().from(selectedService)
@@ -334,7 +336,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                     running = false;
                 } else {
                     if (index < 0 || index >= serviceBeans.size()) {
-                        output.error("No profile was selected.");
+                        output.error(NO_PROFILE_WAS_SELECTED);
                     } else {
                         serviceBeans.remove(index);
                         persist(serviceBeans);
@@ -450,6 +452,10 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         return suggestedName.replaceAll("#\\d+$", "");
     }
 
+    /**
+     * Test friendly method to set the max attempts
+     * @return the max attempts
+     */
     int maxCaptureAttempts() {
         return MAX_ATTEMPTS;
     }

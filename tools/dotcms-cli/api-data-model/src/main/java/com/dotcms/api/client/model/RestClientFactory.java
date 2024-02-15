@@ -3,7 +3,6 @@ package com.dotcms.api.client.model;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.model.config.ServiceBean;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -40,13 +39,13 @@ public class RestClientFactory {
          */
         public <T > T getClient( final Class<T> clazz){
 
-            Optional<ServiceBean> profile;
+            Optional<ServiceBean> optional;
             try {
-                profile = getServiceProfile();
+                optional = getServiceProfile();
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to get current selected profile ", e);
             }
-            if (profile.isEmpty()) {
+            if (optional.isEmpty()) {
                 throw new IllegalStateException(
                         String.format("No dotCMS instance has been activated check your [%s] file.",
                                 YAMLFactoryServiceManagerImpl.DOT_SERVICE_YML)
@@ -55,7 +54,7 @@ public class RestClientFactory {
 
             URI uri;
             try{
-               uri = toApiURI(profile.get().url());
+               uri = toApiURI(optional.get().url());
             } catch (URISyntaxException | IOException e) {
                 throw new IllegalStateException("  ", e);
             }
@@ -79,11 +78,10 @@ public class RestClientFactory {
 
     @SuppressWarnings("unchecked")
     <T> T newRestClient(final Class<T> clazz, final URI apiBaseUri) {
-        return (T)
-                RestClientBuilder.newBuilder()
-                        .register(ClientObjectMapper.class)
-                        .baseUri(apiBaseUri)
-                        .build(clazz);
+        return RestClientBuilder.newBuilder()
+                .register(ClientObjectMapper.class)
+                .baseUri(apiBaseUri)
+                .build(clazz);
     }
 
     URI toApiURI(final URL url) throws IOException, URISyntaxException {

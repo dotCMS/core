@@ -25,6 +25,8 @@ public interface AbstractCommandsChain {
 
     boolean isHelpRequestedAny();
 
+    boolean isShowErrorsAny();
+
     String command();
 
 }

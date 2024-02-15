@@ -67,7 +67,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                 try {
                     final List<ServiceBean> services = manager.services();
                     if (services.isEmpty()) {
-                        throw new UninitializedStateException(
+                        throw new ExecutionException(
                                 parseResult.commandSpec().commandLine(),
                                 "No dotCMS configured instances were found. Please run 'init' to initialize the CLI.");
                     }

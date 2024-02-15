@@ -5,7 +5,6 @@ import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.Prompt;
-import com.dotcms.cli.common.PromptImpl;
 import com.dotcms.model.ResponseEntityView;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;

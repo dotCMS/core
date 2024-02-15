@@ -2,7 +2,6 @@ package com.dotcms.model.config;
 
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.net.MalformedURLException;
 import java.net.URL;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;

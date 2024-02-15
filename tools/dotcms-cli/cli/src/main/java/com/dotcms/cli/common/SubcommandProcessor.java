@@ -16,6 +16,10 @@ import picocli.CommandLine.ParseResult;
  */
 public class SubcommandProcessor {
 
+    private SubcommandProcessor() {
+        //Utility class
+    }
+
     /**
      * This method will process the result of a command execution and return a CommandsChain object
      * @param subcommand the result of the command execution
@@ -29,11 +33,13 @@ public class SubcommandProcessor {
         }
 
         //This is a sub command
-        boolean isHelpRequestedAny = false;
+        boolean isHelpRequestedAny = false; //This will be true if any subcommand requested help
+        boolean isShowErrors = false; //This will be true if any subcommand requested to show errors
         List<ParseResult> subcommands = new ArrayList<>();
 
         ParseResult current = subcommand;
         while (current != null) {
+            isShowErrors = isShowErrors || (current.matchedOption("--errors") != null);
             isHelpRequestedAny = isHelpRequestedAny || current.isUsageHelpRequested();
             //We're only interested in subcommands that are not the main command
             if(!isMainCommand(current)) {
@@ -46,7 +52,7 @@ public class SubcommandProcessor {
                 .map(CommandSpec::name).collect(
                         Collectors.toList());
 
-        return Optional.of(CommandsChain.builder().subcommands(subcommands).isHelpRequestedAny(isHelpRequestedAny)
+        return Optional.of(CommandsChain.builder().subcommands(subcommands).isShowErrorsAny(isShowErrors).isHelpRequestedAny(isHelpRequestedAny)
                 .command( String.join(" ",collect) ).build());
 
     }
