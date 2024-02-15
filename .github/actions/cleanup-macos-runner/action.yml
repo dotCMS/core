@@ -30,12 +30,16 @@ runs:
           [[ -e $file ]] && echo "$file exists" || echo "$file does not exist"
         }
         
-        exists /Users/runner/.cache
-        exists /Users/runner/Library/Logs
-        exists /Users/runner/Library/Caches
+        exists ${HOME}/.cache
+        exists ${HOME}/Library/Logs
+        exists ${HOME}/Library/Caches
         exists /usr/local/Caskroom/
-        exists /Users/runner/Library/Android/sdk/tools
-        exists /Users/runner/Library/Android/sdk/platform-tools
+        exists ${HOME}/Library/Android/sdk/tools
+        exists ${HOME}/Library/Android/sdk/platform-tools
+        
+        exists ${HOME}/work/_temp
+        exists ${HOME}/work/_tool
+        exists ${HOME}/work/_config        
         
         which pipx
         which swift
@@ -43,9 +47,13 @@ runs:
         which cargo
         which ghc
         which android
+        which codeql
+        which CodeQL
         
-        ls -la
         ls -la $HOME
+        ls -la ${HOME}/image-generation
+        ls -la ${HOME}/hostedtoolcache
+        ls -la ${HOME}/work
 
 # [[ -e $file ]] && time sudo rm -rf $1 || true
 
