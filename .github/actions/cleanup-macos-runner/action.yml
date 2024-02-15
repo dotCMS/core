@@ -32,25 +32,21 @@ runs:
         
         exists ${HOME}/.cache
         exists ${HOME}/Library/Logs
-        exists ${HOME}/Library/Caches
-        exists /usr/local/Caskroom/
-        exists ${HOME}/Library/Android/sdk/tools
-        exists ${HOME}/Library/Android/sdk/platform-tools
-        
+        exists ${HOME}/Library/Caches  
         exists ${HOME}/work/_temp
-    
+        exists ${HOME}/.cargo/bin/cargo
+        exists ${HOME}/.ghcup/bin/ghc
+        exists ${HOME}/Library/Android/sdk/tools/android
+             
+        exists /usr/local/bin/pipx             
+        exists /usr/bin/swift
+        exists /usr/local/bin/dotnet
+        exists /usr/local/Caskroom/
         
-        which pipx
-        which swift
-        which dotnet
-        which cargo
-        which ghc
-        which android
-        
-        ls -la $HOME
-        ls -la $HOME/image-generation
+        ls -Rla $HOME/image-generation
         ls -la ${HOME}/hostedtoolcache
         ls -la ${HOME}/work
+        ls -la ${HOME}/Library/
 
 # [[ -e $file ]] && time sudo rm -rf $1 || true
 
