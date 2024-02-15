@@ -31,7 +31,6 @@ export default {
     }
   },
   beforeRouteEnter(to, from, next) {
-    console.log(to)
     // Directly use fetchData function
     fetchData(to.href, (data) => {
       next((vm) => (vm.data = data))
