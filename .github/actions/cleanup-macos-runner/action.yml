@@ -38,8 +38,7 @@ runs:
         exists ${HOME}/Library/Android/sdk/platform-tools
         
         exists ${HOME}/work/_temp
-        exists ${HOME}/work/_tool
-        exists ${HOME}/work/_config        
+    
         
         which pipx
         which swift
@@ -47,11 +46,9 @@ runs:
         which cargo
         which ghc
         which android
-        which codeql
-        which CodeQL
         
         ls -la $HOME
-        ls -la ${HOME}/image-generation
+        ls -la $HOME/image-generation
         ls -la ${HOME}/hostedtoolcache
         ls -la ${HOME}/work
 
