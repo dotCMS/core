@@ -4,7 +4,6 @@ import com.dotcms.cli.command.DotCommand;
 import io.quarkus.arc.Arc;
 import java.util.Optional;
 import picocli.CommandLine;
-import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.IExecutionExceptionHandler;
 import picocli.CommandLine.ParseResult;
 
