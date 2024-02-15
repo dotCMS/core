@@ -43,9 +43,10 @@ runs:
         exists /usr/local/bin/dotnet
         exists /usr/local/Caskroom/
         
-        ls -la $HOME/image-generation
+        exists /Applications/
+
         ls -la ${HOME}/hostedtoolcache
-        ls -la ${HOME}/Library/Developer
+        ls -la 	/Users/runner/Library/Android/sdk
 
 # [[ -e $file ]] && time sudo rm -rf $1 || true
 
