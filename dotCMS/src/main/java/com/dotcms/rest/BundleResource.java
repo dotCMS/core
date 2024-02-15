@@ -136,12 +136,14 @@ public class BundleResource {
                 .init();
 
         try {
-
             PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
                     .getPublishAuditStatus(bundleId, 0);
 
-            if (publishAuditStatus == null) {
-                throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
+            if (!UtilMethods.isSet(publishAuditStatus)) {
+                final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+                if (!UtilMethods.isSet(bundle)) {
+                    throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
+                }
             }
 
             final List<PublishQueueElement> queueElements = PublisherAPIImpl.getInstance()
@@ -156,10 +158,14 @@ public class BundleResource {
                 publishAuditStatus = PublishAuditAPI.getInstance()
                         .getPublishAuditStatus(bundleId, limit);
 
-                final Map<String, String> assets = publishAuditStatus.getStatusPojo().getAssets();
-                detailedAssets = assets.entrySet().stream()
-                        .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
-                        .collect(Collectors.toList());
+                if (!UtilMethods.isSet(publishAuditStatus)) {
+                    detailedAssets = ImmutableList.of();
+                } else {
+                    final Map<String, String> assets = publishAuditStatus.getStatusPojo().getAssets();
+                    detailedAssets = assets.entrySet().stream()
+                            .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
+                            .collect(Collectors.toList());
+                }
             }
 
             return Response.ok(detailedAssets).build();

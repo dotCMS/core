@@ -7,6 +7,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CollectionsUtils;
@@ -69,18 +70,8 @@ import io.vavr.control.Try;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-
 import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.ACTIVE_FOLDER_ID;
 import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.OPEN_FOLDER_IDS;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
@@ -2101,6 +2092,7 @@ public class BrowserAjax {
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
     	WebContext ctx = WebContextFactory.get();
         User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
+		Logger.info(this,"currentLoggedUser: " + user.getFullName()+" - id"+user.getUserId());
         Role[] roles = new Role[]{};
 		try {
 			roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
@@ -2110,9 +2102,19 @@ public class BrowserAjax {
         boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts = hostAPI.findAll(user, respectFrontendRoles);
+		// Remove invalid hosts, before sorting the list
+		hosts.removeIf(host -> Objects.isNull(host) || Strings.isNullOrEmpty(host.getHostname()));
 		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
 		Collections.sort(hosts, new HostNameComparator());
 		for (Host h: hosts) {
+			/**
+			 * When we created the provided host list, we already validated the user's permission over the system host.
+			 * Therefore, there is no need to validate it again.
+			 **/
+			if (h.isSystemHost()){
+				hostsToReturn.add(hostMap(h));
+				continue;
+			}
 			List permissions = new ArrayList();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(h, roles, user);
@@ -2288,6 +2290,7 @@ public class BrowserAjax {
 	@CloseDBIfOpened
 	public List<Map<String, Object>> getFolderSubfolders(final String parentFolderId) throws DotDataException, DotSecurityException {
 		final User user = this.getLoggedInUser();
+		Logger.info(this, "subFoldersUSer" + user.getUserId());
 		final Role[] roles = DwrUtil.getUserRoles(user);
 		final Folder parentFolder = this.folderAPI.find(parentFolderId, user, false);
 		final List<Folder> subFolders = this.folderAPI.findSubFolders(parentFolder, user, false);
