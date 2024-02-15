@@ -36,15 +36,14 @@ runs:
         removeIfExists ${HOME}/work/_temp
         removeIfExists ${HOME}/.cargo/bin/cargo
         removeIfExists ${HOME}/.ghcup/bin/ghc
-        removeIfExists ${HOME}/Library/Android/sdk/tools/android
+        removeIfExists ${HOME}/Library/Android/sdk
         
         removeIfExists /usr/local/bin/pipx             
         removeIfExists /usr/bin/swift
         removeIfExists /usr/local/bin/dotnet
         removeIfExists /usr/local/Caskroom/
         
-        ls -la /Applications/
-
+#        ls -la /Applications/
 #        ls -la ${HOME}/hostedtoolcache
 #        ls -la /Users/runner/Library/Android/sdk
 
