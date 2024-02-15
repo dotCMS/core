@@ -33,7 +33,6 @@ runs:
         exists /Users/runner/.cache
         exists /Users/runner/Library/Logs
         exists /Users/runner/Library/Caches
-        exists /Users/runner/Library/Developer/Xcode/DerivedData
         exists /usr/local/Caskroom/
         exists /Users/runner/Library/Android/sdk/tools
         exists /Users/runner/Library/Android/sdk/platform-tools
@@ -43,75 +42,13 @@ runs:
         which dotnet
         which cargo
         which ghc
+        which android
+        
+        ls -la
+        ls -la work/
 
-#        rm -Rf /usr/local/bin/pipx
-#        rm -Rf /usr/bin/swift
-#        exists /Users/runner/.ghcup/bin
-#        exists /Users/runner/.cargo/bin
-#        exists /Users/runner/.yarn/bin
-#        exists /Users/runner/.dotnet/tools
-#
+# [[ -e $file ]] && time sudo rm -rf $1 || true
 
-# /Library/Java/JavaVirtualMachines/graalvm-ce-java11-22.1.0/Contents/Home/bin:/usr/local/lib/ruby/gems/3.0.0/bin:/usr/local/opt/ruby@3.0/bin:/usr/local/opt/pipx_bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Users/runner/.yarn/bin:/Users/runner/Library/Android/sdk/tools:/Users/runner/Library/Android/sdk/platform-tools:/Library/Frameworks/Python.framework/Versions/Current/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/usr/bin:/bin:/usr/sbin:/sbin:/Users/runner/.dotnet/tools:/Users/runner/.ghcup/bin
-
-#    - name: Reclaim Disk Space
-#      shell: bash
-#      run: |
-#        removeIfExists() {
-#          local file=$1
-#          [[ -e $file ]] && rm -rf $1 || true
-#        }
-#
-#        removeIfExists /usr/local/Caskroom/*
-#        removeIfExists /usr/local/lib/android
-#        removeIfExists /opt/ghc
-#        removeIfExists /opt/pipx
-#
-#        removeIfExists $HOME/.cache/*
-#        removeIfExists $HOME/.m2/*
-#        removeIfExists $HOME/Library/Caches/*
-#        removeIfExists $HOME/Library/Developer/Xcode/DerivedData/*
-#        removeIfExists $HOME/Library/Logs/*
-
-
-#        echo '# docker images'
-#        docker images || true
-#
-#        echo '# du -sh /home/runner'
-#        sudo du -sh /home/runner || true
-#
-#    - name: Clean apt cache
-#      shell: bash
-#      run: |
-#        echo 'Clean apt cache'
-#        time sudo apt-get clean -y
-#        time sudo apt-get autoclean -y
-#        time sudo apt-get autoremove -y
-#        time sudo rm -rf /var/lib/apt/lists/*
-#
-#    - name: Cleanup Docker
-#      shell: bash
-#      run: |
-#        echo 'Cleanup Docker'
-#        time docker system prune -f
-#        time docker volume prune -f
-#        time docker image prune -f
-#        time docker container prune -f
-#        time docker network prune -f
-#
-#    - name: Reclaim Disk Space
-#      shell: bash
-#      run: |
-#        removeIfExists() {
-#          local file=$1
-#          [[ -e $file ]] && time sudo rm -rf $1 || true
-#        }
-#
-#        removeIfExists /usr/share/dotnet
-#        removeIfExists /usr/share/swift
-#        removeIfExists /usr/local/lib/android
-#        removeIfExists /opt/ghc
-#        removeIfExists /opt/pipx
 #
 #        removeIfExists /opt/hostedtoolcache/CodeQL
 #        removeIfExists /imagegeneration/installers/go-*
