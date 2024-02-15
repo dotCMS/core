@@ -45,7 +45,7 @@ runs:
         which android
         
         ls -la
-        ls -la work/
+        ls -la $HOME
 
 # [[ -e $file ]] && time sudo rm -rf $1 || true
 
