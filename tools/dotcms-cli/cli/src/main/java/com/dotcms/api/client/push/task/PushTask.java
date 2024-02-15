@@ -1,6 +1,8 @@
 package com.dotcms.api.client.push.task;
 
+import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.push.exception.PushException;
+import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.model.push.PushAnalysisResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -8,26 +10,51 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.function.Function;
+import javax.enterprise.context.Dependent;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
- * Represents a task for pushing analysis results using a specified push handler. This class extends
- * the `RecursiveTask` class from the `java.util.concurrent` package.
+ * Represents a task for pushing analysis results using a specified push handler.
  *
  * @param <T> the type of analysis result
  */
-public class PushTask<T> extends RecursiveTask<List<Exception>> {
+@Dependent
+public class PushTask<T> extends TaskProcessor {
 
-    private final PushTaskParams<T> params;
+    private PushTaskParams<T> params;
 
     private final Logger logger;
 
-    private static final int THRESHOLD = 10;
+    private final ManagedExecutor executor;
 
-    public PushTask(final PushTaskParams<T> params) {
+    private final MapperService mapperService;
+
+    public PushTask(final Logger logger,
+            final MapperService mapperService, final ManagedExecutor executor) {
+        this.logger = logger;
+        this.executor = executor;
+        this.mapperService = mapperService;
+    }
+
+    /**
+     * Sets the parameters for the PushTask. This method provides a way to inject necessary
+     * configuration after the instance of PushTask has been created by the container, which is a
+     * common pattern when working with frameworks like Quarkus that manage object creation and
+     * dependency injection in a specific manner.
+     * <p>
+     * This method is used as an alternative to constructor injection, which is not feasible due to
+     * the limitations or constraints of the framework's dependency injection mechanism. It allows
+     * for the explicit setting of traversal parameters after the object's instantiation, ensuring
+     * that the executor is properly configured before use.
+     *
+     * @param params The parameters for the PullTask
+     */
+    public void setTaskParams(final PushTaskParams<T> params) {
         this.params = params;
-        this.logger = params.logger();
     }
 
     /**
@@ -35,8 +62,10 @@ public class PushTask<T> extends RecursiveTask<List<Exception>> {
      *
      * @return a list of exceptions encountered during the computation
      */
-    @Override
-    protected List<Exception> compute() {
+    public List<Exception> compute() {
+
+        CompletionService<List<Exception>> completionService =
+                new ExecutorCompletionService<>(executor);
 
         var errors = new ArrayList<Exception>();
 
@@ -60,29 +89,46 @@ public class PushTask<T> extends RecursiveTask<List<Exception>> {
 
         } else {
 
-            // If the list is large, split it into two smaller tasks
-            int mid = this.params.results().size() / 2;
-            var paramsTask1 = this.params.withResults(
-                    this.params.results().subList(0, mid)
-            );
-            var paramsTask2 = this.params.withResults(
-                    this.params.results().subList(mid, this.params.results().size())
-            );
+            // If the list is large, split it into smaller tasks
+            int toProcessCount = splitTasks(completionService);
 
-            var task1 = new PushTask<>(paramsTask1);
-            var task2 = new PushTask<>(paramsTask2);
-
-            // Start the first subtask in a new thread
-            task1.fork();
-
-            // Start and wait for the second subtask to finish
-            errors.addAll(task2.compute());
-
-            // Wait for the first subtask to finish
-            errors.addAll(task1.join());
+            // Wait for all tasks to complete and gather the results
+            Function<List<Exception>, Void> processFunction = taskResult -> {
+                errors.addAll(taskResult);
+                return null;
+            };
+            processTasks(toProcessCount, completionService, processFunction);
         }
 
         return errors;
+    }
+
+    /**
+     * Splits a list of T objects into separate tasks.
+     *
+     * @param completionService The CompletionService to submit tasks to.
+     * @return The number of tasks to process.
+     */
+    private int splitTasks(final CompletionService<List<Exception>> completionService) {
+
+        int mid = this.params.results().size() / 2;
+        var paramsTask1 = this.params.withResults(
+                this.params.results().subList(0, mid)
+        );
+        var paramsTask2 = this.params.withResults(
+                this.params.results().subList(mid, this.params.results().size())
+        );
+
+        PushTask<T> task1 = new PushTask<>(logger, mapperService, executor);
+        task1.setTaskParams(paramsTask1);
+
+        PushTask<T> task2 = new PushTask<>(logger, mapperService, executor);
+        task2.setTaskParams(paramsTask2);
+
+        completionService.submit(task1::compute);
+        completionService.submit(task2::compute);
+
+        return 2;
     }
 
     /**
@@ -265,7 +311,7 @@ public class PushTask<T> extends RecursiveTask<List<Exception>> {
 
             // Updating the file content
 
-            ObjectMapper objectMapper = this.params.mapperService().objectMapper(localFile);
+            ObjectMapper objectMapper = mapperService.objectMapper(localFile);
             final String asString = objectMapper.writeValueAsString(content);
 
             final Path path = Path.of(localFile.getAbsolutePath());

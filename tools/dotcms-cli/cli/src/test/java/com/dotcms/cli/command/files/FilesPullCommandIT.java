@@ -11,7 +11,6 @@ import java.io.StringWriter;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
@@ -75,7 +74,6 @@ class FilesPullCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Pull_Option_Valid_Protocol() throws IOException {
 
@@ -114,7 +112,6 @@ class FilesPullCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Pull_Option_Preserve() throws IOException {
 
@@ -172,7 +169,6 @@ class FilesPullCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Pull_Option_Include_Empty2() throws IOException {
 

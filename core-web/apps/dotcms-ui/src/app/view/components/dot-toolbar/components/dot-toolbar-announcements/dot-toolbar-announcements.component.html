@@ -5,7 +5,9 @@
         class="announcements__list-item"
         [class.announcements__list-item--active]="!item.hasBeenRead">
         <span class="announcements__badge" *ngIf="!item.hasBeenRead"></span>
-        <span class="announcements__image pi" [ngClass]="typesIcons[item.type]"></span>
+        <span
+            class="announcements__image pi"
+            [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"></span>
         <a
             class="announcements__url"
             [href]="item.url"
@@ -23,31 +25,43 @@
 </ul>
 
 <div class="announcements__container">
-    <i class="pi pi-external-link"></i>
-    <a
-        class="announcements__link"
-        [href]="linkToDotCms()"
-        target="_blank"
-        data-testId="announcement_link_all"
-        rel="noopener"
-        >{{ 'announcements.show.all' | dm }}</a
-    >
+    <div class="announcements__link-container">
+        <i class="pi pi-external-link"></i>
+        <a
+            class="announcements__link"
+            [href]="linkToDotCms()"
+            target="_blank"
+            data-testId="announcement_link_all"
+            rel="noopener"
+            >{{ 'announcements.show.all' | dm }}</a
+        >
+    </div>
 </div>
 
 <h5 class="announcements__title">{{ 'announcements.knowledge.center' | dm }}</h5>
 <div class="announcements__about">
     @for (item of knowledgeCenterLinks(); track item.id;) {
-    <a [href]="item.url" data-testId="announcement_link" target="_blank" rel="noopener">{{
-        item.label
-    }}</a>
+    <a
+        class="announcements__about-link"
+        [href]="item.url"
+        data-testId="announcement_link"
+        target="_blank"
+        rel="noopener"
+        >{{ item.label }}</a
+    >
     }
 </div>
 
 <h5 class="announcements__title">{{ 'announcements.knowledge.contact.us' | dm }}</h5>
 <div class="announcements__about">
     @for (item of contactLinks(); track item.id;) {
-    <a [href]="item.url" data-testId="announcement_link" target="_blank" rel="noopener">{{
-        item.label
-    }}</a>
+    <a
+        class="announcements__about-link"
+        [href]="item.url"
+        data-testId="announcement_link"
+        target="_blank"
+        rel="noopener"
+        >{{ item.label }}</a
+    >
     }
 </div>
