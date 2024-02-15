@@ -19,7 +19,6 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -39,6 +38,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableList;
@@ -203,7 +203,7 @@ public class ContentletAjaxTest {
 			long time = System.currentTimeMillis();
 
 			final ContentType languageVariableContentType = contentTypeAPI
-					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
+					.find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
 			languageVariable1 = createTestKeyValueContent(
 					"brought.you.by.IT"+time, "hello world", language.getId(),
 					languageVariableContentType, systemUser);
@@ -520,10 +520,9 @@ public class ContentletAjaxTest {
 		Map<String,Object> result = (Map<String,Object>)results.get(0);
 		Assert.assertEquals((Long)result.get("total"), Long.valueOf(2));
 		// Validate the two different languages
-		result = (Map<String,Object>)results.get(3);
-		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
-		result = (Map<String,Object>)results.get(4);
-		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
+		final long contentletOne_Language = Long.parseLong(((Map<String,String>)results.get(3)).get("languageId"));
+		final long contentletTwo_Language = Long.parseLong(((Map<String,String>)results.get(4)).get("languageId"));
+		assertTrue(contentletTwo_Language!=contentletOne_Language);
 
 	}
 

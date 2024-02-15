@@ -1,7 +1,9 @@
 <ng-container *ngIf="shellProperties$ | async as sp">
     <ng-container *ngIf="sp.canRead; else error">
         <router-outlet (activate)="onActivateRoute($event)"></router-outlet>
-        <dot-edit-ema-navigation-bar [items]="sp.items"></dot-edit-ema-navigation-bar>
+        <dot-edit-ema-navigation-bar
+            [items]="sp.items"
+            data-testId="ema-nav-bar"></dot-edit-ema-navigation-bar>
         <p-toast position="top-center" data-testId="ema-toast"></p-toast>
         <dot-page-tools-seo
             #pageTools
@@ -17,33 +19,7 @@
     </ng-template>
 </ng-container>
 
-<p-dialog
+<dot-edit-ema-dialog
     #dialog
-    *ngIf="dialogState$ | async as ds"
-    [visible]="ds.type === 'shell'"
-    [style]="{ height: '90vh', width: '90vw' }"
-    [header]="ds.header"
-    [draggable]="false"
-    [resizable]="false"
-    [maximizable]="true"
-    [modal]="true"
-    (visibleChange)="store.resetDialog()"
-    data-testId="dialog"
-    styleClass="edit-ema-dialog">
-    <iframe
-        #dialogIframe
-        [style]="{
-            border: 'none',
-            display: ds.iframeLoading ? 'none' : 'block'
-        }"
-        [src]="ds.iframeURL | safeUrl"
-        (load)="onIframeLoad()"
-        title="dialog"
-        data-testId="dialog-iframe"
-        width="100%"
-        height="100%"></iframe>
-    <dot-spinner
-        *ngIf="ds.iframeLoading"
-        [ngStyle]="{ position: 'absolute', top: '50%' }"
-        data-testId="spinner"></dot-spinner>
-</p-dialog>
+    (action)="handleNgEvent($event)"
+    data-testId="ema-dialog"></dot-edit-ema-dialog>

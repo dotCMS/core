@@ -85,7 +85,6 @@
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
             <dot-dot-binary-field-editor
                 *ngSwitchCase="BinaryFieldMode.EDITOR"
-                [allowFileNameEdit]="systemOptions?.allowFileNameEdit"
                 [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
                 [fileContent]="vm.tempFile?.content || vm.contentlet?.content"
                 [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"

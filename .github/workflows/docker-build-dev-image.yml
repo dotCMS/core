@@ -15,7 +15,9 @@ jobs:
         uses: ./.github/actions/cleanup-runner
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+      -
+        uses: ./.github/actions/cleanup-runner
       -
         name: Docker meta
         id: meta

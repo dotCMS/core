@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of as observableOf, Subject } from 'rxjs';
+import { Observable, of as observableOf, of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input, signal } from '@angular/core';
@@ -39,9 +39,6 @@ class MockDotNotificationsListComponent {
     @Input()
     notifications: INotification;
 }
-
-@Injectable()
-class MockIframeOverlayService {}
 
 @Injectable()
 class MockDotcmsEventsService {
@@ -82,10 +79,13 @@ class MockNotificationsService {
 
 describe('DotToolbarNotificationsComponent', () => {
     let fixture: ComponentFixture<DotToolbarNotificationsComponent>;
+    let iframeOverlayService: IframeOverlayService;
     const messageServiceMock = new MockDotMessageService({
         notifications_dismissall: 'Dismiss all',
         notifications_title: 'Notifications',
-        notifications_load_more: 'More'
+        notifications_load_more: 'More',
+        notifications_no_notifications_title: 'No More Notifications Here',
+        notifications_no_notifications: 'There are no notifications to show right now.'
     });
     const siteServiceMock = new SiteServiceMock();
 
@@ -99,7 +99,7 @@ describe('DotToolbarNotificationsComponent', () => {
             imports: [DotPipesModule, DotMessagePipe, ButtonModule, HttpClientTestingModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: IframeOverlayService, useClass: MockIframeOverlayService },
+                { provide: IframeOverlayService, useClass: IframeOverlayService },
                 { provide: DotcmsEventsService, useClass: MockDotcmsEventsService },
                 { provide: LoginService, useClass: MockLoginService },
                 { provide: NotificationsService, useClass: MockNotificationsService },
@@ -115,6 +115,7 @@ describe('DotToolbarNotificationsComponent', () => {
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotToolbarNotificationsComponent);
+        iframeOverlayService = fixture.debugElement.injector.get(IframeOverlayService);
     }));
 
     it(`should has a badge`, () => {
@@ -125,5 +126,25 @@ describe('DotToolbarNotificationsComponent', () => {
         );
 
         expect(badge).not.toBeNull();
+    });
+
+    it('should display the dropdown even if there are no notifications', () => {
+        spyOn(TestBed.inject(NotificationsService), 'getLastNotifications').and.returnValue(
+            of<any>({
+                entity: {
+                    totalUnreadNotifications: 0,
+                    notifications: [],
+                    total: 0
+                }
+            })
+        );
+
+        iframeOverlayService.show();
+        fixture.detectChanges();
+
+        const notificationsComponent = fixture.debugElement.query(
+            By.css('[data-testId="dot-toolbar-notifications"]')
+        );
+        expect(notificationsComponent).toBeDefined();
     });
 });

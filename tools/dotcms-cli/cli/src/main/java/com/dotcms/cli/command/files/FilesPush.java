@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -61,6 +62,9 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @Inject
     PushContext pushContext;
 
+    @Inject
+    ManagedExecutor executor;
+
     @Override
     public Integer call() throws Exception {
 
@@ -76,7 +80,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
         File finalInputFile = resolvedWorkspaceAndPath.getRight();
         CompletableFuture<List<TraverseResult>>
-                folderTraversalFuture = CompletableFuture.supplyAsync(
+                folderTraversalFuture = executor.supplyAsync(
                 () ->
                         // Service to handle the traversal of the folder
                         pushService.traverseLocalFolders(
@@ -91,7 +95,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                 folderTraversalFuture
         );
 
-        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+        CompletableFuture<Void> animationFuture = executor.runAsync(
                 consoleLoadingAnimation
         );
 

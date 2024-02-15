@@ -16,9 +16,26 @@
 .announcements__container {
     display: flex;
     justify-content: flex-end;
+}
+
+.announcements__link-container {
+    display: flex;
+    padding: $spacing-1;
+    gap: $spacing-1;
+    border-radius: $border-radius-lg;
+    &:hover {
+        background-color: $color-palette-primary-100;
+    }
 
     i {
         color: $color-palette-primary-500;
+    }
+}
+
+.announcements__about-link {
+    padding: $spacing-1;
+    &:hover {
+        background-color: $color-palette-primary-100;
     }
 }
 
@@ -73,15 +90,13 @@
 .announcements__about {
     display: grid;
     flex-direction: column;
-    gap: $spacing-3;
+    gap: $spacing-0;
     margin: $spacing-3;
     grid-template-columns: 1fr 1fr;
 }
 
 .announcements__link {
     color: $color-palette-primary;
-    padding: $spacing-1;
-    border-radius: $border-radius-lg;
     &:hover {
         background-color: $color-palette-primary-100;
     }

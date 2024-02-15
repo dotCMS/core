@@ -336,7 +336,10 @@ export class DotEditContentBinaryFieldComponent
         const {
             accept,
             maxFileSize = 0,
-            systemOptions = '{}'
+            systemOptions = `{
+                "allowURLImport": true,
+                "allowCodeWrite": true
+            }`
         } = getFieldVariablesParsed<{
             accept: string;
             maxFileSize: string;

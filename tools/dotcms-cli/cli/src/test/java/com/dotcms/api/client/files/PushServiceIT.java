@@ -37,7 +37,6 @@ import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -185,7 +184,6 @@ class PushServiceIT {
      *
      * @throws IOException if an I/O error occurs
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Push_New_Site() throws IOException {
 
@@ -298,6 +296,14 @@ class PushServiceIT {
             );
             var newSiteTreeNode = newSiteResults.getRight();
 
+            Assertions.assertEquals(4, newSiteTreeNode.children().size());
+
+            // Sorting the children to make the test deterministic
+            newSiteTreeNode.sortChildren();
+            newSiteTreeNode.children().get(0).sortChildren();
+            newSiteTreeNode.children().get(1).sortChildren();
+            newSiteTreeNode.children().get(2).sortChildren();
+
             //Validating the tree
             // subFolder1-1-1 (has 2 asset)
             Assertions.assertEquals(2, newSiteTreeNode.children().get(0).children().get(0).children().get(0).assets().size());
@@ -320,7 +326,6 @@ class PushServiceIT {
      *
      * @throws IOException if an I/O error occurs
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Push_Modified_Data() throws IOException {
 
@@ -457,6 +462,16 @@ class PushServiceIT {
             );
             var updatedTreeNode = updatedResults.getRight();
 
+            Assertions.assertEquals(5, updatedTreeNode.children().size());
+
+            // Sorting the children to make the test deterministic
+            updatedTreeNode.sortChildren();
+            updatedTreeNode.children().get(0).sortChildren();
+            updatedTreeNode.children().get(1).sortChildren();
+            updatedTreeNode.children().get(2).sortChildren();
+            updatedTreeNode.children().get(3).sortChildren();
+            updatedTreeNode.children().get(4).sortChildren();
+
             //Validating the tree
             // subFolder1-1-1 (has 2 asset)
             Assertions.assertEquals(2, updatedTreeNode.children().get(0).children().get(0).children().get(0).assets().size());
@@ -492,7 +507,6 @@ class PushServiceIT {
      * If the real intend if really removing the folder remotely. The folder needs to me removed  also from the "working" tree nodes branch
      * @throws IOException
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Delete_Folder() throws IOException {
 
