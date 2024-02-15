@@ -288,8 +288,8 @@ public class InitCommand implements Callable<Integer>, DotCommand {
             persist(List.of(activeBean));
             output.info("The current active profile is now [" + activeBean.name() + "]");
         } else {
-            boolean running = true;
-            while (running) {
+            boolean capture = true;
+            while (capture) {
                 final List<ServiceBean> serviceBeans = new ArrayList<>(capturedValues);
                 printServices(serviceBeans);
                 output.info("One of these profiles needs to be made the current active one. Please select the number of the profile you want to activate.");
@@ -297,7 +297,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                         "Enter the number of the profile to be made default or press enter to exit. ");
                 if (-1 == index) {
                     persist(serviceBeans);
-                    running = false;
+                    capture = false;
                 } else {
                     if (index < 0 || index >= capturedValues.size()) {
                         output.error(NO_PROFILE_WAS_SELECTED);
@@ -309,44 +309,55 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                         serviceBeans.set(index, activeBean);
                         persist(serviceBeans);
                         output.info("The current active profile is now [" + activeBean.name() + "]");
-                        running = false;
+                        capture = false;
                     }
                 }
             }
         }
     }
 
-
     /**
      * This method is used to delete a profile
      * @throws IOException if an error occurs
      */
     private void performDelete() throws IOException {
-        boolean running = true;
-        while (running) {
+        boolean capture = true;
+        while (capture) {
             final List<ServiceBean> serviceBeans = new ArrayList<>(serviceManager.services());
             if (serviceBeans.isEmpty()) {
                 output.info("All configurations were removed.");
-                running = false;
+                capture = false;
             } else {
                 printServices(serviceBeans);
-                final int index = prompt.readInput(-1,
-                        "Enter the number of the profile to @|bold delete|@ press enter to exit. ");
-                if (index == -1) {
-                    running = false;
-                } else {
-                    if (index < 0 || index >= serviceBeans.size()) {
-                        output.error(NO_PROFILE_WAS_SELECTED);
-                    } else {
-                        serviceBeans.remove(index);
-                        persist(serviceBeans);
-                        if (!prompt.yesOrNo(false, "Do you want to delete another profile? ")) {
-                            break;
-                        }
-                    }
+                capture = captureOptionThenDelete(capture, serviceBeans);
+            }
+        }
+    }
+
+    /**
+     * This method is used to capture option to delete and perform the delete operation
+     * @param capture the running flag
+     * @param serviceBeans
+     * @return
+     * @throws IOException
+     */
+    private boolean captureOptionThenDelete(boolean capture, List<ServiceBean> serviceBeans) throws IOException {
+        final int index = prompt.readInput(-1,
+                "Enter the number of the profile to @|bold delete|@ press enter to exit. ");
+        if (index == -1) {
+            capture = false;
+        } else {
+            if (index < 0 || index >= serviceBeans.size()) {
+                output.error(NO_PROFILE_WAS_SELECTED);
+            } else {
+                serviceBeans.remove(index);
+                persist(serviceBeans);
+                if (!prompt.yesOrNo(false, "Do you want to delete another profile? ")) {
+                    capture = false;
                 }
             }
         }
+        return capture;
     }
 
     /**
