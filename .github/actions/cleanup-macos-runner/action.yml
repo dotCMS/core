@@ -43,10 +43,9 @@ runs:
         exists /usr/local/bin/dotnet
         exists /usr/local/Caskroom/
         
-        ls -Rla $HOME/image-generation
+        ls -la $HOME/image-generation
         ls -la ${HOME}/hostedtoolcache
-        ls -la ${HOME}/work
-        ls -la ${HOME}/Library/
+        ls -la ${HOME}/Library/Developer
 
 # [[ -e $file ]] && time sudo rm -rf $1 || true
 
