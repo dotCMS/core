@@ -1,12 +1,18 @@
 package com.dotcms.api.client.pull.task;
 
+import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.pull.exception.PullException;
+import com.dotcms.api.client.task.TaskProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.function.Function;
+import javax.enterprise.context.Dependent;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
@@ -14,24 +20,48 @@ import org.jboss.logging.Logger;
  *
  * @param <T> the type of content being pulled and processed
  */
-public class PullTask<T> extends RecursiveTask<List<Exception>> {
+@Dependent
+public class PullTask<T> extends TaskProcessor {
 
-    private final PullTaskParams<T> params;
+    private PullTaskParams<T> params;
 
     private final Logger logger;
 
-    private static final int THRESHOLD = 10;
+    private final MapperService mapperService;
 
-    public PullTask(final PullTaskParams<T> params) {
+    private final ManagedExecutor executor;
+
+    public PullTask(final Logger logger, final MapperService mapperService,
+            final ManagedExecutor executor) {
+        this.logger = logger;
+        this.mapperService = mapperService;
+        this.executor = executor;
+    }
+
+    /**
+     * Sets the parameters for the PullTask. This method provides a way to inject necessary
+     * configuration after the instance of PullTask has been created by the container, which is a
+     * common pattern when working with frameworks like Quarkus that manage object creation and
+     * dependency injection in a specific manner.
+     * <p>
+     * This method is used as an alternative to constructor injection, which is not feasible due to
+     * the limitations or constraints of the framework's dependency injection mechanism. It allows
+     * for the explicit setting of traversal parameters after the object's instantiation, ensuring
+     * that the executor is properly configured before use.
+     *
+     * @param params The parameters for the PullTask
+     */
+    public void setTaskParams(final PullTaskParams<T> params) {
         this.params = params;
-        this.logger = params.logger();
     }
 
     /**
      * Computes the contents to pull
      */
-    @Override
-    protected List<Exception> compute() {
+    public List<Exception> compute() {
+
+        CompletionService<List<Exception>> completionService =
+                new ExecutorCompletionService<>(executor);
 
         var errors = new ArrayList<Exception>();
 
@@ -54,29 +84,46 @@ public class PullTask<T> extends RecursiveTask<List<Exception>> {
 
         } else {
 
-            // If the list is large, split it into two smaller tasks
-            int mid = this.params.contents().size() / 2;
-            var paramsTask1 = this.params.withContents(
-                    this.params.contents().subList(0, mid)
-            );
-            var paramsTask2 = this.params.withContents(
-                    this.params.contents().subList(mid, this.params.contents().size())
-            );
+            // If the list is large, split it into smaller tasks
+            int toProcessCount = splitTasks(completionService);
 
-            var task1 = new PullTask<>(paramsTask1);
-            var task2 = new PullTask<>(paramsTask2);
-
-            // Start the first subtask in a new thread
-            task1.fork();
-
-            // Start and wait for the second subtask to finish
-            errors.addAll(task2.compute());
-
-            // Wait for the first subtask to finish
-            errors.addAll(task1.join());
+            // Wait for all tasks to complete and gather the results
+            Function<List<Exception>, Void> processFunction = taskResult -> {
+                errors.addAll(taskResult);
+                return null;
+            };
+            processTasks(toProcessCount, completionService, processFunction);
         }
 
         return errors;
+    }
+
+    /**
+     * Splits a list of T objects into separate tasks.
+     *
+     * @param completionService The CompletionService to submit tasks to.
+     * @return The number of tasks to process.
+     */
+    private int splitTasks(final CompletionService<List<Exception>> completionService) {
+
+        int mid = this.params.contents().size() / 2;
+        var paramsTask1 = this.params.withContents(
+                this.params.contents().subList(0, mid)
+        );
+        var paramsTask2 = this.params.withContents(
+                this.params.contents().subList(mid, this.params.contents().size())
+        );
+
+        PullTask<T> task1 = new PullTask<>(logger, mapperService, executor);
+        task1.setTaskParams(paramsTask1);
+
+        PullTask<T> task2 = new PullTask<>(logger, mapperService, executor);
+        task2.setTaskParams(paramsTask2);
+
+        completionService.submit(task1::compute);
+        completionService.submit(task2::compute);
+
+        return 2;
     }
 
     /**
@@ -96,8 +143,7 @@ public class PullTask<T> extends RecursiveTask<List<Exception>> {
 
             // Save the content to a file
 
-            ObjectMapper objectMapper = this.params.mapperService()
-                    .objectMapper(this.params.format());
+            ObjectMapper objectMapper = mapperService.objectMapper(this.params.format());
             final String asString = objectMapper.writeValueAsString(content);
             if (this.params.output().isVerbose()) {
                 this.params.output().info( String.format("%n%s", asString) );

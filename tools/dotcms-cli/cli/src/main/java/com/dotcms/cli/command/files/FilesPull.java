@@ -17,7 +17,6 @@ import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
 import com.dotcms.cli.common.WorkspaceParams;
-import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.pull.PullOptions;
 import java.io.File;
@@ -64,10 +63,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     PullMixin pullMixin;
 
     @CommandLine.Mixin(name = FILE_PULL_MIXIN)
-    FilePullMixin filePullMixin;
-
-    @Inject
-    WorkspaceManager workspaceManager;
+    FilesPullMixin filesPullMixin;
 
     @Inject
     PullService pullService;
@@ -103,26 +99,34 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
             );
         }
 
-        var includeFolderPatterns = parsePatternOption(filePullMixin.includeFolderPatternsOption);
-        var includeAssetPatterns = parsePatternOption(filePullMixin.includeAssetPatternsOption);
-        var excludeFolderPatterns = parsePatternOption(filePullMixin.excludeFolderPatternsOption);
-        var excludeAssetPatterns = parsePatternOption(filePullMixin.excludeAssetPatternsOption);
+        var includeFolderPatterns = parsePatternOption(
+                filesPullMixin.globMixin.includeFolderPatternsOption
+        );
+        var includeAssetPatterns = parsePatternOption(
+                filesPullMixin.globMixin.includeAssetPatternsOption
+        );
+        var excludeFolderPatterns = parsePatternOption(
+                filesPullMixin.globMixin.excludeFolderPatternsOption
+        );
+        var excludeAssetPatterns = parsePatternOption(
+                filesPullMixin.globMixin.excludeAssetPatternsOption
+        );
 
         var customOptions = Map.of(
                 INCLUDE_FOLDER_PATTERNS, includeFolderPatterns,
                 INCLUDE_ASSET_PATTERNS, includeAssetPatterns,
                 EXCLUDE_FOLDER_PATTERNS, excludeFolderPatterns,
                 EXCLUDE_ASSET_PATTERNS, excludeAssetPatterns,
-                NON_RECURSIVE, filePullMixin.nonRecursive,
-                PRESERVE, filePullMixin.preserve,
-                INCLUDE_EMPTY_FOLDERS, filePullMixin.includeEmptyFolders
+                NON_RECURSIVE, filesPullMixin.nonRecursive,
+                PRESERVE, filesPullMixin.preserve,
+                INCLUDE_EMPTY_FOLDERS, filesPullMixin.includeEmptyFolders
         );
 
         // Execute the pull
         pullService.pull(
                 PullOptions.builder().
                         destination(filesFolder).
-                        contentKey(Optional.ofNullable(filePullMixin.path)).
+                        contentKey(Optional.ofNullable(filesPullMixin.path)).
                         isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
                         failFast(pullMixin.failFast).
                         maxRetryAttempts(pullMixin.retryAttempts).
@@ -149,11 +153,6 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public PullMixin getPullMixin() {
         return pullMixin;
-    }
-
-    @Override
-    public Optional<String> getCustomMixinName() {
-        return Optional.empty();
     }
 
     @Override
