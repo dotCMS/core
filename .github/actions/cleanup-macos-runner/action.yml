@@ -43,18 +43,6 @@ runs:
         removeIfExists /usr/local/bin/dotnet
         removeIfExists /usr/local/Caskroom/
         
-#        ls -la /Applications/
-#        ls -la ${HOME}/hostedtoolcache
-#        ls -la /Users/runner/Library/Android/sdk
-
-# [[ -e $file ]] && time sudo rm -rf $1 || true
-# [[ -e $file ]] && echo "$file exists" || echo "$file does not exist"
-
-#        removeIfExists /opt/hostedtoolcache/CodeQL
-#        removeIfExists /imagegeneration/installers/go-*
-#        removeIfExists /imagegeneration/installers/node-*
-#        removeIfExists /imagegeneration/installers/python-*
-#
     - name: Show Disk Usage
       shell: bash
       run: |
