@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 import { client } from './utils/client'
 import MyHeader from './components/MyHeader.vue'
 import MyFooter from './components/MyFooter.vue'
-import Navigation from './Navigation.vue'
+import Navigation from './components/Navigation.vue'
 
 async function fetchData(routePath) {
   const data = await client.page
