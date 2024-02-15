@@ -107,7 +107,7 @@ describe('EmaPageDropzoneComponent', () => {
         expect(spectator.queryAll('[data-type="row"]')).toHaveLength(1);
         expect(spectator.queryAll('[data-type="column"]')).toHaveLength(1);
         expect(spectator.queryAll('[data-type="container"]')).toHaveLength(1);
-        expect(spectator.queryAll('[data-type="contentlet"]')).toHaveLength(1);
+        expect(spectator.queryAll('[data-type="contentlet"]')).toHaveLength(2);
     });
 
     describe('css', () => {
