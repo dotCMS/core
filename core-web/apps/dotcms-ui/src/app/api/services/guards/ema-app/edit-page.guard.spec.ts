@@ -4,13 +4,14 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { EmaAppConfigurationService } from '@dotcms/data-access';
+import { DotPropertiesService, EmaAppConfigurationService } from '@dotcms/data-access';
 
 import { editPageGuard } from './edit-page.guard';
 
 describe('EditPageGuard', () => {
     let emaAppConfigurationService: jasmine.SpyObj<EmaAppConfigurationService>;
     let router: Router;
+    let properties: jasmine.SpyObj<DotPropertiesService>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const state: RouterStateSnapshot = {} as any;
 
@@ -29,6 +30,12 @@ describe('EditPageGuard', () => {
                     useValue: {
                         navigate: jasmine.createSpy('navigate')
                     }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getFeatureFlag: jasmine.createSpy('getFeatureFlag')
+                    }
                 }
             ]
         });
@@ -37,9 +44,12 @@ describe('EditPageGuard', () => {
             EmaAppConfigurationService
         ) as jasmine.SpyObj<EmaAppConfigurationService>;
         router = TestBed.inject(Router);
+        properties = TestBed.inject(DotPropertiesService) as jasmine.SpyObj<DotPropertiesService>;
     });
 
-    it('should navigate to "edit-ema" when app config is set', async () => {
+    it('should navigate to "edit-ema" when FEATURE_FLAG_NEW_EDIT_PAGE is true', async () => {
+        properties.getFeatureFlag.and.returnValue(of(true));
+
         emaAppConfigurationService.get.and.returnValue(
             of({
                 pattern: 'some-pattern',
@@ -73,7 +83,44 @@ describe('EditPageGuard', () => {
         });
     });
 
+    it('should navgate to "edit-ema" when have a EMA App configuration', async () => {
+        properties.getFeatureFlag.and.returnValue(of(false));
+        emaAppConfigurationService.get.and.returnValue(
+            of({
+                pattern: 'some-pattern',
+                url: 'https://example.com',
+                options: {
+                    authenticationToken: '12345',
+                    additionalOption1: 'value1',
+                    additionalOption2: 'value2'
+                    // Add more key-value pairs as needed
+                }
+            })
+        );
+
+        const route: ActivatedRouteSnapshot = {
+            queryParams: { url: '/some-url' }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+
+        const result = await TestBed.runInInjectionContext(
+            () => editPageGuard(route, state) as Observable<boolean>
+        );
+
+        result.subscribe((canActivate) => {
+            expect(router.navigate).toHaveBeenCalledWith(['edit-ema'], {
+                queryParams: {
+                    url: 'some-url',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    language_id: 1
+                }
+            });
+            expect(canActivate).toBe(false);
+        });
+    });
+
     it('should not update the queryParams on navigate', async () => {
+        properties.getFeatureFlag.and.returnValue(of(true));
         emaAppConfigurationService.get.and.returnValue(
             of({
                 pattern: 'some-pattern',
@@ -111,9 +158,8 @@ describe('EditPageGuard', () => {
         });
     });
 
-    it('should return `true` when app config is NOT set', async () => {
-        emaAppConfigurationService.get.and.returnValue(of(null));
-
+    it('should return true when FEATURE_FLAG_NEW_EDIT_PAGE is false', async () => {
+        properties.getFeatureFlag.and.returnValue(of(false));
         const route: ActivatedRouteSnapshot = {
             queryParams: { url: '/some-url' }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -122,7 +168,6 @@ describe('EditPageGuard', () => {
         const result = await TestBed.runInInjectionContext(
             () => editPageGuard(route, state) as Observable<boolean>
         );
-
         result.subscribe((canActivate) => {
             expect(router.navigate).not.toHaveBeenCalled();
             expect(canActivate).toBe(true);

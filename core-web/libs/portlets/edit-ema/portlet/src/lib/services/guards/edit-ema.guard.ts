@@ -1,12 +1,13 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { DEFAULT_PERSONA } from 'libs/portlets/edit-ema/portlet/src/lib/shared/consts';
+import { of } from 'rxjs';
 
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Params, Router } from '@angular/router';
 
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
-import { EmaAppConfigurationService } from '@dotcms/data-access';
+import { DotPropertiesService, EmaAppConfigurationService } from '@dotcms/data-access';
 
 import { sanitizeURL } from '../../utils';
 
@@ -20,6 +21,7 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     const [content] = route.firstChild.url;
 
     const router = inject(Router);
+    const properties = inject(DotPropertiesService);
 
     const { didQueryParamsGetCompleted, newQueryParams } = confirmQueryParams(route.queryParams);
 
@@ -28,7 +30,7 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     return inject(EmaAppConfigurationService)
         .get(url)
         .pipe(
-            map((value) => {
+            switchMap((value) => {
                 if (value) {
                     if (didQueryParamsGetCompleted) {
                         router.navigate([`/edit-ema/${content.path}`], {
@@ -39,13 +41,36 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
                             replaceUrl: true
                         });
 
-                        return true;
+                        return of(true);
                     }
 
-                    return true;
+                    return of(true);
                 }
 
-                return router.createUrlTree(['/pages']);
+                return properties.getFeatureFlag('FEATURE_FLAG_NEW_EDIT_PAGE').pipe(
+                    map((flag) => {
+                        if (!flag) {
+                            //Go to EditPage
+                            router.navigate(['/edit-page/content'], {
+                                queryParams: route.queryParams
+                            });
+
+                            return false;
+                        }
+
+                        if (didQueryParamsGetCompleted) {
+                            router.navigate([`/edit-ema/${content.path}`], {
+                                queryParams: {
+                                    ...route.queryParams,
+                                    ...newQueryParams
+                                },
+                                replaceUrl: true
+                            });
+                        }
+
+                        return true;
+                    })
+                );
             })
         );
 };

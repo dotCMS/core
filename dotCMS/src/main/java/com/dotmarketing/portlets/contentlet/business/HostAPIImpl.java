@@ -382,6 +382,10 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (null != siteList && !siteList.isEmpty()) {
             return siteList.stream().filter(site -> {
                 try {
+                    if (site.isSystemHost() && !user.isAdmin()){
+                        return includeSystemHost &&
+                               APILocator.getPermissionAPI().doesSystemHostHavePermissions(APILocator.systemHost(), user, respectFrontendRoles, Host.class.getCanonicalName());
+                    }
                     this.checkSitePermission(user, respectFrontendRoles, site);
                     return true;
                 } catch (final DotDataException | DotSecurityException e) {
