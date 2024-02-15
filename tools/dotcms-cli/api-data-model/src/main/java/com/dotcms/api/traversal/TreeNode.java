@@ -9,6 +9,7 @@ import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderSync;
 import com.dotcms.model.asset.FolderView;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -86,6 +87,16 @@ public class TreeNode {
     }
 
     /**
+     * Sorts the children of the TreeNode based on their folder names in ascending order. If the
+     * TreeNode has no children or is null, this method does nothing.
+     */
+    public void sortChildren() {
+        if (this.children != null && !this.children.isEmpty()) {
+            this.children.sort(Comparator.comparing(a -> a.folder().name()));
+        }
+    }
+
+    /**
      * Returns a list of child nodes of this TreeNode
      * Given that this is a recursive structure, this method returns a flattened list of all the
      * @return the list of child nodes
@@ -103,6 +114,17 @@ public class TreeNode {
      */
     public List<AssetView> assets() {
         return this.assets;
+    }
+
+    /**
+     * Sorts the assets within the current TreeNode based on their names. The sorting is done in
+     * ascending order. If the TreeNode does not contain any assets or is null, this method does
+     * nothing.
+     */
+    public void sortAssets() {
+        if (this.assets != null && !this.assets.isEmpty()) {
+            this.assets.sort(Comparator.comparing(AssetView::name));
+        }
     }
 
     /**

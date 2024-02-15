@@ -11,7 +11,6 @@ import java.io.StringWriter;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -43,7 +42,6 @@ class FilesLsCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Ls_Option_Valid_Protocol() {
 
@@ -98,7 +96,6 @@ class FilesLsCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Ls_Option_Glob_Exclude_Folders() {
 
@@ -113,7 +110,6 @@ class FilesLsCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Ls_Option_Glob_Exclude_Folders2() {
 
@@ -142,7 +138,6 @@ class FilesLsCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Ls_Option_Glob_Exclude_Folders4() {
 
@@ -283,7 +278,6 @@ class FilesLsCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Ls_Option_Glob_Include_Folders2() {
 
@@ -396,7 +390,6 @@ class FilesLsCommandIT extends CommandTest {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Command_Files_Ls_Option_Glob_Include_Assets4() {
 
