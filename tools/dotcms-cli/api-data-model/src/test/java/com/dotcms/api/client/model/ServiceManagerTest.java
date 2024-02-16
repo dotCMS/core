@@ -5,6 +5,7 @@ import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -23,7 +24,7 @@ class ServiceManagerTest {
 
     @BeforeEach
     public void setupTest() throws IOException {
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
     }
 
     @Test
@@ -32,6 +33,7 @@ class ServiceManagerTest {
 
         final ServiceBean serviceBeanDefault = ServiceBean.builder().name("default")
                 .active(false)
+                .url(new URL("http://localhost:8080"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
                                 .token(FAKE_TOKEN_1.toCharArray()).build())
@@ -40,6 +42,7 @@ class ServiceManagerTest {
 
         final ServiceBean serviceBeanDemo1 = ServiceBean.builder().name("demo1")
                 .active(false)
+                .url(new URL("https://demo.dotcms.com"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
                                 .token(FAKE_TOKEN_2.toCharArray()).build())
@@ -48,6 +51,7 @@ class ServiceManagerTest {
 
         final ServiceBean serviceBeanDemo2 = ServiceBean.builder().name("demo2")
                 .active(false)
+                .url(new URL("https://demo.dotcms.com"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
                                 .token(FAKE_TOKEN_3.toCharArray()).build())
@@ -70,6 +74,7 @@ class ServiceManagerTest {
 
         final ServiceBean serviceBeanDemoDupe = ServiceBean.builder().name("demo2")
                 .active(false)
+                .url(new URL("https://demo.dotcms.com"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
                                 .token(FAKE_TOKEN_3.toCharArray()).build())
@@ -83,6 +88,7 @@ class ServiceManagerTest {
 
         final ServiceBean activeBean = ServiceBean.builder().name("demo2")
                 .active(true)
+                .url(new URL("https://demo.dotcms.com"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
                                 .token(FAKE_TOKEN_3.toCharArray()).build())

@@ -11,6 +11,7 @@ import com.dotcms.model.config.ServiceBean;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import java.net.URL;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
@@ -44,6 +45,7 @@ class AssetAPIT {
         serviceManager.removeAll().persist(
                 ServiceBean.builder().
                         name("default").
+                        url(new URL("http://localhost:8080")).
                         active(true).
                         build()
         );

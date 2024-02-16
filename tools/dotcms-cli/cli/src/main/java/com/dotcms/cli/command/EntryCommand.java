@@ -1,14 +1,16 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.api.client.model.AuthenticationParam;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;
 import com.dotcms.cli.command.site.SiteCommand;
-import com.dotcms.cli.common.ExceptionHandlerImpl;
-import com.dotcms.cli.common.LoggingExecutionStrategy;
+import com.dotcms.cli.common.DotExceptionHandler;
+import com.dotcms.cli.common.DotExecutionStrategy;
 import com.dotcms.cli.common.OutputOptionMixin;
-import io.quarkus.arc.Unremovable;
+import com.dotcms.cli.exception.ExceptionHandlerImpl;
+import com.dotcms.model.annotation.SecuredPassword;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import javax.enterprise.context.ApplicationScoped;
@@ -24,17 +26,18 @@ import picocli.CommandLine.ParameterException;
 
 @TopCommand
 @CommandLine.Command(
-        name = "dotCMS",
+        name = EntryCommand.NAME,
         mixinStandardHelpOptions = true,
-        version = {"dotcms-cli 1.0", "picocli " + CommandLine.VERSION},
+        version = {"dotCMS cli 1.0", "picocli " + CommandLine.VERSION},
         description = {
                 "@|bold,underline,blue dotCMS|@ cli is a command line interface to interact with your @|bold,underline,blue dotCMS|@ instance.",
         },
         header = "dotCMS cli",
         subcommands = {
                 //-- Miscellaneous stuff
-                StatusCommand.class,
+                InitCommand.class,
                 InstanceCommand.class,
+                StatusCommand.class,
                 LoginCommand.class,
                 PushCommand.class,
                 PullCommand.class,
@@ -49,17 +52,33 @@ import picocli.CommandLine.ParameterException;
                 FilesCommand.class
         }
 )
-public class EntryCommand  {
+public class EntryCommand implements DotCommand{
 
-    // Declared here, so we have an instance available via Arc container
-    @Unremovable
+    public static final String NAME = "dotCMS";
+
+    // Declared here, so we have an instance available via Arc container on the Customized CommandLine
     @Inject
     ExceptionHandlerImpl exceptionHandler;
 
-    @Unremovable
     @Inject
     AuthenticationParam authenticationParam;
 
+    @SecuredPassword
+    @Inject
+    ServiceManager serviceManager;
+
+    @CommandLine.Mixin(name = "output")
+    protected OutputOptionMixin output;
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }
 
 @ApplicationScoped
@@ -74,7 +93,7 @@ class CustomConfiguration {
     @Produces
     CommandLine customCommandLine(final PicocliCommandLineFactory factory) {
 
-        CommandLine cmdLine = factory.create();
+        final CommandLine cmdLine = factory.create();
 
         var configurationUtil = CustomConfigurationUtil.getInstance();
 
@@ -121,21 +140,9 @@ class CustomConfigurationUtil {
     public void customize(CommandLine cmdLine) {
 
         cmdLine.setCaseInsensitiveEnumValuesAllowed(true)
-                .setExecutionStrategy(
-                        new LoggingExecutionStrategy(new CommandLine.RunLast()))
-                .setExecutionExceptionHandler((ex, commandLine, parseResult) -> {
-                    final Object object = commandLine.getCommand();
-                    if (object instanceof DotCommand) {
-                        final DotCommand command = (DotCommand) object;
-                        final OutputOptionMixin output = command.getOutput();
-                        return output.handleCommandException(ex,
-                                String.format("Error in command [%s] with message: %n ",
-                                        command.getName()));
-                    } else {
-                        commandLine.getErr().println(ex.getMessage());
-                    }
-                    return ExitCode.SOFTWARE;
-                }).setExitCodeExceptionMapper(t -> {
+                .setExecutionStrategy(new DotExecutionStrategy(new CommandLine.RunLast()))
+                .setExecutionExceptionHandler(new DotExceptionHandler())
+                .setExitCodeExceptionMapper(t -> {
                     // customize exit code
                     // We usually throw an IllegalArgumentException to denote that an invalid param has been passed
                     if (t instanceof ParameterException || t instanceof IllegalArgumentException) {
