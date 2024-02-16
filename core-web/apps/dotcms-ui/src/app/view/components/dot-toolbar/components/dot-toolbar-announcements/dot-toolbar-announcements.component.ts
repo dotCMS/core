@@ -43,8 +43,10 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
         });
     }
 
-    ngOnChanges(): void {
-        this.announcementsStore.markAnnouncementsAsRead();
+    ngOnChanges(changes): void {
+        if (!changes.showUnreadAnnouncement.currentValue) {
+            this.announcementsStore.markAnnouncementsAsRead();
+        }
     }
 
     typesIcons = {
