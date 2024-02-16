@@ -46,6 +46,7 @@ import com.dotcms.graphql.exception.FieldGenerationException;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.LowerKeyMap;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -266,13 +267,16 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * @return
      */
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
+        final Map<String, TypeUtil.TypeFetcher> lowerNewFieldMap = new LowerKeyMap<>();
+        // making the keys lowercase
+        lowerNewFieldMap.putAll(ContentFields.getContentFields());
+
         // first let's check if there's an inherited field with the same variable
-        if (ContentFields.getContentFields().containsKey(variable)) {
+        if (lowerNewFieldMap.containsKey(variable.toLowerCase())) {
             // now let's check if the graphql types are compatible
 
             // get inherited field's graphql type
-            final GraphQLType inheritedFieldGraphQLType = ContentFields.getContentFields()
-                    .get(variable).getType();
+            final GraphQLType inheritedFieldGraphQLType = lowerNewFieldMap.get(variable).getType();
 
             // get new field's type
             final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
