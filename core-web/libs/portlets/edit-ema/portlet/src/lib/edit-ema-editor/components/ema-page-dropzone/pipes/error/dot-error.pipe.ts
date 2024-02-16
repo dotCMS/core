@@ -2,7 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
-import { Container, EmaDragItem } from '../../ema-page-dropzone.component';
+import { Container, EmaDragItem } from '../../types';
 
 interface DotErrorPipeResponse {
     message: string;

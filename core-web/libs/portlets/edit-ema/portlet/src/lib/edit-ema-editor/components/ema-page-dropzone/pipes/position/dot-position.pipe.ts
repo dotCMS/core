@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-import { EmaPageDropzoneItem } from '../../ema-page-dropzone.component';
+import { EmaPageDropzoneItem } from '../../types';
 
 @Pipe({
     name: 'dotPosition',
