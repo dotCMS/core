@@ -104,19 +104,5 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
 
         return Try.of(()-> this.htmlPage.getURI()).getOrElseThrow(DotRuntimeException::new);
     }
-
-    public static void main(String[] args) throws JsonProcessingException {
-        final String htmlPageAssetRendered = "$dotExperiment.code()\n" +
-                "<html>\n" +
-                "This is a test\n" +
-                "</html>\n" +
-                "<script>console.log(\"AAAA\");</SCRIPT>\n" +
-                "<script>console.log(\"BBB\");</script>\n";
-
-        final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        final String renderedPageString = objectWriter.writeValueAsString(htmlPageAssetRendered)
-                .replaceAll("(?i)</script>", "\\\\</script\\\\>");
-                //.replace("</script>",  "\\</script\\>");
-        System.out.println("renderedPageString = " + renderedPageString);
-    }
+    
 }
