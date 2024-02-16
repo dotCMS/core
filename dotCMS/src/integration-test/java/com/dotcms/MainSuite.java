@@ -605,7 +605,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleFactoryImplTest.class,
         DropOldContentVersionsJobTest.class,
         ITConfigTest.class,
-        Task231109AddPublishDateToContentletVersionInfoTest.class
+        Task231109AddPublishDateToContentletVersionInfoTest.class,
+        Task240102AlterVarcharLengthOfRelationTypeTest.class
 
 })
 

@@ -46,3 +46,4 @@ This maintenance release includes the following code fixes:
 40. https://github.com/dotCMS/core/issues/26796 : Reserved names fields should be compared in a case-insensitive manner to avoid errors and inconsistencies. #26796
 40. https://github.com/dotCMS/core/issues/26680 : Restoring Reorder Rows Functionality in Content Type Editing #26680
 41. https://github.com/dotCMS/core/issues/26774 : text fields validation limit to 255 chars is not longer required #26774
+42. https://github.com/dotCMS/core/issues/26605 : Relation_type field too small #26605
