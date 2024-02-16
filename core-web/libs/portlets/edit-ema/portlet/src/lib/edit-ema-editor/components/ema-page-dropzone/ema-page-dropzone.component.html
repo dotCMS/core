@@ -12,12 +12,15 @@
                 (drop)="onDrop($event)"
                 (dragover)="onDragover($event)"
                 data-type="contentlet"></div>
+
+            @if(container | dotError : item; as error) {
             <div
                 class="drop-zone_error"
-                *ngIf="container | dotError : item as error"
+                *ngIf="error.message.length"
                 [ngStyle]="container | dotPosition">
                 <span [innerHTML]="error.message | dm : error.args"></span>
             </div>
+            }
         </div>
     </div>
 </div>
