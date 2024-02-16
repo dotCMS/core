@@ -41,3 +41,4 @@ This maintenance release includes the following code fixes:
 35. https://github.com/dotCMS/core/issues/26861 : Can not create in rest a new diff lang version #26861
 36. https://github.com/dotCMS/core/issues/27007 : Content export with Publish Date Parameter leads to 400 Bad Request error #27007
 37. https://github.com/dotCMS/core/issues/27601 : Unhandled Exception: Failed to Fetch Error Not Caught in Preview with SEO Feature #27601 
+38. https://github.com/dotCMS/core/issues/26459 : Unable to copy a contentlet having Site/Folder Field #26459
