@@ -61,9 +61,9 @@ public class VelocityServlet extends HttpServlet {
     public static PageMode processPageMode (final User user, final HttpServletRequest request) {
 
         final LoginMode loginMode = LoginMode.get(request);
-
+        System.out.println("loginMode = " + loginMode);
         if (LoginMode.UNKNOWN == loginMode) {
-
+            System.out.println("user.isFrontendUser() = " + user.isFrontendUser());
             return user.isFrontendUser()
                     ? PageMode.setPageMode(request, PageMode.LIVE)
                     :  useNavigateMode(request, loginMode)
@@ -87,12 +87,13 @@ public class VelocityServlet extends HttpServlet {
         }
 
         final boolean disabledNavigateMode = Boolean.parseBoolean(request.getParameter("disabledNavigateMode"));
-
+        System.out.println("disabledNavigateMode = " + disabledNavigateMode);
         if (disabledNavigateMode) {
             return false;
         }
 
         final String referer = request.getHeader("referer");
+        System.out.println("referer = " + referer);
         return referer != null && referer.contains("/dotAdmin");
     }
 
@@ -112,7 +113,7 @@ public class VelocityServlet extends HttpServlet {
         
         request.setRequestUri(uri);
         final PageMode mode = processPageMode(user, request);
-
+        System.out.println("mode = " + mode);
         // if you are hitting the servlet without running through the other filters
         if (uri == null) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "VelocityServlet called without running through the CMS Filter");

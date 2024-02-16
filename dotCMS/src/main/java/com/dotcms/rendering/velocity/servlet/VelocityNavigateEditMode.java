@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.servlet;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotmarketing.beans.Host;
@@ -87,7 +88,7 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
         );
         final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
         final String renderedPageString = objectWriter.writeValueAsString(htmlPageAssetRendered)
-                .replace("</script>", "\\</script\\>");
+                .replaceAll("(?i)</script>", "\\\\</script\\\\>");
         out.write(String.format(JS_CODE, renderedPageString).getBytes());
     }
 
@@ -102,5 +103,20 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
     private String getPageURI () {
 
         return Try.of(()-> this.htmlPage.getURI()).getOrElseThrow(DotRuntimeException::new);
+    }
+
+    public static void main(String[] args) throws JsonProcessingException {
+        final String htmlPageAssetRendered = "$dotExperiment.code()\n" +
+                "<html>\n" +
+                "This is a test\n" +
+                "</html>\n" +
+                "<script>console.log(\"AAAA\");</SCRIPT>\n" +
+                "<script>console.log(\"BBB\");</script>\n";
+
+        final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        final String renderedPageString = objectWriter.writeValueAsString(htmlPageAssetRendered)
+                .replaceAll("(?i)</script>", "\\\\</script\\\\>");
+                //.replace("</script>",  "\\</script\\>");
+        System.out.println("renderedPageString = " + renderedPageString);
     }
 }
