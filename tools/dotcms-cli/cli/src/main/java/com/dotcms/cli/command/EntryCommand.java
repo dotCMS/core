@@ -8,6 +8,7 @@ import com.dotcms.cli.command.site.SiteCommand;
 import com.dotcms.cli.common.ExceptionHandlerImpl;
 import com.dotcms.cli.common.LoggingExecutionStrategy;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.VersionProvider;
 import io.quarkus.arc.Unremovable;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
@@ -24,13 +25,13 @@ import picocli.CommandLine.ParameterException;
 
 @TopCommand
 @CommandLine.Command(
-        name = "dotCMS",
+        name = "@|bold,magenta dotCLI|@",
         mixinStandardHelpOptions = true,
-        version = {"dotcms-cli 1.0", "picocli " + CommandLine.VERSION},
+        versionProvider = VersionProvider.class,
         description = {
-                "@|bold,underline,blue dotCMS|@ cli is a command line interface to interact with your @|bold,underline,blue dotCMS|@ instance.",
+                "@|bold,underline,blue dotCMS|@ dotCLI is a command line interface to interact with your @|bold,underline,blue dotCMS|@ instance.",
         },
-        header = "dotCMS cli",
+        header = "dotCMS dotCLI",
         subcommands = {
                 //-- Miscellaneous stuff
                 StatusCommand.class,
