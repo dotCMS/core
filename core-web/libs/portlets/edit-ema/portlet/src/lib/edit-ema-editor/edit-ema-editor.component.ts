@@ -40,13 +40,13 @@ import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
+import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
+    Row,
     ContentletArea,
     EmaDragItem,
-    EmaPageDropzoneComponent,
-    ClientContentletArea,
-    Row
-} from './components/ema-page-dropzone/ema-page-dropzone.component';
+    ClientContentletArea
+} from './components/ema-page-dropzone/types';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
