@@ -116,6 +116,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         error: state.error
     }));
 
+    // This data is needed to save the page on CRUD operation
     readonly pageData$ = this.select((state) => {
         const containers = this.getPageContainers(state.editor.containers);
 
