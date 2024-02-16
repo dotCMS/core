@@ -5,6 +5,7 @@ import com.dotcms.model.config.ServiceBean;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,7 +44,7 @@ public abstract class CommandTest {
     @CanIgnoreReturnValue
     protected ServiceManager resetServiceProfiles() throws IOException {
         return serviceManager.removeAll()
-                .persist(ServiceBean.builder().name("default").active(true).build());
+                .persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
     }
 
     protected CommandLine createCommand() {

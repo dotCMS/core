@@ -1,4 +1,4 @@
-package com.dotcms.cli.common;
+package com.dotcms.cli.exception;
 
 public interface ExceptionHandler {
 

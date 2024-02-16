@@ -3,8 +3,6 @@ package com.dotcms.api.client.model;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationAPI;
-import com.dotcms.api.client.model.RestClientFactory;
-import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
@@ -15,6 +13,7 @@ import io.restassured.path.json.JsonPath;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.impl.jose.JWT;
 import java.io.IOException;
+import java.net.URL;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,13 +31,17 @@ class RestClientFactoryIT {
 
     @BeforeEach
     public void setupTest() throws IOException {
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
     }
 
+    /**
+     * Given scenario: We build a RestClientFactory using the default profile
+     * Expected result: The RestClientFactory should be able to create a client for the AuthenticationAPI and get a token
+     */
     @Test
-    public void Config_Test() {
+    void TestAPIClientFactorySetup() {
         final AuthenticationAPI authenticationApi = apiClientFactory.getClient(AuthenticationAPI.class);
-        APITokenRequest request = APITokenRequest.builder().user("admin@DOTcms.com").password("admin".toCharArray()).expirationDays(1).build();
+        APITokenRequest request = APITokenRequest.builder().user("admin@dotCMS.com").password("admin".toCharArray()).expirationDays(1).build();
         ResponseEntityView<TokenEntity> tokenResponse = authenticationApi.getToken(request);
         JsonObject token = JWT.parse(new String(tokenResponse.entity().token()));
         JsonPath path = JsonPath.from(token.encode());

@@ -81,4 +81,13 @@ describe('DotToolbarAnnouncementsComponent', () => {
         const announcementLink = spectator.query(byTestId('announcement_link'));
         expect(announcementLink.getAttribute('target')).toBe('_blank');
     });
+
+    it('should call markAnnouncementsAsRead when showUnreadAnnouncement is false', () => {
+        const markAnnouncementsAsReadSpy = spyOn(
+            spectator.component.announcementsStore,
+            'markAnnouncementsAsRead'
+        );
+        spectator.setInput('showUnreadAnnouncement', false);
+        expect(markAnnouncementsAsReadSpy).toHaveBeenCalled();
+    });
 });
