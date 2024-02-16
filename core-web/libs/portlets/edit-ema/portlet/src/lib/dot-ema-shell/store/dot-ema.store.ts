@@ -216,8 +216,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     this.updateEditorState(EDITOR_STATE.LOADING);
                 }),
                 getFormId(this.dotPageApiService),
-                switchMap(({ whenSaved, payload, params }) => {
-                    const { pageContainers, didInsert } = insertContentletInContainer(payload);
+                switchMap((response) => {
+                    const { pageContainers, didInsert } = insertContentletInContainer(
+                        response?.payload
+                    );
 
                     // This should not be called here but since here is where we get the form contentlet
                     // we need to do it here, we need to refactor editor and will fix there.
@@ -241,21 +243,21 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     return this.dotPageApiService
                         .save({
                             pageContainers,
-                            pageId: payload.pageId,
-                            params
+                            pageId: response?.payload.pageId,
+                            params: response?.params
                         })
                         .pipe(
                             tapResponse(
                                 () => {
-                                    whenSaved?.();
+                                    response?.whenSaved?.();
                                 },
                                 (e) => {
                                     console.error(e);
-                                    whenSaved?.();
+                                    response?.whenSaved?.();
                                     this.updateEditorState(EDITOR_STATE.ERROR);
                                 }
                             ),
-                            switchMap(() => this.syncEditorData(params))
+                            switchMap(() => this.syncEditorData(response?.params))
                         );
                 })
             );

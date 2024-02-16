@@ -231,6 +231,12 @@ describe('utils functions', () => {
                 ]
             });
         });
+
+        it("should not insert if there's no action", () => {
+            const result = insertContentletInContainer(null);
+
+            expect(result).toEqual({ pageContainers: [], didInsert: false });
+        });
     });
 
     describe('url sanitize', () => {
