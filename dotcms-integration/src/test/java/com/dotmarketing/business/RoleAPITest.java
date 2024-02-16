@@ -1,12 +1,5 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
@@ -15,27 +8,31 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
-import java.util.Date;
-import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Jonathan Gamba
  *         Date: 6/20/13
  */
-
 public class RoleAPITest extends IntegrationTestBase {
 
     private static DotCacheAdministrator cache;
     private static User systemUser;
 
     //Current group keys
-    private String primaryGroup = "dotCMSRoleCache";
-    private String keyGroup = "dotCMSRoleKeyCache";
-    private String userGroup = "dotCMSUserRoleCache";
-    private String layoutGroup = "dotCMSLayoutCache";
-    private String rootRolesGroup = "dotCMSRootRolesCache";
+    private final String primaryGroup = "dotCMSRoleCache";
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -112,7 +109,7 @@ public class RoleAPITest extends IntegrationTestBase {
         //Verify if we find the implicit roles
         List<Role> foundRoles = roleAPI.loadRolesForUser( testUser.getUserId(), true );
         assertTrue( foundRoles != null && !foundRoles.isEmpty() );
-        assertTrue( foundRoles.size() == 4 );// 3 roles + User role
+        assertEquals(4, foundRoles.size());// 3 roles + User role
 
         //Cache validations
         List<Role> originalCachedRootRoles = CacheLocator.getRoleCache().getRootRoles();
@@ -444,6 +441,98 @@ public class RoleAPITest extends IntegrationTestBase {
             roleAPI.delete(childB);
             roleAPI.delete(parentA);
             roleAPI.delete(parentB);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link Role#compareTo(Role)}</li>
+     *     <li><b>Given Scenario: </b>Create four Role objects: One parent, and three children.
+     *     Role 1 and Role 2 are children of the parent Role. Role 3 is the child of Role 2. Add
+     *     them to a list like this: Role 2, Role 3, and Role 1, and sort it.</li>
+     *     <li><b>Expected Result: </b>When calling the method separately, Role 1 and Role 2 will
+     *     ALWAYS be treated as equal cause their FQN is the same. When sorting the list, the new
+     *     order will be: Role 2, Role 1, and Role 3. Because Role 3 has the longest FQN, it will
+     *     be located in the last position.</li>
+     * </ul>
+     */
+    @Test
+    public void checkCompareToBehavior() throws DotDataException {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long time = System.currentTimeMillis();
+        Role rootRole = new Role();
+        Role roleOne = new Role();
+        Role roleTwo = new Role();
+        Role roleThree = new Role();
+        try {
+            // ╔════════════════════════╗
+            // ║  Generating Test data  ║
+            // ╚════════════════════════╝
+            rootRole.setName( "Test Root Role_" + time );
+            rootRole.setRoleKey( "testRootRole_" + time );
+            rootRole.setEditUsers( true );
+            rootRole.setEditPermissions( true );
+            rootRole.setEditLayouts( true );
+            rootRole.setDescription( "Test Root Role" );
+            rootRole = roleAPI.save( rootRole );
+
+            roleOne.setName("Test Child Role 1_" + time);
+            roleOne.setRoleKey("testChildRole1_" + time);
+            roleOne.setEditUsers(true);
+            roleOne.setEditPermissions(true);
+            roleOne.setEditLayouts(true);
+            roleOne.setDescription("Test Child Role 1");
+            roleOne.setParent(rootRole.getId());
+            roleOne = roleAPI.save(roleOne);
+
+            roleTwo.setName("Test Child Role 2_" + time);
+            roleTwo.setRoleKey("testChildRole2_" + time);
+            roleTwo.setEditUsers(true);
+            roleTwo.setEditPermissions(true);
+            roleTwo.setEditLayouts(true);
+            roleTwo.setDescription("Test Child Role 2");
+            roleTwo.setParent(rootRole.getId());
+            roleTwo = roleAPI.save(roleTwo);
+
+            roleThree.setName("Test Child Role 3_" + time);
+            roleThree.setRoleKey("testChildRole3_" + time);
+            roleThree.setEditUsers(true);
+            roleThree.setEditPermissions(true);
+            roleThree.setEditLayouts(true);
+            roleThree.setDescription("Test Child Role 3");
+            roleThree.setParent(roleTwo.getId());
+            roleThree = roleAPI.save(roleThree);
+
+            // ╔════════════════════════╗
+            // ║  Executing Assertions  ║
+            // ╚════════════════════════╝
+            int compareResultSameLevel = roleOne.compareTo(roleTwo);
+            assertEquals("Test Role 1 and Test Role 2 must be treated as equal objects", 0,
+                    compareResultSameLevel);
+
+            int compareResultShorterFQN = roleTwo.compareTo(roleThree);
+            assertEquals("Test Role 2 must come first, as the FQN value in Test Role 3 is longer"
+                    , -1, compareResultShorterFQN);
+
+            // ╔══════════════════════════════════════════════════╗
+            // ║  Sorting the Role list and executing assertions  ║
+            // ╚══════════════════════════════════════════════════╝
+            final List<Role> roleList = Lists.newArrayList(roleTwo, roleThree, roleOne);
+            Collections.sort(roleList);
+            assertEquals("Test Role 2 must be the first object in the list", roleTwo,
+                    roleList.get(0));
+            assertEquals("Test Role 1 must be the second object in the list", roleOne,
+                    roleList.get(1));
+            assertEquals("Test Role 3 must be the last object in the list", roleThree,
+                    roleList.get(2));
+        } finally {
+            // ╔══════════════════════════════════════════════════════════════╗
+            // ║  Role cleanup. This must be executed in this specific order  ║
+            // ╚══════════════════════════════════════════════════════════════╝
+            roleAPI.delete(roleThree);
+            roleAPI.delete(roleTwo);
+            roleAPI.delete(roleOne);
+            roleAPI.delete(rootRole);
         }
     }
 
