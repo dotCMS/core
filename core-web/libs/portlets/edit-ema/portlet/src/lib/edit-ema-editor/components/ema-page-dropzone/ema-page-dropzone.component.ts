@@ -5,11 +5,9 @@ import {
     ElementRef,
     EventEmitter,
     Input,
-    Output,
-    inject
+    Output
 } from '@angular/core';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotErrorPipe } from './pipes/error/dot-error.pipe';
@@ -77,8 +75,6 @@ export class EmaPageDropzoneComponent {
     @Input() rows: Row[] = [];
     @Input() item: EmaDragItem;
     @Output() place = new EventEmitter<PositionPayload>();
-
-    private readonly dotMessageService: DotMessageService = inject(DotMessageService);
 
     pointerPosition: Record<string, string> = {
         left: '0',
