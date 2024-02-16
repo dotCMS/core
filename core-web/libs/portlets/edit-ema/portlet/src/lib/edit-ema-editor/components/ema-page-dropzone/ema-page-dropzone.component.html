@@ -13,16 +13,19 @@
                 (dragover)="onDragover($event)"
                 data-type="contentlet"></div>
 
-            @if(container | dotError : item; as error) {
-            <div
-                class="drop-zone_error"
-                *ngIf="error.message.length"
-                [ngStyle]="container | dotPosition">
-                <span [innerHTML]="error.message | dm : error.args"></span>
-            </div>
-            }
+            <ng-container
+                *ngTemplateOutlet="
+                    errorTemplate;
+                    context: { error: container | dotError : item, container: container }
+                "></ng-container>
         </div>
     </div>
 </div>
 
 <div class="pointer" [ngStyle]="pointerPosition"></div>
+
+<ng-template #errorTemplate let-error="error" let-container="container">
+    <div class="drop-zone_error" *ngIf="error.message.length" [ngStyle]="container | dotPosition">
+        <span [innerHTML]="error.message | dm : error.args"></span>
+    </div>
+</ng-template>
