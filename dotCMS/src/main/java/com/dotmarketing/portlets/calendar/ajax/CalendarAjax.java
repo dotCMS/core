@@ -776,17 +776,7 @@ public class CalendarAjax {
 					saveContentErrors.add(errorString);
 				}
 			}
-			
-			if(ve.hasLengthErrors()){
-				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-				for (Field field : reqs) {
-					String errorString = LanguageUtil.get(user,"message.contentlet.maxlength");
-					errorString = errorString.replace("{0}", field.getFieldName());
-					errorString = errorString.replace("{1}", "225");
-					saveContentErrors.add(errorString);
-				}
-			}
-			
+
 			if(ve.hasPatternErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
 				for (Field field : reqs) {

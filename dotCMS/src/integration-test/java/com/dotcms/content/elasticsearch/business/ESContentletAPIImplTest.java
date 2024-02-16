@@ -2778,4 +2778,27 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(respCont.getHost(), APILocator.systemHost().getIdentifier());
 
     }
+
+    /**
+     * Since we removed the validation of max length of 255 chars, we should be able to create content successfully, even
+     * thought we sent over 255 chars
+     */
+    @Test
+    public void createContentWhichTextFieldOver255Chars_success(){
+        final String textOver255Chars = "this-text-is-waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay-longer-than-two-hundred-fifty-five-characters-so-should-be-hitting-the-limit-for-the-fields-260-charsq";
+        final DefaultVanityUrl vanityURL = (DefaultVanityUrl) new VanityUrlDataGen()
+                .allSites()
+                .title("Test VanityURL URI and Forward Over 255")
+                .uri(textOver255Chars)
+                .action(HttpStatus.SC_MOVED_PERMANENTLY)
+                .forwardTo(textOver255Chars)
+                .nextPersisted();
+
+        ContentletDataGen.publish(vanityURL);
+
+        final Contentlet checkout = ContentletDataGen.checkout(vanityURL);
+        final VanityUrl vanityURLCheckout = APILocator.getVanityUrlAPI().fromContentlet(checkout);
+        assertEquals(textOver255Chars,vanityURLCheckout.getURI());
+        assertEquals(textOver255Chars,vanityURLCheckout.getForwardTo());
+    }
 }

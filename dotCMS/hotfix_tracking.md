@@ -44,3 +44,4 @@ This maintenance release includes the following code fixes:
 38. https://github.com/dotCMS/core/issues/26459 : Unable to copy a contentlet having Site/Folder Field #26459
 39. https://github.com/dotCMS/core/issues/22372 : Users can create fields with reserved var names #22372
 40. https://github.com/dotCMS/core/issues/26680 : Restoring Reorder Rows Functionality in Content Type Editing #26680
+41. https://github.com/dotCMS/core/issues/26774 : text fields validation limit to 255 chars is not longer required #26774
