@@ -4,20 +4,17 @@ import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
 import { Container, EmaDragItem } from '../../ema-page-dropzone.component';
 
+interface DotErrorPipeResponse {
+    message: string;
+    args: string[];
+}
+
 @Pipe({
     name: 'dotError',
     standalone: true
 })
 export class DotErrorPipe implements PipeTransform {
-    transform(
-        { payload, contentlets }: Container,
-        ...args: unknown[]
-    ): {
-        message: string;
-        args: string[];
-    } {
-        const item = args[0] as EmaDragItem;
-
+    transform({ payload, contentlets }: Container, item: EmaDragItem): DotErrorPipeResponse {
         const { container = {} } =
             typeof payload === 'string' ? JSON.parse(payload) : payload || {};
         const { acceptTypes = '', maxContentlets } = container;
