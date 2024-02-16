@@ -94,7 +94,11 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
               return Optional.of(token);
             }
             final String userString = optionalUser.get();
-            final Optional<char[]> optionalToken = loadToken(getServiceKey(), userString);
+            final Optional<ServiceBean> selected = serviceManager.selected();
+            if(selected.isEmpty()){
+                throw new IllegalStateException("No service selected, unable to load token.");
+            }
+            final Optional<char[]> optionalToken = loadToken(selected.get().name(), userString);
             optionalToken.ifPresent(s -> token = s);
             return optionalToken;
         }
@@ -112,7 +116,12 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
 
     private void saveCredentials(final String user, final char[] token) {
         try {
-            final ServiceBean serviceBean = ServiceBean.builder().active(true).name(getServiceKey())
+            final Optional<ServiceBean> selected = serviceManager.selected();
+            if(selected.isEmpty()){
+                throw new IllegalStateException("No service selected, unable to save credentials.");
+            }
+            final ServiceBean serviceBean = ServiceBean.builder().active(true)
+                    .name(selected.get().name()).url(selected.get().url())
                     .credentials(CredentialsBean.builder().user(user).token(token).build()).build();
             serviceManager.persist(serviceBean);
         } catch (IOException e) {
@@ -134,14 +143,6 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
             }
         }
         return Optional.empty();
-    }
-
-    String getServiceKey() throws IOException {
-        final Optional<ServiceBean> selected = serviceManager.selected();
-        if(selected.isEmpty()){
-           throw new IllegalStateException("No dotCMS instance has been activated.");
-        }
-        return selected.get().name();
     }
 
     public void reset(){

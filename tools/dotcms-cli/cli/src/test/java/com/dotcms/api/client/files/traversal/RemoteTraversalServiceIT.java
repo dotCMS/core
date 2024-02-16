@@ -8,6 +8,7 @@ import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
@@ -41,6 +42,7 @@ class RemoteTraversalServiceIT {
         serviceManager.removeAll().persist(
                 ServiceBean.builder().
                         name("default").
+                        url(new URL("http://localhost:8080")).
                         active(true).
                         build()
         );
