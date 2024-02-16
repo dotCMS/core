@@ -79,11 +79,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             siteId: state.editor.site.identifier
         });
 
+        const iframeURL = state.clientHost ? `${state.clientHost}/${pageURL}` : null;
+
         return {
             clientHost: state.clientHost,
             favoritePageURL,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-            iframeURL: `${state.clientHost}/${pageURL}`,
+            iframeURL,
             editor: {
                 ...state.editor,
                 viewAs: {
@@ -119,7 +121,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * @returns {Observable<any>} Response of the HTTP requests.
      */
     readonly load = this.effect(
-        (params$: Observable<DotPageApiParams & { clientHost: string }>) => {
+        (params$: Observable<DotPageApiParams & { clientHost?: string }>) => {
             return params$.pipe(
                 switchMap((params) => {
                     return forkJoin({
@@ -130,11 +132,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     }).pipe(
                         tap({
                             next: ({ pageData, licenseData }) => {
+                                const isHeadlessPage = !!params.clientHost;
                                 this.setState({
                                     clientHost: params.clientHost,
                                     editor: pageData,
                                     isEnterpriseLicense: licenseData,
-                                    editorState: EDITOR_STATE.LOADING
+                                    //This to stop the progress bar. Testing yet
+                                    editorState: isHeadlessPage
+                                        ? EDITOR_STATE.LOADING
+                                        : EDITOR_STATE.LOADED
                                 });
                             },
                             error: ({ status }: HttpErrorResponse) => {

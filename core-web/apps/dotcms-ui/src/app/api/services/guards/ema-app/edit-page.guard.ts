@@ -1,28 +1,33 @@
+import { combineLatest } from 'rxjs';
+
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
-import { EmaAppConfigurationService } from '@dotcms/data-access';
+import { DotPropertiesService, EmaAppConfigurationService } from '@dotcms/data-access';
 
 export const editPageGuard: CanActivateFn = (route) => {
+    const properties = inject(DotPropertiesService);
+    const emaConfiguration = inject(EmaAppConfigurationService);
     const router = inject(Router);
 
-    return inject(EmaAppConfigurationService)
-        .get(route.queryParams.url)
-        .pipe(
-            map((value) => {
-                if (value) {
-                    router.navigate(['edit-ema'], {
-                        queryParams: getUpdatedQueryParams(route)
-                    });
+    return combineLatest([
+        properties.getFeatureFlag('FEATURE_FLAG_NEW_EDIT_PAGE'),
+        emaConfiguration.get(route.queryParams.url)
+    ]).pipe(
+        map(([flag, value]) => {
+            if (flag || value) {
+                router.navigate(['edit-ema'], {
+                    queryParams: getUpdatedQueryParams(route)
+                });
 
-                    return false;
-                }
+                return false;
+            }
 
-                return true;
-            })
-        );
+            return true;
+        })
+    );
 };
 
 function getUpdatedQueryParams(route: ActivatedRouteSnapshot) {
