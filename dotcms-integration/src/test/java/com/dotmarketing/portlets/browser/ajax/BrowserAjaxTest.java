@@ -9,12 +9,20 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.ThreadUtilsTest;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ThreadUtils;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.servlet.SessionMessages;
@@ -73,7 +81,7 @@ public class BrowserAjaxTest {
         childFolderOne = new FolderDataGen().site(testSite).parent(parentFolderOne).name("child-one").nextPersisted();
         childFolderTwo = new FolderDataGen().site(testSite).parent(childFolderOne).name("child-two").nextPersisted();
 
-        setUpDwrContext();
+        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
     }
 
     /**
@@ -229,13 +237,14 @@ public class BrowserAjaxTest {
     /**
      * Sets up the DWR context using Mockito so that the {@link BrowserAjax} class can be tested correctly.
      */
-    private static void setUpDwrContext() {
+    private static void setUpDwrContext(User user) throws DotDataException, DotSecurityException {
         session = mock(HttpSession.class);
         when(session.getAttribute(SessionMessages.KEY)).thenReturn(new LinkedHashMap());
 
         final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
         when(httpServletRequest.getSession()).thenReturn(session);
-        when(httpServletRequest.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+
+        when(httpServletRequest.getAttribute(WebKeys.USER)).thenReturn(user);
 
         final WebContext webContext = mock(WebContext.class);
         when(webContext.getHttpServletRequest()).thenReturn(httpServletRequest);
@@ -294,9 +303,10 @@ public class BrowserAjaxTest {
      */
     @Test
     public void test_getFolderSubfolders() throws Exception {
-        final User adminUser = TestUserUtils.getAdminUser();
+        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
+        final User sysUser = APILocator.getUserAPI().getSystemUser();
         final Host host = new SiteDataGen().nextPersisted();
-        final Folder mainFolder = new FolderDataGen().site(host).nextPersisted();
+        final Folder mainFolder = new FolderDataGen().name("mainFolder"+System.currentTimeMillis()).site(host).nextPersisted();
         final Folder subFolderC = new FolderDataGen().name("c"+System.currentTimeMillis()).parent(mainFolder).nextPersisted();
         final Folder subFolderB = new FolderDataGen().name("b"+System.currentTimeMillis()).parent(mainFolder).nextPersisted();
         final Folder subFolderA = new FolderDataGen().name("a"+System.currentTimeMillis()).parent(mainFolder).nextPersisted();
@@ -306,11 +316,49 @@ public class BrowserAjaxTest {
         //assert all the subfolders are alphabetical sorted by name
         assertEquals(folderContent.get(0).get("name"),subFolderA.getName());
         //rename the subfolderA to z...
-        APILocator.getFolderAPI().renameFolder(subFolderA, "z"+System.currentTimeMillis(), adminUser , false);
+        APILocator.getFolderAPI().renameFolder(subFolderA, "z"+System.currentTimeMillis(), sysUser , false);
         //method to test
         folderContent = browserAjax.getFolderSubfolders(mainFolder.getIdentifier());
         //now to subFolderA should be the last one
         assertNotEquals(folderContent.get(0).get("name"), subFolderA.getName());
         assertEquals(folderContent.get(folderContent.size()-1).get("name"),subFolderA.getName());
+    }
+
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getHosts()}</li>
+     *     <li><b>Given Scenario: Limited users should be able to create content types on System Host if given the proper permissions</b> </li>
+     *     <li><b>Expected Result:The System host should appear in the list of host </b> </li>
+     * </ul>
+     * @throws Exception
+     */
+    @Test
+    public void test_getHosts_ShoudlRetrieveSystemHosts() throws DotDataException, DotSecurityException, SystemException, PortalException {
+        final BrowserAjax browserAjax = new BrowserAjax();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        //create the user
+        final User user =TestUserUtils.getChrisPublisherUser();
+        //assign permissions to system host
+        final Permission permissions = new Permission(Host.class.getCanonicalName(),
+                APILocator.systemHost().getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(user.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        permissionAPI.save(permissions, APILocator.systemHost(), APILocator.getUserAPI().getSystemUser(), false);
+        //set up the dwr context
+        setUpDwrContext(user);
+        //get the logged-in user
+        WebContext ctx = WebContextFactory.get();
+        UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+        User loggedInUser = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
+        Host nsite = new SiteDataGen().nextPersisted();
+        //method to test
+        List<Map<String, Object>> hosts = browserAjax.getHosts();
+        assertNotNull(hosts);
+        assertTrue(hosts.size() > 0);
+        //should contain the system host as a limited user
+        assertTrue(hosts.stream().anyMatch(host -> host.get("identifier").equals(APILocator.systemHost().getIdentifier())) && loggedInUser.getFirstName().equals(user.getFirstName()) );
+        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
     }
 }

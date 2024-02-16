@@ -152,7 +152,7 @@ public class FilesTestHelperService {
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
         // Creating a new test site
-        final String newSiteName = String.format("site-%d", System.currentTimeMillis());
+        final String newSiteName = String.format("site-%s", UUID.randomUUID());
         CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder()
                 .siteName(newSiteName).build();
         ResponseEntityView<SiteView> createSiteResponse = siteAPI.create(newSiteRequest);

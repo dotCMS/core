@@ -1,6 +1,5 @@
 package com.dotcms.api.client.pull.task;
 
-import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.pull.GeneralPullHandler;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.InputOutputFormat;
@@ -10,7 +9,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.List;
 import org.immutables.value.Value;
-import org.jboss.logging.Logger;
 
 /**
  * The AbstractPullTaskParams class is used to compile all the parameters shared by various Pull
@@ -51,25 +49,11 @@ public interface AbstractPullTaskParams<T> extends Serializable {
     InputOutputFormat format();
 
     /**
-     * Retrieves the mapper service used to map the content to the output format.
-     *
-     * @return the mapper service.
-     */
-    MapperService mapperService();
-
-    /**
      * Retrieves the output options for the pull operation.
      *
      * @return the output options.
      */
     OutputOptionMixin output();
-
-    /**
-     * Retrieves the logger for the pull operation.
-     *
-     * @return the logger.
-     */
-    Logger logger();
 
     /**
      * Retrieves the progress bar for the pull operation.

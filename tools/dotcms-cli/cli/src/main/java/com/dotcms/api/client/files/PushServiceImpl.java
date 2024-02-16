@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 @DefaultBean
@@ -40,6 +41,9 @@ public class PushServiceImpl implements PushService {
 
     @Inject
     RemoteTraversalService remoteTraversalService;
+
+    @Inject
+    ManagedExecutor executor;
 
     /**
      * Traverses the local folders and retrieves the hierarchical tree representation of their
@@ -251,17 +255,16 @@ public class PushServiceImpl implements PushService {
             );
 
             var isRetry = retryAttempts > 0;
-            CompletableFuture<List<Exception>> pushTreeFuture = CompletableFuture.supplyAsync(
+            CompletableFuture<List<Exception>> pushTreeFuture = executor.supplyAsync(
                     () -> remoteTraversalService.pushTreeNode(
                             PushTraverseParams.builder().from(traverseParams)
                                     .progressBar(progressBar)
-                                    .logger(logger)
                                     .isRetry(isRetry).build()
                     )
             );
             progressBar.setFuture(pushTreeFuture);
 
-            CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+            CompletableFuture<Void> animationFuture = executor.runAsync(
                     progressBar
             );
 

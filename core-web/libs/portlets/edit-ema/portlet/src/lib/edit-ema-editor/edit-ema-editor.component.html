@@ -90,12 +90,13 @@
             }">
             <iframe
                 #iframe
-                [src]="es.iframeURL | safeUrl"
+                [src]="(es.clientHost ? es.iframeURL : '') | safeUrl"
                 [title]="host"
                 [ngStyle]="{
                     pointerEvents: this.rows.length ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
+                (load)="onIframePageLoad(es)"
                 data-testId="iframe"
                 width="100%"
                 height="100%"></iframe>

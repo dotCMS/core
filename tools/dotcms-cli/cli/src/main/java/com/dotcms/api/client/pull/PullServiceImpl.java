@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutionException;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
@@ -23,6 +24,9 @@ public class PullServiceImpl implements PullService {
 
     @Inject
     Logger logger;
+
+    @Inject
+    ManagedExecutor executor;
 
     /**
      * {@inheritDoc}
@@ -83,7 +87,7 @@ public class PullServiceImpl implements PullService {
             final PullHandler<T> pullHandler) {
 
         CompletableFuture<List<T>>
-                fetcherServiceFuture = CompletableFuture.supplyAsync(
+                fetcherServiceFuture = executor.supplyAsync(
                 () -> {
 
                     // Looking for a specific content
@@ -113,7 +117,7 @@ public class PullServiceImpl implements PullService {
                 fetcherServiceFuture
         );
 
-        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+        CompletableFuture<Void> animationFuture = executor.runAsync(
                 consoleLoadingAnimation
         );
 
