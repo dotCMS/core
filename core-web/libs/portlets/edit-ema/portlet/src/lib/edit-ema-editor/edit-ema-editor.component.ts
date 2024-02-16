@@ -164,8 +164,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
 
-    get queryParams(): Params {
-        return this.activatedRouter.snapshot.queryParams;
+    get queryParams(): DotPageApiParams {
+        return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
     }
 
     ngOnInit(): void {
@@ -387,7 +387,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.store.savePage({
                 pageContainers,
                 pageId: payload.pageId,
-                params: this.queryParams as DotPageApiParams,
+                params: this.queryParams,
                 whenSaved: () => {
                     this.reloadIframe();
                     this.draggedPayload = undefined;
@@ -422,7 +422,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.savePage({
                     pageContainers: newPageContainers,
                     pageId: payload.pageId,
-                    params: this.queryParams as DotPageApiParams,
+                    params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
                         this.reloadIframe();
@@ -455,7 +455,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.savePage({
                     pageContainers,
                     pageId: payload.pageId,
-                    params: this.queryParams as DotPageApiParams,
+                    params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
                         this.reloadIframe();
@@ -480,7 +480,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.store.savePage({
                         pageContainers,
                         pageId: payload.pageId,
-                        params: this.queryParams as DotPageApiParams,
+                        params: this.queryParams,
                         whenSaved: () => {
                             this.dialog.resetDialog();
                             this.reloadIframe();
@@ -503,7 +503,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.saveFormToPage({
                     payload,
                     formId: identifier,
-                    params: this.queryParams as DotPageApiParams,
+                    params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
                         this.reloadIframe();

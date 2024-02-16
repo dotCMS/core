@@ -29,10 +29,15 @@ export interface EditEmaState {
     editorState: EDITOR_STATE;
 }
 
+interface GetFormIdPayload extends SavePagePayload {
+    payload: ActionPayload;
+    formId: string;
+}
+
 function getFormId(dotPageApiService: DotPageApiService) {
-    return (source: Observable<unknown>) =>
+    return (source: Observable<GetFormIdPayload>) =>
         source.pipe(
-            switchMap(({ payload, formId, whenSaved, params }) => {
+            switchMap(({ payload, formId, whenSaved, params }: GetFormIdPayload) => {
                 return dotPageApiService
                     .getFormIndetifier(payload.container.identifier, formId)
                     .pipe(
