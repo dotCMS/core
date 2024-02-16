@@ -298,7 +298,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     @Override
     public Optional<String> getCode(final Host host, final HttpServletRequest request) {
         final PageMode pageMode = PageMode.get(request);
-        System.out.println("pageMode = " + pageMode);
+
         if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled() && pageMode == PageMode.LIVE) {
 
             try {
