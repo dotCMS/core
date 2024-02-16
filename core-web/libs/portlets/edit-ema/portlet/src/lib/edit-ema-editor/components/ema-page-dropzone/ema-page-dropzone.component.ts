@@ -10,9 +10,12 @@ import {
 } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { ActionPayload, PositionPayload, HeadlessData } from '../../../shared/models';
+import { DotErrorPipe } from './pipes/error/dot-error.pipe';
+import { DotPositionPipe } from './pipes/position/dot-position.pipe';
+
+import { ActionPayload, PositionPayload, ClientData } from '../../../shared/models';
 
 export interface ContentletArea {
     x: number;
@@ -22,21 +25,21 @@ export interface ContentletArea {
     payload: ActionPayload;
 }
 
-export interface HeadlessContentletArea {
+export interface ClientContentletArea {
     x: number;
     y: number;
     width: number;
     height: number;
-    payload: HeadlessData;
+    payload: ClientData;
 }
 
-interface Container {
+export interface Container {
     x: number;
     y: number;
     width: number;
     height: number;
     contentlets: ContentletArea[];
-    payload: HeadlessData | string;
+    payload: ClientData | string;
 }
 
 interface Column {
@@ -60,10 +63,12 @@ export interface Row {
     columns: Column[];
 }
 
+export type EmaPageDropzoneItem = Row | Column | Container | ContentletArea;
+
 @Component({
     selector: 'dot-ema-page-dropzone',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, DotPositionPipe, DotErrorPipe, DotMessagePipe],
     templateUrl: './ema-page-dropzone.component.html',
     styleUrls: ['./ema-page-dropzone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -85,24 +90,6 @@ export class EmaPageDropzoneComponent {
     constructor(private readonly el: ElementRef) {}
 
     /**
-     * Set the style for the item
-     *
-     * @param {(Row | Column | Container | ContentletArea)} item
-     * @param {string} [border='black']
-     * @return {*}  {Record<string, string>}
-     * @memberof EmaPageDropzoneComponent
-     */
-    getPosition(item: Row | Column | Container | ContentletArea): Record<string, string> {
-        return {
-            position: 'absolute',
-            left: `${item.x}px`,
-            top: `${item.y}px`,
-            width: `${item.width}px`,
-            height: `${item.height}px`
-        };
-    }
-
-    /**
      * Emit place event and reset pointer position
      *
      * @param {DragEvent} event
@@ -110,7 +97,7 @@ export class EmaPageDropzoneComponent {
      */
     onDrop(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
-        const data: HeadlessData = JSON.parse(target.dataset.payload);
+        const data: ClientData = JSON.parse(target.dataset.payload);
         const isTop = this.isTop(event);
 
         const payload = <PositionPayload>{
@@ -158,57 +145,11 @@ export class EmaPageDropzoneComponent {
         };
     }
 
-    /**
-     * Return error message if the contentlet can't be placed in the container
-     * or empty string if it can be placed
-     *
-     * @param {Container} { payload }
-     * @return {*}  {boolean}
-     * @memberof EmaPageDropzoneComponent
-     */
-    getErrorMessage(headlessData: HeadlessData | string, contentletsLength: number): string {
-        const { container = {} } =
-            typeof headlessData === 'string' ? JSON.parse(headlessData) : headlessData || {};
-        const { acceptTypes = '', maxContentlets } = container;
-
-        if (!this.isValidContentType(acceptTypes)) {
-            return this.dotMessageService.get(
-                'edit.ema.page.dropzone.invalid.contentlet.type',
-                this.item.contentType
-            );
-        }
-
-        if (!this.contentCanFitInContainer(container.maxContentlets, contentletsLength)) {
-            const message =
-                maxContentlets === 1
-                    ? 'edit.ema.page.dropzone.one.max.contentlet'
-                    : 'edit.ema.page.dropzone.max.contentlets';
-
-            return this.dotMessageService.get(message, maxContentlets);
-        }
-
-        return '';
-    }
-
     private isTop(event: DragEvent): boolean {
         const target = event.target as HTMLDivElement;
         const targetRect = target.getBoundingClientRect();
         const mouseY = event.clientY;
 
         return mouseY < targetRect.top + targetRect.height / 2;
-    }
-
-    private isValidContentType(acceptTypes: string) {
-        if (this.item.baseType === DotCMSBaseTypesContentTypes.WIDGET) {
-            return true;
-        }
-
-        const acceptTypesArr = acceptTypes.split(',');
-
-        return acceptTypesArr.includes(this.item.contentType);
-    }
-
-    private contentCanFitInContainer(maxContentlets: number, contentletsLength: number): boolean {
-        return contentletsLength < maxContentlets;
     }
 }

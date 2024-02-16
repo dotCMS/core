@@ -1,11 +1,11 @@
 import { DotPageApiParams } from '../services/dot-page-api.service';
 
-export interface HeadlessData {
+export interface ClientData {
     contentlet?: ContentletPayload;
     container: ContainerPayload;
 }
 
-export interface PositionPayload extends HeadlessData {
+export interface PositionPayload extends ClientData {
     position?: 'before' | 'after';
 }
 

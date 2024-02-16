@@ -8,9 +8,9 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EmaPageDropzoneComponent, Row } from './ema-page-dropzone.component';
 
-import { HeadlessData } from '../../../shared/models';
+import { ClientData } from '../../../shared/models';
 
-const ACTION_MOCK: HeadlessData = {
+const ACTION_MOCK: ClientData = {
     container: {
         acceptTypes: 'file',
         identifier: '789',
@@ -24,7 +24,7 @@ const ITEM_MOCK = {
     baseType: 'FILEASSET'
 };
 
-const getBoundsMock = (payload: HeadlessData): Row[] => {
+const getBoundsMock = (payload: ClientData): Row[] => {
     return [
         {
             x: 0,

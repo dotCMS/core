@@ -1,22 +1,22 @@
-<div *ngFor="let row of rows" [ngStyle]="getPosition(row)" data-type="row">
-    <div *ngFor="let column of row.columns" [ngStyle]="getPosition(column)" data-type="column">
+<div *ngFor="let row of rows" [ngStyle]="row | dotPosition" data-type="row">
+    <div *ngFor="let column of row.columns" [ngStyle]="column | dotPosition" data-type="column">
         <div
             *ngFor="let container of column.containers"
-            [ngStyle]="getPosition(container)"
+            [ngStyle]="container | dotPosition"
             [attr.data-payload]="container.payload"
             data-type="container">
             <div
                 *ngFor="let contentlet of container.contentlets"
                 [attr.data-payload]="contentlet.payload"
-                [ngStyle]="getPosition(contentlet)"
+                [ngStyle]="contentlet | dotPosition"
                 (drop)="onDrop($event)"
                 (dragover)="onDragover($event)"
                 data-type="contentlet"></div>
             <div
                 class="drop-zone_error"
-                *ngIf="getErrorMessage(container.payload, container.contentlets.length) as error"
-                [ngStyle]="getPosition(container)">
-                <span [innerHTML]="error"></span>
+                *ngIf="container | dotError : item as error"
+                [ngStyle]="container | dotPosition">
+                <span [innerHTML]="error.message | dm : error.args"></span>
             </div>
         </div>
     </div>
