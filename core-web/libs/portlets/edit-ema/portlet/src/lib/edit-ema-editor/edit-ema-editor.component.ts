@@ -44,6 +44,7 @@ import {
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
+import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
@@ -140,8 +141,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
+        // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
+        // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
+        // this.store.updateEditorState(EDITOR_STATE.LOADING);
+    }
 
-        this.store.updateEditorState(EDITOR_STATE.LOADING);
+    /**
+     * Handle the iframe page load
+     *
+     * @param {string} clientHost
+     * @memberof EditEmaEditorComponent
+     */
+    onIframePageLoad({ clientHost, editor }: { clientHost: string; editor: DotPageApiResponse }) {
+        if (!clientHost) {
+            // Is VTL
+            this.iframe.nativeElement.contentDocument.open();
+            this.iframe.nativeElement.contentDocument.write(editor.page.rendered);
+            this.iframe.nativeElement.contentDocument.close();
+        }
     }
 
     ngOnDestroy(): void {
