@@ -45,7 +45,8 @@ function getFormId(dotPageApiService: DotPageApiService) {
                                 whenSaved,
                                 params
                             };
-                        })
+                        }),
+                        catchError(() => EMPTY)
                     );
             })
         );
