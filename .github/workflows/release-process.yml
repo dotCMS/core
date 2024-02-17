@@ -1,7 +1,8 @@
 name: Release Process
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - dont-run-this-again
 env:
   BRANCHING_MODEL: trunk-based
 
