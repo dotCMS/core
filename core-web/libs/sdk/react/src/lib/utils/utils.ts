@@ -120,6 +120,13 @@ export const getPageContainers = (containers: ContainerData) => {
     );
 };
 
+/**
+ * Get the container data
+ *
+ * @param {ContainerData} containers
+ * @param {PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0]} containerRef
+ * @return {*}
+ */
 export const getContainersData = (
     containers: ContainerData,
     containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0]
@@ -127,6 +134,8 @@ export const getContainersData = (
     const { identifier, uuid } = containerRef;
 
     const { containerStructures, container } = containers[identifier];
+
+    // Get the variant id
     const { variantId } = container?.parentPermissionable || {};
 
     // Get accepts types of content types for this container
@@ -135,6 +144,7 @@ export const getContainersData = (
     // Get the contentlets for "this" container
     const contentlets = containers[identifier].contentlets[`uuid-${uuid}`];
 
+    // Get the page containers
     const pageContainers = getPageContainers(containers);
 
     return {
