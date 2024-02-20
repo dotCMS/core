@@ -184,37 +184,27 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             tap(() => {
                 this.updateEditorState(EDITOR_STATE.LOADING);
             }),
-            switchMap((payload) => {
-                return this.dotPageApiService.save(payload).pipe(
-                    catchError((e) => {
-                        console.error(e);
-                        payload?.whenSaved?.();
-                        this.updateEditorState(EDITOR_STATE.ERROR);
+            switchMap((payload) =>
+                this.dotPageApiService.save(payload).pipe(
+                    switchMap(() => this.syncEditorData(payload.params)),
+                    tapResponse(
+                        (pageData: DotPageApiResponse) => {
+                            this.patchState((state) => ({
+                                ...state,
+                                editor: pageData,
+                                editorState: EDITOR_STATE.LOADED
+                            }));
 
-                        return EMPTY;
-                    }),
-                    switchMap(() =>
-                        this.syncEditorData(payload.params).pipe(
-                            tapResponse(
-                                (pageData: DotPageApiResponse) => {
-                                    this.patchState((state) => ({
-                                        ...state,
-                                        editor: pageData,
-                                        editorState: EDITOR_STATE.LOADED
-                                    }));
-
-                                    payload.whenSaved?.();
-                                },
-                                (e) => {
-                                    console.error(e);
-                                    payload.whenSaved?.();
-                                    this.updateEditorState(EDITOR_STATE.ERROR);
-                                }
-                            )
-                        )
+                            payload.whenSaved?.();
+                        },
+                        (e) => {
+                            console.error(e);
+                            payload.whenSaved?.();
+                            this.updateEditorState(EDITOR_STATE.ERROR);
+                        }
                     )
-                );
-            })
+                )
+            )
         );
     });
 
@@ -269,32 +259,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             params: response.params
                         })
                         .pipe(
-                            catchError((e) => {
-                                console.error(e);
-                                response.whenSaved?.();
-                                this.updateEditorState(EDITOR_STATE.ERROR);
+                            switchMap(() => this.syncEditorData(response.params)),
+                            tapResponse(
+                                (pageData: DotPageApiResponse) => {
+                                    this.patchState((state) => ({
+                                        ...state,
+                                        editor: pageData,
+                                        editorState: EDITOR_STATE.LOADED
+                                    }));
 
-                                return EMPTY;
-                            }),
-                            switchMap(() =>
-                                this.syncEditorData(response.params).pipe(
-                                    tapResponse(
-                                        (pageData: DotPageApiResponse) => {
-                                            this.patchState((state) => ({
-                                                ...state,
-                                                editor: pageData,
-                                                editorState: EDITOR_STATE.LOADED
-                                            }));
-
-                                            response.whenSaved?.();
-                                        },
-                                        (e) => {
-                                            console.error(e);
-                                            response.whenSaved?.();
-                                            this.updateEditorState(EDITOR_STATE.ERROR);
-                                        }
-                                    )
-                                )
+                                    response.whenSaved?.();
+                                },
+                                (e) => {
+                                    console.error(e);
+                                    response.whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.ERROR);
+                                }
                             )
                         );
                 })
