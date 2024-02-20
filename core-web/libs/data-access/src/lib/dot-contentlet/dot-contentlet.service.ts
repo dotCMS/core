@@ -26,4 +26,19 @@ export class DotContentletService {
             })
             .pipe(take(1), pluck('entity', 'versions', language));
     }
+
+    /**
+     * Get the Contentlet versions by the inode.
+     *
+     * @param string inode
+     * @returns Observable<DotCMSContentlet>
+     * @memberof DotContentletService
+     */
+    getContentletByInode(inode: string): Observable<DotCMSContentlet> {
+        return this.coreWebService
+            .requestView({
+                url: `/api/v1/content/${inode}`
+            })
+            .pipe(pluck('entity'));
+    }
 }
