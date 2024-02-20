@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +9,6 @@ import { AccordionModule } from 'primeng/accordion';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
-import { CodeHighlighterModule } from 'primeng/codehighlighter';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { FocusTrapModule } from 'primeng/focustrap';
@@ -37,7 +35,6 @@ export default {
                 ButtonModule,
                 InputTextModule,
                 AccordionModule,
-                CodeHighlighterModule,
                 FocusTrapModule,
                 AutoCompleteModule,
                 CalendarModule,
@@ -94,7 +91,7 @@ type City = {
     code: string;
 };
 
-const Template: Story<City[]> = (props: City[]) => {
+const Template: (props: City[]) => { template: string; props: City[] } = (props: City[]) => {
     const template = FocusTrapTemplate;
 
     return {

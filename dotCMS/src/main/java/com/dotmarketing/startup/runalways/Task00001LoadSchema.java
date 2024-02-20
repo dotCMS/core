@@ -35,25 +35,11 @@ public class Task00001LoadSchema implements StartupTask {
 	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		Logger.info(this.getClass(), "Loading schema");
-		String schemaFile = null;
-		if (DbConnectionFactory.isPostgres()) {
-			schemaFile = "postgres.sql";
-		}
-		if (DbConnectionFactory.isMsSql()) {
-			schemaFile = "mssql.sql";
-		}
-		if (DbConnectionFactory.isMySql()) {
-			schemaFile = "mysql.sql";
-		}
-		if (DbConnectionFactory.isOracle()) {
-			schemaFile = "oracle.sql";
-		}
+		String schemaFile = "postgres.sql";
 
 		final StringBuilder schema = new StringBuilder();
 		int processedStatementCount = 0;
 		
-		//flush cache before we do a new import
-		MaintenanceUtil.flushCache();
 		try {
 			// Open the file
 			final ClassLoader classLoader = Thread.currentThread()

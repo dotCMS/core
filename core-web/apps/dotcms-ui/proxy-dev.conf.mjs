@@ -10,10 +10,15 @@ export default [
             '/DotAjaxDirector',
             '/contentAsset',
             '/application',
-            '/assets/seo/page-tools.json'
+            '/assets',
+            '/dotcms-block-editor',
+            '/dotcms-binary-field-builder'
         ],
         target: 'http://localhost:8080',
         secure: false,
-        logLevel: 'debug'
+        logLevel: 'debug',
+        pathRewrite: {
+            '^/assets': '/dotAdmin/assets'
+        }
     }
 ];

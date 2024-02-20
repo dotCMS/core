@@ -15,6 +15,10 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     border-color: $color-alert-red;
 }
 
+.p-fluid .p-dropdown input.p-dropdown-label {
+    width: 100%;
+}
+
 .p-dropdown {
     @extend #form-field-base;
     padding-right: 0;

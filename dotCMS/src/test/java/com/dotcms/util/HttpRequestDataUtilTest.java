@@ -1,9 +1,5 @@
 package com.dotcms.util;
 
-import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
-import com.dotcms.analytics.metrics.QueryParameter;
-import com.dotcms.analytics.metrics.QueryParameterValuesGetter;
-import com.dotcms.experiments.business.result.Event;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -11,9 +7,6 @@ import java.util.*;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import javax.servlet.http.HttpServletRequest;
 import org.junit.runner.RunWith;

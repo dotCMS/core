@@ -10,7 +10,7 @@
     border-bottom: 1px solid $color-palette-gray-300;
 
     a {
-        color: $color-alert-blue;
+        color: $color-accessible-text-blue;
         font-weight: $font-weight-regular-bold;
 
         i {
@@ -20,12 +20,7 @@
 }
 
 ::ng-deep {
-    p-tag .p-tag {
-        &.p-tag-danger {
-            background-color: $color-alert-red-light;
-            color: $color-alert-red;
-        }
-
+    p-chip .p-chip {
         &.running {
             color: $color-accessible-text-green;
             background-color: $color-accessible-text-green-bg;

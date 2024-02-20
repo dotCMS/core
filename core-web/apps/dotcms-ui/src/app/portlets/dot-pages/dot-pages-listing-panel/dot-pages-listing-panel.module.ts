@@ -12,9 +12,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
 
@@ -24,7 +22,7 @@ import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.compone
         CheckboxModule,
         CommonModule,
         FormsModule,
-        DotAutofocusModule,
+        DotAutofocusDirective,
         DotMessagePipe,
         DotRelativeDatePipe,
         DropdownModule,

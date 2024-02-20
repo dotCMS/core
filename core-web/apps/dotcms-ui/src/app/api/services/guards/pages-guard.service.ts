@@ -3,8 +3,6 @@ import { Observable } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { CanActivate } from '@angular/router';
 
-import { map, take } from 'rxjs/operators';
-
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
@@ -20,13 +18,8 @@ export class PagesGuardService implements CanActivate {
      * @returns Observable<boolean>
      */
     canActivate(): Observable<boolean> {
-        return this.dotConfigurationService
-            .getKey(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
-            .pipe(
-                take(1),
-                map((enabled: string) => {
-                    return enabled === 'true';
-                })
-            );
+        return this.dotConfigurationService.getFeatureFlag(
+            FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE
+        );
     }
 }

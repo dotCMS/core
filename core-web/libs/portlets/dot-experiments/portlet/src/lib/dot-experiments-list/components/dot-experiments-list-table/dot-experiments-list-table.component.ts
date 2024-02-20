@@ -17,8 +17,13 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperiment, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
-import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
+import {
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotTimestampToDatePipe,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
 @Component({
     standalone: true,
@@ -37,7 +42,8 @@ import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.
         ButtonModule,
         TooltipModule,
         MenuModule,
-        DotEmptyContainerComponent
+        DotEmptyContainerComponent,
+        DotTimestampToDatePipe
     ],
     templateUrl: './dot-experiments-list-table.component.html',
     styleUrls: ['./dot-experiments-list-table.component.scss'],
@@ -46,8 +52,10 @@ import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.
 })
 export class DotExperimentsListTableComponent {
     @Input() experimentGroupedByStatus: GroupedExperimentByStatus[] = [];
+
     @Output()
     goToContainer = new EventEmitter<DotExperiment>();
+
     private dotMessageService: DotMessageService = inject(DotMessageService);
     protected readonly emptyConfiguration: PrincipalConfiguration = {
         title: this.dotMessageService.get('experimentspage.not.experiments.found.filtered'),

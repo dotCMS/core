@@ -165,9 +165,9 @@ public interface HostAPI {
     /**
      * @deprecated This method is basically duplicated code. Use one of the following methods instead:
 	 * <ul>
-	 *     <li>{{@link #findAllFromDB(User, boolean)}}</li>
-	 *     <li>{{@link #findAllFromCache(User, boolean)}</li>
-	 *     <li>{{@link #search(String, boolean, boolean, int, int, User, boolean)}</li>
+	 *     <li>{@link #findAllFromDB(User, boolean)}</li>
+	 *     <li>{@link #findAllFromCache(User, boolean)}</li>
+	 *     <li>{@link #search(String, boolean, boolean, int, int, User, boolean)}</li>
 	 * </ul>
      *
      * Retrieves the list of all hosts in the system, that the given user has permissions to see

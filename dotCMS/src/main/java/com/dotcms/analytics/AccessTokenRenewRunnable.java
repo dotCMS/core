@@ -1,7 +1,6 @@
 package com.dotcms.analytics;
 
 import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AnalyticsAppWithStatus;
@@ -9,14 +8,11 @@ import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.exception.UnrecoverableAnalyticsException;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.quartz.job.AccessTokenRenewJob;
 import com.dotmarketing.util.Logger;
-import com.liferay.util.StringPool;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Access Token renew thread.
@@ -29,14 +25,12 @@ public class AccessTokenRenewRunnable implements Runnable {
     private final AccessTokenRenewJob callerJob;
     private final Set<AnalyticsAppWithStatus> appsWithStatus;
     private final AnalyticsAPI analyticsAPI;
-    private final AnalyticsCache analyticsCache;
 
     public AccessTokenRenewRunnable(final AccessTokenRenewJob callerJob,
                                     final Set<AnalyticsAppWithStatus> appsWithStatus) {
         this.callerJob = callerJob;
         this.appsWithStatus = appsWithStatus;
         analyticsAPI = APILocator.getAnalyticsAPI();
-        analyticsCache = CacheLocator.getAnalyticsCache();
     }
 
     /**
@@ -76,12 +70,12 @@ public class AccessTokenRenewRunnable implements Runnable {
                 tokenStatus));
 
         boolean restore = false;
-        final AccessToken found = analyticsAPI.getAccessToken(analyticsApp);
+        final AccessToken found = analyticsAPI.getCachedAccessToken(analyticsApp);
         final AccessToken blocked = AnalyticsHelper.get().createBlockedToken(
             analyticsApp,
             "ACCESS_TOKEN is blocked due to access token renew");
         if (tokenStatus == TokenStatus.EXPIRED) {
-            analyticsCache.putAccessToken(blocked);
+            AccessTokens.get().putAccessToken(blocked);
         }
 
         try {
@@ -97,7 +91,7 @@ public class AccessTokenRenewRunnable implements Runnable {
                 final AccessToken noop = AnalyticsHelper.get().createNoopToken(
                     analyticsApp,
                     String.format("Setting NOOP ACCESS_TOKEN for clientId %s due to %s", clientId, e.getMessage()));
-                analyticsCache.putAccessToken(noop);
+                AccessTokens.get().putAccessToken(noop);
             } else {
                 restore = tokenStatus == TokenStatus.EXPIRED;
             }
@@ -106,10 +100,10 @@ public class AccessTokenRenewRunnable implements Runnable {
                 Optional.ofNullable(found)
                     .ifPresentOrElse(
                         token -> {
-                            Logger.debug(this, String.format("Restoring ACCESS_TOKEN for clientId %s", clientId));
-                            analyticsCache.putAccessToken(token);
+                                Logger.debug(this, String.format("Restoring ACCESS_TOKEN for clientId %s", clientId));
+                                AccessTokens.get().putAccessToken(token);
                             },
-                        () -> analyticsCache.removeAccessToken(blocked));
+                        () -> AccessTokens.get().removeAccessToken(blocked));
             }
         }
     }

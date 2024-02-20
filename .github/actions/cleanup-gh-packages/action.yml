@@ -19,8 +19,8 @@ inputs:
     description: 'Name of the package to clean up'
     required: true
     default: 'core'
-  delete_version:
-    description: 'Specific version to delete'
+  delete_tags:
+    description: 'Specific tags to delete'
     required: false
   access_token:
     description: 'Access token'

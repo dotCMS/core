@@ -84,14 +84,13 @@ $color-palette-gray-op-70: rgba($color-palette-gray, 0.7);
 $color-palette-gray-op-80: rgba($color-palette-gray, 0.8);
 $color-palette-gray-op-90: rgba($color-palette-gray, 0.9);
 
-$color-alert-blue: $color-palette-primary-500;
-$color-alert-blue-light: $color-palette-primary-100;
 $color-alert-yellow: #ffb444;
 $color-alert-yellow-light: #fff8ec;
 $color-alert-green: #3ed97a;
 $color-alert-green-light: #f5fdf8;
 $color-alert-red: #f65446;
 $color-alert-red-light: #fff6f6;
+$color-alert-fuchsia: hsla(288, 77%, 55%, 0.08);
 
 $color-accessible-text-red: #d82b2e;
 $color-accessible-text-red-bg: $color-alert-red-light;
@@ -104,14 +103,16 @@ $color-accessible-text-green-bg: $color-alert-green-light;
 $color-accessible-text-purple: $color-palette-secondary-600;
 $color-accessible-text-purple-bg: $color-palette-secondary-100;
 
-$color-accessible-text-blue: $color-palette-primary-500;
-$color-accessible-text-blue-bg: $color-palette-primary-200;
+$color-accessible-text-blue: $color-palette-primary-600;
+$color-accessible-text-blue-bg: $color-palette-primary-op-10;
 
 $color-accessible-text-yellow: #bc5b0d; // TODO: why?
 $color-accessible-text-yellow-bg: $color-alert-yellow-light;
 
 $color-accessible-text-gray: $color-palette-gray-600;
 $color-accessible-text-gray-bg: $color-palette-gray-100;
+
+$color-accessible-text-fuchsia: hsla(288, 77%, 48%, 1);
 
 // LEGACY COLORS
 $brand-background: var(--color-palette-primary-800);

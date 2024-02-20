@@ -51,6 +51,10 @@ public abstract class FolderFactory {
 		return null;
 	}
 
+	protected List<Folder> getSubFoldersNameSort(Folder folder) throws DotStateException, DotDataException {
+		return null;
+	}
+
 	protected List<Folder> getSubFoldersTitleSort(Folder folder) throws DotStateException, DotDataException {
 		return null;
 	}

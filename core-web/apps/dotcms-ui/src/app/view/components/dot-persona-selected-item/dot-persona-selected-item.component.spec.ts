@@ -7,10 +7,9 @@ import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

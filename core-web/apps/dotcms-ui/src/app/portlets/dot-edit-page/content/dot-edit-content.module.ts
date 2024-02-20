@@ -40,10 +40,12 @@ import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
+import { DotSeoMetaTagsUtilService } from './services/html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
 import { DotResultsSeoToolComponent } from '../seo/components/dot-results-seo-tool/dot-results-seo-tool.component';
+import { DotSelectSeoToolComponent } from '../seo/components/dot-select-seo-tool/dot-select-seo-tool.component';
 const routes: Routes = [
     {
         component: DotEditContentComponent,
@@ -75,7 +77,8 @@ const routes: Routes = [
         DotIconModule,
         DotEditPageToolbarSeoComponent,
         DotShowHideFeatureDirective,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
+        DotSelectSeoToolComponent
     ],
     exports: [DotEditContentComponent],
     providers: [
@@ -95,7 +98,8 @@ const routes: Routes = [
         DotLicenseService,
         DialogService,
         DotCopyContentModalService,
-        DotSeoMetaTagsService
+        DotSeoMetaTagsService,
+        DotSeoMetaTagsUtilService
     ]
 })
 export class DotEditContentModule {}

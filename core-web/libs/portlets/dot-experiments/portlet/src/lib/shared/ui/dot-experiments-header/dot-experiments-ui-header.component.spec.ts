@@ -2,8 +2,8 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 
 import { DatePipe } from '@angular/common';
 
+import { Chip } from 'primeng/chip';
 import { Skeleton } from 'primeng/skeleton';
-import { Tag, TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, RUNNING_UNTIL_DATE_FORMAT } from '@dotcms/dotcms-models';
@@ -23,7 +23,6 @@ describe('ExperimentsHeaderComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotExperimentsUiHeaderComponent,
-        imports: [TagModule],
         providers: [
             {
                 provide: DotMessageService,
@@ -58,12 +57,12 @@ describe('ExperimentsHeaderComponent', () => {
         expect(spectator.query(Skeleton)).toExist();
     });
 
-    it('should rendered the status tag', () => {
+    it('should rendered the status p-chip', () => {
         spectator.setInput({
             experiment: { ...EXPERIMENT_MOCK, status: DotExperimentStatus.SCHEDULED }
         });
 
-        expect(spectator.query(Tag)).toExist();
+        expect(spectator.query(Chip)).toExist();
         expect(spectator.query(byTestId('status-tag'))).toContainText('Scheduled');
     });
 
@@ -79,7 +78,7 @@ describe('ExperimentsHeaderComponent', () => {
             experiment: { ...EXPERIMENT_MOCK, status: DotExperimentStatus.RUNNING }
         });
 
-        expect(spectator.query(Tag)).toExist();
+        expect(spectator.query(Chip)).toExist();
         expect(spectator.query(byTestId('status-tag'))).toContainText(expectedStatus);
     });
 });

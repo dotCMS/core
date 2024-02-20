@@ -9,11 +9,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
-    <artifactId>application-bom</artifactId>
+    <artifactId>dotcms-application-bom</artifactId>
 
     <properties>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
-        <twelvemonkeys.version>3.7.1</twelvemonkeys.version>
+        <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
         <swagger.version>2.2.0</swagger.version>
         <bytebuddy.version>1.12.6</bytebuddy.version>
         <batik.version>1.16</batik.version>
@@ -23,7 +23,8 @@
         <glowroot.version>0.13.1</glowroot.version>
         <jackson.version>2.13.4</jackson.version>
         <jersey.version>2.22.1</jersey.version>
-        <dotcms.tika-api.version>1.0.0-SNAPSHOT</dotcms.tika-api.version>
+        <graalvm.version>22.3.3</graalvm.version>
+        <dotcms.tika-api.version>2023.09.8</dotcms.tika-api.version>
     </properties>
     <dependencyManagement>
 
@@ -61,7 +62,7 @@
 
             <dependency>
                 <groupId>com.dotcms</groupId>
-                <artifactId>logging-bom</artifactId>
+                <artifactId>dotcms-logging-bom</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -670,7 +671,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-pool2</artifactId>
-                <version>2.9.0</version>
+                <version>2.11.1</version>
             </dependency>
 
 
@@ -842,7 +843,7 @@
             <dependency>
                 <groupId>redis.clients</groupId>
                 <artifactId>jedis</artifactId>
-                <version>2.7.3</version>
+                <version>4.4.6</version>
             </dependency>
 
             <dependency>
@@ -908,7 +909,7 @@
             <dependency>
                 <groupId>com.thoughtworks.xstream</groupId>
                 <artifactId>xstream</artifactId>
-                <version>1.4.8</version>
+                <version>1.4.20</version>
                 <exclusions>
                     <exclusion>
                         <groupId>xpp3</groupId>
@@ -925,28 +926,6 @@
                 <version>2.3.8</version>
             </dependency>
 
-
-            <!-- Castor:  Replace with JaxB -->
-            <dependency>
-                <groupId>org.codehaus.castor</groupId>
-                <artifactId>castor-core</artifactId>
-                <version>1.4.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.castor</groupId>
-                <artifactId>castor-xml</artifactId>
-                <version>1.4.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.inject</groupId>
-                        <artifactId>javax.inject</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.springframework</groupId>
-                        <artifactId>spring-context</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
 
 
             <!--
@@ -992,6 +971,18 @@
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>2.4.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>net.minidev</groupId>
+                        <artifactId>json-smart</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>2.4.9</version>
             </dependency>
 
 
@@ -1401,7 +1392,7 @@
                  Is only needed during compilation and no runtime component required -->
                 <groupId>org.immutables</groupId>
                 <artifactId>value</artifactId>
-                <version>2.9.0</version>
+                <version>${immutables.version}</version>
             </dependency>
 
             <!--
@@ -1437,14 +1428,14 @@
                 <!-- Jasper is the Tomcat JSP Engine -->
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-jasper</artifactId>
-                <version>9.0.73</version>
+                <version>${tomcat.version}</version>
             </dependency>
 
 
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-jdbc</artifactId>
-                <version>9.0.73</version>
+                <version>${tomcat.version}</version>
             </dependency>
 
 
@@ -1511,6 +1502,22 @@
                 <version>2.6</version>
             </dependency>
 
+            <!-- Graalvm Js Engine -->
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>graal-sdk</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.js</groupId>
+                <artifactId>js</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.js</groupId>
+                <artifactId>js-scriptengine</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>

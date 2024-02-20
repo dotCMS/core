@@ -1,0 +1,62 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Instance Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= instance(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+instance - *Prints a list of available dotCMS instances.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*instance* [*-h*] [*-act*=_<activate>_]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ A List with all the available dotCMS instances is printed.
+ The info includes API URL, active user and the current profile.
+ This list of available servers comes from the file [dot-service.yml]
+ Located in a folder named dotCMS under the user's home directory.
+ Use to activate/switch dotCMS instance. -act  --activate
+ followed by the instance name.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-act, --activate*=_<activate>_::
+  Activate an instance by entering it's name.
+
+*-h*, *--help*::
+  Display this help message.
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

@@ -8,6 +8,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -58,7 +59,11 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
       Tuple2<List<Persona>, Integer> personas = personaAPI.getPersonasIncludingDefaultPersona(host, filter, respectFrontEndRoles, limit,
           offset, orderByString, user, respectFrontEndRoles);
 
-      final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage(pageId);
+      final IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(
+              APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId));
+
+      final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+      final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage(page, currentVariantId);
       final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
 
       final Language foundLanguage = Try.of(

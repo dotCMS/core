@@ -37,17 +37,17 @@ interface PluginState {
 }
 
 export class BubbleFormView extends BubbleMenuView {
-    public editor: Editor;
+    public override editor: Editor;
 
     public node: Node;
 
-    public element: HTMLElement;
+    public override element: HTMLElement;
 
-    public view: EditorView;
+    public override view: EditorView;
 
-    public tippy: Instance | undefined;
+    public override tippy: Instance | undefined;
 
-    public tippyOptions?: Partial<Props>;
+    public override tippyOptions?: Partial<Props>;
 
     public pluginKey: PluginKey;
 
@@ -87,7 +87,7 @@ export class BubbleFormView extends BubbleMenuView {
         document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
     }
 
-    update(view: EditorView, prevState?: EditorState): void {
+    override update(view: EditorView, prevState?: EditorState): void {
         const next = this.pluginKey?.getState(view.state);
         const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
 
@@ -134,7 +134,7 @@ export class BubbleFormView extends BubbleMenuView {
         next.open ? this.show() : this.hide();
     }
 
-    createTooltip() {
+    override createTooltip() {
         const { element: editorElement } = this.editor.options;
         const editorIsAttached = !!editorElement.parentElement;
 
@@ -154,17 +154,17 @@ export class BubbleFormView extends BubbleMenuView {
         });
     }
 
-    focusHandler = () => {
+    override focusHandler = () => {
         this.editor.commands.closeForm();
         // we use `setTimeout` to make sure `selection` is already updated
         setTimeout(() => this.update(this.editor.view));
     };
 
-    show() {
+    override show() {
         this.tippy?.show();
     }
 
-    destroy() {
+    override destroy() {
         this.tippy?.destroy();
         this.editor.off('focus', this.focusHandler);
         this.$destroy.next(true);
@@ -179,6 +179,8 @@ export class BubbleFormView extends BubbleMenuView {
 
         // we use `setTimeout` to make sure `selection` is already updated
         setTimeout(() => this.update(this.editor.view));
+
+        return null;
     }
 
     private tippyRect(node, type) {

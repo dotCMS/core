@@ -1,22 +1,13 @@
 package com.dotmarketing.db;
 
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_BASE_URL;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_DRIVER;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_LEAK_DETECTION_THRESHOLD;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MIN_IDLE;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_TOTAL;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_WAIT;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_PASSWORD;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_USERNAME;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_VALIDATION_QUERY;
-
 import com.dotmarketing.util.Constants;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.SystemEnvironmentProperties;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
+
+import static com.dotmarketing.db.DataSourceStrategyProvider.*;
 
 
 /**
@@ -78,9 +69,16 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
 
         config.setIdleTimeout(
                 Integer.parseInt(
-                        systemEnvironmentProperties.getVariable(CONNECTION_DB_MIN_IDLE) != null
-                                ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MIN_IDLE)
+                        systemEnvironmentProperties.getVariable(CONNECTION_DB_IDLE_TIMEOUT) != null
+                                ? systemEnvironmentProperties.getVariable(CONNECTION_DB_IDLE_TIMEOUT)
                                 : "10")
+                        * 1000);
+
+        config.setConnectionTimeout(
+                Integer.parseInt(
+                        systemEnvironmentProperties.getVariable(CONNECTION_DB_CONNECTION_TIMEOUT) != null
+                                ? systemEnvironmentProperties.getVariable(CONNECTION_DB_CONNECTION_TIMEOUT)
+                                : "5")
                         * 1000);
 
         config.setMaxLifetime(Integer.parseInt(
@@ -101,6 +99,12 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
 
         config.setTransactionIsolation(systemEnvironmentProperties
                 .getVariable(CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));
+
+
+        config.setValidationTimeout(Integer.parseInt(
+                systemEnvironmentProperties.getVariable(CONNECTION_DB_VALIDATION_TIMEOUT)
+                        != null ? systemEnvironmentProperties
+                        .getVariable(CONNECTION_DB_VALIDATION_TIMEOUT) : "5000"));
 
         return new HikariDataSource(config);
     }

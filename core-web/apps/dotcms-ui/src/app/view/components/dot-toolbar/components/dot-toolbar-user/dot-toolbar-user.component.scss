@@ -7,6 +7,7 @@
 
 p-avatar {
     cursor: pointer;
+    padding: $spacing-2 0;
 }
 
 ::ng-deep #toolbar-header:hover {
@@ -25,5 +26,31 @@ p-avatar {
         white-space: nowrap;
         font-size: $font-size-lg;
         color: $black;
+    }
+}
+
+:host::ng-deep {
+    .p-menu {
+        margin-top: $spacing-0;
+    }
+
+    .p-menu .p-menu-separator {
+        margin: $spacing-1;
+    }
+
+    .p-menu.p-menu-overlay {
+        min-width: 17rem;
+    }
+
+    .toolbar-user__logout .p-menuitem-link .p-menuitem-text {
+        color: $color-palette-gray-700;
+    }
+
+    .toolbar-user__logout .p-menuitem-link:not(.p-disabled):hover .p-menuitem-text {
+        color: $color-palette-gray-700;
+    }
+
+    .toolbar-user__logout .p-menuitem-link:not(.p-disabled):hover .p-menuitem-icon {
+        color: $color-palette-gray-700;
     }
 }

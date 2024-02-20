@@ -11,12 +11,10 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
@@ -115,8 +113,7 @@ class MockDotKeyValueComponent {
     @Input() autoFocus: boolean;
     @Input() showHiddenField: string;
     @Input() variables: DotKeyValue[];
-    @Output() delete = new EventEmitter<DotKeyValue>();
-    @Output() save = new EventEmitter<DotKeyValue>();
+    @Output() updatedList = new EventEmitter<DotKeyValue[]>();
 }
 
 @Component({
@@ -125,7 +122,7 @@ class MockDotKeyValueComponent {
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;
-    @Input() formFields: DotAppsSecrets[];
+    @Input() formFields: DotAppsSecret[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
 }
@@ -150,7 +147,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 ]),
                 ButtonModule,
                 CommonModule,
-                DotCopyButtonModule,
+                DotCopyButtonComponent,
                 DotAppsConfigurationHeaderModule,
                 DotPipesModule,
                 DotMessagePipe,
@@ -336,15 +333,14 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should update local collection with saved value', () => {
             const variableEmitted = { key: 'custom', hidden: false, value: 'changed' };
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
-            keyValue.componentInstance.save.emit(variableEmitted);
+            keyValue.componentInstance.updatedList.emit([variableEmitted]);
             expect(component.dynamicVariables[0]).toEqual(variableEmitted);
             expect(component.dynamicVariables.length).toEqual(1);
         });
 
         it('should delete from local collection', () => {
-            const variableEmitted = { key: 'custom', hidden: false, value: 'test' };
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
-            keyValue.componentInstance.delete.emit(variableEmitted);
+            keyValue.componentInstance.updatedList.emit([]);
             expect(component.dynamicVariables.length).toEqual(0);
         });
 

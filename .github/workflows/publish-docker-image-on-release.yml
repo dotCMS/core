@@ -1,108 +1,61 @@
-name: publish-dotcms-docker-image-on-release
+name: Build/Push dotCMS docker image (on release)
 on:
-  push:
-    branches:
-      - release-*
+#  push:
+#    branches:
+#      - release-*
   repository_dispatch:
     types:
-
       - enterprise-update
 jobs:
-  publish_image:
-    name: Publish DotCMS docker image on release push
+  prepare-build:
+    name: Prepare build
     runs-on: ubuntu-latest
+    outputs:
+      build_id: ${{ steps.process-params.outputs.build_id }}
     steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+
       - name: Process Params
+        id: process-params
         run: |
           if [[ "${{ github.event_name }}" == 'repository_dispatch' ]]; then
-            BUILD_ID=${{ github.event.client_payload.build_id }}
+            build_id=${{ github.event.client_payload.build_id }}
           else
-            BUILD_ID=$(basename "${{ github.ref }}")
+            build_id=$(basename "${{ github.ref }}")
           fi
 
-          if [[ -z "${BUILD_ID}" ]]; then
-            echo 'Could not resolve BUILD_ID, aborting'
+          if [[ -z "${build_id}" ]]; then
+            echo 'Could not resolve build_id, aborting'
             exit 1
           else
-            echo "Found BUILD_ID: ${BUILD_ID}"
+            echo "Found build_id: ${build_id}"
           fi
 
-          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
-      - name: Checkout core
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ env.BUILD_ID }}
-          token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          submodules: recursively
-      - name: Set Common Vars
-        run: |
-          BUILD_HASH=$(git log -1 --pretty=%h)
-          BUILD_HASH=${BUILD_HASH::7}
-          eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
-          DOTCMS_VERSION="${dotcmsReleaseVersion}"
+          echo "build_id=${build_id}" >> $GITHUB_OUTPUT
 
-          if [[ ${BUILD_ID} =~ ^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
-            jobRun=true
-          else
-            jobRun=false
-          fi
+  build-push-image:
+    name: Build/Push Image
+    needs: prepare-build
+    uses: ./.github/workflows/maven-build-docker-image.yml
+    with:
+      ref: ${{ needs.prepare-build.outputs.build_id }}
+      docker_platforms: linux/amd64,linux/arm64
+      force_snapshot: true
+    secrets:
+      docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+      ghcr_io_username: ${{ secrets.DOCKER_USERNAME }}
+      ghcr_io_token: ${{ secrets.GHCR_TOKEN }}
 
-          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
-          echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
-          echo "jobRun=${jobRun}" >> $GITHUB_ENV
-      - name: Discover docker tags
-        id: discover-docker-tags
-        uses: dotcms/discover-docker-tags-action@v2.0
-        with:
-          version: ${{ env.DOTCMS_VERSION }}
-          hash: ${{ env.BUILD_HASH }}
-          label: 'SNAPSHOT'
-          update_stable: false
-          also_latest: false
-          image_name: dotcms/dotcms
-        if: env.jobRun == 'true'
-      - name: Format docker tags
-        id: format-docker-tags
-        run: |
-          tags=${{ steps.discover-docker-tags.outputs.discovered_tags }}
-          sep=
-          formatted=
-          for tag in ${tags//,/ }
-          do
-            formatted="$formatted$sep\`$tag\`"
-            [[ -z "$sep" ]] && sep=', '
-          done
-
-          echo "discovered_tags=${formatted}" >> $GITHUB_OUTPUT
-        if: env.jobRun == 'true'
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2.1.0
-        with:
-          platforms: amd64,arm64
-      - name: Docker Setup Buildx
-        uses: docker/setup-buildx-action@v2.2.1
-        with:
-          platforms: linux/amd64,linux/arm64
-          driver-opts: |
-            image=moby/buildkit:v0.10.6
-      - name: Docker Hub login
-        uses: docker/login-action@v2.1.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Build and push
-        uses: docker/build-push-action@v3.2.0
-        with:
-          context: ./docker/dotcms
-          push: true
-          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
-          platforms: linux/amd64,linux/arm64
-          build-args: |
-            BUILD_FROM=COMMIT
-            BUILD_ID=${{ env.BUILD_ID }}
-        if: env.jobRun == 'true'
+  finish-build-push:
+    name: Finish Build/Push
+    needs: build-push-image
+    runs-on: ubuntu-latest
+    steps:
       - name: Slack Notification
-        if: success() && env.jobRun == 'true' 
+        if: success()
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
@@ -112,4 +65,4 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
-          SLACK_MESSAGE: "<!channel> This automated script is happy to announce that a new docker image has been built for *${{ env.DOTCMS_VERSION }}* with tag: ${{ steps.format-docker-tags.outputs.discovered_tags }} :docker:"
+          SLACK_MESSAGE: "<!channel> This automated script is happy to announce that a new docker image has been built for *${{ needs.build-push-image.outputs.version }}* with tags: [${{ needs.build-push-image.outputs.tags }}] :docker:"

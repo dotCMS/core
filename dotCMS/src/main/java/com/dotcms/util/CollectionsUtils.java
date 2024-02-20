@@ -1,15 +1,34 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.function.*;
+import java.lang.reflect.Array;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 /**
  * This utility class provides common use methods for creating and interacting
@@ -997,6 +1016,73 @@ public class CollectionsUtils implements Serializable {
         return Collections.unmodifiableList(result);
     }
 
+    /**
+     * Took a non serializable map and convert it and all the contents inside to a serializable map
+     * Note: if a value is a map, use recursive to create that inner map to a serializable map (if it is not already)
+     * if the value is not a map, but it is not serializable, then convert it to a string by calling toString
+     * any null value will be skipped.
+     *
+     * @param nonSerializableMap Map
+     * @return Serializable HashMap serializable
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static HashMap<Serializable, Serializable> toSerializableMap (final Map nonSerializableMap) {
+
+        final HashMap<Serializable, Serializable> serializableMap = new HashMap<>();
+
+        for (final Object key : nonSerializableMap.keySet()) {
+
+            final Object value = nonSerializableMap.get(key);
+            if (null != value) {
+                if (value instanceof Map && !(value instanceof Serializable)) {
+
+                    serializableMap.put((Serializable) key, toSerializableMap((Map) value));
+                }else if (value instanceof List && !(value instanceof Serializable)) {
+
+                    serializableMap.put((Serializable) key, toSerializableList((List) value));
+                } else {
+
+                    serializableMap.put((Serializable) key, value instanceof Serializable ? (Serializable) value : value.toString());
+                }
+            }
+        }
+
+        return serializableMap;
+    }
+
+    /**
+     * Took a non serializable list and convert it and all the contents inside to a serializable arraylist
+     * Note: if a value is a list, use recursive to create that inner list to a serializable list (if it is not already)
+     * if the value is not a list, but it is not serializable, then convert it to a string by calling toString
+     * any null value will be skipped.
+     *
+     * @param nonSerializableMap Map
+     * @return Serializable HashMap serializable
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static ArrayList<Serializable> toSerializableList(final List nonSerializableList) {
+
+        final ArrayList<Serializable> serializableList = new ArrayList<>();
+
+        for (final Object value : nonSerializableList) {
+
+            if (null != value) {
+                if (value instanceof Map && !(value instanceof Serializable)) {
+
+                    serializableList.add(toSerializableMap((Map) value));
+                }else if (value instanceof List && !(value instanceof Serializable)) {
+
+                    serializableList.add(toSerializableList((List) value));
+                } else {
+
+                    serializableList.add(value instanceof Serializable ? (Serializable) value : value.toString());
+                }
+            }
+        }
+
+        return serializableList;
+    }
+
     private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
         @Override
         public Supplier<ImmutableList.Builder<T>> supplier() {
@@ -1099,6 +1185,19 @@ public class CollectionsUtils implements Serializable {
             return (current,last) -> comparator.compare(current,last) >= 0 ? current : last;
         }
 
-
     }
+
+    /**
+     * Concatenates the contents of one array into the other one.
+     *
+     * @param array1 The base array used in the concatenation.
+     * @param array2 The array that will be added to the first array.
+     *
+     * @return The resulting array
+     */
+    public static <T> T[] concat(final T[] array1, final T[] array2) {
+        return Stream.concat(Arrays.stream(array1), Arrays.stream(array2))
+                .toArray(size -> (T[]) Array.newInstance(array1.getClass().getComponentType(), size));
+    }
+
 }

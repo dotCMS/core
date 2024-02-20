@@ -1,24 +1,21 @@
 package com.dotcms.api.client.files.traversal.data;
 
+import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteURL;
+
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 import com.google.common.collect.ImmutableList;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
-import static com.dotcms.common.AssetsUtils.buildRemoteURL;
 
 /**
  * Utility class for retrieving folder and asset information from the remote server using REST calls.
@@ -133,12 +130,7 @@ public class Retriever {
                 subFolders.add(child.withLevel(level + 1));
             }
 
-            // Ordering foundFolder by name
-            List<FolderView> sortedFolders = subFolders.stream()
-                    .sorted(Comparator.comparing(FolderView::name))
-                    .collect(Collectors.toList());
-
-            foundFolder = foundFolder.withSubFolders(ImmutableList.copyOf(sortedFolders));
+            foundFolder = foundFolder.withSubFolders(ImmutableList.copyOf(subFolders));
         }
 
         return foundFolder;

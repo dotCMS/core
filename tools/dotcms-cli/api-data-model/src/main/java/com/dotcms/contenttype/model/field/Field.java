@@ -2,7 +2,8 @@
 package com.dotcms.contenttype.model.field;
 
 import com.dotcms.api.provider.ClientObjectMapper;
-import com.dotcms.contenttype.model.field.Field.ClassNameAliasResolver;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -14,9 +15,11 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.Nullable;
+import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
 @JsonTypeInfo(
@@ -54,26 +57,41 @@ import org.immutables.value.Value.Default;
         @Type(value = WysiwygField.class),
         @Type(value = RowField.class),
         @Type(value = ColumnField.class),
+        @Type(value = JSONField.class),
 })
+@JsonInclude(Include.NON_DEFAULT)
+@Value.Style(passAnnotations = {JsonInclude.class})
 public abstract class Field {
 
-    @Nullable
-    public abstract Boolean searchable();
+    @Value.Default
+    public Boolean searchable() {
+        return false;
+    }
 
-    @Nullable
-    public abstract Boolean unique();
+    @Value.Default
+    public Boolean unique() {
+        return false;
+    }
 
-    @Nullable
-    public abstract Boolean indexed();
+    @Value.Default
+    public Boolean indexed() {
+        return false;
+    }
 
-    @Nullable
-    public abstract Boolean listed();
+    @Value.Default
+    public Boolean listed() {
+        return false;
+    }
 
-    @Nullable
-    public abstract Boolean readOnly();
+    @Value.Default
+    public Boolean readOnly() {
+        return false;
+    }
 
-    @Nullable
-    public abstract Boolean forceIncludeInApi();
+    @Value.Default
+    public Boolean forceIncludeInApi() {
+        return false;
+    }
 
     @Nullable
     public abstract String owner();
@@ -84,6 +102,13 @@ public abstract class Field {
     @Nullable
     public abstract String inode();
 
+    /**
+     * The modDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of Field can be considered equal even if
+     * their modDate values differ. This decision was made because under certain circumstances, the
+     * modDate value is set using the current date.
+     */
+    @Value.Auxiliary
     @Nullable
     public abstract Date modDate();
 
@@ -97,11 +122,15 @@ public abstract class Field {
     @Nullable
     public abstract String relationType();
 
-    @Nullable
-    public abstract Boolean required();
+    @Value.Default
+    public Boolean required() {
+        return false;
+    }
 
-    @Nullable
-    public abstract Integer sortOrder();
+    @Value.Default
+    public Integer sortOrder() {
+        return 0;
+    }
 
     @Nullable
     public abstract String values();
@@ -115,8 +144,10 @@ public abstract class Field {
     @Nullable
     public abstract String defaultValue();
 
-    @Nullable
-    public abstract Boolean fixed();
+    @Value.Default
+    public Boolean fixed() {
+        return false;
+    }
 
     public abstract DataTypes dataType();
 
@@ -129,16 +160,27 @@ public abstract class Field {
     @Nullable
     public abstract String fieldTypeLabel();
 
-    @Nullable
-    public abstract List<FieldVariable> fieldVariables();
+    @Value.Default
+    public List<FieldVariable> fieldVariables() {
+        return Collections.emptyList();
+    }
 
+    /**
+     * The iDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of Field can be considered equal even if
+     * their iDate values differ. This decision was made because under certain circumstances, the
+     * iDate value is set using the current date.
+     */
+    @Value.Auxiliary
     @Nullable
     public abstract Date iDate();
 
-    @Nullable
-    public abstract List<ContentTypeFieldProperties> fieldContentTypeProperties();
+    @Value.Default
+    public List<ContentTypeFieldProperties> fieldContentTypeProperties() {
+        return Collections.emptyList();
+    }
 
-    static class ClassNameAliasResolver extends ClassNameIdResolver {
+    public static class ClassNameAliasResolver extends ClassNameIdResolver {
 
         static final String IMMUTABLE = "Immutable";
 

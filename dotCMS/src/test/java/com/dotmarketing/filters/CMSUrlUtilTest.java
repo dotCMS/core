@@ -1,13 +1,14 @@
 package com.dotmarketing.filters;
 
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.io.UnsupportedEncodingException;
-import javax.servlet.http.HttpServletRequest;
-import org.junit.Test;
 
 /**
  * @author nollymar 
@@ -42,6 +43,36 @@ public class CMSUrlUtilTest {
         when(request.getAttribute(CMS_FILTER_URI_OVERRIDE)).thenReturn("dotcms+test.txt");
         final String result = CMSUrlUtil.getInstance().getURIFromRequest(request);
         assertEquals("dotcms+test.txt", result);
+    }
+
+    /**
+     * Method To Test: {@link CMSUrlUtil#getInodeFromUrlPath(String)}
+     * Given Scenario: Invoke with a page live url
+     * ExpectedResult: the contentlet identifier will be returned
+     */
+    @Test
+    public void test_getIdentifierFromUrlPath() {
+        final String liveUrlPath = "/LIVE/27e8f845c3bd21ad1c601b8fe005caa6/dotParser_1695072095296.container";
+        final String contentIdentifier = CMSUrlUtil.getInstance().getInodeFromUrlPath(liveUrlPath);
+        assertNotNull(contentIdentifier);
+        assertEquals("27e8f845c3bd21ad1c601b8fe005caa6", contentIdentifier);
+
+        final String templateUrlPath = "CONTENT/27e8f845c3bd21ad1c601b8fe005caa6_1695072095296.content";
+        final String contentIdentifier2 = CMSUrlUtil.getInstance().getInodeFromUrlPath(templateUrlPath);
+        assertNotNull(contentIdentifier2);
+        assertEquals("27e8f845c3bd21ad1c601b8fe005caa6", contentIdentifier2);
+
+        final String feUrlPath = "/data/shared/assets/c/e/ce837ff5-dc6f-427a-8f60-d18afc395be9/fileAsset/openai-summarize.vtl";
+        final String contentIdentifier3 = CMSUrlUtil.getInstance().getInodeFromUrlPath(feUrlPath);
+        assertNotNull(contentIdentifier3);
+        assertEquals("ce837ff5-dc6f-427a-8f60-d18afc395be9", contentIdentifier3);
+
+
+        final String template2UrlPath = "LIVE/d2e56042255158023d03164cd3852ead.templatelayout";
+        final String contentIdentifier4 = CMSUrlUtil.getInstance().getInodeFromUrlPath(template2UrlPath);
+        assertNotNull(contentIdentifier4);
+        assertEquals("d2e56042255158023d03164cd3852ead", contentIdentifier4);
+
     }
 
 }

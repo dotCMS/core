@@ -1,3 +1,9 @@
+/*
+  ========================== WARNING ==========================
+  Don't use this in your components, use $font-size-md instead,
+  this is only for the root element
+  =============================================================
+*/
 fieldset {
     border: none;
     padding: 0;

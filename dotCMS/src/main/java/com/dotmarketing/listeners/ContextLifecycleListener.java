@@ -66,7 +66,7 @@ public class ContextLifecycleListener implements ServletContextListener {
         String path = null;
 		try {
 
-            String contextPath = Config.CONTEXT_PATH;
+            String contextPath = Config.CONTEXT.getRealPath("/");
             if ( !contextPath.endsWith( File.separator ) ) {
                 contextPath += File.separator;
             }

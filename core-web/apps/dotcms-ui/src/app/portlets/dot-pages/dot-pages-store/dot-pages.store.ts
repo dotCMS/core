@@ -9,27 +9,28 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { catchError, filter, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotEnvironment } from '@dotcms/app/shared/models/dot-environment/dot-environment';
 import {
     DotCMSPageWorkflowState,
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
+    DotHttpErrorManagerService,
     DotLanguagesService,
     DotLicenseService,
     DotLocalstorageService,
     DotMessageService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
+    DotPropertiesService,
     DotRenderMode,
+    DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
-    ESOrderDirection
+    ESOrderDirection,
+    PushPublishService,
+    DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
@@ -43,12 +44,13 @@ import {
     DotLanguage,
     DotPermissionsType,
     ESContent,
+    FeaturedFlags,
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
-import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
 import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 export interface DotPagesInfo {
     actionMenuDomId?: string;
@@ -82,6 +84,8 @@ export interface DotPagesState {
     pages?: DotPagesInfo;
     pageTypes?: DotCMSContentType[];
     portletStatus: ComponentStatus;
+    isContentEditor2Enabled: boolean;
+    availableContentTypes: string[];
 }
 
 export interface DotSessionStorageFilter {
@@ -123,6 +127,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         (state) =>
             state.pages.status === ComponentStatus.LOADING ||
             state.pages.status === ComponentStatus.INIT
+    );
+
+    readonly isContentEditor2Enabled$: Observable<boolean> = this.select(
+        (state) => state.isContentEditor2Enabled
+    );
+
+    readonly availableContentTypes$: Observable<string[]> = this.select(
+        (state) => state.availableContentTypes
     );
 
     readonly isPortletLoading$: Observable<boolean> = this.select(
@@ -334,7 +346,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             this.dialogService.open(DotPagesCreatePageDialogComponent, {
                                 header: this.dotMessageService.get('create.page'),
                                 width: '58rem',
-                                data: pageTypes
+                                data: {
+                                    pageTypes,
+                                    isContentEditor2Enabled: this.get().isContentEditor2Enabled,
+                                    availableContentTypes: this.get().availableContentTypes
+                                }
                             });
                         },
                         (error: HttpErrorResponse) => {
@@ -518,6 +534,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         this.languageIdValue$,
         this.showArchivedValue$,
         this.pageTypes$,
+        this.isContentEditor2Enabled$,
+        this.availableContentTypes$,
         (
             {
                 favoritePages,
@@ -536,7 +554,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             keywordValue,
             languageIdValue,
             showArchivedValue,
-            pageTypes
+            pageTypes,
+            isContentEditor2Enabled,
+            availableContentTypes
         ) => ({
             favoritePages,
             isEnterprise,
@@ -553,7 +573,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             keywordValue,
             languageIdValue,
             showArchivedValue,
-            pageTypes
+            pageTypes,
+            isContentEditor2Enabled,
+            availableContentTypes
         })
     );
 
@@ -616,7 +638,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     private getFavoritePageWorflowActions(
         item: DotCMSContentlet
     ): Observable<DotCMSPageWorkflowState> {
-        const urlParams: { [key: string]: string } = { url: item.url.split('?')[0] };
+        const urlParams: { [key: string]: string } = {
+            url: item.url.split('?')[0]
+        };
         const searchParams = new URLSearchParams(item.url.split('?')[1]);
         for (const entry of searchParams) {
             urlParams[entry[0]] = entry[1];
@@ -624,7 +648,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         const { host_id, language_id, url } = urlParams;
 
-        return this.dotPageWorkflowsActionsService.getByUrl({ host_id, language_id, url });
+        return this.dotPageWorkflowsActionsService.getByUrl({
+            host_id,
+            language_id,
+            url
+        });
     }
 
     private getPagesDataFn(
@@ -758,7 +786,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         ? this.dotMessageService.get('Edit')
                         : this.dotMessageService.get('View'),
                 command: () => {
-                    this.dotRouterService.goToEditContentlet(item.inode);
+                    this.get().isContentEditor2Enabled &&
+                    !this.shouldRedirectToOldContentEditor(item.contentType)
+                        ? this.dotRouterService.goToURL(`content/${item.inode}`)
+                        : this.dotRouterService.goToEditContentlet(item.inode);
                 }
             });
         }
@@ -790,7 +821,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         if (isEnterprise && environments) {
             actionsMenu.push({
                 label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                command: (item) =>
+                command: () =>
                     this.dotPushPublishDialogService.open({
                         assetIdentifier: item.identifier,
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
@@ -840,7 +871,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private pushPublishService: PushPublishService,
         private siteService: SiteService,
         private dotFavoritePageService: DotFavoritePageService,
-        private dotLocalstorageService: DotLocalstorageService
+        private dotLocalstorageService: DotLocalstorageService,
+        private dotPropertiesService: DotPropertiesService
     ) {
         super(null);
     }
@@ -860,7 +892,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 .getEnvironments()
                 .pipe(map((environments: DotEnvironment[]) => !!environments.length)),
             this.getSessionStorageFilterParams(),
-            this.getLocalStorageFavoritePanelParams()
+            this.getLocalStorageFavoritePanelParams(),
+            this.dotPropertiesService.getFeatureFlag(
+                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+            ),
+            this.dotPropertiesService
+                .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE)
+                .pipe(map((contentTypes) => contentTypes.split(',')))
         ])
             .pipe(
                 take(1),
@@ -872,7 +910,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         isEnterprise,
                         environments,
                         filterParams,
-                        collapsedParam
+                        collapsedParam,
+                        isContentEditor2Enabled,
+                        availableContentTypes
                     ]: [
                         ESContent,
                         DotCurrentUser,
@@ -880,7 +920,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         boolean,
                         boolean,
                         DotSessionStorageFilter,
-                        boolean
+                        boolean,
+                        boolean,
+                        string[]
                     ]) => {
                         return this.dotCurrentUser
                             .getUserPermissions(
@@ -899,7 +941,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                         environments,
                                         permissionsType,
                                         filterParams,
-                                        collapsedParam
+                                        collapsedParam,
+                                        isContentEditor2Enabled,
+                                        availableContentTypes
                                     ];
                                 })
                             );
@@ -915,7 +959,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     environments,
                     permissions,
                     filterParams,
-                    collapsedParam
+                    collapsedParam,
+                    isContentEditor2Enabled,
+                    availableContentTypes
                 ]: [
                     ESContent,
                     DotCurrentUser,
@@ -924,7 +970,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     boolean,
                     DotPermissionsType,
                     DotSessionStorageFilter,
-                    boolean
+                    boolean,
+                    boolean,
+                    string[]
                 ]): void => {
                     this.setState({
                         favoritePages: {
@@ -956,7 +1004,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             archived: filterParams?.archived || false,
                             status: ComponentStatus.INIT
                         },
-                        portletStatus: ComponentStatus.LOADED
+                        portletStatus: ComponentStatus.LOADED,
+                        isContentEditor2Enabled,
+                        availableContentTypes
                     });
                 },
                 () => {
@@ -986,7 +1036,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             keyword: '',
                             status: ComponentStatus.INIT
                         },
-                        portletStatus: ComponentStatus.LOADED
+                        portletStatus: ComponentStatus.LOADED,
+                        isContentEditor2Enabled: false,
+                        availableContentTypes: ['*']
                     });
                 }
             );
@@ -1060,9 +1112,24 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
      */
     private fireWorkflowAction(contentletInode: string, actionId: string): void {
         const value = this.dotMessageService.get('Workflow-executed');
-        this.dotWorkflowActionsFireService.fireTo(contentletInode, actionId).subscribe(
+        this.dotWorkflowActionsFireService.fireTo({ actionId, inode: contentletInode }).subscribe(
             (payload) => this.dotEventsService.notify('save-page', { payload, value }),
             (error) => this.httpErrorManagerService.handle(error, true)
+        );
+    }
+
+    /**
+     * Check if the content type is in the feature flag list
+     *
+     * @private
+     * @param {string} contentType
+     * @return {*}  {boolean}
+     * @memberof DotCustomEventHandlerService
+     */
+    private shouldRedirectToOldContentEditor(contentType: string): boolean {
+        return (
+            !this.get().availableContentTypes.includes('*') &&
+            this.get().availableContentTypes.indexOf(contentType) === -1
         );
     }
 }

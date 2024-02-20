@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.categories.model;
 
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.beans.Host;
@@ -21,13 +22,14 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Category extends Inode implements Serializable, ManifestItem {
@@ -147,6 +149,7 @@ public class Category extends Inode implements Serializable, ManifestItem {
 
 
 
+	@CloseDBIfOpened
 	public boolean hasActiveChildren() {
 		DotConnect db = new DotConnect ();
 		String query = "select count(*) as test_count from category cat where cat.inode in (select tree.child from tree tree where tree.parent = ? )  and cat.active = ?";

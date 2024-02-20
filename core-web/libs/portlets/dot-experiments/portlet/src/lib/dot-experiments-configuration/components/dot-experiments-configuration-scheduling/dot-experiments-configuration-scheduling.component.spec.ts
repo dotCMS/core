@@ -14,7 +14,7 @@ import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, ExperimentSteps } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
@@ -23,7 +23,6 @@ import {
     MockDotMessageService
 } from '@dotcms/utils-testing';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationSchedulingComponent } from './dot-experiments-configuration-scheduling.component';
 
@@ -103,7 +102,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         expect(spectator.query(Tooltip).disabled).toEqual(true);
     });
 
-    it('should disable button and show tooltip when experiment is nos on draft', () => {
+    it('should disable button and show tooltip when there is an error', () => {
         dotExperimentsService.getById.mockReturnValue(
             of({
                 ...EXPERIMENT_MOCK,

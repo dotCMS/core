@@ -7,14 +7,17 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentCompareTableComponent } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component';
 import { dotContentCompareTableDataMock } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component.spec';
 import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
 import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotIframeService,
+    DotFormatDateService
+} from '@dotcms/data-access';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -87,6 +90,10 @@ describe('DotContentCompareComponent', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });

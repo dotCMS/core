@@ -8,23 +8,24 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotDevicesService,
     DotLanguagesService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPersonalizeService,
-    DotPersonasService
+    DotPersonasService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotDevice, DotLanguage, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
+    DotMessageDisplayServiceMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
     DotPersonasServiceMock,
@@ -43,8 +44,7 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
 @Component({
     selector: 'dot-test-host',
     template: `<dot-edit-page-view-as-controller-seo
-        [pageState]="pageState"
-    ></dot-edit-page-view-as-controller-seo>`
+        [pageState]="pageState"></dot-edit-page-view-as-controller-seo>`
 })
 class DotTestHostComponent {
     @Input()
@@ -123,6 +123,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                 DotPipesModule
             ],
             providers: [
+                DotSessionStorageService,
                 DotLicenseService,
                 {
                     provide: DotMessageService,
@@ -152,7 +153,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                     provide: DotPersonalizeService,
                     useClass: DotPersonalizeServiceMock
                 },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock }
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                }
             ]
         });
     }));

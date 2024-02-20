@@ -82,6 +82,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
@@ -111,6 +112,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     private final ESIndexAPI indexApi;
     private final ESMappingAPIImpl mappingAPI;
     private final IndiciesAPI indiciesAPI;
+    private ArrayList<Object> list;
+    private int indexPosition;
 
     @VisibleForTesting
     public ESSiteSearchAPI(final ESIndexAPI indexApi,
@@ -144,7 +147,32 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
         Collections.sort(indices);
         Collections.reverse(indices);
+        setDefaultToSpecificPosition(indices, 0);
         return indices;
+    }
+
+    /**
+     * Set the default site search index to the specified position of the arraylist
+     */
+    private void setDefaultToSpecificPosition(final List<String> list, final int indexPosition) {
+
+        if (list != null && list.size() > 1){
+
+            try {
+                //search the default site search index
+                final String defaultIndice = indiciesAPI.loadIndicies().getSiteSearch();
+                if (defaultIndice != null && !defaultIndice.isEmpty() && !list.isEmpty() ){
+                    final int index = list.indexOf(defaultIndice);
+                    //change the element defaultIndex to the first position of the arraylist if it is not yet
+                    if (index != 0) {
+                        list.remove(index);
+                        list.add(indexPosition, defaultIndice);
+                    }
+                }
+            } catch (DotDataException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Override

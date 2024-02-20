@@ -4,13 +4,20 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * This class holds a view with all attributes of the
+ * {@link com.dotmarketing.portlets.templates.model.Template} class for the REST Endpoint to provide
+ * it as part of the JSON response.
+ *
+ * @author Jonathan Sanchez
+ * @since Aug 31st, 2020
+ */
 public class TemplateView {
 
     private final String  identifier;
@@ -48,9 +55,9 @@ public class TemplateView {
     private final boolean canPublish;
     private final TemplateLayoutView layout;
     private final Set<ContainerView> containers;
+    private final ThemeView themeInfo;
 
     private TemplateView(final Builder builder) {
-
         this.identifier = builder.identifier;
         this.inode = builder.inode;
         this.categoryId = builder.categoryId;
@@ -86,13 +93,14 @@ public class TemplateView {
         this.canPublish = builder.canPublish;
         this.layout = builder.layout;
         this.containers = builder.containers;
+        this.themeInfo = builder.themeInfo;
     }
 
     public Map<String, ContainerView> getContainers() {
 
         final Map<String, ContainerView> containerMap = new HashMap<>();
 
-        containers.stream().forEach(containerView -> {
+        containers.forEach(containerView -> {
 
             final Container container = containerView.getContainer();
             final String containerId  = container instanceof FileAssetContainer?
@@ -239,6 +247,10 @@ public class TemplateView {
         return canPublish;
     }
 
+    public ThemeView getThemeInfo() {
+        return themeInfo;
+    }
+
     public static final class Builder {
 
         private  String identifier;
@@ -276,6 +288,7 @@ public class TemplateView {
         private  boolean canPublish;
         private  TemplateLayoutView layout;
         private  Set<ContainerView> containers;
+        private ThemeView themeInfo;
 
         public Builder containers (final Set<ContainerView> containers) {
 
@@ -459,10 +472,15 @@ public class TemplateView {
             return this;
         }
 
+        public Builder themeInfo(final ThemeView themeObj) {
+            this.themeInfo = themeObj;
+            return this;
+        }
 
         public TemplateView build() {
-
             return new TemplateView(this);
         }
+
     }
+
 }

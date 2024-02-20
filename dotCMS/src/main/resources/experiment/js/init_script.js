@@ -1,11 +1,14 @@
 
+let regexsChecks = [];
+
 function setJitsuExperimentData (experimentData) {
     let experimentsShortData = {
         experiments: experimentData.experiments.map((experiment) => ({
                 experiment: experiment.id,
                 runningId: experiment.runningId,
                 variant: experiment.variant.name,
-                lookBackWindow: experiment.lookBackWindow.value
+                lookBackWindow: experiment.lookBackWindow.value,
+                ...regexsChecks.filter(regexCheked => regexCheked.id === experiment.id)[0].checks
             })
         )
     };
@@ -21,17 +24,37 @@ function getParams (experimentData) {
     return (location.href.includes("?") ? "&" : "?") + `variantName=${experimentData.variant.name}&redirect=true`;
 }
 
+function validateRegexs(experimentsData){
+
+    for (let i = 0; i < experimentsData.experiments.length; i++) {
+        let experimentId = experimentsData.experiments[i].id;
+        let experimentRegex = {id: experimentId, checks: []}
+
+        for (const key in experimentsData.experiments[i].regexs) {
+            const pattern = new RegExp(experimentsData.experiments[i].regexs[key]);
+
+            let indexOf = location.href.indexOf("?");
+            let urlWithoutParameters = indexOf > -1 ? location.href.substring(0, indexOf) : location.href;
+            let parameters = indexOf > -1 ? location.href.substring(indexOf) : '';
+
+            let url = urlWithoutParameters.toLowerCase() + parameters;
+            experimentRegex.checks[key] = pattern.test(url)
+        }
+        regexsChecks.push(experimentRegex);
+
+    }
+}
+
 function redirectIfNeedIt(experimentsData,
-    additionalValidation = (experimentData) => true){
+                          additionalValidation = (experimentData) => true){
 
     if (!location.href.includes("redirect=true")) {
 
         for (let i = 0; i < experimentsData.experiments.length; i++) {
-            const pattern = new RegExp(experimentsData.experiments[i].redirectPattern);
+            let experimentId = experimentsData.experiments[i].id;
+            let regexs = regexsChecks.filter(regexs => regexs.id === experimentId)[0];
 
-            if (additionalValidation(experimentsData.experiments[i]) &&
-                pattern.test(location.href.toLowerCase())) {
-
+            if (additionalValidation(experimentsData.experiments[i]) && regexs.checks.isExperimentPage) {
                 const param = experimentsData.experiments[i].variant.name === 'DEFAULT' ?
                     '' : getParams(experimentsData.experiments[i]);
 
@@ -47,12 +70,15 @@ function redirectIfNeedIt(experimentsData,
 
 window.addEventListener("experiment_loaded", function (event) {
     let experimentsData = event.detail;
+    validateRegexs(experimentsData);
     setJitsuExperimentData(experimentsData);
+
     redirectIfNeedIt(experimentsData, (experimentData) => experimentData.variant.name !== 'DEFAULT');
 });
 
 window.addEventListener("experiment_loaded_from_endpoint", function (event) {
     let experimentsData = event.detail;
+    validateRegexs(experimentsData);
     setJitsuExperimentData(experimentsData);
     const wasRedirect = redirectIfNeedIt(experimentsData);
 
@@ -89,12 +115,11 @@ if (!experimentAlreadyCheck) {
             var now = Date.now();
 
             experimentData.experiments = experimentData.experiments
-            .filter(experiment => currentRunningExperimentsId.includes(experiment.id))
-            .filter(experiment => experiment.lookBackWindow.expireTime > now);
-
+                .filter(experiment => currentRunningExperimentsId.includes(experiment.id))
+                .filter(experiment => experiment.lookBackWindow.expireTime > now);
 
             experimentData.includedExperimentIds = experimentData.includedExperimentIds
-            .filter(experimentId => currentRunningExperimentsId.includes(experimentId));
+                .filter(experimentId => currentRunningExperimentsId.includes(experimentId));
 
             if (!experimentData.experiments.length) {
                 localStorage.removeItem('experiment_data');
@@ -124,45 +149,45 @@ if (!experimentAlreadyCheck) {
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.entity.experiments) {
-                let dataToStorage = Object.assign({}, data.entity);
-                let oldExperimentData = JSON.parse(
-                    localStorage.getItem('experiment_data'));
+            .then(response => response.json())
+            .then(data => {
+                if (data.entity.experiments) {
+                    let dataToStorage = Object.assign({}, data.entity);
+                    let oldExperimentData = JSON.parse(
+                        localStorage.getItem('experiment_data'));
 
-                delete dataToStorage['excludedExperimentIds'];
+                    delete dataToStorage['excludedExperimentIds'];
 
-                dataToStorage.includedExperimentIds = [
-                    ...dataToStorage.includedExperimentIds,
-                    ...data.entity.excludedExperimentIds
-                ];
-
-                if (oldExperimentData) {
-                    dataToStorage.experiments = [
-                        ...oldExperimentData.experiments,
-                        ...dataToStorage.experiments
+                    dataToStorage.includedExperimentIds = [
+                        ...dataToStorage.includedExperimentIds,
+                        ...data.entity.excludedExperimentIds
                     ];
-                }
 
-                var now = Date.now();
-
-                dataToStorage.experiments = dataToStorage.experiments.map(experiment => ({
-                    ...experiment,
-                    lookBackWindow: {
-                        ...experiment.lookBackWindow,
-                        expireTime: now + experiment.lookBackWindow.expireMillis
+                    if (oldExperimentData) {
+                        dataToStorage.experiments = [
+                            ...oldExperimentData.experiments,
+                            ...dataToStorage.experiments
+                        ];
                     }
-                }));
 
-                localStorage.setItem('experiment_data',
-                    JSON.stringify(dataToStorage));
+                    var now = Date.now();
 
-                const event = new CustomEvent('experiment_loaded_from_endpoint',
-                    {detail: dataToStorage});
-                window.dispatchEvent(event);
-            }
-        });
+                    dataToStorage.experiments = dataToStorage.experiments.map(experiment => ({
+                        ...experiment,
+                        lookBackWindow: {
+                            ...experiment.lookBackWindow,
+                            expireTime: now + experiment.lookBackWindow.expireMillis
+                        }
+                    }));
+
+                    localStorage.setItem('experiment_data',
+                        JSON.stringify(dataToStorage));
+
+                    const event = new CustomEvent('experiment_loaded_from_endpoint',
+                        {detail: dataToStorage});
+                    window.dispatchEvent(event);
+                }
+            });
     }
 
     let experimentDataAsString = localStorage.getItem('experiment_data');

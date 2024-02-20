@@ -16,6 +16,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rekognition.actionlet.RekognitionActionlet;
+import com.dotcms.rendering.js.JsScriptActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
@@ -133,7 +134,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,6 +147,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -160,7 +161,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
@@ -270,6 +270,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CopyActionlet.class,
 				MessageActionlet.class,
 				VelocityScriptActionlet.class,
+				JsScriptActionlet.class,
 				LargeMessageActionlet.class,
 				SendFormEmailActionlet.class,
 				ResetApproversActionlet.class,
@@ -839,7 +840,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user The user
 	 */
 	@WrapInTransaction
-	private WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+	@VisibleForTesting
+	@Override
+	public WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
 
 		try {
 
@@ -4026,9 +4029,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CollectionsUtils.join(this.findWorkFlowComments(task),
 						this.findWorkflowHistory (task));
 
-	    return workflowTimelineItems.stream()
-                .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
-                .collect(CollectionsUtils.toImmutableList());
+		final Comparator<WorkflowTimelineItem> comparator = Comparator.comparing(WorkflowTimelineItem::createdDate).reversed();
+		return workflowTimelineItems.stream()
+				.sorted(comparator)
+				.collect(CollectionsUtils.toImmutableList());
+
 	}
 
 
@@ -4184,6 +4189,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         }
 
         return actionsBuilder.build();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Optional<SystemActionWorkflowActionMapping> findSystemActionByScheme(final SystemAction systemAction,
+																				final WorkflowScheme workflowScheme,
+																				final User user) throws DotSecurityException, DotDataException {
+
+		final List<Map<String, Object>> mappings = this.workFlowFactory.findSystemActionsByScheme (workflowScheme);
+		for (final Map<String, Object> rowMap : mappings) {
+
+			final SystemActionWorkflowActionMapping mapping =
+					this.toSystemActionWorkflowActionMapping(rowMap, workflowScheme, user);
+			if (Objects.nonNull(mapping) && mapping.getSystemAction().equals(systemAction)) {
+				return Optional.ofNullable(mapping);
+			}
+		}
+
+		return Optional.empty();
 	}
 
 	@Override
@@ -4364,6 +4388,54 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return this.hasActionlet(action, Actionlet::destroy);
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasSteps(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasSteps();
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasActions();
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasSubActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasSubActions();
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasUniqueSubActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasUniqueSubActions();
+	}
+
 	@Override
 	public WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
 									final WorkflowStep workflowStep, final String title, String description) throws DotDataException {
@@ -4435,5 +4507,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return null;
     }
+
+	@Override
+	@CloseDBIfOpened
+	public int countWorkflowSchemes(final User user) {
+		isUserAllowToModifiedWorkflow(user);
+		return workFlowFactory.countWorkflowSchemes(false);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public int countWorkflowSchemesIncludeArchived(final User user) {
+		isUserAllowToModifiedWorkflow(user);
+		return workFlowFactory.countWorkflowSchemes(true);
+	}
 
 }

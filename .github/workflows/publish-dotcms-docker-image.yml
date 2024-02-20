@@ -1,87 +1,52 @@
-name: Publish DotCMS docker image
+name: Build/Push dotCMS docker image
 on:
   workflow_dispatch:
     inputs:
-      custom_label:
-        description: 'Custom label to add as part of the tag'
-        required: false
-      update_stable:
-        description: 'Update stable tags'
-        required: true
-        default: 'false'
-      also_latest:
-        description: 'Update also the "latest" tag (relies on update_stable input to be set to true)'
-        required: false
-        default: 'false'
       multi_arch:
-        description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
+        description: 'Build Multi-arch'
         required: true
-        default: 'true'
-      dry_run:
-        description: 'Dry Run (does not publish to docker hub)'
+        type: boolean
+        default: true
+      docker_registry:
+        description: 'Docker registry to push the image to'
         required: false
-        default: 'false'
+        type: choice
+        options:
+          - 'DOCKER.IO'
+          - 'GHCR.IO'
+          - 'BOTH'
+        default: 'DOCKER.IO'
 jobs:
-  publish_image:
-    name: Publish DotCMS docker image
+  prepare-build:
+    name: Prepare build
     runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.set-common-vars.outputs.ref }}
+      docker_platforms: ${{ steps.set-common-vars.outputs.docker_platforms }}
     steps:
-      - name: GITHUB CONTEXT
+      - run: echo 'GitHub context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-        if: env.DEBUG == 'true'
-      - name: Checkout core
-        uses: actions/checkout@v3
-      - name: Set Common Vars
-        run: |
-          BUILD_ID=$(basename "${{ github.ref }}")
-          BUILD_HASH=$(git log -1 --pretty=%h)
-          BUILD_HASH=${BUILD_HASH::7}
-          eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
-          DOTCMS_VERSION="${dotcmsReleaseVersion}"
-          PLATFORMS='linux/amd64'
-          [[ "${{ github.event.inputs.multi_arch }}" == 'true' ]] && PLATFORMS='linux/amd64,linux/arm64'
 
-          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
-          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
-          echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
-          echo "PLATFORMS=${PLATFORMS}" >> $GITHUB_ENV
-      - name: Discover docker tags
-        id: discover-docker-tags
-        uses: dotcms/discover-docker-tags-action@v2.0
-        with:
-          version: ${{ env.DOTCMS_VERSION }}
-          hash: ${{ env.BUILD_HASH }}
-          label: ${{ github.event.inputs.custom_label }}
-          update_stable: ${{ github.event.inputs.update_stable }}
-          also_latest: ${{ github.event.inputs.also_latest }}
-          image_name: dotcms/dotcms
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2.1.0
-        with:
-          platforms: amd64,arm64
-        if: github.event.inputs.multi_arch == 'true'
-      - id: docker-setup-buildx
-        name: Docker Setup Buildx
-        uses: docker/setup-buildx-action@v2.2.1
-        with:
-          platforms: ${{ env.PLATFORMS }}
-          driver-opts: |
-            image=moby/buildkit:v0.10.6
-        if: github.event.inputs.multi_arch == 'true'
-      - name: Docker Hub login
-        uses: docker/login-action@v2.1.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Build and push
-        uses: docker/build-push-action@v3.2.0
-        with:
-          context: ./docker/dotcms
-          push: true
-          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
-          platforms: ${{ env.PLATFORMS }}
-          build-args: |
-            BUILD_FROM=COMMIT
-            BUILD_ID=${{ env.BUILD_ID }}
+      - name: Resolve Docker Platforms
+        id: set-common-vars
+        run: |
+          ref=$(basename ${{ github.event.ref }})
+          docker_platforms="${{ github.event.inputs.multi_arch == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}"
+          
+          echo "ref=${ref}" >> $GITHUB_OUTPUT
+          echo "docker_platforms=${docker_platforms}" >> $GITHUB_OUTPUT
+
+  build_push_image:
+    name: Build/Push Image
+    needs: prepare-build
+    uses: ./.github/workflows/maven-build-docker-image.yml
+    with:
+      ref: ${{ needs.prepare-build.outputs.ref }}
+      docker_platforms: ${{ needs.prepare-build.outputs.docker_platforms }}
+      docker_registry: ${{ inputs.docker_registry }}
+    secrets:
+      docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+      ghcr_io_username: ${{ secrets.DOCKER_USERNAME }}
+      ghcr_io_token: ${{ secrets.GHCR_TOKEN }}

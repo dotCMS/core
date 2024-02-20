@@ -2,12 +2,17 @@ import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
 
-import { DotDropZoneComponent } from './dot-drop-zone.component';
+import {
+    DotDropZoneComponent,
+    DropZoneErrorType,
+    DropZoneFileValidity
+} from './dot-drop-zone.component';
 
-const MOCK_VALIDITY = {
+const MOCK_VALIDITY: DropZoneFileValidity = {
     fileTypeMismatch: false,
     maxFileSizeExceeded: false,
     multipleFilesDropped: false,
+    errorsType: [],
     valid: true
 };
 
@@ -119,6 +124,7 @@ describe('DotDropZoneComponent', () => {
                     file: null,
                     validity: {
                         ...MOCK_VALIDITY,
+                        errorsType: [DropZoneErrorType.MULTIPLE_FILES_DROPPED],
                         multipleFilesDropped: true,
                         valid: false
                     }
@@ -144,6 +150,7 @@ describe('DotDropZoneComponent', () => {
                     file: mockFile,
                     validity: {
                         ...MOCK_VALIDITY,
+                        errorsType: [DropZoneErrorType.FILE_TYPE_MISMATCH],
                         fileTypeMismatch: true,
                         valid: false
                     }
@@ -166,6 +173,7 @@ describe('DotDropZoneComponent', () => {
                     file: mockFile,
                     validity: {
                         ...MOCK_VALIDITY,
+                        errorsType: [DropZoneErrorType.MAX_FILE_SIZE_EXCEEDED],
                         maxFileSizeExceeded: true,
                         valid: false
                     }
@@ -198,6 +206,16 @@ describe('DotDropZoneComponent', () => {
     });
 
     describe('onDragOver', () => {
+        it('should emit fileDragOver event', () => {
+            const spy = spyOn(spectator.component.fileDragOver, 'emit');
+            const event = new DragEvent('dragover');
+
+            spectator.component.onDragOver(event);
+            spectator.detectChanges();
+
+            expect(spy).toHaveBeenCalledWith(true);
+        });
+
         it('should prevent default', () => {
             const event = new DragEvent('dragover');
             const spyEventPrevent = spyOn(event, 'preventDefault');

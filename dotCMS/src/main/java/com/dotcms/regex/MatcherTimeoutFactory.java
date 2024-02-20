@@ -10,6 +10,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
 /**
  * A factory class used to generate Matcher instances that will throw if in use after their timeout.
@@ -17,6 +18,16 @@ import com.liferay.util.StringPool;
  * https://www.exratione.com/2017/06/preventing-unbounded-regular-expression-operations-in-java/
  */
 public abstract class MatcherTimeoutFactory {
+
+
+    /**
+     * This pattern is for TESTING only and not intended to match anything in the real world.
+     */
+    @VisibleForTesting
+    public static final String MATCHER_TIMEOUT_PATTERN="MATCHER_TIMEOUT_TESTING_PATTERNe8f124f01427";
+
+
+
 
     private MatcherTimeoutFactory() {
         
@@ -156,6 +167,9 @@ public abstract class MatcherTimeoutFactory {
             timeoutAfterTimestamp = System.currentTimeMillis() + timeoutInMilliseconds;
             this.pattern = pattern;
             this.originalCharSequence = originalCharSequence;
+            if(pattern.toString().equals(MATCHER_TIMEOUT_PATTERN)){
+                Try.run(()->Thread.sleep(timeoutInMilliseconds));
+            }
         }
         
         @Override

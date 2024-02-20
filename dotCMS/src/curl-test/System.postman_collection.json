@@ -57,7 +57,6 @@
 									"",
 									"    pm.expect(jsonData.release.buildDate).to.not.eql(\"\");",
 									"    pm.expect(jsonData.release.buildNumber).to.not.eql(\"\");",
-									"    pm.expect(jsonData.release.codeName).to.not.eql(\"\");",
 									"    pm.expect(jsonData.release.name).to.not.eql(\"\");",
 									"    pm.expect(jsonData.release.releaseInfo).to.not.eql(\"\");",
 									"    pm.expect(jsonData.release.serverInfo).to.not.eql(\"\");",

@@ -14,13 +14,15 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
     DotExperimentStatus,
+    EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
+    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     ExperimentSteps,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
@@ -40,7 +42,6 @@ import {
     MockDotMessageService,
     PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
     DotExperimentsConfigurationState,
@@ -81,7 +82,8 @@ const EXPECTED_INITIAL_STATE: DotExperimentsConfigurationState = {
     configProps: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data.config,
     hasEnterpriseLicense: ActivatedRouteMock.parent.snapshot.data.isEnterprise,
     addToBundleContentId: null,
-    pushPublishEnvironments: ActivatedRouteMock.parent.snapshot.data.pushPublishEnvironments
+    pushPublishEnvironments: ActivatedRouteMock.parent.snapshot.data.pushPublishEnvironments,
+    dotPageRenderState: ActivatedRouteMock.parent.parent.parent.snapshot.data.content
 };
 
 const messageServiceMock = new MockDotMessageService({
@@ -383,12 +385,36 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should edit a variant name of an experiment', (done) => {
             const variants: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
-                { id: '222', name: 'name to edit', weight: 50, url: 'url', promoted: false }
+                {
+                    id: '111',
+                    name: DEFAULT_VARIANT_NAME,
+                    weight: 50,
+                    url: 'url',
+                    promoted: false
+                },
+                {
+                    id: '222',
+                    name: 'name to edit',
+                    weight: 50,
+                    url: 'url',
+                    promoted: false
+                }
             ];
             const variantEdited: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
-                { id: '222', name: 'new name', weight: 50, url: 'url', promoted: false }
+                {
+                    id: '111',
+                    name: DEFAULT_VARIANT_NAME,
+                    weight: 50,
+                    url: 'url',
+                    promoted: false
+                },
+                {
+                    id: '222',
+                    name: 'new name',
+                    weight: 50,
+                    url: 'url',
+                    promoted: false
+                }
             ];
 
             dotExperimentsService.getById.mockReturnValue(
@@ -480,7 +506,10 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_MOCK.id);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
-            store.deleteVariant({ experimentId: EXPERIMENT_MOCK.id, variant: variants[1] });
+            store.deleteVariant({
+                experimentId: EXPERIMENT_MOCK.id,
+                variant: variants[1]
+            });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.trafficProportion.variants).toEqual(
@@ -504,7 +533,10 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.setSelectedGoal({ experimentId: EXPERIMENT_MOCK.id, goals: expectedGoals });
+            store.setSelectedGoal({
+                experimentId: EXPERIMENT_MOCK.id,
+                goals: expectedGoals
+            });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.goals).toEqual(expectedGoals);
@@ -623,7 +655,10 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.deleteGoal({ experimentId: EXPERIMENT_MOCK.id, goalLevel: goalLevelToDelete });
+            store.deleteGoal({
+                experimentId: EXPERIMENT_MOCK.id,
+                goalLevel: goalLevelToDelete
+            });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.goals).toEqual(null);
@@ -844,6 +879,52 @@ describe('DotExperimentsConfigurationStore', () => {
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
                 'error' as unknown as HttpErrorResponse
             );
+        });
+
+        it('should set EXP_CONFIG_ERROR_LABEL_CANT_EDIT when page is not Draft and locked by other user', (done) => {
+            dotExperimentsService.getById.mockReturnValue(
+                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
+            );
+
+            ActivatedRouteMock.parent.parent.parent.snapshot.data.content.state.lockedByAnotherUser =
+                true;
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.vm$.subscribe(({ disabledTooltipLabel }) => {
+                // Start Experiment
+                expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+                done();
+            });
+        });
+
+        it('should set EXP_CONFIG_ERROR_LABEL_CANT_EDIT when page is not Draft', (done) => {
+            dotExperimentsService.getById.mockReturnValue(
+                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.vm$.subscribe(({ disabledTooltipLabel }) => {
+                // Start Experiment
+                expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+                done();
+            });
+        });
+
+        it('should set EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED when page is locked by other user', (done) => {
+            dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_2));
+
+            ActivatedRouteMock.parent.parent.parent.snapshot.data.content.state.lockedByAnotherUser =
+                true;
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.vm$.subscribe(({ disabledTooltipLabel }) => {
+                // Start Experiment
+                expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED);
+                done();
+            });
         });
     });
 });

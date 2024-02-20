@@ -98,3 +98,13 @@ p-togglebutton.ng-dirty.ng-invalid > .p-togglebutton.p-button {
 .p-rating:not(.p-disabled):not(.p-readonly) .p-rating-icon.p-rating-cancel:hover {
     color: $color-alert-red;
 }
+
+.p-inputtextarea.ng-invalid:not(.ng-pristine) {
+    &:hover,
+    &:active,
+    &:focus {
+        border-color: $color-alert-red;
+    }
+
+    border-color: $color-alert-red;
+}

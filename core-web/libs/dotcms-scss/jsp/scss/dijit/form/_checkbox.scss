@@ -3,11 +3,28 @@
     border: $check-normal-border;
     background-color: $check-normal-bgcolor;
     width: $check-size;
+    min-width: $check-size;
     height: $check-size;
+    cursor: pointer;
+
+    .dijitCheckBoxInput {
+        width: $check-size;
+        height: $check-size;
+        cursor: pointer;
+    }
 
     &Checked {
         border: $check-checked-border;
-        background: $check-checked-bgcolor url($check-checked-icon) center center no-repeat;
+        background: url($check-checked-icon) center center no-repeat;
+        background-color: $white;
+    }
+
+    &Hover:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
+        border-color: $color-palette-primary-400;
+    }
+
+    &Focused:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
+        outline: $field-border-size solid $color-palette-primary-op-20;
     }
 
     &Disabled {

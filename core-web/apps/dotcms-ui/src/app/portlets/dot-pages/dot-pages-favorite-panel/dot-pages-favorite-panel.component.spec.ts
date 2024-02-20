@@ -13,9 +13,8 @@ import { PanelModule } from 'primeng/panel';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPageRenderService,
     DotSessionStorageService
@@ -24,6 +23,7 @@ import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js'
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
+    MockDotHttpErrorManagerService,
     MockDotMessageService,
     mockResponseView
 } from '@dotcms/utils-testing';
@@ -107,7 +107,8 @@ describe('DotPagesFavoritePanelComponent', () => {
                     actionMenuDomId: '',
                     items: [],
                     addToBundleCTId: 'test1'
-                }
+                },
+                isContentEditor2Enabled: false
             });
         }
 
@@ -305,9 +306,13 @@ describe('DotPagesFavoritePanelComponent', () => {
                 spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
                 fixture.detectChanges();
                 const elem = de.query(By.css('dot-pages-card'));
-                elem.triggerEventHandler('edit', { ...favoritePagesInitialTestData[0] });
+                elem.triggerEventHandler('edit', {
+                    ...favoritePagesInitialTestData[0]
+                });
 
-                const urlParams = { url: favoritePagesInitialTestData[0].url.split('?')[0] };
+                const urlParams = {
+                    url: favoritePagesInitialTestData[0].url.split('?')[0]
+                };
                 const searchParams = new URLSearchParams(
                     favoritePagesInitialTestData[0].url.split('?')[1]
                 );
@@ -325,7 +330,9 @@ describe('DotPagesFavoritePanelComponent', () => {
                 spyOn(dotHttpErrorManagerService, 'handle');
                 fixture.detectChanges();
                 const elem = de.query(By.css('dot-pages-card'));
-                elem.triggerEventHandler('edit', { ...favoritePagesInitialTestData[0] });
+                elem.triggerEventHandler('edit', {
+                    ...favoritePagesInitialTestData[0]
+                });
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
                     new HttpErrorResponse(
@@ -346,7 +353,9 @@ describe('DotPagesFavoritePanelComponent', () => {
                 );
                 fixture.detectChanges();
                 const elem = de.query(By.css('dot-pages-card'));
-                elem.triggerEventHandler('edit', { ...favoritePagesInitialTestData[0] });
+                elem.triggerEventHandler('edit', {
+                    ...favoritePagesInitialTestData[0]
+                });
 
                 expect(dialogService.open).toHaveBeenCalledTimes(1);
             });

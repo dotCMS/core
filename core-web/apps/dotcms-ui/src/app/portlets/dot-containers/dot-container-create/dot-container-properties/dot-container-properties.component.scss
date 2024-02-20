@@ -2,7 +2,7 @@
 
 .dot-container-properties__button-container {
     position: absolute;
-    top: 5.1rem;
+    top: 4.4rem;
     right: $spacing-4;
 
     button {
@@ -17,14 +17,10 @@
     padding: $spacing-2 0;
     align-items: center;
 
-    ::ng-deep .p-inplace.p-component {
+    &-content {
         display: flex;
         align-items: center;
-        justify-content: center;
-    }
-
-    ::ng-deep .p-inplace-display {
-        padding: 0.67rem $spacing-3;
+        gap: $spacing-2;
     }
 }
 
@@ -35,7 +31,6 @@
 }
 
 .dot-container-properties__max-contents-input {
-    width: 7rem;
     margin-right: $spacing-2;
 }
 
@@ -47,26 +42,6 @@
 }
 
 .dot-container-properties__code-loop-container {
-    background: $white;
-    border: 1px solid $input-border-color;
-}
-
-:host ::ng-deep {
-    .tab-panel-btn {
-        background: $brand-background;
-
-        a.p-tabview-nav-link {
-            padding: 0;
-        }
-
-        i {
-            color: $white;
-            padding: 1.2rem $spacing-6 1.35rem;
-        }
-    }
-
-    .p-tabview-panel {
-        padding: 0;
-        padding-top: $spacing-1;
-    }
+    border: $field-border-size solid $color-palette-gray-400;
+    border-radius: $field-border-radius;
 }

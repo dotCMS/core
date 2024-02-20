@@ -334,11 +334,7 @@ function showTagsForSearch(result) {
             let tagName = tag.tagName;
             tagName = RTrim(tagName);
             tagName = LTrim(tagName);
-            if (tag.persona) {
-                personasTags += "<a href=\"#\" class=\"persona\" onClick=\"useThisTagForSearch(event)\"><span class=\"personaIcon\"></span>" + tagName + "</a>";
-            } else {
-                tags += "<a href=\"#\" onClick=\"useThisTagForSearch(event)\"><span class=\"tagIcon\"></span>" + tagName + "</a>";
-            }
+			tags += "<a href=\"#\" onClick=\"useThisTagForSearch(event)\"><span class=\"tagIcon\"></span>" + tagName + "</a>";
 
         }
 

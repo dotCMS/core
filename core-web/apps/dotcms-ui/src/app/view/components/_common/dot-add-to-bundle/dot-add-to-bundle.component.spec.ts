@@ -9,11 +9,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { AddToBundleService, DotMessageService } from '@dotcms/data-access';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
-
-import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
 
 class AddToBundleServiceMock {
     getBundles(): Observable<any> {
@@ -54,7 +53,7 @@ xdescribe('DotAddToBundleComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [DotAddToBundleComponent, TestHostComponent],
-            imports: [BrowserAnimationsModule, DotFieldValidationMessageModule],
+            imports: [BrowserAnimationsModule, DotFieldValidationMessageComponent],
             providers: [
                 { provide: AddToBundleService, useValue: addToBundleServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock }

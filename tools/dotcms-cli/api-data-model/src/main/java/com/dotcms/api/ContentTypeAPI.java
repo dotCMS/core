@@ -44,7 +44,7 @@ public interface ContentTypeAPI {
     )
     ResponseEntityView<List<ContentType>> getContentTypes(@QueryParam("filter") String filter,
             @QueryParam("page") Integer page,
-            @QueryParam("perPage") Integer perPage,
+            @QueryParam("per_page") Integer perPage,
             @QueryParam("orderBy") String orderBy,
             @QueryParam("direction") String direction,
             @QueryParam("type") String type,
@@ -73,7 +73,7 @@ public interface ContentTypeAPI {
     @Operation(
             summary = "Save/Update a CT instance"
     )
-    ResponseEntityView<ContentType> updateContentTypes(@PathParam("idOrVar") final String idOrVar,
+    ResponseEntityView<ContentType> updateContentType(@PathParam("idOrVar") final String idOrVar,
             final SaveContentTypeRequest contentType);
 
 

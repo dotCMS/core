@@ -148,6 +148,13 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		return getSubFolders(null, id.getPath(), id.getHostId(), "lower(folder.title)");
 	}
+	@SuppressWarnings("unchecked")
+	@Override
+	protected java.util.List<Folder> getSubFoldersNameSort(Folder folder) throws DotDataException  {
+		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+
+		return getSubFolders(null, id.getPath(), id.getHostId(), "lower(folder.name)");
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -324,7 +331,8 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	protected List<Folder> getFoldersByParent(Folder folder, User user, boolean respectFrontendRoles) throws DotDataException {
 		List<Folder> entries = new ArrayList<>();
-		List<Folder> elements = getSubFoldersTitleSort(folder);
+		//the subfolders are sorted by name
+		List<Folder> elements = getSubFoldersNameSort(folder);
 		for (Folder childFolder : elements) {
 			if (APILocator.getPermissionAPI().doesUserHavePermission(childFolder, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 				entries.add(childFolder);

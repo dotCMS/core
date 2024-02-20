@@ -119,8 +119,7 @@ public class HostFactoryImpl implements HostFactory {
 
     private static final String SITE_IS_LIVE = "cvi.live_inode IS NOT NULL";
     @VisibleForTesting
-    protected static final String SITE_IS_LIVE_OR_STOPPED = "cvi.live_inode IS NOT null or " +
-            "(cvi.live_inode IS NULL AND cvi.deleted = false )";
+    protected static final String SITE_IS_LIVE_OR_STOPPED = "cvi.deleted = false";
     private static final String SITE_IS_STOPPED = "cvi.live_inode IS NULL AND cvi" +
             ".deleted = " +
             getDBFalse();
@@ -137,7 +136,7 @@ public class HostFactoryImpl implements HostFactory {
 
     // query that Exact matches should be at the top of the search results.
     private static final String PRIORITIZE_EXACT_MATCHES =
-            "ORDER BY CASE WHEN LOWER(%s) = ? THEN 0 ELSE 1 END";
+            "ORDER BY length(%s),  " + POSTGRES_SITENAME_COLUMN;
 
     /**
      * Default class constructor.
@@ -718,6 +717,36 @@ public class HostFactoryImpl implements HostFactory {
     @VisibleForTesting
     protected Optional<List<Host>> search(final String siteNameFilter, final String condition, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
+        return search(siteNameFilter,condition,showSystemHost,limit,offset,user,respectFrontendRoles,new ArrayList<>());
+    }
+
+    /**
+     * Returns the list of Sites – with pagination capabilities – that match the specified search criteria. This method
+     * allows users to specify three search parameters:
+     * <ol>
+     *  <li>{@code filter}: Finds Sites whose name starts with the specified String.</li>
+     *  <li>{@code condition}: Determines if live, stopped, or archived Sites are returned in the result set.</li>
+     *  <li>{@code showSystemHost}: Determines whether the System Host must be returned or not.</li>
+     * </ol>
+     *
+     * @param siteNameFilter       The initial part or full name of the Site you need to look up. If not required, set
+     *                             as {@code null} or empty.
+     * @param condition            The status of the Site determined via SQL conditions.
+     * @param showSystemHost       If the System Host object must be returned, set to {@code true}. Otherwise, se to
+     *                             {@code false}.
+     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
+     *                             lower than zero, this parameter will be ignored.
+     * @param offset               Expected offset of results in the response, for pagination purposes.  If set equal or
+     *                             lower than zero, this parameter will be ignored.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects that match the specified search criteria.
+     */
+    @VisibleForTesting
+    protected Optional<List<Host>> search(final String siteNameFilter, final String condition, final boolean
+            showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles, List<Host> hostList) {
         final DotConnect dc = new DotConnect();
         final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE);
         sqlQuery.append(WHERE);
@@ -741,9 +770,8 @@ public class HostFactoryImpl implements HostFactory {
         dc.setSQL(sqlQuery.toString());
         if (UtilMethods.isSet(siteNameFilter)) {
             // Add the site name filter parameter
-            dc.addParam("%" + siteNameFilter.trim() + "%");
-            // Add the site name filter parameter again, but this time for the exact match
-            dc.addParam(siteNameFilter.trim().replace("%", ""));
+            dc.addParam(("%" + siteNameFilter.trim() + "%").replace("%%", "%"));
+
         }
         if (limit > 0) {
             dc.setMaxRows(limit);
@@ -754,12 +782,32 @@ public class HostFactoryImpl implements HostFactory {
         try {
             final List<Map<String, String>> dbResults = dc.loadResults();
             if (dbResults.isEmpty()) {
-                return Optional.empty();
+                return Optional.of(hostList);
             }
-            List<Host> siteList = convertDbResultsToSites(dbResults);
-            siteList = APILocator.getPermissionAPI().filterCollection(siteList, PermissionAPI
-                    .PERMISSION_READ, respectFrontendRoles, user);
-            return Optional.of(siteList);
+            final List<Host> siteList = convertDbResultsToSites(dbResults);
+            if(user.isAdmin()){
+                return Optional.of(siteList);
+            }
+            hostList.addAll(APILocator.getPermissionAPI().filterCollection(siteList, PermissionAPI
+                    .PERMISSION_READ, respectFrontendRoles, user));
+            hostList = hostList.stream().limit(limit).collect(Collectors.toList());
+
+            //We want to include the system host in the list of hosts
+            final Host systemHost = APILocator.systemHost();
+            //Check if we need to include it, if we have the permissions and if it is in the list.
+            final boolean sysHostPermission = showSystemHost
+                    && !hostList.contains(systemHost)
+                    && APILocator.getPermissionAPI().doesSystemHostHavePermissions(systemHost, user, respectFrontendRoles, Host.class.getCanonicalName());
+
+            if(sysHostPermission){
+                hostList.add(systemHost);
+            }
+
+            if(hostList.size()==limit || siteList.size() < limit){//user is admin or reach the amount of sites requested or there is no anymore sites
+                return Optional.of(hostList);
+            }else{
+                return search(siteNameFilter,condition,showSystemHost,limit,offset+limit,user,respectFrontendRoles,hostList);
+            }
         } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when searching for Sites based on the following " +
                     "criteria: filter[ %s ], condition[ %s ], showSystemHost [ %s ]: %s", siteNameFilter, condition,

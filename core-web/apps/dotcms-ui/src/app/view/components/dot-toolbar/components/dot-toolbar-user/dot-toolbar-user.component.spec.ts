@@ -16,19 +16,21 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { MenuModule } from 'primeng/menu';
 import { PasswordModule } from 'primeng/password';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { DotEventsService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotRouterService,
+    DotIframeService,
+    DotFormatDateService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -140,6 +142,7 @@ describe('DotToolbarUserComponent', () => {
 
         const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
         expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
+        expect(logoutLink.parent.classes['toolbar-user__logout']).toBe(true);
     });
     it('should have correct target in logout link', () => {
         fixture.detectChanges();

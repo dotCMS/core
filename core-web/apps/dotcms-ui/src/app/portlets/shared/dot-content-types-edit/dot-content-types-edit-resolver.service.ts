@@ -7,11 +7,12 @@ import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 import { catchError, map, take } from 'rxjs/operators';
 
 import {
+    DotContentTypesInfoService,
+    DotCrudService,
     DotHttpErrorHandled,
-    DotHttpErrorManagerService
-} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotContentTypesInfoService, DotCrudService } from '@dotcms/data-access';
+    DotHttpErrorManagerService,
+    DotRouterService
+} from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
@@ -53,7 +54,9 @@ export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
                 return this.dotHttpErrorManagerService.handle(err).pipe(
                     map((res: DotHttpErrorHandled) => {
                         if (!res.redirected) {
-                            this.dotRouterService.gotoPortlet('/content-types-angular', true);
+                            this.dotRouterService.gotoPortlet('/content-types-angular', {
+                                replaceUrl: true
+                            });
                         }
 
                         return null;

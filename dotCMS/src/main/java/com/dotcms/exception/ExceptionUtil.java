@@ -1,15 +1,5 @@
 package com.dotcms.exception;
 
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BADTYPE;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_REL;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_PATTERN;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_UNIQUE;
-
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.exception.BadRequestException;
@@ -48,6 +38,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -57,11 +49,22 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
+
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BADTYPE;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_REL;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_PATTERN;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_UNIQUE;
 
 /**
- * Exception Utils
+ * This utility class provides useful methods to extract and process different pieces of information
+ * from Java Exceptions that may be thrown by the application.
+ *
  * @author andrecurione
+ * @since Jan 30th, 2018
  */
 public class ExceptionUtil {
 
@@ -188,6 +191,22 @@ public class ExceptionUtil {
     }
 
     /**
+     * Returns the error message from the specified Java exception. If it's not present, returns the
+     * class name.
+     *
+     * @param throwable The thrown exception.
+     *
+     * @return The exception's error message, or its class name if not available.
+     */
+    public static String getErrorMessage(final Throwable throwable) {
+        if (null == throwable) {
+            return StringPool.BLANK;
+        }
+        return UtilMethods.isSet(throwable.getMessage()) ? throwable.getMessage() :
+                throwable.getClass().getName();
+    }
+
+    /**
      * Return an optional throwable if one of them match exactly the class name of the set exceptions
      * Empty optional if not match any
      * @param e
@@ -264,19 +283,6 @@ public class ExceptionUtil {
                     errorString = errorString.replace("{0}", field.getFieldName());
                     contentValidationErrors
                             .computeIfAbsent(VALIDATION_FAILED_REQUIRED, k -> new ArrayList<>())
-                            .add(new ValidationError(field.getVelocityVarName(), errorString));
-                }
-
-            }
-
-            if (ve.hasLengthErrors()) {
-                final List<Field> reqs = ve.getNotValidFields().get(VALIDATION_FAILED_MAXLENGTH);
-                for (final Field field : reqs) {
-                    String errorString = LanguageUtil.get(user, "message.contentlet.maxlength");
-                    errorString = errorString.replace("{0}", field.getFieldName());
-                    errorString = errorString.replace("{1}", "255");
-                    contentValidationErrors
-                            .computeIfAbsent(VALIDATION_FAILED_MAXLENGTH, k -> new ArrayList<>())
                             .add(new ValidationError(field.getVelocityVarName(), errorString));
                 }
 

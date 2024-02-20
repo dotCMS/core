@@ -118,6 +118,10 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	cursor: pointer;
 }
 
+.showDefaultCursor{
+	cursor: default;
+}
+
 .showPointer h2 {
     max-width: 220px;
     white-space: nowrap;
@@ -148,7 +152,7 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 }
 #wacMessage{
 	text-align: left;
-	width:250px;	
+	max-width:50%;
 	float:right;
 }
 #actionClassParamsDia{
@@ -297,7 +301,6 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	max-height: 100%;
 	position: relative;
 	white-space: normal;
-	padding-bottom: 24px;
 	min-height: 450px;
     box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
 }
@@ -338,25 +341,23 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 }
 
 .btn-flat-wrapper {
-	position: absolute;
 	bottom: 18px;
 	width: 100%;
 	text-align: right;
+	padding: 0px 0.375rem;
+	padding-bottom: 0.625rem;
 }
 
 .btn-flat {
 	text-transform: uppercase;
 	display: inline-block;
-	padding: 8px 16px;
+	padding: 0.5em 1em;
 	margin: 0px;
 	text-decoration: none;
 	font-size: 14px;
 	font-weight: 300;
 	color: #a6a6a6;
 	letter-spacing: 0.1em
-}
-.btn-flat:last-child{
-	margin-right: 10px;
 }
 
 .btn-flat:hover{

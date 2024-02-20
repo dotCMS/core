@@ -3,10 +3,13 @@ package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A MetricType is anything that is desired to be measured on pages or sites in order to get analytic
@@ -17,11 +20,9 @@ import java.util.Set;
 public enum MetricType {
     REACH_PAGE(new Builder()
             .label("Reaching a Page")
-            .allRequiredParameters (Parameters.URL) //TODO we can create singletons of these Parameters in order to reuse
-            .optionalParameters(
-                    Parameters.REFERER,
-                    Parameters.VISIT_BEFORE)
-            .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
+            .allRequiredParameters (Parameters.URL)
+            .availableOperators(Operator.EQUALS, Operator.CONTAINS)
+            .regexParameterName(Parameters.URL.name())),
     CLICK_ON_ELEMENT(new Builder()
             .label("Clicking on Element")
             .allRequiredParameters(Parameter.builder().name("pageUrl").build())
@@ -41,13 +42,8 @@ public enum MetricType {
 
     URL_PARAMETER(new Builder()
             .label("Url Parameter")
-            .allRequiredParameters(
-                    Parameter.builder().name("queryParameter")
-                        .valueGetter(new QueryParameterValuesGetter())
-                        .type(AbstractParameter.Type.QUERY_PARAMETER)
-                        .build()
-            )
-            .optionalParameters(Parameters.VISIT_BEFORE)
+            .allRequiredParameters(Parameters.QUERY_PARAMETER)
+            .regexParameterName(Parameters.QUERY_PARAMETER.name())
     );
 
     private final String label;
@@ -59,6 +55,7 @@ public enum MetricType {
     private final Set<Parameter> anyRequiredParameters;
 
     private final Set<Parameter> optionalParameters;
+    private final String regexParameterName;
 
     private static class Builder {
         private String label;
@@ -66,6 +63,7 @@ public enum MetricType {
         private final Set<Parameter> allRequiredParameters = new HashSet<>();
         private final Set<Parameter> anyRequiredParameters= new HashSet<>();
         private final Set<Parameter> optionalParameters= new HashSet<>();
+        private String regexParameterName;
 
         public Builder label(String label) {
             this.label = label;
@@ -91,6 +89,11 @@ public enum MetricType {
             this.optionalParameters.addAll(Set.of(optionalParameters));
             return this;
         }
+
+        public Builder regexParameterName(final String name) {
+            this.regexParameterName = name;
+            return this;
+        }
     }
 
     MetricType(final Builder builder) {
@@ -99,10 +102,15 @@ public enum MetricType {
         this.anyRequiredParameters = builder.anyRequiredParameters;
         this.optionalParameters = builder.optionalParameters;
         this.availableOperators = builder.availableOperators;
+        this.regexParameterName = builder.regexParameterName;
     }
 
     public String label() {
         return label;
+    }
+
+    public Optional<String> getRegexParameterName() {
+        return Optional.ofNullable(regexParameterName);
     }
 
     @JsonIgnore

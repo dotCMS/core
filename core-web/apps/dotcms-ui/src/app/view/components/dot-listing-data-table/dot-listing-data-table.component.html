@@ -6,9 +6,8 @@
         (input)="dataTable.filterGlobal($event.target.value, 'contains')"
         (keydown.arrowdown)="focusFirstRow()"
         pInputText
-        placeholder="{{ 'global-search' | dm }}"
-        type="text"
-    />
+        placeholder="{{ 'Type-to-filter' | dm }}"
+        type="text" />
     <ng-content></ng-content>
 </dot-action-header>
 <p-table
@@ -33,8 +32,7 @@
     (onLazyLoad)="loadDataPaginationEvent($event)"
     (onRowSelect)="handleRowCheck()"
     (onRowUnselect)="handleRowCheck()"
-    loadingIcon="pi pi-spin pi-spinner"
->
+    loadingIcon="pi pi-spin pi-spinner">
     <ng-template let-columns pTemplate="header">
         <tr *ngIf="items?.length" data-testClass="testHeadTableRow">
             <th *ngIf="checkbox" style="width: 5%">
@@ -42,8 +40,7 @@
             </th>
             <ng-container
                 [ngTemplateOutletContext]="{ columns: columns }"
-                [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate"
-            ></ng-container>
+                [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate"></ng-container>
         </tr>
     </ng-template>
 
@@ -58,28 +55,24 @@
             [attr.data-testId]="rowData?.variable ? 'row-' + rowData.variable : null"
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
-            data-testClass="testTableRow"
-        >
+            data-testClass="testTableRow">
             <td *ngIf="checkbox">
                 <p-tableCheckbox
                     *ngIf="!rowData.disableInteraction"
                     [value]="rowData"
                     [attr.test-id]="rowData.friendlyName"
-                    (click)="$event.stopPropagation()"
-                ></p-tableCheckbox>
+                    (click)="$event.stopPropagation()"></p-tableCheckbox>
             </td>
             <ng-container
                 [ngTemplateOutletContext]="{ rowData: rowData }"
-                [ngTemplateOutlet]="rowTemplate || defaultRowTemplate"
-            ></ng-container>
+                [ngTemplateOutlet]="rowTemplate || defaultRowTemplate"></ng-container>
         </tr>
     </ng-template>
     <ng-template pTemplate="emptymessage">
         <div
             class="listing-datatable__empty"
             *ngIf="isContentFiltered; else emptyState"
-            data-testId="listing-datatable__empty"
-        >
+            data-testId="listing-datatable__empty">
             {{ 'No-Results-Found' | dm }}
         </div>
         <ng-template #emptyState>
@@ -93,8 +86,7 @@
         *ngFor="let col of columns"
         [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
         [pSortableColumnDisabled]="!col.sortable"
-        [pSortableColumn]="col.fieldName"
-    >
+        [pSortableColumn]="col.fieldName">
         {{ col.header }}
         <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
     </th>
@@ -105,8 +97,7 @@
     <td
         *ngFor="let col of columns"
         [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
-        [attr.data-testId]="col.fieldName"
-    >
+        [attr.data-testId]="col.fieldName">
         <div class="listing-datatable__column-icon" *ngIf="col.icon">
             <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
             <span>{{ col.textContent || rowData[col.fieldName] }}</span>
@@ -121,8 +112,7 @@
             *ngIf="col.fieldName === 'nEntries' && !rowData?.system"
             [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
-            (click)="$event.stopPropagation()"
-        >
+            (click)="$event.stopPropagation()">
             {{
                 col.textContent
                     ? (col.textContent | dotStringFormat : [rowData[col.fieldName]])
@@ -135,8 +125,7 @@
             class="listing-datatable__action-button"
             *ngIf="actions"
             [actions]="actions"
-            [item]="rowData"
-        >
+            [item]="rowData">
         </dot-action-menu-button>
     </td>
 </ng-template>

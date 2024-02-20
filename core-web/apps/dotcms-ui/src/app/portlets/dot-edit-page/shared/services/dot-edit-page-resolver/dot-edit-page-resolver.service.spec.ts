@@ -9,27 +9,27 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
+    DotFavoritePageService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotPageRenderService,
-    DotSessionStorageService
+    DotRouterService,
+    DotSessionStorageService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     CoreWebServiceMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
+    MockDotHttpErrorManagerService,
     mockDotRenderedPage,
     MockDotRouterService,
     mockResponseView,
@@ -53,6 +53,7 @@ describe('DotEditPageResolver', () => {
     let dotPageStateService: DotPageStateService;
     let dotPageStateServiceRequestPageSpy: jasmine.Spy;
     let dotRouterService: DotRouterService;
+    let dotSessionStorageService: DotSessionStorageService;
 
     let injector: TestBed;
     let dotEditPageResolver: DotEditPageResolver;
@@ -79,7 +80,10 @@ describe('DotEditPageResolver', () => {
                 DotESContentService,
                 DotFavoritePageService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 { provide: SiteService, useClass: SiteServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
@@ -102,6 +106,7 @@ describe('DotEditPageResolver', () => {
         dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
         dotRouterService = injector.get(DotRouterService);
         siteService = injector.get(SiteService);
+        dotSessionStorageService = injector.get(DotSessionStorageService);
 
         spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(of());
     });
@@ -239,6 +244,38 @@ describe('DotEditPageResolver', () => {
                 expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+                new HttpErrorResponse(
+                    new HttpResponse({
+                        body: null,
+                        status: HttpCode.FORBIDDEN,
+                        headers: null,
+                        url: ''
+                    })
+                )
+            );
+        });
+
+        it('should call to `removeVariantId` when handle error and redirect to site-browser ', () => {
+            spyOn(dotSessionStorageService, 'removeVariantId');
+
+            const mock = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender({
+                    ...mockDotRenderedPage(),
+                    page: {
+                        ...mockDotRenderedPage().page,
+                        canEdit: false
+                    }
+                })
+            );
+            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
+                expect(state).toBeNull();
+            });
+
+            expect(dotSessionStorageService.removeVariantId).toHaveBeenCalled();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
                 new HttpErrorResponse(
                     new HttpResponse({

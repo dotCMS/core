@@ -182,7 +182,9 @@ public class LanguagesResource {
         if(null != language && language != LanguageCacheImpl.LANG_404){
             return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
-        return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
+        return Response.ok(new ResponseEntityView<>(
+                new LanguageView(saveOrUpdateLanguage(null, languageForm))
+        )).build(); // 200
     }
 
     @POST
@@ -208,7 +210,9 @@ public class LanguagesResource {
         if(null != language && language != LanguageCacheImpl.LANG_404){
            return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
-        return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
+        return Response.ok(new ResponseEntityView<>(
+                new LanguageView(saveOrUpdateLanguage(null, languageForm))
+        )).build(); // 200
     }
 
 
@@ -233,8 +237,8 @@ public class LanguagesResource {
         if(null == language){
            return Response.status(Status.NOT_FOUND).build();
         }
-        return Response.ok(new ResponseEntityView(language)).build(); // 200
 
+        return Response.ok(new ResponseEntityView(new LanguageView(language))).build();
     }
 
     private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {
@@ -278,7 +282,9 @@ public class LanguagesResource {
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = saveOrUpdateLanguage(languageId, languageForm);
-        return Response.ok(new ResponseEntityView(language)).build(); // 200
+        return Response.ok(new ResponseEntityView<>(
+                new LanguageView(language)
+        )).build(); // 200
     }
 
     /**
@@ -398,7 +404,10 @@ public class LanguagesResource {
             long langId = language1.getId();
             final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
                     user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
-                    KeyValue::getKey,KeyValue::getValue));
+                    KeyValue::getKey,KeyValue::getValue, (value1,value2) ->{
+                        Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
+                        return value1;
+                    }));
 
             result.putAll(mapLanguageVariables);
 
@@ -487,6 +496,8 @@ public class LanguagesResource {
         httpServletRequest.getSession().removeAttribute(LANGUAGE_SEARCHED);
         httpServletRequest.getSession().removeAttribute(HTMLPAGE_LANGUAGE);
         httpServletRequest.getSession().removeAttribute(CONTENT_SELECTED_LANGUAGE);
-        return Response.ok(new ResponseEntityView(newDefault)).build(); // 200
+        return Response.ok(new ResponseEntityView<>(
+                new LanguageView(newDefault)
+        )).build(); // 200
     }
 }

@@ -44,6 +44,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
         scheduling: RangeOfDateAndTime;
         status: StepStatus;
         isExperimentADraft: boolean;
+        disabledTooltipLabel: string | null;
     }> = this.dotExperimentsConfigurationStore.schedulingStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );

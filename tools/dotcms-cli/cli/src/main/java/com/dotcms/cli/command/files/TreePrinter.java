@@ -1,12 +1,15 @@
 package com.dotcms.cli.command.files;
 
+import static com.dotcms.common.AssetsUtils.isMarkedForDelete;
+import static com.dotcms.common.AssetsUtils.isMarkedForPush;
+import static com.dotcms.common.AssetsUtils.isPushNew;
+
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.FilesUtils;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
-
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -79,7 +82,7 @@ public class TreePrinter {
             final List<Language> languages) {
 
         // Collect the list of unique statuses and languages
-        final var treeNodeInfo = rootNode.collectUniqueStatusesAndLanguages(showEmptyFolders);
+        final var treeNodeInfo = rootNode.collectUniqueStatusAndLanguage(showEmptyFolders);
         final var uniqueLiveLanguages = treeNodeInfo.liveLanguages();
         final var uniqueWorkingLanguages = treeNodeInfo.workingLanguages();
 
@@ -151,11 +154,10 @@ public class TreePrinter {
                     append('\n');
 
             var siteFormat = SITE_REGULAR_FORMAT;
-            if (rootNode.folder().markForPush().isPresent()) {
-                if (rootNode.folder().markForPush().get()) {
-                    siteFormat = SITE_PUSH_FORMAT;
-                }
+            if (isMarkedForPush(rootNode.folder())) {
+                siteFormat = SITE_PUSH_FORMAT;
             }
+
 
             // Add the domain and parent folder
             sb.append("     ").
@@ -214,15 +216,15 @@ public class TreePrinter {
             final String indent, boolean isLastSibling, boolean includeAssets) {
 
         var folderFormat = FOLDER_REGULAR_FORMAT;
-        if (node.folder().markForDelete().isPresent()) {
-            if (node.folder().markForDelete().get()) {
-                folderFormat = FOLDER_DELETE_FORMAT;
-            }
-        } else if (node.folder().markForPush().isPresent()) {
-            if (node.folder().markForPush().get()) {
-                folderFormat = FOLDER_PUSH_FORMAT;
-            }
+
+        if (isMarkedForDelete(node.folder())) {
+            folderFormat = FOLDER_DELETE_FORMAT;
         }
+
+        if (isMarkedForPush(node.folder())) {
+            folderFormat = FOLDER_PUSH_FORMAT;
+        }
+
 
         String filePrefix;
         String nextIndent;
@@ -241,6 +243,7 @@ public class TreePrinter {
 
         if (includeAssets) {
             // Adds the names of the node's files to the string representation.
+            node.sortAssets();
             int assetCount = node.assets().size();
             for (int i = 0; i < assetCount; i++) {
 
@@ -248,24 +251,19 @@ public class TreePrinter {
                 AssetView asset = node.assets().get(i);
                 var assetFormat = ASSET_REGULAR_FORMAT;
 
-                if (asset.markForDelete().isPresent()) {
-                    if (asset.markForDelete().get()) {
+                    if (isMarkedForDelete(asset)) {
                         assetFormat = ASSET_DELETE_FORMAT;
                     }
-                }
 
-                if (asset.markForPush().isPresent()) {
-                    if (asset.markForPush().get()) {
+                    if (isMarkedForPush(asset)) {
 
                         assetFormat = ASSET_PUSH_MODIFIED_FORMAT;
 
-                        if (asset.pushTypeNew().isPresent()) {
-                            if (asset.pushTypeNew().get()) {
+                        if (isPushNew(asset)) {
                                 assetFormat = ASSET_PUSH_NEW_FORMAT;
-                            }
                         }
                     }
-                }
+
 
                 boolean lastAsset = i == assetCount - 1 && node.children().isEmpty();
 
@@ -277,6 +275,7 @@ public class TreePrinter {
         }
 
         // Recursively creates string representations for the node's children.
+        node.sortChildren();
         int childCount = node.children().size();
         for (int i = 0; i < childCount; i++) {
             TreeNode child = node.children().get(i);
@@ -313,7 +312,7 @@ public class TreePrinter {
                     replaceAll("/$", "");
         }
 
-        if (!emptyFolderName) {
+        if (!emptyFolderName && !emptyFolderPath) {
             if (folderPath.endsWith(folderName)) {
 
                 int folderIndex = folderPath.lastIndexOf(folderName);

@@ -17,7 +17,6 @@ import { Table } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { OrderDirection, PaginatorService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
@@ -82,11 +81,7 @@ export class DotListingDataTableComponent implements OnInit {
     maxLinksPage: number;
     totalRecords: number;
 
-    constructor(
-        public loggerService: LoggerService,
-        public paginatorService: PaginatorService,
-        private dotFormatDateService: DotFormatDateService
-    ) {
+    constructor(public loggerService: LoggerService, public paginatorService: PaginatorService) {
         this.paginatorService.url = this.url;
     }
 

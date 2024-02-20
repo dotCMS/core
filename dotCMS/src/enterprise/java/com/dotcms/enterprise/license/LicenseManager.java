@@ -45,18 +45,6 @@
 
 package com.dotcms.enterprise.license;
 
-import com.dotmarketing.util.Config;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.enterprise.LicenseUtil;
@@ -68,6 +56,7 @@ import com.dotcms.enterprise.license.bouncycastle.crypto.paddings.PaddedBuffered
 import com.dotcms.enterprise.license.bouncycastle.crypto.params.KeyParameter;
 import com.dotcms.enterprise.license.bouncycastle.util.encoders.Base64;
 import com.dotcms.enterprise.license.bouncycastle.util.encoders.Hex;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
@@ -77,14 +66,26 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Provides access to licensing information for a dotCMS instance. This allows the system to perform
- * validations a to limit or hide enterprise-only application features.
+ * validations and limit or hide enterprise-level application features.
  * 
  * @author root
  * @since 1.x
- *
  */
 public final class LicenseManager {
 
@@ -169,20 +170,20 @@ public final class LicenseManager {
      * expiration days.
      */
     private DotLicense readLicenseFile() {
-        File f = new File(getLicensePath());
-        try (InputStream is = Files.newInputStream(f.toPath())){
-            String licenseRaw = IOUtils.toString(is);
-            DotLicense dl = new LicenseTransformer(licenseRaw).dotLicense;
+        final File licenseFile = new File(getLicensePath());
+        try (final InputStream is = Files.newInputStream(licenseFile.toPath())) {
+            final String licenseRaw = IOUtils.toString(is, StandardCharsets.UTF_8);
+            final DotLicense dl = new LicenseTransformer(licenseRaw).dotLicense;
             try {
                 LicenseRepoDAO.upsertLicenseToRepo( dl.serial, licenseRaw);
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 Logger.warnEveryAndDebug(this.getClass(), "Cannot upsert License to db", e,120000);
             }
             return dl;
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             // Eat Me
-            Logger.warn(System.class, "No Valid License Found : " + f.getAbsolutePath());
-             
+            Logger.debug(System.class, String.format("No valid license was found: %s",
+                    ExceptionUtil.getErrorMessage(e)), e);
         }
         return setupDefaultLicense(false);
     }
@@ -262,21 +263,17 @@ public final class LicenseManager {
         return LicenseLevel.fromInt(level).name;
     }
 
-    private static final LicenseManager instance= new LicenseManager();
-
-
     /**
      * Returns a singleton instance of this class.
      * 
      * @return A unique instance of {@link LicenseManager}.
      */
     public static LicenseManager getInstance() {
-
-        return instance;
+        return LicenceManagerHolder.INSTANCE;
     }
 
     public static void reloadInstance() {
-        instance.license  = instance.readLicenseFile();
+        getInstance().readLicenseFile();
     }
 
     /**
@@ -286,11 +283,8 @@ public final class LicenseManager {
      *         {@code false}.
      */
     private boolean checkValidity() {
-        if (!license.perpetual && new Date().after(license.validUntil)) {
-            // license expired
-            return false;
-        }
-        return true;
+        // license expired
+        return license.perpetual || !new Date().after(license.validUntil);
     }
 
     /**
@@ -309,8 +303,8 @@ public final class LicenseManager {
             // license expired
             return false;
         }
-        for (int i = 0; i < levels.length; i++) {
-            if (levels[i] <= license.level) {
+        for (int level : levels) {
+            if (level <= license.level) {
                 return true;
             }
         }
@@ -336,11 +330,9 @@ public final class LicenseManager {
             // Prime, can run anything
             return true;
         }
-        if ((ServerDetector.isGlassfish() || ServerDetector.isJBoss()) && level >= LicenseLevel.PROFESSIONAL.level) {
-            // Glassfish and JBoss only in professional
-            return true;
-        }
-        return false;
+        // Glassfish and JBoss only in professional
+        return (ServerDetector.isGlassfish() || ServerDetector.isJBoss())
+                && level >= LicenseLevel.PROFESSIONAL.level;
     }
 
     /**
@@ -417,7 +409,7 @@ public final class LicenseManager {
     /**
      * Performs a cluster check every time a license is applied to a dotCMS instance.
      */
-    protected void onLicenseApplied() {
+    private void onLicenseApplied() {
         ChainableCacheAdministratorImpl cacheAdm = (ChainableCacheAdministratorImpl) CacheLocator
                         .getCacheAdministrator().getImplementationObject();
 
@@ -469,19 +461,9 @@ public final class LicenseManager {
      * @return
      * @throws IOException
      */
-    private String[] getLicData() throws IOException {
+    private String[] getLicData() {
         return LicenseTransformer.publicDatFile;
     }
-
-    /**
-     * 
-     * @return
-     * @throws IOException
-     */
-    private byte[] getSaltAESKey() throws IOException {
-        return Hex.decode(getLicData()[0]);
-    }
-
 
 
     /**
@@ -533,7 +515,7 @@ public final class LicenseManager {
      * @return
      * @throws IOException
      */
-    private byte[] getRequestCodeAESKey() throws IOException {
+    private byte[] getRequestCodeAESKey() {
         return Hex.decode(getLicData()[3]);
     }
 
@@ -552,7 +534,7 @@ public final class LicenseManager {
                         ("level=" + level + ",version=" + version + ",serverid=" + serverId
                                         + ",licensetype=" + type.type + ",serverid_display="
                                         + getDisplayServerId()).getBytes(),
-                        getRequestCodeAESKey(), true)), "UTF-8");
+                        getRequestCodeAESKey(), true)), StandardCharsets.UTF_8);
     }
 
     /**
@@ -772,6 +754,11 @@ public final class LicenseManager {
                     String.format("Could not update startup time for server %s", serverId),
                     e);
         }
+    }
+
+    private static class LicenceManagerHolder {
+        static final LicenseManager INSTANCE = new LicenseManager();
+
     }
 
 }

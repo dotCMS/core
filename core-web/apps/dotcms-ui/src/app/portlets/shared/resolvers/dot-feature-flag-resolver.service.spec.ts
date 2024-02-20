@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClientModule } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
@@ -22,7 +22,7 @@ describe('DotFeatureFlagResolver', () => {
         dotConfigurationService = TestBed.inject(DotPropertiesService);
     });
 
-    it('should return an observable of boolean values', () => {
+    it('should return an observable of boolean values', (done) => {
         const route: ActivatedRouteSnapshot = {
             data: {
                 featuredFlagsToCheck: ['flag1', 'flag2']
@@ -44,20 +44,23 @@ describe('DotFeatureFlagResolver', () => {
             queryParamMap: undefined
         };
 
-        const expectedFlags = {
-            flag1: 'true',
-            flag2: 'false'
-        };
-
-        const expectedFlagsResult = {
+        const expectedFlagsResult: Record<string, boolean> = {
             flag1: true,
             flag2: false
         };
 
-        spyOn(dotConfigurationService, 'getKeys').and.returnValue(of(expectedFlags));
+        spyOn(dotConfigurationService, 'getFeatureFlags').and.returnValue(of(expectedFlagsResult));
 
-        resolver.resolve(route).subscribe((result) => {
-            expect(result).toEqual(expectedFlagsResult);
-        });
+        (resolver.resolve(route) as Observable<Record<string, boolean>>).subscribe(
+            (result: Record<string, boolean>) => {
+                expect(dotConfigurationService.getFeatureFlags).toHaveBeenCalledWith([
+                    'flag1',
+                    'flag2'
+                ]);
+
+                expect(result).toEqual(expectedFlagsResult);
+                done();
+            }
+        );
     });
 });

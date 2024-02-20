@@ -14,7 +14,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { TabView } from 'primeng/tabview';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
@@ -24,8 +24,8 @@ import {
     getExperimentResultsMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
+import { DotExperimentsExperimentSummaryComponent } from './components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
 import { DotExperimentsReportsChartComponent } from './components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from './components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
@@ -35,7 +35,6 @@ import {
     VmReportExperiment
 } from './store/dot-experiments-reports-store';
 
-import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 const ActivatedRouteMock = {
@@ -113,7 +112,9 @@ describe('DotExperimentsReportsComponent', () => {
                 DotExperimentsReportsComponent,
                 {
                     remove: { imports: [DotExperimentsReportsChartComponent] },
-                    add: { imports: [MockComponent(DotExperimentsReportsChartComponent)] }
+                    add: {
+                        imports: [MockComponent(DotExperimentsReportsChartComponent)]
+                    }
                 }
             ]
         ],
@@ -133,6 +134,15 @@ describe('DotExperimentsReportsComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(MessageService)
         ]
+    });
+
+    beforeAll(() => {
+        global.ResizeObserver = class ResizeObserver {
+            constructor() {}
+            observe() {}
+            unobserve() {}
+            disconnect() {}
+        };
     });
 
     beforeEach(() => {
@@ -159,7 +169,7 @@ describe('DotExperimentsReportsComponent', () => {
 
     it("shouldn't show the skeleton component when is not loading", () => {
         spectator.component.vm$ = of({ ...defaultVmMock });
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
         expect(spectator.query(DotExperimentsReportsSkeletonComponent)).not.toExist();
@@ -191,6 +201,19 @@ describe('DotExperimentsReportsComponent', () => {
             defaultVmMock.bayesianChart.chartData
         );
         expect(spectator.queryLast(DotExperimentsReportsChartComponent).isLinearAxis).toEqual(true);
+    });
+
+    it('should reload results', () => {
+        spectator.detectChanges();
+        jest.spyOn(store, 'loadExperimentAndResults');
+
+        const summaryComponent = spectator.query(DotExperimentsExperimentSummaryComponent);
+
+        summaryComponent.updateResults.emit();
+
+        expect(store.loadExperimentAndResults).toHaveBeenCalledWith(
+            ActivatedRouteMock.snapshot.params.experimentId
+        );
     });
 
     it('should show the SummaryComponent', () => {
@@ -258,5 +281,9 @@ describe('DotExperimentsReportsComponent', () => {
             variant: EXPERIMENT_RESULTS_DETAIL_DATA_MOCK[0]
         });
         expect(spectator.queryAll(byTestId('variant-promoted-tag')).length).toEqual(0);
+    });
+
+    afterAll(() => {
+        delete global.ResizeObserver;
     });
 });

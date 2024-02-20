@@ -4,8 +4,8 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
+import { DotClipboardUtil } from '@dotcms/ui';
 
 import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
 

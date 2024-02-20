@@ -4,6 +4,7 @@ import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.io.Serializable;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -11,7 +12,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonDeserialize(as = Site.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractSite {
+public interface AbstractSite extends Serializable {
 
     String inode();
 

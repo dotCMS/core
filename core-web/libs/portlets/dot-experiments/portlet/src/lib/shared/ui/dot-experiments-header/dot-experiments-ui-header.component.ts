@@ -1,14 +1,23 @@
 import { DatePipe, LowerCasePipe, NgIf, TitleCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Input,
+    OnChanges,
+    Output,
+    SimpleChanges
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TagModule } from 'primeng/tag';
 
 import {
     DotExperiment,
     DotExperimentStatus,
+    ExperimentsStatusIcons,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
@@ -29,12 +38,12 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DotPipesModule,
         DotMessagePipe,
         SkeletonModule,
-        TagModule,
-        ButtonModule
+        ButtonModule,
+        ChipModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsUiHeaderComponent {
+export class DotExperimentsUiHeaderComponent implements OnChanges {
     @Input()
     title = '';
 
@@ -47,6 +56,15 @@ export class DotExperimentsUiHeaderComponent {
     @Output()
     goBack = new EventEmitter<boolean>();
 
-    experimentStatus = DotExperimentStatus;
     runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
+    statusIcon: string;
+    protected readonly experimentStatus = DotExperimentStatus;
+
+    ngOnChanges(changes: SimpleChanges): void {
+        const { experiment } = changes;
+        if (experiment && experiment.currentValue) {
+            const { status } = experiment.currentValue;
+            this.statusIcon = ExperimentsStatusIcons[status];
+        }
+    }
 }

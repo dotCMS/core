@@ -1,5 +1,7 @@
 package com.dotcms.integritycheckers;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.repackage.com.csvreader.CsvReader;
@@ -16,6 +18,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -32,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.juli.logging.Log;
 
 /**
  * Contentlet page integrity checker implementation.
@@ -254,12 +258,14 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                     + "FROM "
                     + "identifier li "
                     + "INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet') "
-                    + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier) "
+                    + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier "
+					+ "AND lcvi.variant_id = '"+DEFAULT_VARIANT.name()+"') "
                     + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                     + "INNER JOIN " + tempTableName
                     + " t ON (li.full_path_lc = t.full_path_lc "
                     + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
-                    + "AND lc.language_id = t.language_id)";
+                    + "AND lc.language_id = t.language_id "
+					+ "AND lc.variant_id = '"+DEFAULT_VARIANT.name()+"')";
         
 
         if (DbConnectionFactory.isOracle()) {
@@ -297,8 +303,10 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                         + endpointId
                         + "', t.language_id as language_id "
                         + "FROM identifier li "
-                        + "INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet') "
-                        + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier and lc.language_id = lcvi.lang) "
+                        + "INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet' "
+						+ "and lc.variant_id = '"+DEFAULT_VARIANT.name()+"') "
+                        + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier "
+						+ "and lc.language_id = lcvi.lang and lcvi.variant_id = '"+DEFAULT_VARIANT.name()+"') "
                         + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                         + "INNER JOIN " + tempTableName
 						+ " t ON (li.full_path_lc = t.full_path_lc "
@@ -716,7 +724,10 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
         // Insert the new working Contentlet record with the new Inode
         String contentletQuery = String.format("INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, disabled_wysiwyg, identifier, language_id, contentlet_as_json, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25) "
                 + "SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, disabled_wysiwyg, ?, ?, '%s', date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25 "
-                + "FROM contentlet c INNER JOIN contentlet_version_info cvi on (c.inode = cvi.working_inode) WHERE c.identifier = ? and c.language_id = ?", workingCopyJson);
+                + "FROM contentlet c INNER JOIN contentlet_version_info cvi "
+				+ "on (c.inode = cvi.working_inode) "
+				+ "WHERE c.identifier = ? and c.language_id = ? "
+				+ "and c.variant_id = '"+DEFAULT_VARIANT.name()+"'", workingCopyJson);
         if (DbConnectionFactory.isMySql()) {
             // Use correct escape char when using reserved words as column names
             contentletQuery = contentletQuery.replaceAll("\"", "`");
@@ -745,7 +756,9 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 
             contentletQuery =  String.format("INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, disabled_wysiwyg, identifier, language_id, contentlet_as_json, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25) "
                     + "SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, disabled_wysiwyg, ?, ?, '%s', date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25 "
-                    + "FROM contentlet c INNER JOIN contentlet_version_info cvi on (c.inode = cvi.live_inode) WHERE c.identifier = ? and c.language_id = ?", liveCopyJson);
+                    + "FROM contentlet c INNER JOIN contentlet_version_info cvi on (c.inode = cvi.live_inode) "
+					+ "WHERE c.identifier = ? and c.language_id = ? "
+					+ "and c.variant_id = '"+DEFAULT_VARIANT.name()+"'", liveCopyJson);
             dc.setSQL(contentletQuery);
             dc.addParam(remoteLiveInode);
             dc.addParam(newHtmlPageIdentifier);
@@ -759,7 +772,9 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
         	// Insert the new Contentlet_version_info record with the new Inode
 	        if (UtilMethods.isSet(remoteLiveInode) && UtilMethods.isSet(localLiveInode)) {
 	            dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-	                    + "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+	                    + "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info "
+						+ "WHERE identifier = ? AND working_inode = ? "
+						+ "AND lang = ? AND variant_id = '"+DEFAULT_VARIANT.name()+"'");
 	            dc.addParam(newHtmlPageIdentifier);
 	            dc.addParam(languageId);
 	            dc.addParam(remoteWorkingInode);
@@ -771,7 +786,9 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 	        } else {
 	        	if(UtilMethods.isSet(localWorkingInode) && UtilMethods.isSet(localLiveInode) && localWorkingInode.equals(localLiveInode)){
 					dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-							+ "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+							+ "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info "
+							+ "WHERE identifier = ? AND working_inode = ? AND lang = ? "
+							+ "AND variant_id = '"+DEFAULT_VARIANT.name()+"'");
 					dc.addParam(newHtmlPageIdentifier);
 					dc.addParam(languageId);
 					dc.addParam(remoteWorkingInode);
@@ -782,7 +799,9 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 					dc.loadResult();
 				}else{
 		        	dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-		                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+		                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts "
+							+ "FROM contentlet_version_info WHERE identifier = ? "
+							+ "AND working_inode = ? AND lang = ? AND variant_id = '"+DEFAULT_VARIANT.name()+"'");
 		            dc.addParam(newHtmlPageIdentifier);
 		            dc.addParam(languageId);
 		            dc.addParam(remoteWorkingInode);
@@ -793,7 +812,9 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 		        }
 	        }
 	        // Remove the live_inode references from Contentlet_version_info
-	        dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
+	        dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? "
+					+ "AND lang = ? AND working_inode = ? "
+					+ "AND variant_id = '"+DEFAULT_VARIANT.name()+"'");
 	        dc.addParam(oldHtmlPageIdentifier);
 	        dc.addParam(languageId);
 	        dc.addParam(localWorkingInode);
@@ -811,7 +832,8 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 		}
 
         // Remove the conflicting working version of the Contentlet record
-        dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
+        dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? "
+				+ "AND language_id = ? AND variant_id = '"+DEFAULT_VARIANT.name()+"'");
         dc.addParam(oldHtmlPageIdentifier);
         dc.addParam(localWorkingInode);
         dc.addParam(languageId);
@@ -820,7 +842,8 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
         if (UtilMethods.isSet(localLiveInode) && UtilMethods.isSet(remoteLiveInode)
                 && !localLiveInode.equals(localWorkingInode)) {
             // Remove the conflicting version of the Contentlet record
-            dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
+            dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? "
+					+ "AND language_id = ? AND variant_id = '"+DEFAULT_VARIANT.name()+"'");
             dc.addParam(oldHtmlPageIdentifier);
             dc.addParam(localLiveInode);
             dc.addParam(languageId);
@@ -859,7 +882,8 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 			}
             // Update previous version of the Contentlet_version_info with new
             // Identifier
-            dc.setSQL("UPDATE contentlet_version_info SET identifier = ? WHERE identifier = ? AND lang = ?");
+            dc.setSQL("UPDATE contentlet_version_info SET identifier = ? WHERE identifier = ? "
+					+ "AND lang = ? AND variant_id = '"+DEFAULT_VARIANT.name()+"'");
             dc.addParam(newHtmlPageIdentifier);
             dc.addParam(oldHtmlPageIdentifier);
             dc.addParam(languageId);
@@ -894,10 +918,29 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
             	newLiveContentPage.setInode(remoteLiveInode);
             }
         }
+
+		final Contentlet updatedLivePage = newLiveContentPage;
+
+		Try.run(()->updateRelatedExperiments(oldHtmlPageIdentifier, newHtmlPageIdentifier))
+				.onFailure((e)-> Logger.error(ContentPageIntegrityChecker.class,
+						"Unable to update related experiments "
+								+ "for page with id ["+updatedLivePage.getIdentifier()+"]. "
+								+ "Error: " + e.getMessage()));
+
 		reindexFixedPage(newWorkingContentPage, existingWorkingContentPage,
 				newLiveContentPage, existingLiveContentPage, localWorkingInode,
 				localLiveInode, languageId, fixAllVersions);
     }
+
+	private void updateRelatedExperiments(final String oldHtmlPageIdentifier,
+			String newHtmlPageIdentifier)
+			throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		dc.setSQL("UPDATE experiment SET page_id = ? WHERE page_id = ?");
+		dc.addParam(newHtmlPageIdentifier);
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.loadResult();
+	}
 
 	/**
 	 * Runs the queries that will wrap up the integrity fix process. They will

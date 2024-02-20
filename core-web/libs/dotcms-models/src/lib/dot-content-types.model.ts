@@ -30,6 +30,7 @@ export interface DotCMSContentType {
     workflows: DotCMSWorkflow[];
     workflow?: string[];
     systemActionMappings?: DotCMSSystemActionMappings;
+    metadata?: { [key: string]: string | number | boolean };
 }
 
 export interface DotCMSContentTypeField {
@@ -58,6 +59,12 @@ export interface DotCMSContentTypeField {
     unique: boolean;
     values?: string;
     variable: string;
+    metadata?: { [key: string]: string | number | boolean };
+}
+
+export interface DotCMSContentTypeLayoutTab {
+    title: string;
+    layout: DotCMSContentTypeLayoutRow[];
 }
 
 export interface DotCMSContentTypeLayoutRow {

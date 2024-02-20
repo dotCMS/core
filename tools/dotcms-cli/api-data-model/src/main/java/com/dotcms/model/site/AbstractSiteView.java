@@ -84,6 +84,7 @@ public interface AbstractSiteView  {
     @JsonProperty("embeddedDashboard")
     String embeddedDashboard();
 
+    @Nullable
     @JsonProperty("languageId")
     Long languageId();
 
@@ -107,9 +108,11 @@ public interface AbstractSiteView  {
     @JsonProperty("locked")
     Boolean isLocked();
 
+    @Nullable
     @JsonProperty("modDate")
     Date modDate();
 
+    @Nullable
     @JsonProperty("modUser")
     String modUser();
 

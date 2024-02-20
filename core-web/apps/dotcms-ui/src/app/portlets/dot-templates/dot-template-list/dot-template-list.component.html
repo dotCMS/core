@@ -12,26 +12,23 @@
     sortField="modDate"
     sortOrder="DESC"
     url="v1/templates"
-    dataKey="inode"
->
+    dataKey="inode">
     <div class="template-listing__header-options">
         <div>
             <p-checkbox
                 [label]="'Show-Archived' | dm"
                 [binary]="true"
                 (onChange)="handleArchivedFilter($event.checked)"
-                data-testid="archiveCheckbox"
-            ></p-checkbox>
+                data-testid="archiveCheckbox"></p-checkbox>
             <button
-                class="p-button-outlined p-button-sm"
+                class="p-button-outlined"
                 [disabled]="!this.selectedTemplates?.length"
                 [label]="'Actions' | dm"
                 (click)="actionsMenu.toggle($event)"
                 type="button"
                 pButton
                 icon="pi pi-ellipsis-v"
-                attr.data-testid="bulkActions"
-            ></button>
+                attr.data-testid="bulkActions"></button>
         </div>
         <p-menu #actionsMenu [popup]="true" [model]="templateBulkActions" appendTo="body"></p-menu>
     </div>
@@ -43,8 +40,7 @@
         [content]="'message.template.empty.content' | dm"
         [buttonLabel]="'message.template.empty.button.label' | dm"
         (buttonClick)="handleButtonClick()"
-        icon="web"
-    >
+        icon="web">
     </dot-empty-state>
 
     <ng-template #rowTemplate let-rowData="rowData">
@@ -55,14 +51,27 @@
             <dot-state-icon
                 [labels]="setStateLabels()"
                 [state]="getTemplateState(rowData)"
-                size="14px"
-            >
+                size="14px">
             </dot-state-icon>
         </td>
-        <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }">
-            {{ rowData.friendlyName }}
+        <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }" data-testId="theme-cell">
+            <ng-container *ngIf="rowData.themeInfo?.inode === 'SYSTEM_THEME'; else linkTemplate">
+                {{ rowData.themeInfo?.title }}
+            </ng-container>
+            <ng-template #linkTemplate>
+                <a
+                    *ngIf="rowData.themeInfo"
+                    (click)="goToFolder($event, rowData.themeInfo?.path)"
+                    data-testId="theme-folder-link"
+                    target="_self"
+                    >{{ rowData.themeInfo?.title }}</a
+                >
+            </ng-template>
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
+            {{ rowData.friendlyName }}
+        </td>
+        <td [ngStyle]="{ 'text-align': tableColumns[4].textAlign }">
             {{ rowData.modDate | dotRelativeDate }}
         </td>
         <td style="width: 5%; height: 3.85rem">
@@ -71,8 +80,7 @@
                 *ngIf="!rowData.disableInteraction"
                 [attr.data-testid]="rowData.identifier"
                 [actions]="setTemplateActions(rowData)"
-                [item]="rowData"
-            >
+                [item]="rowData">
             </dot-action-menu-button>
         </td>
     </ng-template>
@@ -81,5 +89,4 @@
 <dot-add-to-bundle
     *ngIf="addToBundleIdentifier"
     [assetIdentifier]="addToBundleIdentifier"
-    (cancel)="addToBundleIdentifier = null"
-></dot-add-to-bundle>
+    (cancel)="addToBundleIdentifier = null"></dot-add-to-bundle>

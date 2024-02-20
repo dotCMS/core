@@ -3,9 +3,12 @@ import { of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 
 import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotContentletService, DotContentTypeService } from '@dotcms/data-access';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import {
+    DotContentletService,
+    DotContentTypeService,
+    DotFormatDateService
+} from '@dotcms/data-access';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 
 const getContentTypeMOCKResponse = {
     baseType: 'CONTENT',
@@ -649,6 +652,10 @@ describe('DotContentCompareStore', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });

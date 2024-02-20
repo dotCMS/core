@@ -10,7 +10,8 @@ import com.dotcms.model.ResponseEntityView;
 import java.util.List;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import org.apache.commons.lang3.BooleanUtils;
+import javax.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -28,6 +29,9 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
 
     @CommandLine.Mixin
     InteractiveOptionMixin interactiveOption;
+
+    @Inject
+    Prompt prompt;
 
     /**
      * Here we encapsulate Filter endpoint options
@@ -67,6 +71,9 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @ConfigProperty(name = "contentType.pageSize", defaultValue = "25")
+    Integer pageSize;
+
     @Override
     public Integer call() throws Exception {
 
@@ -82,11 +89,10 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
 
     private int list() {
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
-        final int pageSize = 10;
         int page = 1;
         while (true) {
             final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
-                    null, page, null, "variable", null, null, null);
+                    null, page,  pageSize, "variable", null, null, null);
             final List<ContentType> types = responseEntityView.entity();
             if (types.isEmpty()) {
                 output.info("@|yellow No content-types were returned, Check you have access permissions.|@");
@@ -100,7 +106,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
             }
             page++;
 
-            if(interactiveOption.isInteractive() && !Prompt.yesOrNo(true,"Load next page? y/n:")){
+            if(interactiveOption.isInteractive() && !prompt.yesOrNo(true,"Load next page? y/n:")){
                 break;
             }
 

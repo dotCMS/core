@@ -11,8 +11,7 @@ import { By } from '@angular/platform-browser';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotRolesService } from '@dotcms/data-access';
+import { DotRolesService, DotFormatDateService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';

@@ -1,7 +1,7 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { DOCUMENT } from '@angular/common';
-import { Component, Inject, Input, OnChanges } from '@angular/core';
+import { Component, Inject, Input, OnChanges, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -15,6 +15,7 @@ import {
     DotTemplate,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;
@@ -25,15 +26,23 @@ interface DotEditPageNavItem {
     needsEntepriseLicense: boolean;
     tooltip?: string;
 }
-
+/**
+ * Display the navigation for edit page
+ *
+ * @export
+ * @class DotEditPageNavComponent
+ * @implements {OnChanges}
+ * @deprecated use the new nav bar from edit-ema
+ */
 @Component({
     selector: 'dot-edit-page-nav',
     templateUrl: './dot-edit-page-nav.component.html',
     styleUrls: ['./dot-edit-page-nav.component.scss']
 })
 export class DotEditPageNavComponent implements OnChanges {
+    @ViewChild('pageTools') pageTools: DotPageToolsSeoComponent;
     @Input() pageState: DotPageRenderState;
-    togglePageTools: boolean;
+
     isEnterpriseLicense: boolean;
     model: Observable<DotEditPageNavItem[]>;
     currentUrlParams: DotPageToolUrlParams;
@@ -189,7 +198,7 @@ export class DotEditPageNavComponent implements OnChanges {
     }
 
     private showPageTools(): void {
-        this.togglePageTools = !this.togglePageTools;
+        this.pageTools.toggleDialog();
     }
 
     /**

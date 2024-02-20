@@ -10,7 +10,7 @@ declare module '@tiptap/core' {
             /**
              * Set Image Link mark
              */
-            setImageLink: (attributes: { href: string }) => ReturnType;
+            setImageLink: (attributes: { href: string; target?: string }) => ReturnType;
             /**
              * Unset Image Link mark
              */
@@ -62,6 +62,11 @@ export const ImageNode = Image.extend({
                 default: null,
                 parseHTML: (element) => element.getAttribute('data'),
                 renderHTML: (attributes) => ({ data: JSON.stringify(attributes.data) })
+            },
+            target: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('target'),
+                renderHTML: (attributes) => ({ target: attributes.target })
             }
         };
     },

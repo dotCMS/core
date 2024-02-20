@@ -1,0 +1,28 @@
+<form class="p-fluid" *ngIf="form" [formGroup]="form">
+    <ng-container *ngIf="areMultipleTabs; else singleForm">
+        <p-tabView [scrollable]="true" data-testId="edit-content-multiple-tabs">
+            <p-tabPanel *ngFor="let tab of tabs" [header]="tab.title">
+                <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tab }" />
+            </p-tabPanel>
+        </p-tabView>
+    </ng-container>
+
+    <ng-template #singleForm>
+        <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tabs[0] }" />
+    </ng-template>
+
+    <ng-template #tabTemplate let-tab="tab">
+        <div class="form__layout">
+            <div class="row" *ngFor="let row of tab.layout" data-testId="row">
+                <div class="column" *ngFor="let column of row.columns" data-testId="column">
+                    <dot-edit-content-field
+                        *ngFor="let field of column.fields"
+                        [field]="field"
+                        [contentlet]="formData.contentlet"
+                        [contentType]="formData.contentType.variable"
+                        data-testId="field" />
+                </div>
+            </div>
+        </div>
+    </ng-template>
+</form>

@@ -67,6 +67,7 @@
             try {
                 ContentType filterContentType = APILocator.getContentTypeAPI(user).find(variableName);
                 structureSelected = filterContentType != null ? filterContentType.id() : null;
+
             } catch (NotFoundInDbException e) {
                 structureSelected = null;
             }
@@ -76,6 +77,8 @@
         if (structureSelected != null){
             try {
                 ContentType contentType = APILocator.getContentTypeAPI(user).find(structureSelected);
+
+
                 if (contentType != null && com.dotmarketing.beans.Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()) ){
                     structureSelected = null;
                 }
@@ -459,7 +462,6 @@
         function myLabelFunc(item) {
             return item.textLabel + "";
         }
-
         // content type select box
         var fs = new dijit.form.FilteringSelect({
                 id: "structure_inode",
@@ -469,6 +471,7 @@
                 searchAttr: "textLabel",
                 labelAttr: "label",
                 labelType: "html",
+
 
                 onChange: function(){
 
@@ -567,7 +570,7 @@
             label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>",
             iconClass: "plusIcon",
             onClick: function() {
-                addNewContentlet();
+                addNewContentlet(null);
             }
         });
         menu.addChild(menuItem1);
@@ -776,7 +779,7 @@
                                         }
                                     </script>
                                     <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
-                                        <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:function() {addNewContentlet()}"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>
+                                        <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:function() {addNewContentlet('')}"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>
                                         <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:importContent">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>
                                         </li>
@@ -867,7 +870,7 @@
                 <% stType = struc.getStructureType(); %>
                 <div class="sTypeHeader" id="sType<%=strTypeNames[stType] %>"><%=strTypeNames[stType] %></div>
                 <%} %>
-                <div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getInode() %>');"><%=struc.getName() %></a></div>
+                <div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getInode() %>','<%=struc.getVelocityVarName() %>');"><%=struc.getName() %></a></div>
                 <%if(i++ == maxPerCol){ %>
                 <%i=0; %>
             </td>

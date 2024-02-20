@@ -32,7 +32,7 @@ describe('DotShowHideFeatureDirective', () => {
             providers: [
                 ViewContainerRef,
                 TemplateRef,
-                { provide: DotPropertiesService, useValue: { getKey: () => of('true') } }
+                { provide: DotPropertiesService, useValue: { getFeatureFlag: () => of(true) } }
             ]
         });
 
@@ -54,7 +54,7 @@ describe('DotShowHideFeatureDirective', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('false'));
+            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
             fixture.detectChanges();
         });
 
@@ -79,8 +79,7 @@ describe('DotShowHideFeatureDirective', () => {
         </ng-template>
         <ng-container
             *dotShowHideFeature="featureFlag; alternate: disabledComponent"
-            [ngTemplateOutlet]="enabledComponent"
-        ></ng-container>
+            [ngTemplateOutlet]="enabledComponent"></ng-container>
     `
 })
 class TestWithAlternateTemplateComponent {
@@ -98,7 +97,10 @@ describe('DotShowHideFeatureDirective with alternate template', () => {
             providers: [
                 ViewContainerRef,
                 TemplateRef,
-                { provide: DotPropertiesService, useValue: { getKey: () => of('true') } }
+                {
+                    provide: DotPropertiesService,
+                    useValue: { getFeatureFlag: () => of(true) }
+                }
             ]
         });
 
@@ -128,7 +130,7 @@ describe('DotShowHideFeatureDirective with alternate template', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('false'));
+            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
             fixture.detectChanges();
         });
 

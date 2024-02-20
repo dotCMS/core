@@ -4,7 +4,7 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
@@ -20,7 +20,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -29,29 +28,25 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Helper for templates
+ * Provides utility methods that allow classes such as the {@link TemplateResource} to interact with
+ * Templates in dotCMS. Additionally, provides useful mechanisms to transform Template to and from
+ * intermediate objects such as {@link TemplateView}, {@link TemplateLayoutView},
+ * {@link SidebarView}, and so on.
+ *
  * @author jsanca
+ * @since Aug 20th, 2020
  */
 public class TemplateHelper {
 
-    private final PermissionAPI  permissionAPI;
-    private final RoleAPI roleAPI;
     private final ContainerAPI containerAPI;
 
     public TemplateHelper() {
-        this(APILocator.getPermissionAPI(),
-                APILocator.getRoleAPI(),
-                APILocator.getContainerAPI());
+        this(APILocator.getContainerAPI());
     }
 
     @VisibleForTesting
-    public TemplateHelper(final PermissionAPI  permissionAPI,
-                          final RoleAPI        roleAPI,
-                          final ContainerAPI containerAPI) {
-
-        this.permissionAPI  = permissionAPI;
-        this.roleAPI        = roleAPI;
-        this.containerAPI   = containerAPI;
+    public TemplateHelper(final ContainerAPI containerAPI) {
+        this.containerAPI = containerAPI;
     }
 
     public Host getHost (final String hostId, final Supplier<Host> hostSupplier) {
@@ -65,11 +60,24 @@ public class TemplateHelper {
         return hostSupplier.get();
     }
 
+    /**
+     * Takes a given Template and transforms it into a TemplateView representation that is used to
+     * generate a JSON response.
+     *
+     * @param template The {@link Template} object.
+     * @param user     The {@link User} requesting the view.
+     *
+     * @return The {@link TemplateView} object with the Template data.
+     */
     public TemplateView toTemplateView(final Template template, final User user) {
-
-        final TemplateLayout layout = UtilMethods.isSet(template.getDrawedBody())?
-                DotTemplateTool.getTemplateLayout(template.getDrawedBody()): null;
-
+        final TemplateLayout layout = UtilMethods.isSet(template.getDrawedBody()) ?
+                DotTemplateTool.getTemplateLayout(template.getDrawedBody()) : null;
+        final Theme templateTheme =
+                Try.of(() -> APILocator.getThemeAPI().findThemeById(template.getTheme(), user,
+                        false)).getOrNull();
+        if (null != templateTheme) {
+            template.setThemeName(templateTheme.getName());
+        }
         return new TemplateView.Builder()
                 .name(template.getName())
                 .friendlyName(template.getFriendlyName())
@@ -89,12 +97,12 @@ public class TemplateHelper {
                 .footer(template.getFooter())
 
                 .isNew(template.isNew())
-                .hasLiveVersion(Try.of(()->template.hasLiveVersion()).getOrElse(false))
-                .deleted(Try.of(()->template.isDeleted()).getOrElse(false))
-                .live(Try.of(()->template.isLive()).getOrElse(false))
-                .locked(Try.of(()->template.isLocked()).getOrElse(false))
+                .hasLiveVersion(Try.of(template::hasLiveVersion).getOrElse(false))
+                .deleted(Try.of(template::isDeleted).getOrElse(false))
+                .live(Try.of(template::isLive).getOrElse(false))
+                .locked(Try.of(template::isLocked).getOrElse(false))
                 .lockedBy(Try.of(()->APILocator.getVersionableAPI().getLockedBy(template).orElse(null)).getOrNull())
-                .working(Try.of(()->template.isWorking()).getOrElse(false))
+                .working(Try.of(template::isWorking).getOrElse(false))
 
                 .canRead(Try.of(()-> APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user)).getOrElse(false))
                 .canWrite(Try.of(()->APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT, user)).getOrElse(false))
@@ -110,6 +118,7 @@ public class TemplateHelper {
                 .sortOrder(template.getSortOrder())
                 .layout(this.toLayoutView(layout))
                 .containers(this.findContainerInLayout(layout))
+                .themeInfo(null != templateTheme ? new ThemeView(templateTheme) : null)
                 .build();
     }
 
@@ -175,12 +184,12 @@ public class TemplateHelper {
                 new TemplateLayoutView(layout.getWidth(),
                     layout.getTitle(), layout.isHeader(), layout.isFooter(),
                     this.toBodyView(layout.getBody()),
-                    this.toSiderBarView(layout.getSidebar())
+                    this.toSideBarView(layout.getSidebar())
                     ):
                 null;
     }
 
-    private SidebarView toSiderBarView(final Sidebar sidebar) {
+    private SidebarView toSideBarView(final Sidebar sidebar) {
 
         return null != sidebar?
                 new SidebarView(sidebar.getContainers(), sidebar.getLocation(), sidebar.getWidth()):
@@ -241,8 +250,8 @@ public class TemplateHelper {
                         containers.add(new ContainerView(container.get()));
                     } else {
 
-                        Logger.info(this, ()-> "The container id: " + containerIdOrPath +
-                                " is on the layout: " + templateLayout.getTitle() + " does not exists!");
+                        Logger.info(this, ()-> "Container id: " + containerIdOrPath +
+                                " in layout: " + templateLayout.getTitle() + " does not exist!");
                     }
                 }
             }

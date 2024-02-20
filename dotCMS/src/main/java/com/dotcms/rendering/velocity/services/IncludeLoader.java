@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotmarketing.util.ConfigUtils;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -9,7 +11,6 @@ import java.util.Set;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
 
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -19,8 +20,8 @@ import com.google.common.collect.ImmutableSet;
 
 public class IncludeLoader implements DotLoader {
 
+    public static final String CANNOT_FIND_RESOURCE = "cannot find resource:";
     private final String[] allowedPaths;
-    private static IncludeLoader includeServices;
     private final Set<String> allowedExtensions;
 
     private IncludeLoader() {
@@ -28,20 +29,18 @@ public class IncludeLoader implements DotLoader {
         this.allowedExtensions = buildAllowedExtensions();
     }
 
+    private static final class IncludeServicesHolder {
+
+        private static final IncludeLoader includeServices = new IncludeLoader();
+    }
+
     public static IncludeLoader instance() {
-        if (includeServices == null) {
-            synchronized (IncludeLoader.class) {
-                if (includeServices == null) {
-                    includeServices = new IncludeLoader();
-                }
-            }
-        }
-        return includeServices;
+        return IncludeServicesHolder.includeServices;
     }
 
     private String[] buildAllowedPaths() {
-        File velocityRootPath = new File(Config.CONTEXT.getRealPath(Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity")));
-        File assetPath = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
+        File velocityRootPath = new File(VelocityUtil.getVelocityRootPath());
+        File assetPath = new File(ConfigUtils.getAssetPath());
 
         try {
             return new String[] {velocityRootPath.getCanonicalPath(), assetPath.getCanonicalPath()};
@@ -52,17 +51,17 @@ public class IncludeLoader implements DotLoader {
     }
 
     private Set<String> buildAllowedExtensions() {
-        String allowedExtensions = Config.getStringProperty("VELOCITY_INCLUDE_ALLOWED_EXTENSIONS", "txt,css,js,html,htm,json");
-        allowedExtensions = allowedExtensions.replace(" ", "");
+        String allowedExt = Config.getStringProperty("VELOCITY_INCLUDE_ALLOWED_EXTENSIONS", "txt,css,js,html,htm,json");
+        allowedExt = allowedExt.replace(" ", "");
 
-        return ImmutableSet.copyOf(allowedExtensions.split(","));
+        return ImmutableSet.copyOf(allowedExt.split(","));
     }
 
 
     private File allowedToServe(final String filePath) throws IOException {
         final File fileToServe = new File(filePath);
         if (!fileToServe.exists()) {
-            throw new ResourceNotFoundException("cannot find resource:" + filePath);
+            throw new ResourceNotFoundException(CANNOT_FIND_RESOURCE + filePath);
         }
         String canonicalPath = fileToServe.getCanonicalPath();
 
@@ -74,7 +73,7 @@ public class IncludeLoader implements DotLoader {
 
         }
         Logger.warn(this, "POSSIBLE HACK ATTACK DotResourceLoader: " + canonicalPath);
-        throw new ResourceNotFoundException("cannot find resource:" + canonicalPath);
+        throw new ResourceNotFoundException(CANNOT_FIND_RESOURCE + canonicalPath);
 
     }
 
@@ -91,7 +90,7 @@ public class IncludeLoader implements DotLoader {
         try {
             return streamFile(key.path);
         } catch (Exception e) {
-            throw new ResourceNotFoundException("cannot find resource:" + key.path, e);
+            throw new ResourceNotFoundException(CANNOT_FIND_RESOURCE + key.path, e);
         }
     }
 

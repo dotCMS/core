@@ -10,10 +10,13 @@ import { MenuModule } from 'primeng/menu';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotApiLinkComponent,
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { DotContentEditorModule } from '@portlets/dot-containers/dot-container-create/dot-container-code/dot-container-code.module';
 import { DotContainerPropertiesComponent } from '@portlets/dot-containers/dot-container-create/dot-container-properties/dot-container-properties.component';
 import { DotLoopEditorModule } from '@portlets/dot-containers/dot-container-create/dot-loop-editor/dot-loop-editor.module';
@@ -36,8 +39,8 @@ import { DotContainersService } from '@services/dot-containers/dot-containers.se
         DotMessagePipe,
         DotLoopEditorModule,
         DotContentEditorModule,
-        DotApiLinkModule,
-        DotAutofocusModule,
+        DotApiLinkComponent,
+        DotAutofocusDirective,
         DotFieldRequiredDirective
     ],
     providers: [DotContainersService]

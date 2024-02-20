@@ -73,3 +73,7 @@
         }
     }
 }
+
+.p-selectbutton .p-disabled {
+    opacity: $field-disabled-opacity;
+}

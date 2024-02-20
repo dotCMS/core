@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
+import { DotRelativeDatePipe } from '@dotcms/ui';
 
 import { CustomTimeComponent } from './dot-custom-time.component';
 

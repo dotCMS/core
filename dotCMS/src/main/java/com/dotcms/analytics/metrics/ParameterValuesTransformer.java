@@ -2,8 +2,7 @@ package com.dotcms.analytics.metrics;
 
 
 import java.util.Collection;
-import com.dotcms.experiments.business.result.Event;
-import java.util.Collection;
+
 
 /**
  * Transform the Value taken from the Event on String to be use on the {@link com.dotcms.analytics.metrics.AbstractCondition.Operator}

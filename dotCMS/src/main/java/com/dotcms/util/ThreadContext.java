@@ -12,6 +12,8 @@ public class ThreadContext {
     // when the reindex happens later, the api call can set this to true in order to tell at the end of the thread process to do reindex including dependencies
     private boolean includeDependencies = false;
 
+    private String tag;
+
     public boolean isReindex() {
         return reindex;
     }
@@ -26,5 +28,13 @@ public class ThreadContext {
 
     public void setIncludeDependencies(boolean includeDependencies) {
         this.includeDependencies = includeDependencies;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 }

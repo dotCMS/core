@@ -31,7 +31,6 @@ import {
     DotExperimentsConfigurationStore
 } from './store/dot-experiments-configuration-store';
 
-import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 
@@ -41,7 +40,6 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         AsyncPipe,
         NgIf,
         DotExperimentsUiHeaderComponent,
-        DotExperimentsExperimentSummaryComponent,
         DotExperimentsConfigurationVariantsComponent,
         DotExperimentsConfigurationGoalsComponent,
         DotExperimentsConfigurationTrafficComponent,

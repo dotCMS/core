@@ -25,7 +25,13 @@ export class DotContentletThumbnail {
     showVideoThumbnail = true;
 
     @Prop()
+    playableVideo = false;
+
+    @Prop()
     contentlet: DotContentletItem;
+
+    @Prop({ reflect: true })
+    fieldVariable = '';
 
     @State() renderImage: boolean;
 
@@ -49,7 +55,12 @@ export class DotContentletThumbnail {
         return (
             <Host>
                 {this.shouldShowVideoThumbnail() ? (
-                    <dot-video-thumbnail contentlet={this.contentlet} cover={this.cover} />
+                    <dot-video-thumbnail
+                        contentlet={this.contentlet}
+                        variable={this.fieldVariable}
+                        cover={this.cover}
+                        playable={this.playableVideo}
+                    />
                 ) : this.renderImage ? (
                     <div class={`thumbnail ${imgClass}`} style={{ 'background-image': image }}>
                         <img
@@ -72,8 +83,20 @@ export class DotContentletThumbnail {
 
     private getImageURL(): string {
         return this.contentlet.mimeType === 'application/pdf'
-            ? `/contentAsset/image/${this.contentlet.inode}/${this.contentlet.titleImage}/pdf_page/1/resize_w/250/quality_q/45`
-            : `/dA/${this.contentlet.inode}/500w/50q?r=${this.contentlet.modDateMilis}`;
+            ? `/contentAsset/image/${this.contentlet.inode}/${
+                  this.fieldVariable || this.contentlet.titleImage
+              }/pdf_page/1/resize_w/250/quality_q/45`
+            : `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
+                  this.contentlet.modDateMilis || this.contentlet.modDate
+              }`;
+    }
+
+    private fieldVariablePath(): string {
+        if (!this.fieldVariable) {
+            return '';
+        }
+
+        return `${this.fieldVariable || this.contentlet.titleImage}/`;
     }
 
     private switchToIcon(): any {

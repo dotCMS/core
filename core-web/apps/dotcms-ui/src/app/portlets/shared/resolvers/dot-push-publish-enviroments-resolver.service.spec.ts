@@ -3,9 +3,9 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { PushPublishService } from '@dotcms/data-access';
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 import { DotPushPublishEnvironmentsResolver } from '@portlets/shared/resolvers/dot-push-publish-enviroments-resolver.service';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
 
 describe('DotPushPublishEnvironmentsResolver', () => {
     let service: DotPushPublishEnvironmentsResolver;

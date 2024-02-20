@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { mockProvider } from '@ngneat/spectator';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -9,23 +11,25 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService } from 'primeng/api';
 
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotHttpErrorManagerService,
     DotLicenseService,
-    DotWorkflowActionsFireService
+    DotMessageDisplayService,
+    DotRouterService,
+    DotWorkflowActionsFireService,
+    DotGlobalMessageService,
+    DotWorkflowEventHandlerService,
+    DotFormatDateService,
+    DotIframeService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -43,7 +47,6 @@ import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dot
 
 import { MainComponentLegacyComponent } from './main-legacy.component';
 
-import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 
 @Component({
@@ -133,7 +136,8 @@ describe('MainLegacyComponent', () => {
                 DotWorkflowActionsFireService,
                 DotGlobalMessageService,
                 DotEventsService,
-                DotGenerateSecurePasswordService
+                DotGenerateSecurePasswordService,
+                mockProvider(DotContentTypeService)
             ],
             declarations: [
                 MainComponentLegacyComponent,
@@ -180,7 +184,9 @@ describe('MainLegacyComponent', () => {
             spyOn(dotCustomEventHandlerService, 'handle');
             createContentlet.triggerEventHandler('custom', { data: 'test' });
 
-            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({ data: 'test' });
+            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
+                data: 'test'
+            });
         });
     });
 });

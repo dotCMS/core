@@ -91,29 +91,46 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable,
 		ManifestItem {
 
+	// Reserved fields names
+	public static final String CLASS_NAME_KEY = "class";
+	public static final String CON_FOLDER_KEY = "conFolder";
+	public static final String CON_HOST_KEY = "conHost";
+	public static final String DELETED_KEY = "deleted";
+	public static final String FILE_KEY = "file";
+	public static final String FORM_KEY = "form";
+	public static final String IDENTIFIER_KEY = "identifier";
+	public static final String INODE_KEY = "inode";
+	public static final String OWNER_CAN_PUBLISH_KEY = "ownerCanPublish";
+	public static final String OWNER_CAN_READ_KEY = "ownerCanRead";
+	public static final String OWNER_CAN_WRITE_KEY = "ownerCanWrite";
+	public static final String PERMISSIONS_KEY = "permissions";
+	public static final String TYPE_KEY = "type";
+	public static final String WEBSITE_KEY = "website";
+	public static final String STRING_KEY = "string";
+	public static final String NUMBER_KEY = "number";
+	public static final String TITTLE_KEY = "title";
+	public static final String LOCKED_KEY = "locked";
+	public static final String ARCHIVED_KEY = "archived";
+	public static final String LIVE_KEY = "live";
+	public static final String WORKING_KEY = "working";
+	public static final String MOD_DATE_KEY = "modDate";
+	public static final String MOD_USER_KEY = "modUser";
+	public static final String OWNER_KEY = "owner";
+	public static final String HOST_KEY = "host";
+	public static final String FOLDER_KEY = "folder";
+	public static final String SORT_ORDER_KEY = "sortOrder";
+	public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
+	public static final String LANGUAGEID_KEY = "languageId";
+	//	End of reserved fields names
+
   private static final long serialVersionUID = 1L;
-  public static final String TITTLE_KEY = "title";
   public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
-  public static final String INODE_KEY = "inode";
-  public static final String LANGUAGEID_KEY = "languageId";
   public static final String VARIANT_ID = "variantId";
   public static final String STRUCTURE_INODE_KEY = "stInode";
   public static final String STRUCTURE_NAME_KEY = "stName";
   public static final String CONTENT_TYPE_KEY = "contentType";
   public static final String BASE_TYPE_KEY = "baseType";
-  public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
-  public static final String LOCKED_KEY = "locked";
-  public static final String ARCHIVED_KEY = "archived";
-  public static final String LIVE_KEY = "live";
-  public static final String WORKING_KEY = "working";
-  public static final String MOD_DATE_KEY = "modDate";
-  public static final String MOD_USER_KEY = "modUser";
-  public static final String OWNER_KEY = "owner";
-  public static final String IDENTIFIER_KEY = "identifier";
-  public static final String SORT_ORDER_KEY = "sortOrder";
-  public static final String HOST_KEY = "host";
   public static final String HOST_NAME = "hostName";
-  public static final String FOLDER_KEY = "folder";
   public static final String NULL_PROPERTIES = "nullProperties";
   public static final String WORKFLOW_ACTION_KEY = "wfActionId";
   public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
@@ -1509,12 +1526,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 								if (contentletTagsBuilder.length() > 0) {
 									contentletTagsBuilder.append(",");
 								}
-								if (relatedTag.isPersona()) {
-									contentletTagsBuilder.append(relatedTag.getTagName())
-											.append(":persona");
-								} else {
-									contentletTagsBuilder.append(relatedTag.getTagName());
-								}
+
+								contentletTagsBuilder.append(relatedTag.getTagName());
 
 								contentletTagsMap.put(fieldVarName, contentletTagsBuilder);
 							} else {

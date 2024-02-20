@@ -1,6 +1,7 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
+import com.dotcms.rendering.js.JsResource;
 import com.dotcms.rest.AuditPublishingResource;
 import com.dotcms.rest.BundlePublisherResource;
 import com.dotcms.rest.BundleResource;
@@ -21,6 +22,7 @@ import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.rest.annotation.RequestFilter;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotcms.rest.api.MyObjectMapperProvider;
+import com.dotcms.rest.api.v1.announcements.AnnouncementsResource;
 import com.dotcms.rest.api.v1.apps.AppsResource;
 import com.dotcms.rest.api.v1.asset.WebAssetResource;
 import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
@@ -41,6 +43,7 @@ import com.dotcms.rest.api.v1.content.ResourceLinkResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
+import com.dotcms.rest.api.v1.ema.EMAResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.experiments.ExperimentsResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
@@ -78,6 +81,7 @@ import com.dotcms.rest.api.v1.system.permission.PermissionResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
+import com.dotcms.rest.api.v1.system.storage.StorageResource;
 import com.dotcms.rest.api.v1.taillog.TailLogResource;
 import com.dotcms.rest.api.v1.temp.TempFileResource;
 import com.dotcms.rest.api.v1.template.TemplateResource;
@@ -110,7 +114,6 @@ import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
-import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.google.common.collect.ImmutableSet;
@@ -120,11 +123,12 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+
+import javax.ws.rs.core.Application;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.ws.rs.core.Application;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -153,7 +157,6 @@ import org.glassfish.jersey.media.multipart.MultiPartFeature;
 				@Tag(name = "Experiment")
 		}
 )
-
 public class DotRestApplication extends Application {
 
 	/**
@@ -227,12 +230,14 @@ public class DotRestApplication extends Application {
 			.add(NavResource.class)
 			.add(RelationshipsResource.class)
 			.add(VTLResource.class)
+			.add(JsResource.class)
 			.add(ContentVersionResource.class)
 			.add(FileAssetsResource.class)
 			.add(PersonalizationResource.class)
 			.add(TempFileResource.class)
 			.add(UpgradeTaskResource.class)
 			.add(AppsResource.class)
+			.add(EMAResource.class)
 			.add(BrowserResource.class)
 			.add(ResourceLinkResource.class)
 			.add(PushPublishFilterResource.class)
@@ -254,6 +259,9 @@ public class DotRestApplication extends Application {
 			.add(VariantResource.class)
 			.add(WebAssetResource.class)
 			.add(SystemTableResource.class)
+			.add(StorageResource.class)
+			.add(com.dotcms.rest.api.v2.tags.TagResource.class)
+			.add(AnnouncementsResource.class)
 			.build();
 
 	private static final Set<Class<?>> PROVIDER_CLASSES = ImmutableSet.<Class<?>>builder()
@@ -287,7 +295,6 @@ public class DotRestApplication extends Application {
 			.add(NotAllowedExceptionMapper.class)
 			.add(RuntimeExceptionMapper.class)
 			.build();
-
 
 	/**
 	 * This is the cheap way to create a concurrent set of user provided classes

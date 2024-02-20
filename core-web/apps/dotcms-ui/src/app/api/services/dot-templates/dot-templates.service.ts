@@ -5,10 +5,9 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
-
-import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
 export const TEMPLATE_API_URL = '/api/v1/templates/';
 
@@ -73,7 +72,11 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     create(values: DotTemplate): Observable<DotTemplate> {
-        return this.request<DotTemplate>({ method: 'POST', url: TEMPLATE_API_URL, body: values });
+        return this.request<DotTemplate>({
+            method: 'POST',
+            url: TEMPLATE_API_URL,
+            body: values
+        });
     }
 
     /**
@@ -82,7 +85,11 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     update(values: DotTemplate): Observable<DotTemplate> {
-        return this.request<DotTemplate>({ method: 'PUT', url: TEMPLATE_API_URL, body: values });
+        return this.request<DotTemplate>({
+            method: 'PUT',
+            url: TEMPLATE_API_URL,
+            body: values
+        });
     }
 
     /**
@@ -122,7 +129,11 @@ export class DotTemplatesService {
     unArchive(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_unarchive`;
 
-        return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
+        return this.request<DotActionBulkResult>({
+            method: 'PUT',
+            url,
+            body: identifiers
+        });
     }
 
     /**
@@ -134,7 +145,11 @@ export class DotTemplatesService {
     archive(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_archive`;
 
-        return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
+        return this.request<DotActionBulkResult>({
+            method: 'PUT',
+            url,
+            body: identifiers
+        });
     }
 
     /**
@@ -146,7 +161,11 @@ export class DotTemplatesService {
     unPublish(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_unpublish`;
 
-        return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
+        return this.request<DotActionBulkResult>({
+            method: 'PUT',
+            url,
+            body: identifiers
+        });
     }
 
     /**
@@ -158,7 +177,11 @@ export class DotTemplatesService {
     publish(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_publish`;
 
-        return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
+        return this.request<DotActionBulkResult>({
+            method: 'PUT',
+            url,
+            body: identifiers
+        });
     }
 
     /**

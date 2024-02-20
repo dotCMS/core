@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
 
     <groupId>com.dotcms</groupId>
-    <artifactId>independent-projects</artifactId>
+    <artifactId>dotcms-independent-projects</artifactId>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

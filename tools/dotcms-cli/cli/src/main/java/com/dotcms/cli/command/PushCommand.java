@@ -1,17 +1,17 @@
 package com.dotcms.cli.command;
 
+import com.dotcms.cli.common.AuthenticationMixin;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
-import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import picocli.CommandLine;
 
@@ -39,7 +39,10 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     HelpOptionMixin helpOption;
 
     @CommandLine.Mixin
-    PushMixin pushMixin;
+    FullPushOptionsMixin pushMixin;
+
+    @CommandLine.Mixin
+    AuthenticationMixin authenticationMixin;
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
@@ -47,11 +50,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     @Inject
     protected WorkspaceManager workspaceManager;
 
-    // Find the instances of all push subcommands
-    Instance<DotPush> pushCommands = CDI.current().select(DotPush.class);
+    @Inject
+    Instance<DotPush> pushCommands;
+
 
     @Override
     public Integer call() throws Exception {
+        // Find the instances of all push subcommands
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
@@ -64,8 +69,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         expandedArgs.add("--noValidateUnmatchedArguments");
         var args = expandedArgs.toArray(new String[0]);
 
+        // Sort the subcommands by order
+        final var pushCommandsSorted = pushCommands.stream()
+                .sorted(Comparator.comparingInt(DotPush::getOrder))
+                .collect(Collectors.toList());
+
         // Process each subcommand
-        for (var subCommand : pushCommands) {
+        for (var subCommand : pushCommandsSorted) {
 
             var cmdLine = createCommandLine(subCommand);
 
@@ -100,26 +110,16 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     /**
      * Checks if the provided file is a valid workspace.
      *
-     * @param fromFile the file representing the workspace directory. If null, the current directory
-     *                 is used.
+     * @param path represents the workspace directory.
      * @throws IllegalArgumentException if no valid workspace is found at the specified path.
      */
-    void checkValidWorkspace(final File fromFile) {
+    void checkValidWorkspace(final Path path) {
 
-        String fromPath;
-        if (fromFile == null) {
-            // If the workspace is not specified, we use the current directory
-            fromPath = Paths.get("").toAbsolutePath().normalize().toString();
-        } else {
-            fromPath = fromFile.getAbsolutePath();
-        }
-
-        final Path path = Paths.get(fromPath);
         final var workspace = workspaceManager.findWorkspace(path);
 
         if (workspace.isEmpty()) {
             throw new IllegalArgumentException(
-                    String.format("No valid workspace found at path: [%s]", fromPath));
+                    String.format("No valid workspace found at path: [%s]", path.toAbsolutePath()));
         }
     }
 

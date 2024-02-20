@@ -10,9 +10,7 @@ import { SelectItem } from 'primeng/api';
 import { take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { DotLoginParams, HttpCode, LoggerService, LoginService, User } from '@dotcms/dotcms-js';
 import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
@@ -108,15 +106,6 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     onLanguageChange(lang: string): void {
         this.loginPageStateService.update(lang);
         this.dotMessageService.init({ language: lang });
-    }
-
-    /**
-     * Display the forgot password card
-     *
-     * @memberof DotLoginComponent
-     */
-    goToForgotPassword(): void {
-        this.dotRouterService.goToForgotPassword();
     }
 
     private setInitialFormValues(loginInfo: DotLoginInformation): void {

@@ -191,11 +191,16 @@ export class BubbleLinkFormComponent implements OnInit {
 
             case 'ArrowUp':
                 this.suggestionsComponent?.updateSelection(e);
-                break;
+
+                return false;
 
             case 'ArrowDown':
                 this.suggestionsComponent?.updateSelection(e);
-                break;
+
+                return false;
+
+            default:
+                return false;
         }
     }
 

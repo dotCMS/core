@@ -1,12 +1,12 @@
 package com.dotcms.api.client;
 
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
-import com.starxg.keytar.Keytar;
-import com.starxg.keytar.KeytarException;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -27,7 +27,7 @@ class HybridServiceManagerTest {
     @BeforeEach
     public void setupTest() throws IOException {
         Assertions.assertTrue(serviceManager instanceof HybridServiceManagerImpl);
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
     }
 
     /**
@@ -36,12 +36,13 @@ class HybridServiceManagerTest {
      * @throws IOException
      */
     @Test
-    void Test_Service_Manager_Resilence() throws IOException {
+    void Test_Service_Manager_Resilience() throws IOException {
         serviceManager.removeAll();
         Assert.assertTrue(serviceManager.services().isEmpty());
         final String key = "resilece-test";
         final ServiceBean serviceBean = ServiceBean.builder().name(key)
                 .active(true)
+                .url(new URL("http://localhost:8080"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
                                 .token(FAKE_TOKEN).build())

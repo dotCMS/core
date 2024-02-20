@@ -1,6 +1,7 @@
 import {
     ChangeDetectorRef,
     Component,
+    ElementRef,
     HostListener,
     Input,
     OnInit,
@@ -43,6 +44,7 @@ export enum ItemsType {
 })
 export class SuggestionsComponent implements OnInit {
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
+    @ViewChild('list', { static: false, read: ElementRef }) listElement: ElementRef;
 
     @Input() onSelectContentlet: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];

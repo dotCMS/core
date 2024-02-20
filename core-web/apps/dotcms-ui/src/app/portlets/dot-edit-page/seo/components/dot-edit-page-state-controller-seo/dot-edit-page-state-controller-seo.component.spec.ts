@@ -18,12 +18,15 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotCurrentUserService,
     DotDevicesService,
+    DotHttpErrorManagerService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
@@ -34,6 +37,8 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
+import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -41,6 +46,7 @@ import {
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
     getExperimentMock,
+    MockDotHttpErrorManagerService,
     MockDotMessageService,
     mockDotRenderedPage,
     mockUser
@@ -51,7 +57,6 @@ import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock
 import { DotEditPageStateControllerSeoComponent } from './dot-edit-page-state-controller-seo.component';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
-import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
@@ -109,11 +114,33 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     let dotPageStateService: DotPageStateService;
     let dialogService: DotAlertConfirmService;
     let personalizeService: DotPersonalizeService;
+    let propertiesService: DotPropertiesService;
+    let editContentletService: DotContentletEditorService;
+    let dotTabButtons: DotTabButtonsComponent;
+    let deDotTabButtons: DebugElement;
+
+    let featFlagMock: jasmine.Spy;
+
+    let pointerEvent: PointerEvent;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
             providers: [
+                DecimalPipe,
+                ConfirmationService,
+                DotCurrentUserService,
+                DotAlertConfirmService,
+                DotContentletEditorService,
+                DotPropertiesService,
+                {
+                    provide: CoreWebService,
+                    useClass: CoreWebServiceMock
+                },
+                {
+                    provide: DotDevicesService,
+                    useClass: DotDevicesServiceMock
+                },
                 {
                     provide: DotMessageService,
                     useValue: mockDotMessageService
@@ -126,19 +153,11 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     provide: DotPersonalizeService,
                     useClass: DotPersonalizeServiceMock
                 },
-                DotAlertConfirmService,
-                DecimalPipe,
-                { provide: LOCALE_ID, useValue: 'en-US' },
-                ConfirmationService,
                 {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
                 },
-                {
-                    provide: DotDevicesService,
-                    useClass: DotDevicesServiceMock
-                },
-                DotCurrentUserService
+                { provide: LOCALE_ID, useValue: 'en-US' }
             ],
             imports: [
                 InputSwitchModule,
@@ -167,10 +186,16 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         dotPageStateService = de.injector.get(DotPageStateService);
         dialogService = de.injector.get(DotAlertConfirmService);
         personalizeService = de.injector.get(DotPersonalizeService);
+        propertiesService = de.injector.get(DotPropertiesService);
+        editContentletService = de.injector.get(DotContentletEditorService);
 
         spyOn(component.modeChange, 'emit');
         spyOn(dotPageStateService, 'setLock');
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
+        featFlagMock = spyOn(propertiesService, 'getFeatureFlag').and.returnValue(of(false));
+
+        deDotTabButtons = de.query(By.css('[data-testId="dot-tabs-buttons"]'));
+        dotTabButtons = deDotTabButtons.componentInstance;
     });
 
     describe('elements', () => {
@@ -178,20 +203,25 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             it('should have mode selector', async () => {
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
                 await fixtureHost.whenRenderingDone();
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options).toEqual([
                     {
                         label: 'Edit',
-                        value: 'EDIT_MODE',
+                        value: {
+                            id: 'EDIT_MODE',
+                            showDropdownButton: false,
+                            shouldRefresh: false
+                        },
                         disabled: false
                     },
                     {
                         label: 'Preview',
-                        value: 'PREVIEW_MODE',
+                        value: {
+                            id: 'PREVIEW_MODE',
+                            showDropdownButton: true,
+                            shouldRefresh: true
+                        },
                         disabled: false
                     }
                 ]);
@@ -217,8 +247,44 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     'Page locked by Some One'
                 );
                 expect(lockerContainerDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
-                expect(locker.modelValue).toBe(false, 'checked');
+                expect(locker.modelValue).toBe(true, 'checked');
                 expect(locker.disabled).toBe(false, 'disabled');
+            });
+
+            it('should have the lock switch in the "on" state', async () => {
+                const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                    { ...mockUser(), userId: '456' },
+                    new DotPageRender(mockDotRenderedPage())
+                );
+                fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+                componentHost.variant = null;
+                componentHost.pageState.page.locked = true;
+                fixtureHost.detectChanges();
+                const lockerDe = de.query(By.css('[data-testId="lock-switch"]'));
+
+                const locker = lockerDe.componentInstance;
+
+                await fixtureHost.whenRenderingDone();
+
+                expect(locker.modelValue).toBeTruthy();
+            });
+
+            it('should have the lock switch in the "off" state', async () => {
+                const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                    { ...mockUser(), userId: '456' },
+                    new DotPageRender(mockDotRenderedPage())
+                );
+                fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+                componentHost.variant = null;
+                componentHost.pageState.state.locked = false;
+                fixtureHost.detectChanges();
+                const lockerDe = de.query(By.css('[data-testId="lock-switch"]'));
+
+                const locker = lockerDe.componentInstance;
+
+                await fixtureHost.whenRenderingDone();
+
+                expect(locker.modelValue).toBeFalsy();
             });
 
             it('should have lock info', () => {
@@ -233,19 +299,20 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 componentHost.pageState.page.canRead = false;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
 
                 fixtureHost.whenRenderingDone();
 
                 await expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options[1]).toEqual({
                     label: 'Preview',
-                    value: 'PREVIEW_MODE',
+                    value: {
+                        id: 'PREVIEW_MODE',
+                        showDropdownButton: true,
+                        shouldRefresh: true
+                    },
                     disabled: true
                 });
-                expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
+                expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
             });
 
             it('should disable edit', async () => {
@@ -253,27 +320,25 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 componentHost.pageState.page.canLock = false;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options[0]).toEqual({
                     label: 'Edit',
-                    value: 'EDIT_MODE',
+                    value: {
+                        id: 'EDIT_MODE',
+                        showDropdownButton: false,
+                        shouldRefresh: false
+                    },
                     disabled: true
                 });
-                expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
+                expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
             });
 
             it('should enable edit and preview when variant id different than original and draft', async () => {
                 fixtureHost.detectChanges();
                 componentHost.variant = dotVariantDataMock;
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
@@ -285,7 +350,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(editOption.disabled).toEqual(false);
                 expect(previewOption.disabled).toEqual(false);
 
-                expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
+                expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
             });
 
             it('should show only the preview tab when experiment is not Draft', async () => {
@@ -295,10 +360,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 };
                 fixtureHost.detectChanges();
 
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
-
                 await fixtureHost.whenRenderingDone();
 
                 expect(dotTabButtons).toBeDefined();
@@ -308,7 +369,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options.length).toEqual(1);
                 expect(previewOption.disabled).toEqual(false);
 
-                expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
+                expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
             });
 
             it('should show only the preview tab when variant is the default one', async () => {
@@ -318,10 +379,6 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 };
                 fixtureHost.detectChanges();
 
-                const dotTabButtons = de.query(
-                    By.css('[data-testId="dot-tabs-buttons"]')
-                ).componentInstance;
-
                 await fixtureHost.whenRenderingDone();
 
                 expect(dotTabButtons).toBeDefined();
@@ -331,7 +388,23 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options.length).toEqual(1);
                 expect(previewOption.disabled).toEqual(false);
 
-                expect(dotTabButtons.mode).toBe(DotPageMode.PREVIEW);
+                expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
+            });
+            it('should show only the preview tab when the page is blocked by another user', async () => {
+                componentHost.variant = {
+                    ...dotVariantDataMock
+                };
+                componentHost.pageState.state.lockedByAnotherUser = true;
+                fixtureHost.detectChanges();
+
+                await fixtureHost.whenRenderingDone();
+
+                const previewOption = dotTabButtons.options[0];
+
+                expect(dotTabButtons.options.length).toEqual(1);
+                expect(previewOption.disabled).toEqual(false);
+
+                expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
             });
         });
     });
@@ -340,10 +413,9 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         it('should without confirmation dialog emit modeChange and update pageState service', async () => {
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            deDotTabButtons.triggerEventHandler('clickOption', {
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -375,11 +447,11 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            deDotTabButtons.triggerEventHandler('clickOption', {
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
+
             await fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
@@ -398,10 +470,9 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            deDotTabButtons.triggerEventHandler('clickOption', {
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
 
             fixtureHost.whenStable();
@@ -438,10 +509,9 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            deDotTabButtons.triggerEventHandler('clickOption', {
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -476,10 +546,9 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             });
             fixtureHost.detectChanges();
 
-            const dotTabButtons = de.query(By.css('[data-testId="dot-tab-container"]'));
-            dotTabButtons.triggerEventHandler('click', {
-                target: { value: 'EDIT_MODE' },
-                value: DotPageMode.EDIT
+            deDotTabButtons.triggerEventHandler('clickOption', {
+                event: pointerEvent,
+                optionId: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -506,6 +575,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
         it('should call selected event', async () => {
             spyOn(dotPageStateService, 'setDevice');
+            spyOn(dotPageStateService, 'setSeoMedia');
             const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
             const event = {
                 identifier: 'string',
@@ -518,6 +588,117 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             dotSelector.triggerEventHandler('selected', event);
 
             expect(dotPageStateService.setDevice).toHaveBeenCalledWith(event);
+            expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith(null);
+        });
+    });
+    describe('page does not have URLContentMap and feature flag is on', () => {
+        beforeEach(() => {
+            featFlagMock.and.returnValue(of(true));
+
+            const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                { ...mockUser(), userId: '486' },
+                mockDotRenderedPage()
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+
+            fixtureHost.detectChanges();
+        });
+
+        it('should not have menuItems if page does not have URLContentMap', async () => {
+            expect(component.menuItems.length).toBe(0);
+        });
+    });
+
+    describe('feature flag edit URLContentMap is on', () => {
+        beforeEach(() => {
+            featFlagMock.and.returnValue(of('true'));
+
+            const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage(),
+                    urlContentMap: {
+                        title: 'Title',
+                        inode: '123',
+                        contentType: 'test'
+                    }
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+        });
+
+        it('should have menuItems if page has URLContentMap', async () => {
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(2);
+        });
+
+        it('should have preview and edit options with showDropdownButton setted to true', () => {
+            expect(component.options[0].value.showDropdownButton).toBe(true);
+            expect(component.options[1].value.showDropdownButton).toBe(true);
+        });
+
+        it("should change the mode when the user clicks on the 'Edit' option", () => {
+            component.menuItems[0].command();
+
+            expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+        });
+
+        it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
+            spyOn(editContentletService, 'edit');
+            component.menuItems[1].command();
+            expect(editContentletService.edit).toHaveBeenCalledWith({
+                data: {
+                    inode: '123'
+                }
+            });
+        });
+
+        it('should trigger resetDropdownById when menu hides', () => {
+            spyOn(dotTabButtons, 'resetDropdownById');
+
+            component.menu.onHide.emit();
+
+            expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.EDIT);
+        });
+
+        it('should trigger resetDropdownById when device selector hides', () => {
+            spyOn(dotTabButtons, 'resetDropdownById');
+
+            component.deviceSelector.hideOverlayPanel.emit();
+
+            expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.PREVIEW);
+        });
+
+        it('should have menuItems if the page goes from not having urlContentMap to having it', async () => {
+            let pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage()
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(0);
+
+            pageRenderStateMocked = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage(),
+                    urlContentMap: {
+                        title: 'Title',
+                        inode: '123',
+                        contentType: 'test'
+                    }
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(2);
         });
     });
 });

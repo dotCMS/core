@@ -77,13 +77,20 @@ public abstract class RestUtilTest extends UnitTestBase {
         };
 
         Config.CONTEXT=context;
+
         when(context.getInitParameter("company_id")).thenReturn(DEFAULT_COMPANY);
 
         LogMapper mockLogMapper = mock(LogMapper.class);
         when ( mockLogMapper.isLogEnabled( any() ) ).thenReturn( false );
 
         LogMapper.setLogMapper( mockLogMapper );
+
     }
+
+    public static void cleanupContext(){
+        Config.CONTEXT=null;
+    }
+
 
     public static WebResource getMockWebResource(final User user, final HttpServletRequest req) {
         WebResource webResource  = mock(WebResource.class);

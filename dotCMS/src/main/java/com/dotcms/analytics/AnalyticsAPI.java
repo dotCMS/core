@@ -21,6 +21,7 @@ public interface AnalyticsAPI {
 
     String ANALYTICS_USE_DUMMY_TOKEN_KEY = "analytics.use.dummy.token";
     String ANALYTICS_IDP_URL_KEY = "analytics.idp.url";
+    String ANALYTICS_ACCESS_TOKEN_KEY_PREFIX = "ANALYTICS_ACCESS_TOKEN";
 
     String ANALYTICS_ACCESS_TOKEN_TTL_KEY = "analytics.accesstoken.ttl";
     int ANALYTICS_ACCESS_TOKEN_TTL = Config.getIntProperty(
@@ -53,26 +54,36 @@ public interface AnalyticsAPI {
         .issueDate(Instant.now())
         .build();
 
+
     /**
-     * Fetches an {@link AccessToken} instance from cache falling back to get the access token
-     * from analytics IDP when not found int the cache.
+     * Fetches an {@link AccessToken} instance from cache.
      *
      * @param analyticsApp app to associate app's data with
      * @return the access token if found, otherwise null
      * @throws AnalyticsException if access token cannot be fetched
      */
-    AccessToken getAccessToken(AnalyticsApp analyticsApp);
+    AccessToken getCachedAccessToken(AnalyticsApp analyticsApp);
 
     /**
      * Fetches an {@link AccessToken} instance from cache falling back to get the access token
      * from analytics IDP when not found.
      *
      * @param analyticsApp app to associate app's data with
-     * @param fetchMode   fetch mode to use
+     * @param fetchMode fetch mode to use
      * @return the access token if found, otherwise null
      * @throws AnalyticsException if access token cannot be fetched
      */
     AccessToken getAccessToken(AnalyticsApp analyticsApp, AccessTokenFetchMode fetchMode) throws AnalyticsException;
+
+    /**
+     * Fetches an {@link AccessToken} instance from cache falling back to get the access token
+     * from analytics IDP when not found.
+     *
+     * @param analyticsApp app to associate app's data with
+     * @return the access token if found, otherwise null
+     * @throws AnalyticsException if access token cannot be fetched
+     */
+    AccessToken getAccessToken(AnalyticsApp analyticsApp) throws AnalyticsException;
 
     /**
      * Requests an {@link AccessToken} with associated analytics app data and saves it to be accessible when found.

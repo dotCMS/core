@@ -1,68 +1,34 @@
-import { Observable, forkJoin, from, of } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
-
+import { DotMessageService } from '@dotcms/data-access';
 import {
-    SeoMetaTags,
-    SEO_LIMITS,
-    SEO_OPTIONS,
-    SEO_RULES_COLORS,
-    SEO_RULES_ICONS,
-    SeoKeyResult,
-    SeoRulesResult,
+    SEO_MEDIA_TYPES,
     SeoMetaTagsResult,
     SeoMediaKeys,
+    SEO_OPTIONS,
+    OpenGraphOptions,
+    SeoMetaTags,
+    SeoRulesResult,
     ImageMetaData,
-    OpenGraphOptions
-} from '../dot-edit-content-html/models/meta-tags-model';
+    SEO_LIMITS,
+    IMG_NOT_FOUND_KEY
+} from '@dotcms/dotcms-models';
+
+import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
 
 @Injectable()
 export class DotSeoMetaTagsService {
+    readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
+    seoMedia: string;
+
     constructor(
         private dotMessageService: DotMessageService,
-        private dotUploadService: DotUploadService
+        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService
     ) {}
-
-    /**
-     * Get meta tags from the document
-     * @param pageDocument
-     * @returns
-     */
-    getMetaTags(pageDocument: Document): SeoMetaTags {
-        const metaTags = pageDocument.getElementsByTagName('meta');
-        const metaTagsObject = {};
-
-        for (const metaTag of metaTags) {
-            const name = metaTag.getAttribute('name');
-            const property = metaTag.getAttribute('property');
-            const content = metaTag.getAttribute('content');
-
-            const key = name ?? property;
-
-            if (key) {
-                metaTagsObject[key] = content;
-            }
-        }
-
-        const favicon = pageDocument.querySelectorAll('link[rel="icon"]');
-        const title = pageDocument.querySelectorAll('title');
-        const titleOgElements = pageDocument.querySelectorAll('meta[property="og:title"]');
-        const imagesOgElements = pageDocument.querySelectorAll('meta[property="og:image"]');
-
-        metaTagsObject['faviconElements'] = favicon;
-        metaTagsObject['titleElements'] = title;
-        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href;
-        metaTagsObject['title'] = title[0]?.innerText;
-        metaTagsObject['titleOgElements'] = titleOgElements;
-        metaTagsObject['imageOgElements'] = imagesOgElements;
-
-        return metaTagsObject;
-    }
 
     /**
      * Get the object with the SEO Result,
@@ -70,7 +36,7 @@ export class DotSeoMetaTagsService {
      * @returns
      */
     getMetaTagsResults(pageDocument: Document): Observable<SeoMetaTagsResult[]> {
-        const metaTagsObject = this.getMetaTags(pageDocument);
+        const metaTagsObject = this.dotSeoMetaTagsUtilService.getMetaTags(pageDocument);
         const ogMap = this.openGraphMap();
 
         const resolves = SeoMediaKeys.all.map((key) => ogMap[key]?.getItems(metaTagsObject));
@@ -78,16 +44,16 @@ export class DotSeoMetaTagsService {
         return forkJoin(resolves).pipe(
             map((resolve) => {
                 return resolve.map((items, index) => {
-                    const keysValues = this.getKeyValues(items);
+                    const keysValues = this.dotSeoMetaTagsUtilService.getKeyValues(items);
                     const key = SeoMediaKeys.all[index];
 
                     return {
                         key,
+                        title: key.replace('og:', '').replace('twitter:', ''),
                         keyIcon: keysValues.keyIcon,
                         keyColor: keysValues.keyColor,
                         items: items,
-                        sort: ogMap[key]?.sort,
-                        info: ogMap[key]?.info
+                        sort: ogMap[key]?.sort
                     };
                 });
             })
@@ -99,142 +65,236 @@ export class DotSeoMetaTagsService {
     private openGraphMap(): Record<SEO_OPTIONS, OpenGraphOptions> {
         return {
             [SEO_OPTIONS.FAVICON]: {
-                getItems: (metaTagsObject: SeoMetaTags) => of(this.getFaviconItems(metaTagsObject)),
-                sort: 1,
-                info: ''
+                getItems: (metaTagsObject: SeoMetaTags) => this.getFaviconItems(metaTagsObject),
+                sort: 1
             },
             [SEO_OPTIONS.DESCRIPTION]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getDescriptionItems(metaTagsObject)),
-                sort: 2,
-                info: this.dotMessageService.get('seo.rules.description.info')
+                sort: 3
             },
             [SEO_OPTIONS.OG_DESCRIPTION]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
-                    of(this.getDescriptionItems(metaTagsObject)),
-                sort: 3,
-                info: this.dotMessageService.get('seo.rules.description.info')
+                    of(this.getOgDescriptionItems(metaTagsObject)),
+                sort: 4
             },
             [SEO_OPTIONS.TITLE]: {
                 getItems: (metaTagsObject: SeoMetaTags) => of(this.getTitleItems(metaTagsObject)),
-                sort: 4,
-                info: this.dotMessageService.get('seo.rules.title.info')
+                sort: 2
             },
             [SEO_OPTIONS.OG_TITLE]: {
                 getItems: (metaTagsObject: SeoMetaTags) => of(this.getOgTitleItems(metaTagsObject)),
-                sort: 5,
-                info: this.dotMessageService.get('seo.rules.title.info')
+                sort: 2
             },
             [SEO_OPTIONS.OG_IMAGE]: {
                 getItems: (metaTagsObject: SeoMetaTags) => this.getOgImagesItems(metaTagsObject),
-                sort: 6,
-                info: ''
+                sort: 6
+            },
+            [SEO_OPTIONS.TWITTER_CARD]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    of(this.getTwitterCardItems(metaTagsObject)),
+                sort: 2
+            },
+            [SEO_OPTIONS.TWITTER_TITLE]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    of(this.getTwitterTitleItems(metaTagsObject)),
+                sort: 1
+            },
+            [SEO_OPTIONS.TWITTER_DESCRIPTION]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    of(this.getTwitterDescriptionItems(metaTagsObject)),
+                sort: 3
+            },
+            [SEO_OPTIONS.TWITTER_IMAGE]: {
+                getItems: (metaTagsObject: SeoMetaTags) =>
+                    this.getTwitterImageItems(metaTagsObject),
+                sort: 4
             }
         };
     }
 
-    /**
-     * Filter
-     * @param results
-     * @param seoMedia
-     * @returns
-     */
+    private getFaviconItems(metaTagsObject: SeoMetaTags): Observable<SeoRulesResult[]> {
+        const favicon = metaTagsObject['favicon'];
+        const faviconElements = metaTagsObject['faviconElements'];
 
-    getFilteredMetaTagsByMedia(
-        results: Observable<SeoMetaTagsResult[]>,
-        seoMedia: string
-    ): Observable<SeoMetaTagsResult[]> {
-        return results.pipe(
-            map((resultsArray) => {
-                return resultsArray
-                    .map((result) => result)
-                    .filter((result) =>
-                        SeoMediaKeys[seoMedia.toLowerCase()].includes(result.key.toLowerCase())
-                    )
-                    .sort((a, b) => a.sort - b.sort);
+        return this.dotSeoMetaTagsUtilService.getImageFileSize(favicon).pipe(
+            switchMap((imageMetaData: ImageMetaData) => {
+                const items: SeoRulesResult[] = [];
+                if (
+                    (faviconElements.length <= SEO_LIMITS.MAX_FAVICONS &&
+                        this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([favicon])) ||
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY
+                ) {
+                    items.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get('seo.rules.favicon.not.found')
+                        )
+                    );
+                }
+
+                if (faviconElements.length > SEO_LIMITS.MAX_FAVICONS) {
+                    items.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get('seo.rules.favicon.more.one.found')
+                        )
+                    );
+                }
+
+                if (
+                    favicon &&
+                    faviconElements.length === SEO_LIMITS.MAX_FAVICONS &&
+                    imageMetaData?.url !== IMG_NOT_FOUND_KEY
+                ) {
+                    items.push(
+                        this.dotSeoMetaTagsUtilService.getDoneItem(
+                            this.dotMessageService.get('seo.rules.favicon.found')
+                        )
+                    );
+                }
+
+                return of(items);
             })
         );
     }
 
-    private getFaviconItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
-        const items: SeoRulesResult[] = [];
-        const favicon = metaTagsObject['favicon'];
-        const faviconElements = metaTagsObject['faviconElements'];
+    private getOgDescriptionItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
+        const ogDescription = metaTagsObject['og:description'];
+        const description = metaTagsObject['description'];
+        const descriptionElements = metaTagsObject['descriptionElements'];
+        const descriptionOgElements = metaTagsObject['descriptionOgElements'];
 
-        if (faviconElements.length === 0) {
-            items.push({
-                message: this.dotMessageService.get('seo.rules.favicon.not.found'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
+        if (descriptionOgElements?.length > 1) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-description.more.one.found')
+                )
+            );
         }
 
-        if (faviconElements.length > SEO_LIMITS.MAX_FAVICONS) {
-            items.push({
-                message: this.dotMessageService.get('seo.rules.favicon.more.one.found'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
+        if (
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([
+                ogDescription,
+                descriptionOgElements,
+                description,
+                descriptionElements
+            ])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-description.description.not.found')
+                )
+            );
         }
 
-        if (favicon && faviconElements.length === SEO_LIMITS.MAX_FAVICONS) {
-            items.push({
-                message: this.dotMessageService.get('seo.rules.favicon.found'),
-                color: SEO_RULES_COLORS.DONE,
-                itemIcon: SEO_RULES_ICONS.CHECK
-            });
+        if (description && this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([ogDescription])) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-description.not.found')
+                )
+            );
         }
 
-        return items;
-    }
-
-    private getKeyValues(items: SeoRulesResult[]): SeoKeyResult {
-        let keyIcon = SEO_RULES_ICONS.CHECK_CIRCLE;
-        let keyColor = SEO_RULES_COLORS.DONE;
-
-        if (items?.some((item) => item.color === SEO_RULES_COLORS.WARNING)) {
-            keyIcon = SEO_RULES_ICONS.EXCLAMATION;
-            keyColor = SEO_RULES_COLORS.WARNING;
+        if (
+            descriptionOgElements?.length >= 1 &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([ogDescription])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-description.found.empty')
+                )
+            );
         }
 
-        if (items?.some((item) => item.color === SEO_RULES_COLORS.ERROR)) {
-            keyIcon = SEO_RULES_ICONS.EXCLAMATION;
-            keyColor = SEO_RULES_COLORS.ERROR;
+        if (ogDescription?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.og-description.less')
+                )
+            );
         }
 
-        return {
-            keyIcon,
-            keyColor
-        };
+        if (ogDescription?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.og-description.greater')
+                )
+            );
+        }
+
+        if (
+            ogDescription &&
+            ogDescription?.length >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
+            ogDescription?.length <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getDoneItem(
+                    this.dotMessageService.get('seo.rules.og-description.found')
+                )
+            );
+        }
+
+        return result;
     }
 
     private getDescriptionItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
         const result: SeoRulesResult[] = [];
-        const ogDescription = metaTagsObject['og:description'];
         const description = metaTagsObject['description'];
+        const descriptionElements = metaTagsObject['descriptionElements'];
 
-        if (!ogDescription && description) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.description.not.found'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
+        if (descriptionElements?.length > 1) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.description.more.one.found')
+                )
+            );
         }
 
-        if (ogDescription && ogDescription.length === 0) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.description.found.empty'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
+        if (this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([description, descriptionElements])) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.description.not.found')
+                )
+            );
         }
 
-        if (ogDescription && ogDescription.length > 0) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.description.found'),
-                color: SEO_RULES_COLORS.DONE,
-                itemIcon: SEO_RULES_ICONS.CHECK
-            });
+        if (
+            descriptionElements.length >= 1 &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([description])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.description.found.empty')
+                )
+            );
+        }
+
+        if (description?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.description.less')
+                )
+            );
+        }
+
+        if (description?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.description.greater')
+                )
+            );
+        }
+
+        if (
+            description &&
+            description?.length >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
+            description?.length <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getDoneItem(
+                    this.dotMessageService.get('seo.rules.description.found')
+                )
+            );
         }
 
         return result;
@@ -245,48 +305,59 @@ export class DotSeoMetaTagsService {
         const title = metaTagsObject['title'];
         const titleElements = metaTagsObject['titleElements'];
 
-        if (!titleElements) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.title.not.found'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
+        if (this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([title, titleElements])) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.title.not.found')
+                )
+            );
+        }
+
+        if (
+            titleElements?.length >= 1 &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([title])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.title.found.empty')
+                )
+            );
         }
 
         if (titleElements?.length > 1) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.title.more.one.found'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.title.more.one.found')
+                )
+            );
         }
 
-        if (title?.length > SEO_LIMITS.MAX_TITLE_LENGTH) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.title.greater'),
-                color: SEO_RULES_COLORS.WARNING,
-                itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
-            });
+        if (title?.length > SEO_LIMITS.MAX_OG_TITLE_LENGTH) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.title.greater')
+                )
+            );
         }
 
-        if (title?.length < SEO_LIMITS.MIN_TITLE_LENGTH) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.title.less'),
-                color: SEO_RULES_COLORS.WARNING,
-                itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
-            });
+        if (title?.length < SEO_LIMITS.MIN_OG_TITLE_LENGTH) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.title.less')
+                )
+            );
         }
 
         if (
             titleElements?.length === SEO_LIMITS.MAX_TITLES &&
-            title?.length < SEO_LIMITS.MAX_TITLE_LENGTH &&
-            title?.length > SEO_LIMITS.MIN_TITLE_LENGTH
+            title?.length <= SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
+            title?.length >= SEO_LIMITS.MIN_OG_TITLE_LENGTH
         ) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.title.found'),
-                color: SEO_RULES_COLORS.DONE,
-                itemIcon: SEO_RULES_ICONS.CHECK
-            });
+            result.push(
+                this.dotSeoMetaTagsUtilService.getDoneItem(
+                    this.dotMessageService.get('seo.rules.title.found')
+                )
+            );
         }
 
         return result;
@@ -295,50 +366,81 @@ export class DotSeoMetaTagsService {
     private getOgTitleItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
         const result: SeoRulesResult[] = [];
         const titleOgElements = metaTagsObject['titleOgElements'];
+        const titleElements = metaTagsObject['titleElements'];
         const titleOg = metaTagsObject['og:title'];
+        const title = metaTagsObject['title'];
 
-        if (!titleOgElements) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.image.not.found'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
+        if (
+            title &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([titleOg, titleOgElements])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-title.not.found')
+                )
+            );
+        }
+
+        if (
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([
+                title,
+                titleOg,
+                titleElements,
+                titleOgElements
+            ])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-title.not.found.title')
+                )
+            );
+        }
+
+        if (
+            titleOgElements?.length >= 1 &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([titleOg])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-title.found.empty')
+                )
+            );
         }
 
         if (titleOgElements?.length > 1) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.og-title.more.one.found'),
-                color: SEO_RULES_COLORS.ERROR,
-                itemIcon: SEO_RULES_ICONS.TIMES
-            });
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-title.more.one.found')
+                )
+            );
         }
 
         if (titleOg?.length < SEO_LIMITS.MIN_OG_TITLE_LENGTH) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.og-title.less'),
-                color: SEO_RULES_COLORS.WARNING,
-                itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
-            });
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.og-title.less')
+                )
+            );
         }
 
         if (titleOg?.length > SEO_LIMITS.MAX_OG_TITLE_LENGTH) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.og-title.greater'),
-                color: SEO_RULES_COLORS.WARNING,
-                itemIcon: SEO_RULES_ICONS.EXCLAMATION_CIRCLE
-            });
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.og-title.greater')
+                )
+            );
         }
 
         if (
             titleOg &&
-            titleOg?.length < SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
-            titleOg?.length > SEO_LIMITS.MIN_OG_TITLE_LENGTH
+            titleOg?.length <= SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
+            titleOg?.length >= SEO_LIMITS.MIN_OG_TITLE_LENGTH
         ) {
-            result.push({
-                message: this.dotMessageService.get('seo.rules.og-image.found'),
-                color: SEO_RULES_COLORS.DONE,
-                itemIcon: SEO_RULES_ICONS.CHECK
-            });
+            result.push(
+                this.dotSeoMetaTagsUtilService.getDoneItem(
+                    this.dotMessageService.get('seo.rules.og-title.found')
+                )
+            );
         }
 
         return result;
@@ -348,32 +450,49 @@ export class DotSeoMetaTagsService {
         const imageOgElements = metaTagsObject['imageOgElements'];
         const imageOg = metaTagsObject['og:image'];
 
-        return this.getImageFileSize(imageOg).pipe(
-            switchMap((imageMetaData) => {
+        return this.dotSeoMetaTagsUtilService.getImageFileSize(imageOg).pipe(
+            switchMap((imageMetaData: ImageMetaData) => {
                 const result: SeoRulesResult[] = [];
 
-                if (imageOg && imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES) {
-                    result.push({
-                        message: this.dotMessageService.get('seo.rules.og-image.found'),
-                        color: SEO_RULES_COLORS.DONE,
-                        itemIcon: SEO_RULES_ICONS.CHECK
-                    });
+                if (
+                    imageMetaData?.url !== IMG_NOT_FOUND_KEY &&
+                    imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES
+                ) {
+                    result.push(
+                        this.dotSeoMetaTagsUtilService.getDoneItem(
+                            this.dotMessageService.get('seo.rules.og-image.found')
+                        )
+                    );
                 }
 
-                if (!imageOgElements) {
-                    result.push({
-                        message: this.dotMessageService.get('seo.rules.og-image.not.found'),
-                        color: SEO_RULES_COLORS.ERROR,
-                        itemIcon: SEO_RULES_ICONS.TIMES
-                    });
+                if (
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY ||
+                    this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([imageOgElements, imageOg])
+                ) {
+                    result.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get('seo.rules.og-image.not.found')
+                        )
+                    );
+                }
+
+                if (
+                    imageOgElements?.length >= 1 &&
+                    this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([imageOg])
+                ) {
+                    result.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get('seo.rules.og-image.more.one.found.empty')
+                        )
+                    );
                 }
 
                 if (imageOgElements?.length > 1) {
-                    result.push({
-                        message: this.dotMessageService.get('seo.rules.og-image.more.one.found'),
-                        color: SEO_RULES_COLORS.ERROR,
-                        itemIcon: SEO_RULES_ICONS.TIMES
-                    });
+                    result.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get('seo.rules.og-image.more.one.found')
+                        )
+                    );
                 }
 
                 return of(result);
@@ -381,29 +500,299 @@ export class DotSeoMetaTagsService {
         );
     }
 
-    /**
-     * This uploads the image temporaly to get the file size, only if it is external
-     * @param imageUrl string
-     * @returns
-     */
-    getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
-        return from(
-            fetch(imageUrl)
-                .then((response) => response.blob())
-                .then((blob) => {
-                    return {
-                        length: blob.size,
-                        url: imageUrl
-                    };
-                })
-                .catch((error) => {
-                    console.warn(
-                        'Getting the file size from an external URL failed, so we upload it to the server:',
-                        error
-                    );
+    private getTwitterCardItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
+        const twitterCardElements = metaTagsObject['twitterCardElements'];
+        const twitterCard = metaTagsObject['twitter:card'];
 
-                    return this.dotUploadService.uploadFile({ file: imageUrl });
-                })
+        if (this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([twitterCard, twitterCardElements])) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card.not.found')
+                )
+            );
+        }
+
+        if (
+            twitterCardElements.length >= 1 &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([twitterCard])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card.more.one.found.empty')
+                )
+            );
+        }
+
+        if (twitterCardElements?.length > 1) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card.more.one.found')
+                )
+            );
+        }
+
+        if (twitterCard) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getDoneItem(
+                    this.dotMessageService.get('seo.rules.twitter-card.found')
+                )
+            );
+        }
+
+        return result;
+    }
+
+    private getTwitterTitleItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
+        const titleCardElements = metaTagsObject['twitterTitleElements'];
+        const titleCard = metaTagsObject['twitter:title'];
+        const titleOg = metaTagsObject['og:title'];
+        const titleOgElements = metaTagsObject['titleOgElements'];
+        const title = metaTagsObject['title'];
+        const titleElements = metaTagsObject['titleElements'];
+
+        if (
+            (title || titleOg) &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([titleCard, titleCardElements])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-title.not.found')
+                )
+            );
+        }
+
+        if (
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([
+                title,
+                titleCard,
+                titleElements,
+                titleCardElements,
+                titleOgElements,
+                titleOg
+            ])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-title.title.not.found')
+                )
+            );
+        }
+
+        if (titleCardElements?.length > 1) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-title.more.one.found')
+                )
+            );
+        }
+
+        if (
+            titleCardElements.length >= 1 &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([titleCard])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-title.found.empty')
+                )
+            );
+        }
+
+        if (titleCard?.length < SEO_LIMITS.MIN_TWITTER_TITLE_LENGTH) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.twitter-card.title.less')
+                )
+            );
+        }
+
+        if (titleCard?.length > SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.twitter-card.title.greater')
+                )
+            );
+        }
+
+        if (
+            titleCard &&
+            titleCard?.length >= SEO_LIMITS.MIN_TWITTER_TITLE_LENGTH &&
+            titleCard?.length <= SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getDoneItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-title.found')
+                )
+            );
+        }
+
+        return result;
+    }
+
+    private getTwitterDescriptionItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
+        const result: SeoRulesResult[] = [];
+        const twitterDescriptionElements = metaTagsObject['twitterDescriptionElements'];
+        const twitterDescription = metaTagsObject['twitter:description'];
+        const ogDescriptionElements = metaTagsObject['descriptionOgElements'];
+        const ogDescription = metaTagsObject['og:description'];
+        const descriptionElements = metaTagsObject['descriptionElements'];
+        const description = metaTagsObject['description'];
+
+        if (
+            (description || ogDescription) &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([
+                twitterDescription,
+                twitterDescriptionElements
+            ])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-description.not.found')
+                )
+            );
+        }
+
+        if (
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([
+                twitterDescription,
+                twitterDescriptionElements,
+                ogDescriptionElements,
+                descriptionElements,
+                ogDescription,
+                description
+            ])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get(
+                        'seo.rules.twitter-card-description.description.not.found'
+                    )
+                )
+            );
+        }
+
+        if (twitterDescriptionElements.length > 1) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-description.more.one.found')
+                )
+            );
+        }
+
+        if (
+            twitterDescriptionElements.length >= 1 &&
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([twitterDescription])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get(
+                        'seo.rules.twitter-card-description.more.one.found.empty'
+                    )
+                )
+            );
+        }
+
+        if (
+            twitterDescription &&
+            twitterDescription.length > SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-description.greater')
+                )
+            );
+        }
+
+        if (
+            twitterDescription &&
+            twitterDescription.length < SEO_LIMITS.MIN_TWITTER_DESCRIPTION_LENGTH
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getWarningItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-description.less')
+                )
+            );
+        }
+
+        if (
+            twitterDescription &&
+            twitterDescription?.length >= SEO_LIMITS.MIN_TWITTER_DESCRIPTION_LENGTH &&
+            twitterDescription?.length <= SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getDoneItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-description.found')
+                )
+            );
+        }
+
+        return result;
+    }
+
+    private getTwitterImageItems(metaTagsObject: SeoMetaTags): Observable<SeoRulesResult[]> {
+        const twitterImageElements = metaTagsObject['twitterImageElements'];
+        const twitterImage = metaTagsObject['twitter:image'];
+
+        return this.dotSeoMetaTagsUtilService.getImageFileSize(twitterImage).pipe(
+            switchMap((imageMetaData: ImageMetaData) => {
+                const result: SeoRulesResult[] = [];
+                if (
+                    imageMetaData?.url !== IMG_NOT_FOUND_KEY &&
+                    imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES
+                ) {
+                    result.push(
+                        this.dotSeoMetaTagsUtilService.getDoneItem(
+                            this.dotMessageService.get('seo.rules.twitter-image.found')
+                        )
+                    );
+                }
+
+                if (
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY ||
+                    this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([
+                        twitterImage,
+                        twitterImageElements
+                    ])
+                ) {
+                    result.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get('seo.rules.twitter-image.not.found')
+                        )
+                    );
+                }
+
+                if (
+                    twitterImageElements?.length >= 1 &&
+                    this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([twitterImage])
+                ) {
+                    result.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get(
+                                'seo.rules.twitter-image.more.one.found.empty'
+                            )
+                        )
+                    );
+                }
+
+                if (twitterImageElements?.length > 1) {
+                    result.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get('seo.rules.twitter-image.more.one.found')
+                        )
+                    );
+                }
+
+                if (imageMetaData.length > SEO_LIMITS.MAX_TWITTER_IMAGE_BYTES) {
+                    result.push(
+                        this.dotSeoMetaTagsUtilService.getDoneItem(
+                            this.dotMessageService.get('seo.rules.twitter-image.over')
+                        )
+                    );
+                }
+
+                return of(result);
+            })
         );
     }
 }

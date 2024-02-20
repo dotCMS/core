@@ -16,7 +16,7 @@ import { CardModule } from 'primeng/card';
 import { DropdownModule } from 'primeng/dropdown';
 import { Sidebar } from 'primeng/sidebar';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
     DefaultGoalConfiguration,
     ExperimentSteps,
@@ -32,7 +32,6 @@ import {
     MockDotMessageService
 } from '@dotcms/utils-testing';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiments-configuration-goal-select.component';
 
@@ -386,14 +385,11 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(reachPageOptionContent).toHaveClass('expanded');
     });
 
-    it('should emit closedSidebar when the sidebar its closed', (done) => {
+    it('should emit closedSidebar when the sidebar its closed', () => {
+        spectator.detectChanges();
+
         sidebar = spectator.query(Sidebar);
         jest.spyOn(spectator.component, 'closeSidebar');
-
-        sidebar.onHide.subscribe(() => {
-            expect(spectator.component.closeSidebar).toHaveBeenCalled();
-            done();
-        });
 
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.GOAL,

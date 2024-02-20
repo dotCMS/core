@@ -12,6 +12,7 @@ import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Identifier;
@@ -36,6 +37,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
@@ -249,10 +251,13 @@ public class ContentResource {
     }
 
     /**
-     * Retrieve a contentlet if exists, 404 otherwise
-     * @param request
-     * @param response
-     * @return Retrieve single contentlet
+     * Retrieves a Contentlet based on either its Inode or Identifier. If it doesn't exist, a 404
+     * will be returned.
+     *
+     * @param request  The current {@link HttpServletRequest} instance.
+     * @param response The current {@link HttpServletResponse} instance.
+     *
+     * @return The {@link Contentlet} matching the Inode or Identifier.
      */
     @GET
     @Path("/{inodeOrIdentifier}")
@@ -275,12 +280,17 @@ public class ContentResource {
         final String inode    = idOrInode._2();
         final PageMode mode   = PageMode.get(request);
         final long languageId = LanguageUtil.getLanguageId(language);
-
-        return Response.ok(new ResponseEntityView(
-                WorkflowHelper.getInstance().contentletToMap(
-                        this.getContentlet(inode, id, languageId,
-                                ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                                initDataObject, mode)))).build();
+        Contentlet contentlet = this.getContentlet(inode, id, languageId,
+                ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                initDataObject, mode);
+        final int depth = ConversionUtils.toInt(request.getParameter(WebKeys.HTMLPAGE_DEPTH), -1);
+        if (-1 != depth) {
+            ContentUtils.addRelationships(contentlet, initDataObject.getUser(), mode,
+                    languageId, depth, request, response);
+        }
+        contentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
+        return Response.ok(new ResponseEntityView<>(
+                WorkflowHelper.getInstance().contentletToMap(contentlet))).build();
     }
 
     @GET

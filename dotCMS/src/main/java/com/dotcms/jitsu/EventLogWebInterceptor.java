@@ -3,11 +3,13 @@ package com.dotcms.jitsu;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
-import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -19,8 +21,9 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedReader;
@@ -50,6 +53,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
 
     private final EventLogSubmitter submitter;
     private final Lazy<String> jitsuLib;
+    private final ExperimentsAPI experimentsAPI = APILocator.getExperimentsAPI();
 
     public EventLogWebInterceptor() {
         submitter = new EventLogSubmitter();
@@ -104,7 +108,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
         final String requestPayload = IOUtils.toString(request.getReader());
         final String realIp = request.getRemoteAddr();
         final Map<String, Object> requestJsonPayload = JsonUtil.getJsonFromString(requestPayload);
-        final List<Map<String, String>> experiments = (List<Map<String, String>>) requestJsonPayload.get("experiments");
+        final List<Map<String, Object>> experiments = (List<Map<String, Object>>) requestJsonPayload.get("experiments");
 
         if (!UtilMethods.isSet(experiments)) {
             return;
@@ -123,22 +127,32 @@ public class EventLogWebInterceptor implements WebInterceptor {
                 WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
         //eventPayload.put("clusterId", ClusterFactory.getClusterId());
 
-        for (final Map<String, String> experiment : experiments) {
-            eventPayload.addExperiment(
-                    experiment.get("experiment"),
-                    experiment.get("runningId"),
-                    experiment.get("variant"),
-                    experiment.get("lookBackWindow"));
-        }
-
         try {
-            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-            this.submitter.logEvent(host, eventPayload);
+
+            addRunningExperimentAsPayload(experiments, eventPayload);
+
+            if (!eventPayload.isEmpty()) {
+                final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+                this.submitter.logEvent(host, eventPayload);
+            }
         } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
             Logger.error(this, "Error resolving current host", e);
         } catch(Exception e) {
             Logger.error(this, "Could not submit event log", e);
 
+        }
+    }
+
+    private void addRunningExperimentAsPayload(List<Map<String, Object>> experiments, EventsPayload eventPayload) throws DotDataException {
+        final Collection<String> runningExperimentIds = experimentsAPI.getRunningExperiments().stream()
+                .map(Experiment::getIdentifier)
+                .collect(Collectors.toSet());
+
+
+        for (final Map<String, Object> experiment : experiments) {
+            if (runningExperimentIds.contains(experiment.get("experiment"))) {
+                eventPayload.addExperiment(experiment);
+            }
         }
     }
 

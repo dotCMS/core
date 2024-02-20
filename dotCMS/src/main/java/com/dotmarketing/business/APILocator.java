@@ -26,7 +26,18 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPIImpl;
+import com.dotcms.contenttype.business.DotAssetAPI;
+import com.dotcms.contenttype.business.DotAssetAPIImpl;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.contenttype.business.StoryBlockAPI;
+import com.dotcms.contenttype.business.StoryBlockAPIImpl;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -189,7 +200,7 @@ public class APILocator extends Locator<APIIndex> {
 			return;
 		}
 
-		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
+		final String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
 		if (apiLocatorClass != null) {
 			instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
 		}

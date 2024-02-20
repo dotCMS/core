@@ -5,14 +5,18 @@ import { TestBed } from '@angular/core/testing';
 
 import { take } from 'rxjs/operators';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { DotCurrentUserService, DotLicenseService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotLicenseService,
+    PushPublishService,
+    DotFormatDateService
+} from '@dotcms/data-access';
 import {
     ApiRoot,
     CoreWebService,
     DotcmsConfigService,
     LoggerService,
+    LoginService,
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
@@ -49,6 +53,10 @@ describe('DotTemplateListResolverService', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });
