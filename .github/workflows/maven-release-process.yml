@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       release_version: ${{ steps.set-common-vars.outputs.release_version }}
+      release_branch: ${{ steps.set-common-vars.outputs.release_branch }}
       release_tag: ${{ steps.set-common-vars.outputs.release_tag }}
       release_commit: ${{ steps.set-release-version.outputs.release_commit }}
       date: ${{ steps.set-common-vars.outputs.date }}
@@ -353,13 +354,33 @@ jobs:
 
       - uses: ./.github/actions/cleanup-runner
 
-      - name: Set Next Version
+      - name: Attempt Merge
         run: |
           git config user.name "${{ secrets.CI_MACHINE_USER }}"
           git config user.email "dotCMS-Machine-User@dotcms.com"
           git config pull.rebase false
-          git cherry-pick ${{ needs.prepare-release.outputs.release_commit }} --strategy-option ours
           
+          git merge --strategy-option ours origin/${{ needs.prepare-release.outputs.release_branch }}
+
+      - name: Resolve Conflicts
+        run: |
+          git status | grep "deleted by us:" | sed 's/deleted by us://g' | while read -r file; do
+            rm "$file"
+            git add "$file"
+          done
+
+          git status | grep "added by them:" | sed 's/added by them://g' | while read -r file; do
+            git add "$file"
+          done
+
+          GIT_EDITOR_BAK=${GIT_EDITOR}
+          export GIT_EDITOR=/bin/true
+          git merge --continue
+          export GIT_EDITOR=${GIT_EDITOR_BAK}
+        if: failure()
+
+      - name: Set Next Version
+        run: |
           next_version=${{ env.NEXT_VERSION }}
 
           ./mvnw -ntp \
@@ -380,6 +401,7 @@ jobs:
           git status
           git commit -a -m "Setting to next version: [${next_version}]"
           git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+        if: success() || failure()
 
       #      - name: Fetch `Next Release` issues
       #        id: fetch-next-release-issues
@@ -408,15 +430,15 @@ jobs:
       #          github_token: ${{ secrets.GITHUB_TOKEN }}
       #        if: github.event.inputs.update_github_labels == 'true'
 
-      - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotBot
-          SLACK_TITLE: "Important news!"
-          SLACK_MSG_AUTHOR: " "
-          MSG_MINIMAL: true
-          SLACK_FOOTER: ""
-          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.prepare-release.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.build-push-image.outputs.formatted_tags }}]"
-        if: success()
+#      - name: Slack Notification
+#        uses: rtCamp/action-slack-notify@v2
+#        env:
+#          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+#          SLACK_USERNAME: dotBot
+#          SLACK_TITLE: "Important news!"
+#          SLACK_MSG_AUTHOR: " "
+#          MSG_MINIMAL: true
+#          SLACK_FOOTER: ""
+#          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
+#          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.prepare-release.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.build-push-image.outputs.formatted_tags }}]"
+#        if: success()
