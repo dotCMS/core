@@ -331,7 +331,7 @@ describe('EmaPageDropzoneComponent', () => {
             expect(spectator.component.place.emit).not.toHaveBeenCalled();
             expect(spyDotMessageSerivice).toHaveBeenCalledWith(
                 'edit.ema.page.dropzone.max.contentlets',
-                2
+                '2'
             );
         });
 
@@ -382,7 +382,7 @@ describe('EmaPageDropzoneComponent', () => {
             expect(spectator.component.place.emit).not.toHaveBeenCalled();
             expect(spyDotMessageSerivice).toHaveBeenCalledWith(
                 'edit.ema.page.dropzone.one.max.contentlet',
-                1
+                '1'
             );
         });
 

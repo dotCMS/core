@@ -37,7 +37,7 @@ export class DotErrorPipe implements PipeTransform {
 
             return {
                 message,
-                args: [maxContentlets]
+                args: [maxContentlets.toString()]
             };
         }
 

@@ -330,6 +330,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         };
 
         const item = JSON.parse(dataset.item);
+
         this.dragItem = {
             baseType: item.baseType,
             contentType: item.contentType
