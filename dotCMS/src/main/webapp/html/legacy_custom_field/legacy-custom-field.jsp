@@ -118,7 +118,8 @@
         // 2. Add event listener to the fields
         fields.forEach(({ variable }) => {
             const input = dojo.byId(variable);
-            input.addEventListener('change', (event) => console.log(event)); // Handle the `dojo.byId(variable).setValue()` case
+            // input.addEventListener('change', (event) => console.log(event)); // Handle the `dojo.byId(variable).setValue()` case
+            // input.addEventListener('input', (event) => console.log(event)); // Handle the `dojo.byId(variable).setValue()` case
             addCustomValueProperty(input, variable); // Handle the `dojo.byId(variable).value` case
         });
     });
@@ -270,7 +271,6 @@
 %>
                     <body>
                         <script>
-                            // Global 
                             const fields = Object.values(<%= fieldJson %>);
                             const bodyElement = document.querySelector('body');
                             // 1. Create field in local enviroment (Iframe)
@@ -284,7 +284,6 @@
                                 bodyElement.appendChild(input);
                             });
                         </script>
-                        
                         <%= HTMLString %>
                     </body>
 <%
