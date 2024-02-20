@@ -22,6 +22,7 @@ import com.dotcms.model.pull.PullOptions;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -69,6 +70,7 @@ class PullServiceIT {
         serviceManager.removeAll().persist(
                 ServiceBean.builder().
                         name("default").
+                        url(new URL("http://localhost:8080")).
                         active(true).
                         build()
         );

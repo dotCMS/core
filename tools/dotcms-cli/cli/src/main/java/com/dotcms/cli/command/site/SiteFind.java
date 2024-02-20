@@ -4,12 +4,13 @@ import com.dotcms.api.SiteAPI;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
 import java.util.List;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import com.dotcms.cli.common.Prompt;
+import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
@@ -55,6 +56,9 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, 
     @ConfigProperty(name = "site.pageSize", defaultValue = "25")
     Integer pageSize;
 
+    @Inject
+    Prompt prompt;
+
     @Override
     public Integer call() {
 
@@ -93,7 +97,7 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, 
                 break;
             }
             page++;
-            if(interactiveOption.isInteractive() && !Prompt.yesOrNo(true,"Load next page? y/n: ")){
+            if(interactiveOption.isInteractive() && !prompt.yesOrNo(true,"Load next page? y/n: ")){
                 break;
             }
         }

@@ -51,7 +51,11 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Maintenance (portlet) resource.
+ * This REST Endpoint exposes all the different features displayed in the <b>Maintenance</b> portlet
+ * inside the dotCMS back-end.
+ *
+ * @author Will Ezell
+ * @since Oct 21st, 2020
  */
 @Path("/v1/maintenance")
 @SuppressWarnings("serial")
@@ -114,7 +118,7 @@ public class MaintenanceResource implements Serializable {
                         TimeUnit.SECONDS
                 );
 
-        return Response.ok(new ResponseEntityView("Shutdown")).build();
+        return Response.ok(new ResponseEntityView<>("Shutdown")).build();
     }
 
     /**
@@ -148,7 +152,7 @@ public class MaintenanceResource implements Serializable {
             return Response.status(Status.FORBIDDEN).build();
         }
         ClusterManagementTopic.getInstance().restartCluster(rollingDelay);
-        return Response.ok(new ResponseEntityView("Shutdown")).build();
+        return Response.ok(new ResponseEntityView<>("Shutdown")).build();
     }
     
     /**
@@ -331,8 +335,8 @@ public class MaintenanceResource implements Serializable {
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveStarterFileName();
-        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s' with [ includeAssets = %s ]", user.getUserId(),
-                zipName, includeAssets));
+        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s' with [ includeAssets = %s ] [ oldAssets = %s ]", user.getUserId(),
+                zipName, includeAssets, oldAssets));
 
         final StreamingOutput stream = output -> {
 

@@ -1,4 +1,4 @@
-package com.dotcms.cli.common;
+package com.dotcms.cli.exception;
 
 import io.smallrye.config.ConfigMapping;
 import java.util.Map;

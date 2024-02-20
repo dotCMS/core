@@ -285,7 +285,7 @@ public class PushServiceImpl implements PushService {
                     for (final var error : errors) {
                         c++;
                         output.handleCommandException(error,
-                                String.format("%s %n", error.getMessage()), c == count);
+                                String.format("%s %n", error.getMessage()), c >= count);
                     }
                 }
 

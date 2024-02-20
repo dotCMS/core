@@ -10,6 +10,7 @@ import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
@@ -36,7 +37,8 @@ class FolderAPIT {
 
     @BeforeEach
     public void setupTest() throws IOException {
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default")
+                .url(new URL("http://localhost:8080")).active(true).build());
 
         final String user = "admin@dotcms.com";
         final char[] passwd = "admin".toCharArray();

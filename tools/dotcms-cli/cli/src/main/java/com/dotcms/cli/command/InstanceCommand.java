@@ -1,16 +1,12 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.api.client.model.DotCmsClientConfig;
+import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
+
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.ServiceBean;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -18,10 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -47,9 +43,6 @@ public class InstanceCommand implements Callable<Integer>, DotCommand {
     @CommandLine.Mixin
     HelpOptionMixin helpOption;
 
-    @Inject
-    DotCmsClientConfig clientConfig;
-
     @SecuredPassword
     @Inject
     ServiceManager serviceManager;
@@ -66,51 +59,37 @@ public class InstanceCommand implements Callable<Integer>, DotCommand {
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
 
-        final Map<String, URI> servers = clientConfig.servers();
-        if (servers.isEmpty()) {
-            output.error(
-                    "No dotCMS instances are configured. They should be included in the application.properties or via .env file.");
-            return ExitCode.SOFTWARE;
-        } else {
+        final List<ServiceBean> services = serviceManager.services();
 
-            final List<ServiceBean> services = serviceManager.services();
-            final Map<String, ServiceBean> serviceBeanByName = services.stream()
-                    .collect(Collectors.toMap(ServiceBean::name, Function.identity(),
-                            (serviceBean1, serviceBean2) -> serviceBean1));
+        output.info("Available registered dotCMS servers.");
 
-                output.info("Available registered dotCMS servers.");
+        for (final ServiceBean serviceBean : services) {
+            final String color = serviceBean.active() ? "green" : "blue";
+            output.info(String.format(
+                    " Profile [@|bold,underline,%s %s|@], Uri [@|bold,underline,%s %s|@], active [@|bold,underline,%s %s|@]. ",
+                    color, serviceBean.name(), color, serviceBean.url(), color,
+                    toStringYesNo(serviceBean.active())));
+        }
 
-                for (final Map.Entry<String, URI> entry : servers.entrySet()) {
-                    final String suffix = entry.getKey();
-                    final URI uri = entry.getValue();
-                    final boolean active =
-                            serviceBeanByName.containsKey(suffix) && serviceBeanByName.get(suffix)
-                                    .active();
-                    final String color = active ? "green" : "blue";
-
-                    output.info(String.format(
-                            " Profile [@|bold,underline,%s %s|@], Uri [@|bold,underline,%s %s|@], active [@|bold,underline,%s %s|@]. ",
-                            color, suffix, color, uri, color, toStringYesNo(active)));
-                }
-
-            if (null != activate) {
-
-                final List<ServiceBean> beans = beansList(servers, serviceBeanByName);
-                Optional<ServiceBean> optional = get(activate, beans);
-                if (optional.isEmpty()) {
-                    // The selected option is not valid
-                    output.error(String.format(" The instance name [%s] does not match any configured server! Use --list option. ", activate));
-                    return ExitCode.SOFTWARE;
-                } else {
-                    ServiceBean serviceBean = optional.get();
-                    serviceBean = serviceBean.withActive(true);
-                    serviceManager.persist(serviceBean);
-                    output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active one.", activate));
-                }
+        if (null != activate) {
+            Optional<ServiceBean> optional = get(activate, services);
+            if (optional.isEmpty()) {
+                // The selected option is not valid
+                output.error(String.format(
+                        " The instance name [%s] does not match any configured server! Use --list option. ",
+                        activate));
+                return ExitCode.SOFTWARE;
+            } else {
+                ServiceBean serviceBean = optional.get();
+                serviceBean = serviceBean.withActive(true);
+                serviceManager.persist(serviceBean);
+                output.info(String.format(
+                        " The instance name [@|bold,underline,green %s|@] is now the active one.",
+                        activate));
             }
         }
 
-      return ExitCode.OK;
+        return ExitCode.OK;
     }
 
     Optional<ServiceBean> get(final String suffix, final List<ServiceBean> services) {
