@@ -6,7 +6,8 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { EmaPageDropzoneComponent, Row } from './ema-page-dropzone.component';
+import { EmaPageDropzoneComponent } from './ema-page-dropzone.component';
+import { Row } from './types';
 
 import { ClientData } from '../../../shared/models';
 
