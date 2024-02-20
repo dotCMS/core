@@ -13,6 +13,7 @@
 <%@page import="com.liferay.portal.util.ReleaseInfo"%>
 <%@page import="com.dotmarketing.cms.factories.PublicCompanyFactory"%>
 <%@page import="com.liferay.portal.model.*" %>
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 
 
 <%@page import="com.dotmarketing.util.Config"%>
@@ -105,13 +106,40 @@
 
     dojo.require("dotcms.dijit.image.ImageEditor");
     dojo.require("dotcms.dojo.data.UsersReadStore");
-
+    dojo.require("dotcms.dojo.data.UsersReadStore");
+    dojo.require("dijit.form.TextBox");
+    
     dojo.addOnLoad(function () {
         dojo.global.DWRUtil = dwr.util;
         dojo.global.DWREngine = dwr.engine;
         dwr.engine.setErrorHandler(DWRErrorHandler);
         dwr.engine.setWarningHandler(DWRErrorHandler);
+
+        // 2. Add event listener to the fields
+        fields.forEach(({ variable }) => {
+            const input = dojo.byId(variable);
+            input.addEventListener('change', (event) => console.log(event)); // Handle the `dojo.byId(variable).setValue()` case
+            addCustomValueProperty(input, variable); // Handle the `dojo.byId(variable).value` case
+        });
     });
+
+    function addCustomValueProperty(input, variable) {
+        // 3. Add custom value property to the input
+        const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value'); // Copy the original descriptor from the prototype
+        Object.defineProperty(input, 'value', {
+            get: function() {
+                return valueDescriptor.get.apply(this);
+            },
+            set: function(value) {
+                // 4. Trigger the original setter & Notify the change to Angular
+                console.log("Something triggered the setter", {
+                    variable,
+                    value
+                });
+                valueDescriptor.set.apply(this, [value]);
+            }
+        });
+    }
 
     function DWRErrorHandler(msg, e) {
         console.log(msg, e);
@@ -205,6 +233,7 @@
 <%
     String contentTypeVarName = request.getParameter("variable");
     String fieldName = request.getParameter("field");
+    ObjectMapper mapper = new ObjectMapper(); 
 
     if (null != contentTypeVarName && null != fieldName) {
 
@@ -215,6 +244,8 @@
         if (null != contentType) {
 
             Field field = contentType.fieldMap().get(fieldName);
+            String fieldJson = mapper.writeValueAsString(contentType.fieldMap());
+
             System.out.println(field);
             if (null != field) {
                
@@ -238,6 +269,22 @@
                 }
 %>
                     <body>
+                        <script>
+                            // Global 
+                            const fields = Object.values(<%= fieldJson %>);
+                            const bodyElement = document.querySelector('body');
+                            // 1. Create field in local enviroment (Iframe)
+                            fields.forEach(({ variable, value }) => {
+                                const input = document.createElement('input');
+                                input.setAttribute('type', 'hidden');
+                                input.setAttribute('name', variable);
+                                input.setAttribute('id', variable);
+                                input.setAttribute('dojoType', 'dijit.form.TextBox');
+                                input.setAttribute('value', value);
+                                bodyElement.appendChild(input);
+                            });
+                        </script>
+                        
                         <%= HTMLString %>
                     </body>
 <%
