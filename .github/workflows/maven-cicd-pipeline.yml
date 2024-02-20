@@ -18,7 +18,9 @@ on:
   merge_group:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
-  cancel-in-progress: true
+  # Cancel any in-progress runs for the same branch/PR to prevent delays from changes during build
+  # On master and other branches run will set as pending.  Any new builds requested will replace the pending build
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   JVM_TEST_MAVEN_OPTS: "-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
   DOCKER_PLATFORMS: "linux/amd64,linux/arm64"
