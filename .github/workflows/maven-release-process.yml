@@ -8,11 +8,6 @@ on:
       release_commit:
         description: 'Commit Hash (default to latest commit)'
         required: false
-      create_release_branch:
-        description: 'Create release branch'
-        type: boolean
-        default: true
-        required: false
       update_github_labels:
         description: 'Update GitHub labels'
         type: boolean
@@ -31,13 +26,12 @@ env:
   DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
 jobs:
   prepare-release:
-    if: ${{ !startsWith(github.event.release.name, 'dotcms-cli') }}
     name: Prepare Release
     runs-on: ubuntu-20.04
     outputs:
       release_version: ${{ steps.set-common-vars.outputs.release_version }}
-      release_tag: ${{ steps.set-common-vars.outputs.release_tag }}
       release_branch: ${{ steps.set-common-vars.outputs.release_branch }}
+      release_tag: ${{ steps.set-common-vars.outputs.release_tag }}
       date: ${{ steps.set-common-vars.outputs.date }}
     steps:
       - name: Validate Inputs
@@ -66,12 +60,8 @@ jobs:
           git config user.email "dotCMS-Machine-User@dotcms.com"
 
           release_version=${{ github.event.inputs.release_version }}
+          release_branch=release-${release_version}
           release_tag=v${release_version}
-          if [[ "${{ github.event.inputs.create_release_branch }}" == 'true' ]]; then
-            release_branch=release-${release_version}
-          else
-            release_branch=master
-          fi
           release_commit=${{ github.event.inputs.release_commit }}
           if [[ -z "${release_commit}" ]]; then
               release_commit=$(git log -1 --pretty=%H)
@@ -81,8 +71,8 @@ jobs:
           [[ ${release_version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts_v[0-9]{2}$ ]] && is_lts=true
 
           echo "release_version=${release_version}" >> $GITHUB_OUTPUT
-          echo "release_tag=${release_tag}" >> $GITHUB_OUTPUT
           echo "release_branch=${release_branch}" >> $GITHUB_OUTPUT
+          echo "release_tag=${release_tag}" >> $GITHUB_OUTPUT
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
           echo "release_hash=${release_hash}" >> $GITHUB_OUTPUT
           echo "is_lts=${is_lts}" >> $GITHUB_OUTPUT
@@ -291,11 +281,6 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRO }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
       - name: maven-settings-xml-action
         uses: whelk-io/maven-settings-xml-action@v20
         with:
@@ -352,7 +337,6 @@ jobs:
           path: ${{ github.workspace }}/plugin-seeds
 
       - name: Update Plugins
-        working-directory: ${{ github.workspace }}/plugin-seeds
         run: |
           git config user.name "${{ secrets.CI_MACHINE_USER }}"
           git config user.email "dotCMS-Machine-User@dotcms.com"
