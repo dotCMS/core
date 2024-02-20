@@ -93,22 +93,20 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                                 contentType: DotCMSContentType;
                                 contents: DotCMSContentlet[];
                             }) => {
-                                if (
-                                    !value.contents.some((content) => content.inode === data.inode)
-                                ) {
-                                    return this.dotContentletService
-                                        .getContentletByInode(data.inode)
-                                        .pipe(
-                                            map((response: DotCMSContentlet) => {
-                                                value.contents.push(response);
-
-                                                return value;
-                                            })
-                                        );
-                                } else {
-                                    // Wrap 'value' with 'of' to return it as an Observable
-                                    return of(value);
-                                }
+                                return !value.contents.some(
+                                    (content) => content.inode === data.inode
+                                )
+                                    ? this.dotContentletService
+                                          .getContentletByInode(data.inode)
+                                          .pipe(
+                                              map((response: DotCMSContentlet) => {
+                                                  return {
+                                                      ...value,
+                                                      contents: [...value.contents, response]
+                                                  };
+                                              })
+                                          )
+                                    : of(value);
                             }
                         )
                     )
