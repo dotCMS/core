@@ -10,6 +10,72 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 
+const generateRandomString = function (length) {
+    // length is the number of characters or words to generate
+    // type is either 'char' or 'word'
+    let result = '';
+
+    // generate a random string of words
+    const words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit'];
+    for (let i = 0; i < length; i++) {
+        result += words[Math.floor(Math.random() * words.length)] + ' ';
+    }
+
+    return result.trim(); // remove the trailing space
+};
+
+const generateInode = function () {
+    // a UUID is a 36-character string with 8-4-4-4-12 hex digits and dashes
+    let uuid = '';
+    const hex = '0123456789abcdef'; // the hexadecimal digits
+    const segments = [8, 4, 4, 4, 12]; // the lengths of each segment
+    for (const segment of segments) {
+        // for each segment, append a dash and then random hex digits
+        uuid += '-';
+        for (let i = 0; i < segment; i++) {
+            // pick a random hex digit and append it to the uuid
+            uuid += hex[Math.floor(Math.random() * hex.length)];
+        }
+    }
+
+    return uuid.slice(1); // remove the leading dash
+};
+
+const newContentObj = function () {
+    return {
+        archived: false,
+        baseType: 'CONTENT',
+        caategory: [{ boys: 'Boys' }],
+        contentType: 'ContentType1',
+        date: 1639548000000,
+        dateTime: 1639612800000,
+        folder: 'SYSTEM_FOLDER',
+        hasLiveVersion: true,
+        hasTitleImage: false,
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        hostName: 'demo.dotcms.com',
+        identifier: '758cb37699eae8500d64acc16ebc468e',
+        inode: generateInode(),
+        keyValue: { keyone: generateRandomString(1), keytwo: generateRandomString(1) },
+        languageId: 1,
+        live: true,
+        locked: false,
+        modDate: 1639784363639,
+        modUser: 'dotcms.org.1',
+        modUserName: 'Admin User',
+        owner: 'dotcms.org.1',
+        publishDate: 1639780580960,
+        sortOrder: 0,
+        stInode: '0121c052881956cd95bfe5dde968ca07',
+        text: generateRandomString(3),
+        time: 104400000,
+        title: generateRandomString(3),
+        titleImage: 'TITLE_IMAGE_NOT_FOUND',
+        url: '/content.40e5d7cd-2117-47d5-b96d-3278b188deeb',
+        working: true
+    };
+};
+
 const getContentTypeMOCKResponse = {
     baseType: 'CONTENT',
     clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -620,6 +686,9 @@ const newCompare = {
 
 describe('DotContentCompareStore', () => {
     let dotContentCompareStore: DotContentCompareStore;
+    for (let index = 0; index < 21; index++) {
+        getContentletVersionsMOCKResponse.push(newContentObj());
+    }
 
     beforeEach(() => {
         TestBed.configureTestingModule({
