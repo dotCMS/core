@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
@@ -418,10 +419,14 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @param metadataMap The File's metadata Map.
      */
     private void checkEditableAsText(final Map<String, Serializable> metadataMap) {
-        if (!metadataMap.containsKey(BasicMetadataFields.EDITABLE_AS_TEXT.key())) {
-            final String mimeType =
-                    Try.of(() -> metadataMap.get(CONTENT_TYPE_META_KEY.key()).toString()).getOrElse(StringPool.BLANK);
-            metadataMap.put(EDITABLE_AS_TEXT.key(), FileUtil.isFileEditableAsText(mimeType));
+        if (UtilMethods.isSet(metadataMap)) {
+            metadataMap.computeIfAbsent(EDITABLE_AS_TEXT.key(), key -> {
+
+                final String mimeType =
+                        Try.of(() -> metadataMap.get(CONTENT_TYPE_META_KEY.key()).toString()).getOrElse(StringPool.BLANK);
+                return FileUtil.isFileEditableAsText(mimeType);
+
+            });
         }
     }
 

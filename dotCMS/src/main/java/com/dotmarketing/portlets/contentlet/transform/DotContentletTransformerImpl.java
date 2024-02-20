@@ -10,6 +10,7 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
+import io.vavr.control.Try;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -17,12 +18,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.*;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.JSON_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.STORY_BLOCK_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 
 /**
- * This class intents to be the single point of transformation logic
- * Transformation basically takes place in strategies that are plugged based on the options submitted
- * or the ContentType associated to the the Content.
+ * This class intents to be the single point of transformation logic for Contentlets. Transformation
+ * basically takes place in strategies that are plugged based on the {@link TransformOptions}
+ * submitted or the ContentType associated to the Content.
+ *
+ * @author Fabrizzio Araya
+ * @since Jun 11th, 2020
  */
 class DotContentletTransformerImpl implements DotContentletTransformer {
 
@@ -112,15 +123,16 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
     }
 
     /**
-     * To avoid caching issues we work on a copy
-     * @param contentlet input contentlet
-     * @return a copy contentlet
+     * Takes the specified Contentlet object and returns a copy of it in order to avoid caching
+     * issues.
+     *
+     * @param contentlet The {@link Contentlet} being copied.
+     *
+     * @return An exact copy of the specified Contentlet.
      */
     private Contentlet copy(final Contentlet contentlet) {
         final Contentlet newContentlet = new Contentlet();
-        if (null != contentlet && null != contentlet.getMap()) {
-            newContentlet.getMap().putAll(contentlet.getMap());
-        }
+        newContentlet.getMap().putAll(Try.of(contentlet::getMap).getOrElse(Map.of()));
         return newContentlet;
     }
 

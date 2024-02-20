@@ -453,6 +453,19 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 });
             });
         });
+
+        it('should not set file when metadata is not present', () => {
+            const spy = jest
+                .spyOn(store, 'setFileFromContentlet')
+                .mockReturnValue(of(null).subscribe());
+            const mock = {
+                ...MOCK_DOTCMS_FILE,
+                binaryFieldMetaData: null
+            };
+            spectator.setInput('contentlet', mock);
+            spectator.detectChanges();
+            expect(spy).not.toHaveBeenCalled();
+        });
     });
 
     afterEach(() => {
