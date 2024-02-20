@@ -29,6 +29,7 @@ import { delay, filter, skip, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
@@ -121,7 +122,7 @@ export class DotEditContentBinaryFieldComponent
     private onTouched: () => void;
     private tempId = '';
 
-    protected systemOptions: Record<string, boolean>;
+    protected systemOptions: Record<string, boolean> = {};
 
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
@@ -185,13 +186,15 @@ export class DotEditContentBinaryFieldComponent
     ngAfterViewInit() {
         this.setFieldVariables();
 
-        if (this.value) {
-            this.dotBinaryFieldStore.setFileFromContentlet({
-                ...this.contentlet,
-                value: this.value,
-                fieldVariable: this.variable
-            });
+        if (!this.value || !this.checkMetadata()) {
+            return;
         }
+
+        this.dotBinaryFieldStore.setFileFromContentlet({
+            ...this.contentlet,
+            value: this.value,
+            fieldVariable: this.variable
+        });
 
         this.cd.detectChanges();
     }
@@ -345,8 +348,8 @@ export class DotEditContentBinaryFieldComponent
 
         this.DotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
         this.DotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
-
         this.systemOptions = JSON.parse(systemOptions);
+        this.cd.detectChanges();
     }
 
     /**
@@ -382,5 +385,20 @@ export class DotEditContentBinaryFieldComponent
         );
 
         return stringToJson(monacoOptions);
+    }
+
+    /**
+     * Check if the contentlet has metadata
+     *
+     * @private
+     * @return {*}  {boolean}
+     * @memberof DotEditContentBinaryFieldComponent
+     */
+    private checkMetadata(): boolean {
+        const { baseType } = this.contentlet;
+        const isFileAsset = baseType === DotCMSBaseTypesContentTypes.FILEASSET;
+        const key = isFileAsset ? 'metaData' : this.variable + 'MetaData';
+
+        return !!this.contentlet[key];
     }
 }

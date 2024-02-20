@@ -12,8 +12,10 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -56,6 +58,12 @@ public class YAMLFactoryServiceManagerImpl implements ServiceManager {
             cached = mapper.readValue(inputStream, new TypeReference<>() {
             });
         }
+
+        cached = cached.stream().sorted(
+                Comparator.comparing(ServiceBean::active).reversed()
+                        .thenComparing(ServiceBean::name)
+        ).collect(Collectors.toList());
+
         return cached;
     }
 
@@ -92,7 +100,7 @@ public class YAMLFactoryServiceManagerImpl implements ServiceManager {
             ServiceBean serviceBean = iterator.next();
             //if the new incoming bean is meant to be the new active one... We mark all others inactive
             serviceBean = newServiceBean.active() ? serviceBean.withActive(false) : serviceBean;
-            if (newServiceBean.name().equals(serviceBean.name())) {
+            if (newServiceBean.name().equalsIgnoreCase(serviceBean.name())) {
                 //Remove cuz it's about to get replaced with the new `newServiceBean`
                 iterator.remove();
             } else {

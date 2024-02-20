@@ -14,6 +14,7 @@ import com.dotcms.model.site.SiteView;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
@@ -44,7 +45,7 @@ class SiteAPIIT {
 
     @BeforeEach
     public void setupTest() throws IOException {
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
 
         final String user = "admin@dotcms.com";
         final char[] passwd = "admin".toCharArray();
