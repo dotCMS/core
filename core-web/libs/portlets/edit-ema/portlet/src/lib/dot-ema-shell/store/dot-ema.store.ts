@@ -186,17 +186,33 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             }),
             switchMap((payload) => {
                 return this.dotPageApiService.save(payload).pipe(
-                    tapResponse(
-                        () => {
-                            payload.whenSaved?.();
-                        },
-                        (e) => {
-                            console.error(e);
-                            payload.whenSaved?.();
-                            this.updateEditorState(EDITOR_STATE.ERROR);
-                        }
-                    ),
-                    switchMap(() => this.syncEditorData(payload.params))
+                    catchError((e) => {
+                        console.error(e);
+                        payload?.whenSaved?.();
+                        this.updateEditorState(EDITOR_STATE.ERROR);
+
+                        return EMPTY;
+                    }),
+                    switchMap(() =>
+                        this.syncEditorData(payload.params).pipe(
+                            tapResponse(
+                                (pageData: DotPageApiResponse) => {
+                                    this.patchState((state) => ({
+                                        ...state,
+                                        editor: pageData,
+                                        editorState: EDITOR_STATE.LOADED
+                                    }));
+
+                                    payload.whenSaved?.();
+                                },
+                                (e) => {
+                                    console.error(e);
+                                    payload.whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.ERROR);
+                                }
+                            )
+                        )
+                    )
                 );
             })
         );
@@ -221,10 +237,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 tap(() => {
                     this.updateEditorState(EDITOR_STATE.LOADING);
                 }),
-                getFormId(this.dotPageApiService),
+                getFormId(this.dotPageApiService), // We need to do something with the errors here.
                 switchMap((response) => {
                     const { pageContainers, didInsert } = insertContentletInContainer(
-                        response?.payload
+                        response.payload
                     );
 
                     // This should not be called here but since here is where we get the form contentlet
@@ -249,21 +265,37 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     return this.dotPageApiService
                         .save({
                             pageContainers,
-                            pageId: response?.payload.pageId,
-                            params: response?.params
+                            pageId: response.payload.pageId,
+                            params: response.params
                         })
                         .pipe(
-                            tapResponse(
-                                () => {
-                                    response?.whenSaved?.();
-                                },
-                                (e) => {
-                                    console.error(e);
-                                    response?.whenSaved?.();
-                                    this.updateEditorState(EDITOR_STATE.ERROR);
-                                }
-                            ),
-                            switchMap(() => this.syncEditorData(response?.params))
+                            catchError((e) => {
+                                console.error(e);
+                                response.whenSaved?.();
+                                this.updateEditorState(EDITOR_STATE.ERROR);
+
+                                return EMPTY;
+                            }),
+                            switchMap(() =>
+                                this.syncEditorData(response?.params).pipe(
+                                    tapResponse(
+                                        (pageData: DotPageApiResponse) => {
+                                            this.patchState((state) => ({
+                                                ...state,
+                                                editor: pageData,
+                                                editorState: EDITOR_STATE.LOADED
+                                            }));
+
+                                            response.whenSaved?.();
+                                        },
+                                        (e) => {
+                                            console.error(e);
+                                            response.whenSaved?.();
+                                            this.updateEditorState(EDITOR_STATE.ERROR);
+                                        }
+                                    )
+                                )
+                            )
                         );
                 })
             );
@@ -310,20 +342,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * @memberof EditEmaStore
      */
     private syncEditorData = (params: DotPageApiParams) => {
-        return this.dotPageApiService.get(params).pipe(
-            tapResponse(
-                (pageData: DotPageApiResponse) => {
-                    this.patchState((state) => ({
-                        ...state,
-                        editor: pageData,
-                        editorState: EDITOR_STATE.LOADED
-                    }));
-                },
-                (e) => {
-                    console.error(e);
-                }
-            )
-        );
+        return this.dotPageApiService.get(params);
     };
 
     /**

@@ -14,10 +14,6 @@ export function insertContentletInContainer(action: ActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
 } {
-    if (!action) {
-        return { pageContainers: [], didInsert: false };
-    }
-
     if (action.position) {
         return insertPositionedContentletInContainer(action);
     }
