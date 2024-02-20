@@ -1,5 +1,5 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
@@ -87,7 +87,30 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                                         return { contentType, contents };
                                     })
                                 );
-                        })
+                        }),
+                        switchMap(
+                            (value: {
+                                contentType: DotCMSContentType;
+                                contents: DotCMSContentlet[];
+                            }) => {
+                                if (
+                                    !value.contents.some((content) => content.inode === data.inode)
+                                ) {
+                                    return this.dotContentletService
+                                        .getContentletByInode(data.inode)
+                                        .pipe(
+                                            map((response: DotCMSContentlet) => {
+                                                value.contents.push(response);
+
+                                                return value;
+                                            })
+                                        );
+                                } else {
+                                    // Wrap 'value' with 'of' to return it as an Observable
+                                    return of(value);
+                                }
+                            }
+                        )
                     )
                     .subscribe(
                         (value: {
