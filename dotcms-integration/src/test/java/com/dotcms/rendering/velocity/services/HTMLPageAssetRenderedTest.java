@@ -2352,6 +2352,12 @@ public class HTMLPageAssetRenderedTest {
         }
     }
 
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: The render with more than one Script block no matter is it is on upper case or lower case
+     * Should: Scape de close script tag as follow \</script/>
+     * @throws Exception
+     */
     @Test
     public void renderPageWithScriptAndInnerNavigateMode() throws Exception {
 
@@ -2404,7 +2410,6 @@ public class HTMLPageAssetRenderedTest {
         when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
         when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
         mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER, systemUser);
-        //mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(language.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
 
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
