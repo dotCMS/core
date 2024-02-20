@@ -277,7 +277,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 return EMPTY;
                             }),
                             switchMap(() =>
-                                this.syncEditorData(response?.params).pipe(
+                                this.syncEditorData(response.params).pipe(
                                     tapResponse(
                                         (pageData: DotPageApiResponse) => {
                                             this.patchState((state) => ({
