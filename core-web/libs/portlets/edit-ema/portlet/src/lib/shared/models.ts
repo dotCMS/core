@@ -9,7 +9,7 @@ export interface ActionPayload {
     personaTag?: string;
     position?: 'before' | 'after';
     treeNode?: DotTreeNode;
-    isInMultiplePages?: boolean;
+    isInMultiplePages: boolean;
     newContentletId?: string;
 }
 

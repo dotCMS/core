@@ -8,5 +8,5 @@
  * tracking(); // Returns "implement tracking"
  */
 export const tracking = (): string => {
-    return 'implement tracking';
+  return 'implement tracking';
 };
