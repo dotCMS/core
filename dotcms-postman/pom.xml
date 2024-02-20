@@ -4,13 +4,13 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-build-parent</artifactId>
-        <version>24.02.20</version>
+        <version>1.0.0-SNAPSHOT</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
 
     <packaging>jar</packaging>
     <artifactId>dotcms-postman</artifactId>
-    <version>24.02.20</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
         <db.port>5432</db.port>
