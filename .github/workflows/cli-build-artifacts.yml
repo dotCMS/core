@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ ${{ needs.os-runners.outputs.runners }}]
+        os: ${{ needs.os-runners.outputs.runners }}
 
     runs-on: ${{ matrix.os }}
     env:
