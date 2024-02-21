@@ -2355,7 +2355,7 @@ public class HTMLPageAssetRenderedTest {
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: The page includes more than one script block regardless of the casing (lowercase, uppercase)
-     * Should: Scape de close script like this <code></>\</script/></code>
+     * Should: Escape de close script like this <code></>\</script/></code>
      * @throws Exception
      */
     @Test
