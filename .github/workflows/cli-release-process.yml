@@ -32,8 +32,8 @@ jobs:
   build:
     uses: ./.github/workflows/cli-build-artifacts.yml
     with:
-      skipTests: ${{ github.event.inputs.skipTests }}
-      buildNativeImage: 'true'
+      skipTests: true
+      buildNativeImage: true
       branch: ${{ github.ref_name }}
     secrets: inherit
 
