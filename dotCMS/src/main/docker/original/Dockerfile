@@ -48,6 +48,25 @@ RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
     mkdir -p /data/local/dotsecure/license && \
     chown -R $USER_NAME:$USER_NAME /data
 
+# ----------------------------------------------
+# Stage 2:  Copy pg_dump binary
+# ----------------------------------------------
+FROM dotcms/pg-base:22.02 as composed-base
+COPY --from=container-base / /
+
+# ----------------------------------------------
+# Stage 3:  Flatten everything to 1 layer
+# ----------------------------------------------
+FROM scratch
+
+LABEL com.dotcms.contact "support@dotcms.com"
+LABEL com.dotcms.vendor "dotCMS LLC"
+LABEL com.dotcms.description "dotCMS Content Management System"
+
+ARG USER_UID="65001"
+ARG USER_GID="65001"
+
+COPY --from=composed-base / /
 
 # Switching to non-root user to install SDKMAN!
 USER $USER_UID:$USER_GID
