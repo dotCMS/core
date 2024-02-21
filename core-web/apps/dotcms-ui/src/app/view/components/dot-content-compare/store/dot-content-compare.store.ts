@@ -88,6 +88,7 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                                     })
                                 );
                         }),
+                        // If the requested item is not found in the list of historical content versions, attempt to add it.
                         switchMap(
                             (value: {
                                 contentType: DotCMSContentType;
