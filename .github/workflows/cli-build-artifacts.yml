@@ -32,7 +32,7 @@ env:
   GRAALVM_VERSION: '22.1.0'
 
 jobs:
-  os:
+  os-runners:
     name: 'Get OS matrix'
     runs-on: ubuntu-latest
     outputs:
@@ -49,12 +49,12 @@ jobs:
           echo "runners=$RUNNERS" >> $GITHUB_OUTPUT
 
   build:
-    needs: os
+    needs: os-runners
     name: 'Build native image on ${{ matrix.os }}'
     strategy:
       fail-fast: true
       matrix:
-        os: [ ${{ needs.os.outputs.runners }}]
+        os: [ ${{ needs.os-runners.outputs.runners }}]
 
     runs-on: ${{ matrix.os }}
     env:
