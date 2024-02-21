@@ -20,12 +20,12 @@ project:
 
   snapshot:
     pattern: .*-SNAPSHOT
-    label: 'dotcms-cli{{projectVersion}}'
+    label: 'dotcms-cli-{{projectVersion}}'
     fullChangelog: true
 
 release:
   github:
-    tagName: 'dotcms-cli{{projectVersion}}'
+    tagName: 'dotcms-cli-{{projectVersion}}'
     releaseName: 'dotcms-cli - {{projectVersion}}'
     overwrite: false
     changelog:
