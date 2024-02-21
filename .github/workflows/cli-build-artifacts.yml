@@ -1,5 +1,13 @@
 name: 'CLI Build Artifacts'
 on:
+  workflow_call:
+    inputs:
+      skipTests:
+        type: boolean
+      buildNativeImage:
+        type: boolean
+      branch:
+        type: string
   workflow_dispatch:
     inputs:
       skipTests:
