@@ -320,7 +320,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123']
+                        contentletsId: ['existing-contentlet-123'],
+                        variantId: '123'
                     },
                     pageContainers: [
                         {

@@ -237,7 +237,10 @@ describe('DotEmaDialogComponent', () => {
 
             const PAYLOAD_MOCK_WITH_TREE_NODE = {
                 ...PAYLOAD_MOCK,
-                isInMultiplePages: true,
+                contentlet: {
+                    ...PAYLOAD_MOCK.contentlet,
+                    onNumberOfPages: 2
+                },
                 treeNode: treeNodeMock
             };
 

@@ -1,4 +1,9 @@
-import { deleteContentletFromContainer, insertContentletInContainer, sanitizeURL } from '.';
+import {
+    deleteContentletFromContainer,
+    insertContentletInContainer,
+    sanitizeURL,
+    getPersonalization
+} from '.';
 
 describe('utils functions', () => {
     describe('delete contentlet from container', () => {
@@ -267,6 +272,22 @@ describe('utils functions', () => {
 
         it('should leave as it is for a nested valid url', () => {
             expect(sanitizeURL('hello-there/general-kenobi')).toEqual('hello-there/general-kenobi');
+        });
+    });
+
+    describe('personalization', () => {
+        it('should return the correct personalization when persona exists', () => {
+            const personalization = getPersonalization({
+                contentType: 'persona',
+                keyTag: 'adminUser'
+            });
+
+            expect(personalization).toBe('dot:persona:adminUser');
+        });
+
+        it('should return the correct personalization when persona does not exist', () => {
+            const personalization = getPersonalization({});
+            expect(personalization).toBe('dot:default');
         });
     });
 });

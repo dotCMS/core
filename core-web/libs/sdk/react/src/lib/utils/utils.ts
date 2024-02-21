@@ -115,14 +115,6 @@ export const getContainersData = (
     };
 };
 
-export const getPersonalization = (persona: Record<string, string>) => {
-    if (!persona || (!persona.contentType && !persona.keyTag)) {
-        return `dot:default`;
-    }
-
-    return `dot:${persona.contentType}:${persona.keyTag}`;
-};
-
 export const combineClasses = (classes: string[]) => classes.filter(Boolean).join(' ');
 
 export const getPositionStyleClasses = (start: number, end: number) => {
