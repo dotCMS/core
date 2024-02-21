@@ -25,8 +25,8 @@ export interface ContainerData {
                 identifier: string;
                 title: string;
                 inode: string;
+                onNumberOfPages: number;
                 widgetTitle?: string;
-                onNumberOfPages?: number;
             }[];
         };
     };

@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 
 import { PageContext } from '../../contexts/PageContext';
-import { getContainersData, getPersonalization } from '../../utils/utils';
+import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
 const FAKE_CONTENLET = {
@@ -94,10 +94,8 @@ export function Container({ containerRef }: ContainerProps) {
         });
     }
 
-    const renderContentlets = updatedContentlets.map((contentlet, treeOrder) => {
+    const renderContentlets = updatedContentlets.map((contentlet) => {
         const ContentTypeComponent = components[contentlet.contentType] || NoContent;
-        // const pageId = page.identifier;
-        // const isInMultiplePages = (contentlet.onNumberOfPages as number) > 1;
 
         const Component =
             contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
@@ -110,7 +108,7 @@ export function Container({ containerRef }: ContainerProps) {
                 identifier: contentlet.identifier,
                 title: contentlet.widgetTitle || contentlet.title,
                 inode: contentlet.inode,
-                treeOrder
+                onNumberOfPages: contentlet.onNumberOfPages
             }
         };
 

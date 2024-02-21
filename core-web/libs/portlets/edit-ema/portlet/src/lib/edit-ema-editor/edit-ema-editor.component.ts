@@ -59,7 +59,11 @@ import { DotPageApiResponse, DotPageApiParams } from '../services/dot-page-api.s
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, PositionPayload, ClientData, SetUrlPayload } from '../shared/models';
-import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
+import {
+    deleteContentletFromContainer,
+    insertContentletInContainer,
+    getContentletRelationship
+} from '../utils';
 
 interface BasePayload {
     type: 'contentlet' | 'content-type';
@@ -137,24 +141,32 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const clientData = this.clientData();
-        const { containers, languageId, id, personaTag } = this.pageData();
-        const { contentletsId } = containers.find((container) => {
-            return (
-                container.identifier === clientData.container.identifier &&
-                container.uuid === clientData.container.uuid
-            );
-        });
+        const { container, contentlet } = clientData;
+        const relationship = getContentletRelationship(contentlet, container);
+        const { containers, languageId, id: pageId, personaTag, personalization } = this.pageData();
+        const { contentletsId } = containers.find(
+            ({ identifier, uuid }) => identifier === container.identifier && uuid === container.uuid
+        );
+        const treeOrder = contentletsId.findIndex((id) => id === contentlet?.identifier).toString();
+
+        const treeNode = {
+            ...relationship,
+            personalization,
+            treeOrder,
+            pageId
+        };
 
         return {
             ...clientData,
             language_id: languageId.toString(),
-            pageId: id,
+            pageId,
             pageContainers: containers,
             personaTag,
             container: {
-                ...clientData.container,
+                ...container,
                 contentletsId
-            }
+            },
+            treeNode
         } as ActionPayload;
     });
 

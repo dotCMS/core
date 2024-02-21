@@ -1,4 +1,9 @@
-import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
+import {
+    ActionPayload,
+    ContainerPayload,
+    ContentletPayload,
+    PageContainer
+} from '../shared/models';
 
 /**
  * Insert a contentlet in a container
@@ -147,3 +152,37 @@ export function sanitizeURL(url: string): string {
         })
         .join('/');
 }
+
+/**
+ * Get the relation between a contentlet and a container
+ *
+ * @export
+ * @param {ContentletPayload} contentlet
+ * @param {ContainerPayload} container
+ * @return {*}
+ */
+export function getContentletRelationship(
+    contentlet: ContentletPayload,
+    container: ContainerPayload
+) {
+    return {
+        contentId: contentlet?.identifier,
+        containerId: container.identifier,
+        relationType: container.uuid,
+        variantId: container.variantId
+    };
+}
+
+/**
+ * Get the personalization for the contentlet
+ *
+ * @param {Record<string, string>} persona
+ * @return {*}
+ */
+export const getPersonalization = (persona: Record<string, string>) => {
+    if (!persona || (!persona.contentType && !persona.keyTag)) {
+        return `dot:default`;
+    }
+
+    return `dot:${persona.contentType}:${persona.keyTag}`;
+};

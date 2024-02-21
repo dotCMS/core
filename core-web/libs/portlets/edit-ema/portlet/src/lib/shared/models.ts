@@ -1,3 +1,5 @@
+import { DotTreeNode } from '@dotcms/dotcms-models';
+
 import { DotPageApiParams } from '../services/dot-page-api.service';
 
 export interface ClientData {
@@ -15,6 +17,7 @@ export interface ActionPayload extends PositionPayload {
     pageId: string;
     personaTag?: string;
     newContentletId?: string;
+    treeNode?: DotTreeNode;
 }
 
 export interface PageContainer {
@@ -33,11 +36,13 @@ export interface ContainerPayload {
     uuid: string;
 }
 
-interface ContentletPayload {
+export interface ContentletPayload {
     identifier: string;
     inode: string;
     title: string;
+    onNumberOfPages?: number;
 }
+
 export interface SetUrlPayload {
     url: string;
 }

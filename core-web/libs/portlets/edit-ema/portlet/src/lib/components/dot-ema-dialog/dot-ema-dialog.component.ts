@@ -120,9 +120,9 @@ export class DotEmaDialogComponent {
      * @memberof EditEmaEditorComponent
      */
     editContentlet(payload: Partial<ActionPayload>) {
-        const { contentlet, isInMultiplePages, treeNode } = payload;
+        const { contentlet, treeNode } = payload;
 
-        if (isInMultiplePages) {
+        if (contentlet.onNumberOfPages > 1) {
             this.askToCopy({ treeNode, contentlet });
 
             return;
