@@ -38,9 +38,9 @@ jobs:
       fail-fast: true
       matrix:
         os:
-          - ubuntu-latest,
-          - ${{ github.event.inputs.buildNativeImage == 'true' && 'macos-13-xlarge' || '' }},
-          - ${{ github.event.inputs.buildNativeImage == 'true' && 'macOS-latest' || '' }}
+          - ${{ github.event.inputs.buildNativeImage == 'true' && 'macos-13-xlarge' }}
+          - ${{ github.event.inputs.buildNativeImage == 'true' && 'macOS-latest' }}
+          - ubuntu-latest
 
     runs-on: ${{ matrix.os }}
     env:
