@@ -315,18 +315,6 @@ jobs:
         run: |
           tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
 
-      - name: 'Setup git config'
-        run: |
-          git config user.name "${{ secrets.CI_MACHINE_USER }}"
-          git config user.email "dotCMS-Machine-User@dotcms.com"
-
-      - name: 'Tag release version in ${{ github.ref }}'
-        if: ${{ !contains(github.event.inputs.version, 'SNAPSHOT') }}
-        run: |
-          git checkout ${{ needs.precheck.outputs.HEAD }}
-          git tag -a "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}" -m "Release dotCLI version ${{ needs.precheck.outputs.RELEASE_VERSION }}"
-          git push origin "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}"
-
   publish-npm-package:
     name: "Publish NPM Package"
     if: success()  # Run only if explicitly indicated and successful
