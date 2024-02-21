@@ -47,14 +47,14 @@ jobs:
         with:
           token: ${{ secrets.CI_MACHINE_TOKEN }}
 
-      - uses: ./.github/actions/cleanup-runner
+
 
       - name: 'Setup Java'
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRO }}
-
+      - uses: ./.github/actions/cleanup-runner
       - name: 'Get Date'
         id: get-date
         run: |
