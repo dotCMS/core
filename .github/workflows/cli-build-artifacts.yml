@@ -8,23 +8,23 @@ on:
         type: boolean
       branch:
         type: string
-  workflow_dispatch:
-    inputs:
-      skipTests:
-        description: 'Skip tests'
-        required: false
-        default: 'true'
-      buildNativeImage:
-        description: 'Build Native Image'
-        required: true
-        default: 'false'
-      branch:
-        description: 'Branch to build'
-        required: false
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
-  cancel-in-progress: true
+#  workflow_dispatch:
+#    inputs:
+#      skipTests:
+#        description: 'Skip tests'
+#        required: false
+#        default: 'true'
+#      buildNativeImage:
+#        description: 'Build Native Image'
+#        required: true
+#        default: 'false'
+#      branch:
+#        description: 'Branch to build'
+#        required: false
+#
+#concurrency:
+#  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+#  cancel-in-progress: true
 
 env:
   JAVA_VERSION: 11
