@@ -32,15 +32,29 @@ env:
   GRAALVM_VERSION: '22.1.0'
 
 jobs:
+  os:
+    name: 'Get OS matrix'
+    runs-on: ubuntu-latest
+    outputs:
+      runners: ${{ steps.set-os.outputs.runners }}
+    steps:
+      - name: 'Set OS'
+        id: set-os
+        run: |
+          if [[ "${{ github.event.inputs.buildNativeImage }}" == "true" ]]; then
+            RUNNERS="ubuntu-latest,macos-latest,macos-13-xlarge"
+          else
+            RUNNERS="ubuntu-latest"
+          fi
+          echo "runners=$RUNNERS" >> $GITHUB_OUTPUT
+
   build:
+    needs: os
     name: 'Build native image on ${{ matrix.os }}'
     strategy:
       fail-fast: true
       matrix:
-        os:
-          - ${{ github.event.inputs.buildNativeImage == 'true' && 'macos-13-xlarge' }}
-          - ${{ github.event.inputs.buildNativeImage == 'true' && 'macOS-latest' }}
-          - ubuntu-latest
+        os: [ ${{ needs.os.outputs.runners }}]
 
     runs-on: ${{ matrix.os }}
     env:
