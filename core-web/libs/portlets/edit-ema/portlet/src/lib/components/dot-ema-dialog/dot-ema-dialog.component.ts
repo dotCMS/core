@@ -15,7 +15,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 import { DialogModule } from 'primeng/dialog';
 
-import { catchError, filter, switchMap } from 'rxjs/operators';
+import { catchError, filter, switchMap, tap } from 'rxjs/operators';
 
 import { DotCopyContentService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
@@ -219,16 +219,17 @@ export class DotEmaDialogComponent {
      */
     private askToCopy(treeNode: DotTreeNode, contentlet: DotCMSContentlet) {
         return this.dotCopyContentModalService
-            .open(() => this.loading.emit(true))
+            .open()
             .pipe(
                 switchMap(({ shouldCopy }) => {
                     if (!shouldCopy) {
                         return of(contentlet);
                     }
 
-                    return this.dotCopyContentService
-                        .copyInPage(treeNode)
-                        .pipe(catchError((error) => this.dotHttpErrorManagerService.handle(error)));
+                    return this.dotCopyContentService.copyInPage(treeNode).pipe(
+                        tap(() => this.loading.emit(true)),
+                        catchError((error) => this.dotHttpErrorManagerService.handle(error))
+                    );
                 }),
                 filter((content: DotCMSContentlet) => !!content?.inode)
             )

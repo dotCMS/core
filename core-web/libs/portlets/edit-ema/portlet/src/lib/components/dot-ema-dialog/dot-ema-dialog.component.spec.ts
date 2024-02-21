@@ -178,6 +178,7 @@ describe('DotEmaDialogComponent', () => {
                 payload: PAYLOAD_MOCK
             });
         });
+
         it('should trigger editContentlet in the store', () => {
             const editContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
 
@@ -188,6 +189,7 @@ describe('DotEmaDialogComponent', () => {
                 title: PAYLOAD_MOCK.contentlet.title
             });
         });
+
         it('should trigger createContentlet in the store', () => {
             const createContentletSpy = jest.spyOn(storeSpy, 'createContentlet');
 
@@ -300,8 +302,7 @@ describe('DotEmaDialogComponent', () => {
 
                 expect(modalSpy).toHaveBeenCalled();
                 expect(copySpy).not.toHaveBeenCalledWith();
-                expect(loadingSpy).toHaveBeenNthCalledWith(1, true);
-                expect(loadingSpy).toHaveBeenNthCalledWith(2, false);
+                expect(loadingSpy).toHaveBeenNthCalledWith(1, false);
             });
 
             it('should show an error if the copy content fails', () => {
@@ -314,8 +315,7 @@ describe('DotEmaDialogComponent', () => {
                 expect(modalSpy).toHaveBeenCalled();
                 expect(editContentletSpy).not.toHaveBeenCalled();
                 expect(handleErrorSpy).toHaveBeenCalled();
-                expect(loadingSpy).toHaveBeenNthCalledWith(1, true);
-                expect(loadingSpy).toHaveBeenNthCalledWith(2, false);
+                expect(loadingSpy).toHaveBeenNthCalledWith(1, false);
             });
         });
     });

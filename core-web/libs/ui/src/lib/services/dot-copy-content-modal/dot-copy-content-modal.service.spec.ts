@@ -105,18 +105,4 @@ describe('DotCopyContentModalService', () => {
             DYNAMIC_DIALOG_CONFIG
         );
     });
-
-    it('should call the callback function on close', (done) => {
-        const callback = jasmine.createSpy('callback');
-
-        spyOn(dialogService, 'open').and.returnValue({
-            onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option2.value)
-        } as DynamicDialogRef);
-
-        service.open(callback).subscribe((res) => {
-            expect(res.shouldCopy).toBe(true);
-            expect(callback).toHaveBeenCalledTimes(1);
-            done();
-        });
-    });
 });

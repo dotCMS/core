@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { map, take, filter, tap } from 'rxjs/operators';
+import { map, take, filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -48,7 +48,7 @@ export class DotCopyContentModalService {
      * @memberof DotEditContentComponent
      * @returns {Observable<ModelCopyContentResponse>}
      */
-    open(onClose?: () => void): Observable<ModelCopyContentResponse> {
+    open(): Observable<ModelCopyContentResponse> {
         const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {
             header: this.dotMessageService.get('Edit-Content'),
             width: '37rem',
@@ -61,7 +61,6 @@ export class DotCopyContentModalService {
             // If the user close the modal without select an option, we return false
             // This will complete the observable
             filter((value) => !!value),
-            tap(() => onClose?.()),
             map((value) => {
                 return { shouldCopy: this.CONTENT_EDIT_OPTIONS.option2.value === value };
             })
