@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "13b4e6cd-724d-4b5e-b4cc-9a2b2483b51b",
+		"_postman_id": "dc3c0b1e-5343-47c0-b17a-c18786018f1a",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -4197,14 +4197,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status must be successfull\", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"pm.test(\"Getting 'default' Site ID\", function() {",
 									"    var entity = pm.response.json().entity;",
 									"    pm.collectionVariables.set(\"defaultSiteId\", entity.identifier);",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4268,7 +4269,8 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.collectionVariables.set(\"firstPageIdentifier\", jsonData.entity.identifier);",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4349,7 +4351,8 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.collectionVariables.set(\"richContentIdentifier\", jsonData.entity.identifier);",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4420,7 +4423,8 @@
 									"pm.test(\"No contentlet addition errors are present\", function() {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4476,7 +4480,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status Response is successfully\", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
@@ -4486,12 +4490,19 @@
 									"    pm.expect(contentletList.length).to.eql(1);",
 									"});",
 									"",
+									"pm.test(\"Check the 'onNumberOfPages' property in the test Contentlet map in first Page\", function() {",
+									"    var entity = pm.response.json().entity;",
+									"    var contentlet = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"][0];",
+									"    pm.expect(contentlet.onNumberOfPages).to.eql(1, \"The 'onNumberOfPages' counter must be 1 at this point\");",
+									"});",
+									"",
 									"pm.test(\"The rendered section should contain data attribute 'data-dot-on-number-of-pages' for the contentlet object\", function() {",
 									"    var entity = pm.response.json().entity;",
 									"    var contentletData = entity.containers.SYSTEM_CONTAINER.rendered[\"uuid-1\"];",
 									"    console.log(contentletData);",
 									"    pm.expect(contentletData).includes(\"data-dot-on-number-of-pages\");",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4560,7 +4571,8 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.collectionVariables.set(\"secondPageIdentifier\", jsonData.entity.identifier);",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4633,14 +4645,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Content was added to First Page successfully\", function () {",
+									"pm.test(\"Test Content was added to second test Page successfully\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"pm.test(\"No contentlet addition errors are present\", function() {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4696,7 +4709,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status Response is successfully\", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
@@ -4706,12 +4719,19 @@
 									"    pm.expect(contentletList.length).to.eql(1);",
 									"});",
 									"",
+									"pm.test(\"Check the 'onNumberOfPages' property in the test Contentlet map in second Page\", function() {",
+									"    var entity = pm.response.json().entity;",
+									"    var contentlet = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"][0];",
+									"    pm.expect(contentlet.onNumberOfPages).to.eql(2, \"The 'onNumberOfPages' counter must be 2 at this point\");",
+									"});",
+									"",
 									"pm.test(\"The rendered section should contain data attribute 'data-dot-on-number-of-pages' for the contentlet object\", function() {",
 									"    var entity = pm.response.json().entity;",
 									"    var contentletData = entity.containers.SYSTEM_CONTAINER.rendered[\"uuid-1\"];",
 									"    console.log(contentletData);",
 									"    pm.expect(contentletData).includes(\"data-dot-on-number-of-pages\");",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
