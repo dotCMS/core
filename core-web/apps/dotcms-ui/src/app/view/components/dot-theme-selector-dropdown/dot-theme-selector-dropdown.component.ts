@@ -260,7 +260,7 @@ export class DotThemeSelectorDropdownComponent
         this.setHostThemes(this.currentSiteIdentifier, this.currentOffset || offset);
     }
 
-    private setHostThemes(hostId: string, offset: number = 0) {
+    private setHostThemes(hostId: string, offset = 0) {
         this.siteService
             .getSiteById(hostId)
             .pipe(take(1))

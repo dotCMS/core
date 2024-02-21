@@ -18,12 +18,12 @@ import { MessageService } from 'primeng/api';
     `
 })
 export class ToastComponent {
-    @Input() severity: string = 'success';
-    @Input() summary: string = 'Success Message';
-    @Input() detail: string = 'The action "Publish" was executed succesfully';
-    @Input() position: string = 'top-right';
-    @Input() life: number = 2000;
-    @Input() icon: string = 'pi-check-circle';
+    @Input() severity = 'success';
+    @Input() summary = 'Success Message';
+    @Input() detail = 'The action "Publish" was executed succesfully';
+    @Input() position = 'top-right';
+    @Input() life = 2000;
+    @Input() icon = 'pi-check-circle';
 
     constructor(private messageService: MessageService) {}
 

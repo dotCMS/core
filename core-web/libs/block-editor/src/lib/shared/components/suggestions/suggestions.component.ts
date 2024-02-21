@@ -147,7 +147,7 @@ export class SuggestionsComponent implements OnInit {
      * @param {string} filter
      * @memberof SuggestionsComponent
      */
-    filterItems(filter: string = '') {
+    filterItems(filter = '') {
         switch (this.itemsLoaded) {
             case ItemsType.BLOCK:
                 this.items = this.initialItems.filter((item) =>
