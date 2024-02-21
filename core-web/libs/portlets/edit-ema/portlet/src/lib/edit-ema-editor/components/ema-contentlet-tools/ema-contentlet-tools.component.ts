@@ -73,6 +73,7 @@ export class EmaContentletToolsComponent implements OnDestroy {
     ];
 
     ngOnDestroy(): void {
+        // Remove all the appended elements
         document.querySelectorAll('[data-dot-drag-item]').forEach((el) => {
             el.remove();
         });
