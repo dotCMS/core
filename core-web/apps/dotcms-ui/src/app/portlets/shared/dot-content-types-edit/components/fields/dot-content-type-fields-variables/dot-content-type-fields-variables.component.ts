@@ -18,7 +18,7 @@ import { DotFieldVariablesService } from './services/dot-field-variables.service
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
     @Input() field: DotCMSContentTypeField;
-    @Input() showTable: boolean = true;
+    @Input() showTable = true;
 
     fieldVariables: DotFieldVariable[] = [];
     blackList = {

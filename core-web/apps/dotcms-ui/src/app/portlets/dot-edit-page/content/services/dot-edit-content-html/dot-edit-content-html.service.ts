@@ -419,7 +419,7 @@ export class DotEditContentHtmlService {
      * @returns *
      * @memberof DotEditContentHtmlService
      */
-    getContentModel(addedContentId: string = ''): DotPageContainer[] {
+    getContentModel(addedContentId = ''): DotPageContainer[] {
         const { uuid, identifier } = this.currentContainer || {};
 
         return this.getEditPageIframe().contentWindow['getDotNgModel']({
