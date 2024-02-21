@@ -29,6 +29,7 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import { SafeUrlPipe } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -50,6 +51,7 @@ import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-pag
 import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
+import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
@@ -91,8 +93,11 @@ const QUERY_PARAMS_MOCK = { language_id: 1, url: 'page-one' };
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule],
-        declarations: [MockComponent(DotEditEmaWorkflowActionsComponent)],
+        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe],
+        declarations: [
+            MockComponent(DotEditEmaWorkflowActionsComponent),
+            MockComponent(DotEmaDialogComponent)
+        ],
         detectChanges: false,
         componentProviders: [
             MessageService,
@@ -1253,30 +1258,6 @@ describe('EditEmaEditorComponent', () => {
                         );
 
                         expect(editorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
-                    });
-
-                    it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {
-                        spectator.detectChanges();
-
-                        const dialog = spectator.query(byTestId('dialog'));
-
-                        window.dispatchEvent(
-                            new MessageEvent('message', {
-                                origin: 'my.super.cool.website.xyz',
-                                data: {
-                                    action: 'edit-contentlet',
-                                    payload: {
-                                        contentlet: {
-                                            identifier: '123'
-                                        }
-                                    }
-                                }
-                            })
-                        );
-
-                        spectator.detectChanges();
-
-                        expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
                     });
                 });
             });

@@ -54,6 +54,7 @@
     background: $white;
     color: $black;
     padding: 0 $spacing-6 $spacing-6 $spacing-6;
+    word-break: break-all;
 }
 
 .p-dialog .p-dialog-footer {

@@ -30,12 +30,7 @@ import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import {
-    SafeUrlPipe,
-    DotSpinnerModule,
-    DotMessagePipe,
-    DotCopyContentModalService
-} from '@dotcms/ui';
+import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -93,7 +88,6 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
     templateUrl: './edit-ema-editor.component.html',
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DotCopyContentModalService],
     imports: [
         CommonModule,
         FormsModule,

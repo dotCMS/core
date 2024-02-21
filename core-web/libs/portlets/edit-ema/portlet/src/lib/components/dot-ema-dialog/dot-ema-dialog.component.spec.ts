@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import { Spectator, createComponentFactory, SpyObject, byTestId } from '@ngneat/spectator/jest';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -8,7 +8,11 @@ import { By } from '@angular/platform-browser';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotCopyContentService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotCopyContentService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCopyContentModalService, ModelCopyContentResponse } from '@dotcms/ui';
@@ -27,6 +31,7 @@ describe('DotEmaDialogComponent', () => {
     let storeSpy: SpyObject<DotEmaDialogStore>;
     let dotCopyContentService: DotCopyContentService;
     let dotCopyContentModalService: DotCopyContentModalService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dialogService: DialogService;
 
     const triggerIframeCustomEvent = (
@@ -54,6 +59,16 @@ describe('DotEmaDialogComponent', () => {
     const createComponent = createComponentFactory({
         component: DotEmaDialogComponent,
         imports: [HttpClientTestingModule],
+        componentProviders: [
+            {
+                provide: DotHttpErrorManagerService,
+                useValue: {
+                    handle() {
+                        return of({});
+                    }
+                }
+            }
+        ],
         providers: [
             DotEmaDialogStore,
             HttpClient,
@@ -88,6 +103,7 @@ describe('DotEmaDialogComponent', () => {
         dotCopyContentService = spectator.inject(DotCopyContentService, true);
         dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
         dialogService = spectator.inject(DialogService, true);
+        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
     });
 
     describe('DOM', () => {
@@ -249,12 +265,11 @@ describe('DotEmaDialogComponent', () => {
                 loadingSpy = jest.spyOn(spectator.component.loading, 'emit');
                 dialogServiceSpy = jest.spyOn(dialogService, 'open');
                 modalSpy = jest.spyOn(dotCopyContentModalService, 'open');
-                copySpy = jest
-                    .spyOn(dotCopyContentService, 'copyInPage')
-                    .mockReturnValue(of(newContentlet));
+                copySpy = jest.spyOn(dotCopyContentService, 'copyInPage');
             });
 
             it('should copy and trigger editContentlet in the store', () => {
+                copySpy.mockReturnValue(of(newContentlet));
                 dialogServiceSpy.mockReturnValue({
                     onClose: of('Copy')
                 });
@@ -285,6 +300,20 @@ describe('DotEmaDialogComponent', () => {
 
                 expect(modalSpy).toHaveBeenCalled();
                 expect(copySpy).not.toHaveBeenCalledWith();
+                expect(loadingSpy).toHaveBeenNthCalledWith(1, true);
+                expect(loadingSpy).toHaveBeenNthCalledWith(2, false);
+            });
+
+            it('should show an error if the copy content fails', () => {
+                const handleErrorSpy = jest.spyOn(dotHttpErrorManagerService, 'handle');
+                copySpy.mockReturnValue(throwError({}));
+
+                dialogServiceSpy.mockReturnValue({ onClose: of('Copy') });
+                component.editContentlet(PAYLOAD_MOCK_WITH_TREE_NODE);
+
+                expect(modalSpy).toHaveBeenCalled();
+                expect(editContentletSpy).not.toHaveBeenCalled();
+                expect(handleErrorSpy).toHaveBeenCalled();
                 expect(loadingSpy).toHaveBeenNthCalledWith(1, true);
                 expect(loadingSpy).toHaveBeenNthCalledWith(2, false);
             });

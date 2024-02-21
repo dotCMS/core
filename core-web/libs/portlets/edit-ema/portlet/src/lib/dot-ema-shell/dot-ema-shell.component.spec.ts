@@ -1,5 +1,6 @@
 import { describe, expect } from '@jest/globals';
 import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -30,6 +31,7 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
@@ -46,6 +48,7 @@ describe('DotEmaShellComponent', () => {
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
         providers: [{ provide: SiteService, useClass: SiteServiceMock }],
+        declarations: [MockComponent(DotEmaDialogComponent)],
         componentProviders: [
             MessageService,
             EditEmaStore,

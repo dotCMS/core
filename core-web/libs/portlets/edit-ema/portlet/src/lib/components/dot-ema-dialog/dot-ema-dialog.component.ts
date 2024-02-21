@@ -15,10 +15,10 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 import { DialogModule } from 'primeng/dialog';
 
-import { switchMap } from 'rxjs/operators';
+import { catchError, filter, switchMap } from 'rxjs/operators';
 
-import { DotCopyContentService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCopyContentService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
 import { DotCopyContentModalService, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import {
@@ -46,7 +46,12 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
         DialogModule,
         DotSpinnerModule
     ],
-    providers: [DotEmaDialogStore, DotCopyContentService, DotCopyContentModalService]
+    providers: [
+        DotEmaDialogStore,
+        DotCopyContentService,
+        DotCopyContentModalService,
+        DotHttpErrorManagerService
+    ]
 })
 export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
@@ -58,6 +63,7 @@ export class DotEmaDialogComponent {
     private readonly store = inject(DotEmaDialogStore);
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     protected readonly dialogState = toSignal(this.store.dialogState$);
     protected readonly dialogStatus = DialogStatus;
@@ -123,7 +129,7 @@ export class DotEmaDialogComponent {
         const { contentlet, treeNode } = payload;
 
         if (contentlet.onNumberOfPages > 1) {
-            this.askToCopy({ treeNode, contentlet });
+            this.askToCopy(treeNode, contentlet as DotCMSContentlet);
 
             return;
         }
@@ -206,26 +212,29 @@ export class DotEmaDialogComponent {
      * Ask to copy the contentlet
      *
      * @private
-     * @param {*} { treeNode, contentlet }
+     * @param {DotTreeNode} treeNode
+     * @param {DotCMSContentlet} contentlet
      * @return {*}
      * @memberof DotEmaDialogComponent
      */
-    private askToCopy({ treeNode, contentlet }) {
+    private askToCopy(treeNode: DotTreeNode, contentlet: DotCMSContentlet) {
         return this.dotCopyContentModalService
             .open(() => this.loading.emit(true))
             .pipe(
                 switchMap(({ shouldCopy }) => {
-                    return shouldCopy
-                        ? this.dotCopyContentService.copyInPage(treeNode)
-                        : of(contentlet as DotCMSContentlet);
-                })
+                    if (!shouldCopy) {
+                        return of(contentlet);
+                    }
+
+                    return this.dotCopyContentService
+                        .copyInPage(treeNode)
+                        .pipe(catchError((error) => this.dotHttpErrorManagerService.handle(error)));
+                }),
+                filter((content: DotCMSContentlet) => !!content?.inode)
             )
-            .subscribe(({ inode, title }) => {
-                this.loading.emit(false);
-                this.store.editContentlet({
-                    inode,
-                    title
-                });
+            .subscribe({
+                next: ({ inode, title }) => this.store.editContentlet({ inode, title }),
+                complete: () => this.loading.emit(false)
             });
     }
 }
