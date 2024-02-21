@@ -28,7 +28,8 @@ describe('utils functions', () => {
                     inode: 'test',
                     title: 'test'
                 },
-                personaTag: 'test'
+                personaTag: 'test',
+                position: 'after'
             });
 
             expect(result).toEqual([
@@ -73,7 +74,8 @@ describe('utils functions', () => {
                 container,
                 contentlet,
                 pageId: 'test',
-                language_id: 'test'
+                language_id: 'test',
+                position: 'after'
             });
 
             expect(result).toEqual([

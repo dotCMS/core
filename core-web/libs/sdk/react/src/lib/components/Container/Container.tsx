@@ -45,20 +45,20 @@ export function Container({ containerRef }: ContainerProps) {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, page, viewAs, components, isInsideEditor } =
-        useContext<PageProviderContext | null>(PageContext) as PageProviderContext;
+    const { containers, components, isInsideEditor } = useContext<PageProviderContext | null>(
+        PageContext
+    ) as PageProviderContext;
 
-    const { acceptTypes, contentlets, maxContentlets, pageContainers, path, variantId } =
-        getContainersData(containers, containerRef);
+    const { acceptTypes, contentlets, maxContentlets, variantId, path } = getContainersData(
+        containers,
+        containerRef
+    );
 
     const updatedContentlets =
         contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
 
-    const contentletsId = updatedContentlets.map((contentlet) => contentlet.identifier);
-
     const container = {
         acceptTypes,
-        contentletsId,
         identifier: path ?? identifier,
         maxContentlets,
         variantId,
@@ -66,11 +66,7 @@ export function Container({ containerRef }: ContainerProps) {
     };
 
     const containerPayload = {
-        container,
-        language_id: viewAs.language.id,
-        pageContainers,
-        pageId: page.identifier,
-        personaTag: viewAs.persona?.keyTag
+        container
     };
 
     function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
@@ -100,8 +96,8 @@ export function Container({ containerRef }: ContainerProps) {
 
     const renderContentlets = updatedContentlets.map((contentlet, treeOrder) => {
         const ContentTypeComponent = components[contentlet.contentType] || NoContent;
-        const pageId = page.identifier;
-        const isInMultiplePages = (contentlet.onNumberOfPages as number) > 1;
+        // const pageId = page.identifier;
+        // const isInMultiplePages = (contentlet.onNumberOfPages as number) > 1;
 
         const Component =
             contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
@@ -113,22 +109,9 @@ export function Container({ containerRef }: ContainerProps) {
             contentlet: {
                 identifier: contentlet.identifier,
                 title: contentlet.widgetTitle || contentlet.title,
-                inode: contentlet.inode
-            },
-            treeNode: {
-                containerId: container.identifier,
-                contentId: contentlet.identifier,
-                relationType: container.uuid,
-                variantId: container.variantId,
-                personalization: getPersonalization(viewAs.persona),
-                treeOrder,
-                pageId
-            },
-            language_id: viewAs.language.id,
-            personaTag: viewAs.persona?.keyTag,
-            isInMultiplePages,
-            pageContainers,
-            pageId
+                inode: contentlet.inode,
+                treeOrder
+            }
         };
 
         return isInsideEditor ? (

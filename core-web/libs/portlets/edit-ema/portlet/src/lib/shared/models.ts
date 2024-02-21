@@ -1,15 +1,19 @@
-import { DotTreeNode } from '@dotcms/dotcms-models';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 
-export interface ActionPayload {
-    container: ContainerPayload;
+export interface ClientData {
     contentlet?: ContentletPayload;
+    container: ContainerPayload;
+}
+
+export interface PositionPayload extends ClientData {
+    position?: 'before' | 'after';
+}
+
+export interface ActionPayload extends PositionPayload {
     language_id: string;
     pageContainers: PageContainer[];
     pageId: string;
     personaTag?: string;
-    position?: 'before' | 'after';
-    treeNode?: DotTreeNode;
-    isInMultiplePages: boolean;
     newContentletId?: string;
 }
 
@@ -23,7 +27,7 @@ export interface PageContainer {
 export interface ContainerPayload {
     acceptTypes: string;
     identifier: string;
-    contentletsId: string[];
+    contentletsId?: string[];
     maxContentlets: number;
     variantId: string;
     uuid: string;
@@ -40,6 +44,7 @@ export interface SetUrlPayload {
 
 export interface SavePagePayload {
     pageContainers: PageContainer[];
+    params?: DotPageApiParams;
     pageId: string;
     whenSaved?: () => void;
 }

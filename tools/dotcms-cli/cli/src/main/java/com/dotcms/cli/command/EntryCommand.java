@@ -9,6 +9,7 @@ import com.dotcms.cli.command.site.SiteCommand;
 import com.dotcms.cli.common.DotExceptionHandler;
 import com.dotcms.cli.common.DotExecutionStrategy;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.VersionProvider;
 import com.dotcms.cli.exception.ExceptionHandlerImpl;
 import com.dotcms.model.annotation.SecuredPassword;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
@@ -28,11 +29,11 @@ import picocli.CommandLine.ParameterException;
 @CommandLine.Command(
         name = EntryCommand.NAME,
         mixinStandardHelpOptions = true,
-        version = {"dotCMS cli 1.0", "picocli " + CommandLine.VERSION},
+        versionProvider = VersionProvider.class,
         description = {
-                "@|bold,underline,blue dotCMS|@ cli is a command line interface to interact with your @|bold,underline,blue dotCMS|@ instance.",
+                "@|bold,underline,blue dotCMS|@ dotCLI is a command line interface to interact with your @|bold,underline,blue dotCMS|@ instance.",
         },
-        header = "dotCMS cli",
+        header = "dotCMS dotCLI",
         subcommands = {
                 //-- Miscellaneous stuff
                 InitCommand.class,
@@ -54,7 +55,7 @@ import picocli.CommandLine.ParameterException;
 )
 public class EntryCommand implements DotCommand{
 
-    public static final String NAME = "dotCMS";
+    public static final String NAME = "@|bold,magenta dotCLI|@";
 
     // Declared here, so we have an instance available via Arc container on the Customized CommandLine
     @Inject
