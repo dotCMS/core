@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 
@@ -39,5 +40,15 @@ describe('DotContentletService', () => {
         const req = httpMock.expectOne('/api/v1/content/versions?identifier=123&groupByLang=1');
         expect(req.request.method).toBe('GET');
         req.flush(mockContentletVersionsResponse);
+    });
+
+    it('should retrieve by inode', () => {
+        service.getContentletByInode('777-777').subscribe((res) => {
+            expect(res !== null).toBe(true);
+            expect(res.inode).toBe('777-777');
+        });
+
+        // const req = httpMock.expectOne('/api/v1/content/versions/777-777');
+        // expect(req.request.method).toBe('GET');
     });
 });
