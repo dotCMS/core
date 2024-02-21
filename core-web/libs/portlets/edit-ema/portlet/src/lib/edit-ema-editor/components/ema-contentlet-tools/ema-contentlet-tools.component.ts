@@ -5,6 +5,7 @@ import {
     EventEmitter,
     HostBinding,
     Input,
+    OnDestroy,
     Output,
     inject
 } from '@angular/core';
@@ -26,7 +27,7 @@ import { ContentletArea } from '../ema-page-dropzone/types';
     styleUrls: ['./ema-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EmaContentletToolsComponent {
+export class EmaContentletToolsComponent implements OnDestroy {
     private dotMessageService = inject(DotMessageService);
 
     private buttonPosition: 'after' | 'before' = 'after';
@@ -71,10 +72,26 @@ export class EmaContentletToolsComponent {
         }
     ];
 
+    ngOnDestroy(): void {
+        document.querySelectorAll('[data-dot-drag-item]').forEach((el) => {
+            el.remove();
+        });
+    }
+
     dragStart(event: DragEvent, payload: ActionPayload): void {
-        const element = document.querySelector(
-            '#content-type-card-' + payload.contentlet.contentType // We need to generate the component here.
+        const element =
+            document.querySelector(`[data-dot-drag-item="${payload.contentlet.contentType}"]`) ??
+            document.createElement('div');
+
+        element.innerHTML = payload.contentlet.contentType;
+        element.setAttribute(
+            'style',
+            'position: absolute;top: -1000px;left: -1000px;padding: 1rem;width: fit-content;background-color: white;border: 1px solid #d1d4db;border-radius: 0.5rem;'
         );
+
+        element.setAttribute('data-dot-drag-item', payload.contentlet.contentType);
+
+        document.body.appendChild(element);
 
         event.dataTransfer.setDragImage(element, 0, 0);
 
