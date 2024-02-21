@@ -22,6 +22,7 @@
         <div
             class="content-type-card"
             *ngFor="let contenttype of contentTypes; let i = index"
+            [id]="'content-type-card-' + contenttype.variable"
             [attr.data-item]="
                 {
                     variable: contenttype.variable,

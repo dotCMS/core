@@ -3,6 +3,10 @@
 :host {
     display: block;
 
+    &.hide {
+        opacity: 0;
+    }
+
     ::ng-deep {
         .p-button-raised {
             background-color: $white;
@@ -10,7 +14,8 @@
             box-shadow: $shadow-s;
             transition: all 0.15s ease-in-out;
 
-            &:hover {
+            &:hover,
+            &:enabled:focus {
                 background-color: $color-palette-primary-100;
                 color: $color-palette-primary-500;
                 box-shadow: $shadow-s;

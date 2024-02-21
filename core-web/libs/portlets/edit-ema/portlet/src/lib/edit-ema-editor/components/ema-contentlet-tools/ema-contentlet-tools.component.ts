@@ -3,6 +3,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    HostBinding,
     Input,
     Output,
     inject
@@ -31,11 +32,14 @@ export class EmaContentletToolsComponent {
     private buttonPosition: 'after' | 'before' = 'after';
 
     @Input() contentlet: ContentletArea;
+    @HostBinding('class.hide') @Input() hide = false;
     @Output() addContent = new EventEmitter<ActionPayload>();
     @Output() addForm = new EventEmitter<ActionPayload>();
     @Output() addWidget = new EventEmitter<ActionPayload>();
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() delete = new EventEmitter<ActionPayload>();
+    @Output() move = new EventEmitter<ActionPayload>();
+    @Output() dragStop = new EventEmitter<void>();
 
     items: MenuItem[] = [
         {
@@ -66,6 +70,20 @@ export class EmaContentletToolsComponent {
             }
         }
     ];
+
+    dragStart(event: DragEvent, payload: ActionPayload): void {
+        const element = document.querySelector(
+            '#content-type-card-' + payload.contentlet.contentType // We need to generate the component here.
+        );
+
+        event.dataTransfer.setDragImage(element, 0, 0);
+
+        this.move.emit(payload);
+    }
+
+    dragEnd() {
+        this.dragStop.emit();
+    }
 
     /**
      * Set the position flag to add the contentlet before or after the current one
@@ -141,7 +159,7 @@ export class EmaContentletToolsComponent {
      * @memberof EmaContentletToolsComponent
      */
     getActionPosition(): Record<string, string> {
-        const width = 84;
+        const width = 128;
         const height = 40;
         const contentletCenterX = this.contentlet.x + this.contentlet.width;
         const left = contentletCenterX - width - 8;
