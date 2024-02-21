@@ -70,7 +70,7 @@ interface BasePayload {
 interface ContentletDragPayload extends BasePayload {
     type: 'contentlet';
     item: {
-        container: ContainerPayload;
+        container?: ContainerPayload;
         contentlet: ContentletPayload;
     };
     move: boolean;
