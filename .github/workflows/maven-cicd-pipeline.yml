@@ -18,7 +18,9 @@ on:
   merge_group:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
-  cancel-in-progress: true
+  # Cancel any in-progress runs for the same branch/PR to prevent delays from changes during build
+  # On master and other branches run will set as pending.  Any new builds requested will replace the pending build
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   JVM_TEST_MAVEN_OPTS: "-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
   DOCKER_PLATFORMS: "linux/amd64,linux/arm64"
@@ -50,32 +52,38 @@ jobs:
       - name: Rewrite Filter
         id: filter-rewrite
         run: |
-          frontend=${{ steps.filter.outputs.frontend }}
-          cli=${{ steps.filter.outputs.cli }}
-          backend=${{ steps.filter.outputs.backend }}
-          build=${{ steps.filter.outputs.build }}
-          jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }} 
+          # Run all steps on master branch to catch any issues that got through
+          is_master=$(echo ${{ github.ref }} | sed -n 's/refs\/heads\/master/&/p')
           
-          is_backend=false
-          backend_files=( ${{ steps.filter.outputs.backend_files }} )
-          for backend_file in "${backend_files[@]}"
-          do
-            echo "Evaluating ${backend_file}"
-            if [[ ! ${backend_file} =~ ^dotCMS/src/main/webapp/html/.*\.(js|css)$ ]]; then
-              echo "Backend file ${backend_file} is not a frontend file... aborting search"
-              is_backend=true
-              break
-            fi
-          done
+          if [ "$is_master" == "refs/heads/master" ]; then
+            echo "Build is on master branch. Setting all outputs to true."
+            frontend=true
+            cli=true
+            backend=true
+            build=true
+            jvm_unit_test=true
+          else
+            frontend=${{ steps.filter.outputs.frontend }}
+            cli=${{ steps.filter.outputs.cli }}
+            backend=${{ steps.filter.outputs.backend }}
+            build=${{ steps.filter.outputs.build }}
+            jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }} 
           
-          backend=${is_backend}
-          [[ "${backend}" == 'true' ]] && build=true && jvm_unit_test=true
+            is_backend=false
+            backend_files=( ${{ steps.filter.outputs.backend_files }} )
+            for backend_file in "${backend_files[@]}"
+            do
+              echo "Evaluating ${backend_file}"
+              if [[ ! ${backend_file} =~ ^dotCMS/src/main/webapp/html/.*\.(js|css)$ ]]; then
+                echo "Backend file ${backend_file} is not a frontend file... aborting search"
+                is_backend=true
+                break
+              fi
+            done
           
-          echo "frontend=${frontend}"
-          echo "cli=${cli}"
-          echo "backend=${backend}"
-          echo "build=${build}"
-          echo "jvm_unit_test=${jvm_unit_test}"
+            backend=${is_backend}
+            [[ "${backend}" == 'true' ]] && build=true && jvm_unit_test=true
+          fi
           
           echo "frontend=${frontend}" >> $GITHUB_OUTPUT
           echo "cli=${cli}" >> $GITHUB_OUTPUT
