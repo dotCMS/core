@@ -10,35 +10,26 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 
-const generateRandomString = function (length) {
-    // length is the number of characters or words to generate
-    // type is either 'char' or 'word'
-    let result = '';
-
-    // generate a random string of words
+const generateRandomString = function (length: number) {
     const words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit'];
-    for (let i = 0; i < length; i++) {
-        result += words[Math.floor(Math.random() * words.length)] + ' ';
-    }
 
-    return result.trim(); // remove the trailing space
+    return Array.from({ length }, () => words[Math.floor(Math.random() * words.length)]).join(' ');
 };
 
 const generateInode = function () {
-    // a UUID is a 36-character string with 8-4-4-4-12 hex digits and dashes
+    const hexDigits = '0123456789abcdef';
+    const segments = [8, 4, 4, 4, 12];
     let uuid = '';
-    const hex = '0123456789abcdef'; // the hexadecimal digits
-    const segments = [8, 4, 4, 4, 12]; // the lengths of each segment
-    for (const segment of segments) {
-        // for each segment, append a dash and then random hex digits
-        uuid += '-';
-        for (let i = 0; i < segment; i++) {
-            // pick a random hex digit and append it to the uuid
-            uuid += hex[Math.floor(Math.random() * hex.length)];
-        }
-    }
 
-    return uuid.slice(1); // remove the leading dash
+    segments.forEach((segmentLength, index) => {
+        if (index !== 0) uuid += '-'; // Add dash between segments
+
+        for (let i = 0; i < segmentLength; i++) {
+            uuid += hexDigits.charAt(Math.floor(Math.random() * hexDigits.length));
+        }
+    });
+
+    return uuid;
 };
 
 const newContentObj = function () {
