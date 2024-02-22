@@ -144,6 +144,68 @@ const dotPageContainerStructureMock: DotPageContainerStructure = {
                     sortOrder: 123,
                     stInode: '123',
                     titleImage: '123'
+                },
+                {
+                    baseType: '456',
+                    content: 'something',
+                    contentType: '456',
+                    dateCreated: '456',
+                    dateModifed: '456',
+                    folder: '456',
+                    host: '456',
+                    identifier: '456',
+                    inode: '456',
+                    languageId: 456,
+                    live: false,
+                    locked: false,
+                    modDate: '456',
+                    modUser: '456',
+                    owner: '456',
+                    working: false,
+                    title: '456',
+                    url: '456',
+                    __icon__: '456',
+                    archived: false,
+                    deleted: false,
+                    hasTitleImage: false,
+                    hostName: '456',
+                    image: '456',
+                    modUserName: '456',
+                    sortOrder: 456,
+                    stInode: '456',
+                    titleImage: '456'
+                }
+            ],
+            '456': [
+                {
+                    baseType: '123',
+                    content: 'something',
+                    contentType: '123',
+                    dateCreated: '123',
+                    dateModifed: '123',
+                    folder: '123',
+                    host: '123',
+                    identifier: '123',
+                    inode: '123',
+                    languageId: 123,
+                    live: false,
+                    locked: false,
+                    modDate: '123',
+                    modUser: '123',
+                    owner: '123',
+                    working: false,
+                    title: '123',
+                    url: '123',
+                    __icon__: '123',
+                    archived: false,
+                    deleted: false,
+                    hasTitleImage: false,
+                    hostName: '123',
+                    image: '123',
+                    modUserName: '123',
+                    sortOrder: 123,
+                    stInode: '123',
+                    titleImage: '123'
                 }
             ]
         }
@@ -1595,6 +1657,192 @@ describe('EditEmaEditorComponent', () => {
                 spectator.detectComponentChanges();
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
+            });
+
+            it('should move a contentlet from position in the same contentlet', () => {
+                const saveSpy = jest.spyOn(store, 'savePage');
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                            payload: {
+                                x: 100,
+                                y: 100,
+                                width: 500,
+                                height: 500,
+                                payload: PAYLOAD_MOCK
+                            }
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+
+                const emaTools = spectator.debugElement.query(
+                    By.css('[data-testId="contentlet-tools"]')
+                );
+
+                spectator.triggerEventHandler(emaTools, 'move', {
+                    container: {
+                        acceptTypes: '123,456',
+                        identifier: '123',
+                        contentletsId: ['123', '456'],
+                        maxContentlets: 123,
+                        uuid: '123'
+                    }, // Same container
+                    contentlet: {
+                        identifier: '123' // The pivot
+                    }
+                });
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                );
+
+                spectator.detectComponentChanges();
+
+                const dropZone = spectator.debugElement.query(By.css('[data-testId="dropzone"]'));
+
+                spectator.triggerEventHandler(dropZone, 'place', {
+                    container: {
+                        acceptTypes: '123,456',
+                        identifier: '123',
+                        contentletsId: ['123', '456'],
+                        maxContentlets: 123,
+                        uuid: '123'
+                    }, // Same container
+                    position: 'after',
+                    contentlet: {
+                        identifier: '456' // The pivot
+                    }
+                });
+
+                const newPageContainers = [
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['456', '123'],
+                        personaTag: 'dot:persona'
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '456',
+                        contentletsId: ['123'],
+                        personaTag: 'dot:persona'
+                    }
+                ];
+
+                expect(saveSpy).toHaveBeenCalledWith({
+                    pageContainers: newPageContainers,
+                    pageId: '123',
+                    whenSaved: expect.any(Function),
+                    params: {
+                        language_id: 1,
+                        url: 'page-one'
+                    }
+                });
+            });
+
+            it('should move a contentlet to another container', () => {
+                const saveSpy = jest.spyOn(store, 'savePage');
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                            payload: {
+                                x: 100,
+                                y: 100,
+                                width: 500,
+                                height: 500,
+                                payload: PAYLOAD_MOCK
+                            }
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+
+                const emaTools = spectator.debugElement.query(
+                    By.css('[data-testId="contentlet-tools"]')
+                );
+
+                spectator.triggerEventHandler(emaTools, 'move', {
+                    container: {
+                        acceptTypes: '123,456',
+                        identifier: '123',
+                        contentletsId: ['123', '456'],
+                        maxContentlets: 123,
+                        uuid: '123'
+                    }, // From container
+                    contentlet: {
+                        identifier: '456' // The contentlet to move
+                    }
+                });
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                );
+
+                spectator.detectComponentChanges();
+
+                const dropZone = spectator.debugElement.query(By.css('[data-testId="dropzone"]'));
+
+                spectator.triggerEventHandler(dropZone, 'place', {
+                    container: {
+                        acceptTypes: '123,456',
+                        identifier: '123',
+                        contentletsId: ['123'],
+                        maxContentlets: 123,
+                        uuid: '456'
+                    }, // Another container
+                    position: 'after',
+                    contentlet: {
+                        identifier: '123' // The pivot
+                    }
+                });
+
+                const newPageContainers = [
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123'],
+                        personaTag: 'dot:persona'
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '456',
+                        contentletsId: ['123', '456'],
+                        personaTag: 'dot:persona'
+                    }
+                ];
+
+                expect(saveSpy).toHaveBeenCalledWith({
+                    pageContainers: newPageContainers,
+                    pageId: '123',
+                    whenSaved: expect.any(Function),
+                    params: {
+                        language_id: 1,
+                        url: 'page-one'
+                    }
+                });
             });
         });
 
