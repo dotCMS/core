@@ -147,7 +147,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const clientData = this.clientData();
         const { container } = clientData;
-        const { containers, languageId, id: pageId, personaTag } = this.pageData();
+        const { containers, languageId, id: pageId, personaTag } = this.pageData() || {};
         const { contentletsId } = containers.find(
             ({ identifier, uuid }) => identifier === container.identifier && uuid === container.uuid
         );

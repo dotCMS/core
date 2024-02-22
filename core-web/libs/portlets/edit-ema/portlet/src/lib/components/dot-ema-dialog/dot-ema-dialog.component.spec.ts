@@ -1,22 +1,17 @@
 import { describe, it, expect } from '@jest/globals';
 import { Spectator, createComponentFactory, SpyObject, byTestId } from '@ngneat/spectator/jest';
-import { Observable, of, throwError } from 'rxjs';
+import { of} from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
-import { DialogService } from 'primeng/dynamicdialog';
-
 import {
-    DotCopyContentService,
-    DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotCopyContentModalService, ModelCopyContentResponse } from '@dotcms/ui';
-import { MockDotMessageService, dotcmsContentletMock } from '@dotcms/utils-testing';
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaDialogComponent } from './dot-ema-dialog.component';
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
@@ -25,38 +20,10 @@ import { DotActionUrlService } from '../../services/dot-action-url/dot-action-ur
 import { PAYLOAD_MOCK } from '../../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
 
-const treeNodeMock = {
-    containerId: '123',
-    contentId: '123',
-    pageId: '123',
-    relationType: 'test',
-    treeOrder: '1',
-    variantId: 'test',
-    personalization: 'dot:default'
-};
-const newContentlet = {
-    ...dotcmsContentletMock,
-    inode: '123',
-    title: 'test'
-};
-
-const PAYLOAD_MOCK_WITH_TREE_NODE = {
-    ...PAYLOAD_MOCK,
-    contentlet: {
-        ...PAYLOAD_MOCK.contentlet,
-        onNumberOfPages: 2
-    },
-    treeNode: treeNodeMock
-};
-
 describe('DotEmaDialogComponent', () => {
     let spectator: Spectator<DotEmaDialogComponent>;
     let component: DotEmaDialogComponent;
     let storeSpy: SpyObject<DotEmaDialogStore>;
-    let dotCopyContentService: DotCopyContentService;
-    let dotCopyContentModalService: DotCopyContentModalService;
-    let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    let dialogService: DialogService;
 
     const triggerIframeCustomEvent = (
         customEvent = {
@@ -83,22 +50,9 @@ describe('DotEmaDialogComponent', () => {
     const createComponent = createComponentFactory({
         component: DotEmaDialogComponent,
         imports: [HttpClientTestingModule],
-        componentProviders: [
-            {
-                provide: DotHttpErrorManagerService,
-                useValue: {
-                    handle() {
-                        return of({});
-                    }
-                }
-            }
-        ],
         providers: [
             DotEmaDialogStore,
             HttpClient,
-            DialogService,
-            DotCopyContentService,
-            DotCopyContentModalService,
             {
                 provide: DotActionUrlService,
                 useValue: {
@@ -124,10 +78,6 @@ describe('DotEmaDialogComponent', () => {
         spectator = createComponent();
         component = spectator.component;
         storeSpy = spectator.inject(DotEmaDialogStore, true);
-        dotCopyContentService = spectator.inject(DotCopyContentService, true);
-        dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
-        dialogService = spectator.inject(DialogService, true);
-        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
     });
 
     describe('DOM', () => {
@@ -255,74 +205,12 @@ describe('DotEmaDialogComponent', () => {
             expect(resetSpy).toHaveBeenCalled();
         });
 
-        describe('Copy content', () => {
-            let copySpy: jest.SpyInstance<Observable<DotCMSContentlet>>;
-            let dialogStatusSpy: jest.SpyInstance;
-            let emptyDialogSpy: jest.SpyInstance;
-            let openDialogSpy: jest.SpyInstance;
-            let editContentletSpy: jest.SpyInstance;
-            let modalSpy: jest.SpyInstance<Observable<ModelCopyContentResponse>>;
-            let reloadIframeSpy: jest.SpyInstance;
+        it('should trigger a loading iframe in the store', () => {
+            const resetSpy = jest.spyOn(storeSpy, 'loadingIframe');
 
-            beforeEach(() => {
-                copySpy = jest.spyOn(dotCopyContentService, 'copyInPage');
-                dialogStatusSpy = jest.spyOn(storeSpy, 'setStatus');
-                editContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
-                emptyDialogSpy = jest.spyOn(storeSpy, 'emptyDialog');
-                modalSpy = jest.spyOn(dotCopyContentModalService, 'open');
-                openDialogSpy = jest.spyOn(dialogService, 'open');
-                reloadIframeSpy = jest.spyOn(spectator.component.reloadIframe, 'emit');
-            });
+            component.showLoadingIframe();
 
-            it('should copy and trigger editContentlet in the store', () => {
-                copySpy.mockReturnValue(of(newContentlet));
-                openDialogSpy.mockReturnValue({
-                    onClose: of('Copy')
-                });
-                component.editContentlet(PAYLOAD_MOCK_WITH_TREE_NODE);
-
-                expect(editContentletSpy).toHaveBeenCalledWith({
-                    inode: newContentlet.inode,
-                    title: newContentlet.title
-                });
-
-                expect(modalSpy).toHaveBeenCalled();
-                expect(copySpy).toHaveBeenCalledWith(treeNodeMock);
-                expect(reloadIframeSpy).toHaveBeenCalledWith(true);
-                expect(emptyDialogSpy).toHaveBeenCalledWith(PAYLOAD_MOCK.contentlet.title);
-                expect(dialogStatusSpy).not.toHaveBeenCalled();
-            });
-
-            it('should not copy and trigger editContentlet in the store', () => {
-                openDialogSpy.mockReturnValue({
-                    onClose: of('NotCopy')
-                });
-
-                component.editContentlet(PAYLOAD_MOCK_WITH_TREE_NODE);
-
-                expect(editContentletSpy).toHaveBeenCalledWith({
-                    inode: PAYLOAD_MOCK_WITH_TREE_NODE.contentlet.inode,
-                    title: PAYLOAD_MOCK_WITH_TREE_NODE.contentlet.title
-                });
-
-                expect(modalSpy).toHaveBeenCalled();
-                expect(copySpy).not.toHaveBeenCalledWith();
-            });
-
-            it('should show an error if the copy content fails', () => {
-                const handleErrorSpy = jest.spyOn(dotHttpErrorManagerService, 'handle');
-                copySpy.mockReturnValue(throwError({}));
-
-                openDialogSpy.mockReturnValue({ onClose: of('Copy') });
-                component.editContentlet(PAYLOAD_MOCK_WITH_TREE_NODE);
-
-                expect(modalSpy).toHaveBeenCalled();
-                expect(editContentletSpy).not.toHaveBeenCalled();
-                expect(handleErrorSpy).toHaveBeenCalled();
-                expect(reloadIframeSpy).toHaveBeenCalledWith(true);
-                expect(emptyDialogSpy).toHaveBeenCalledWith(PAYLOAD_MOCK.contentlet.title);
-                expect(dialogStatusSpy).toHaveBeenCalledWith('IDLE');
-            });
+            expect(resetSpy).toHaveBeenCalled();
         });
     });
 });
