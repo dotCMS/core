@@ -1634,26 +1634,23 @@ describe('EditEmaEditorComponent', () => {
             });
         });
 
-        describe('Dialog loading', () => {
+        describe('reaload iframe', () => {
             let spy: jest.SpyInstance;
             let dialog: DebugElement;
 
             beforeEach(() => {
-                spy = jest.spyOn(store, 'updateEditorState');
+                spy = jest.spyOn(
+                    spectator.component.iframe.nativeElement.contentWindow,
+                    'postMessage'
+                );
                 spectator.detectChanges();
                 dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
             });
 
             it('should update to Loading state', () => {
-                triggerCustomEvent(dialog, 'loading', true);
+                triggerCustomEvent(dialog, 'reloadIframe', true);
                 spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
-            });
-
-            it('should update to Loaded state', () => {
-                triggerCustomEvent(dialog, 'loading', false);
-                spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                expect(spy).toHaveBeenCalledWith('ema-reload-page', '*');
             });
         });
     });

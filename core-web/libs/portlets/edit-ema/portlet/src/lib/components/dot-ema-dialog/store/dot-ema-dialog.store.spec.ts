@@ -171,4 +171,18 @@ describe('DotEmaDialogStoreService', () => {
 
         expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost');
     });
+
+    it('should initialize with empty iframe properties', (done) => {
+        spectator.service.emptyDialog('test');
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state).toEqual({
+                url: '',
+                status: DialogStatus.LOADING,
+                header: 'test',
+                type: 'content'
+            });
+            done();
+        });
+    });
 });

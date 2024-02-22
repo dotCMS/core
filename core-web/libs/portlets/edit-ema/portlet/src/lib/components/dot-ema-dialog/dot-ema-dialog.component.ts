@@ -1,4 +1,4 @@
-import { fromEvent, of } from 'rxjs';
+import { Observable, fromEvent, of } from 'rxjs';
 
 import { NgIf, NgStyle, NgSwitch, NgSwitchCase } from '@angular/common';
 import {
@@ -15,7 +15,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 import { DialogModule } from 'primeng/dialog';
 
-import { catchError, filter, switchMap, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotCopyContentService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
@@ -57,7 +57,7 @@ export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
 
     @Output() action = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
-    @Output() loading = new EventEmitter<boolean>();
+    @Output() reloadIframe = new EventEmitter<boolean>();
 
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly store = inject(DotEmaDialogStore);
@@ -226,16 +226,33 @@ export class DotEmaDialogComponent {
                         return of(contentlet);
                     }
 
-                    return this.dotCopyContentService.copyInPage(treeNode).pipe(
-                        tap(() => this.loading.emit(true)),
-                        catchError((error) => this.dotHttpErrorManagerService.handle(error))
-                    );
+                    // If we are copying the contentlet, we show a empty iframe to the user
+                    this.store.emptyDialog(contentlet.title);
+
+                    return this.handleCopyContent(treeNode);
                 }),
                 filter((content: DotCMSContentlet) => !!content?.inode)
             )
-            .subscribe({
-                next: ({ inode, title }) => this.store.editContentlet({ inode, title }),
-                complete: () => this.loading.emit(false)
-            });
+            .subscribe(({ inode, title }) => this.store.editContentlet({ inode, title }));
+    }
+
+    /**
+     * Handle copy content
+     *
+     * @private
+     * @param {*} treeNode
+     * @return {*}
+     * @memberof DotEmaDialogComponent
+     */
+    private handleCopyContent(treeNode): Observable<DotCMSContentlet> {
+        return this.dotCopyContentService.copyInPage(treeNode).pipe(
+            catchError((error) =>
+                this.dotHttpErrorManagerService.handle(error).pipe(
+                    tap(() => this.store.setStatus(this.dialogStatus.IDLE)), // If there is an error, we set the status to idle
+                    map(() => null)
+                )
+            ),
+            tap(() => this.reloadIframe.emit(true))
+        );
     }
 }
