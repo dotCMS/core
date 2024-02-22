@@ -146,7 +146,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 container.identifier === clientData.container.identifier &&
                 container.uuid === clientData.container.uuid
             );
-        });
+        }) ?? { contentletsId: [] };
 
         return {
             ...clientData,
@@ -409,7 +409,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const positionToInsert = positionPayload.position;
 
         if (this.draggedPayload.type === 'contentlet') {
-            const draggedPayload = this.draggedPayload as ContentletDragPayload;
+            const draggedPayload = this.draggedPayload;
             const originContainer = draggedPayload.item.container;
             const contentletToMove = draggedPayload.item.contentlet;
 
