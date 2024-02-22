@@ -1,5 +1,7 @@
 import { Spectator, byTestId, byText, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { By } from '@angular/platform-browser';
+
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 
@@ -75,6 +77,31 @@ describe('EmaContentletToolsComponent', () => {
                 const deleteSpy = jest.spyOn(spectator.component.edit, 'emit');
                 spectator.click('[data-testId="edit-button"]');
                 expect(deleteSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
+            });
+
+            it('should emit move on move button drag', () => {
+                const moveSpy = jest.spyOn(spectator.component.move, 'emit');
+
+                const dragButton = spectator.debugElement.query(
+                    By.css('[data-testId="drag-button"]')
+                );
+
+                spectator.triggerEventHandler(dragButton, 'dragstart', {
+                    dataTransfer: {
+                        setDragImage: jest.fn()
+                    }
+                });
+
+                expect(moveSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
+            });
+
+            it('should emit dragStop', () => {
+                const dragStopSpy = jest.spyOn(spectator.component.dragStop, 'emit');
+                const dragButton = spectator.debugElement.query(
+                    By.css('[data-testId="drag-button"]')
+                );
+                spectator.triggerEventHandler(dragButton, 'dragend', {});
+                expect(dragStopSpy).toHaveBeenCalled();
             });
 
             describe('top button', () => {
