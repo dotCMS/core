@@ -1,9 +1,4 @@
-import {
-    ActionPayload,
-    ContainerPayload,
-    ContentletPayload,
-    PageContainer
-} from '../shared/models';
+import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
 
 /**
  * Insert a contentlet in a container
@@ -151,26 +146,6 @@ export function sanitizeURL(url: string): string {
             return !i || part !== 'index'; // Filter the index from the url if it is at the last position
         })
         .join('/');
-}
-
-/**
- * Get the relation between a contentlet and a container
- *
- * @export
- * @param {ContentletPayload} contentlet
- * @param {ContainerPayload} container
- * @return {*}
- */
-export function getContentletRelationship(
-    contentlet: ContentletPayload,
-    container: ContainerPayload
-) {
-    return {
-        contentId: contentlet?.identifier,
-        containerId: container.identifier,
-        relationType: container.uuid,
-        variantId: container.variantId
-    };
 }
 
 /**

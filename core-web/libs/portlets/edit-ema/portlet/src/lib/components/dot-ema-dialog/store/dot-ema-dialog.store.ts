@@ -107,7 +107,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly emptyDialog = this.updater((state, title: string) => {
+    readonly loadingIframe = this.updater((state, title: string) => {
         return {
             ...state,
             header: title,

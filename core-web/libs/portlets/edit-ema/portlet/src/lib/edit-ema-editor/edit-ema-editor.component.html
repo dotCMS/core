@@ -116,7 +116,7 @@
                     es.state === editorState.LOADED
                 "
                 [contentlet]="contentlet"
-                (edit)="dialog.editContentlet($event)"
+                (edit)="handleEditContentlet($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
@@ -145,7 +145,6 @@
     #dialog
     *ngIf="!currentDevice"
     (action)="onCustomEvent($event)"
-    (reloadIframe)="reloadIframe()"
     data-testId="ema-dialog"></dot-edit-ema-dialog>
 <p-confirmDialog
     *ngIf="!currentDevice"
