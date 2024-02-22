@@ -37,7 +37,7 @@ jobs:
       - name: 'Set OS'
         id: set-os
         run: |
-          if [[ "${{ github.event.inputs.buildNativeImage }}" == "true" ]]; then
+          if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
             RUNNERS='["ubuntu-latest","macos-latest","macos-13-xlarge"]'
           else
             RUNNERS='["ubuntu-latest"]'
@@ -54,7 +54,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-      BRANCH: ${{ github.event.inputs.branch || github.ref_name }}
+      BRANCH: ${{ inputs.branch || github.ref_name }}
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
       # Downloads and installs GRAALVM
       # Configures environment variables
       - name: 'Set up GRAALVM for (Linux/MacOS)'
-        if: ${{ github.event.inputs.buildNativeImage == 'true' && matrix.os != 'windows-latest' }}
+        if: ${{ inputs.buildNativeImage == 'true' && matrix.os != 'windows-latest' }}
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             echo "GRAALVM on Linux (AMD64)"
@@ -124,7 +124,7 @@ jobs:
           gu install native-image
 
       - name: 'Set up GRAALVM for (Windows)'
-        if: ${{ github.event.inputs.buildNativeImage == 'true' && matrix.os == 'windows-latest' }}
+        if: ${{ inputs.buildNativeImage == 'true' && matrix.os == 'windows-latest' }}
         shell: pwsh
         run: |
           $ARCH="amd64"
@@ -167,7 +167,7 @@ jobs:
             mavencore-${{ steps.get-date.outputs.date }}
 
       - name: 'Prepare dotCMS license'
-        if: ${{ github.event.inputs.skipTests == 'false' }}
+        if: ${{ inputs.skipTests == 'false' }}
         env:
           DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         run: |
@@ -179,38 +179,38 @@ jobs:
       - name: 'Compile source code'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
+          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ inputs.skipTests }} -am -pl :dotcms-cli
 
       - name: 'Build uber-jar'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Dquarkus.package.type="uber-jar" -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Dquarkus.package.type="uber-jar" -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
 
       # Builds a native image of the CLI using GRAALVM (Linux/macOS)
       # Runs on a matrix for different operating systems
       - name: 'Build Native Image (Linux/MacOS)'
-        if: ${{ github.event.inputs.buildNativeImage == 'true' && matrix.os != 'windows-latest' }}
+        if: ${{ inputs.buildNativeImage == 'true' && matrix.os != 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Pnative -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
 
       # Builds a native image of the CLI using GRAALVM on Windows
       # Uses PowerShell for setup and execution
       - name: 'Build Native Image (Windows)'
-        if: ${{ github.event.inputs.buildNativeImage == 'true' && matrix.os == 'windows-latest' }}
+        if: ${{ inputs.buildNativeImage == 'true' && matrix.os == 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: |
           cmd /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && .\mvnw.cmd package -Dnative -DskipTests=true -pl :dotcms-cli'
 
       - name: 'Create distribution'
-        if: ${{ github.event.inputs.buildNativeImage == 'true' }}
+        if: ${{ inputs.buildNativeImage == 'true' }}
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw -B -ntp -Pdist package -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
 
       - name: 'Distribution tree'
-        if: ${{ github.event.inputs.buildNativeImage == 'true' }}
+        if: ${{ inputs.buildNativeImage == 'true' }}
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
           ls -ltr cli/target/distributions
@@ -220,7 +220,7 @@ jobs:
         run: |
           echo "artifact_path=${GITHUB_WORKSPACE}/tools/dotcms-cli/cli/target/*-runner.jar" >> $GITHUB_OUTPUT
           
-          if [[ "${{ github.event.inputs.buildNativeImage }}" == "true" ]]; then
+          if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
             echo "artifact_path=${GITHUB_WORKSPACE}/tools/dotcms-cli/cli/target/distributions/*.zip" >> $GITHUB_OUTPUT
             echo "artifact_path=${GITHUB_WORKSPACE}/tools/dotcms-cli/cli/target/distributions/*.tar.gz" >> $GITHUB_OUTPUT
           fi
