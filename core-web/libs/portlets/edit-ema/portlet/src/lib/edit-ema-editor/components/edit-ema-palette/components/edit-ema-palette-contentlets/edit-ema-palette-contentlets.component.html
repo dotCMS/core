@@ -32,7 +32,7 @@
                     *ngFor="let contentlet of contentlets.items; let i = index"
                     [attr.data-item]="
                         {
-                            contentlet: { identifier: contentlet.identifier },
+                            contentlet: { contentlet },
                             contentType: contentlet?.contentType,
                             baseType: contentlet.baseType
                         } | json
