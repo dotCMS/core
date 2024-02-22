@@ -95,6 +95,7 @@ public class RemoteFolderTraversalTask extends TaskProcessor {
         // Wait for all tasks to complete and gather the results
         Function<Pair<List<Exception>, TreeNode>, Void> processFunction = taskResult -> {
             errors.addAll(taskResult.getLeft());
+            //TODO: Prevent adding null nodes to the tree here
             currentNode.addChild(taskResult.getRight());
             return null;
         };

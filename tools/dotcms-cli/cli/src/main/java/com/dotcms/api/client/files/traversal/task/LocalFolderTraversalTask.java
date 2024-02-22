@@ -149,6 +149,7 @@ public class LocalFolderTraversalTask extends TaskProcessor {
                 // Wait for all tasks to complete and gather the results
                 Function<Pair<List<Exception>, TreeNode>, Void> processFunction = taskResult -> {
                     errors.addAll(taskResult.getLeft());
+                    // Im getting null response here
                     currentNode.get().addChild(taskResult.getRight());
                     return null;
                 };
@@ -156,6 +157,7 @@ public class LocalFolderTraversalTask extends TaskProcessor {
             }
         }
 
+        //If the task failed to complete ad the exception got added to the list of errors instead of being thrown current node will be null
         return Pair.of(errors, currentNode.get());
     }
 

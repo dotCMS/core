@@ -101,7 +101,8 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
             var response = remoteTraversalService.traverseRemoteFolder(
                     path,
                     nonRecursive ? 0 : null,
-                    true,
+                    //fetcher needs to be told to not fail fast on permission errors
+                    false,  //so we can still get the tree at least partially
                     includeFolderPatterns,
                     includeAssetPatterns,
                     excludeFolderPatterns,
@@ -114,7 +115,7 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
                     build();
 
         } else { // Handling single files
-
+            //Todo: handle Permission access exceptions here
             var asset = retrieveAssetInformation(path);
             return FileTraverseResult.builder().asset(asset).build();
         }

@@ -63,7 +63,9 @@ public abstract class AbstractFilesListingCommand extends AbstractFilesCommand {
                         remoteTraversalService.traverseRemoteFolder(
                                 filesMixin.folderPath,
                                 depth,
-                                true,
+                                // Fail fast is set to true to stop the traversal as soon as an exception is encountered
+                                // therefore if we encounter permissions error the command will not complete
+                                false,
                                 includeFolderPatterns,
                                 includeAssetPatterns,
                                 excludeFolderPatterns,

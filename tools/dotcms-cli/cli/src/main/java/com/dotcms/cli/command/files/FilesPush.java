@@ -86,7 +86,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                         pushService.traverseLocalFolders(
                                 output, resolvedWorkspaceAndPath.getLeft().root().toFile(),
                                 finalInputFile, filesPushMixin.removeAssets,
-                                filesPushMixin.removeFolders, false, true)
+                                filesPushMixin.removeFolders, false, pushMixin.failFast)
         );
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"

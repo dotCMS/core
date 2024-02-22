@@ -5,6 +5,7 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.api.v1.asset.view.AssetVersionsView;
@@ -16,6 +17,7 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -46,6 +48,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+import static org.apache.commons.lang3.BooleanUtils.toString;
+
 import org.apache.commons.lang3.BooleanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
@@ -69,6 +73,7 @@ public class WebAssetHelper {
     ContentTypeAPI contentTypeAPI;
 
     FolderAPI folderAPI;
+    PermissionAPI permissionAPI;
 
     /**
      * Constructor for testing
@@ -84,7 +89,8 @@ public class WebAssetHelper {
             final BrowserAPI browserAPI,
             final TempFileAPI tempFileAPI,
             final ContentTypeAPI contentTypeAPI,
-            final FolderAPI folderAPI
+            final FolderAPI folderAPI,
+            final PermissionAPI permissionAPI
     ){
         this.languageAPI = languageAPI;
         this.fileAssetAPI = fileAssetAPI;
@@ -93,6 +99,7 @@ public class WebAssetHelper {
         this.tempFileAPI = tempFileAPI;
         this.contentTypeAPI = contentTypeAPI;
         this.folderAPI = folderAPI;
+        this.permissionAPI = permissionAPI;
     }
 
     /**
@@ -106,7 +113,8 @@ public class WebAssetHelper {
                 APILocator.getBrowserAPI(),
                 APILocator.getTempFileAPI(),
                 APILocator.getContentTypeAPI(APILocator.systemUser()),
-                APILocator.getFolderAPI()
+                APILocator.getFolderAPI(),
+                APILocator.getPermissionAPI()
                 );
     }
 
@@ -421,10 +429,9 @@ public class WebAssetHelper {
         final List<Contentlet> assets = folderContent.stream().filter(Contentlet.class::isInstance).map(
                 Contentlet.class::cast).collect(Collectors.toList());
         if (assets.isEmpty()) {
+            final String status = BooleanUtils.toString(form.live(), "live", "working", "unspecified");
             throw new NotFoundInDbException(
-                    String.format(" Asset [%s] not found for lang [%s] and live status [%b] ",
-                            assetName, form.language(),
-                            BooleanUtils.toString(form.live(), "live", "working", "unspecified"))
+                    " Asset [" + assetName + "] not found for lang ["+form.language()+"] and live status ["+ status +"]"
             );
         }
         final Contentlet asset = assets.get(0);
@@ -442,6 +449,7 @@ public class WebAssetHelper {
      * @throws DotSecurityException
      * @throws IOException
      */
+    @WrapInTransaction
     public WebAssetView saveUpdateAsset(final HttpServletRequest request, final FileUploadData form,
             final User user) throws DotDataException, DotSecurityException, IOException {
 
@@ -473,8 +481,7 @@ public class WebAssetHelper {
         final DotTempFile tempFile = tempFileAPI.createTempFile(assetName, request,
                 fileInputStream);
         try {
-            final WebAssetView assetView = Try.of(() -> getAssetInfo(assetAndPath, true, user))
-                    .getOrNull();
+            final WebAssetView assetView = Try.of(() -> getAssetInfo(assetAndPath, true, user)).getOrNull();
             Contentlet savedAsset = null;
 
             if (assetView instanceof AssetVersionsView) {
@@ -495,14 +502,22 @@ public class WebAssetHelper {
 
             } else {
                 //asset does not exist. So create new one
-                final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder,
-                        lang.get());
+                final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, user, lang.get());
                 savedAsset = checkinOrPublish(contentlet, user, live);
             }
             final FileAsset fileAsset = fileAssetAPI.fromContentlet(savedAsset);
             return toAsset(fileAsset);
         } finally {
             disposeTempFile(tempFile);
+        }
+    }
+
+    void verifyUserPermission(final User user, final Contentlet asset)
+            throws DotSecurityException, DotDataException {
+        if (!permissionAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+            throw new DotSecurityException(
+                    String.format("User [%s] does not have permission to read asset [%s]",
+                            user.getUserId(), asset.getIdentifier()));
         }
     }
 
@@ -567,6 +582,12 @@ public class WebAssetHelper {
      * @throws DotSecurityException
      */
     Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live) throws DotDataException, DotSecurityException {
+
+        if(!permissionAPI.doesUserHavePermission(checkout, PermissionAPI.PERMISSION_PUBLISH, user, false)){
+            Logger.info(this, String.format("User [%s] does not have permission to publish asset [%s]", user.getUserId(), checkout.getIdentifier()));
+            return checkout;
+        }
+
         if(live){
             //if the desired state is live, and we need to publish the contentlet
             //But checkout forces creation of a new version, so we need to check in first
@@ -598,12 +619,12 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Contentlet makeFileAsset(final File file, final Host host, final Folder folder, Language lang)
+    Contentlet makeFileAsset(final File file, final Host host, final Folder folder, final User user, final Language lang)
             throws DotDataException, DotSecurityException {
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentTypeAPI.find("FileAsset").id());
         final Contentlet fileAsset = updateFileAsset(file, host, folder, lang, contentlet);
-        return contentletAPI.checkin(fileAsset, APILocator.systemUser(),false);
+        return contentletAPI.checkin(fileAsset, user, false);
     }
 
 
@@ -631,11 +652,10 @@ public class WebAssetHelper {
 
     /**
      * archive an asset
-     * @param assetPath
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param assetPath the asset path
+     * @param user current user
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
      */
     public void archiveAsset(final String assetPath, final User user)
             throws DotDataException, DotSecurityException {

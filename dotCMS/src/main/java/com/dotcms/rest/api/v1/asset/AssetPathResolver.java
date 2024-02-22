@@ -113,7 +113,7 @@ public class AssetPathResolver {
 
             asset.ifPresent(builder::asset);
             return builder.build();
-        } catch (URISyntaxException | DotSecurityException e) {
+        } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Error Parsing uri:" + url, e);
         }
     }

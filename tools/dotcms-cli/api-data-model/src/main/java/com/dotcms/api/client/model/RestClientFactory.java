@@ -94,7 +94,7 @@ public class RestClientFactory {
             }
         }
         raw = raw.replaceAll("(?<!(http:|https:))//", "/");
-        logger.info(String.format("API URI: %s", raw));
+        logger.debug(String.format("API URI: %s", raw));
         return new URL(raw).toURI();
     }
 
