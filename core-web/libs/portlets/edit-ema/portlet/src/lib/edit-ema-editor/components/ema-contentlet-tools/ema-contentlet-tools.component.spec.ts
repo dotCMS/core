@@ -185,7 +185,7 @@ describe('EmaContentletToolsComponent', () => {
                 const topButton = spectator.query(byTestId('actions'));
                 expect(topButton).toHaveStyle({
                     position: 'absolute',
-                    left: '508px',
+                    left: '464px',
                     top: '80px',
                     zIndex: '1'
                 });
