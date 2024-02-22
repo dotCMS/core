@@ -72,7 +72,7 @@ public class IdentityProviderConfigurationFactoryTest {
 
         final AppSecrets appSecrets = mock(AppSecrets.class);
         when(appSecrets.getSecrets()).thenReturn(Map.of("idp.config.identifier",
-                Secret.newSecret(testConfigId.toCharArray(), Type.STRING, false)));
+                Secret.newSecret(testConfigId.toCharArray(), false, Type.STRING)));
         when(appsAPI.getSecrets(anyString(), any(), any())).thenReturn(Optional.of(appSecrets));
         when(appsAPI.getSecrets(anyString(), anyBoolean(), any(), any())).thenReturn(Optional.of(appSecrets));
 

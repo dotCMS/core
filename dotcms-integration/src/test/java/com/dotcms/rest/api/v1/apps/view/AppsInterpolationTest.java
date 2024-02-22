@@ -79,7 +79,7 @@ public class AppsInterpolationTest {
                 new SiteView("48190c8c-42c4-46af-8d1a-0cd5db894797", "demo.dotcms.com",  ImmutableList.of(
                         new SecretView("param1", null, descriptorParams.get("param1"),
                                 ImmutableList.of()),
-                        new SecretView("param2", Secret.newSecret("This is me Param2's Value".toCharArray(), Type.STRING, false), descriptorParams.get("param2"),
+                        new SecretView("param2", Secret.newSecret("This is me Param2's Value".toCharArray(), false, Type.STRING), descriptorParams.get("param2"),
                                 ImmutableList.of()),
                         new SecretView("selectParam", null, descriptorParams.get("selectParam"),
                                 ImmutableList.of()),
@@ -92,7 +92,7 @@ public class AppsInterpolationTest {
         final String json = mapper.writeValueAsString(appView);
         assertFalse(json.contains("$"));
         final Map<String, Object> map = mapper
-              .readValue(json, new TypeReference<Map<String, Object>>() {});
+              .readValue(json, new TypeReference<>() {});
         final String name = (String)map.get("name");
         assertTrue(map.get("description").toString().contains(name));
         List<Map<String,Object>> sites = (List<Map<String, Object>>) map.get("sites");

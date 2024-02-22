@@ -327,7 +327,7 @@ class AppsHelper {
             final AppDescriptor appDescriptor, final SecretForm form, final User user) throws DotSecurityException, DotDataException {
         final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
 
-        final Map<String, Input> params = validateFormForSave(form, appDescriptor);
+        final Map<String, Input> params = validateFormForSave(form, appDescriptor, appSecretsOptional);
         //Create a brand new secret for the present app.
         final AppSecrets.Builder builder = new AppSecrets.Builder();
         builder.withKey(key);
@@ -336,37 +336,39 @@ class AppsHelper {
             final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
             final Input inputParam = stringParamEntry.getValue();
             final boolean dynamic = null == describedParam;
-            final Secret secret;
+                final Optional<Secret> secret;
 
-            if(dynamic){
-                secret = Secret.newSecret(inputParam.getValue(), Type.STRING, inputParam.isHidden());
+            if (dynamic) {
+                secret = AppsUtil.newSecret(key, name, inputParam);
             } else {
-                if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
-                    //If we're dealing with a hidden param and there's a secret already saved...
-                    //The param must be override and replaced for that reason we must delete the existing saved secret.
-                    //In order to keep all existing secrets we grab the saved one and push it into the new.
-                    Logger.debug(AppsHelper.class, ()->"found hidden secret sent with no value.");
-                    if(appSecretsOptional.isPresent()) {
-                        final AppSecrets appSecrets = appSecretsOptional.get();
-                        final Map<String, Secret> secrets = appSecrets.getSecrets();
-                        final Secret hiddenSecret = secrets.get(name);
-                        if(null != hiddenSecret){
-                          secret = Secret.newSecret(hiddenSecret.getValue(), describedParam.getType(), describedParam.isHidden());
-                          Logger.debug(AppsHelper.class, ()->" hidden secret sent with masked value we must grab the value from the saved secret so we dont lose it.");
-                        } else {
-                           //There is an AppSecrets but the secret in particular is grabbed from the default value provided by the yml.
-                           continue;
-                        }
-                    } else {
-                       //The secret isn't there at all. Let's just continue.
-                       continue;
-                    }
+                //If we're dealing with a hidden param and there's a secret already saved...
+                //The param must be overridden and replaced for that reason we must delete the existing saved secret.
+                //In order to keep all existing secrets we grab the saved one and push it into the new.
+                Logger.debug(AppsHelper.class, () -> "found hidden secret sent with no value.");
+                if (isHidden(describedParam, inputParam)) {
+                    secret = appSecretsOptional
+                            .flatMap(appSecrets -> {
+                                Logger.debug(
+                                        AppsHelper.class,
+                                        () -> " hidden secret sent with masked value we must grab the value from the saved secret so we dont lose it.");
+                                return AppsUtil.newSecret(key, name, describedParam, appSecrets);
+                            });
                 } else {
-                   secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
+                    secret = AppsUtil.newSecret(key, name, inputParam.getValue(), describedParam);
                 }
             }
-            builder.withSecret(name, secret);
+            secret.ifPresent(s -> builder.withSecret(name, s));
         }
+
+        // Make sure if omitted params correspond to secrets which have their values managed by an env-vars and that
+        // they're not editable.
+        appSecretsOptional
+                .map(appSecrets -> appSecrets.getSecrets().entrySet())
+                .orElse(Set.of())
+                .stream()
+                .filter(entry -> !entry.getValue().isEditable() && !params.containsKey(entry.getKey()))
+                .forEach(entry -> builder.withSecret(entry.getKey(), entry.getValue()));
+
         // We're gonna build the secret upfront and have it ready.
         // Since the next step is potentially risky (delete a secret that already exist).
         final AppSecrets secrets = builder.build();
@@ -378,6 +380,10 @@ class AppsHelper {
 
         //This operation needs to be executed at the very end.
         appSecretsOptional.ifPresent(AppSecrets::destroy);
+    }
+
+    private boolean isHidden(ParamDescriptor describedParam, Input inputParam) {
+        return describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue());
     }
 
     /**
@@ -418,21 +424,23 @@ class AppsHelper {
                     final String name = stringParamEntry.getKey();
                     final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
                     final boolean dynamic = null == describedParam;
-                    final Secret secret;
+                    final Optional<Secret> secret;
                     if (dynamic) {
-                        secret = Secret.newSecret(inputParam.getValue(), Type.STRING,
-                                inputParam.isHidden());
+                        secret = AppsUtil.newSecret(key, name, inputParam);
                     } else {
-                        if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
-                            Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
+                        if (isHidden(describedParam, inputParam)) {
+                            Logger.debug(AppsHelper.class, () -> "skipping secret sent with no value.");
                             continue;
                         }
-                        secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(),
-                                describedParam.isHidden());
+
+                        secret = AppsUtil.newSecret(key, name, inputParam.getValue(), describedParam);
                     }
-                    appsAPI.saveSecret(key, Tuple.of(name, secret), host, user);
+
+                    if (secret.isPresent()) {
+                        appsAPI.saveSecret(key, Tuple.of(name, secret.get()), host, user);
+                    }
                 }
-            }finally {
+            } finally {
                 form.destroySecretTraces();
             }
         }
@@ -485,12 +493,15 @@ class AppsHelper {
      * Validate the incoming params match the params described by an appDescriptor yml.
      * This validation is intended to behave as a form validation. It'll make sure that all required values are present at save time.
      * And nothing else besides the params described are allowed. Unless they app-descriptor establishes that extraParams are allowed.
-     * @param form a set of paramNames.
-     * @param appDescriptor the app template.
+     *
+     * @param form               a set of paramNames.
+     * @param appDescriptor      the app template.
+     * @param appSecretsOptional the app secrets.
      * @throws IllegalArgumentException This will give back an exception if you send an invalid param.
      */
     private Map<String, Input> validateFormForSave(final SecretForm form,
-            final AppDescriptor appDescriptor)
+                                                   final AppDescriptor appDescriptor,
+                                                   final Optional<AppSecrets> appSecretsOptional)
             throws IllegalArgumentException {
 
         if (!UtilMethods.isSet(form.getInputParams())) {
@@ -502,14 +513,14 @@ class AppsHelper {
                         Entry::getValue));
 
 
-        AppsUtil.validateForSave(mapForValidation(params), appDescriptor);
+        AppsUtil.validateForSave(mapForValidation(params), appDescriptor, appSecretsOptional);
 
         return params;
     }
 
     /**
      * Map of optionals is a middle ground between {@link SecretForm} and {@link AppSecrets}
-     * used by {@link com.dotcms.security.apps.AppsUtil#validateForSave(Map, AppDescriptor)}
+     * used by {@link AppsUtil#validateForSave(Map, AppDescriptor, Optional)}
      * @return
      */
     private Map<String, Optional<char[]>> mapForValidation(final Map<String, Input> params) {

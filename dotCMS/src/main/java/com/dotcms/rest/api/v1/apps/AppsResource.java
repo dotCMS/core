@@ -168,7 +168,7 @@ public class AppsResource {
             final Optional<AppView> appSiteDetailedView = helper
                         .getAppSiteDetailedView(key, siteId, user);
             if (appSiteDetailedView.isPresent()) {
-                return Response.ok(new ResponseEntityView(appSiteDetailedView.get()))
+                return Response.ok(new ResponseEntityView<>(appSiteDetailedView.get()))
                 .build(); // 200
             }
             throw new DoesNotExistException(String.format(

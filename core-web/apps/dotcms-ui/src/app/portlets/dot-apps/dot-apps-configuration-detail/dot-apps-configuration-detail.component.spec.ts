@@ -48,7 +48,8 @@ const sites = [
                 label: 'Name:',
                 required: true,
                 type: 'STRING',
-                value: 'John'
+                value: 'John',
+                editable: true
             },
             {
                 dynamic: false,
@@ -58,7 +59,8 @@ const sites = [
                 label: 'Password:',
                 required: true,
                 type: 'STRING',
-                value: '****'
+                value: '****',
+                editable: true
             },
             {
                 dynamic: false,
@@ -306,7 +308,8 @@ describe('DotAppsConfigurationDetailComponent', () => {
                     label: '',
                     required: false,
                     type: 'STRING',
-                    value: 'test'
+                    value: 'test',
+                    editable: true
                 }
             ];
             const mockRoute = { data: {} };

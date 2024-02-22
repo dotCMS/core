@@ -300,7 +300,7 @@ public class AppsAPIImplTest {
 
         //Now we want to update one of the values within the secret.
         //We want to change the value from `secret3` to `secret-3` for the secret named "test:secret3"
-        final Secret secret = newSecret("secret-3".toCharArray(), Type.STRING, false);
+        final Secret secret = newSecret("secret-3".toCharArray(), false, Type.STRING);
         //Update the individual secret
         api.saveSecret("appKey-1-Host-1", Tuple.of("test:secret3",secret), host, admin);
         //The other properties of the object should remind the same so lets verify so.
@@ -367,7 +367,7 @@ public class AppsAPIImplTest {
         assertEquals("secret-4", recoveredBean1.getSecrets().get("test:secret4").getString());
 
         //Now lets re-introduce again the property we just deleted
-        final Secret secret = newSecret("lol".toCharArray(), Type.STRING, false);
+        final Secret secret = newSecret("lol".toCharArray(), false, Type.STRING);
 
         //This should create again the entry we just removed.
         api.saveSecret("appKeyHost-1", Tuple.of("test:secret3",secret), host, admin);
@@ -740,7 +740,7 @@ public class AppsAPIImplTest {
 
     private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(
             APILocator.getLayoutAPI(),
-            APILocator.getHostAPI(), APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
+            APILocator.getHostAPI(), SecretsStore.INSTANCE.get(),
             CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(), new AppDescriptorHelper(),
             new LicenseValiditySupplier() {
                 public boolean hasValidLicense() {

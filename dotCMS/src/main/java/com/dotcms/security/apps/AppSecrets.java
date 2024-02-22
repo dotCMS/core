@@ -72,28 +72,28 @@ public class AppSecrets implements Serializable {
 
         public Builder withHiddenSecret(final String name, final String value) {
             secretMap.put(
-                    name, Secret.newSecret(value.toCharArray(), Type.STRING, true)
+                    name, Secret.newSecret(value.toCharArray(), true, Type.STRING)
             );
             return this;
         }
 
         public Builder withHiddenSecret(final String name, final boolean value){
             secretMap.put(
-                    name, Secret.newSecret(String.valueOf(value).toCharArray(), Type.BOOL, true)
+                    name, Secret.newSecret(String.valueOf(value).toCharArray(), true, Type.BOOL)
             );
             return this;
         }
 
         public Builder withSecret(final String name, final String value){
             secretMap.put(
-                    name, Secret.newSecret(value.toCharArray(), Type.STRING, false)
+                    name, Secret.newSecret(value.toCharArray(), false, Type.STRING)
             );
             return this;
         }
 
         public Builder withSecret(final String name, final boolean value){
             secretMap.put(
-                    name, Secret.newSecret(String.valueOf(value).toCharArray(), Type.STRING, false)
+                    name, Secret.newSecret(String.valueOf(value).toCharArray(), false, Type.STRING)
             );
             return this;
         }

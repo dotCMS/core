@@ -34,6 +34,7 @@ export interface DotAppsSecret {
     required: boolean;
     type: string;
     value: string;
+    editable?: boolean;
     warnings?: string[];
 }
 

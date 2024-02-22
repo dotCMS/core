@@ -11,6 +11,7 @@ params:
     label: "Analytics Client ID"
     hint: "Client ID is required to resolve access token from IDP"
     required: true
+    envvar: "ANALYTICS_CLIENT_ID"
   clientSecret:
     value: ""
     hidden: true

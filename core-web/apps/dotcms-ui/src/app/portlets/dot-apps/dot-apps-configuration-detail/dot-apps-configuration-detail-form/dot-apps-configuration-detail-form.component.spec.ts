@@ -27,7 +27,8 @@ const secrets = [
         label: 'Name:',
         required: true,
         type: 'STRING',
-        value: 'test'
+        value: 'test',
+        editable: true
     },
     {
         dynamic: false,
@@ -37,7 +38,8 @@ const secrets = [
         label: 'Password:',
         required: true,
         type: 'STRING',
-        value: '****'
+        value: '****',
+        editable: true
     },
     {
         dynamic: false,

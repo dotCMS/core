@@ -2,14 +2,17 @@ package com.dotcms.security.apps;
 
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
- * its a super class that serves as the base form both Params and Secrets.
+ * This is a super class that serves as the base form both Params and Secrets.
  * @param <T>
  */
 public abstract class AbstractProperty<T> implements Serializable {
@@ -19,11 +22,24 @@ public abstract class AbstractProperty<T> implements Serializable {
     protected final T value;
     protected final Boolean hidden;
     protected final Type type;
+    protected final String envVar;
+    protected final Boolean envShow;
+    protected char[] envValue;
 
-    AbstractProperty(final T value, final Boolean hidden, final Type type) {
+    public AbstractProperty(final T value,
+                            final Boolean hidden,
+                            final Type type,
+                            final String envVar,
+                            final Boolean envShow) {
         this.value = value;
         this.hidden = hidden;
         this.type = type;
+        this.envVar = envVar;
+        if (UtilMethods.isSet(this.envVar)) {
+            this.envShow = Optional.ofNullable(envShow).orElse(true);
+        } else {
+            this.envShow = null;
+        }
     }
 
     public T getValue() {
@@ -42,12 +58,48 @@ public abstract class AbstractProperty<T> implements Serializable {
         return type;
     }
 
+    public String getEnvVar() {
+        return envVar;
+    }
+
+    public Boolean getEnvShow() {
+        return envShow;
+    }
+
+    public boolean isEnvShow() {
+        return UtilMethods.isSet(envShow) ? envShow : true;
+    }
+
+    public char[] getEnvValue() {
+        return envValue;
+    }
+
+    public void setEnvValue(char[] envValue) {
+        this.envValue = envValue;
+    }
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public boolean isEditable() {
+        return isEnvShow();
+    }
+
     @JsonIgnore
     public String getString() {
-        if(value instanceof char[]){
-           return String.valueOf((char[]) value);
+        if (isEnvValueSet()) {
+            return String.valueOf(envValue);
         }
-        return String.valueOf(value);
+
+        return value instanceof char[] ? String.valueOf((char[]) value) : String.valueOf(value);
+    }
+
+    @JsonIgnore
+    public boolean isEnvVarSet() {
+        return UtilMethods.isSet(envVar);
+    }
+
+    @JsonIgnore
+    public boolean isEnvValueSet() {
+        return Objects.nonNull(envValue);
     }
 
     @JsonIgnore
@@ -70,7 +122,7 @@ public abstract class AbstractProperty<T> implements Serializable {
             return false;
         }
         final AbstractProperty<?> that = (AbstractProperty<?>) o;
-        return  Objects.equals(hidden, that.hidden) &&
+        return Objects.equals(hidden, that.hidden) &&
                 Objects.deepEquals(value, that.value) &&
                 type == that.type;
     }

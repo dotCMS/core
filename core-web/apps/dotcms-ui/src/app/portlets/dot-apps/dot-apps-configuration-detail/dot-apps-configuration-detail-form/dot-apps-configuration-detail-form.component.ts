@@ -11,6 +11,7 @@ import {
 import { NgForm, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { DotAppsSecret } from '@dotcms/dotcms-models';
+import { DotMessageService } from '@dotcms/data-access';
 
 const getFieldValueFn = {
     BOOL: (field: DotAppsSecret) => {
@@ -36,12 +37,20 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
     @Output() valid = new EventEmitter<boolean>();
     myFormGroup: UntypedFormGroup;
 
+    constructor(private dotMessageService: DotMessageService) {}
+
     ngOnInit() {
         const group = {};
+
         this.formFields.forEach((field: DotAppsSecret) => {
+            const fieldValue = !!field.editable
+                ? field.value
+                : this.dotMessageService.get('apps.param.set.from.env');
             group[field.name] = new UntypedFormControl(
-                this.getFieldValue(field),
-                field.required ? Validators.required : null
+                field.type === 'STRING'
+                    ? { value: fieldValue, disabled: !field.editable }
+                    : fieldValue,
+                field.required && !!field.editable ? Validators.required : null
             );
         });
         this.myFormGroup = new UntypedFormGroup(group);
