@@ -34,9 +34,9 @@ export interface ContainerPayload {
 
 export interface ContentletPayload {
     identifier: string;
-    inode?: string;
-    title?: string;
-    contentType?: string;
+    inode: string;
+    title: string;
+    contentType: string;
 }
 
 export interface SetUrlPayload {

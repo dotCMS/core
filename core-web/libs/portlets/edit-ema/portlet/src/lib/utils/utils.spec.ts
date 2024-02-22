@@ -25,7 +25,8 @@ describe('utils functions', () => {
                 contentlet: {
                     identifier: 'test',
                     inode: 'test',
-                    title: 'test'
+                    title: 'test',
+                    contentType: 'test'
                 },
                 personaTag: 'test',
                 position: 'after'
@@ -64,7 +65,8 @@ describe('utils functions', () => {
             const contentlet = {
                 identifier: 'test2',
                 inode: 'test',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = deleteContentletFromContainer({
@@ -111,7 +113,8 @@ describe('utils functions', () => {
             const contentlet = {
                 identifier: 'contentlet-mark-123',
                 inode: 'contentlet-mark-inode-123',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -159,7 +162,8 @@ describe('utils functions', () => {
             const contentlet = {
                 identifier: 'test123',
                 inode: 'test',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -208,7 +212,8 @@ describe('utils functions', () => {
             const contentlet = {
                 identifier: 'test',
                 inode: 'test',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = insertContentletInContainer({

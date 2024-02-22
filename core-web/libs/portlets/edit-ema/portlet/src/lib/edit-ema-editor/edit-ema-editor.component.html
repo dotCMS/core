@@ -121,8 +121,8 @@
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
-                (move)="moveContentlet($event)"
-                (dragStop)="resetDragProperties()"
+                (moveStart)="moveContentlet($event)"
+                (moveStop)="resetDragProperties()"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="

@@ -785,7 +785,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: '123',
                             inode: '456',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         position: 'after'
                     };
@@ -853,7 +854,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'test',
@@ -1056,7 +1058,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'container-identifier-123',
@@ -1142,7 +1145,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'container-identifier-123',
@@ -1217,7 +1221,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'container-identifier-123',
@@ -1303,7 +1308,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'container-identifier-123',
@@ -1563,7 +1569,7 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('move contentlet', () => {
-            it('should post to iframe to get bound on move contentlet', () => {
+            it('should post to iframe to get bound on move contentlet and show bounds', () => {
                 spectator.detectChanges();
 
                 const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
@@ -1595,13 +1601,25 @@ describe('EditEmaEditorComponent', () => {
                     By.css('[data-testId="contentlet-tools"]')
                 );
 
-                spectator.triggerEventHandler(emaTools, 'move', {
+                spectator.triggerEventHandler(emaTools, 'moveStart', {
                     ...PAYLOAD_MOCK
                 });
 
                 spectator.detectComponentChanges();
 
                 expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                ); // Simulate the iframe response
+
+                expect(spectator.query(EmaPageDropzoneComponent)).not.toBeNull();
             });
 
             it('should hide drop zone on palette drop', () => {
@@ -1629,7 +1647,7 @@ describe('EditEmaEditorComponent', () => {
                     By.css('[data-testId="contentlet-tools"]')
                 );
 
-                spectator.triggerEventHandler(emaTools, 'move', {
+                spectator.triggerEventHandler(emaTools, 'moveStart', {
                     ...PAYLOAD_MOCK
                 });
 
@@ -1653,7 +1671,7 @@ describe('EditEmaEditorComponent', () => {
                 });
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
 
-                spectator.triggerEventHandler(emaTools, 'dragStop', undefined);
+                spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
                 spectator.detectComponentChanges();
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
@@ -1685,7 +1703,7 @@ describe('EditEmaEditorComponent', () => {
                     By.css('[data-testId="contentlet-tools"]')
                 );
 
-                spectator.triggerEventHandler(emaTools, 'move', {
+                spectator.triggerEventHandler(emaTools, 'moveStart', {
                     container: {
                         acceptTypes: '123,456',
                         identifier: '123',
@@ -1778,7 +1796,7 @@ describe('EditEmaEditorComponent', () => {
                     By.css('[data-testId="contentlet-tools"]')
                 );
 
-                spectator.triggerEventHandler(emaTools, 'move', {
+                spectator.triggerEventHandler(emaTools, 'moveStart', {
                     container: {
                         acceptTypes: '123,456',
                         identifier: '123',

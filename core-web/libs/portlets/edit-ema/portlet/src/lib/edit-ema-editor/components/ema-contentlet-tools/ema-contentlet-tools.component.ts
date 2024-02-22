@@ -44,8 +44,8 @@ export class EmaContentletToolsComponent implements OnDestroy {
     @Output() addWidget = new EventEmitter<ActionPayload>();
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() delete = new EventEmitter<ActionPayload>();
-    @Output() move = new EventEmitter<ActionPayload>();
-    @Output() dragStop = new EventEmitter<void>();
+    @Output() moveStart = new EventEmitter<ActionPayload>();
+    @Output() moveStop = new EventEmitter<void>();
 
     items: MenuItem[] = [
         {
@@ -101,11 +101,11 @@ export class EmaContentletToolsComponent implements OnDestroy {
 
         event.dataTransfer.setDragImage(element, 0, 0);
 
-        this.move.emit(payload);
+        this.moveStart.emit(payload);
     }
 
     dragEnd() {
-        this.dragStop.emit();
+        this.moveStop.emit();
     }
 
     /**

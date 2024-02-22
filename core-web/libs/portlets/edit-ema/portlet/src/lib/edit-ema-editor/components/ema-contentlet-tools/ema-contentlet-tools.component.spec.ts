@@ -24,7 +24,8 @@ const payload: ActionPayload = {
     contentlet: {
         identifier: 'contentlet-identifier-123',
         inode: 'contentlet-inode-123',
-        title: 'Hello World'
+        title: 'Hello World',
+        contentType: 'test'
     },
     container: {
         identifier: 'test',
@@ -80,7 +81,7 @@ describe('EmaContentletToolsComponent', () => {
             });
 
             it('should emit move on move button drag', () => {
-                const moveSpy = jest.spyOn(spectator.component.move, 'emit');
+                const moveSpy = jest.spyOn(spectator.component.moveStart, 'emit');
 
                 const dragButton = spectator.debugElement.query(
                     By.css('[data-testId="drag-button"]')
@@ -96,7 +97,7 @@ describe('EmaContentletToolsComponent', () => {
             });
 
             it('should emit dragStop', () => {
-                const dragStopSpy = jest.spyOn(spectator.component.dragStop, 'emit');
+                const dragStopSpy = jest.spyOn(spectator.component.moveStop, 'emit');
                 const dragButton = spectator.debugElement.query(
                     By.css('[data-testId="drag-button"]')
                 );
@@ -268,7 +269,8 @@ describe('EmaContentletToolsComponent', () => {
                                 contentlet: {
                                     identifier: 'TEMP_EMPTY_CONTENTLET',
                                     inode: 'Fake inode',
-                                    title: 'Fake title'
+                                    title: 'Fake title',
+                                    contentType: 'Fake content type'
                                 },
                                 container: undefined,
                                 language_id: '1',
