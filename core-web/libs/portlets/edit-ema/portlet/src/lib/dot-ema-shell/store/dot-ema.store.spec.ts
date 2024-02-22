@@ -6,9 +6,9 @@ import { MessageService } from 'primeng/api';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
-    MockDotMessageService,
     mockDotContainers,
     mockDotLayout,
+    MockDotMessageService,
     mockDotTemplate,
     mockSites
 } from '@dotcms/utils-testing';
@@ -417,7 +417,9 @@ describe('EditEmaStore', () => {
                         url: 'test-url',
                         language_id: '1'
                     },
-                    whenSaved: () => {}
+                    whenSaved: () => {
+                        //
+                    }
                 });
 
                 expect(addMessageSpy).toHaveBeenCalledWith({
@@ -603,7 +605,9 @@ describe('EditEmaStore', () => {
                         url: 'test-url',
                         language_id: '1'
                     },
-                    whenSaved: () => {}
+                    whenSaved: () => {
+                        //
+                    }
                 });
 
                 expect(dotPageApiService.getFormIndetifier).toHaveBeenCalledWith(
@@ -674,7 +678,9 @@ describe('EditEmaStore', () => {
                         url: 'test-url',
                         language_id: '1'
                     },
-                    whenSaved: () => {}
+                    whenSaved: () => {
+                        //
+                    }
                 });
 
                 expect(addMessageSpy).toHaveBeenCalledWith({
