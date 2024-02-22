@@ -90,6 +90,7 @@ export const dotSdkCustomerActions = {
 //but the names are more verbose
 //I Have this proposal of naming
 export const notifyDotEditorOfSetBounds = () => {};
+
 export const notifyDotEditorOfSetURL = () => {};
 
 export const sendCustomerActionSetURL = () => {};
@@ -97,4 +98,5 @@ export const sendCustomerActionSetURL = () => {};
 export const dotTriggerSetURL = () => {};
 
 export const dotOnCustomerActionSetURL = () => {};
+
 export const dotOnSetURL = () => {};

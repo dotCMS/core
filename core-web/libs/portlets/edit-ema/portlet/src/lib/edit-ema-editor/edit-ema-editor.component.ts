@@ -28,6 +28,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
+import { CUSTOMER_ACTIONS, NOTIFY_CUSTOMER } from '@dotcms/editor';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
@@ -65,7 +66,6 @@ import {
   deleteContentletFromContainer,
   insertContentletInContainer,
 } from '../utils';
-import { CUSTOMER_ACTIONS, NOTIFY_CUSTOMER } from '@dotcms/editor';
 
 interface BasePayload {
   type: 'contentlet' | 'content-type';

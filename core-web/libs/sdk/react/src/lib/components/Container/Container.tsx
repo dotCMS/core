@@ -1,10 +1,10 @@
 import { useContext } from 'react';
 
+import { dotSdkCustomerActions } from '@dotcms/editor';
+
 import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
-
-import { dotSdkCustomerActions } from '@dotcms/editor';
 
 const FAKE_CONTENLET = {
   identifier: 'TEMP_EMPTY_CONTENTLET',

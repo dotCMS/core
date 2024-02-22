@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { getPageElementBound } from '../utils/utils';
 import {
   CUSTOMER_ACTIONS,
   dotSdkCustomerActions,
   postMessageToEditor,
 } from '@dotcms/editor';
+
+import { getPageElementBound } from '../utils/utils';
 
 /**
  * `PageEditorOptions` is an interface that defines the options for the `usePageEditor` hook.
