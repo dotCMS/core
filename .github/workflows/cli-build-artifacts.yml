@@ -8,19 +8,6 @@ on:
         type: boolean
       branch:
         type: string
-  workflow_dispatch:
-    inputs:
-      skipTests:
-        description: 'Skip tests'
-        required: false
-        default: 'true'
-      buildNativeImage:
-        description: 'Build Native Image'
-        required: true
-        default: 'false'
-      branch:
-        description: 'Branch to build'
-        required: false
 
 env:
   JAVA_VERSION: 11
@@ -79,7 +66,7 @@ jobs:
       # Downloads and installs GRAALVM
       # Configures environment variables
       - name: 'Set up GRAALVM for (Linux/MacOS)'
-        if: ${{ inputs.buildNativeImage == 'true' && matrix.os != 'windows-latest' }}
+        if: ${{ inputs.buildNativeImage == true && matrix.os != 'windows-latest' }}
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             echo "GRAALVM on Linux (AMD64)"
@@ -124,7 +111,7 @@ jobs:
           gu install native-image
 
       - name: 'Set up GRAALVM for (Windows)'
-        if: ${{ inputs.buildNativeImage == 'true' && matrix.os == 'windows-latest' }}
+        if: ${{ inputs.buildNativeImage == true && matrix.os == 'windows-latest' }}
         shell: pwsh
         run: |
           $ARCH="amd64"
@@ -167,7 +154,7 @@ jobs:
             mavencore-${{ steps.get-date.outputs.date }}
 
       - name: 'Prepare dotCMS license'
-        if: ${{ inputs.skipTests == 'false' }}
+        if: ${{ inputs.skipTests == false }}
         env:
           DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         run: |
@@ -189,7 +176,7 @@ jobs:
       # Builds a native image of the CLI using GRAALVM (Linux/macOS)
       # Runs on a matrix for different operating systems
       - name: 'Build Native Image (Linux/MacOS)'
-        if: ${{ inputs.buildNativeImage == 'true' && matrix.os != 'windows-latest' }}
+        if: ${{ inputs.buildNativeImage == true && matrix.os != 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw package -Pnative -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
@@ -197,20 +184,20 @@ jobs:
       # Builds a native image of the CLI using GRAALVM on Windows
       # Uses PowerShell for setup and execution
       - name: 'Build Native Image (Windows)'
-        if: ${{ inputs.buildNativeImage == 'true' && matrix.os == 'windows-latest' }}
+        if: ${{ inputs.buildNativeImage == true && matrix.os == 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: |
           cmd /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && .\mvnw.cmd package -Dnative -DskipTests=true -pl :dotcms-cli'
 
       - name: 'Create distribution'
-        if: ${{ inputs.buildNativeImage == 'true' }}
+        if: ${{ inputs.buildNativeImage == true }}
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw -B -ntp -Pdist package -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
 
       - name: 'Distribution tree'
-        if: ${{ inputs.buildNativeImage == 'true' }}
+        if: ${{ inputs.buildNativeImage == true }}
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
           ls -ltr cli/target/distributions
