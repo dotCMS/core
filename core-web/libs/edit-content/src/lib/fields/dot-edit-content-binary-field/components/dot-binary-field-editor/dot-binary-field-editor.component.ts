@@ -172,7 +172,7 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         });
     }
 
-    private setEditorLanguage(fileName: string = '') {
+    private setEditorLanguage(fileName = '') {
         const fileExtension = fileName?.includes('.') ? fileName.split('.').pop() : '';
         const { id, mimetypes, extensions } = this.getLanguage(fileExtension) || {};
         this.mimeType = mimetypes?.[0];
@@ -198,7 +198,7 @@ export class DotBinaryFieldEditorComponent implements OnInit {
             .find((language) => language.extensions?.includes(`.${fileExtension}`));
     }
 
-    private updateEditorLanguage(languageId: string = 'text') {
+    private updateEditorLanguage(languageId = 'text') {
         this.languageType.set(languageId);
     }
 
