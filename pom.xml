@@ -20,6 +20,7 @@
         <module>parent</module>
         <module>independent-projects</module>
         <module>bom</module>
+        <module>nodejs-parent</module>
         <module>core-web</module>
         <module>osgi-base</module>
         <module>plugins-core</module>
@@ -28,6 +29,7 @@
         <module>tools/dotcms-cli</module>
         <module>dotcms-integration</module>
         <module>dotcms-postman</module>
+        <module>reports</module>
     </modules>
     <repositories>
         <repository>
