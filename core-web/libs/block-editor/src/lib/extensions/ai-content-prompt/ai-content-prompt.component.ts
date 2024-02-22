@@ -35,7 +35,7 @@ export class AIContentPromptComponent {
 
         if (textPrompt) {
             this.aiContentService
-                .getIAContent(textPrompt)
+                .generateContent(textPrompt)
                 .pipe(catchError(() => of(null)))
                 .subscribe((response) => {
                     this.isFormSubmitting = false;

@@ -49,3 +49,4 @@ This maintenance release includes the following code fixes:
 42. https://github.com/dotCMS/core/issues/26605 : Relation_type field too small #26605
 43. https://github.com/dotCMS/core/issues/22921 : Workflow API unable to archive contentlet #22921
 44. https://github.com/dotCMS/core/issues/26521 : [UI] Create a Middleware to use Storybook with dotCMS #26521
+45. https://github.com/dotCMS/core/issues/26657 : [UI] - Update the endpoints used by the extensions with the new URLS #26657
