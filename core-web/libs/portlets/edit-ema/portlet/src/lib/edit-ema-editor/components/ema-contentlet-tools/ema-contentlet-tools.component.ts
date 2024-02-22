@@ -19,6 +19,11 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ActionPayload } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
+const BUTTON_WIDTH = 40;
+const BUTTON_HEIGHT = 40;
+const ACTIONS_CONTAINER_WIDTH = 128;
+const ACTIONS_CONTAINER_HEIGHT = 40;
+
 @Component({
     selector: 'dot-ema-contentlet-tools',
     standalone: true,
@@ -135,11 +140,9 @@ export class EmaContentletToolsComponent implements OnDestroy {
      * @memberof EmaContentletToolsComponent
      */
     getTopButtonPosition(): Record<string, string> {
-        const buttonWidth = 40;
-        const buttonHeight = 40;
         const contentletCenterX = this.contentlet.x + this.contentlet.width / 2;
-        const buttonLeft = contentletCenterX - buttonWidth / 2;
-        const buttonTop = this.contentlet.y - buttonHeight / 2;
+        const buttonLeft = contentletCenterX - BUTTON_WIDTH / 2;
+        const buttonTop = this.contentlet.y - BUTTON_HEIGHT / 2;
 
         return {
             position: 'absolute',
@@ -156,11 +159,9 @@ export class EmaContentletToolsComponent implements OnDestroy {
      * @memberof EmaContentletToolsComponent
      */
     getBottomButtonPosition(): Record<string, string> {
-        const buttonWidth = 40;
-        const buttonHeight = 40;
         const contentletCenterX = this.contentlet.x + this.contentlet.width / 2;
-        const buttonLeft = contentletCenterX - buttonWidth / 2;
-        const buttonTop = this.contentlet.y + this.contentlet.height - buttonHeight / 2;
+        const buttonLeft = contentletCenterX - BUTTON_WIDTH / 2;
+        const buttonTop = this.contentlet.y + this.contentlet.height - BUTTON_HEIGHT / 2;
 
         return {
             position: 'absolute',
@@ -177,11 +178,9 @@ export class EmaContentletToolsComponent implements OnDestroy {
      * @memberof EmaContentletToolsComponent
      */
     getActionPosition(): Record<string, string> {
-        const width = 128;
-        const height = 40;
         const contentletCenterX = this.contentlet.x + this.contentlet.width;
-        const left = contentletCenterX - width - 8;
-        const top = this.contentlet.y - height / 2;
+        const left = contentletCenterX - ACTIONS_CONTAINER_WIDTH - 8;
+        const top = this.contentlet.y - ACTIONS_CONTAINER_HEIGHT / 2;
 
         return {
             position: 'absolute',

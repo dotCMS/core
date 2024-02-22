@@ -51,13 +51,17 @@ export class DotErrorPipe implements PipeTransform {
     }
 
     private isValidContentType(acceptTypes: string, item: EmaDragItem | undefined): boolean {
-        if (item?.baseType === DotCMSBaseTypesContentTypes.WIDGET) {
+        if (!item) {
+            return false;
+        }
+
+        if (item.baseType === DotCMSBaseTypesContentTypes.WIDGET) {
             return true;
         }
 
         const acceptTypesArr = acceptTypes.split(',');
 
-        return acceptTypesArr.includes(item?.contentType);
+        return acceptTypesArr.includes(item.contentType);
     }
 
     private contentCanFitInContainer(maxContentlets: number, contentletsLength: number): boolean {
