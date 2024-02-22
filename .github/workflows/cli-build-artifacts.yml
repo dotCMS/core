@@ -207,7 +207,7 @@ jobs:
         with:
           name: artifacts-${{ matrix.os }}
           path: |
-            - ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
-            - ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
           retention-days: 2
           if-no-files-found: ignore
