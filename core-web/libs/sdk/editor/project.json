@@ -1,30 +1,30 @@
 {
-  "name": "sdk-editor",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/sdk/sdk-editor/src",
-  "projectType": "library",
-  "targets": {
-    "build": {
-      "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
-      "options": {
-        "outputPath": "dist/libs/sdk/sdk-editor",
-        "main": "libs/sdk/sdk-editor/src/index.ts",
-        "tsConfig": "libs/sdk/sdk-editor/tsconfig.lib.json",
-        "assets": ["libs/sdk/sdk-editor/*.md"]
-      }
+    "name": "sdk-editor",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/sdk-editor/src",
+    "projectType": "library",
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/sdk/sdk-editor",
+                "main": "libs/sdk/sdk-editor/src/index.ts",
+                "tsConfig": "libs/sdk/sdk-editor/tsconfig.lib.json",
+                "assets": ["libs/sdk/sdk-editor/*.md"]
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/sdk/sdk-editor/jest.config.ts"
+            }
+        }
     },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"]
-    },
-    "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-      "options": {
-        "jestConfig": "libs/sdk/sdk-editor/jest.config.ts"
-      }
-    }
-  },
-  "tags": []
+    "tags": []
 }

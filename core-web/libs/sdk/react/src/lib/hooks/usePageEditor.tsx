@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import {
-  CUSTOMER_ACTIONS,
-  dotSdkCustomerActions,
-  postMessageToEditor,
-} from '@dotcms/editor';
+import { CUSTOMER_ACTIONS, dotSdkCustomerActions, postMessageToEditor } from '@dotcms/editor';
 
 import { getPageElementBound } from '../utils/utils';
 
@@ -19,27 +15,27 @@ import { getPageElementBound } from '../utils/utils';
  * @property {string} pathname - An optional string that represents the path of the page that the editor is editing.
  */
 interface PageEditorOptions {
-  /**
-   * `reloadFunction` is an optional function that can be provided to the `PageEditorOptions` object.
-   * It is called when the dotcms editor needs to reload the page to get changes.
-   *
-   * @property {Function} reloadFunction
-   * @default window.location.reload
-   * @memberof PageEditorOptions
-   * @type {() => void}
-   * @optional
-   */
-  reloadFunction?: () => void;
-  /**
-   * `pathname` is an optional string that can be provided to the `PageEditorOptions` object.
-   * It represents the path of the page that the editor is editing.
-   * When this path changes, the editor will update its own state and reload the page to get the changes.
-   * @property {string} pathname
-   * @memberof PageEditorOptions
-   * @type {string}
-   * @optional
-   */
-  pathname?: string;
+    /**
+     * `reloadFunction` is an optional function that can be provided to the `PageEditorOptions` object.
+     * It is called when the dotcms editor needs to reload the page to get changes.
+     *
+     * @property {Function} reloadFunction
+     * @default window.location.reload
+     * @memberof PageEditorOptions
+     * @type {() => void}
+     * @optional
+     */
+    reloadFunction?: () => void;
+    /**
+     * `pathname` is an optional string that can be provided to the `PageEditorOptions` object.
+     * It represents the path of the page that the editor is editing.
+     * When this path changes, the editor will update its own state and reload the page to get the changes.
+     * @property {string} pathname
+     * @memberof PageEditorOptions
+     * @type {string}
+     * @optional
+     */
+    pathname?: string;
 }
 
 /**
@@ -55,117 +51,110 @@ interface PageEditorOptions {
  * @throws {Error} - Throws an error if the `pathname` is not provided.
  */
 export const usePageEditor = (
-  props: PageEditorOptions
+    props: PageEditorOptions
 ): {
-  rowsRef: React.MutableRefObject<HTMLDivElement[]>;
-  isInsideEditor: boolean;
+    rowsRef: React.MutableRefObject<HTMLDivElement[]>;
+    isInsideEditor: boolean;
 } => {
-  const { reloadFunction = window.location.reload, pathname = null } = props;
+    const { reloadFunction = window.location.reload, pathname = null } = props;
 
-  if (!pathname) {
-    throw new Error('Dotcms page editor required the pathname of your webapp');
-  }
-
-  const { rowsRef, isInsideEditor } = useEventMessageHandler({
-    reload: reloadFunction,
-  });
-
-  usePostUrlToEditor(pathname, isInsideEditor);
-  useScrollEvent(isInsideEditor);
-
-  return { rowsRef, isInsideEditor };
-};
-
-function useEventMessageHandler({
-  reload = window.location.reload,
-}: {
-  reload: () => void;
-}) {
-  const rows = useRef<HTMLDivElement[]>([]);
-  const observer = useRef<MutationObserver | null>(null);
-
-  const [isInsideEditor, setIsInsideEditor] = useState(false);
-
-  useEffect(() => {
-    observer.current = dotSdkCustomerActions.didContentChange();
-
-    observer.current?.observe(document, { childList: true, subtree: true });
-
-    return () => {
-      if (observer.current) observer.current.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    // If the page is not inside an iframe we do nothing.
-    if (window.parent === window) return;
-
-    dotSdkCustomerActions.checkIsInsideEditor();
-  }, []);
-
-  useEffect(() => {
-    function eventMessageHandler(event: MessageEvent) {
-      if (!isInsideEditor) {
-        // Editor is telling us that we can set ourselves into edit mode
-        if (event.data === 'ema-editor-pong') {
-          setIsInsideEditor(true);
-        }
-
-        return;
-      }
-
-      switch (event.data) {
-        case 'ema-request-bounds': {
-          const positionData = getPageElementBound(rows.current);
-
-          postMessageToEditor({
-            action: CUSTOMER_ACTIONS.SET_BOUNDS,
-            payload: positionData,
-          });
-
-          break;
-        }
-
-        case 'ema-reload-page': {
-          reload();
-
-          break;
-        }
-      }
+    if (!pathname) {
+        throw new Error('Dotcms page editor required the pathname of your webapp');
     }
 
-    window.addEventListener('message', eventMessageHandler);
+    const { rowsRef, isInsideEditor } = useEventMessageHandler({
+        reload: reloadFunction
+    });
 
-    return () => {
-      window.removeEventListener('message', eventMessageHandler);
+    usePostUrlToEditor(pathname, isInsideEditor);
+    useScrollEvent(isInsideEditor);
+
+    return { rowsRef, isInsideEditor };
+};
+
+function useEventMessageHandler({ reload = window.location.reload }: { reload: () => void }) {
+    const rows = useRef<HTMLDivElement[]>([]);
+    const observer = useRef<MutationObserver | null>(null);
+
+    const [isInsideEditor, setIsInsideEditor] = useState(false);
+
+    useEffect(() => {
+        observer.current = dotSdkCustomerActions.didContentChange();
+
+        observer.current?.observe(document, { childList: true, subtree: true });
+
+        return () => {
+            if (observer.current) observer.current.disconnect();
+        };
+    }, []);
+
+    useEffect(() => {
+        // If the page is not inside an iframe we do nothing.
+        if (window.parent === window) return;
+
+        dotSdkCustomerActions.checkIsInsideEditor();
+    }, []);
+
+    useEffect(() => {
+        function eventMessageHandler(event: MessageEvent) {
+            if (!isInsideEditor) {
+                // Editor is telling us that we can set ourselves into edit mode
+                if (event.data === 'ema-editor-pong') {
+                    setIsInsideEditor(true);
+                }
+
+                return;
+            }
+
+            switch (event.data) {
+                case 'ema-request-bounds': {
+                    const positionData = getPageElementBound(rows.current);
+
+                    postMessageToEditor({
+                        action: CUSTOMER_ACTIONS.SET_BOUNDS,
+                        payload: positionData
+                    });
+
+                    break;
+                }
+
+                case 'ema-reload-page': {
+                    reload();
+
+                    break;
+                }
+            }
+        }
+
+        window.addEventListener('message', eventMessageHandler);
+
+        return () => {
+            window.removeEventListener('message', eventMessageHandler);
+        };
+    }, [rows, reload, isInsideEditor]);
+
+    return {
+        rowsRef: rows,
+        isInsideEditor
     };
-  }, [rows, reload, isInsideEditor]);
-
-  return {
-    rowsRef: rows,
-    isInsideEditor,
-  };
 }
 
 function useScrollEvent(isInsideEditor: boolean) {
-  useEffect(() => {
-    if (!isInsideEditor) return;
+    useEffect(() => {
+        if (!isInsideEditor) return;
 
-    window.addEventListener('scroll', dotSdkCustomerActions.eventScrollHandler);
+        window.addEventListener('scroll', dotSdkCustomerActions.eventScrollHandler);
 
-    return () => {
-      window.removeEventListener(
-        'scroll',
-        dotSdkCustomerActions.eventScrollHandler
-      );
-    };
-  }, [isInsideEditor]);
+        return () => {
+            window.removeEventListener('scroll', dotSdkCustomerActions.eventScrollHandler);
+        };
+    }, [isInsideEditor]);
 }
 
 function usePostUrlToEditor(pathname: string, isInsideEditor: boolean) {
-  useEffect(() => {
-    if (!isInsideEditor) return;
+    useEffect(() => {
+        if (!isInsideEditor) return;
 
-    dotSdkCustomerActions.setURL(pathname);
-  }, [pathname, isInsideEditor]);
+        dotSdkCustomerActions.setURL(pathname);
+    }, [pathname, isInsideEditor]);
 }
