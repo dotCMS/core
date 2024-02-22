@@ -223,6 +223,7 @@ export class DotSeoMetaTagsUtilService {
                         url: IMG_NOT_FOUND_KEY
                     });
                 }
+
                 return from(this.dotUploadService.uploadFile({ file: imageUrl })).pipe(
                     catchError((uploadError) => {
                         console.warn('Error while uploading:', uploadError);
