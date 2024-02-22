@@ -33,6 +33,6 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     getContentletByInode(inode: string): Observable<DotCMSContentlet> {
-        return this.http.get(`/api/v1/content/${inode}`).pipe(pluck('entity'));
+        return this.http.get(`/api/v1/content/${inode}`).pipe(take(1), pluck('entity'));
     }
 }
