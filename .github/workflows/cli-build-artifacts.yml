@@ -158,7 +158,7 @@ jobs:
         env:
           DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         run: |
-          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
+          DOTCMS_LICENSE_PATH=${{ github.workspace }}/tools/dotcms-cli/license
           mkdir -p ${DOTCMS_LICENSE_PATH}
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
@@ -207,7 +207,7 @@ jobs:
         with:
           name: artifacts-${{ matrix.os }}
           path: |
-            - ${GITHUB_WORKSPACE}/tools/dotcms-cli/cli/target/*-runner.jar
-            - ${GITHUB_WORKSPACE}/tools/dotcms-cli/cli/target/distributions/*.zip
+            - ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
+            - ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
           retention-days: 2
           if-no-files-found: ignore
