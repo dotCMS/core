@@ -80,7 +80,7 @@ export class AIImagePromptView {
                 if (data) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     this.editor.commands.insertImage(data as any);
-                    this.editor.commands.openAIContentActions();
+                    this.editor.commands.openAIContentActions('image');
                 }
             });
     }

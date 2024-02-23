@@ -25,7 +25,7 @@ import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
 import { ContentletBlockComponent } from './nodes';
-import { AiContentService, DotUploadFileService } from './shared';
+import { DotAiService, DotUploadFileService } from './shared';
 import { EditorDirective } from './shared/directives';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
@@ -58,7 +58,7 @@ import { SharedModule } from './shared/shared.module';
         AIContentActionsComponent,
         AIImagePromptComponent
     ],
-    providers: [DotUploadFileService, LoggerService, StringUtils, AiContentService],
+    providers: [DotUploadFileService, LoggerService, StringUtils, DotAiService],
     exports: [
         EditorDirective,
         BubbleMenuComponent,

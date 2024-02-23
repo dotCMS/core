@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-export class AiContentServiceMock {
+export class DotAiServiceMock {
     getIAContent(): Observable<string> {
         return of(
             `
