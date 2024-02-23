@@ -1,11 +1,14 @@
-import { DotSdkExperiment } from '@dotcms/sdk/experiments';
+//WIP
+describe('SdkExperiments', () => {
+    beforeEach(() => {
+        // setup
+    });
 
-describe('sdkExperiments', () => {
-  let sdk: DotSdkExperiment;
-  beforeEach(() => {
-    sdk = new DotSdkExperiment();
-  });
-  it('should work', () => {
-    expect(sdk.init()).toEqual('Pending Implementation');
-  });
+    it('should ensure that ...', () => {
+        // test
+    });
+
+    afterEach(() => {
+        // clean
+    });
 });
