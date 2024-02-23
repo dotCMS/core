@@ -70,7 +70,7 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
      * @param event
      */
     toggleDialog(event): void {
-        this.showMask.set(!this.showMask());
+        this.showMask.update((value) => !value);
         this.toolbarAnnouncements.toggle(event);
     }
 

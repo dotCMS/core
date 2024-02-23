@@ -42,6 +42,6 @@ export class DotToolbarUserComponent implements OnInit {
 
     toogleMenu(event: CustomEvent): void {
         this.menu.toggle(event);
-        this.showMask.set(!this.showMask());
+        this.showMask.update((value) => !value);
     }
 }
