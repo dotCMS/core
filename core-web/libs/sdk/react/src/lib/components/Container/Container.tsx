@@ -44,10 +44,11 @@ export function Container({ containerRef }: ContainerProps) {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, page, viewAs, components, isInsideEditor } =
-        useContext<PageProviderContext | null>(PageContext) as PageProviderContext;
+    const { containers, components, isInsideEditor } = useContext<PageProviderContext | null>(
+        PageContext
+    ) as PageProviderContext;
 
-    const { acceptTypes, contentlets, maxContentlets, pageContainers, path } = getContainersData(
+    const { acceptTypes, contentlets, maxContentlets, path } = getContainersData(
         containers,
         containerRef
     );
@@ -55,22 +56,15 @@ export function Container({ containerRef }: ContainerProps) {
     const updatedContentlets =
         contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
 
-    const contentletsId = updatedContentlets.map((contentlet) => contentlet.identifier);
-
     const container = {
         acceptTypes,
-        contentletsId,
         identifier: path ?? identifier,
         maxContentlets,
         uuid
     };
 
     const containerPayload = {
-        container,
-        language_id: viewAs.language.id,
-        pageContainers,
-        pageId: page.identifier,
-        personaTag: viewAs.persona?.keyTag
+        container
     };
 
     function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
@@ -114,11 +108,7 @@ export function Container({ containerRef }: ContainerProps) {
                 identifier: contentlet.identifier,
                 title: contentlet.widgetTitle || contentlet.title,
                 inode: contentlet.inode
-            },
-            language_id: viewAs.language.id,
-            pageContainers,
-            pageId: page.identifier,
-            personaTag: viewAs.persona?.keyTag
+            }
         };
 
         return isInsideEditor ? (
