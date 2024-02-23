@@ -18,17 +18,19 @@ import {
     EventEmitter,
     HostListener,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
     QueryList,
+    SimpleChanges,
     ViewChild,
     ViewChildren
 } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
+import { filter, take, map, takeUntil, skip, pairwise, startWith } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -67,6 +69,31 @@ import {
     parseFromGridStackToDotObject
 } from './utils/gridstack-utils';
 
+function compareUUIDs(array1, array2) {
+    for (let i = 0; i < array1.length; i++) {
+        const columns1 = array1[i].columns;
+        const columns2 = array2[i].columns;
+
+        for (let j = 0; j < columns1.length; j++) {
+            const containers1 = columns1[j].containers;
+            const containers2 = columns2[j].containers;
+
+            for (let k = 0; k < containers1.length; k++) {
+                const uuid1 = containers1[k].uuid;
+                const uuid2 = containers2[k].uuid;
+
+                // Compare the uuids
+                if (uuid1 !== uuid2) {
+                    return true; // Different uuids mean they are different
+                }
+            }
+        }
+    }
+
+    // If no differences were found, return false
+    return false;
+}
+
 @Component({
     selector: 'dotcms-template-builder-lib',
     templateUrl: './template-builder.component.html',
@@ -74,7 +101,7 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore]
 })
-export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
+export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     @Input()
     layout!: DotLayout;
 
@@ -106,7 +133,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @ViewChildren(AddWidgetComponent) addWidget: QueryList<AddWidgetComponent>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    public rows$: Observable<DotLayoutBody>;
+    public rows$: Observable<{
+        content: DotLayoutBody;
+        doesItChange: boolean;
+    }>;
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
 
     private themeId$ = this.store.themeId$;
@@ -187,7 +217,21 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private dotMessage: DotMessageService,
         private cd: ChangeDetectorRef
     ) {
-        this.rows$ = this.store.rows$.pipe(map((rows) => parseFromGridStackToDotObject(rows)));
+        this.rows$ = this.store.rows$.pipe(
+            startWith([]),
+            pairwise(),
+            map(([prev, next]) => {
+                const prevBody = parseFromGridStackToDotObject(prev);
+                const nextBody = parseFromGridStackToDotObject(next);
+
+                const doesItChange = compareUUIDs(prevBody.rows, nextBody.rows);
+
+                return {
+                    content: nextBody,
+                    doesItChange
+                };
+            })
+        );
 
         combineLatest([this.rows$, this.store.layoutProperties$, this.themeId$])
             .pipe(
@@ -196,22 +240,38 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 takeUntil(this.destroy$)
             )
             .subscribe(([rows, layoutProperties, themeId]) => {
+                // console.log({ doesItChange: rows.doesItChange });
+
                 this.dotLayout = {
                     ...this.layout,
                     ...layoutProperties,
                     sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
                         ? layoutProperties.sidebar
                         : null,
-                    body: rows,
+                    body: rows.content,
                     title: this.layout?.title ?? '',
                     width: this.layout?.width ?? ''
                 };
 
-                this.templateChange.emit({
-                    themeId,
-                    layout: { ...this.dotLayout }
-                });
+                if (rows.doesItChange) {
+                    // console.log('emit');
+                    this.templateChange.emit({
+                        themeId,
+                        layout: { ...this.dotLayout }
+                    });
+                }
             });
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        // console.log(changes.layout.currentValue.body.rows);
+
+        if (!changes.layout.firstChange) {
+            // console.log('changes');
+
+            const newLayout = changes.layout.currentValue as DotLayout;
+            this.store.updateRows(parseFromDotObjectToGridStack(newLayout.body));
+        }
     }
 
     ngOnInit(): void {

@@ -65,6 +65,7 @@
             <div class="template-builder-box__item" *ngFor="let item of items; let i = index">
                 <p data-testId="container-title">
                     {{ (containerMap && containerMap[item.identifier]?.title) || item.identifier }}
+                    {{ item.uuid }}
                 </p>
                 <dotcms-remove-confirm-dialog
                     (deleteConfirmed)="deleteContainer.emit(i)"
