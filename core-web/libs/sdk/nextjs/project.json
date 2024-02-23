@@ -3,7 +3,7 @@
     "$schema": "../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/sdk/nextjs/src",
     "projectType": "library",
-    "tags": [],
+    "tags": ["check:test"],
     "targets": {
         "lint": {
             "executor": "@nrwl/linter:eslint",

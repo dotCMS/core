@@ -104,5 +104,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["check:test"]
 }

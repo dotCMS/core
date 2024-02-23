@@ -22,5 +22,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["check:test"]
 }

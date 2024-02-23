@@ -1,5 +1,5 @@
 {
-    "name": "dotcms-ui",
+    "name": "dotcms-workspace",
     "version": "23.4.0-next.1",
     "license": "MIT",
     "engines": {
@@ -41,7 +41,7 @@
         "pretty-quick": "pretty-quick",
         "prepare": "cd .. && node core-web/prepare.js",
         "test:dotcms-ui": "nx run dotcms-ui:test",
-        "test:dotcms": "nx run-many --target=test --projects=dotcms-ui,portlets-dot-experiments-portlet,edit-content,dotcms-binary-field-builder,data-access,portlets-dot-experiments-data-access,template-builder,portlets-dot-ema,ui,dotcdn",
+        "test:dotcms": "nx affected -t test --exclude='*,!tag:check:test'",
         "update": "nx migrate latest",
         "workspace-generator": "nx workspace-generator",
         "help": "nx help"
@@ -158,6 +158,8 @@
         "@nx/react": "18.0.4",
         "@nx/rollup": "18.0.4",
         "@nx/storybook": "18.0.4",
+        "@nx/vite": "18.0.4",
+        "@nx/web": "18.0.4",
         "@nx/workspace": "18.0.4",
         "@nxext/stencil": "17.0.2",
         "@rollup/plugin-url": "^7.0.0",
@@ -196,6 +198,7 @@
         "@types/webpack": "4.41.21",
         "@typescript-eslint/eslint-plugin": "6.21.0",
         "@typescript-eslint/parser": "6.21.0",
+        "@vitest/ui": "^1.0.4",
         "babel-jest": "28.1.1",
         "babel-loader": "^8.2.1",
         "codelyzer": "^6.0.2",
@@ -227,6 +230,7 @@
         "jest-html-reporters": "^3.1.5",
         "jest-junit": "^16.0.0",
         "jest-preset-angular": "13.1.4",
+        "jsdom": "~22.1.0",
         "jsonc-eslint-parser": "^2.1.0",
         "karma": "6.4.0",
         "karma-chrome-launcher": "^3.1.0",
@@ -258,7 +262,14 @@
         "tslint-angular": "^3.0.3",
         "typedoc": "^0.25.4",
         "typescript": "5.3.3",
+        "verdaccio": "^5.0.4",
+        "vite": "~5.0.0",
+        "vite-plugin-dts": "~2.3.0",
+        "vitest": "^1.0.4",
         "webpack": "^5.64.0",
         "webpack-bundle-analyzer": "^4.5.0"
+    },
+    "nx": {
+        "includedScripts": []
     }
 }
