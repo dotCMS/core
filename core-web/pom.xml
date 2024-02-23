@@ -161,7 +161,7 @@
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <arguments>run nx test</arguments>
+                            <arguments>run nx run-many -t test --exclude='*,!tag:check:test'</arguments>
                         </configuration>
                     </execution>
                 </executions>
