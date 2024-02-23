@@ -1,14 +1,22 @@
-//WIP
-describe('SdkExperiments setup script', () => {
-    beforeEach(() => {
-        // Example: jest.spyOn(global, 'window', 'get').mockReturnValue({});
-    });
+import { getScriptDataAttributes } from './utils/utils';
+import { SdkExperiments } from './sdk-experiments';
 
-    afterEach(() => {
-        // Example: jest.restoreAllMocks();
-    });
+jest.mock('./utils/utils', () => ({
+    getScriptDataAttributes: jest.fn().mockReturnValue({ mode: 'js', server: 'http://localhost' }),
+    Logger: jest.fn()
+}));
 
-    it('should ...', () => {
-        // Example: expect(someFunction()).toEqual(expectedValue);
+describe('IIFE Execution', () => {
+    it('should call getScriptDataAttributes and set window.experiment', () => {
+        const getInstanceMock = jest
+            .spyOn(SdkExperiments, 'getInstance')
+            .mockReturnValue({} as SdkExperiments);
+
+        require('./standalone');
+
+        expect(getScriptDataAttributes).toHaveBeenCalled();
+
+        expect(getInstanceMock).toHaveBeenCalledWith({ mode: 'js', server: 'http://localhost' });
+        expect(getInstanceMock).toHaveBeenCalled();
     });
 });

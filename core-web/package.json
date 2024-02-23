@@ -228,6 +228,7 @@
         "jest-cli": "29.7.0",
         "jest-environment-jsdom": "29.7.0",
         "jest-environment-node": "^29.4.1",
+        "jest-fetch-mock": "^3.0.3",
         "jest-html-reporters": "^3.1.5",
         "jest-junit": "^16.0.0",
         "jest-preset-angular": "13.1.4",
