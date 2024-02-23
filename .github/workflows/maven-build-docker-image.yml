@@ -97,6 +97,11 @@ jobs:
           distribution: ${{ env.JAVA_DISTRO }}
         if: steps.build-status.outputs.rebuild == 'true'
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: core-web/.nvmrc
+        if: steps.build-status.outputs.rebuild == 'true'
+
       - name: Build Core
         run: |
           mkdir -p ${DOCKER_BUILD_CONTEXT}/context
