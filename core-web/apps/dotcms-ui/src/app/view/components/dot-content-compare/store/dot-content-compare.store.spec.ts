@@ -6,9 +6,11 @@ import { DotContentCompareStore } from '@components/dot-content-compare/store/do
 import {
     DotContentletService,
     DotContentTypeService,
-    DotFormatDateService
+    DotHttpErrorManagerService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
+
+import { MockDotHttpErrorManagerService } from '@dotcms/utils-testing';
 
 const generateRandomString = function (length: number) {
     const words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit'];
@@ -685,7 +687,7 @@ describe('DotContentCompareStore', () => {
         TestBed.configureTestingModule({
             providers: [
                 DotContentCompareStore,
-                DotFormatDateService,
+                DotHttpErrorManagerService,
                 {
                     provide: DotContentTypeService,
                     useValue: {
@@ -716,6 +718,10 @@ describe('DotContentCompareStore', () => {
                 {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
+                },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
                 }
             ]
         });
