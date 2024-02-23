@@ -9,7 +9,6 @@ import {
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-
 import { MockDotHttpErrorManagerService } from '@dotcms/utils-testing';
 
 const generateRandomString = function (length: number) {
