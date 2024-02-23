@@ -385,6 +385,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     identifier: '',
                     inode: '',
                     pageURI: '',
+                    contentType: '',
                     ...permissions
                 },
                 site: {

@@ -107,7 +107,8 @@ export function Container({ containerRef }: ContainerProps) {
             contentlet: {
                 identifier: contentlet.identifier,
                 title: contentlet.widgetTitle || contentlet.title,
-                inode: contentlet.inode
+                inode: contentlet.inode,
+                contentType: contentlet.contentType
             }
         };
 
