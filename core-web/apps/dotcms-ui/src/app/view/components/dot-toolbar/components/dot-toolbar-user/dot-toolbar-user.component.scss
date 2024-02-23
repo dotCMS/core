@@ -29,17 +29,25 @@ p-avatar {
     }
 }
 
+::ng-deep {
+    .p-menu {
+        margin-top: $spacing-0;
+        &.p-menu-overlay {
+            width: 17rem;
+        }
+    }
+}
+
 :host::ng-deep {
     .p-menu {
         margin-top: $spacing-0;
+        &.p-menu-overlay {
+            width: 17rem;
+        }
     }
 
     .p-menu .p-menu-separator {
         margin: $spacing-1;
-    }
-
-    .p-menu.p-menu-overlay {
-        min-width: 17rem;
     }
 
     .toolbar-user__logout .p-menuitem-link .p-menuitem-text {
