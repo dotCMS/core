@@ -15,7 +15,7 @@ import org.eclipse.microprofile.context.ManagedExecutor;
  * Represents a task that performs HTTP requests concurrently.
  */
 @Dependent
-public class HttpRequestTask extends TaskProcessor {
+public class HttpRequestTask extends TaskProcessor<List<Site>,List<SiteView>> {
 
     private final SiteFetcher siteFetcher;
 
@@ -47,7 +47,7 @@ public class HttpRequestTask extends TaskProcessor {
     }
 
     /**
-     * Processes a list of Site objects, either sequantially or in parallel, depending on the list
+     * Processes a list of Site objects, either sequentially or in parallel, depending on the list
      * size. If the size of the list is under a predefined threshold, items are processed
      * individually in order. For larger lists, the work is divided into separate concurrent tasks,
      * which are processed in parallel.
@@ -66,7 +66,7 @@ public class HttpRequestTask extends TaskProcessor {
             // If the list is small enough, process sequentially
             List<SiteView> siteViews = new ArrayList<>();
             for (Site site : sites) {
-                siteViews.add(siteFetcher.fetchByKey(site.hostName(), null));
+                siteViews.add(siteFetcher.fetchByKey(site.hostName(), false,null));
             }
 
             return siteViews;

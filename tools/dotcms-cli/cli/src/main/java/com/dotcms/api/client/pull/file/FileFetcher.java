@@ -41,7 +41,8 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
 
     @ActivateRequestContext
     @Override
-    public List<FileTraverseResult> fetch(final Map<String, Object> customOptions) {
+    public List<FileTraverseResult> fetch(final boolean failFast,
+            final Map<String, Object> customOptions) {
 
         // ---
         // Fetching the all the existing sites
@@ -58,7 +59,7 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
         final List<FileTraverseResult> results = new ArrayList<>();
         for (final Site site : allSites) {
             final String sitePath = String.format("//%s", site.hostName());
-            results.add(fetch(sitePath, customOptions));
+            results.add(fetch(sitePath, failFast, customOptions));
         }
 
         return results;
@@ -66,10 +67,11 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
 
     @ActivateRequestContext
     @Override
-    public FileTraverseResult fetchByKey(String path, Map<String, Object> customOptions)
+    public FileTraverseResult fetchByKey(final String path, final boolean failFast,
+            final Map<String, Object> customOptions)
             throws NotFoundException {
 
-        return fetch(path, customOptions);
+        return fetch(path, failFast, customOptions);
     }
 
     /**
@@ -79,7 +81,8 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
      * @param customOptions The custom options for traversal.
      * @return The file traversal result.
      */
-    private FileTraverseResult fetch(String path, Map<String, Object> customOptions) {
+    private FileTraverseResult fetch(final String path, final boolean failFast,
+            final Map<String, Object> customOptions) {
 
         if (LocationUtils.isFolderURL(path)) { // Handling folders
 
@@ -101,8 +104,7 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
             var response = remoteTraversalService.traverseRemoteFolder(
                     path,
                     nonRecursive ? 0 : null,
-                    //fetcher needs to be told to not fail fast on permission errors
-                    false,  //so we can still get the tree at least partially
+                    failFast, //We need to be able to instruct the service to fail fast.
                     includeFolderPatterns,
                     includeAssetPatterns,
                     excludeFolderPatterns,

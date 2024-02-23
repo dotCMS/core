@@ -44,7 +44,7 @@ import org.jboss.logging.Logger;
  * allowing for faster traversal of large directory structures.
  */
 @Dependent
-public class LocalFolderTraversalTask extends TaskProcessor {
+public class LocalFolderTraversalTask extends TaskProcessor<LocalFolderTraversalTaskParams,TraverseTaskResult> {
 
     private final ManagedExecutor executor;
 
@@ -85,7 +85,8 @@ public class LocalFolderTraversalTask extends TaskProcessor {
      *
      * @param params The traversal parameters
      */
-    public void setTraversalParams(final LocalFolderTraversalTaskParams params) {
+    @Override
+    public void setTaskParams(final LocalFolderTraversalTaskParams params) {
         this.traversalTaskParams = params;
     }
 
@@ -96,6 +97,7 @@ public class LocalFolderTraversalTask extends TaskProcessor {
      * @return A Pair object containing a list of exceptions encountered during traversal and the
      * resulting TreeNode representing the directory tree at the specified folder.
      */
+    @Override
     public TraverseTaskResult compute() {
 
         CompletionService<TraverseTaskResult> completionService =
@@ -135,7 +137,7 @@ public class LocalFolderTraversalTask extends TaskProcessor {
                                 logger, executor, retriever, fileHashService
                         );
 
-                        subTask.setTraversalParams(LocalFolderTraversalTaskParams.builder()
+                        subTask.setTaskParams(LocalFolderTraversalTaskParams.builder()
                                 .from(traversalTaskParams)
                                 .sourcePath(file.getAbsolutePath())
                                 .build()

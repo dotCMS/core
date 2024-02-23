@@ -21,7 +21,7 @@ import org.jboss.logging.Logger;
  * that can be executed in parallel, allowing for faster traversal of large directory structures.
  */
 @Dependent
-public class RemoteFolderTraversalTask extends TaskProcessor {
+public class RemoteFolderTraversalTask extends TaskProcessor<RemoteFolderTraversalTaskParams,TraverseTaskResult> {
 
     private final ManagedExecutor executor;
     private final Logger logger;
@@ -59,7 +59,7 @@ public class RemoteFolderTraversalTask extends TaskProcessor {
      *
      * @param params The traversal parameters
      */
-    public void setTraversalParams(final RemoteFolderTraversalTaskParams params) {
+    public void setTaskParams(final RemoteFolderTraversalTaskParams params) {
         this.traversalTaskParams = params;
     }
 
@@ -250,7 +250,7 @@ public class RemoteFolderTraversalTask extends TaskProcessor {
                 this.retriever
         );
 
-        task.setTraversalParams(RemoteFolderTraversalTaskParams.builder()
+        task.setTaskParams(RemoteFolderTraversalTaskParams.builder()
                 .filter(traversalTaskParams.filter())
                 .siteName(siteName)
                 .folder(folder)

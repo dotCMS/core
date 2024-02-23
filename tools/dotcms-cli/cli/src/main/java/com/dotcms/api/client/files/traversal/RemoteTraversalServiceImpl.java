@@ -94,7 +94,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 retriever
         );
 
-        task.setTraversalParams(RemoteFolderTraversalTaskParams.builder()
+        task.setTaskParams(RemoteFolderTraversalTaskParams.builder()
                 .filter(filter)
                 .siteName(dotCMSPath.site())
                 .folder(FolderView.builder()
@@ -144,7 +144,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 pusher
         );
         
-        task.setTraversalParams(PushTreeNodeTaskParams.builder()
+        task.setTaskParams(PushTreeNodeTaskParams.builder()
                 .workspacePath(traverseParams.workspacePath())
                 .localPaths(traverseParams.localPaths())
                 .rootNode(traverseParams.rootNode())

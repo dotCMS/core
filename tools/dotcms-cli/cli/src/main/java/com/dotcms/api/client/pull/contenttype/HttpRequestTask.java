@@ -14,7 +14,7 @@ import org.eclipse.microprofile.context.ManagedExecutor;
  * Represents a task that performs HTTP requests concurrently.
  */
 @Dependent
-public class HttpRequestTask extends TaskProcessor {
+public class HttpRequestTask extends TaskProcessor< List<ContentType>,List<ContentType>> {
 
     private final ContentTypeFetcher contentTypeFetcher;
 
@@ -41,12 +41,13 @@ public class HttpRequestTask extends TaskProcessor {
      *
      * @param contentTypes List of ContentType objects to process.
      */
+    @Override
     public void setTaskParams(final List<ContentType> contentTypes) {
         this.contentTypes = contentTypes;
     }
 
     /**
-     * Processes a list of ContentType objects, either sequantially or in parallel, depending on the
+     * Processes a list of ContentType objects, either sequentially or in parallel, depending on the
      * list size. If the size of the list is under a predefined threshold, items are processed
      * individually in order. For larger lists, the work is divided into separate concurrent tasks,
      * which are processed in parallel.
@@ -56,6 +57,7 @@ public class HttpRequestTask extends TaskProcessor {
      *
      * @return A List of fully fetched ContentType objects.
      */
+    @Override
     public List<ContentType> compute() {
 
         CompletionService<List<ContentType>> completionService =
@@ -67,7 +69,7 @@ public class HttpRequestTask extends TaskProcessor {
             List<ContentType> contentTypeViews = new ArrayList<>();
             for (ContentType contentType : contentTypes) {
                 contentTypeViews.add(
-                        contentTypeFetcher.fetchByKey(contentType.variable(), null)
+                        contentTypeFetcher.fetchByKey(contentType.variable(), false,null)
                 );
             }
 

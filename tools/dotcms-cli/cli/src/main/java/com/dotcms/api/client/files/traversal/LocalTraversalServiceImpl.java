@@ -100,7 +100,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 fileHashCalculatorService
         );
 
-        task.setTraversalParams(LocalFolderTraversalTaskParams.builder()
+        task.setTaskParams(LocalFolderTraversalTaskParams.builder()
                 .siteExists(siteExists)
                 .sourcePath(params.sourcePath())
                 .workspace(params.workspace())
@@ -150,7 +150,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 fileHashCalculatorService
         );
 
-        task.setTraversalParams(PullTreeNodeTaskParams.builder()
+        task.setTaskParams(PullTreeNodeTaskParams.builder()
                 .rootNode(filteredRoot)
                 .destination(rootPath.toString())
                 .overwrite(overwrite)

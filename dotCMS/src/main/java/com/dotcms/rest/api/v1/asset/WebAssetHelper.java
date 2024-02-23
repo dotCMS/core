@@ -5,6 +5,7 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -369,6 +370,7 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @CloseDBIfOpened
     public FileAsset getAsset(final AssetsRequestForm form, final User user)
             throws DotDataException, DotSecurityException {
 
@@ -657,6 +659,7 @@ public class WebAssetHelper {
      * @throws DotDataException any data related exception
      * @throws DotSecurityException any security violation exception
      */
+    @WrapInTransaction
     public void deleteAsset(final String assetPath, final User user)
             throws DotDataException, DotSecurityException {
         final WebAssetView assetInfo = getAssetInfo(assetPath, user);
@@ -680,6 +683,7 @@ public class WebAssetHelper {
      * @throws DotDataException any data related exception
      * @throws DotSecurityException any security violation exception
      */
+    @WrapInTransaction
     public void deleteFolder(final String path, final User user)
             throws DotDataException, DotSecurityException {
         final WebAssetView assetInfo = getAssetInfo(path, user);

@@ -101,6 +101,7 @@ public class PullServiceImpl implements PullService {
 
                         var foundContent = provider.fetchByKey(
                                 pullOptions.contentKey().get(),
+                                pullOptions.failFast(),
                                 pullOptions.customOptions().orElse(null)
                         );
                         return List.of(foundContent);
@@ -108,7 +109,8 @@ public class PullServiceImpl implements PullService {
 
                     // Fetching all contents
                     logger.debug(String.format("Fetching all %s.", pullHandler.title()));
-                    return provider.fetch(pullOptions.customOptions().orElse(null));
+                    return provider.fetch(pullOptions.failFast(),
+                            pullOptions.customOptions().orElse(null));
                 });
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"
