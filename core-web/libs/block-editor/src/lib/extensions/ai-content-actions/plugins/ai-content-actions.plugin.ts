@@ -12,10 +12,10 @@ import { Editor } from '@tiptap/core';
 
 import { DOT_AI_TEXT_CONTENT_KEY } from '../../ai-content-prompt/ai-content-prompt.extension';
 import { AiContentPromptStore } from '../../ai-content-prompt/store/ai-content-prompt.store';
-import { ACTIONS, AIContentActionsComponent } from '../ai-content-actions.component';
-import { AI_CONTENT_ACTIONS_PLUGIN_KEY } from '../ai-content-actions.extension';
 import { DOT_AI_IMAGE_CONTENT_KEY } from '../../ai-image-prompt/ai-image-prompt.extension';
 import { DotAiImagePromptStore } from '../../ai-image-prompt/ai-image-prompt.store';
+import { ACTIONS, AIContentActionsComponent } from '../ai-content-actions.component';
+import { AI_CONTENT_ACTIONS_PLUGIN_KEY } from '../ai-content-actions.extension';
 import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentActionsProps {
