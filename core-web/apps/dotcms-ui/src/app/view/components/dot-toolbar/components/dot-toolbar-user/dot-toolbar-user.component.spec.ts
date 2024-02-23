@@ -133,7 +133,7 @@ describe('DotToolbarUserComponent', () => {
         jasmine.clock().uninstall();
     });
 
-    xit('should have correct href in logout link', () => {
+    it('should have correct href in logout link', () => {
         fixture.detectChanges();
 
         const avatarComponent = de.query(By.css('p-avatar')).nativeElement;
