@@ -54,9 +54,9 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: ./.github/actions/cleanup-runner
 
-#      - name: 'Cleanup MacOS Runner'
-#        if: ${{ contains(matrix.os, 'macos-') }}
-#        uses: ./.github/actions/cleanup-macos-runner
+      - name: 'Cleanup MacOS Runner'
+        if: ${{ contains(matrix.os, 'macos-') }}
+        uses: ./.github/actions/cleanup-macos-runner
 
       - name: 'Setup Java'
         uses: actions/setup-java@v4
