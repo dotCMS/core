@@ -110,8 +110,8 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
             );
 
             return FileTraverseResult.builder().
-                    tree(response.getRight()).
-                    exceptions(response.getLeft()).
+                    tree(response.treeNode()).
+                    exceptions(response.exceptions()).
                     build();
 
         } else { // Handling single files

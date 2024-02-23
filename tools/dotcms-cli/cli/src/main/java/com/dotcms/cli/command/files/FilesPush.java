@@ -118,7 +118,13 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             for (var treeNodeData : result) {
 
                 var localPaths = treeNodeData.localPaths();
-                var treeNode = treeNodeData.treeNode();
+                var optional = treeNodeData.treeNode();
+
+                if(optional.isEmpty()){
+                   continue;
+                }
+
+                final TreeNode treeNode = optional.get();
 
                 var outputBuilder = new StringBuilder();
 

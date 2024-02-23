@@ -6,6 +6,7 @@ import com.dotcms.api.client.files.traversal.task.PushTreeNodeTask;
 import com.dotcms.api.client.files.traversal.task.PushTreeNodeTaskParams;
 import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTask;
 import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTaskParams;
+import com.dotcms.api.client.files.traversal.task.TraverseTaskResult;
 import com.dotcms.api.traversal.Filter;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.common.AssetsUtils;
@@ -59,7 +60,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
      */
     @ActivateRequestContext
     @Override
-    public Pair<List<Exception>, TreeNode> traverseRemoteFolder(
+    public TraverseTaskResult traverseRemoteFolder(
             final String path,
             final Integer depth,
             final boolean failFast,

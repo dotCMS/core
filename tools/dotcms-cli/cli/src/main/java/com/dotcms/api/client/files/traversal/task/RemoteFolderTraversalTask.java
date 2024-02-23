@@ -70,9 +70,9 @@ public class RemoteFolderTraversalTask extends TaskProcessor {
      * @return A Pair object containing a list of exceptions encountered during traversal and the
      * resulting TreeNode representing the directory tree at the specified folder.
      */
-    public Pair<List<Exception>, TreeNode> compute() {
+    public TraverseTaskResult compute() {
 
-        CompletionService<Pair<List<Exception>, TreeNode>> completionService =
+        CompletionService<TraverseTaskResult> completionService =
                 new ExecutorCompletionService<>(executor);
 
         var errors = new ArrayList<Exception>();
@@ -84,7 +84,7 @@ public class RemoteFolderTraversalTask extends TaskProcessor {
         var currentNode = processResult.getLeft();
         var currentFolder = processResult.getRight();
 
-        // And now its subfolders
+        // And now its sub-folders
         int toProcessCount = processSubFolders(
                 currentNode,
                 currentFolder,
@@ -93,15 +93,17 @@ public class RemoteFolderTraversalTask extends TaskProcessor {
         );
 
         // Wait for all tasks to complete and gather the results
-        Function<Pair<List<Exception>, TreeNode>, Void> processFunction = taskResult -> {
-            errors.addAll(taskResult.getLeft());
-            //TODO: Prevent adding null nodes to the tree here
-            currentNode.addChild(taskResult.getRight());
-            return null;
+        Function<TraverseTaskResult, Void> processFunction = taskResult -> {
+            errors.addAll(taskResult.exceptions());
+            taskResult.treeNode().ifPresent(currentNode::addChild);
+        return null;
         };
         processTasks(toProcessCount, completionService, processFunction);
 
-        return Pair.of(errors, currentNode);
+        return TraverseTaskResult.builder()
+                .exceptions(errors)
+                .treeNode(currentNode)
+                .build();
     }
 
     /**
@@ -162,7 +164,7 @@ public class RemoteFolderTraversalTask extends TaskProcessor {
      */
     private int processSubFolders(TreeNode currentNode, FolderView currentFolder,
             List<Exception> errors,
-            CompletionService<Pair<List<Exception>, TreeNode>> completionService) {
+            CompletionService<TraverseTaskResult> completionService) {
 
         var toProcessCount = 0;
 

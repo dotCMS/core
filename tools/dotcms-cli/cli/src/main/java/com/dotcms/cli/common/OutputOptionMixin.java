@@ -171,24 +171,33 @@ public class OutputOptionMixin implements MessageWriter {
         return exceptionHandler;
     }
 
+    public int handleCommandException(Exception ex){
+        return handleCommandException(ex, null, isShowErrors());
+    }
+
+    /**
+     * This method is used to handle exceptions that occur during command execution
+     * @param ex The exception that was thrown
+     * @param message A custom message to display
+     * @return The exit code
+     */
     public int handleCommandException(Exception ex, String message){
         return handleCommandException(ex, message, isShowErrors());
     }
 
     /**
-     * This method allows me to explicitly set the showErrors flag
-     * in certain context like when an exception is thrown from an ExecutionHandler the showErrors flag is set yet in our mixing
+     * This method allows me to explicitly set the showStack flag
+     * in certain context like when an exception is thrown from an ExecutionHandler the showStack flag is set yet in our mixing
      * This is because the ExecutionHandler run too early and the command hasn't been prepared yet
      * Therefore, We need to be able to set it explicitly to remain consistent with the rest of the code
      * @param ex The exception that was thrown
-     * @param message The message to display
-     * @param showErrors The flag to show errors
+     * @param message Custom message to display
+     * @param showStack The flag to show errors
      * @return The exit code
      */
-    public int handleCommandException(Exception ex, String message, boolean showErrors) {
+    public int handleCommandException(final Exception ex, final String message, final boolean showStack) {
 
         final ExceptionHandler exHandler = getExceptionHandler();
-
         // Handle ParameterException
         if (ex instanceof ParameterException) {
             CommandLine.UnmatchedArgumentException.printSuggestions(
@@ -202,14 +211,14 @@ public class OutputOptionMixin implements MessageWriter {
         //Extract the proper exception and remove all server side noise
         final Exception handledEx = exHandler.handle(unwrappedEx);
         //Short error message
-        message = String.format("%s %s  ", message,
-                handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
-                        :  "An exception " + handledEx.getClass().getSimpleName() + " Occurred With no error message provided.");
-        error(message);
-        Log.error(message, ex);
-        //Won't print unless the "showErrors" flag is on
+         final String errorMessage =  (message != null && !message.isEmpty() ?  message + " " : "" ) + (handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
+                :  "An exception " + handledEx.getClass().getSimpleName() + " Occurred With no error message provided.");
+
+        error(errorMessage);
+        Log.error(errorMessage, ex);
+        //Won't print unless the "showStack" flag is on
         //We show the show message notice only if we're not already showing errors
-        if(!showErrors) {
+        if(!showStack) {
             info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
         } else {
             err().println(colorScheme().stackTraceText(unwrappedEx));

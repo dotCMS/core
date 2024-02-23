@@ -113,9 +113,9 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
         var result = task.compute();
         return TraverseResult.builder()
-                .exceptions(result.getLeft())
+                .exceptions(result.exceptions())
                 .localPaths(localPath)
-                .treeNode(result.getRight()).build();
+                .treeNode(result.treeNode()).build();
     }
 
     /**

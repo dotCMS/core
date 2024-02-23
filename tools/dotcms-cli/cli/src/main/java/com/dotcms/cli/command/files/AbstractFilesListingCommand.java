@@ -2,14 +2,14 @@ package com.dotcms.cli.command.files;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
-import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.api.client.files.traversal.task.TraverseTaskResult;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.model.language.Language;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
-import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import picocli.CommandLine;
 
@@ -57,7 +57,7 @@ public abstract class AbstractFilesListingCommand extends AbstractFilesCommand {
                 filesMixin.globMixin.excludeAssetPatternsOption
         );
 
-        CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = executor.supplyAsync(
+        CompletableFuture<TraverseTaskResult> folderTraversalFuture = executor.supplyAsync(
                 () ->
                         // Service to handle the traversal of the folder
                         remoteTraversalService.traverseRemoteFolder(
@@ -101,12 +101,38 @@ public abstract class AbstractFilesListingCommand extends AbstractFilesCommand {
 
         // Display the result
         StringBuilder sb = new StringBuilder();
-        TreePrinter.getInstance()
-                .filteredFormat(sb, result.getRight(), !filesMixin.excludeEmptyFolders, languages);
-
-        output.info(sb.toString());
-
+        if(result.treeNode().isPresent()){
+            //We got back a tree node lets print it out
+            TreePrinter.getInstance()
+                    .filteredFormat(sb, result.treeNode().get(), !filesMixin.excludeEmptyFolders, languages);
+            output.info(sb.toString());
+        } else {
+            reportErrorWhenNothingWasReturned(result);
+        }
         return CommandLine.ExitCode.OK;
+    }
+
+    /**
+     * Reports an error when nothing was returned from the traversal.
+     * @param result the result of the traversal
+     */
+    private void reportErrorWhenNothingWasReturned(final TraverseTaskResult result) {
+        //TreeNode didn't make it back, lets print out the exceptions
+        //though the exceptions should have been handled by the ExceptionHandler if thrown
+        //We still need to cover the case when no fail fast is set therefore we get a list of exceptions
+        if(result.exceptions().isEmpty()){
+            output.info("Error occurred while pulling folder info: [" + filesMixin.folderPath + "].");
+        } else {
+            final Iterator<Exception> iterator = result.exceptions().iterator();
+            while (iterator.hasNext()) {
+                final Exception e = iterator.next();
+                if (iterator.hasNext()){
+                    output.handleCommandException(e);
+                } else {
+                    output.handleCommandException(e,"Error occurred while pulling folder info: [" + filesMixin.folderPath + "].");
+                }
+            }
+        }
     }
 
 }

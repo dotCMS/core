@@ -96,9 +96,9 @@ public class LocalFolderTraversalTask extends TaskProcessor {
      * @return A Pair object containing a list of exceptions encountered during traversal and the
      * resulting TreeNode representing the directory tree at the specified folder.
      */
-    public Pair<List<Exception>, TreeNode> compute() {
+    public TraverseTaskResult compute() {
 
-        CompletionService<Pair<List<Exception>, TreeNode>> completionService =
+        CompletionService<TraverseTaskResult> completionService =
                 new ExecutorCompletionService<>(executor);
 
         var errors = new ArrayList<Exception>();
@@ -147,18 +147,21 @@ public class LocalFolderTraversalTask extends TaskProcessor {
                 }
 
                 // Wait for all tasks to complete and gather the results
-                Function<Pair<List<Exception>, TreeNode>, Void> processFunction = taskResult -> {
-                    errors.addAll(taskResult.getLeft());
-                    // Im getting null response here
-                    currentNode.get().addChild(taskResult.getRight());
+                Function<TraverseTaskResult, Void> processFunction = taskResult -> {
+                    errors.addAll(taskResult.exceptions());
+                    taskResult.treeNode().ifPresent(currentNode.get()::addChild);
                     return null;
                 };
                 processTasks(toProcessCount, completionService, processFunction);
             }
         }
 
+        final TreeNode treeNode = currentNode.get();
         //If the task failed to complete ad the exception got added to the list of errors instead of being thrown current node will be null
-        return Pair.of(errors, currentNode.get());
+        return TraverseTaskResult.builder()
+                .treeNode(Optional.ofNullable(treeNode))
+                .exceptions(errors)
+                .build();
     }
 
     /**

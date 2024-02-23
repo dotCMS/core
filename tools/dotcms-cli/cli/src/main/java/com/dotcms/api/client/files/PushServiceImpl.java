@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
@@ -199,8 +200,14 @@ public class PushServiceImpl implements PushService {
 
         Map<String,Map<String, TreeNode>> indexedFolders = new HashMap<>();
         groupBySite.forEach((site, list) -> list.forEach(ctx -> {
-            final String key = ctx.localPaths().status() + ":" + ctx.localPaths().language() + ":" + site;
-            ctx.treeNode().flattened().forEach(node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>()).put(node.folder().path(), node));
+            final Optional<TreeNode> optional = ctx.treeNode();
+            if(optional.isPresent()) {
+                final TreeNode treeNode = optional.get();
+                final String key = ctx.localPaths().status() + ":" + ctx.localPaths().language() + ":" + site;
+                treeNode.flattened().forEach(
+                        node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>())
+                                .put(node.folder().path(), node));
+            }
         }));
         return indexedFolders;
     }
