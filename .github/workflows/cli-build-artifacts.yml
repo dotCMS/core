@@ -176,14 +176,14 @@ jobs:
         run: |
           ./mvnw package -Dquarkus.package.type="uber-jar" -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
 
-      - name: 'Upload Uber-Jar'
-        if: ${{ matrix.label == 'Linux' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts-uber-jar
-          path: ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
-          retention-days: 2
-          if-no-files-found: ignore
+#      - name: 'Upload Uber-Jar'
+#        if: ${{ matrix.label == 'Linux' }}
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: artifacts-uber-jar
+#          path: ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
+#          retention-days: 2
+#          if-no-files-found: ignore
 
       # Builds a native image of the CLI using GRAALVM (Linux/macOS)
       # Runs on a matrix for different operating systems
@@ -219,6 +219,7 @@ jobs:
         with:
           name: artifacts-${{ matrix.os }}
           path: |
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
           retention-days: 2
           if-no-files-found: ignore
