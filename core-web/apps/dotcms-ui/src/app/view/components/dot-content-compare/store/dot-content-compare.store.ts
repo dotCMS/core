@@ -1,15 +1,17 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable, of } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { map, switchMap, take } from 'rxjs/operators';
+import { catchError, map, switchMap, take } from 'rxjs/operators';
 
 import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
 import {
     DotContentletService,
     DotContentTypeService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotHttpErrorManagerService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
@@ -78,6 +80,9 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                     .getContentletVersions(data.identifier, data.language)
                     .pipe(
                         take(1),
+                        catchError((err: HttpErrorResponse) => {
+                            return this.httpErrorManagerService.handle(err);
+                        }),
                         switchMap((contents: DotCMSContentlet[]) => {
                             return this.dotContentTypeService
                                 .getContentType(contents[0].contentType)
@@ -105,6 +110,9 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                                                       ...value,
                                                       contents: [...value.contents, response]
                                                   };
+                                              }),
+                                              catchError((err: HttpErrorResponse) => {
+                                                  return this.httpErrorManagerService.handle(err);
                                               })
                                           )
                                     : of(value);
@@ -116,6 +124,10 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                             contentType: DotCMSContentType;
                             contents: DotCMSContentlet[];
                         }) => {
+                            if (!value || !value.contents || !value.contentType) {
+                                return;
+                            }
+
                             const fields = this.filterFields(value.contentType);
                             const formattedContents = this.formatSpecificTypesFields(
                                 value.contents,
@@ -139,7 +151,8 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
     constructor(
         private dotContentTypeService: DotContentTypeService,
         private dotContentletService: DotContentletService,
-        private dotFormatDateService: DotFormatDateService
+        private dotFormatDateService: DotFormatDateService,
+        private httpErrorManagerService: DotHttpErrorManagerService
     ) {
         super({
             data: null,
