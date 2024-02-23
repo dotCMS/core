@@ -200,4 +200,27 @@ describe('DotToolbarUserComponent', () => {
         const loginAsLink = de.query(By.css('[data-testId="login-as"]'));
         expect(loginAsLink).toBe(null);
     });
+
+    it('should show mask', () => {
+        fixture.detectChanges();
+        const avatarComponent = de.query(By.css('[data-testid="avatar"]')).nativeElement;
+        avatarComponent.click();
+
+        fixture.detectChanges();
+        const mask = de.query(By.css('[data-testId="dot-mask"]'));
+        expect(mask).toBeTruthy();
+    });
+
+    it('should hide mask', () => {
+        fixture.detectChanges();
+        const avatarComponent = de.query(By.css('[data-testid="avatar"]')).nativeElement;
+        avatarComponent.click();
+
+        fixture.detectChanges();
+        const mask = de.query(By.css('[data-testid="dot-mask"]'));
+        mask.nativeElement.click();
+
+        fixture.detectChanges();
+        expect(de.query(By.css('[data-testid="dot-mask"]'))).toBeFalsy();
+    });
 });
