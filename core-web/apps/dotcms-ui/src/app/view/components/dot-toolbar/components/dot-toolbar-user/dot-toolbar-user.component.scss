@@ -30,7 +30,7 @@ p-avatar {
 }
 
 ::ng-deep {
-    .p-menu {
+    .toolbar-user__menu.p-menu {
         margin-top: $spacing-0;
         &.p-menu-overlay {
             width: 17rem;
