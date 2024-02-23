@@ -1,10 +1,6 @@
 @use "variables" as *;
 @import "mixins";
 
-:host {
-    display: block;
-}
-
 p-avatar {
     cursor: pointer;
     padding: $spacing-2 0;
@@ -39,6 +35,8 @@ p-avatar {
 }
 
 :host::ng-deep {
+    display: block;
+
     .p-menu {
         margin-top: $spacing-0;
     }
