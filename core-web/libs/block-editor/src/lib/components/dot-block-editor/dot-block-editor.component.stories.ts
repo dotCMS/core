@@ -11,6 +11,8 @@ import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
+
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 import { BlockEditorModule } from '../../block-editor.module';
@@ -32,6 +34,7 @@ import {
     SuggestionsComponent,
     SuggestionsService
 } from '../../shared';
+import { DotMessageServiceMock } from '../../shared/mocks/dot-message.service.mock';
 import { DotAiServiceMock } from '../../shared/services/dot-ai/dot-ai-service.mock';
 
 export default {
@@ -184,6 +187,13 @@ export const primary = () => ({
             {
                 provide: DotAiService,
                 useClass: process.env.USE_MIDDLEWARE === 'true' ? DotAiService : DotAiServiceMock
+            },
+            {
+                provide: DotMessageService,
+                useClass:
+                    process.env.USE_MIDDLEWARE === 'true'
+                        ? DotMessageService
+                        : DotMessageServiceMock
             }
         ],
         // We need these here because they are dynamically rendered

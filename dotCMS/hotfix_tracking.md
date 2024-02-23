@@ -53,3 +53,4 @@ This maintenance release includes the following code fixes:
 46. https://github.com/dotCMS/core/issues/26664 : [UI] Setup a flag to use the middleware in storybook #26664
 47. https://github.com/dotCMS/core/issues/26519 : [UI] Review AIContentPromptExtension #26519
 48. https://github.com/dotCMS/core/issues/26551 : [UI] Review AIImagePromptExtension prompt extension #26551
+49. https://github.com/dotCMS/core/issues/26520 : [UI] Add DotMessageService to Block Editor to able translate the labels/messages #26520

@@ -43,6 +43,14 @@ module.exports = function expressMiddleware(router) {
             })
         );
 
-        console.info(`\x1b[35m[dotCMS]\x1b[0m`, 'Using middleware for storybook');
+        router.use(
+            '/api/v2/languages/default/keys',
+            createProxyMiddleware({
+                target: 'http://localhost:8080',
+                changeOrigin: true
+            })
+        );
+
+        console.info(`\x1b[32m[dotCMS]\x1b[0m`, 'Using middleware for storybook');
     }
 };

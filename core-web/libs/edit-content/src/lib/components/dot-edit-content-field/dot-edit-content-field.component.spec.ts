@@ -1,8 +1,10 @@
 import { describe } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { DotMessageService } from '@dotcms/data-access';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 import { FIELD_TYPES, FIELD_TYPES_COMPONENTS } from './utils';
@@ -18,6 +20,15 @@ describe('FIELD_TYPES and FIELDS_MOCK', () => {
         ).toBeTruthy();
     });
 });
+
+const dotMessageServiceMock = {
+    init: jest.fn().mockImplementation(() => {
+        // mocking init
+    }),
+    get: jest.fn().mockImplementation(() => {
+        // mocking get
+    })
+};
 
 describe.each([...FIELDS_MOCK])('DotFieldComponent', (fieldMock) => {
     let spectator: Spectator<DotEditContentFieldComponent>;
@@ -36,7 +47,13 @@ describe.each([...FIELDS_MOCK])('DotFieldComponent', (fieldMock) => {
         spectator = createComponent({
             props: {
                 field: fieldMock
-            }
+            },
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: dotMessageServiceMock
+                }
+            ]
         });
     });
 

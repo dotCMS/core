@@ -30,8 +30,8 @@ export class DotMessageService {
      * If a language is passed or if buildDate is different than what is local then
      * key messages in localStorage are replaced
      *
-     * @param DotMessageServiceParams [params]
      * @memberof DotMessageService
+     * @param params
      */
     init(params?: DotMessageServiceParams): void {
         if (
@@ -63,9 +63,10 @@ export class DotMessageService {
     /**
      * Return the message key value, formatted if more values are passed.
      *
-     * @param string key
      * @returns string
      * @memberof DotMessageService
+     * @param key
+     * @param args
      */
     get(key: string, ...args: string[]): string {
         return this.messageMap[key]

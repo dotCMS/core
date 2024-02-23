@@ -1,4 +1,13 @@
-import { Component, EventEmitter, Output, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    inject,
+    OnInit,
+    Output
+} from '@angular/core';
+
+import { DotMessageService } from '@dotcms/data-access';
 
 interface ActionOption {
     label: string;
@@ -24,23 +33,24 @@ export class AIContentActionsComponent implements OnInit {
 
     actionOptions!: ActionOption[];
     tooltipContent = 'Describe the size, color palette, style, mood, etc.';
+    private dotMessageService: DotMessageService = inject(DotMessageService);
 
     ngOnInit() {
         this.actionOptions = [
             {
-                label: 'Accept',
+                label: this.dotMessageService.get('block-editor.common.accept'),
                 icon: 'pi pi-check',
                 callback: () => this.emitAction(ACTIONS.ACCEPT),
                 selectedOption: true
             },
             {
-                label: 'Regenerate',
+                label: this.dotMessageService.get('block-editor.common.regenerate'),
                 icon: 'pi pi-sync',
                 callback: () => this.emitAction(ACTIONS.REGENERATE),
                 selectedOption: false
             },
             {
-                label: 'Delete',
+                label: this.dotMessageService.get('block-editor.common.delete'),
                 icon: 'pi pi-trash',
                 callback: () => this.emitAction(ACTIONS.DELETE),
                 selectedOption: false
