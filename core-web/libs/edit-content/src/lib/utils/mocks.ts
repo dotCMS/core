@@ -1092,8 +1092,16 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
 };
 
 export const MockResizeObserver = class {
-    constructor() {}
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    constructor() {
+        //
+    }
+    observe() {
+        //
+    }
+    unobserve() {
+        //
+    }
+    disconnect() {
+        //
+    }
 };

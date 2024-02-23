@@ -36,6 +36,7 @@ jobs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       HEAD: ${{ steps.version.outputs.HEAD }}
       AUXILIARY_BRANCH: ${{ steps.version.outputs.AUXILIARY_BRANCH }}
+      DATE: ${{ steps.get-date.outputs.DATE }}
     steps:
       - name: 'Log GitHub context'
         env:
@@ -47,18 +48,18 @@ jobs:
         with:
           token: ${{ secrets.CI_MACHINE_TOKEN }}
 
-      - uses: ./.github/actions/cleanup-runner
+
 
       - name: 'Setup Java'
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRO }}
-
+      - uses: ./.github/actions/cleanup-runner
       - name: 'Get Date'
         id: get-date
         run: |
-          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+          echo "DATE=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: 'Restore Maven Repository'
@@ -66,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: maven-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+          key: maven-${{ steps.get-date.outputs.DATE }}-${{ github.run_id }}
 
       - name: 'Setup git config'
         run: |
@@ -85,10 +86,10 @@ jobs:
           # Create a release branch for versioning updates
           AUXILIARY_BRANCH=version-update-${RELEASE_VERSION}-${{ github.run_id }}
           git checkout -b $AUXILIARY_BRANCH
-          
+
           # Update version in pom.xml
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
-               
+
           # Commit version changes
           git commit --allow-empty -a -m "Update dotCLI version to $RELEASE_VERSION"
           git push origin $AUXILIARY_BRANCH
@@ -116,6 +117,10 @@ jobs:
       - name: 'Cleanup Runner'
         if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: ./.github/actions/cleanup-runner
+
+      - name: 'Cleanup macOS Runner'
+        if: ${{ contains(matrix.os, 'macos-') }}
+        uses: ./.github/actions/cleanup-macos-runner
 
       # Sets up GraalVM for native image compilation (Linux/macOS)
       # Downloads and installs GraalVM
@@ -197,7 +202,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: maven-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+          key: maven-${{ needs.precheck.outputs.DATE }}-${{ github.run_id }}
 
       - name: 'Prepare dotCMS license'
         env:
@@ -252,7 +257,7 @@ jobs:
           path: |
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
-            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz     
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
 
   release:
     needs: [ precheck, build ]
@@ -292,7 +297,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: maven-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+          key: maven-${{ needs.precheck.outputs.DATE }}-${{ github.run_id }}
 
       # Creates automated releases using JReleaser
       # Generates builds for different platforms
@@ -310,22 +315,10 @@ jobs:
         run: |
           tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
 
-      - name: 'Setup git config'
-        run: |
-          git config user.name "${{ secrets.CI_MACHINE_USER }}"
-          git config user.email "dotCMS-Machine-User@dotcms.com"
-
-      - name: 'Tag release version in ${{ github.ref }}'
-        if: ${{ !contains(github.event.inputs.version, 'SNAPSHOT') }}
-        run: |
-          git checkout ${{ needs.precheck.outputs.HEAD }}
-          git tag -a "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}" -m "Release dotCLI version ${{ needs.precheck.outputs.RELEASE_VERSION }}"
-          git push origin "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}"
-
   publish-npm-package:
     name: "Publish NPM Package"
     if: success()  # Run only if explicitly indicated and successful
-    needs: [ build, release ]
+    needs: [ precheck, build, release ]
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout code'
@@ -350,40 +343,47 @@ jobs:
           pattern: artifacts-*
           merge-multiple: true
 
-      # Determines the NPM package version suffix (RC_SUFFIX)
+      # Determines the NPM package version and tag
       # Distinguishes between snapshots and releases
-      - name: 'Generate package version suffix'
-        id: generate-version-suffix
-        env:
-          MVN_PACKAGE_VERSION: ${{ github.event.inputs.version }}
-          IS_SNAPSHOT_VERSION: ${{ contains(github.event.inputs.version, 'SNAPSHOT') }}
+      - name: 'Dynamic configuration of NPM package Version and Tag'
         run: |
-          if [ "$IS_SNAPSHOT_VERSION" = "true" ]; then
-              echo "Snapshot version found.";
-              TAG="rc"
-              PACKAGE_FULL_NAME="${NPM_PACKAGE_SCOPE}/${NPM_PACKAGE_NAME}"
+          MVN_PACKAGE_VERSION=$(echo ${{ github.event.inputs.version }} | tr '[:lower:]' '[:upper:]') 
+          PACKAGE_FULL_NAME=${{ env.NPM_PACKAGE_SCOPE }}/${{ env.NPM_PACKAGE_NAME }}
           
-              if npm view $PACKAGE_FULL_NAME &> /dev/null; then
-                echo "${PACKAGE_FULL_NAME} found.";
-                LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
-                echo $LAST_RC_VERSION
-                NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
-                echo $NEXT_RC_VERSION
-                RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
-                echo $RC_SUFFIX
-              else
-                echo "${PACKAGE_FULL_NAME} not found.";
-                RC_SUFFIX="-rc1"
-              fi;
+          # Check if the npm package exists
+          if ! npm view $PACKAGE_FULL_NAME &> /dev/null; then
+            echo "The package $PACKAGE_FULL_NAME does not exist on npm."
+            exit 1
+          fi
+          
+          # Check if the package is a snapshot
+          REGEX="([0-9]+\.[0-9]+\.[0-9]+)-SNAPSHOT"
+          
+          if [[ $MVN_PACKAGE_VERSION =~ $REGEX ]]; then
+            echo "Snapshot version found."
+          
+            NPM_PACKAGE_VERSION_TAG="rc"
+            MVN_BASE_VERSION="${BASH_REMATCH[1]}"
+            MVN_PACKAGE_VERSION_WITHOUT_DOTS=$(echo "$MVN_BASE_VERSION" | sed "s/\.//g")
+            VERSION_NPM_FORMAT=$(date -d "$MVN_PACKAGE_VERSION_WITHOUT_DOTS" "+%y.%-m.%d")            
+            LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+          
+            if [[ $LAST_RC_VERSION == "$VERSION_NPM_FORMAT"* ]]; then
+              NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
+              RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
+            else
+              RC_SUFFIX="-rc1"
+            fi;
+          
+            NPM_PACKAGE_VERSION=${MVN_BASE_VERSION}${RC_SUFFIX}
           else
-            echo "Release version found.";
-            TAG="latest"
-            RC_SUFFIX=""              
-          fi;
+            echo "Release version found."
+            NPM_PACKAGE_VERSION_TAG="latest"
+            NPM_PACKAGE_VERSION=${MVN_PACKAGE_VERSION}
+          fi;          
 
-          VERSION=$(echo "$MVN_PACKAGE_VERSION" | sed 's/-SNAPSHOT//I')
-          echo "NPM_PACKAGE_VERSION=${VERSION}${RC_SUFFIX}" >> $GITHUB_ENV
-          echo "NPM_PACKAGE_VERSION_TAG=$TAG" >> $GITHUB_ENV
+          echo "NPM_PACKAGE_VERSION=$NPM_PACKAGE_VERSION" >> $GITHUB_ENV
+          echo "NPM_PACKAGE_VERSION_TAG=$NPM_PACKAGE_VERSION_TAG" >> $GITHUB_ENV
 
       # Sets up the NPM package
       # Creates the bin folder with the binaries
@@ -393,21 +393,21 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
           MVN_PACKAGE_VERSION: ${{ github.event.inputs.version }}
-        run: |          
+        run: |
           echo "Adding bin folder with all the binaries"
           mkdir -p bin
           find ${{ github.workspace }}/artifacts/distributions/ -name "*.zip" -exec unzip -d bin {} \;
 
           echo "Adding wrapper script"
           mv src/postinstall.js.seed src/postinstall.js
-          
+
           echo "Adding README.md file"
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
-          
+
           echo "Adding package.json file"
           jinja2 package.j2 -D packageName=${MVN_PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} -D packageVersion=${MVN_PACKAGE_VERSION} --format json -o package.json
           rm -f package.j2
-          
+
           cat package.json
           cat src/postinstall.js
 
@@ -435,4 +435,4 @@ jobs:
 
       - name: 'Delete release auxiliary branch - ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}'
         run: |
-          git push origin --delete ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}      
+          git push origin --delete ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}

@@ -65,20 +65,19 @@ export class DotPropertiesService {
     }
 
     /**
-     * Get the values of specific feature flags
+     * Retrieves feature flags for given keys.
      *
-     * @param {string[]} keys
-     * @return {*}  {Observable<Record<string, boolean>>}
-     * @memberof DotPropertiesService
+     * @param {string[]} keys - An array of keys to retrieve feature flags for.
+     * @returns {Observable<Record<string, boolean | string>>} - An Observable that emits a record containing key-value pairs of feature flags.
      */
-    getFeatureFlags(keys: string[]): Observable<Record<string, boolean>> {
+    getFeatureFlags(keys: string[]): Observable<Record<string, boolean | string>> {
         return this.getKeys(keys).pipe(
             map((flags) => {
-                return Object.keys(flags).reduce((acc, key) => {
-                    acc[key] = flags[key] === 'true';
+                return Object.entries(flags).reduce((acc, [key, value]) => {
+                    acc[key] = value === 'true' ? true : value === 'false' ? false : value;
 
                     return acc;
-                }, {} as Record<string, boolean>);
+                }, {} as Record<string, boolean | string>);
             })
         );
     }
