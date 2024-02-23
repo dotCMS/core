@@ -6,7 +6,6 @@ import {
     EventEmitter,
     HostBinding,
     Input,
-    OnDestroy,
     Output,
     ViewChild,
     inject
@@ -34,7 +33,7 @@ const ACTIONS_CONTAINER_HEIGHT = 40;
     styleUrls: ['./ema-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EmaContentletToolsComponent implements OnDestroy {
+export class EmaContentletToolsComponent {
     @ViewChild('dragImage') dragImage: ElementRef;
     private dotMessageService = inject(DotMessageService);
 
@@ -79,13 +78,6 @@ export class EmaContentletToolsComponent implements OnDestroy {
             }
         }
     ];
-
-    ngOnDestroy(): void {
-        // Remove all the appended elements
-        document.querySelectorAll('[data-dot-drag-item]').forEach((el) => {
-            el.remove();
-        });
-    }
 
     dragStart(event: DragEvent, payload: ActionPayload): void {
         event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
