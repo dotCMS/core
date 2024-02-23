@@ -589,7 +589,7 @@ jobs:
           (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
         uses: sonarsource/sonarqube-quality-gate-action@master
         # Force to fail step after specific time.
-        timeout-minutes: 15
+        timeout-minutes: 30
         with:
           scanMetadataReportFile: target/sonar/report-task.txt
         env:
