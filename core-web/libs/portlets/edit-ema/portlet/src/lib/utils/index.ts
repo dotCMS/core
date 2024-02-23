@@ -74,7 +74,7 @@ export function deleteContentletFromContainer(action: ActionPayload): PageContai
  * @param {ContainerPayload} containerToFind
  * @return {*}  {boolean}
  */
-function areContainersEquals(
+export function areContainersEquals(
     currentContainer: PageContainer,
     containerToFind: ContainerPayload
 ): boolean {

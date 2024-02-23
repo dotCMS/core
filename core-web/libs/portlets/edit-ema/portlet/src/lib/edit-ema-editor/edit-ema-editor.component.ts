@@ -61,7 +61,11 @@ import {
     ContainerPayload,
     ContentletPayload
 } from '../shared/models';
-import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
+import {
+    areContainersEquals,
+    deleteContentletFromContainer,
+    insertContentletInContainer
+} from '../utils';
 
 interface BasePayload {
     type: 'contentlet' | 'content-type';
@@ -141,12 +145,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const clientData = this.clientData();
         const { containers, languageId, id, personaTag } = this.pageData();
-        const { contentletsId } = containers.find((container) => {
-            return (
-                container.identifier === clientData.container.identifier &&
-                container.uuid === clientData.container.uuid
-            );
-        }) ?? { contentletsId: [] };
+        const { contentletsId } = containers.find((container) =>
+            areContainersEquals(container, clientData.container)
+        ) ?? { contentletsId: [] };
 
         return {
             ...clientData,
