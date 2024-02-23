@@ -8,24 +8,135 @@
         (onHide)="hideDialog()"
         appendTo="body"
         header="{{ 'block-editor.extension.ai-image.dialog-title' | dm }}">
-        <div class="dialog-prompts__wrapper grid">
-            <dot-ai-image-prompt-input
-                class="col"
-                [isLoading]="vm.status === ComponentStatus.LOADING"
-                [selected]="vm.selectedPromptType === 'input'"
-                (click)="selectType('input', vm.selectedPromptType)"
-                (promptChanged)="generateImage($event)"
-                placeholder="{{ 'block-editor.extension.ai-image.input-text.placeholder' | dm }}"
-                type="input" />
+        <div class="dialog-prompt__wrapper flex">
+            <div>
+                <p-accordion
+                    [activeIndex]="1"
+                    expandIcon="pi pi-angle-down"
+                    collapseIcon="pi pi-angle-up">
+                    <p-accordionTab header="Settings" iconPos="end">
+                        <div class="field dialog-prompt__input">
+                            <label dotFieldRequired>Input</label>
+                            <div>
+                                <p-radioButton
+                                    [(ngModel)]="promptType"
+                                    name="input"
+                                    value="1"
+                                    inputId="optionOne"></p-radioButton>
+                                <label class="ml-2" for="optionOne"
+                                    >Create with Custom Prompt</label
+                                >
+                            </div>
+                            <span
+                                >Write your own prompt and have full creative control over the image
+                                generation.</span
+                            >
+                            <div>
+                                <p-radioButton
+                                    [(ngModel)]="promptType"
+                                    name="input"
+                                    value="2"
+                                    inputId="option2"></p-radioButton>
+                                <label class="ml-2" for="option2"
+                                    >Create based on Existing Content</label
+                                >
+                            </div>
+                            <span
+                                >Generate and image based on provided content. You may Customize
+                                with mood, colors and size.</span
+                            >
+                        </div>
+                        <div class="field dialog-prompt__input">
+                            <label dotFieldRequired>Orientation</label>
 
-            <dot-ai-image-prompt-input
-                class="col"
-                [isLoading]="vm.status === ComponentStatus.LOADING"
-                [selected]="vm.selectedPromptType === 'auto'"
-                (click)="selectType('auto', vm.selectedPromptType)"
-                (promptChanged)="generateImage($event)"
-                placeholder="{{ 'block-editor.extension.ai-image.auto-text.placeholder' | dm }}"
-                type="auto" />
+                            <p-dropdown [options]="sizeOptions" styleClass="w-full"></p-dropdown>
+                        </div>
+                    </p-accordionTab>
+                    <p-accordionTab header="Prompt" iconPos="end">
+                        <div class="field dialog-prompt__input">
+                            <label dotFieldRequired>Prompt</label>
+
+                            <textarea
+                                class="w-full"
+                                [autoResize]="true"
+                                rows="10"
+                                cols="30"
+                                pInputTextarea
+                                placeholder="Describe the image you want to create, including details like subjects, colors, mood, and style. The more specific, the better!"></textarea>
+                        </div>
+                    </p-accordionTab>
+                </p-accordion>
+
+                <!--                <p-panel-->
+                <!--                    #settingsPanel-->
+                <!--                    [toggleable]="true"-->
+                <!--                    [(collapsed)]="settingsCollapsed"-->
+
+                <!--                    (onBeforeToggle)="toggleSettingsPanel($event)"-->
+                <!--                    toggler="header"-->
+                <!--                    iconPos="end"-->
+                <!--                    expandIcon="pi pi-angle-down"-->
+                <!--                    collapseIcon="pi pi-angle-up"-->
+                <!--                >-->
+                <!--                    <ng-template pTemplate="header">-->
+                <!--                        <span>{{ 'Settings' | dm }}</span>-->
+                <!--                    </ng-template>-->
+                <!--                    <div class="field dialog-prompt__input">-->
+                <!--                        <label dotFieldRequired >Input</label>-->
+                <!--                        <div>-->
+                <!--                            <p-radioButton name="input" value="1" inputId="optionOne" [(ngModel)]="promptType"></p-radioButton>-->
+                <!--                            <label for="optionOne" class="ml-2">Create with Custom Prompt</label>-->
+                <!--                        </div>-->
+                <!--                        <span>Write your own prompt and have full creative control over the image generation.</span>-->
+                <!--                        <div>-->
+                <!--                            <p-radioButton name="input" value="2" inputId="option2" [(ngModel)]="promptType"></p-radioButton>-->
+                <!--                            <label for="option2" class="ml-2">Create based on Existing Content</label>-->
+                <!--                        </div>-->
+                <!--                        <span>Generate and image based on provided content. You may Customize with mood, colors and size.</span>-->
+                <!--                    </div>-->
+                <!--                    <div class="field dialog-prompt__input">-->
+                <!--                        <label dotFieldRequired >Orientation</label>-->
+
+                <!--                        <p-dropdown styleClass="w-full" [options]="sizeOptions" ></p-dropdown>-->
+                <!--                    </div>-->
+
+                <!--                </p-panel>-->
+                <!--                <p-panel-->
+                <!--                    #promptPanel-->
+                <!--                    class="dialog-prompt-panel__prompt"-->
+                <!--                    [toggleable]="true"-->
+                <!--                    [(collapsed)]="promptCollapsed"-->
+                <!--                    (onBeforeToggle)="togglePromptPanel($event)"-->
+                <!--                    toggler="header"-->
+                <!--                    iconPos="end"-->
+                <!--                    expandIcon="pi pi-angle-down"-->
+                <!--                    collapseIcon="pi pi-angle-up"-->
+                <!--                >-->
+                <!--                    <ng-template pTemplate="header">-->
+                <!--                        <span>{{ 'Prompt' | dm }}</span>-->
+                <!--                    </ng-template>-->
+
+                <!--                    <div class="field dialog-prompt__input">-->
+                <!--                        <label dotFieldRequired >Prompt</label>-->
+
+                <!--                        <textarea class="w-full" rows="10" cols="30"-->
+                <!--                                  pInputTextarea-->
+                <!--                                  [autoResize]="true"-->
+                <!--                                  placeholder="Describe the image you want to create, including details like subjects, colors, mood, and style. The more specific, the better!"-->
+                <!--                        ></textarea>-->
+                <!--                    </div>-->
+
+                <!--                </p-panel>-->
+
+                <p-button
+                    class="flex justify-content-end"
+                    label="Generate"
+                    icon="pi pi-check"></p-button>
+            </div>
+
+            <div>
+                <h2>Placeholder</h2>
+            </div>
         </div>
     </p-dialog>
 </ng-container>

@@ -1,5 +1,62 @@
 @use "variables" as *;
 
-.dialog-prompts__wrapper {
+.dialog-prompt__wrapper {
     gap: $spacing-5;
+
+    > div {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+}
+
+.dialog-prompt__input {
+    display: flex;
+    flex-direction: column;
+
+    > div {
+        display: flex;
+        align-items: center;
+    }
+
+    > span {
+        display: flex;
+        margin: $spacing-0 0 $spacing-1 $spacing-5;
+        font-size: $font-size-sm;
+        color: $color-palette-gray-700;
+    }
+}
+
+::ng-deep {
+    .p-panel-toggleable {
+        padding: $spacing-3;
+        border: 1px solid $color-palette-gray-400;
+        border-radius: $border-radius-md;
+        background-color: $white;
+    }
+
+    .dialog-prompt-panel__prompt .p-panel-toggleable.p-panel-expanded .p-toggleable-content {
+        min-height: 310px;
+    }
+
+    .p-panel-header .p-panel-icons span.pi,
+    .p-panel-header .p-panel-icons span {
+        margin-right: 0;
+    }
+
+    .p-panel-header-icon {
+        .pi {
+            border: 1px solid;
+            border-radius: 100px;
+            height: $spacing-5;
+            width: $spacing-5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pi:before {
+            font-size: $spacing-2;
+        }
+    }
 }

@@ -2,18 +2,29 @@ import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import {
+    FormBuilder,
+    FormGroupDirective,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
+import { AccordionModule } from 'primeng/accordion';
+import { ConfirmationService, SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
+import {  PanelModule } from 'primeng/panel';
+import { RadioButtonModule } from 'primeng/radiobutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { PromptType } from './ai-image-prompt.models';
 import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
@@ -34,8 +45,16 @@ import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/
         AiImagePromptInputComponent,
         AsyncPipe,
         DotMessagePipe,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        PanelModule,
+        DotFieldRequiredDirective,
+        FormsModule,
+        RadioButtonModule,
+        DropdownModule,
+        InputTextareaModule,
+        AccordionModule
     ],
+    providers: [FormGroupDirective],
 
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -45,6 +64,13 @@ export class AIImagePromptComponent {
     private confirmationService = inject(ConfirmationService);
     private dotMessageService = inject(DotMessageService);
     private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
+
+
+    sizeOptions: SelectItem<number>[] = [
+        { value: 1, label: 'Vertical (1024 x 1792)' },
+        { value: 2, label: 'Horizontal (1792 x 1024)' },
+        { value: 3, label: 'Square (1024 x 1024)' }
+    ];
 
     /**
      * Hides the dialog.
@@ -83,4 +109,10 @@ export class AIImagePromptComponent {
     onHideConfirm(): void {
         this.store.cleanError();
     }
+
+    form = inject(FormBuilder).group({
+        prompt: ['', Validators.required]
+    });
+    promptType = 1;
+
 }
