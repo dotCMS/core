@@ -18,7 +18,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
-import {  PanelModule } from 'primeng/panel';
+import { PanelModule } from 'primeng/panel';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -64,7 +64,6 @@ export class AIImagePromptComponent {
     private confirmationService = inject(ConfirmationService);
     private dotMessageService = inject(DotMessageService);
     private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
-
 
     sizeOptions: SelectItem<number>[] = [
         { value: 1, label: 'Vertical (1024 x 1792)' },
@@ -114,5 +113,4 @@ export class AIImagePromptComponent {
         prompt: ['', Validators.required]
     });
     promptType = 1;
-
 }
