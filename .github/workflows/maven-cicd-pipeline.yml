@@ -532,7 +532,10 @@ jobs:
     name: SonarQube Scan
     runs-on: ubuntu-latest
     needs: [build-jdk11,linux-jvm-tests,linux-integration-tests,linux-postman-tests]
-    if: (success() || failure()) && ( github.repository == 'dotCMS/core' )
+    if: |
+      (success() || failure()) &&
+      (github.repository == 'dotCMS/core') &&
+      (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
     steps:
       - uses: actions/checkout@v4
         with:
@@ -580,7 +583,10 @@ jobs:
           ./mvnw $JVM_TEST_MAVEN_OPTS -Dsonar.log.level=DEBUG org.sonarsource.scanner.maven:sonar-maven-plugin:sonar '-Dcoverage.execution.locations=build-reports/**/*.exec' -Dsonar.projectKey=dotCMS_core_AYSbIemxK43eThAXTlt- -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.token=$SONAR_TOKEN
       - name: SonarQube Quality Gate check
         id: sonarqube-quality-gate-check
-        if: (success() || failure()) && (github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master'))
+        if: |
+          (success() || failure()) &&
+          (github.repository == 'dotCMS/core') &&
+          (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
         uses: sonarsource/sonarqube-quality-gate-action@master
         # Force to fail step after specific time.
         timeout-minutes: 15
