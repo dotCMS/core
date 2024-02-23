@@ -161,7 +161,7 @@
         "@nx/vite": "18.0.4",
         "@nx/web": "18.0.4",
         "@nx/workspace": "18.0.4",
-        "@nxext/stencil": "17.0.2",
+        "@nxext/stencil": "17.2.2",
         "@rollup/plugin-url": "^7.0.0",
         "@schematics/angular": "17.1.0",
         "@stencil/core": "^2.22.2",
