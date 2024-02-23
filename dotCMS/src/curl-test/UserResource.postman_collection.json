@@ -113,7 +113,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"userId\":\"userid-french-12345678\",\n    \"active\":true,\n    \"firstName\":\"FrenchUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"French\",\n    \"nickName\":\"French\",\n    \"email\":\"french@dotcms.com\",\n    \"male\":true,\n    \"languageId\":{{frenchLanguageId}},\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
+							"raw": "{\n    \"userId\":\"userid-french-12345678\",\n    \"active\":true,\n    \"firstName\":\"FrenchUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"French\",\n    \"nickName\":\"French\",\n    \"email\":\"french@dotcms.com\",\n    \"male\":true,\n    \"languageId\":\"fr_FR\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
