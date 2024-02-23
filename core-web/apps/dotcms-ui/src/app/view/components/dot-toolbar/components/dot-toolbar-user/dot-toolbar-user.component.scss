@@ -41,9 +41,6 @@ p-avatar {
 :host::ng-deep {
     .p-menu {
         margin-top: $spacing-0;
-        &.p-menu-overlay {
-            width: 17rem;
-        }
     }
 
     .p-menu .p-menu-separator {
