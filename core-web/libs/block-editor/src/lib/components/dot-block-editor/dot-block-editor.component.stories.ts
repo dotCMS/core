@@ -15,22 +15,24 @@ import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 import { BlockEditorModule } from '../../block-editor.module';
 import {
+    AssetFormComponent,
     BubbleLinkFormComponent,
     DragHandlerComponent,
-    AssetFormComponent,
     UploadPlaceholderComponent
 } from '../../extensions';
 import { ContentletBlockComponent } from '../../nodes';
 import {
+    AiContentService,
+    ASSET_MOCK,
     CONTENTLETS_MOCK,
     DotLanguageService,
+    DotUploadFileService,
+    FileStatus,
     SearchService,
     SuggestionsComponent,
-    SuggestionsService,
-    DotUploadFileService,
-    ASSET_MOCK,
-    FileStatus
+    SuggestionsService
 } from '../../shared';
+import { AiContentServiceMock } from '../../shared/services/ai-content/ai-content.service.mock';
 
 export default {
     title: 'Library/Block Editor'
@@ -178,6 +180,11 @@ export const primary = () => ({
                         }).pipe(delay(1000));
                     }
                 }
+            },
+            {
+                provide: AiContentService,
+                useClass:
+                    process.env.USE_MIDDLEWARE === 'true' ? AiContentService : AiContentServiceMock
             }
         ],
         // We need these here because they are dynamically rendered
