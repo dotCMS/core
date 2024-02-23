@@ -59,13 +59,29 @@ import {
     ClientData,
     SetUrlPayload,
     ContainerPayload,
-    ContentletPayload
+    ContentletPayload,
+    PageContainer
 } from '../shared/models';
 import {
     areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
 } from '../utils';
+
+interface DeletePayload {
+    payload: ActionPayload;
+    originContainer: ContainerPayload;
+    contentletToMove: ContentletPayload;
+}
+
+interface InsertPayloadFromDelete {
+    payload: ActionPayload;
+    pageContainers: PageContainer[];
+    contentletsId: string[];
+    destinationContainer: ContainerPayload;
+    pivotContentlet: ContentletPayload;
+    positionToInsert: 'before' | 'after';
+}
 
 interface BasePayload {
     type: 'contentlet' | 'content-type';
@@ -415,31 +431,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const contentletToMove = draggedPayload.item.contentlet;
 
             if (draggedPayload.move) {
-                const deletePayload = {
-                    ...payload,
-                    container: {
-                        ...originContainer // The container where the contentlet was before
-                    },
-                    contentlet: {
-                        ...contentletToMove // The contentlet that was dragged
-                    }
-                };
+                const deletePayload = this.createDeletePayload({
+                    payload,
+                    originContainer,
+                    contentletToMove
+                });
 
                 const { pageContainers, contentletsId } =
                     deleteContentletFromContainer(deletePayload); // Delete from the original position
 
                 // Update the payload to handle the data to insert the contentlet in the new position
-                payload = {
-                    ...payload,
+                payload = this.createInsertPayloadFromDelete({
+                    payload,
                     pageContainers,
-                    container: {
-                        ...payload.container,
-                        ...destinationContainer,
-                        contentletsId // Contentlets id after deleting the contentlet
-                    },
-                    contentlet: pivotContentlet,
-                    position: positionToInsert
-                };
+                    contentletsId,
+                    destinationContainer,
+                    pivotContentlet,
+                    positionToInsert
+                });
             }
 
             const { pageContainers, didInsert } = insertContentletInContainer({
@@ -766,5 +775,69 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.contentlet = null;
         this.rows = [];
         this.dragItem = null;
+    }
+
+    /**
+     * Create the payload to delete a contentlet
+     *
+     * @private
+     * @param {DeletePayload} {
+     *         payload,
+     *         originContainer,
+     *         contentletToMove
+     *     }
+     * @return {*}  {ActionPayload}
+     * @memberof EditEmaEditorComponent
+     */
+    private createDeletePayload({
+        payload,
+        originContainer,
+        contentletToMove
+    }: DeletePayload): ActionPayload {
+        return {
+            ...payload,
+            container: {
+                ...originContainer // The container where the contentlet was before
+            },
+            contentlet: {
+                ...contentletToMove // The contentlet that was dragged
+            }
+        };
+    }
+
+    /**
+     * Create the payload to insert a contentlet after deleting it
+     *
+     * @private
+     * @param {InsertPayloadFromDelete} {
+     *         payload,
+     *         pageContainers,
+     *         contentletsId,
+     *         destinationContainer,
+     *         pivotContentlet,
+     *         positionToInsert
+     *     }
+     * @return {*}  {ActionPayload}
+     * @memberof EditEmaEditorComponent
+     */
+    private createInsertPayloadFromDelete({
+        payload,
+        pageContainers,
+        contentletsId,
+        destinationContainer,
+        pivotContentlet,
+        positionToInsert
+    }: InsertPayloadFromDelete): ActionPayload {
+        return {
+            ...payload,
+            pageContainers,
+            container: {
+                ...payload.container,
+                ...destinationContainer,
+                contentletsId // Contentlets id after deleting the contentlet
+            },
+            contentlet: pivotContentlet,
+            position: positionToInsert
+        };
     }
 }
