@@ -48,8 +48,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
-import static org.apache.commons.lang3.BooleanUtils.toString;
-
 import org.apache.commons.lang3.BooleanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 

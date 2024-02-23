@@ -3,10 +3,12 @@ package com.dotcms.cli.command.files;
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.client.files.traversal.task.TraverseTaskResult;
+import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.model.language.Language;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
@@ -101,10 +103,11 @@ public abstract class AbstractFilesListingCommand extends AbstractFilesCommand {
 
         // Display the result
         StringBuilder sb = new StringBuilder();
-        if(result.treeNode().isPresent()){
+        final Optional<TreeNode> optional = result.treeNode();
+        if(optional.isPresent()){
             //We got back a tree node lets print it out
             TreePrinter.getInstance()
-                    .filteredFormat(sb, result.treeNode().get(), !filesMixin.excludeEmptyFolders, languages);
+                    .filteredFormat(sb, optional.get(), !filesMixin.excludeEmptyFolders, languages);
             output.info(sb.toString());
         } else {
             reportErrorWhenNothingWasReturned(result);

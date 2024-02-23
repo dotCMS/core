@@ -115,7 +115,6 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
                     build();
 
         } else { // Handling single files
-            //Todo: handle Permission access exceptions here
             var asset = retrieveAssetInformation(path);
             return FileTraverseResult.builder().asset(asset).build();
         }

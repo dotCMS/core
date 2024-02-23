@@ -14,7 +14,7 @@ import org.immutables.value.Value;
 @ValueType
 @Value.Immutable
 public interface AbstractTraverseResult {
-    //TODO Merge these two fields into a RemoteTaskResult
+
     List<Exception> exceptions();
     Optional<TreeNode> treeNode();
 
