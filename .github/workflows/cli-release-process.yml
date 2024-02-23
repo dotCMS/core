@@ -315,6 +315,7 @@ jobs:
 #          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
 #          JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
 #          JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+#          JRELEASER_UPLOAD_ACTIVE: NEVER
 #        working-directory: ${{ github.workspace }}
 #        run: |
 #          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
