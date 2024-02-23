@@ -26,6 +26,7 @@
                 "styles": [
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeng/resources/primeng.min.css",
+                    "node_modules/primeflex/primeflex.css",
                     "libs/dotcms-scss/angular/_forms.scss",
                     "libs/dotcms-scss/angular/_mixins.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/theme.scss",
