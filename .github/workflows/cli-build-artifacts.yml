@@ -6,6 +6,8 @@ on:
         type: boolean
       buildNativeImage:
         type: boolean
+      uploadArtifacts:
+        type: boolean
       branch:
         type: string
 
@@ -13,6 +15,7 @@ env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
   GRAALVM_VERSION: '22.1.0'
+  BRANCH: ${{ inputs.branch || github.ref_name }}
 
 jobs:
   os-runners:
@@ -40,8 +43,6 @@ jobs:
         include: ${{ fromJSON( needs.os-runners.outputs.runners ) }}
 
     runs-on: ${{ matrix.os }}
-    env:
-      BRANCH: ${{ inputs.branch || github.ref_name }}
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
@@ -169,9 +170,19 @@ jobs:
           ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ inputs.skipTests }} -am -pl :dotcms-cli
 
       - name: 'Build uber-jar'
+        if: ${{ matrix.label == 'Linux' }}
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw package -Dquarkus.package.type="uber-jar" -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
+
+      - name: 'Upload Uber-Jar'
+        if: ${{ matrix.label == 'Linux' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-uber-jar
+          path: ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
+          retention-days: 2
+          if-no-files-found: ignore
 
       # Builds a native image of the CLI using GRAALVM (Linux/macOS)
       # Runs on a matrix for different operating systems
@@ -202,12 +213,41 @@ jobs:
         run: |
           ls -ltr cli/target/distributions
 
-      - name: 'Upload build artifact'
+      - name: 'Upload built distribution'
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{ matrix.os }}
           path: |
-            ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
           retention-days: 2
           if-no-files-found: ignore
+
+  upload:
+    if: ${{ inputs.uploadArtifacts == true }}
+    name: 'Upload Artifacts to Artifactory'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+
+      - name: 'Download build artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: artifacts-*
+          path: ${{ github.workspace }}/artifacts
+
+      - name: 'Upload to Artifactory'
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          tools/dotcms-cli/mvnw -B -Prelease jreleaser:upload -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+
+      - name: 'Cleanup'
+        run: |
+          rm -rf ${{ github.workspace }}/artifacts
