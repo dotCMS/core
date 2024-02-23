@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.validation.constraints.NotNull;
 
 /**
  * A node in a hierarchical tree representation of a file system directory. Each node represents a
@@ -133,7 +132,7 @@ public class TreeNode {
      *
      * @param child the child node to add
      */
-    public void addChild(@NotNull  final TreeNode child) {
+    public void addChild(final TreeNode child) {
         this.children.add(child);
     }
 

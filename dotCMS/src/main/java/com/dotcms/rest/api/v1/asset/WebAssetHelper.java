@@ -71,59 +71,49 @@ public class WebAssetHelper {
     ContentTypeAPI contentTypeAPI;
 
     FolderAPI folderAPI;
+
     PermissionAPI permissionAPI;
 
     /**
-     * Constructor for testing
-     * @param languageAPI
-     * @param fileAssetAPI
-     * @param contentletAPI
-     * @param browserAPI
+     * Constructor
+     * @param params
      */
-    WebAssetHelper(
-            final LanguageAPI languageAPI,
-            final FileAssetAPI fileAssetAPI,
-            final ContentletAPI contentletAPI,
-            final BrowserAPI browserAPI,
-            final TempFileAPI tempFileAPI,
-            final ContentTypeAPI contentTypeAPI,
-            final FolderAPI folderAPI,
-            final PermissionAPI permissionAPI
-    ){
-        this.languageAPI = languageAPI;
-        this.fileAssetAPI = fileAssetAPI;
-        this.contentletAPI = contentletAPI;
-        this.browserAPI = browserAPI;
-        this.tempFileAPI = tempFileAPI;
-        this.contentTypeAPI = contentTypeAPI;
-        this.folderAPI = folderAPI;
-        this.permissionAPI = permissionAPI;
+    WebAssetHelper(final WebAssetHelperParams params){
+        this.languageAPI = params.languageAPI();
+        this.fileAssetAPI = params.fileAssetAPI();
+        this.contentletAPI = params.contentletAPI();
+        this.browserAPI = params.browserAPI();
+        this.tempFileAPI = params.tempFileAPI();
+        this.contentTypeAPI = params.contentTypeAPI();
+        this.folderAPI = params.folderAPI();
+        this.permissionAPI = params.permissionAPI();
     }
 
     /**
      * Default constructor
      */
     WebAssetHelper() {
-        this(
-                APILocator.getLanguageAPI(),
-                APILocator.getFileAssetAPI(),
-                APILocator.getContentletAPI(),
-                APILocator.getBrowserAPI(),
-                APILocator.getTempFileAPI(),
-                APILocator.getContentTypeAPI(APILocator.systemUser()),
-                APILocator.getFolderAPI(),
-                APILocator.getPermissionAPI()
-                );
+        this(WebAssetHelperParams.builder()
+            .browserAPI(APILocator.getBrowserAPI())
+            .contentletAPI(APILocator.getContentletAPI())
+            .fileAssetAPI(APILocator.getFileAssetAPI())
+            .languageAPI(APILocator.getLanguageAPI())
+            .tempFileAPI(APILocator.getTempFileAPI())
+            .contentTypeAPI(APILocator.getContentTypeAPI(APILocator.systemUser()))
+            .folderAPI(APILocator.getFolderAPI())
+            .permissionAPI(APILocator.getPermissionAPI())
+            .build()
+        );
     }
 
     /**
      * Entry point here it is determined if the path is a folder or an asset.
      * If it is a folder it will return a FolderView, if it is an asset it will return an AssetView
-     * @param path
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param path the path to the asset
+     * @param user current user
+     * @return the asset view
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
      */
     public WebAssetView getAssetInfo(final String path, final User user)
             throws DotDataException, DotSecurityException {
@@ -439,13 +429,13 @@ public class WebAssetHelper {
 
     /**
      * Saves or updates an asset given the asset path lang and version that will be used to locate it
-     * @param request
-     * @param form
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
+     * @param request the request
+     * @param form the form data
+     * @param user current user
+     * @return the asset view
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
+     * @throws IOException any IO exception
      */
     @WrapInTransaction
     public WebAssetView saveUpdateAsset(final HttpServletRequest request, final FileUploadData form,
@@ -510,15 +500,6 @@ public class WebAssetHelper {
         }
     }
 
-    void verifyUserPermission(final User user, final Contentlet asset)
-            throws DotSecurityException, DotDataException {
-        if (!permissionAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
-            throw new DotSecurityException(
-                    String.format("User [%s] does not have permission to read asset [%s]",
-                            user.getUserId(), asset.getIdentifier()));
-        }
-    }
-
     /**
      * If we want to be successful publishing content that has been archived we need to get rid of any archived version
      * @param user the user performing the action
@@ -554,11 +535,10 @@ public class WebAssetHelper {
 
     /**
      * Deletes an asset given the asset path that will be used to locate it
-     * @param tempFile
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
+     * @param tempFile the temp file
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
+     * @throws IOException any IO exception
      */
     void disposeTempFile(final DotTempFile tempFile){
         final File file = tempFile.file;
@@ -572,12 +552,12 @@ public class WebAssetHelper {
 
     /**
      * checkin or publish the given contentlet
-     * @param checkout
-     * @param user
-     * @param live
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param checkout the contentlet to check in or publish
+     * @param user the user performing the action
+     * @param live if true the contentlet will be published
+     * @return the contentlet
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
      */
     Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live) throws DotDataException, DotSecurityException {
 
@@ -610,12 +590,12 @@ public class WebAssetHelper {
     /**
      * Creates a new file asset with the given file, folder and language
      * So it can be saved within dotCMS
-     * @param file
-     * @param folder
-     * @param lang
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param file the file to save
+     * @param folder the folder to save the file
+     * @param lang the language to save the file
+     * @return the contentlet
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
      */
     Contentlet makeFileAsset(final File file, final Host host, final Folder folder, final User user, final Language lang)
             throws DotDataException, DotSecurityException {
@@ -628,11 +608,11 @@ public class WebAssetHelper {
 
     /**
      * Updates a file asset with the given file, folder and language
-     * @param file
-     * @param folder
-     * @param lang
-     * @param contentlet
-     * @return
+     * @param file the file to update
+     * @param folder the folder to update the file
+     * @param lang the language to update the file
+     * @param contentlet the contentlet to update
+     * @return the contentlet
      */
     Contentlet updateFileAsset(final File file, final Host host, final Folder folder, final Language lang, final Contentlet contentlet){
         final String name = file.getName();
@@ -672,11 +652,10 @@ public class WebAssetHelper {
 
     /**
      * Delete an asset
-     * @param assetPath
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param assetPath the asset path
+     * @param user current user
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
      */
     public void deleteAsset(final String assetPath, final User user)
             throws DotDataException, DotSecurityException {
@@ -694,6 +673,13 @@ public class WebAssetHelper {
         }
     }
 
+    /**
+     * Deletes a folder
+     * @param path the folder path
+     * @param user current user
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
+     */
     public void deleteFolder(final String path, final User user)
             throws DotDataException, DotSecurityException {
         final WebAssetView assetInfo = getAssetInfo(path, user);
@@ -735,8 +721,8 @@ public class WebAssetHelper {
 
     /**
      * Splits the language by either a dash or underscore
-     * @param language
-     * @return
+     * @param language the language to split
+     * @return the split character
      */
     Optional<String> splitBy(final String language){
         if(language.contains("-")){
