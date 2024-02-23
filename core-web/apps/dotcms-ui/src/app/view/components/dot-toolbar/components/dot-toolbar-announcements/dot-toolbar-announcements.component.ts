@@ -50,12 +50,18 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
     linkToDotCms: Signal<string> = this.announcementsStore.selectLinkToDotCms;
     showMask = signal<boolean>(false);
 
+    aboutLinks: { title: string; items: AnnouncementLink[] }[] = [];
+
     ngOnInit(): void {
         this.announcementsStore.load();
 
         this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
             this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.load();
+            this.aboutLinks = [
+                { title: 'announcements.knowledge.center', items: this.knowledgeCenterLinks() },
+                { title: 'announcements.knowledge.contact.us', items: this.contactLinks() }
+            ];
         });
     }
 

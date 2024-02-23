@@ -18,10 +18,6 @@
     iconPos="right"
     data-testid="title-button"></button>
 
-<div
-    class="dropdown-content"
-    *ngIf="show"
-    [@enterAnimation]="show"
-    [ngStyle]="!position || position === 'left' ? { left: 0 } : { right: 0 }">
+<div class="dropdown-content" *ngIf="show" [@enterAnimation]="show" [ngStyle]="positionStyle">
     <ng-content></ng-content>
 </div>

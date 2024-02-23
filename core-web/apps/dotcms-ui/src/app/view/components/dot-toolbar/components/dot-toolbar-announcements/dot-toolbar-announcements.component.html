@@ -47,9 +47,10 @@
             </div>
         </div>
 
-        <h5 class="announcements__title">{{ 'announcements.knowledge.center' | dm }}</h5>
+        @for (item of aboutLinks; track $index) {
+        <h5 class="announcements__title">{{ item.title | dm }}</h5>
         <div class="announcements__about">
-            @for (item of knowledgeCenterLinks(); track item.id;) {
+            @for (item of item.items; track $index) {
             <a
                 class="announcements__about-link"
                 [href]="item.url"
@@ -60,19 +61,6 @@
             >
             }
         </div>
-
-        <h5 class="announcements__title">{{ 'announcements.knowledge.contact.us' | dm }}</h5>
-        <div class="announcements__about">
-            @for (item of contactLinks(); track item.id;) {
-            <a
-                class="announcements__about-link"
-                [href]="item.url"
-                data-testId="announcement_link"
-                target="_blank"
-                rel="noopener"
-                >{{ item.label }}</a
-            >
-            }
-        </div>
+        }
     </div>
 </p-overlayPanel>
