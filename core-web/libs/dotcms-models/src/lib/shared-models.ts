@@ -28,6 +28,8 @@ export const enum FeaturedFlags {
     FEATURE_FLAG_NEW_EDIT_PAGE = 'FEATURE_FLAG_NEW_EDIT_PAGE'
 }
 
+export const FEATURE_FLAG_NOT_FOUND = 'NOT_FOUND';
+
 export type DotDropdownGroupSelectOption<T> = {
     label: string;
     items: DotDropdownSelectOption<T>[];

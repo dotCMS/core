@@ -2,7 +2,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPropertiesService } from './dot-properties.service';
@@ -102,7 +102,9 @@ describe('DotPropertiesService', () => {
 
         service.getFeatureFlags(featureFlags).subscribe((response) => {
             expect(response[FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE]).toBe(true);
-            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(false);
+            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(
+                FEATURE_FLAG_NOT_FOUND
+            );
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
