@@ -43,5 +43,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["check:test"]
 }
