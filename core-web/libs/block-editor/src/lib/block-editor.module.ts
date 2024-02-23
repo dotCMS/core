@@ -39,7 +39,8 @@ import { SharedModule } from './shared/shared.module';
         PrimengModule,
         AssetFormModule,
         DotFieldRequiredDirective,
-        UploadPlaceholderComponent
+        UploadPlaceholderComponent,
+        AIImagePromptComponent
     ],
     declarations: [
         EditorDirective,
@@ -55,8 +56,7 @@ import { SharedModule } from './shared/shared.module';
         DotEditorCountBarComponent,
         FloatingButtonComponent,
         AIContentPromptComponent,
-        AIContentActionsComponent,
-        AIImagePromptComponent
+        AIContentActionsComponent
     ],
     providers: [DotUploadFileService, LoggerService, StringUtils, DotAiService],
     exports: [

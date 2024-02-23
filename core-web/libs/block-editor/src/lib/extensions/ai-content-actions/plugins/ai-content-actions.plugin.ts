@@ -14,6 +14,8 @@ import { DOT_AI_TEXT_CONTENT_KEY } from '../../ai-content-prompt/ai-content-prom
 import { AiContentPromptStore } from '../../ai-content-prompt/store/ai-content-prompt.store';
 import { ACTIONS, AIContentActionsComponent } from '../ai-content-actions.component';
 import { AI_CONTENT_ACTIONS_PLUGIN_KEY } from '../ai-content-actions.extension';
+import { DOT_AI_IMAGE_CONTENT_KEY } from '../../ai-image-prompt/ai-image-prompt.extension';
+import { DotAiImagePromptStore } from '../../ai-image-prompt/ai-image-prompt.store';
 import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentActionsProps {
@@ -52,6 +54,8 @@ export class AIContentActionsView {
 
     private aiContentPromptStore: AiContentPromptStore;
 
+    private dotAiImagePromptStore: DotAiImagePromptStore;
+
     private destroy$ = new Subject<boolean>();
 
     constructor(props: AIContentActionsViewProps) {
@@ -68,8 +72,8 @@ export class AIContentActionsView {
         this.component = component;
 
         // Reference of stores available ROOT through the Angular component.
-        //TODO: Add the reference of the image store.
         this.aiContentPromptStore = this.component.injector.get(AiContentPromptStore);
+        this.dotAiImagePromptStore = this.component.injector.get(DotAiImagePromptStore);
 
         this.component.instance.actionEmitter.pipe(takeUntil(this.destroy$)).subscribe((action) => {
             switch (action) {
@@ -88,41 +92,6 @@ export class AIContentActionsView {
         });
 
         this.view.dom.addEventListener('keydown', this.handleKeyDown.bind(this));
-    }
-
-    private acceptContent() {
-        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
-        this.editor.commands.closeAIContentActions();
-        //TODO: add the image case to the add content.
-        switch (pluginState.nodeType) {
-            case DOT_AI_TEXT_CONTENT_KEY:
-                this.aiContentPromptStore.setAcceptContent(true);
-                break;
-        }
-    }
-
-    private generateContent() {
-        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
-
-        this.editor.commands.closeAIContentActions();
-
-        //TODO: add the image case to the re-generate content.
-        switch (pluginState.nodeType) {
-            case DOT_AI_TEXT_CONTENT_KEY:
-                this.aiContentPromptStore.reGenerateContent();
-                break;
-        }
-    }
-
-    private deleteContent() {
-        this.editor.commands.closeAIContentActions();
-        this.editor.commands.deleteSelection();
-    }
-
-    private handleKeyDown(event: KeyboardEvent) {
-        if (event.key === 'Backspace') {
-            this.editor.commands.closeAIContentActions();
-        }
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -169,6 +138,45 @@ export class AIContentActionsView {
         this.destroy$.next(true);
         this.destroy$.complete();
         this.view.dom.removeEventListener('keydown', this.handleKeyDown);
+    }
+
+    private acceptContent() {
+        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
+
+        this.editor.commands.closeAIContentActions();
+
+        switch (pluginState.nodeType) {
+            case DOT_AI_TEXT_CONTENT_KEY:
+                this.aiContentPromptStore.setAcceptContent(true);
+                break;
+        }
+    }
+
+    private generateContent() {
+        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
+
+        this.editor.commands.closeAIContentActions();
+
+        switch (pluginState.nodeType) {
+            case DOT_AI_TEXT_CONTENT_KEY:
+                this.aiContentPromptStore.reGenerateContent();
+                break;
+
+            case DOT_AI_IMAGE_CONTENT_KEY:
+                this.dotAiImagePromptStore.reGenerateContent();
+                break;
+        }
+    }
+
+    private deleteContent() {
+        this.editor.commands.closeAIContentActions();
+        this.editor.commands.deleteSelection();
+    }
+
+    private handleKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Backspace') {
+            this.editor.commands.closeAIContentActions();
+        }
     }
 }
 

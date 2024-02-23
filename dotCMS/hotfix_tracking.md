@@ -52,3 +52,4 @@ This maintenance release includes the following code fixes:
 45. https://github.com/dotCMS/core/issues/26657 : [UI] - Update the endpoints used by the extensions with the new URLS #26657
 46. https://github.com/dotCMS/core/issues/26664 : [UI] Setup a flag to use the middleware in storybook #26664
 47. https://github.com/dotCMS/core/issues/26519 : [UI] Review AIContentPromptExtension #26519
+48. https://github.com/dotCMS/core/issues/26551 : [UI] Review AIImagePromptExtension prompt extension #26551
