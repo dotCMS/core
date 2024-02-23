@@ -32,14 +32,17 @@ describe('utils functions', () => {
                 position: 'after'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: [],
-                    personaTag: 'test'
-                }
-            ]);
+            expect(result).toEqual({
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: [],
+                        personaTag: 'test'
+                    }
+                ],
+                contentletsId: []
+            });
         });
 
         it('should not delete if id not found', () => {
@@ -78,14 +81,17 @@ describe('utils functions', () => {
                 position: 'after'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: ['test'],
-                    personaTag: undefined
-                }
-            ]);
+            expect(result).toEqual({
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test'],
+                        personaTag: undefined
+                    }
+                ],
+                contentletsId: ['test']
+            });
         });
     });
 

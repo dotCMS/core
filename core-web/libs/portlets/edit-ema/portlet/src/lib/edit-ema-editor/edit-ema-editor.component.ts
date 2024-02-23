@@ -425,13 +425,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     }
                 };
 
-                const pageContainers = deleteContentletFromContainer(deletePayload); // Delete from the original position
-
-                const contentletsId = pageContainers.find(
-                    (container) =>
-                        container.identifier === payload.container.identifier &&
-                        container.uuid === payload.container.uuid
-                )?.contentletsId; // New contentletsId after deleting the contentlet
+                const { pageContainers, contentletsId } =
+                    deleteContentletFromContainer(deletePayload); // Delete from the original position
 
                 // Update the payload to handle the data to insert the contentlet in the new position
                 payload = {
@@ -483,7 +478,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     deleteContentlet(payload: ActionPayload) {
-        const newPageContainers = deleteContentletFromContainer(payload);
+        const { pageContainers } = deleteContentletFromContainer(payload);
 
         this.confirmationService.confirm({
             header: this.dotMessageService.get(
@@ -496,7 +491,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
             accept: () => {
                 this.store.savePage({
-                    pageContainers: newPageContainers,
+                    pageContainers,
                     pageId: payload.pageId,
                     params: this.queryParams,
                     whenSaved: () => {
