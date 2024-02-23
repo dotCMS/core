@@ -1,6 +1,14 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <div class="dot-mask" *ngIf="showMask()" (click)="toogleMenu($event)"></div>
-    <p-avatar [email]="vm.userData.email" (click)="toogleMenu($event)" dotGravatar></p-avatar>
+    <div
+        class="dot-mask"
+        *ngIf="showMask()"
+        (click)="toogleMenu($event)"
+        data-testId="dot-mask"></div>
+    <p-avatar
+        [email]="vm.userData.email"
+        (click)="toogleMenu($event)"
+        data-testId="avatar"
+        dotGravatar></p-avatar>
     <p-menu #menu [model]="vm.items" [popup]="true" appendTo="body"></p-menu>
 
     <dot-my-account
