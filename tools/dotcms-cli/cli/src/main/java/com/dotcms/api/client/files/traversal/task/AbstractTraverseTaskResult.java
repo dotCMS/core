@@ -12,7 +12,6 @@ public interface AbstractTraverseTaskResult {
 
     List<Exception> exceptions();
 
-    //This should be an Optional<TreeNode>
     Optional<TreeNode> treeNode();
 
 

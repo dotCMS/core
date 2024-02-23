@@ -8,7 +8,6 @@ import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTask;
 import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTaskParams;
 import com.dotcms.api.client.files.traversal.task.TraverseTaskResult;
 import com.dotcms.api.traversal.Filter;
-import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
@@ -18,7 +17,6 @@ import java.util.Set;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
