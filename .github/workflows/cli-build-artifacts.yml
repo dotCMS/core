@@ -41,8 +41,9 @@ jobs:
       fail-fast: true
       matrix:
         include: ${{ fromJSON( needs.os-runners.outputs.runners ) }}
-
     runs-on: ${{ matrix.os }}
+    outputs:
+      date: ${{ steps.get-date.outputs.date }}
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
@@ -238,6 +239,20 @@ jobs:
         with:
           pattern: artifacts-*
           path: ${{ github.workspace }}/artifacts
+          merge-multiple: true
+
+      - name: 'List artifacts'
+        run: |
+          ls -R          
+
+      - name: 'Cache Maven Repository'
+        id: cache-maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ needs.build.outputs.date }}-${{ github.run_id }}
+          restore-keys: |
+            mavencore-${{ needs.build.outputs.date }}
 
       - name: 'Upload to Artifactory'
         env:
