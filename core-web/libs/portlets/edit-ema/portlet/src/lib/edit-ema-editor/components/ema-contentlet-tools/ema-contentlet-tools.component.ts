@@ -2,11 +2,13 @@ import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    ElementRef,
     EventEmitter,
     HostBinding,
     Input,
     OnDestroy,
     Output,
+    ViewChild,
     inject
 } from '@angular/core';
 
@@ -33,6 +35,7 @@ const ACTIONS_CONTAINER_HEIGHT = 40;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmaContentletToolsComponent implements OnDestroy {
+    @ViewChild('dragImage') dragImage: ElementRef;
     private dotMessageService = inject(DotMessageService);
 
     private buttonPosition: 'after' | 'before' = 'after';
@@ -85,21 +88,7 @@ export class EmaContentletToolsComponent implements OnDestroy {
     }
 
     dragStart(event: DragEvent, payload: ActionPayload): void {
-        const element =
-            document.querySelector(`[data-dot-drag-item="${payload.contentlet.contentType}"]`) ??
-            document.createElement('div');
-
-        element.innerHTML = payload.contentlet.contentType;
-        element.setAttribute(
-            'style',
-            'position: absolute;top: -1000px;left: -1000px;padding: 1rem;width: fit-content;background-color: white;border: 1px solid #d1d4db;border-radius: 0.5rem;'
-        );
-
-        element.setAttribute('data-dot-drag-item', payload.contentlet.contentType);
-
-        document.body.appendChild(element);
-
-        event.dataTransfer.setDragImage(element, 0, 0);
+        event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
 
         this.moveStart.emit(payload);
     }

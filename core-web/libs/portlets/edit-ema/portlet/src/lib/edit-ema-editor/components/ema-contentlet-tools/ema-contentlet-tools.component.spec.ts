@@ -67,6 +67,10 @@ describe('EmaContentletToolsComponent', () => {
                 }))
         );
 
+        it("should have a drag image with the contentlet's contentType", () => {
+            expect(spectator.query(byTestId('drag-image'))).toHaveText('test');
+        });
+
         describe('events', () => {
             it('should emit delete on delete button click', () => {
                 const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
