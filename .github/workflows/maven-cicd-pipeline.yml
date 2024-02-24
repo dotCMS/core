@@ -541,6 +541,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup master branch locally without switching current branch
+        if: github.ref != 'refs/heads/master'
         run: git fetch origin master:master
       - name: Set up JDK 17
         uses: actions/setup-java@v4
