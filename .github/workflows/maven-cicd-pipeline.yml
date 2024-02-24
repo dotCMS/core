@@ -112,6 +112,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup master branch locally without switching current branch
+        if: github.ref != 'refs/heads/master'
         run: git fetch origin master:master
       - uses: ./.github/actions/cleanup-runner
       - name: Set up JDK 11
