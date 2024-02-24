@@ -20,6 +20,7 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -52,7 +53,8 @@ import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/
         RadioButtonModule,
         DropdownModule,
         InputTextareaModule,
-        AccordionModule
+        AccordionModule,
+        SkeletonModule
     ],
     providers: [FormGroupDirective],
 
@@ -66,9 +68,9 @@ export class AIImagePromptComponent {
     private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
     sizeOptions: SelectItem<number>[] = [
-        { value: 1, label: 'Vertical (1024 x 1792)' },
-        { value: 2, label: 'Horizontal (1792 x 1024)' },
-        { value: 3, label: 'Square (1024 x 1024)' }
+        { value: 1, label: 'Horizontal (1792 x 1024)' },
+        { value: 2, label: 'Square (1024 x 1024)' },
+        { value: 3, label: 'Vertical (1024 x 1792)' }
     ];
 
     /**
