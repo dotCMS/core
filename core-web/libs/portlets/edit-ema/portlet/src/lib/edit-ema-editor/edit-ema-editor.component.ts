@@ -26,9 +26,9 @@ import { ProgressBarModule } from 'primeng/progressbar';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
+import { CUSTOMER_ACTIONS, NOTIFY_CUSTOMER } from '@dotcms/editor';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
@@ -52,7 +52,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiResponse, DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import {
     ActionPayload,
     PositionPayload,

@@ -1,0 +1,30 @@
+{
+    "name": "sdk-editor",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/editor/src",
+    "projectType": "library",
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/sdk/editor",
+                "main": "libs/sdk/editor/src/index.ts",
+                "tsConfig": "libs/sdk/editor/tsconfig.lib.json",
+                "assets": ["libs/sdk/editor/*.md"]
+            }
+        },
+        "publish": {
+            "command": "node tools/scripts/publish.mjs sdk-editor {args.ver} {args.tag}",
+            "dependsOn": ["build"]
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/sdk/editor/jest.config.ts"
+            }
+        }
+    },
+    "tags": []
+}

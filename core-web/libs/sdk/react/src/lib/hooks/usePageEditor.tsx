@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
+import { CUSTOMER_ACTIONS, postMessageToEditor, sdkDotPageEditor } from '@dotcms/editor';
 
 import { getPageElementBound } from '../utils/utils';
 
@@ -62,52 +62,57 @@ export const usePageEditor = (
     const { rowsRef, isInsideEditor } = useEventMessageHandler({ reload: reloadFunction });
 
     usePostUrlToEditor(pathname, isInsideEditor);
-    useScrollEvent(isInsideEditor);
+    // useScrollEvent(isInsideEditor);
 
     return { rowsRef, isInsideEditor };
 };
 
 function useEventMessageHandler({ reload = window.location.reload }: { reload: () => void }) {
     const rows = useRef<HTMLDivElement[]>([]);
-    const observer = useRef<MutationObserver | null>(null);
+    // const observer = useRef<MutationObserver | null>(null);
 
     const [isInsideEditor, setIsInsideEditor] = useState(false);
 
+    // useEffect(() => {
+
+    //     observer.current = new MutationObserver((mutationsList) => {
+    //         for (const { addedNodes, removedNodes, type } of mutationsList) {
+    //             if (type === 'childList') {
+    //                 const didNodesChanged = [
+    //                     ...Array.from(addedNodes),
+    //                     ...Array.from(removedNodes)
+    //                 ].filter(
+    //                     (node) => (node as HTMLDivElement).dataset?.dot === 'contentlet'
+    //                 ).length;
+
+    //                 if (didNodesChanged) {
+    //                     postMessageToEditor({
+    //                         action: CUSTOMER_ACTIONS.CONTENT_CHANGE
+    //                     });
+    //                 }
+    //             }
+    //         }
+    //     });
+
+    //     observer.current?.observe(document, { childList: true, subtree: true });
+
+    //     return () => {
+    //         if (observer.current) observer.current.disconnect();
+    //     };
+    // }, []);
+
     useEffect(() => {
-        observer.current = new MutationObserver((mutationsList) => {
-            for (const { addedNodes, removedNodes, type } of mutationsList) {
-                if (type === 'childList') {
-                    const didNodesChanged = [
-                        ...Array.from(addedNodes),
-                        ...Array.from(removedNodes)
-                    ].filter(
-                        (node) => (node as HTMLDivElement).dataset?.dot === 'contentlet'
-                    ).length;
-
-                    if (didNodesChanged) {
-                        postMessageToEditor({
-                            action: CUSTOMER_ACTIONS.CONTENT_CHANGE
-                        });
-                    }
-                }
-            }
-        });
-
-        observer.current?.observe(document, { childList: true, subtree: true });
-
-        return () => {
-            if (observer.current) observer.current.disconnect();
-        };
+        sdkDotPageEditor.init(); 
     }, []);
 
-    useEffect(() => {
-        // If the page is not inside an iframe we do nothing.
-        if (window.parent === window) return;
+    // useEffect(() => {
+    //     // If the page is not inside an iframe we do nothing.
+    //     if (window.parent === window) return;
 
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.PING_EDITOR // This is to let the editor know that the page is ready
-        });
-    }, []);
+    //     postMessageToEditor({
+    //         action: CUSTOMER_ACTIONS.PING_EDITOR // This is to let the editor know that the page is ready
+    //     });
+    // }, []);
 
     useEffect(() => {
         function eventMessageHandler(event: MessageEvent) {
@@ -153,33 +158,28 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
     };
 }
 
-function useScrollEvent(isInsideEditor: boolean) {
-    useEffect(() => {
-        if (!isInsideEditor) return;
+// function useScrollEvent(isInsideEditor: boolean) {
+//     useEffect(() => {
+//         if (!isInsideEditor) return;
 
-        function eventScrollHandler() {
-            postMessageToEditor({
-                action: CUSTOMER_ACTIONS.IFRAME_SCROLL
-            });
-        }
+//         function eventScrollHandler() {
+//             postMessageToEditor({
+//                 action: CUSTOMER_ACTIONS.IFRAME_SCROLL
+//             });
+//         }
 
-        window.addEventListener('scroll', eventScrollHandler);
+//         window.addEventListener('scroll', eventScrollHandler);
 
-        return () => {
-            window.removeEventListener('scroll', eventScrollHandler);
-        };
-    }, [isInsideEditor]);
-}
+//         return () => {
+//             window.removeEventListener('scroll', eventScrollHandler);
+//         };
+//     }, [isInsideEditor]);
+// }
 
 function usePostUrlToEditor(pathname: string, isInsideEditor: boolean) {
     useEffect(() => {
         if (!isInsideEditor) return;
 
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.SET_URL,
-            payload: {
-                url: pathname === '/' ? 'index' : pathname?.replace('/', '')
-            }
-        });
+        sdkDotPageEditor.setUrl(pathname);
     }, [pathname, isInsideEditor]);
 }

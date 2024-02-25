@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
+
+import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/editor';
 
 import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
@@ -48,7 +49,7 @@ export function Container({ containerRef }: ContainerProps) {
         PageContext
     ) as PageProviderContext;
 
-    const { acceptTypes, contentlets, maxContentlets, path } = getContainersData(
+    const { acceptTypes, contentlets, maxContentlets, path, } = getContainersData(
         containers,
         containerRef
     );
@@ -112,10 +113,16 @@ export function Container({ containerRef }: ContainerProps) {
             }
         };
 
+        // console.log("Container - isInsideEditor?: ", isInsideEditor);
+
         return isInsideEditor ? (
             <div
-                onPointerEnter={onPointerEnterHandler}
                 data-dot="contentlet"
+                data-dot-identifier={contentlet.identifier}
+                data-dot-title={contentlet.widgetTitle || contentlet.title}
+                data-dot-inode={contentlet.inode}
+                data-dot-type={contentlet.contentType}
+
                 data-content={JSON.stringify(contentletPayload)}
                 key={contentlet.identifier}>
                 <Component {...contentlet} />
@@ -126,7 +133,8 @@ export function Container({ containerRef }: ContainerProps) {
     });
 
     return isInsideEditor ? (
-        <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
+        <div data-dot="container"
+        data-content={JSON.stringify(containerPayload)}>
             {renderContentlets}
         </div>
     ) : (

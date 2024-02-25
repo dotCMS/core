@@ -37,5 +37,6 @@ export default async function Home({ searchParams, params }) {
         languageId: searchParams.language_id
     });
 
+    console.log("Data: ",data.entity)
     return <MyPage nav={nav.entity.children} data={data.entity}></MyPage>;
 }
