@@ -58,3 +58,4 @@ This maintenance release includes the following code fixes:
 51. https://github.com/dotCMS/core/issues/26666 : [UI] When the BlockEditor lose the focus, and get it again the generated content is duplicated #26666
 52. https://github.com/dotCMS/core/issues/26895 : [UI] Update AIService of Block Editor with new endpoint shape #26895
 53. https://github.com/dotCMS/core/issues/26912 : [UI] AI actions menu selection is not working as should. #26912
+54. https://github.com/dotCMS/core/issues/26556 : [UI] Not load the AI extensions if the plugin is not properly installed and configured #26556

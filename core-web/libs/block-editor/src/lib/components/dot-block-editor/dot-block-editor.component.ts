@@ -1,9 +1,10 @@
-import { Subject, from } from 'rxjs';
-import { assert, object, string, array, optional } from 'superstruct';
+import { from, Subject } from 'rxjs';
+import { array, assert, object, optional, string } from 'superstruct';
 
 import {
     Component,
     EventEmitter,
+    inject,
     Injector,
     Input,
     OnDestroy,
@@ -28,40 +29,41 @@ import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
-    RemoteCustomExtensions,
     EDITOR_MARKETING_KEYS,
-    IMPORT_RESULTS
+    IMPORT_RESULTS,
+    RemoteCustomExtensions
 } from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
-    BubbleFormExtension,
-    BubbleLinkFormExtension,
-    DotBubbleMenuExtension,
-    DEFAULT_LANG_ID,
-    DotConfigExtension,
-    DotTableCellExtension,
-    DotTableHeaderExtension,
-    DotTableExtension,
-    DragHandler,
-    DotFloatingButton,
-    BubbleAssetFormExtension,
-    FreezeScroll,
-    FREEZE_SCROLL_KEY,
-    AssetUploader,
-    DotComands,
+    AIContentActionsExtension,
     AIContentPromptExtension,
     AIImagePromptExtension,
-    AIContentActionsExtension
+    AssetUploader,
+    BubbleAssetFormExtension,
+    BubbleFormExtension,
+    BubbleLinkFormExtension,
+    DEFAULT_LANG_ID,
+    DotBubbleMenuExtension,
+    DotComands,
+    DotConfigExtension,
+    DotFloatingButton,
+    DotTableCellExtension,
+    DotTableExtension,
+    DotTableHeaderExtension,
+    DragHandler,
+    FREEZE_SCROLL_KEY,
+    FreezeScroll
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
-import { ContentletBlock, ImageNode, VideoNode, AIContentNode, LoaderNode } from '../../nodes';
+import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
+    AI_PLUGIN_INSTALLED_TOKEN,
+    DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
-    SetDocAttrStep,
-    DotMarketingConfigService,
-    RestoreDefaultDOMAttrs
+    RestoreDefaultDOMAttrs,
+    SetDocAttrStep
 } from '../../shared';
 
 @Component({
@@ -116,6 +118,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         ['aiContent', AIContentNode],
         ['loader', LoaderNode]
     ]);
+
+    private readonly isAIPluginInstalled: boolean = inject(AI_PLUGIN_INSTALLED_TOKEN);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -362,7 +366,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * @memberof DotBlockEditorComponent
      */
     private getEditorExtensions() {
-        return [
+        const extensions = [
             DotConfigExtension({
                 lang: this.lang,
                 allowedContentTypes: this.allowedContentTypes,
@@ -380,14 +384,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             }),
             Subscript,
             Superscript,
-            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
+            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
+                shouldShowAIExtensions: this.isAIPluginInstalled
+            }),
             DragHandler(this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef, this.lang),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
-            AIContentPromptExtension(this.viewContainerRef),
-            AIImagePromptExtension(this.viewContainerRef),
-            AIContentActionsExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
@@ -397,6 +400,16 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             CharacterCount,
             AssetUploader(this.injector, this.viewContainerRef)
         ];
+
+        if (this.isAIPluginInstalled) {
+            extensions.push(
+                AIContentPromptExtension(this.viewContainerRef),
+                AIImagePromptExtension(this.viewContainerRef),
+                AIContentActionsExtension(this.viewContainerRef)
+            );
+        }
+
+        return extensions;
     }
 
     /**

@@ -1,7 +1,7 @@
 import { Observable, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap } from 'rxjs/operators';
 
@@ -18,7 +18,7 @@ const headers = new HttpHeaders({
 type ImageSize = '1024x1024' | '1024x1792' | '1792x1024';
 @Injectable()
 export class DotAiService {
-    constructor(private http: HttpClient) {}
+    private http: HttpClient = inject(HttpClient);
     /**
      * Generates content by sending a HTTP POST request to the AI plugin endpoint.
      *
@@ -68,6 +68,15 @@ export class DotAiService {
                     return this.createAndPublishContentlet(response);
                 })
             );
+    }
+
+    /**
+     * Checks the installation status of a plugin.
+     *
+     * @return {Observable<HttpResponse<unknown>>} Observable that emits an HttpResponse object containing the plugin installation status.
+     */
+    checkPluginInstallation(): Observable<HttpResponse<unknown>> {
+        return this.http.get(`${API_ENDPOINT}/image/test`, { observe: 'response' });
     }
 
     private createAndPublishContentlet(image: DotAIImageResponse): Observable<DotCMSContentlet[]> {
