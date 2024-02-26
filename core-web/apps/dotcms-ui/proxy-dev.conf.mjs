@@ -10,7 +10,8 @@ export default [
             '/DotAjaxDirector',
             '/contentAsset',
             '/application',
-            '/assets'
+            '/assets',
+            '/dotcms-block-editor'
         ],
         target: 'http://localhost:8080',
         secure: false,
