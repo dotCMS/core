@@ -1,8 +1,6 @@
 package com.dotcms.api.client.task;
 
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
-import com.dotcms.model.site.SiteView;
-import java.util.List;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;

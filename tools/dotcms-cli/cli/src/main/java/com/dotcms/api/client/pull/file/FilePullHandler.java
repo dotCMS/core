@@ -16,9 +16,12 @@ import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -95,6 +98,19 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException {
 
+        //Now we're going to partition the list of results into two lists:
+        //The first one will contain the results that have exceptions and the second one will contain the results that don't have exceptions
+        final Map<Boolean, List<FileTraverseResult>> partitioned = contents.stream()
+                .collect(Collectors.partitioningBy(pojo -> !pojo.exceptions().isEmpty()));
+
+        //Inform the user about any errors that could have occurred during the traversal process
+        final List<FileTraverseResult> failed = partitioned.get(true);
+        printErrors(failed.stream().map(FileTraverseResult::exceptions).flatMap(List::stream).collect(Collectors.toList()), output);
+
+        //The second list will contain the results that don't have exceptions
+        //We assume that the traversal process was successful for these results
+        final List<FileTraverseResult> success = partitioned.get(false);
+
         boolean preserve = false;
         boolean includeEmptyFolders = false;
 
@@ -105,11 +121,12 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                     getOrDefault(INCLUDE_EMPTY_FOLDERS, false);
         }
 
-        var failed = false;
+        //Did we find any errors during the traversal process?
+        var fail = !failed.isEmpty();
 
-        output.info(startPullingHeader(contents));
+        output.info(startPullingHeader(success));
 
-        for (final var content : contents) {
+        for (final var content : success) {
 
             var errors = pullTree(
                     content,
@@ -120,12 +137,12 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
             );
 
             printErrors(errors, output);
-            if (!errors.isEmpty()) {
-                failed = true;
-            }
+
+            fail = fail || !errors.isEmpty();
+
         }
 
-        return failed;
+        return fail;
     }
 
     /**
