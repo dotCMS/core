@@ -1,10 +1,9 @@
-import { from, Subject } from 'rxjs';
+import { from, Subject, Observable, combineLatest } from 'rxjs';
 import { array, assert, object, optional, string } from 'superstruct';
 
 import {
     Component,
     EventEmitter,
-    inject,
     Injector,
     Input,
     OnDestroy,
@@ -58,7 +57,7 @@ import {
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
-    AI_PLUGIN_INSTALLED_TOKEN,
+    DotAiService,
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
@@ -119,7 +118,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         ['loader', LoaderNode]
     ]);
 
-    private readonly isAIPluginInstalled: boolean = inject(AI_PLUGIN_INSTALLED_TOKEN);
+    private isAIPluginInstalled$: Observable<boolean>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -144,20 +143,23 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     constructor(
         private injector: Injector,
         public viewContainerRef: ViewContainerRef,
-        private dotMarketingConfigService: DotMarketingConfigService
-    ) {}
+        private readonly dotMarketingConfigService: DotMarketingConfigService,
+        private readonly dotAiService: DotAiService
+    ) {
+        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
+    }
 
     async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
         return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
 
     ngOnInit() {
-        from(this.getCustomRemoteExtensions())
+        combineLatest([from(this.getCustomRemoteExtensions()), this.isAIPluginInstalled$])
             .pipe(take(1))
-            .subscribe((extensions) => {
+            .subscribe(([extensions, isInstalled]) => {
                 this.editor = new Editor({
                     extensions: [
-                        ...this.getEditorExtensions(),
+                        ...this.getEditorExtensions(isInstalled),
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
                         ...extensions
@@ -365,7 +367,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof DotBlockEditorComponent
      */
-    private getEditorExtensions() {
+    private getEditorExtensions(isAIPluginInstalled: boolean) {
         const extensions = [
             DotConfigExtension({
                 lang: this.lang,
@@ -385,7 +387,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             Subscript,
             Superscript,
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
-                shouldShowAIExtensions: this.isAIPluginInstalled
+                shouldShowAIExtensions: isAIPluginInstalled
             }),
             DragHandler(this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef, this.lang),
@@ -401,7 +403,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             AssetUploader(this.injector, this.viewContainerRef)
         ];
 
-        if (this.isAIPluginInstalled) {
+        if (isAIPluginInstalled) {
             extensions.push(
                 AIContentPromptExtension(this.viewContainerRef),
                 AIImagePromptExtension(this.viewContainerRef),
