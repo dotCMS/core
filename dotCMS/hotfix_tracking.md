@@ -62,3 +62,4 @@ This maintenance release includes the following code fixes:
 55. https://github.com/dotCMS/core/issues/26899 : [UI] When image loading place holder loose focus, the placeholder stays in the editor. #26899
 56. https://github.com/dotCMS/core/issues/27033 : Fix AI Plugin Detection for AI Extensions in Block Editor Components (Sidebars) #27033
 57. https://github.com/dotCMS/core/issues/27051 : Don't save loading nodes in the block editor. #27051
+58. https://github.com/dotCMS/core/issues/26505 : [UI] - Make AI Image Block Production-ready #26505
