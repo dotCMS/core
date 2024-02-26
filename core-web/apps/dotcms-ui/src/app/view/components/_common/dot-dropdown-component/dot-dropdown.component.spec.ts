@@ -14,8 +14,7 @@ import { DotDropdownComponent } from './dot-dropdown.component';
     template: `<dot-dropdown-component
         [icon]="icon"
         [title]="title"
-        [disabled]="disabled"
-    ></dot-dropdown-component>`
+        [disabled]="disabled"></dot-dropdown-component>`
 })
 class DotTestHostComponent {
     disabled: boolean;
@@ -119,5 +118,20 @@ describe('DotDropdownComponent', () => {
     it(`should hide the dropdown dialog`, () => {
         comp.closeIt();
         expect(comp.show).toBe(false);
+    });
+
+    it('shold show the mask', () => {
+        comp.show = true;
+        hostFixture.detectChanges();
+        const mask = de.query(By.css('.dot-mask'));
+        mask.nativeElement.click();
+        expect(mask).toBeTruthy();
+    });
+
+    it('shold hide the mask', () => {
+        comp.show = false;
+        hostFixture.detectChanges();
+        const mask = de.query(By.css('.dot-mask'));
+        expect(mask).toBeFalsy();
     });
 });

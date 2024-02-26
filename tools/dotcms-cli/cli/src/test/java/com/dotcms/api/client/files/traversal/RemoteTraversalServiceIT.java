@@ -125,8 +125,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -200,7 +201,8 @@ class RemoteTraversalServiceIT {
         // Preparing the data for the test
         final var testSiteName = filesTestHelper.prepareData();
 
-        final var folderPath = String.format("//%s/folder2/subFolder2-1/subFolder2-1-1/image2.png",
+        final var folderPath = String.format(
+                "//%s/folder2/subFolder2-1/subFolder2-1-1-子資料夾/image2.png",
                 testSiteName);
 
         var result = remoteTraversalService.traverseRemoteFolder(
@@ -220,11 +222,11 @@ class RemoteTraversalServiceIT {
         // ============================
         //Validating the tree
         // ============================
-        // subFolder2-1-1 (Root)
+        // subFolder2-1-1-子資料夾 (Root)
         Assertions.assertEquals(0, treeNode.children().size());
 
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3, treeNode.assets().size());
     }
 
     @Test
@@ -528,8 +530,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -595,7 +598,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has no asset)
+        // subFolder2-1-1-子資料夾 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -662,8 +665,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -729,7 +733,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
+        // subFolder2-1-1-子資料夾 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -796,7 +800,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 0 asset)
+        // subFolder2-1-1-子資料夾 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -1079,7 +1083,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has no asset)
+        // subFolder2-1-1-子資料夾 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -1146,8 +1150,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -1213,7 +1218,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 0 asset)
+        // subFolder2-1-1-子資料夾 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -1280,8 +1285,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3

@@ -32,11 +32,13 @@ export interface ContainerPayload {
     uuid: string;
 }
 
-interface ContentletPayload {
+export interface ContentletPayload {
     identifier: string;
     inode: string;
     title: string;
+    contentType: string;
 }
+
 export interface SetUrlPayload {
     url: string;
 }

@@ -2,9 +2,12 @@ import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    ElementRef,
     EventEmitter,
+    HostBinding,
     Input,
     Output,
+    ViewChild,
     inject
 } from '@angular/core';
 
@@ -17,6 +20,11 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ActionPayload } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
+const BUTTON_WIDTH = 40;
+const BUTTON_HEIGHT = 40;
+const ACTIONS_CONTAINER_WIDTH = 128;
+const ACTIONS_CONTAINER_HEIGHT = 40;
+
 @Component({
     selector: 'dot-ema-contentlet-tools',
     standalone: true,
@@ -26,16 +34,20 @@ import { ContentletArea } from '../ema-page-dropzone/types';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmaContentletToolsComponent {
+    @ViewChild('dragImage') dragImage: ElementRef;
     private dotMessageService = inject(DotMessageService);
 
     private buttonPosition: 'after' | 'before' = 'after';
 
     @Input() contentlet: ContentletArea;
+    @HostBinding('class.hide') @Input() hide = false;
     @Output() addContent = new EventEmitter<ActionPayload>();
     @Output() addForm = new EventEmitter<ActionPayload>();
     @Output() addWidget = new EventEmitter<ActionPayload>();
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() delete = new EventEmitter<ActionPayload>();
+    @Output() moveStart = new EventEmitter<ActionPayload>();
+    @Output() moveStop = new EventEmitter<void>();
 
     items: MenuItem[] = [
         {
@@ -66,6 +78,16 @@ export class EmaContentletToolsComponent {
             }
         }
     ];
+
+    dragStart(event: DragEvent, payload: ActionPayload): void {
+        event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
+
+        this.moveStart.emit(payload);
+    }
+
+    dragEnd() {
+        this.moveStop.emit();
+    }
 
     /**
      * Set the position flag to add the contentlet before or after the current one
@@ -99,11 +121,9 @@ export class EmaContentletToolsComponent {
      * @memberof EmaContentletToolsComponent
      */
     getTopButtonPosition(): Record<string, string> {
-        const buttonWidth = 40;
-        const buttonHeight = 40;
         const contentletCenterX = this.contentlet.x + this.contentlet.width / 2;
-        const buttonLeft = contentletCenterX - buttonWidth / 2;
-        const buttonTop = this.contentlet.y - buttonHeight / 2;
+        const buttonLeft = contentletCenterX - BUTTON_WIDTH / 2;
+        const buttonTop = this.contentlet.y - BUTTON_HEIGHT / 2;
 
         return {
             position: 'absolute',
@@ -120,11 +140,9 @@ export class EmaContentletToolsComponent {
      * @memberof EmaContentletToolsComponent
      */
     getBottomButtonPosition(): Record<string, string> {
-        const buttonWidth = 40;
-        const buttonHeight = 40;
         const contentletCenterX = this.contentlet.x + this.contentlet.width / 2;
-        const buttonLeft = contentletCenterX - buttonWidth / 2;
-        const buttonTop = this.contentlet.y + this.contentlet.height - buttonHeight / 2;
+        const buttonLeft = contentletCenterX - BUTTON_WIDTH / 2;
+        const buttonTop = this.contentlet.y + this.contentlet.height - BUTTON_HEIGHT / 2;
 
         return {
             position: 'absolute',
@@ -141,11 +159,9 @@ export class EmaContentletToolsComponent {
      * @memberof EmaContentletToolsComponent
      */
     getActionPosition(): Record<string, string> {
-        const width = 84;
-        const height = 40;
         const contentletCenterX = this.contentlet.x + this.contentlet.width;
-        const left = contentletCenterX - width - 8;
-        const top = this.contentlet.y - height / 2;
+        const left = contentletCenterX - ACTIONS_CONTAINER_WIDTH - 8;
+        const top = this.contentlet.y - ACTIONS_CONTAINER_HEIGHT / 2;
 
         return {
             position: 'absolute',

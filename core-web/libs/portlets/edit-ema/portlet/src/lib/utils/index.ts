@@ -49,22 +49,36 @@ export function insertContentletInContainer(action: ActionPayload): {
  * @param {ActionPayload} action
  * @return {*}  {PageContainer[]}
  */
-export function deleteContentletFromContainer(action: ActionPayload): PageContainer[] {
+export function deleteContentletFromContainer(action: ActionPayload): {
+    pageContainers: PageContainer[];
+    contentletsId: string[];
+} {
     const { pageContainers, container, contentlet, personaTag } = action;
 
-    return pageContainers.map((currentContainer) => {
+    let contentletsId = [];
+
+    const newPageContainers = pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
+            const newContentletsId = currentContainer.contentletsId.filter(
+                (id) => id !== contentlet.identifier
+            );
+
+            contentletsId = newContentletsId;
+
             return {
                 ...currentContainer,
-                contentletsId: currentContainer.contentletsId.filter(
-                    (id) => id !== contentlet.identifier
-                ),
+                contentletsId: newContentletsId,
                 personaTag
             };
         }
 
         return currentContainer;
     });
+
+    return {
+        pageContainers: newPageContainers,
+        contentletsId
+    };
 }
 
 /**
@@ -74,7 +88,7 @@ export function deleteContentletFromContainer(action: ActionPayload): PageContai
  * @param {ContainerPayload} containerToFind
  * @return {*}  {boolean}
  */
-function areContainersEquals(
+export function areContainersEquals(
     currentContainer: PageContainer,
     containerToFind: ContainerPayload
 ): boolean {

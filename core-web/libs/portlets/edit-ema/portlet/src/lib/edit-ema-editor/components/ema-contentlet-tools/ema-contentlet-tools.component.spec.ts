@@ -1,5 +1,7 @@
 import { Spectator, byTestId, byText, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { By } from '@angular/platform-browser';
+
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 
@@ -22,7 +24,8 @@ const payload: ActionPayload = {
     contentlet: {
         identifier: 'contentlet-identifier-123',
         inode: 'contentlet-inode-123',
-        title: 'Hello World'
+        title: 'Hello World',
+        contentType: 'test'
     },
     container: {
         identifier: 'test',
@@ -64,6 +67,10 @@ describe('EmaContentletToolsComponent', () => {
                 }))
         );
 
+        it("should have a drag image with the contentlet's contentType", () => {
+            expect(spectator.query(byTestId('drag-image'))).toHaveText('test');
+        });
+
         describe('events', () => {
             it('should emit delete on delete button click', () => {
                 const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
@@ -75,6 +82,31 @@ describe('EmaContentletToolsComponent', () => {
                 const deleteSpy = jest.spyOn(spectator.component.edit, 'emit');
                 spectator.click('[data-testId="edit-button"]');
                 expect(deleteSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
+            });
+
+            it('should emit move on move button drag', () => {
+                const moveSpy = jest.spyOn(spectator.component.moveStart, 'emit');
+
+                const dragButton = spectator.debugElement.query(
+                    By.css('[data-testId="drag-button"]')
+                );
+
+                spectator.triggerEventHandler(dragButton, 'dragstart', {
+                    dataTransfer: {
+                        setDragImage: jest.fn()
+                    }
+                });
+
+                expect(moveSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
+            });
+
+            it('should emit dragStop', () => {
+                const dragStopSpy = jest.spyOn(spectator.component.moveStop, 'emit');
+                const dragButton = spectator.debugElement.query(
+                    By.css('[data-testId="drag-button"]')
+                );
+                spectator.triggerEventHandler(dragButton, 'dragend', {});
+                expect(dragStopSpy).toHaveBeenCalled();
             });
 
             describe('top button', () => {
@@ -185,7 +217,7 @@ describe('EmaContentletToolsComponent', () => {
                 const topButton = spectator.query(byTestId('actions'));
                 expect(topButton).toHaveStyle({
                     position: 'absolute',
-                    left: '508px',
+                    left: '464px',
                     top: '80px',
                     zIndex: '1'
                 });
@@ -241,7 +273,8 @@ describe('EmaContentletToolsComponent', () => {
                                 contentlet: {
                                     identifier: 'TEMP_EMPTY_CONTENTLET',
                                     inode: 'Fake inode',
-                                    title: 'Fake title'
+                                    title: 'Fake title',
+                                    contentType: 'Fake content type'
                                 },
                                 container: undefined,
                                 language_id: '1',

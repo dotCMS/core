@@ -5,6 +5,8 @@ import { Injectable } from '@angular/core';
 
 import { map, pluck, take } from 'rxjs/operators';
 
+import { FeaturedFlags } from '@dotcms/dotcms-models';
+
 @Injectable({
     providedIn: 'root'
 })
@@ -56,11 +58,11 @@ export class DotPropertiesService {
     /**
      * Get the value of specific feature flag
      *
-     * @param {string} key
+     * @param {FeaturedFlags} key
      * @return {*}  {Observable<boolean>}
      * @memberof DotPropertiesService
      */
-    getFeatureFlag(key: string): Observable<boolean> {
+    getFeatureFlag(key: FeaturedFlags): Observable<boolean> {
         return this.getKey(key).pipe(map((value) => value === 'true'));
     }
 
@@ -70,7 +72,7 @@ export class DotPropertiesService {
      * @param {string[]} keys - An array of keys to retrieve feature flags for.
      * @returns {Observable<Record<string, boolean | string>>} - An Observable that emits a record containing key-value pairs of feature flags.
      */
-    getFeatureFlags(keys: string[]): Observable<Record<string, boolean | string>> {
+    getFeatureFlags(keys: FeaturedFlags[]): Observable<Record<string, boolean | string>> {
         return this.getKeys(keys).pipe(
             map((flags) => {
                 return Object.entries(flags).reduce((acc, [key, value]) => {
