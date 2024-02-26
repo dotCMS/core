@@ -96,7 +96,7 @@ describe('DotPropertiesService', () => {
         const apiResponse = {
             entity: {
                 [FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE]: 'true',
-                [FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]: 'NOT_FOUND'
+                [FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]: FEATURE_FLAG_NOT_FOUND
             }
         };
 
