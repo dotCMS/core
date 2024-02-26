@@ -56,3 +56,4 @@ This maintenance release includes the following code fixes:
 49. https://github.com/dotCMS/core/issues/26520 : [UI] Add DotMessageService to Block Editor to able translate the labels/messages #26520
 50. https://github.com/dotCMS/core/issues/26665 : [UI] - Disable the input while is pending/loading #26665
 51. https://github.com/dotCMS/core/issues/26666 : [UI] When the BlockEditor lose the focus, and get it again the generated content is duplicated #26666
+52. https://github.com/dotCMS/core/issues/26895 : [UI] Update AIService of Block Editor with new endpoint shape #26895
