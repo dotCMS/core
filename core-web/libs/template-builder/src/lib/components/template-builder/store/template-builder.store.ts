@@ -482,6 +482,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     }));
 
     // Effects
+
+    // This code implements a workaround for the gridstack library due to the UUID changing in the backend upon sending and receiving it back, necessitating an update to the state without impacting the UI. Although it is recognized as an antipattern, it is necessary as we are restricted by a third-party library that cannot be modified.
     readonly updateUUIDs = this.effect((rows$: Observable<DotGridStackWidget[]>) => {
         return rows$.pipe(
             tapResponse({
