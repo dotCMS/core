@@ -62,15 +62,9 @@ export class DotPropertiesService {
      * @return {*}  {Observable<boolean>}
      * @memberof DotPropertiesService
      */
-    getFeatureFlag(key: FeaturedFlags, onNotFound = false): Observable<boolean> {
+    getFeatureFlag(key: FeaturedFlags): Observable<boolean> {
         return this.getKey(key).pipe(
-            map((value) => {
-                if (value === FEATURE_FLAG_NOT_FOUND) {
-                    return onNotFound;
-                }
-
-                return value === 'true';
-            })
+            map((value) => value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true')
         );
     }
 

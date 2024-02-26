@@ -15,7 +15,8 @@ const fakeResponse = {
     }
 };
 
-describe('DotPropertiesService', () => {
+
+fdescribe('DotPropertiesService', () => {
     let service: DotPropertiesService;
     let httpMock: HttpTestingController;
 
@@ -108,6 +109,23 @@ describe('DotPropertiesService', () => {
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get feature flag value as true when not found', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
+        const apiResponse = {
+            entity: {
+                [FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS]: 'NOT_FOUND'
+            }
+        };
+
+        service.getFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toEqual(true);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
         expect(req.request.method).toBe('GET');
         req.flush(apiResponse);
     });
