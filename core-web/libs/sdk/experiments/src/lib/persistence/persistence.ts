@@ -3,7 +3,7 @@ import {
     EXPERIMENT_DB_KEY_PATH,
     EXPERIMENT_DB_NAME,
     EXPERIMENT_DB_STORE_NAME
-} from '../contants';
+} from '../constants';
 import { IsUserIncludedApiResponse } from '../models';
 
 /**
@@ -18,7 +18,7 @@ const openDB = (): Promise<IDBDatabase> => {
         const request = indexedDB.open(EXPERIMENT_DB_NAME, EXPERIMENT_DB_DEFAULT_VERSION);
 
         request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
-            const db = (event.target as IDBRequest).result as IDBDatabase;
+            const db = getRequestResult(event);
 
             if (!db.objectStoreNames.contains(EXPERIMENT_DB_STORE_NAME)) {
                 db.createObjectStore(EXPERIMENT_DB_STORE_NAME);
@@ -26,12 +26,12 @@ const openDB = (): Promise<IDBDatabase> => {
         };
 
         request.onerror = (event) => {
-            const error = (event.target as IDBRequest).error;
-            reject('Database error: ' + error?.message);
+            const errorMsj = getOnErrorMessage((event.target as IDBRequest).error);
+            reject(errorMsj);
         };
 
         request.onsuccess = (event: Event) => {
-            const db = (event.target as IDBRequest).result as IDBDatabase;
+            const db = getRequestResult(event);
             resolve(db);
         };
     });
@@ -76,4 +76,41 @@ export const getData = async (): Promise<IsUserIncludedApiResponse['entity']> =>
         request.onsuccess = () => resolve(request.result as IsUserIncludedApiResponse['entity']);
         request.onerror = () => reject(request.error);
     });
+};
+
+/**
+ * Retrieves the result of a database request from an Event object.
+ *
+ * @param {Event} event - The Event object containing the database request.
+ * @returns {IDBDatabase} - The result of the database request, casted as an IDBDatabase object.
+ */
+const getRequestResult = (event: Event): IDBDatabase =>
+    (event.target as IDBRequest).result as IDBDatabase;
+
+/**
+ * Builds an error message based on the provided error object.
+ * @param {DOMException | null} error - The error object to build the message from.
+ * @returns {string} The constructed error message.
+ */
+const getOnErrorMessage = (error: DOMException | null): string => {
+    let errorMessage =
+        'A database error occurred while using IndexedDB. Your browser may not support IndexedDB or IndexedDB might not be enabled.';
+
+    if (error) {
+        errorMessage += ' Details: ';
+
+        if (error.name) {
+            errorMessage += ` Error Name: ${error.name}`;
+        }
+
+        if (error.message) {
+            errorMessage += ` Error Message: ${error.message}`;
+        }
+
+        if (error.code) {
+            errorMessage += ` Error Code: ${error.code}`;
+        }
+    }
+
+    return errorMessage;
 };

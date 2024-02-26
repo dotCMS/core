@@ -22,5 +22,5 @@
             "outputs": ["{options.outputFile}"]
         }
     },
-    "tags": ["type:feature", "scope:dotcms-ui", "portlet:experiments", "check:test"]
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:experiments"]
 }

@@ -16,7 +16,7 @@
         },
         "publish": {
             "command": "node tools/scripts/publish.mjs sdk-experiments {args.ver} {args.tag}",
-            "dependsOn": ["build"]
+            "dependsOn": ["build", "test"]
         },
         "test": {
             "executor": "@nx/jest:jest",
@@ -26,5 +26,5 @@
             }
         }
     },
-    "tags": ["check:test"]
+    "tags": []
 }

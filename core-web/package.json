@@ -38,10 +38,9 @@
         "format:write": "nx format:write",
         "format:check": "nx format:check",
         "dep-graph": "nx dep-graph",
-        "pretty-quick": "pretty-quick",
         "prepare": "cd .. && node core-web/prepare.js",
         "test:dotcms-ui": "nx run dotcms-ui:test",
-        "test:dotcms": "nx affected -t test --exclude='*,!tag:check:test'",
+        "test:dotcms": "nx affected -t test --exclude='tag:skip:test'",
         "update": "nx migrate latest",
         "workspace-generator": "nx workspace-generator",
         "help": "nx help"
@@ -198,7 +197,6 @@
         "@types/webpack": "4.41.21",
         "@typescript-eslint/eslint-plugin": "6.21.0",
         "@typescript-eslint/parser": "6.21.0",
-        "@vitest/ui": "^1.0.4",
         "babel-jest": "28.1.1",
         "babel-loader": "^8.2.1",
         "codelyzer": "^6.0.2",
@@ -209,7 +207,7 @@
         "eslint-config-prettier": "9.0.0",
         "eslint-plugin-ban": "^1.6.0",
         "eslint-plugin-cypress": "2.15.1",
-        "eslint-plugin-import": "2.27.5",
+        "eslint-plugin-import": "^2.29.1",
         "eslint-plugin-jsx-a11y": "6.7.1",
         "eslint-plugin-react": "7.32.2",
         "eslint-plugin-react-hooks": "4.6.0",
@@ -232,7 +230,6 @@
         "jest-html-reporters": "^3.1.5",
         "jest-junit": "^16.0.0",
         "jest-preset-angular": "13.1.4",
-        "jsdom": "~22.1.0",
         "jsonc-eslint-parser": "^2.1.0",
         "karma": "6.4.0",
         "karma-chrome-launcher": "^3.1.0",
@@ -264,14 +261,9 @@
         "tslint-angular": "^3.0.3",
         "typedoc": "^0.25.4",
         "typescript": "5.3.3",
-        "verdaccio": "^5.0.4",
         "vite": "~5.0.0",
         "vite-plugin-dts": "~2.3.0",
-        "vitest": "^1.0.4",
         "webpack": "^5.64.0",
         "webpack-bundle-analyzer": "^4.5.0"
-    },
-    "nx": {
-        "includedScripts": []
     }
 }

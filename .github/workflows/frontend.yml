@@ -45,7 +45,8 @@ jobs:
         run: |
           if [ "${{ matrix.task }}" = "test" ] || [ "${{ matrix.task }}" = "lint" ]; then
             
-            exclude_option="--exclude='*,!tag:check:test'"
+            task=${{ matrix.task }}
+            exclude_option="--exclude='tag:skip:${task}'"
             if ! (npx nx affected --target=${{ matrix.task }} --base=origin/master --head=HEAD --parallel $exclude_option) then
               echo "name=:x: ${{ matrix.task }}" >>$GITHUB_OUTPUT
               echo "status=failure" >>$GITHUB_OUTPUT
@@ -54,7 +55,7 @@ jobs:
             fi
           elif [ "${{ matrix.task }}" = "build" ]; then
             
-            if ! (npx nx run dotcms-ui:build:production) then
+            if ! (npx nx run dotcms-ui:build) then
               echo "name=:x: ${{ matrix.task }}" >>$GITHUB_OUTPUT
               echo "status=failure" >>$GITHUB_OUTPUT
               echo "color=#ff2400" >>$GITHUB_OUTPUT

@@ -3,5 +3,5 @@
 
 cd core-web
 npx nx format:write
-npx nx affected -t lint --exclude='*,!tag:check:test' --fix=true
+npx nx affected -t lint --exclude='tag:skip:lint' --fix=true
 cd ..

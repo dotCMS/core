@@ -3,7 +3,7 @@ import { getScriptDataAttributes } from './utils/utils';
 
 declare global {
     interface Window {
-        experiment: SdkExperiments;
+        dotcmsExperiment: SdkExperiments;
     }
 }
 
@@ -16,8 +16,8 @@ declare global {
 if (window) {
     try {
         const dataAttributes = getScriptDataAttributes();
-        if (dataAttributes != null) {
-            window.experiment = SdkExperiments.getInstance({ mode: 'js', ...dataAttributes });
+        if (dataAttributes) {
+            window.dotcmsExperiment = SdkExperiments.getInstance({ ...dataAttributes });
         }
     } catch (error) {
         throw new Error(`Error instancing SdkExperiments: ${error}`);

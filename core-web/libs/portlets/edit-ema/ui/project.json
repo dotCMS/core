@@ -3,7 +3,7 @@
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/edit-ema/ui/src",
     "prefix": "lib",
-    "tags": ["check:test"],
+    "tags": [],
     "projectType": "library",
     "targets": {
         "test": {

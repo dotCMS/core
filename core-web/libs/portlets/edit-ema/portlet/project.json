@@ -17,5 +17,5 @@
             "outputs": ["{options.outputFile}"]
         }
     },
-    "tags": ["check:test"]
+    "tags": []
 }

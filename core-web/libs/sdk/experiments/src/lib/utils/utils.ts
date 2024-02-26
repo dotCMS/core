@@ -1,5 +1,5 @@
-import { EXPERIMENT_ALLOWED_DATA_ATTRIBUTES, EXPERIMENT_SCRIPT_FILE_NAME } from '../contants';
-import { DataAttribute } from '../models';
+import { EXPERIMENT_ALLOWED_DATA_ATTRIBUTES, EXPERIMENT_SCRIPT_FILE_NAME } from '../constants';
+import { SdkExperimentConfig } from '../models';
 
 /**
  * Returns the first script element that includes the experiment script identifier.
@@ -22,20 +22,20 @@ export const getExperimentScriptTag = (): HTMLScriptElement => {
  * Retrieves experiment attributes from a given script element.
  *
  *
- * @return {DataAttribute | null} - The experiment attributes or null if there are no valid attributes present.
+ * @return {SdkExperimentConfig | null} - The experiment attributes or null if there are no valid attributes present.
  */
-export const getDataExperimentAttributes = (): DataAttribute | null => {
+export const getDataExperimentAttributes = (): SdkExperimentConfig | null => {
     const script = getExperimentScriptTag();
-    const defaultExperimentAttributes: DataAttribute = {
+    const defaultExperimentAttributes: SdkExperimentConfig = {
         'api-key': '',
         server: window.location.href,
         debug: false
     };
 
-    let experimentAttribute: Partial<DataAttribute> = {};
+    let experimentAttribute: Partial<SdkExperimentConfig> = {};
 
     if (!script.hasAttribute('data-experiment-api-key')) {
-        Logger('You need specify the `data-experiment-api-key`');
+        dotLogger('You need specify the `data-experiment-api-key`');
 
         return null;
     }
@@ -77,9 +77,9 @@ export const getDataExperimentAttributes = (): DataAttribute | null => {
  *        data-experiment-debug>
  * </script>
  *
- * @returns {DataAttribute | null} The data attributes of the experiment script tag, or null if no experiment script is found.
+ * @returns {SdkExperimentConfig | null} The data attributes of the experiment script tag, or null if no experiment script is found.
  */
-export const getScriptDataAttributes = (): DataAttribute | null => {
+export const getScriptDataAttributes = (): SdkExperimentConfig | null => {
     const dataExperimentAttributes = getDataExperimentAttributes();
 
     if (dataExperimentAttributes) {
@@ -96,7 +96,7 @@ export const getScriptDataAttributes = (): DataAttribute | null => {
  * @param isDebug
  * @returns {void}
  */
-export const Logger = (msg: string, isDebug?: boolean): void => {
+export const dotLogger = (msg: string, isDebug?: boolean): void => {
     if (isDebug !== false) {
         console.warn(`[dotCMS Experiments] ${msg}`);
     }

@@ -4,7 +4,7 @@ import {
     getScriptDataAttributes
 } from './utils';
 
-import { EXPERIMENT_SCRIPT_FILE_NAME } from '../contants';
+import { EXPERIMENT_SCRIPT_FILE_NAME } from '../constants';
 
 describe('getExperimentScriptTag', () => {
     it('should throw an error if the experiment script is not found', () => {

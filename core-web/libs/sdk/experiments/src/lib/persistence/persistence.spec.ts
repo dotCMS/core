@@ -2,7 +2,7 @@ import fakeIndexedDB from 'fake-indexeddb';
 
 import { getData, persistData } from './persistence';
 
-import { EXPERIMENT_DB_KEY_PATH } from '../contants';
+import { EXPERIMENT_DB_KEY_PATH } from '../constants';
 import { IsUserIncludedResponse } from '../mocks/is-user-included.mock';
 
 if (!globalThis.structuredClone) {
