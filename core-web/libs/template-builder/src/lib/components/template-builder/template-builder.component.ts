@@ -217,7 +217,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        console.log('changes', changes);
+        // console.log('changes', changes);
         if (!changes.layout?.firstChange && changes.layout?.currentValue) {
             const rows: DotGridStackWidget[] = parseFromDotObjectToGridStack(
                 changes.layout.currentValue.body

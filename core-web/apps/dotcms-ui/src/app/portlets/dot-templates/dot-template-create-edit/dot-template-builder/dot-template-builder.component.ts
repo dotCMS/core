@@ -28,7 +28,6 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     @Input() item: DotTemplateItem;
     @Input() didTemplateChanged: boolean;
-    @Output() saveAndPublish = new EventEmitter<DotTemplateItem>();
     @Output() updateTemplate = new EventEmitter<DotTemplateItem>();
     @Output() save = new EventEmitter<DotTemplateItem>();
     @Output() cancel = new EventEmitter();
@@ -67,7 +66,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onTemplateItemChange(item: DotTemplateItem) {
-        this.updateTemplate.emit(item);
+        // this.updateTemplate.emit(item);
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
         }

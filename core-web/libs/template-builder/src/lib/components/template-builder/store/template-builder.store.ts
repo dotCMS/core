@@ -489,7 +489,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             tapResponse({
                 next: (rows: DotGridStackWidget[]) => {
                     const state = this.get();
-                    console.log('rows', rows);
+                    // console.log('rows', rows);
 
                     state.rows = rows;
                 },
