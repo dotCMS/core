@@ -57,7 +57,6 @@ export class DotPropertiesService {
 
     /**
      * Get the value of specific feature flag
-     * Some features we want to display in case of not found.
      * @param {FeaturedFlags} key
      * @return {*}  {Observable<boolean>}
      * @memberof DotPropertiesService
