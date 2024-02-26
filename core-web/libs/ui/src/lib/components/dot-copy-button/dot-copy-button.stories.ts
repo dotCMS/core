@@ -4,7 +4,10 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil, DotCopyButtonComponent } from '@dotcms/ui';
+
+import { DotCopyButtonComponent } from './dot-copy-button.component';
+
+import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
 
 export default {
     title: 'DotCMS/Copy Button',

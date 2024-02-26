@@ -102,7 +102,7 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
     // }, []);
 
     useEffect(() => {
-        sdkDotPageEditor.init(); 
+        sdkDotPageEditor.init();
     }, []);
 
     // useEffect(() => {

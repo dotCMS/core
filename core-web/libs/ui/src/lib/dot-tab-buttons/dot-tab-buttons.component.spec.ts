@@ -10,10 +10,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPageMode } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTabButtonsComponent } from './dot-tab-buttons.component';
+
+import { DotMessagePipe } from '../dot-message/dot-message.pipe';
 
 describe('DotTabButtonsComponent', () => {
     let spectator: Spectator<DotTabButtonsComponent>;

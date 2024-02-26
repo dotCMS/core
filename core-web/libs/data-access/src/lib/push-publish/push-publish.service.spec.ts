@@ -4,7 +4,6 @@ import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import { DotCurrentUserService, DotFormatDateService } from '@dotcms/data-access';
 import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
@@ -14,6 +13,9 @@ import {
 import { CoreWebServiceMock, DotFormatDateServiceMock } from '@dotcms/utils-testing';
 
 import { PushPublishService } from './push-publish.service';
+
+import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
+import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
 
 const mockResponse: DotAjaxActionResponseView = {
     _body: {},

@@ -1,6 +1,6 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotLanguagesService } from '@dotcms/data-access';
+import { DotLanguagesService } from './dot-languages.service';
 
 describe('DotLanguagesService', () => {
     let spectator: SpectatorHttp<DotLanguagesService>;

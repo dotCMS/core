@@ -45,6 +45,7 @@ export class EmaPageDropzoneComponent {
      * @memberof EmaPageDropzoneComponent
      */
     onDrop(event: DragEvent): void {
+        debugger;
         const target = event.target as HTMLDivElement;
         const data: ClientData = JSON.parse(target.dataset.payload);
         const isTop = this.isTop(event);

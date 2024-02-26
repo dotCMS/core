@@ -4,12 +4,14 @@ import { MockProvider } from 'ng-mocks';
 import { Table, TableModule } from 'primeng/table';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotKeyValue, DotKeyValueComponent } from './dot-key-value-ng.component';
 import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-row/dot-key-value-table-input-row.component';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row/dot-key-value-table-row.component';
+
+import { DotIconModule } from '../../dot-icon/dot-icon.module';
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 export const mockKeyValue: DotKeyValue[] = [
     {

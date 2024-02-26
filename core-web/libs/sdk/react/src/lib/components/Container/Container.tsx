@@ -1,8 +1,5 @@
 import { useContext } from 'react';
 
-
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/editor';
-
 import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
@@ -49,7 +46,7 @@ export function Container({ containerRef }: ContainerProps) {
         PageContext
     ) as PageProviderContext;
 
-    const { acceptTypes, contentlets, maxContentlets, path, } = getContainersData(
+    const { acceptTypes, contentlets, maxContentlets, path } = getContainersData(
         containers,
         containerRef
     );
@@ -68,32 +65,32 @@ export function Container({ containerRef }: ContainerProps) {
         container
     };
 
-    function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
-        let target = e.target as HTMLElement;
+    // function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
+    //     let target = e.target as HTMLElement;
 
-        if (target.dataset.dot !== 'contentlet') {
-            target = target.closest('[data-dot="contentlet"]') as HTMLElement;
-        }
+    //     if (target.dataset.dot !== 'contentlet') {
+    //         target = target.closest('[data-dot="contentlet"]') as HTMLElement;
+    //     }
 
-        if (!target) {
-            return;
-        }
+    //     if (!target) {
+    //         return;
+    //     }
 
-        const { x, y, width, height } = target.getBoundingClientRect();
+    //     const { x, y, width, height } = target.getBoundingClientRect();
 
-        const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
+    //     const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
 
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-            payload: {
-                x,
-                y,
-                width,
-                height,
-                payload: contentletPayload
-            }
-        });
-    }
+    //     postMessageToEditor({
+    //         action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+    //         payload: {
+    //             x,
+    //             y,
+    //             width,
+    //             height,
+    //             payload: contentletPayload
+    //         }
+    //     });
+    // }
 
     const renderContentlets = updatedContentlets.map((contentlet) => {
         const ContentTypeComponent = components[contentlet.contentType] || NoContent;
@@ -103,27 +100,27 @@ export function Container({ containerRef }: ContainerProps) {
                 ? EmptyContainer
                 : ContentTypeComponent;
 
-        const contentletPayload = {
-            container,
-            contentlet: {
-                identifier: contentlet.identifier,
-                title: contentlet.widgetTitle || contentlet.title,
-                inode: contentlet.inode,
-                contentType: contentlet.contentType
-            }
-        };
+        // const contentletPayload = {
+        //     container,
+        //     contentlet: {
+        //         identifier: contentlet.identifier,
+        //         title: contentlet.widgetTitle || contentlet.title,
+        //         inode: contentlet.inode,
+        //         contentType: contentlet.contentType
+        //     }
+        // };
 
         // console.log("Container - isInsideEditor?: ", isInsideEditor);
 
         return isInsideEditor ? (
             <div
-                data-dot="contentlet"
+                data-dot-object="contentlet"
                 data-dot-identifier={contentlet.identifier}
                 data-dot-title={contentlet.widgetTitle || contentlet.title}
                 data-dot-inode={contentlet.inode}
                 data-dot-type={contentlet.contentType}
-
-                data-content={JSON.stringify(contentletPayload)}
+                data-dot-container={JSON.stringify(container)}
+                // data-content={JSON.stringify(contentletPayload)}
                 key={contentlet.identifier}>
                 <Component {...contentlet} />
             </div>
@@ -133,7 +130,8 @@ export function Container({ containerRef }: ContainerProps) {
     });
 
     return isInsideEditor ? (
-        <div data-dot="container"
+        <div data-dot="container" 
+
         data-content={JSON.stringify(containerPayload)}>
             {renderContentlets}
         </div>

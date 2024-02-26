@@ -2,8 +2,9 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DotFormatDateService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { DotRelativeDatePipe } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
+
+import { DotRelativeDatePipe } from './dot-relative-date.pipe';
 
 const ONE_DAY = 86400000;
 
