@@ -5,6 +5,8 @@ import { NgClass, NgForOf } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -56,11 +58,12 @@ describe('DotToolbarAnnouncementsComponent', () => {
                 useValue: siteServiceMock
             }
         ],
-        imports: [NgForOf, NgClass, DotMessagePipe, HttpClientTestingModule]
+        imports: [NgForOf, NgClass, DotMessagePipe, HttpClientTestingModule, OverlayPanelModule]
     });
 
     beforeEach(() => {
         spectator = createComponent();
+        spectator.component.toggleDialog(new MouseEvent('click'));
     });
 
     it('should display announcements', () => {
@@ -89,5 +92,17 @@ describe('DotToolbarAnnouncementsComponent', () => {
         );
         spectator.setInput('showUnreadAnnouncement', false);
         expect(markAnnouncementsAsReadSpy).toHaveBeenCalled();
+    });
+
+    it('should show the mask when the dialog is opened', () => {
+        spectator.detectChanges();
+        const mask = spectator.query(byTestId('dot-mask'));
+        expect(mask).toBeTruthy();
+    });
+
+    it('should hide the mask when the dialog is closed', () => {
+        spectator.component.toggleDialog(new MouseEvent('click'));
+        const mask = spectator.query(byTestId('dot-mask'));
+        expect(mask).toBeFalsy();
     });
 });

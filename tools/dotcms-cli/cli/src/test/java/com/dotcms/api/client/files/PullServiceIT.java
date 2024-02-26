@@ -23,8 +23,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -146,12 +144,9 @@ class PullServiceIT {
                     }
                     try (final Stream<Path> walk = Files.walk(tempFolder)) {
                         walk.filter(Files::isRegularFile)
-                                .forEach(path -> {
-                                    String decodedPath = URLDecoder.decode(
-                                            tempFolder.relativize(path).toString(),
-                                            StandardCharsets.UTF_8);
-                                    collectedFiles.add(decodedPath);
-                                });
+                                .forEach(path -> collectedFiles.add(
+                                        tempFolder.relativize(path).toString()
+                                ));
                     }
                     //Let's remove the workspace folder from the list
                     List<String> existingFolders = collectedFolders.stream()
@@ -180,7 +175,7 @@ class PullServiceIT {
                             Map.entry(basePath + "/folder2",
                                     Arrays.asList("subFolder2-1", "subFolder2-2", "subFolder2-3")),
                             Map.entry(basePath + "/folder2/subFolder2-1",
-                                    Arrays.asList("subFolder2-1-1", "subFolder2-1-2",
+                                    Arrays.asList("subFolder2-1-1-子資料夾", "subFolder2-1-2",
                                             "subFolder2-1-3")),
                             Map.entry(basePath + "/folder2/subFolder2-2",
                                     Collections.emptyList()),
@@ -197,8 +192,8 @@ class PullServiceIT {
                             basePath, Collections.emptyList(),
                             basePath + "/folder1/subFolder1-1/subFolder1-1-1",
                             Arrays.asList("image1.png", "image4.jpg"),
-                            basePath + "/folder2/subFolder2-1/subFolder2-1-1",
-                            Arrays.asList("image2.png"),
+                            basePath + "/folder2/subFolder2-1/subFolder2-1-1-子資料夾",
+                            Arrays.asList("image2.png", "這就是我的想像6.png", "image (7)+.png"),
                             basePath + "/folder3", Arrays.asList("image 3.png"),
                             basePath + "/folder4 withSpace", Arrays.asList("image5.jpg")
                     );
@@ -329,11 +324,8 @@ class PullServiceIT {
             }
             try (final Stream<Path> walk = Files.walk(tempFolder)) {
                 walk.filter(Files::isRegularFile)
-                        .forEach(path -> {
-                            String decodedPath = URLDecoder.decode(
-                                    tempFolder.relativize(path).toString(), StandardCharsets.UTF_8);
-                            collectedFiles.add(decodedPath);
-                        });
+                        .forEach(
+                                path -> collectedFiles.add(tempFolder.relativize(path).toString()));
             }
             //Let's remove the workspace folder from the list
             List<String> existingFolders = collectedFolders.stream().map(folder -> folder.replaceAll(
@@ -357,7 +349,8 @@ class PullServiceIT {
                     Map.entry(basePath + "/folder2",
                             Arrays.asList("subFolder2-1", "subFolder2-2", "subFolder2-3")),
                     Map.entry(basePath + "/folder2/subFolder2-1",
-                            Arrays.asList("subFolder2-1-1", "subFolder2-1-2", "subFolder2-1-3")),
+                            Arrays.asList("subFolder2-1-1-子資料夾", "subFolder2-1-2",
+                                    "subFolder2-1-3")),
                     Map.entry(basePath + "/folder2/subFolder2-2",
                             Collections.emptyList()),
                     Map.entry(basePath + "/folder2/subFolder2-3",
@@ -372,7 +365,8 @@ class PullServiceIT {
             Map<String, List<String>> expectedFiles = Map.of(
                     basePath, Collections.emptyList(),
                     basePath + "/folder1/subFolder1-1/subFolder1-1-1", Arrays.asList("image1.png", "image4.jpg"),
-                    basePath + "/folder2/subFolder2-1/subFolder2-1-1", Arrays.asList("image2.png"),
+                    basePath + "/folder2/subFolder2-1/subFolder2-1-1-子資料夾",
+                    Arrays.asList("image2.png", "這就是我的想像6.png", "image (7)+.png"),
                     basePath + "/folder3", Arrays.asList("image 3.png"),
                     basePath + "/folder4 withSpace", Arrays.asList("image5.jpg")
             );
@@ -494,11 +488,9 @@ class PullServiceIT {
             }
             try (final Stream<Path> walk = Files.walk(tempFolder)) {
                 walk.filter(Files::isRegularFile)
-                        .forEach(path -> {
-                            String decodedPath = URLDecoder.decode(
-                                    tempFolder.relativize(path).toString(), StandardCharsets.UTF_8);
-                            collectedFiles.add(decodedPath);
-                        });
+                        .forEach(
+                                path -> collectedFiles.add(tempFolder.relativize(path).toString())
+                        );
             }
             //Let's remove the workspace folder from the list
             List<String> existingFolders = collectedFolders.stream()
@@ -594,7 +586,7 @@ class PullServiceIT {
             final var testSiteName = filesTestHelper.prepareData();
 
             final var folderPath = String.format(
-                    "//%s/folder2/subFolder2-1/subFolder2-1-1/image2.png", testSiteName);
+                    "//%s/folder2/subFolder2-1/subFolder2-1-1-子資料夾/image2.png", testSiteName);
 
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
@@ -638,11 +630,9 @@ class PullServiceIT {
             }
             try (final Stream<Path> walk = Files.walk(tempFolder)) {
                 walk.filter(Files::isRegularFile)
-                        .forEach(path -> {
-                            String decodedPath = URLDecoder.decode(
-                                    tempFolder.relativize(path).toString(), StandardCharsets.UTF_8);
-                            collectedFiles.add(decodedPath);
-                        });
+                        .forEach(
+                                path -> collectedFiles.add(tempFolder.relativize(path).toString())
+                        );
             }
             //Let's remove the workspace folder from the list
             List<String> existingFolders = collectedFolders.stream()
@@ -656,13 +646,14 @@ class PullServiceIT {
             Map<String, List<String>> expectedFolders = Map.of(
                     basePath, Arrays.asList("folder2"),
                     basePath + "/folder2", Arrays.asList("subFolder2-1"),
-                    basePath + "/folder2/subFolder2-1", Arrays.asList("subFolder2-1-1")
+                    basePath + "/folder2/subFolder2-1", Arrays.asList("subFolder2-1-1-子資料夾")
             );
 
             // Expected folder structure based on the treeNode object
             Map<String, List<String>> expectedFiles = Map.of(
                     basePath, Collections.emptyList(),
-                    basePath + "/folder2/subFolder2-1/subFolder2-1-1", Arrays.asList("image2.png")
+                    basePath + "/folder2/subFolder2-1/subFolder2-1-1-子資料夾",
+                    Arrays.asList("image2.png")
             );
 
             // Validate the actual folders against the expected folders
