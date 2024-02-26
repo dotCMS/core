@@ -61,6 +61,7 @@ import {
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
+    removeLoadingNodes,
     RestoreDefaultDOMAttrs,
     SetDocAttrStep
 } from '../../shared';
@@ -431,9 +432,18 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private setEditorJSONContent(content: Content) {
+        //TODO: remove this when the AI content is generated exclusively in popups and not in the editor directly.
+        const filterContent = removeLoadingNodes(
+            content
+                ? Array.isArray(content)
+                    ? [...content]
+                    : [...(content as JSONContent).content]
+                : []
+        );
+
         this.content =
-            this._allowedBlocks?.length > 1
-                ? removeInvalidNodes(content, this._allowedBlocks)
-                : content;
+            this.allowedBlocks?.length > 1
+                ? removeInvalidNodes(filterContent, this._allowedBlocks)
+                : filterContent;
     }
 }
