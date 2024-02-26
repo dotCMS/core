@@ -280,6 +280,17 @@
             }
         }
 
+        .ai-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 100%;
+            padding: $spacing-1;
+            border-radius: $spacing-1;
+            border: 1px solid $color-palette-gray-400;
+            color: $color-palette-primary;
+        }
+
         .video-container {
             margin-bottom: $spacing-3;
             aspect-ratio: 16/9;
