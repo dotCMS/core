@@ -32,7 +32,11 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, CONTAINER_SOURCE, DotPageContainerStructure  } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    CONTAINER_SOURCE,
+    DotPageContainerStructure
+} from '@dotcms/dotcms-models';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
@@ -922,7 +926,11 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'edit', EDIT_ACTION_PAYLOAD_MOCK);
+                    spectator.triggerEventHandler(
+                        EmaContentletToolsComponent,
+                        'edit',
+                        EDIT_ACTION_PAYLOAD_MOCK
+                    );
 
                     spectator.detectComponentChanges();
 
@@ -950,7 +958,6 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
-
                 describe('Copy content', () => {
                     let copySpy: jest.SpyInstance<Observable<DotCMSContentlet>>;
                     let dialogLoadingSpy: jest.SpyInstance;
@@ -967,7 +974,7 @@ describe('EditEmaEditorComponent', () => {
                             contentType: 'test',
                             onNumberOfPages: 2
                         }
-                    }
+                    };
 
                     const CONTENTLET_MOCK = {
                         x: 100,
@@ -975,50 +982,75 @@ describe('EditEmaEditorComponent', () => {
                         width: 500,
                         height: 500,
                         payload: EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
-                    }
+                    };
 
                     beforeEach(() => {
                         copySpy = jest.spyOn(dotCopyContentService, 'copyInPage');
-                        dialogLoadingSpy = jest.spyOn(spectator.component.dialog, 'showLoadingIframe');
-                        editContentletSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        dialogLoadingSpy = jest.spyOn(
+                            spectator.component.dialog,
+                            'showLoadingIframe'
+                        );
+                        editContentletSpy = jest.spyOn(
+                            spectator.component.dialog,
+                            'editContentlet'
+                        );
                         modalSpy = jest.spyOn(dotCopyContentModalService, 'open');
-                        reloadIframeSpy = jest.spyOn(spectator.component.iframe.nativeElement.contentWindow, 'postMessage');
-                        jest.spyOn(spectator.component, 'currentTreeNode').mockReturnValue(TREE_NODE_MOCK);
+                        reloadIframeSpy = jest.spyOn(
+                            spectator.component.iframe.nativeElement.contentWindow,
+                            'postMessage'
+                        );
+                        jest.spyOn(spectator.component, 'currentTreeNode').mockReturnValue(
+                            TREE_NODE_MOCK
+                        );
                     });
 
                     it('should copy and open edit dialog', () => {
                         copySpy.mockReturnValue(of(newContentlet));
-                        modalSpy.mockReturnValue(of({ shouldCopy: true }))
+                        modalSpy.mockReturnValue(of({ shouldCopy: true }));
 
                         spectator.detectChanges();
-    
+
                         spectator.setInput('contentlet', CONTENTLET_MOCK);
-    
+
                         spectator.detectComponentChanges();
-    
-                        spectator.triggerEventHandler(EmaContentletToolsComponent, 'edit', EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
+
+                        spectator.triggerEventHandler(
+                            EmaContentletToolsComponent,
+                            'edit',
+                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
+                        );
 
                         spectator.detectComponentChanges();
 
                         expect(copySpy).toHaveBeenCalledWith(TREE_NODE_MOCK); // It's not being called
                         expect(dialogLoadingSpy).toHaveBeenCalledWith('Hello World');
-                        expect(editContentletSpy).toHaveBeenCalledWith( { ...EDIT_ACTION_PAYLOAD_MOCK, contentlet: newContentlet });
+                        expect(editContentletSpy).toHaveBeenCalledWith({
+                            ...EDIT_ACTION_PAYLOAD_MOCK,
+                            contentlet: newContentlet
+                        });
                         expect(modalSpy).toHaveBeenCalled();
-                        expect(reloadIframeSpy).toHaveBeenCalledWith("ema-reload-page", "*");
+                        expect(reloadIframeSpy).toHaveBeenCalledWith('ema-reload-page', '*');
                     });
 
                     it('should show an error if the copy content fails', () => {
                         const handleErrorSpy = jest.spyOn(dotHttpErrorManagerService, 'handle');
-                        const resetDialogSpy = jest.spyOn(spectator.component.dialog, 'resetDialog');
+                        const resetDialogSpy = jest.spyOn(
+                            spectator.component.dialog,
+                            'resetDialog'
+                        );
                         copySpy.mockReturnValue(throwError({}));
-                        modalSpy.mockReturnValue(of({ shouldCopy: true }))
+                        modalSpy.mockReturnValue(of({ shouldCopy: true }));
                         spectator.detectChanges();
-    
+
                         spectator.setInput('contentlet', CONTENTLET_MOCK);
-    
+
                         spectator.detectComponentChanges();
-    
-                        spectator.triggerEventHandler(EmaContentletToolsComponent, 'edit', EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
+
+                        spectator.triggerEventHandler(
+                            EmaContentletToolsComponent,
+                            'edit',
+                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
+                        );
 
                         spectator.detectComponentChanges();
 
@@ -1033,25 +1065,30 @@ describe('EditEmaEditorComponent', () => {
 
                     it('should ask to copy and not copy content', () => {
                         copySpy.mockReturnValue(of(newContentlet));
-                        modalSpy.mockReturnValue(of({ shouldCopy: false }))
+                        modalSpy.mockReturnValue(of({ shouldCopy: false }));
 
                         spectator.detectChanges();
-    
+
                         spectator.setInput('contentlet', CONTENTLET_MOCK);
-    
+
                         spectator.detectComponentChanges();
-    
-                        spectator.triggerEventHandler(EmaContentletToolsComponent, 'edit', EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
+
+                        spectator.triggerEventHandler(
+                            EmaContentletToolsComponent,
+                            'edit',
+                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
+                        );
 
                         spectator.detectComponentChanges();
 
                         expect(copySpy).not.toHaveBeenCalled();
                         expect(dialogLoadingSpy).not.toHaveBeenCalled();
-                        expect(editContentletSpy).toHaveBeenCalledWith(EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
+                        expect(editContentletSpy).toHaveBeenCalledWith(
+                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
+                        );
                         expect(modalSpy).toHaveBeenCalled();
                         expect(reloadIframeSpy).not.toHaveBeenCalledWith();
                     });
-
                 });
 
                 beforeEach(() => {

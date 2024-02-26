@@ -1,14 +1,12 @@
 import { describe, it, expect } from '@jest/globals';
 import { Spectator, createComponentFactory, SpyObject, byTestId } from '@ngneat/spectator/jest';
-import { of} from 'rxjs';
+import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
-import {
-    DotMessageService
-} from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
