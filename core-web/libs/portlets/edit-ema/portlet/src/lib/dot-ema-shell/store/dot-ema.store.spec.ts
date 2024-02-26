@@ -27,7 +27,8 @@ const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         identifier: '123',
         inode: '123-i',
         canEdit: true,
-        canRead: true
+        canRead: true,
+        contentType: 'htmlpageasset'
     },
     viewAs: {
         language: {
@@ -56,7 +57,8 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         inode: '123-i',
         canEdit: true,
         canRead: true,
-        rendered: '<html><body><h1>Hello, World!</h1></body></html>'
+        rendered: '<html><body><h1>Hello, World!</h1></body></html>',
+        contentType: 'htmlpageasset'
     },
     viewAs: {
         language: {
@@ -263,7 +265,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -333,7 +336,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -396,7 +400,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -585,7 +590,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -658,7 +664,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);

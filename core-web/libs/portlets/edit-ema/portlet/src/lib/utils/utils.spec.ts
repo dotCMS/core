@@ -31,20 +31,24 @@ describe('utils functions', () => {
                 contentlet: {
                     identifier: 'test',
                     inode: 'test',
-                    title: 'test'
+                    title: 'test',
+                    contentType: 'test'
                 },
                 personaTag: 'test',
                 position: 'after'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: [],
-                    personaTag: 'test'
-                }
-            ]);
+            expect(result).toEqual({
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: [],
+                        personaTag: 'test'
+                    }
+                ],
+                contentletsId: []
+            });
         });
 
         it('should not delete if id not found', () => {
@@ -71,7 +75,8 @@ describe('utils functions', () => {
             const contentlet = {
                 identifier: 'test2',
                 inode: 'test',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = deleteContentletFromContainer({
@@ -83,14 +88,17 @@ describe('utils functions', () => {
                 position: 'after'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: ['test'],
-                    personaTag: undefined
-                }
-            ]);
+            expect(result).toEqual({
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test'],
+                        personaTag: undefined
+                    }
+                ],
+                contentletsId: ['test']
+            });
         });
     });
 
@@ -119,7 +127,8 @@ describe('utils functions', () => {
             const contentlet = {
                 identifier: 'contentlet-mark-123',
                 inode: 'contentlet-mark-inode-123',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -168,7 +177,8 @@ describe('utils functions', () => {
             const contentlet = {
                 identifier: 'test123',
                 inode: 'test',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -218,7 +228,8 @@ describe('utils functions', () => {
             const contentlet = {
                 identifier: 'test',
                 inode: 'test',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = insertContentletInContainer({

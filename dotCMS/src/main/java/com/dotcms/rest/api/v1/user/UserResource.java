@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
@@ -25,6 +26,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -68,9 +70,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -704,6 +709,7 @@ public class UserResource implements Serializable {
 		throw new ForbiddenException("User " + modUser.getUserId() + " does not have permissions to create users");
 	} // create.
 
+	@WrapInTransaction
 	protected User createNewUser(final User modUser,
 								 final CreateUserForm createUserForm)
 			throws DotDataException, DotSecurityException, ParseException {
@@ -747,7 +753,7 @@ public class UserResource implements Serializable {
 		final List<String> roleKeys = UtilMethods.isSet(createUserForm.getRoles())?
 				createUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
 
-		this.userAPI.save(user, APILocator.systemUser(), false);
+		this.userAPI.save(user, modUser, false);
 		Logger.debug(this,  ()-> "User with userId '" + userId + "' and email '" +
 				createUserForm.getEmail() + "' has been created.");
 
@@ -761,13 +767,13 @@ public class UserResource implements Serializable {
 
 	private static void processLanguage(final CreateUserForm createUserForm, final User user) {
 
-		final Language language = createUserForm.getLanguageId() <= 0?
-				APILocator.getLanguageAPI().getDefaultLanguage():
-				APILocator.getLanguageAPI().getLanguage(createUserForm.getLanguageId());
+		String languageTag = createUserForm.getLanguageId();
+		if (UtilMethods.isSet(languageTag) && languageTag.contains("_")) {
+			languageTag = languageTag.replace("_", "-");
+		}
 
-		final Locale locale   = language.asLocale();
-		final String languageString = locale.getLanguage() + StringPool.UNDERLINE + locale.getCountry();
-		user.setLanguageId(languageString);
+		LanguageUtil.validateLanguageTag(languageTag);
+		user.setLanguageId(createUserForm.getLanguageId());
 	}
 
 

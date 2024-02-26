@@ -108,7 +108,8 @@ export function Container({ containerRef }: ContainerProps) {
                 identifier: contentlet.identifier,
                 title: contentlet.widgetTitle || contentlet.title,
                 inode: contentlet.inode,
-                onNumberOfPages: contentlet.onNumberOfPages
+                onNumberOfPages: contentlet.onNumberOfPages,
+                contentType: contentlet.contentType
             }
         };
 

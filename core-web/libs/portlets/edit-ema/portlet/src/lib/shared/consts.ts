@@ -56,7 +56,8 @@ export const PAYLOAD_MOCK: ActionPayload = {
         identifier: '19c5ecc0c59b17b5780acd624ad52444',
         title: 'Zelda Cafe',
         inode: 'ff10d5db-b06e-4298-870b-fbe2f5001ac2',
-        onNumberOfPages: 1
+        onNumberOfPages: 1,
+        contentType: 'Banner'
     },
     language_id: '1',
     pageContainers: [

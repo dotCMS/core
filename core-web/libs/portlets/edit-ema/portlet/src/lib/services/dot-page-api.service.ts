@@ -25,6 +25,7 @@ export interface DotPageApiResponse {
         canRead: boolean;
         pageURI: string;
         rendered?: string;
+        contentType: string;
     };
     site: Site;
     viewAs: {

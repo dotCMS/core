@@ -1,7 +1,7 @@
 <ng-container *dotShowHideFeature="featureFlagAnnouncements">
     <p-button
         [class.dot-toolbar-notifications__button-active]="activeAnnouncements"
-        (click)="toolbarAnnouncements.toggle($event)"
+        (click)="onActiveAnnouncements($event)"
         icon="pi pi-megaphone"
         styleClass="p-button-rounded p-button-text">
     </p-button>
@@ -11,14 +11,10 @@
         *ngIf="showUnreadAnnouncement()">
     </span>
 
-    <p-overlayPanel
+    <dot-toolbar-announcements
         #toolbarAnnouncements
-        (onHide)="markAnnocumentsAsRead()"
-        (onShow)="onActiveAnnouncements()"
-        appendTo="body"
-        styleClass="toolbar-announcements__container">
-        <dot-toolbar-announcements [showUnreadAnnouncement]="showUnreadAnnouncement()" />
-    </p-overlayPanel>
+        [showUnreadAnnouncement]="showUnreadAnnouncement()"
+        (hideMenu)="markAnnocumentsAsRead()" />
 </ng-container>
 <div class="toolbar-notifications__container">
     <span

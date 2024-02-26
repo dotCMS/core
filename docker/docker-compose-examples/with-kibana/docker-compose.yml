@@ -11,13 +11,14 @@ volumes:
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    image: opensearchproject/opensearch:1.3.6
     environment:
       - cluster.name=elastic-cluster
       - discovery.type=single-node
       - data
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xmx1G "
+      - "OPENSEARCH_JAVA_OPTS=-Xmx1G "
+      - plugins.security.disabled=true
     ports:
       - 9200:9200
       - 9600:9600

@@ -37,6 +37,7 @@ export interface ContentletPayload {
     identifier: string;
     inode: string;
     title: string;
+    contentType: string;
     onNumberOfPages?: number;
 }
 
