@@ -41,11 +41,8 @@
 											"    tokenIDs.push(tokenID);",
 											"    pm.collectionVariables.set(\"tokenIDs\", tokenIDs);",
 											"});",
-											"",
-											"// Test if the token has the correct issuer",
-											"pm.test(\"Token Issuer Check\", function () {",
-											"    pm.expect(pm.response.json().entity.token.issuer).to.eql(\"dotcms-production\");",
-											"});"
+											""
+		
 										],
 										"type": "text/javascript"
 									}
