@@ -70,7 +70,7 @@ export const AIContentNode = Node.create({
                 (content?: string) =>
                 ({ commands, editor, tr }) => {
                     // Check if the AI_CONTENT node exists in the document.
-                    const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT);
+                    const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT)?.[0];
 
                     // If an AI_CONTENT node is found, replace its content.
                     if (nodeInformation) {
@@ -93,7 +93,7 @@ export const AIContentNode = Node.create({
             setLoadingAIContentNode:
                 (loading: boolean) =>
                 ({ tr, editor }) => {
-                    const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT);
+                    const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT)?.[0];
                     // Set the loading attribute to the specified value.
                     if (nodeInformation) {
                         tr.setNodeMarkup(nodeInformation.from, undefined, {
