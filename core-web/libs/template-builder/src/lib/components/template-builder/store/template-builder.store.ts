@@ -1,5 +1,6 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { GridStackElement, GridStackNode } from 'gridstack';
+import { Observable } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
 import { Injectable } from '@angular/core';
@@ -479,6 +480,22 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         ...state,
         themeId
     }));
+
+    // Effects
+    readonly updateUUIDs = this.effect((rows$: Observable<DotGridStackWidget[]>) => {
+        return rows$.pipe(
+            tapResponse({
+                next: (rows: DotGridStackWidget[]) => {
+                    const state = this.get();
+                    console.log('rows', rows);
+
+                    state.rows = rows;
+                },
+                error: (e) => console.error(e),
+                finalize: () => {}
+            })
+        );
+    });
 
     // Utils methods
 

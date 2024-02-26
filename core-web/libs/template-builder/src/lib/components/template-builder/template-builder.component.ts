@@ -18,10 +18,12 @@ import {
     EventEmitter,
     HostListener,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
     QueryList,
+    SimpleChanges,
     ViewChild,
     ViewChildren
 } from '@angular/core';
@@ -74,7 +76,7 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore]
 })
-export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
+export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     @Input()
     layout!: DotLayout;
 
@@ -212,6 +214,15 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                     layout: { ...this.dotLayout }
                 });
             });
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!changes.layout.firstChange && changes.layout.currentValue) {
+            const rows: DotGridStackWidget[] = parseFromDotObjectToGridStack(
+                changes.layout.currentValue.body
+            );
+            this.store.updateUUIDs(rows);
+        }
     }
 
     ngOnInit(): void {
