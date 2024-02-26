@@ -75,6 +75,7 @@ export class DotEmaDialogComponent {
      * @memberof EditEmaEditorComponent
      */
     addContentlet(payload: ActionPayload): void {
+        console.log("payload: ",payload);
         this.store.addContentlet({
             containerId: payload.container.identifier,
             acceptTypes: payload.container.acceptTypes ?? '*',

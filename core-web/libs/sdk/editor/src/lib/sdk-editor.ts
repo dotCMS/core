@@ -1,188 +1,169 @@
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './actions/client.actions';
+import { getContainerData, getPageElementBound } from './utils/editor.utils';
 
-export const sdkDotPageEditor = {
-    init: init,
-    setUrl: (pathname: string) => {
+
+interface DotCMSPageEditorConfig {
+    onReload: () => void;
+}
+class DotCMSPageEditor {
+    private config: DotCMSPageEditorConfig;
+
+    constructor(config?: DotCMSPageEditorConfig) {
+        this.config = config ?? { onReload: defaultReloadFn };
+    }
+
+    init() {
+        console.log('SdkDotPageEditor init!');
+        const isInsideEditor = this.checkIfInsideEditor();
+        if (isInsideEditor) {
+            this.listenEditorMessages();
+            setTimeout(() => {
+                this.listenHoveredContentlet();
+            }, 100);
+            this.scrollHandler();
+            this.listenContentChange(); // We can use const observer = listenContentChange() to disconnect later
+        }
+    }
+
+    setUrl(pathname: string) {
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_URL,
             payload: {
                 url: pathname === '/' ? 'index' : pathname?.replace('/', '')
             }
         });
-    },
-    destroy: () => {
-        //Remove all listeners
-        // observer.disconnect();
+    }
+
+    listenEditorMessages() {
+        window.addEventListener('message', (event: MessageEvent) => {
+            switch (event.data) {
+                case 'ema-request-bounds': {
+                    // console.log('Requesting bounds');
+                    this.setBounds();
+                    break;
+                }
+
+                case 'ema-reload-page': {
+                    console.log('Reloading page');
+                    this.reloadPage();
+                    break;
+                }
+            }
+        });
+    }
+
+    listenHoveredContentlet() {
+        const contentletElements = document.querySelectorAll('[data-dot-object="contentlet"]');
+
+        contentletElements.forEach((element) => {
+            element.addEventListener('pointerenter', (event) => {
+                // Your pointer enter event handler logic here
+                // console.log('Pointer entered:', event.target);
+                const target = event.target as HTMLElement;
+
+                const { x, y, width, height } = target.getBoundingClientRect();
+                const contentletPayload = {
+                    container:
+                        // Here extract dot-container from contentlet if is Headless
+                        // or search in parent container if is VTL
+                        JSON.parse(target.dataset?.['dotContainer'] || '{}') ??
+                        getContainerData(element),
+                    contentlet: {
+                        identifier: target.dataset?.['dotIdentifier'],
+                        title: target.dataset?.['dotTitle'],
+                        inode: target.dataset?.['dotInode'],
+                        contentType: target.dataset?.['dotType']
+                    }
+                };
+
+                postMessageToEditor({
+                    action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                    payload: {
+                        x,
+                        y,
+                        width,
+                        height,
+                        payload: contentletPayload
+                    }
+                });
+            });
+        });
+    }
+
+    scrollHandler() {
+        window.addEventListener('scroll', () => {
+            // console.log('scroll');
+            postMessageToEditor({
+                action: CUSTOMER_ACTIONS.IFRAME_SCROLL
+            });
+        });
+    }
+
+    checkIfInsideEditor() {
+        if (window.parent === window) {
+            return false;
+        }
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.PING_EDITOR
+        });
+        return true;
+    }
+
+    listenContentChange() {
+        // const config = { attributes: true, childList: true, subtree: true };
+
+        const observer = new MutationObserver((mutationsList) => {
+            for (const { addedNodes, removedNodes, type } of mutationsList) {
+                if (type === 'childList') {
+                    const didNodesChanged = [
+                        ...Array.from(addedNodes),
+                        ...Array.from(removedNodes)
+                    ].filter(
+                        (node) => (node as HTMLDivElement).dataset?.['dot'] === 'contentlet'
+                    ).length;
+
+                    if (didNodesChanged) {
+                        // console.log('Content change!!!!');
+                        postMessageToEditor({
+                            action: CUSTOMER_ACTIONS.CONTENT_CHANGE
+                        });
+                        //To add the listener to the new contents.
+                        this.listenHoveredContentlet();
+                    }
+                }
+            }
+        });
+
+        observer.observe(document, { childList: true, subtree: true });
+        return observer;
+    }
+
+    setBounds() {
+        const rows = Array.from(document.querySelectorAll('[data-dot="row"]')) as unknown as HTMLDivElement[];
+
+        const positionData = getPageElementBound(rows);
+        console.log("Position Data: ",positionData);
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.SET_BOUNDS,
+            payload: positionData
+        });
+    }
+
+    reloadPage() {
+        this.config.onReload();
+    }
+}
+
+const defaultReloadFn = () => window.location.reload();
+
+export const sdkDotPageEditor = {
+    init: (config?: DotCMSPageEditorConfig) => {
+        const dotCMSPageEditor = new DotCMSPageEditor(config);
+        dotCMSPageEditor.init();
+
+        return dotCMSPageEditor;
     }
 };
-
-function init() {
-    console.log('SdkDotPageEditor init!');
-    const isInsideEditor = checkIfInsideEditor();
-    if (isInsideEditor) {
-        listenEditorMessages();
-        setTimeout(() => {
-            listenHoveredContentlet();
-        }, 100);
-        scrollHandler();
-        listenContentChange(); // We can use const observer = listenContentChange() to disconnect later
-    }
-}
-
-function listenHoveredContentlet() {
-    const contentletElements = document.querySelectorAll('[data-dot-object="contentlet"]');
-
-    contentletElements.forEach((element) => {
-        element.addEventListener('pointerenter', (event) => {
-            // Your pointer enter event handler logic here
-            // console.log('Pointer entered:', event.target);
-            const target = event.target as HTMLElement;
-
-            const { x, y, width, height } = target.getBoundingClientRect();
-            const contentletPayload = {
-                container: target.dataset?.['dotContainer'] ?? getContainerData(element),
-                contentlet: {
-                    identifier: target.dataset?.['dotIdentifier'],
-                    title: target.dataset?.['dotTitle'],
-                    inode: target.dataset?.['dotInode'],
-                    contentType: target.dataset?.['dotType']
-                }
-            };
-
-            postMessageToEditor({
-                action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                payload: {
-                    x,
-                    y,
-                    width,
-                    height,
-                    payload: contentletPayload
-                }
-            });
-        });
-    });
-}
-
-function scrollHandler() {
-    window.addEventListener('scroll', () => {
-        // console.log('scroll');
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.IFRAME_SCROLL
-        });
-    });
-}
-
-function checkIfInsideEditor() {
-    if (window.parent === window) {
-        return false;
-    }
-    postMessageToEditor({
-        action: CUSTOMER_ACTIONS.PING_EDITOR
-    });
-    return true;
-}
-
-function listenContentChange() {
-    // const config = { attributes: true, childList: true, subtree: true };
-
-    const observer = new MutationObserver((mutationsList) => {
-        for (const { addedNodes, removedNodes, type } of mutationsList) {
-            if (type === 'childList') {
-                const didNodesChanged = [
-                    ...Array.from(addedNodes),
-                    ...Array.from(removedNodes)
-                ].filter(
-                    (node) => (node as HTMLDivElement).dataset?.['dot'] === 'contentlet'
-                ).length;
-
-                if (didNodesChanged) {
-                    // console.log('Content change!!!!');
-                    postMessageToEditor({
-                        action: CUSTOMER_ACTIONS.CONTENT_CHANGE
-                    });
-                    //To add the listener to the new contents.
-                    listenHoveredContentlet();
-                }
-            }
-        }
-    });
-
-    observer.observe(document, { childList: true, subtree: true });
-    return observer;
-}
-
-function listenHoveredContentlet2() {
-    const iframe = document.querySelector('iframe');
-    if (iframe) {
-        iframe.onload = function () {
-            const iframeDocument = iframe.contentDocument || iframe.contentWindow?.document;
-
-            iframeDocument?.addEventListener('pointerenter', (event) => {
-                console.log('event: ', event);
-                if (
-                    event.target instanceof HTMLElement &&
-                    event.target.hasAttribute('data-dot-object') &&
-                    event.target.getAttribute('data-dot-object') === 'contentlet'
-                ) {
-                    // Log the event target
-                    console.log('Pointer entered:', event.target);
-                    const target = event.target as HTMLElement;
-
-                    const { x, y, width, height } = target.getBoundingClientRect();
-
-                    const contentletPayload = JSON.parse(target.dataset?.['content'] ?? '{}');
-
-                    postMessageToEditor({
-                        action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                        payload: {
-                            x,
-                            y,
-                            width,
-                            height,
-                            payload: contentletPayload
-                        }
-                    });
-                }
-            });
-        };
-    }
-}
-
-function getContainerData(element: Element) {
-    // Find the closest ancestor element with data-dot-object="container" attribute
-    const container = element.closest('[data-dot-object="container"]') as HTMLElement;
-
-    // If a container element is found
-    if (container) {
-        // Return the dataset of the container element
-        return {
-            acceptTypes: container.dataset?.['dotAcceptTypes'],
-            identifier: container.dataset?.['dotIdentifier'],
-            maxContentlets: container.dataset?.['dotMaxContentlets'],
-            uuid: container.dataset?.['dotUuid']
-        };
-    } else {
-        // If no container element is found, return null
-        return null;
-    }
-}
-
-function listenEditorMessages() {
-    window.addEventListener('message', (event: MessageEvent) => {
-        switch (event.data) {
-            case 'ema-request-bounds': {
-                console.log('Requesting bounds');
-                break;
-            }
-
-            case 'ema-reload-page': {
-                console.log('Reloading page');
-                break;
-            }
-        }
-    });
-    return '';
-}
 
 export const sdkAsString = `
 const CUSTOMER_ACTIONS =  {
@@ -383,7 +364,7 @@ function listenEditorMessages() {
 
             case 'ema-reload-page': {
                 console.log('Reloading page');
-                
+
                 break;
             }
         }

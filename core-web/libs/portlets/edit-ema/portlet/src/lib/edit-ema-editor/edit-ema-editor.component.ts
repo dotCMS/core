@@ -385,6 +385,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onDragStart(event: DragEvent) {
+        console.log("onDragStart",event);
         const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
             ContentletDragPayload,
             'type'
@@ -523,8 +524,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     protected handleNgEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
-        console.log(event);
-        
         const { detail } = event;
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{

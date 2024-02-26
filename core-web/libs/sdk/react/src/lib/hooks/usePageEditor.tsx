@@ -59,9 +59,11 @@ export const usePageEditor = (
         throw new Error('Dotcms page editor required the pathname of your webapp');
     }
 
+    const client = sdkDotPageEditor.init();
+
     const { rowsRef, isInsideEditor } = useEventMessageHandler({ reload: reloadFunction });
 
-    usePostUrlToEditor(pathname, isInsideEditor);
+    usePostUrlToEditor(client, pathname, isInsideEditor);
     // useScrollEvent(isInsideEditor);
 
     return { rowsRef, isInsideEditor };
@@ -127,18 +129,19 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
 
             switch (event.data) {
                 case 'ema-request-bounds': {
-                    const positionData = getPageElementBound(rows.current);
+                    // console.log(rows.current)
+                    // const positionData = getPageElementBound(rows.current);
 
-                    postMessageToEditor({
-                        action: CUSTOMER_ACTIONS.SET_BOUNDS,
-                        payload: positionData
-                    });
+                    // postMessageToEditor({
+                    //     action: CUSTOMER_ACTIONS.SET_BOUNDS,
+                    //     payload: positionData
+                    // });
 
                     break;
                 }
 
                 case 'ema-reload-page': {
-                    reload();
+                    // reload();
 
                     break;
                 }
@@ -176,10 +179,10 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
 //     }, [isInsideEditor]);
 // }
 
-function usePostUrlToEditor(pathname: string, isInsideEditor: boolean) {
+function usePostUrlToEditor(client: any, pathname: string, isInsideEditor: boolean) {
     useEffect(() => {
         if (!isInsideEditor) return;
 
-        sdkDotPageEditor.setUrl(pathname);
-    }, [pathname, isInsideEditor]);
+        client.setUrl(pathname);
+    }, [client, pathname, isInsideEditor]);
 }

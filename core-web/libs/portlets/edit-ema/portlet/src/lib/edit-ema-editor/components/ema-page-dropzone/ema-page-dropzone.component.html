@@ -24,7 +24,7 @@
 
 <div class="pointer" [ngStyle]="pointerPosition"></div>
 
-<ng-template #errorTemplate let-error="error" let-container="container">
+<ng-template #errorTemplate let-error="error" let-container="x">
     <div class="drop-zone_error" *ngIf="error.message.length" [ngStyle]="container | dotPosition">
         <span [innerHTML]="error.message | dm : error.args"></span>
     </div>

@@ -130,9 +130,7 @@ export function Container({ containerRef }: ContainerProps) {
     });
 
     return isInsideEditor ? (
-        <div data-dot="container" 
-
-        data-content={JSON.stringify(containerPayload)}>
+        <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
             {renderContentlets}
         </div>
     ) : (

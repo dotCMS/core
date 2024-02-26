@@ -38,6 +38,10 @@ export class EmaPageDropzoneComponent {
 
     constructor(private readonly el: ElementRef) {}
 
+    ngOnInit(){
+        console.log("Rows: ", this.rows);
+    }
+
     /**
      * Emit place event and reset pointer position
      *
@@ -74,6 +78,7 @@ export class EmaPageDropzoneComponent {
         event.preventDefault();
 
         const target = event.target as HTMLDivElement;
+        console.log(target)
         const { type = '' } = target.dataset;
 
         if (type !== 'contentlet') {
