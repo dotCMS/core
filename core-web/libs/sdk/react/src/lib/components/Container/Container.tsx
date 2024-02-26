@@ -11,7 +11,8 @@ const FAKE_CONTENLET = {
     title: 'TEMP_EMPTY_CONTENTLET',
     contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
     inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
-    widgetTitle: 'TEMP_EMPTY_CONTENTLET'
+    widgetTitle: 'TEMP_EMPTY_CONTENTLET',
+    onNumberOfPages: 1
 };
 
 function EmptyContainer() {
@@ -48,7 +49,7 @@ export function Container({ containerRef }: ContainerProps) {
         PageContext
     ) as PageProviderContext;
 
-    const { acceptTypes, contentlets, maxContentlets, path } = getContainersData(
+    const { acceptTypes, contentlets, maxContentlets, variantId, path } = getContainersData(
         containers,
         containerRef
     );
@@ -60,6 +61,7 @@ export function Container({ containerRef }: ContainerProps) {
         acceptTypes,
         identifier: path ?? identifier,
         maxContentlets,
+        variantId,
         uuid
     };
 
@@ -79,9 +81,7 @@ export function Container({ containerRef }: ContainerProps) {
         }
 
         const { x, y, width, height } = target.getBoundingClientRect();
-
         const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
-
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_CONTENTLET,
             payload: {
@@ -108,6 +108,7 @@ export function Container({ containerRef }: ContainerProps) {
                 identifier: contentlet.identifier,
                 title: contentlet.widgetTitle || contentlet.title,
                 inode: contentlet.inode,
+                onNumberOfPages: contentlet.onNumberOfPages,
                 contentType: contentlet.contentType
             }
         };

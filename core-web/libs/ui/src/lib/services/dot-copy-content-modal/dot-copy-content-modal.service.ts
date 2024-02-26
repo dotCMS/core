@@ -6,11 +6,12 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { map, take, filter } from 'rxjs/operators';
 
-import {
-    DotBinaryOptionSelectorComponent,
-    BINARY_OPTION
-} from '@dotcms/app/portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
 import { DotMessageService } from '@dotcms/data-access';
+
+import {
+    BINARY_OPTION,
+    DotBinaryOptionSelectorComponent
+} from '../../components/dot-binary-option-selector/dot-binary-option-selector.component';
 
 export interface ModelCopyContentResponse {
     shouldCopy: boolean;

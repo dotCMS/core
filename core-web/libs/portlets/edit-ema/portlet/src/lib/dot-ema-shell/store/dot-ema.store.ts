@@ -19,7 +19,7 @@ import {
 import { DEFAULT_PERSONA } from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
-import { insertContentletInContainer, sanitizeURL } from '../../utils';
+import { insertContentletInContainer, sanitizeURL, getPersonalization } from '../../utils';
 
 export interface EditEmaState {
     clientHost: string;
@@ -129,7 +129,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             containers,
             id: state.editor.page.identifier,
             languageId: state.editor.viewAs.language.id,
-            personaTag: state.editor.viewAs.persona?.keyTag
+            personaTag: state.editor.viewAs.persona?.keyTag,
+            personalization: getPersonalization(state.editor.viewAs.persona)
         };
     });
 
@@ -285,7 +286,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private createPageURL(params: DotPageApiParams): string {
         const url = sanitizeURL(params.url);
 
-        return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
+        return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}&mode=EDIT_MODE`;
     }
 
     /*******************

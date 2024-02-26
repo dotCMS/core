@@ -6,8 +6,7 @@
                 [(ngModel)]="value"
                 [value]="firstOption.value"
                 type="radio"
-                name="options"
-            />
+                name="options" />
             <div class="item">
                 <span class="material-icons"> {{ firstOption.icon }} </span>
                 <span data-testId="label-op1">{{ firstOption.label | dm }}</span>
@@ -19,8 +18,7 @@
                 [(ngModel)]="value"
                 [value]="secondOption.value"
                 type="radio"
-                name="options"
-            />
+                name="options" />
             <div class="item">
                 <span class="material-icons"> {{ secondOption.icon }} </span>
                 <span data-testId="label-op2">{{ secondOption.label | dm }}</span>
@@ -38,6 +36,5 @@
         (click)="onSelect()"
         pButton
         pAutoFocus
-        data-testId="button"
-    ></button>
+        data-testId="button"></button>
 </div>
