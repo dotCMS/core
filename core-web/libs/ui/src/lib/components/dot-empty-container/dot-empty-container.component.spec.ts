@@ -3,7 +3,10 @@ import { byTestId } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
-import { DotEmptyContainerComponent, PrincipalConfiguration } from './dot-empty-container.component';
+import {
+    DotEmptyContainerComponent,
+    PrincipalConfiguration
+} from './dot-empty-container.component';
 
 const BUTTON_LABEL = 'Amazing Label';
 

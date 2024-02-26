@@ -1,7 +1,6 @@
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './actions/client.actions';
 import { getContainerData, getPageElementBound } from './utils/editor.utils';
 
-
 interface DotCMSPageEditorConfig {
     onReload: () => void;
 }
@@ -139,10 +138,12 @@ class DotCMSPageEditor {
     }
 
     setBounds() {
-        const rows = Array.from(document.querySelectorAll('[data-dot="row"]')) as unknown as HTMLDivElement[];
+        const rows = Array.from(
+            document.querySelectorAll('[data-dot="row"]')
+        ) as unknown as HTMLDivElement[];
 
         const positionData = getPageElementBound(rows);
-        console.log("Position Data: ",positionData);
+        console.log('Position Data: ', positionData);
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_BOUNDS,
             payload: positionData

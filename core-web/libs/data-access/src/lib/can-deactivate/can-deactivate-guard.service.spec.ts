@@ -5,7 +5,6 @@ import { CanDeactivateGuardService } from './can-deactivate-guard.service';
 
 import { DotRouterService } from '../dot-router/dot-router.service';
 
-
 describe('CanDeactivateGuardService', () => {
     let service: CanDeactivateGuardService;
     let dotRouterService: DotRouterService;

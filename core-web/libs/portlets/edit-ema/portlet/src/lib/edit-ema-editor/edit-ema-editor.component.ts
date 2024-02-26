@@ -217,14 +217,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             // Is VTL
             this.iframe.nativeElement.contentDocument.open();
             // this.iframe.nativeElement.contentDocument.write(editor.page.rendered);
-            this.iframe.nativeElement.contentDocument.write(this.addEditorPageScript(editor.page.rendered));
+            this.iframe.nativeElement.contentDocument.write(
+                this.addEditorPageScript(editor.page.rendered)
+            );
             this.iframe.nativeElement.contentDocument.close();
         }
     }
 
-    addEditorPageScript(rendered: string){
+    addEditorPageScript(rendered: string) {
         const sdkEditor = sdkAsString;
-        const scriptString = `<script>${sdkEditor};</script>`
+        const scriptString = `<script>${sdkEditor};</script>`;
         const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
@@ -385,7 +387,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onDragStart(event: DragEvent) {
-        console.log("onDragStart",event);
+        console.log('onDragStart', event);
         const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
             ContentletDragPayload,
             'type'

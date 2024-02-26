@@ -21,7 +21,6 @@ import { DotMessageDisplayService } from '../dot-message-display/dot-message-dis
 import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 
-
 describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;
     let dotRouterService: DotRouterService;

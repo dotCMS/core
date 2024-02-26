@@ -38,8 +38,6 @@ import { DotWizardService } from '../dot-wizard/dot-wizard.service';
 import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { PushPublishService } from '../push-publish/push-publish.service';
 
-
-
 const dotEventSocketURLFactory = () => {
     return new DotEventsSocketURL(
         `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,

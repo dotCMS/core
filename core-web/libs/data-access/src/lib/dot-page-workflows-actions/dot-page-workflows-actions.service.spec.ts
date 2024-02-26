@@ -4,7 +4,10 @@ import { TestBed, getTestBed } from '@angular/core/testing';
 
 import { mockWorkflowsActions, dotcmsContentletMock } from '@dotcms/utils-testing';
 
-import { DotCMSPageWorkflowState, DotPageWorkflowsActionsService } from './dot-page-workflows-actions.service';
+import {
+    DotCMSPageWorkflowState,
+    DotPageWorkflowsActionsService
+} from './dot-page-workflows-actions.service';
 
 describe('DotPageWorkflowsActionsService', () => {
     let injector: TestBed;
