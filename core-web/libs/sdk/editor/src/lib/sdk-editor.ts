@@ -17,9 +17,10 @@ export const sdkDotPageEditor = {
 };
 
 function init() {
-    console.log("SdkDotPageEditor init!")
+    console.log('SdkDotPageEditor init!');
     const isInsideEditor = checkIfInsideEditor();
     if (isInsideEditor) {
+        listenEditorMessages();
         setTimeout(() => {
             listenHoveredContentlet();
         }, 100);
@@ -38,7 +39,6 @@ function listenHoveredContentlet() {
             const target = event.target as HTMLElement;
 
             const { x, y, width, height } = target.getBoundingClientRect();
-            console.log(target.dataset);
             const contentletPayload = {
                 container: target.dataset?.['dotContainer'] ?? getContainerData(element),
                 contentlet: {
@@ -130,8 +130,6 @@ function listenHoveredContentlet2() {
 
                     const { x, y, width, height } = target.getBoundingClientRect();
 
-
-
                     const contentletPayload = JSON.parse(target.dataset?.['content'] ?? '{}');
 
                     postMessageToEditor({
@@ -153,7 +151,7 @@ function listenHoveredContentlet2() {
 function getContainerData(element: Element) {
     // Find the closest ancestor element with data-dot-object="container" attribute
     const container = element.closest('[data-dot-object="container"]') as HTMLElement;
-    
+
     // If a container element is found
     if (container) {
         // Return the dataset of the container element
@@ -167,6 +165,23 @@ function getContainerData(element: Element) {
         // If no container element is found, return null
         return null;
     }
+}
+
+function listenEditorMessages() {
+    window.addEventListener('message', (event: MessageEvent) => {
+        switch (event.data) {
+            case 'ema-request-bounds': {
+                console.log('Requesting bounds');
+                break;
+            }
+
+            case 'ema-reload-page': {
+                console.log('Reloading page');
+                break;
+            }
+        }
+    });
+    return '';
 }
 
 export const sdkAsString = `
@@ -202,10 +217,11 @@ const CUSTOMER_ACTIONS =  {
     window.parent.postMessage(message, '*');
 }
 function init() {
-    console.log("SdkDotPageEditor init!")
+    // console.log("SdkDotPageEditor init!")
     const isInsideEditor = checkIfInsideEditor();
-    console.log('isInsideEditor', isInsideEditor);
+    // console.log('isInsideEditor', isInsideEditor);
     if (isInsideEditor) {
+        listenEditorMessages();
         setTimeout(() => {
             listenHoveredContentlet();
         }, 1000);
@@ -216,7 +232,6 @@ function init() {
 
 function listenHoveredContentlet() {
     const contentletElements = document.querySelectorAll('[data-dot-object="contentlet"]');
-    console.log('Contentlets: ', contentletElements);
 
     contentletElements.forEach((element) => {
         element.addEventListener('pointerenter', (event) => {
@@ -226,7 +241,6 @@ function listenHoveredContentlet() {
 
             const { x, y, width, height } = target.getBoundingClientRect();
 
-            console.log(target.dataset);
             const contentletPayload = {
                 container: target.dataset?.['dotContainer'] ?? getContainerData(element),
                 contentlet: {
@@ -300,11 +314,11 @@ function listenContentChange() {
                     ...Array.from(addedNodes),
                     ...Array.from(removedNodes)
                 ].filter(
-                    (node) => (node).dataset?.['dot'] === 'contentlet'
+                    (node) => (node).dataset?.['dotObject'] === 'contentlet'
                 ).length;
 
                 if (didNodesChanged) {
-                    // console.log('Content change!!!!');
+                    console.log('Content change!!!!');
                     postMessageToEditor({
                         action: CUSTOMER_ACTIONS.CONTENT_CHANGE
                     });
@@ -359,4 +373,22 @@ function listenHoveredContentlet2() {
     }
 }
 
-init();`
+function listenEditorMessages() {
+    window.addEventListener('message', (event) => {
+        switch (event.data) {
+            case 'ema-request-bounds': {
+                console.log('Requesting bounds');
+                break;
+            }
+
+            case 'ema-reload-page': {
+                console.log('Reloading page');
+                
+                break;
+            }
+        }
+    });
+    return '';
+}
+
+init();`;

@@ -28,7 +28,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
-import { CUSTOMER_ACTIONS, NOTIFY_CUSTOMER, sdkAsString, sdkDotPageEditor } from '@dotcms/editor';
+import { CUSTOMER_ACTIONS, NOTIFY_CUSTOMER, sdkAsString } from '@dotcms/editor';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
@@ -161,7 +161,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const clientData = this.clientData();
         const { containers, languageId, id, personaTag } = this.pageData();
-        console.log(containers);
 
         const { contentletsId } = containers.find((container) =>
             areContainersEquals(container, clientData.container)
@@ -430,7 +429,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onPlaceItem(positionPayload: PositionPayload): void {
-        console.log("onPlaceItem", positionPayload);
         let payload = this.getPageSavePayload(positionPayload);
 
         const destinationContainer = payload.container;
@@ -525,6 +523,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     protected handleNgEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
+        console.log(event);
+        
         const { detail } = event;
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
@@ -658,7 +658,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
                 const contentletArea = <ClientContentletArea>data.payload;
-                console.log("Contentlet area: ",contentletArea);
 
                 const payload = this.getPageSavePayload(contentletArea.payload);
 
@@ -772,8 +771,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
-        console.log("getPageSavePayload", positionPayload);
-
         this.clientData.set(positionPayload);
 
         return this.actionPayload();

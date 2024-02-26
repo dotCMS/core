@@ -92,8 +92,6 @@ export function areContainersEquals(
     currentContainer: PageContainer,
     containerToFind: ContainerPayload
 ): boolean {
-    console.log({ currentContainer, containerToFind });
-    
     return (
         currentContainer.identifier === containerToFind.identifier &&
         currentContainer.uuid === containerToFind.uuid
