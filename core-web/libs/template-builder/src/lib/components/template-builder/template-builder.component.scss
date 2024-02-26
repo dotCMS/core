@@ -85,12 +85,9 @@ p-divider {
     transition: opacity 0.3s ease-in-out;
 }
 
-.grid-stack-animate,
-.grid-stack-animate .grid-stack-item {
-    transition: none;
-}
-
 .grid-stack-item {
+    transition: all 0.3s ease-in-out;
+
     &.template-builder-row--wont-fit {
         cursor: no-drop;
 

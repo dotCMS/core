@@ -48,11 +48,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
     // Rows Updaters
 
-    readonly updateRows = this.updater((state, rows: DotGridStackWidget[]) => ({
-        ...state,
-        rows: rows
-    }));
-
     /**
      * @description This Method adds a new row to the grid
      *
