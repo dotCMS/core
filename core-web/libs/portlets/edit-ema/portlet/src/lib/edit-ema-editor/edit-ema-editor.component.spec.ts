@@ -521,7 +521,7 @@ describe('EditEmaEditorComponent', () => {
                 const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
 
                 expect(button.nativeElement.href).toBe(
-                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
                 );
             });
 
@@ -1570,7 +1570,7 @@ describe('EditEmaEditorComponent', () => {
                 const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                 expect(iframe.nativeElement.src).toBe(
-                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
                 );
             });
 

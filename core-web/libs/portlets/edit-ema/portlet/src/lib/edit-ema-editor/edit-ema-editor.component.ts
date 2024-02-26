@@ -802,7 +802,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      *
      * @protected
      * @param {ActionPayload} payload
-     * @return {*} 
+     * @return {*}
      * @memberof EditEmaEditorComponent
      */
     protected handleEditContentlet(payload: ActionPayload) {
