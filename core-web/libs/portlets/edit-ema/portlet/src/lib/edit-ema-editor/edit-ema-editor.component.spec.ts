@@ -17,6 +17,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotContentTypeService,
     DotCurrentUserService,
@@ -29,6 +30,7 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import { CONTAINER_SOURCE, DotPageContainerStructure } from '@dotcms/dotcms-models';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -81,6 +83,131 @@ const dragEventMock = {
                 contentType: 'File',
                 baseType: 'CONTENT'
             })
+        }
+    }
+};
+
+const dotPageContainerStructureMock: DotPageContainerStructure = {
+    '123': {
+        container: {
+            archived: false,
+            categoryId: '123',
+            deleted: false,
+            friendlyName: '123',
+            identifier: '123',
+            live: false,
+            locked: false,
+            maxContentlets: 123,
+            name: '123',
+            path: '123',
+            pathName: '123',
+            postLoop: '123',
+            preLoop: '123',
+            source: CONTAINER_SOURCE.DB,
+            title: '123',
+            type: '123',
+            working: false
+        },
+        containerStructures: [
+            {
+                contentTypeVar: '123'
+            }
+        ],
+        contentlets: {
+            '123': [
+                {
+                    baseType: '123',
+                    content: 'something',
+                    contentType: '123',
+                    dateCreated: '123',
+                    dateModifed: '123',
+                    folder: '123',
+                    host: '123',
+                    identifier: '123',
+                    inode: '123',
+                    languageId: 123,
+                    live: false,
+                    locked: false,
+                    modDate: '123',
+                    modUser: '123',
+                    owner: '123',
+                    working: false,
+                    title: '123',
+                    url: '123',
+                    __icon__: '123',
+                    archived: false,
+                    deleted: false,
+                    hasTitleImage: false,
+                    hostName: '123',
+                    image: '123',
+                    modUserName: '123',
+                    sortOrder: 123,
+                    stInode: '123',
+                    titleImage: '123'
+                },
+                {
+                    baseType: '456',
+                    content: 'something',
+                    contentType: '456',
+                    dateCreated: '456',
+                    dateModifed: '456',
+                    folder: '456',
+                    host: '456',
+                    identifier: '456',
+                    inode: '456',
+                    languageId: 456,
+                    live: false,
+                    locked: false,
+                    modDate: '456',
+                    modUser: '456',
+                    owner: '456',
+                    working: false,
+                    title: '456',
+                    url: '456',
+                    __icon__: '456',
+                    archived: false,
+                    deleted: false,
+                    hasTitleImage: false,
+                    hostName: '456',
+                    image: '456',
+                    modUserName: '456',
+                    sortOrder: 456,
+                    stInode: '456',
+                    titleImage: '456'
+                }
+            ],
+            '456': [
+                {
+                    baseType: '123',
+                    content: 'something',
+                    contentType: '123',
+                    dateCreated: '123',
+                    dateModifed: '123',
+                    folder: '123',
+                    host: '123',
+                    identifier: '123',
+                    inode: '123',
+                    languageId: 123,
+                    live: false,
+                    locked: false,
+                    modDate: '123',
+                    modUser: '123',
+                    owner: '123',
+                    working: false,
+                    title: '123',
+                    url: '123',
+                    __icon__: '123',
+                    archived: false,
+                    deleted: false,
+                    hasTitleImage: false,
+                    hostName: '123',
+                    image: '123',
+                    modUserName: '123',
+                    sortOrder: 123,
+                    stInode: '123',
+                    titleImage: '123'
+                }
+            ]
         }
     }
 };
@@ -147,7 +274,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     identifier: '123',
                                     ...permissions,
                                     pageURI: 'page-one',
-                                    rendered: '<div>hello world</div>'
+                                    rendered: '<div>hello world</div>',
+                                    canEdit: true
                                 },
                                 site: {
                                     identifier: '123'
@@ -161,7 +289,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                         country: 'Germany'
                                     },
                                     persona: DEFAULT_PERSONA
-                                }
+                                },
+                                containers: dotPageContainerStructureMock
                             }),
                             2: of({
                                 page: {
@@ -169,7 +298,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     inode: PAGE_INODE_MOCK,
                                     identifier: '123',
                                     ...permissions,
-                                    pageURI: 'page-one'
+                                    pageURI: 'page-one',
+                                    canEdit: true
                                 },
                                 site: {
                                     identifier: '123'
@@ -183,7 +313,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                         country: 'España'
                                     },
                                     persona: DEFAULT_PERSONA
-                                }
+                                },
+                                containers: dotPageContainerStructureMock
                             }),
                             1: of({
                                 page: {
@@ -205,7 +336,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                         country: 'United States'
                                     },
                                     persona: DEFAULT_PERSONA
-                                }
+                                },
+                                containers: dotPageContainerStructureMock
                             })
                         }[language_id];
                     },
@@ -653,7 +785,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: '123',
                             inode: '456',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         position: 'after'
                     };
@@ -721,7 +854,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'test',
@@ -924,7 +1058,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'container-identifier-123',
@@ -1010,7 +1145,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'container-identifier-123',
@@ -1085,7 +1221,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'container-identifier-123',
@@ -1171,7 +1308,8 @@ describe('EditEmaEditorComponent', () => {
                         contentlet: {
                             identifier: 'contentlet-identifier-123',
                             inode: 'contentlet-inode-123',
-                            title: 'Hello World'
+                            title: 'Hello World',
+                            contentType: 'test'
                         },
                         container: {
                             identifier: 'container-identifier-123',
@@ -1430,6 +1568,302 @@ describe('EditEmaEditorComponent', () => {
             });
         });
 
+        describe('move contentlet', () => {
+            it('should post to iframe to get bound on move contentlet and show bounds', () => {
+                spectator.detectChanges();
+
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                const postMessageSpy = jest.spyOn(
+                    iframe.nativeElement.contentWindow,
+                    'postMessage'
+                );
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                            payload: {
+                                x: 100,
+                                y: 100,
+                                width: 500,
+                                height: 500,
+                                payload: PAYLOAD_MOCK
+                            }
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+
+                const emaTools = spectator.debugElement.query(
+                    By.css('[data-testId="contentlet-tools"]')
+                );
+
+                spectator.triggerEventHandler(emaTools, 'moveStart', {
+                    ...PAYLOAD_MOCK
+                });
+
+                spectator.detectComponentChanges();
+
+                expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                ); // Simulate the iframe response
+
+                expect(spectator.query(EmaPageDropzoneComponent)).not.toBeNull();
+            });
+
+            it('should hide drop zone on palette drop', () => {
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                            payload: {
+                                x: 100,
+                                y: 100,
+                                width: 500,
+                                height: 500,
+                                payload: PAYLOAD_MOCK
+                            }
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+
+                const emaTools = spectator.debugElement.query(
+                    By.css('[data-testId="contentlet-tools"]')
+                );
+
+                spectator.triggerEventHandler(emaTools, 'moveStart', {
+                    ...PAYLOAD_MOCK
+                });
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                );
+
+                spectator.detectComponentChanges();
+
+                let dropZone = spectator.query(EmaPageDropzoneComponent);
+
+                expect(dropZone.item).toEqual({
+                    contentType: 'Banner',
+                    baseType: 'CONTENT'
+                });
+                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+
+                spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
+                spectator.detectComponentChanges();
+                dropZone = spectator.query(EmaPageDropzoneComponent);
+                expect(dropZone).toBeNull();
+            });
+
+            it('should move a contentlet from position in the same contentlet', () => {
+                const saveSpy = jest.spyOn(store, 'savePage');
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                            payload: {
+                                x: 100,
+                                y: 100,
+                                width: 500,
+                                height: 500,
+                                payload: PAYLOAD_MOCK
+                            }
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+
+                const emaTools = spectator.debugElement.query(
+                    By.css('[data-testId="contentlet-tools"]')
+                );
+
+                spectator.triggerEventHandler(emaTools, 'moveStart', {
+                    container: {
+                        acceptTypes: '123,456',
+                        identifier: '123',
+                        contentletsId: ['123', '456'],
+                        maxContentlets: 123,
+                        uuid: '123'
+                    }, // Same container
+                    contentlet: {
+                        identifier: '123' // The pivot
+                    }
+                });
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                );
+
+                spectator.detectComponentChanges();
+
+                const dropZone = spectator.debugElement.query(By.css('[data-testId="dropzone"]'));
+
+                spectator.triggerEventHandler(dropZone, 'place', {
+                    container: {
+                        acceptTypes: '123,456',
+                        identifier: '123',
+                        contentletsId: ['123', '456'],
+                        maxContentlets: 123,
+                        uuid: '123'
+                    }, // Same container
+                    position: 'after',
+                    contentlet: {
+                        identifier: '456' // The pivot
+                    }
+                });
+
+                const newPageContainers = [
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['456', '123'],
+                        personaTag: 'dot:persona'
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '456',
+                        contentletsId: ['123'],
+                        personaTag: 'dot:persona'
+                    }
+                ];
+
+                expect(saveSpy).toHaveBeenCalledWith({
+                    pageContainers: newPageContainers,
+                    pageId: '123',
+                    whenSaved: expect.any(Function),
+                    params: {
+                        language_id: 1,
+                        url: 'page-one'
+                    }
+                });
+            });
+
+            it('should move a contentlet to another container', () => {
+                const saveSpy = jest.spyOn(store, 'savePage');
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                            payload: {
+                                x: 100,
+                                y: 100,
+                                width: 500,
+                                height: 500,
+                                payload: PAYLOAD_MOCK
+                            }
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+
+                const emaTools = spectator.debugElement.query(
+                    By.css('[data-testId="contentlet-tools"]')
+                );
+
+                spectator.triggerEventHandler(emaTools, 'moveStart', {
+                    container: {
+                        acceptTypes: '123,456',
+                        identifier: '123',
+                        contentletsId: ['123', '456'],
+                        maxContentlets: 123,
+                        uuid: '123'
+                    }, // From container
+                    contentlet: {
+                        identifier: '456' // The contentlet to move
+                    }
+                });
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                );
+
+                spectator.detectComponentChanges();
+
+                const dropZone = spectator.debugElement.query(By.css('[data-testId="dropzone"]'));
+
+                spectator.triggerEventHandler(dropZone, 'place', {
+                    container: {
+                        acceptTypes: '123,456',
+                        identifier: '123',
+                        contentletsId: ['123'],
+                        maxContentlets: 123,
+                        uuid: '456'
+                    }, // Another container
+                    position: 'after',
+                    contentlet: {
+                        identifier: '123' // The pivot
+                    }
+                });
+
+                const newPageContainers = [
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123'],
+                        personaTag: 'dot:persona'
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '456',
+                        contentletsId: ['123', '456'],
+                        personaTag: 'dot:persona'
+                    }
+                ];
+
+                expect(saveSpy).toHaveBeenCalledWith({
+                    pageContainers: newPageContainers,
+                    pageId: '123',
+                    whenSaved: expect.any(Function),
+                    params: {
+                        language_id: 1,
+                        url: 'page-one'
+                    }
+                });
+            });
+        });
+
         describe('palette', () => {
             it('should render a palette', () => {
                 spectator.detectChanges();
@@ -1453,8 +1887,10 @@ describe('EditEmaEditorComponent', () => {
                         dataset: {
                             type: 'contentlet',
                             item: JSON.stringify({
-                                identifier: '123',
-                                title: 'hello world'
+                                contentlet: {
+                                    identifier: '123',
+                                    title: 'hello world'
+                                }
                             })
                         }
                     }
@@ -1473,8 +1909,10 @@ describe('EditEmaEditorComponent', () => {
                         dataset: {
                             type: 'contentlet',
                             item: JSON.stringify({
-                                identifier: '123',
-                                title: 'hello world'
+                                contentlet: {
+                                    identifier: '123',
+                                    title: 'hello world'
+                                }
                             })
                         }
                     }
@@ -1552,7 +1990,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(dropZone).toBeNull();
             });
 
-            it('should reset the rowa when we update query params', () => {
+            it('should reset the rows when we update query params', () => {
                 spectator.detectChanges();
 
                 window.dispatchEvent(

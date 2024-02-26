@@ -53,22 +53,51 @@ import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiResponse, DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
-import { ActionPayload, PositionPayload, ClientData, SetUrlPayload } from '../shared/models';
-import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
+import {
+    ActionPayload,
+    PositionPayload,
+    ClientData,
+    SetUrlPayload,
+    ContainerPayload,
+    ContentletPayload,
+    PageContainer
+} from '../shared/models';
+import {
+    areContainersEquals,
+    deleteContentletFromContainer,
+    insertContentletInContainer
+} from '../utils';
+
+interface DeletePayload {
+    payload: ActionPayload;
+    originContainer: ContainerPayload;
+    contentletToMove: ContentletPayload;
+}
+
+interface InsertPayloadFromDelete {
+    payload: ActionPayload;
+    pageContainers: PageContainer[];
+    contentletsId: string[];
+    destinationContainer: ContainerPayload;
+    pivotContentlet: ContentletPayload;
+    positionToInsert: 'before' | 'after';
+}
 
 interface BasePayload {
     type: 'contentlet' | 'content-type';
 }
 
-interface ContentletPayload extends BasePayload {
+interface ContentletDragPayload extends BasePayload {
     type: 'contentlet';
     item: {
-        identifier: string;
+        container?: ContainerPayload;
+        contentlet: ContentletPayload;
     };
+    move: boolean;
 }
 
 // Specific interface when type is 'content-type'
-interface ContentTypePayload extends BasePayload {
+interface ContentTypeDragPayload extends BasePayload {
     type: 'content-type';
     item: {
         variable: string;
@@ -76,7 +105,7 @@ interface ContentTypePayload extends BasePayload {
     };
 }
 
-type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
+type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -132,12 +161,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const clientData = this.clientData();
         const { containers, languageId, id, personaTag } = this.pageData();
-        const { contentletsId } = containers.find((container) => {
-            return (
-                container.identifier === clientData.container.identifier &&
-                container.uuid === clientData.container.uuid
-            );
-        });
+        const { contentletsId } = containers.find((container) =>
+            areContainersEquals(container, clientData.container)
+        ) ?? { contentletsId: [] };
 
         return {
             ...clientData,
@@ -316,6 +342,33 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Move contentlet to a new position
+     *
+     * @param {ActionPayload} item
+     * @memberof EditEmaEditorComponent
+     */
+    moveContentlet(item: ActionPayload) {
+        this.draggedPayload = {
+            type: 'contentlet',
+            item: {
+                container: item.container,
+                contentlet: item.contentlet
+            },
+            move: true
+        };
+
+        this.dragItem = {
+            baseType: 'CONTENT',
+            contentType: item.contentlet.contentType
+        };
+
+        this.iframe.nativeElement.contentWindow?.postMessage(
+            NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+            this.host
+        );
+    }
+
+    /**
      * Handle palette start drag event
      *
      * @param {DragEvent} event
@@ -323,7 +376,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onDragStart(event: DragEvent) {
         const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
-            ContentletPayload,
+            ContentletDragPayload,
             'type'
         > & {
             item: string;
@@ -338,7 +391,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         this.draggedPayload = {
             type: dataset.type,
-            item
+            item,
+            move: false
         };
 
         this.iframe.nativeElement.contentWindow?.postMessage(
@@ -354,11 +408,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onDragEnd(_event: DragEvent) {
-        this.rows = [];
-        this.dragItem = {
-            baseType: '',
-            contentType: ''
-        };
+        this.resetDragProperties();
     }
 
     /**
@@ -369,16 +419,47 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onPlaceItem(positionPayload: PositionPayload): void {
-        const payload = this.getPageSavePayload(positionPayload);
+        let payload = this.getPageSavePayload(positionPayload);
+
+        const destinationContainer = payload.container;
+        const pivotContentlet = payload.contentlet;
+        const positionToInsert = positionPayload.position;
 
         if (this.draggedPayload.type === 'contentlet') {
+            const draggedPayload = this.draggedPayload;
+            const originContainer = draggedPayload.item.container;
+            const contentletToMove = draggedPayload.item.contentlet;
+
+            if (draggedPayload.move) {
+                const deletePayload = this.createDeletePayload({
+                    payload,
+                    originContainer,
+                    contentletToMove
+                });
+
+                const { pageContainers, contentletsId } =
+                    deleteContentletFromContainer(deletePayload); // Delete from the original position
+
+                // Update the payload to handle the data to insert the contentlet in the new position
+                payload = this.createInsertPayloadFromDelete({
+                    payload,
+                    pageContainers,
+                    contentletsId,
+                    destinationContainer,
+                    pivotContentlet,
+                    positionToInsert
+                });
+            }
+
             const { pageContainers, didInsert } = insertContentletInContainer({
                 ...payload,
-                newContentletId: this.draggedPayload.item.identifier
+                newContentletId: draggedPayload.item.contentlet.identifier
             });
 
             if (!didInsert) {
                 this.handleDuplicatedContentlet();
+
+                this.resetDragProperties();
 
                 return;
             }
@@ -389,7 +470,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 params: this.queryParams,
                 whenSaved: () => {
                     this.reloadIframe();
-                    this.draggedPayload = undefined;
+                    this.resetDragProperties();
                 }
             });
 
@@ -406,7 +487,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     deleteContentlet(payload: ActionPayload) {
-        const newPageContainers = deleteContentletFromContainer(payload);
+        const { pageContainers } = deleteContentletFromContainer(payload);
 
         this.confirmationService.confirm({
             header: this.dotMessageService.get(
@@ -419,7 +500,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
             accept: () => {
                 this.store.savePage({
-                    pageContainers: newPageContainers,
+                    pageContainers,
                     pageId: payload.pageId,
                     params: this.queryParams,
                     whenSaved: () => {
@@ -576,8 +657,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
-                this.contentlet = null;
-                this.rows = [];
+                this.resetDragProperties();
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
@@ -682,5 +762,82 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.clientData.set(positionPayload);
 
         return this.actionPayload();
+    }
+
+    /**
+     * Reset the drag properties
+     *
+     * @private
+     * @memberof EditEmaEditorComponent
+     */
+    protected resetDragProperties() {
+        this.draggedPayload = undefined;
+        this.contentlet = null;
+        this.rows = [];
+        this.dragItem = null;
+    }
+
+    /**
+     * Create the payload to delete a contentlet
+     *
+     * @private
+     * @param {DeletePayload} {
+     *         payload,
+     *         originContainer,
+     *         contentletToMove
+     *     }
+     * @return {*}  {ActionPayload}
+     * @memberof EditEmaEditorComponent
+     */
+    private createDeletePayload({
+        payload,
+        originContainer,
+        contentletToMove
+    }: DeletePayload): ActionPayload {
+        return {
+            ...payload,
+            container: {
+                ...originContainer // The container where the contentlet was before
+            },
+            contentlet: {
+                ...contentletToMove // The contentlet that was dragged
+            }
+        };
+    }
+
+    /**
+     * Create the payload to insert a contentlet after deleting it
+     *
+     * @private
+     * @param {InsertPayloadFromDelete} {
+     *         payload,
+     *         pageContainers,
+     *         contentletsId,
+     *         destinationContainer,
+     *         pivotContentlet,
+     *         positionToInsert
+     *     }
+     * @return {*}  {ActionPayload}
+     * @memberof EditEmaEditorComponent
+     */
+    private createInsertPayloadFromDelete({
+        payload,
+        pageContainers,
+        contentletsId,
+        destinationContainer,
+        pivotContentlet,
+        positionToInsert
+    }: InsertPayloadFromDelete): ActionPayload {
+        return {
+            ...payload,
+            pageContainers,
+            container: {
+                ...payload.container,
+                ...destinationContainer,
+                contentletsId // Contentlets id after deleting the contentlet
+            },
+            contentlet: pivotContentlet,
+            position: positionToInsert
+        };
     }
 }

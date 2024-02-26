@@ -14,7 +14,10 @@ interface DotErrorPipeResponse {
     standalone: true
 })
 export class DotErrorPipe implements PipeTransform {
-    transform({ payload, contentlets }: Container, item: EmaDragItem): DotErrorPipeResponse {
+    transform(
+        { payload, contentlets }: Container,
+        item: EmaDragItem | undefined
+    ): DotErrorPipeResponse {
         const { container = {} } =
             typeof payload === 'string' ? JSON.parse(payload) : payload || {};
 
@@ -47,7 +50,11 @@ export class DotErrorPipe implements PipeTransform {
         };
     }
 
-    private isValidContentType(acceptTypes: string, item: EmaDragItem): boolean {
+    private isValidContentType(acceptTypes: string, item: EmaDragItem | undefined): boolean {
+        if (!item) {
+            return false;
+        }
+
         if (item.baseType === DotCMSBaseTypesContentTypes.WIDGET) {
             return true;
         }

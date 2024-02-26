@@ -109,18 +109,20 @@
 
             <dot-ema-contentlet-tools
                 *ngIf="
-                    !rows.length &&
                     !!contentlet &&
                     !currentDevice &&
                     es.editor.page.canEdit &&
                     es.state === editorState.LOADED
                 "
+                [hide]="!!rows.length"
                 [contentlet]="contentlet"
                 (edit)="dialog.editContentlet($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
+                (moveStart)="moveContentlet($event)"
+                (moveStop)="resetDragProperties()"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
