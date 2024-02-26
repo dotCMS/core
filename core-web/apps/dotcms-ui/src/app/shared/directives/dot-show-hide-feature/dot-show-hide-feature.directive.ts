@@ -52,7 +52,6 @@ export class DotShowHideFeatureDirective implements OnInit {
         this._alternateTemplateRef = alternateTemplateRef;
     }
 
-
     get alternateTemplateRef(): TemplateRef<Component> {
         return this._alternateTemplateRef;
     }
@@ -64,20 +63,18 @@ export class DotShowHideFeatureDirective implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.dotPropertiesService
-            .getFeatureFlag(this._featureFlag)
-            .subscribe((isEnabled) => {
-                this.viewContainer.clear();
+        this.dotPropertiesService.getFeatureFlag(this._featureFlag).subscribe((isEnabled) => {
+            this.viewContainer.clear();
 
-                if (isEnabled) {
-                    this.viewContainer.createEmbeddedView(this.templateRef);
-                } else if (this.alternateTemplateRef) {
-                    this.viewContainer.createEmbeddedView(this.alternateTemplateRef);
-                } else {
-                    console.warn(
-                        `Feature flag "${this._featureFlag}" doesn't exist or is disabled and no alternate template was provided`
-                    );
-                }
-            });
+            if (isEnabled) {
+                this.viewContainer.createEmbeddedView(this.templateRef);
+            } else if (this.alternateTemplateRef) {
+                this.viewContainer.createEmbeddedView(this.alternateTemplateRef);
+            } else {
+                console.warn(
+                    `Feature flag "${this._featureFlag}" doesn't exist or is disabled and no alternate template was provided`
+                );
+            }
+        });
     }
 }

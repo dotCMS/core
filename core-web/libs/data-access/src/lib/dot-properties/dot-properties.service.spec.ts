@@ -15,8 +15,7 @@ const fakeResponse = {
     }
 };
 
-
-fdescribe('DotPropertiesService', () => {
+describe('DotPropertiesService', () => {
     let service: DotPropertiesService;
     let httpMock: HttpTestingController;
 
