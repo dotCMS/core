@@ -20,7 +20,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
   # Cancel any in-progress runs for the same branch/PR to prevent delays from changes during build
   # On master and other branches run will set as pending.  Any new builds requested will replace the pending build
-  
+
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   JVM_TEST_MAVEN_OPTS: "-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
@@ -301,8 +301,8 @@ jobs:
         with:
           name: "build-reports-test-cli - JDK ${{matrix.java.name}}"
           path: |
-            toole/dotcms-cli/**/target/failsafe-reports/*.xml
-            toole/dotcms-cli/**/target/jacoco-report/*.exec
+            tools/dotcms-cli/**/target/failsafe-reports/*.xml
+            tools/dotcms-cli/**/target/jacoco-report/*.exec
             target/build-report.json
             LICENSE
           retention-days: 2
@@ -473,7 +473,7 @@ jobs:
           path: /tmp/docker-image
       - name: Load Docker image from tar file
         run: docker load < /tmp/docker-image/image.tar
-        
+
       - name: Cache Node Binary
         id: cache-node-binary
         uses: actions/cache@v4
@@ -734,6 +734,19 @@ jobs:
         with:
           name: workflow-data
           path: ./workflow-data.json
+
+  linux-cli-deploy:
+    needs: [ prepare-report-data ]
+    if: ${{ github.event_name == 'push' &&  needs.prepare-report-data.outputs.aggregate_status == 'SUCCESS' }}
+    name: CLI Build and Deploy
+    uses: ./.github/workflows/cli-build-artifacts.yml
+    with:
+      skipTests: true
+      buildNativeImage: false
+      uploadArtifacts: true
+      branch: ${{ github.ref_name }}
+    secrets: inherit
+
   final-status:
     name: Final Status
     needs: prepare-report-data

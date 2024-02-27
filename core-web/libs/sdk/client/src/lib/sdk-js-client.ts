@@ -51,6 +51,12 @@ type PageApiOptions = {
      */
     siteId?: string;
     /**
+     * The mode of the page you want to retrieve. If not provided will use the default mode of the site.
+     *
+     * @type {number}
+     */
+    mode?: string;
+    /**
      * The language id of the page you want to retrieve. If not provided will use the default language of the site.
      *
      * @type {number}
@@ -190,6 +196,8 @@ export class DotCmsClient {
 
                 if (key === 'personaId') {
                     queryParamsObj['com.dotmarketing.persona.id'] = String(value);
+                } else if (key === 'mode' && value) {
+                    queryParamsObj['mode'] = String(value);
                 } else {
                     queryParamsObj[key] = String(value);
                 }
