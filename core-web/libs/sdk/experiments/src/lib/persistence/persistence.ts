@@ -4,7 +4,7 @@ import {
     EXPERIMENT_DB_NAME,
     EXPERIMENT_DB_STORE_NAME
 } from '../constants';
-import { IsUserIncludedApiResponse } from '../models';
+import { AssignedExperiments, IsUserIncludedApiResponse } from '../models';
 
 /**
  * Creates or opens a IndexedDB database with the specified version.
@@ -41,12 +41,10 @@ const openDB = (): Promise<IDBDatabase> => {
  * Saves the provided data to indexDB.
  *
  * @async
- * @param {IsUserIncludedApiResponse['entity']} data - The data to be saved.
+ * @param {AssignedExperiments} data - The data to be saved.
  * @returns {Promise<any>} - The result of the save operation.
  */
-export const persistData = async (
-    data: IsUserIncludedApiResponse['entity']
-): Promise<IDBValidKey> => {
+export const persistData = async (data: AssignedExperiments): Promise<IDBValidKey> => {
     const db = await openDB();
 
     return await new Promise((resolve, reject) => {

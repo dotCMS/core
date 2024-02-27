@@ -1,9 +1,10 @@
+import { EXPERIMENT_WINDOWS_KEY } from './constants';
 import { SdkExperiments } from './sdk-experiments';
 import { getScriptDataAttributes } from './utils/utils';
 
 declare global {
     interface Window {
-        dotcmsExperiment: never;
+        [EXPERIMENT_WINDOWS_KEY]: never;
     }
 }
 
@@ -14,9 +15,9 @@ jest.mock('./utils/utils', () => ({
 
 describe('IIFE Execution', () => {
     beforeEach(() => {
-        delete window.dotcmsExperiment;
+        delete window[EXPERIMENT_WINDOWS_KEY];
     });
-    it('should call getScriptDataAttributes and set window.experiment', () => {
+    it('should call getScriptDataAttributes and set window[EXPERIMENT_WINDOWS_KEY]', () => {
         const fakeInstance = {} as SdkExperiments;
 
         const getInstanceMock = jest
@@ -30,7 +31,7 @@ describe('IIFE Execution', () => {
         expect(getInstanceMock).toHaveBeenCalledWith({ server: 'http://localhost' });
         expect(getInstanceMock).toHaveBeenCalled();
 
-        expect(window.dotcmsExperiment).toBeDefined();
-        expect(window.dotcmsExperiment).toEqual(fakeInstance);
+        expect(window[EXPERIMENT_WINDOWS_KEY]).toBeDefined();
+        expect(window[EXPERIMENT_WINDOWS_KEY]).toEqual(fakeInstance);
     });
 });

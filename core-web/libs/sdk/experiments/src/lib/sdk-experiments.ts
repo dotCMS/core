@@ -113,7 +113,8 @@ export class SdkExperiments {
      */
     private async setExperimentData() {
         try {
-            this.persistExperiments(await this.getExperimentsFromServer());
+            const experimentAssignedToUser = await this.getExperimentsFromServer();
+            this.persistExperiments(experimentAssignedToUser);
         } catch (e) {
             throw Error(`Error persisting experiments to indexDB, ${e}`);
         }
