@@ -161,3 +161,17 @@ export function sanitizeURL(url: string): string {
         })
         .join('/');
 }
+
+/**
+ * Get the personalization for the contentlet
+ *
+ * @param {Record<string, string>} persona
+ * @return {*}
+ */
+export const getPersonalization = (persona: Record<string, string>) => {
+    if (!persona || (!persona.contentType && !persona.keyTag)) {
+        return `dot:default`;
+    }
+
+    return `dot:${persona.contentType}:${persona.keyTag}`;
+};

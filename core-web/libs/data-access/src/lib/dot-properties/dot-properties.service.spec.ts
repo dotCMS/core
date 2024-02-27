@@ -96,7 +96,7 @@ describe('DotPropertiesService', () => {
         const apiResponse = {
             entity: {
                 [FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE]: 'true',
-                [FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]: 'NOT_FOUND'
+                [FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]: FEATURE_FLAG_NOT_FOUND
             }
         };
 
@@ -108,6 +108,23 @@ describe('DotPropertiesService', () => {
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get feature flag value as true when not found', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
+        const apiResponse = {
+            entity: {
+                [FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS]: 'NOT_FOUND'
+            }
+        };
+
+        service.getFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toEqual(true);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
         expect(req.request.method).toBe('GET');
         req.flush(apiResponse);
     });
