@@ -735,18 +735,6 @@ jobs:
           name: workflow-data
           path: ./workflow-data.json
 
-  linux-cli-deploy:
-    needs: [ prepare-report-data ]
-    if: ${{ github.event_name == 'push' &&  needs.prepare-report-data.outputs.aggregate_status == 'SUCCESS' }}
-    name: CLI Build and Deploy
-    uses: ./.github/workflows/cli-build-artifacts.yml
-    with:
-      skipTests: true
-      buildNativeImage: false
-      uploadArtifacts: true
-      branch: ${{ github.ref_name }}
-    secrets: inherit
-
   final-status:
     name: Final Status
     needs: prepare-report-data
