@@ -29,6 +29,7 @@ export interface ContainerPayload {
     identifier: string;
     contentletsId?: string[];
     maxContentlets: number;
+    variantId: string;
     uuid: string;
 }
 
@@ -37,6 +38,7 @@ export interface ContentletPayload {
     inode: string;
     title: string;
     contentType: string;
+    onNumberOfPages?: number;
 }
 
 export interface SetUrlPayload {

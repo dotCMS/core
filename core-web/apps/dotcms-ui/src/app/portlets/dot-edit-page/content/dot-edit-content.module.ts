@@ -24,7 +24,7 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotCopyContentModalService, DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
@@ -35,7 +35,6 @@ import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-s
 import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
-import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
