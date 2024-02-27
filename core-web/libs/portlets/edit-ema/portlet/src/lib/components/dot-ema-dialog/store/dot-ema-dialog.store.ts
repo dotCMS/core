@@ -107,6 +107,21 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
+    readonly loadingIframe = this.updater((state, title: string) => {
+        return {
+            ...state,
+            header: title,
+            status: DialogStatus.LOADING,
+            url: '',
+            type: 'content'
+        };
+    });
+
+    /**
+     * This method is called when the user clicks on the edit button
+     *
+     * @memberof DotEmaDialogStore
+     */
     readonly editContentlet = this.updater((state, payload: { inode: string; title: string }) => {
         return {
             ...state,

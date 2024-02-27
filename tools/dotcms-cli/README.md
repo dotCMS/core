@@ -1,7 +1,19 @@
 # dotCMS CLI 
-The dotCMS CLI is a command-line tool that you can use to populate and modify your dotCMS instances from a command shell.
+The **dotCMS CLI**, sometimes shortened to **dotCLI**, is a standalone tool for interacting with a dotCMS instance through a command shell, allowing a wide array of automated operations and behaviors.
 
-## Quick start
+## Getting Started
+
+### Installation
+
+### NPM
+
+The simplest and most recommended way to get the dotCMS CLI is from its npm package:
+
+```shell script
+npm install -g @dotcms/cli
+```
+### Manual JAR Download
+
 1. Download the CLI: The dotCMS CLI is delivered as an uber jar that can be downloaded from [here](https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/).
  Once downloaded, you just need to run it with: 
 
