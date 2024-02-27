@@ -13,7 +13,6 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
-import picocli.CommandLine.ExitCode;
 
 /**
  * A generic pull handler that can be used to pull any type of content. When using this handler, the

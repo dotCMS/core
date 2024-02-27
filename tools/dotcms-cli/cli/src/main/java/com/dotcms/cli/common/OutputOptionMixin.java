@@ -6,7 +6,6 @@ import static org.apache.commons.lang3.StringUtils.abbreviate;
 
 import com.dotcms.cli.exception.ExceptionHandler;
 import com.dotcms.cli.exception.ForceSilentExitException;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.quarkus.arc.Arc;
 import io.quarkus.devtools.messagewriter.MessageWriter;
 import io.quarkus.logging.Log;

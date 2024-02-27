@@ -89,6 +89,13 @@ public abstract class PullHandler<T> {
         }
     }
 
+    /**
+     * Handles the exceptions that occurred during the pull process.
+     *
+     * @param errors The list of exceptions that occurred during any process.
+     * @param output The output option mixin for providing output messages.
+     * @return The exit code for the pull process.
+     */
     protected int handleExceptions(final List<Exception> errors, final OutputOptionMixin output) {
         int exitCode = ExitCode.OK;
         if (!errors.isEmpty()) {
