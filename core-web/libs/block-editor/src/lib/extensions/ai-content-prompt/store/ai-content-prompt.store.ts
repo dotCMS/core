@@ -1,9 +1,9 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -15,23 +15,15 @@ export interface AiContentPromptState {
     acceptContent: boolean;
     deleteContent: boolean;
     status: ComponentStatus;
+    error: string;
 }
 
 @Injectable({
     providedIn: 'root'
 })
 export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
-    constructor(private dotAiService: DotAiService) {
-        super({
-            prompt: '',
-            content: '',
-            acceptContent: false,
-            deleteContent: false,
-            status: ComponentStatus.INIT
-        });
-    }
-
     //Selectors
+    readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
     readonly prompt$ = this.select((state) => state.prompt);
     readonly content$ = this.select((state) => state.content);
     readonly deleteContent$ = this.select((state) => state.deleteContent);
@@ -60,13 +52,18 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
                 this.patchState({ status: ComponentStatus.LOADING, prompt });
 
                 return this.dotAiService.generateContent(prompt).pipe(
-                    tap((content) => this.patchState({ status: ComponentStatus.LOADED, content })),
-                    catchError(() => {
-                        //TODO: Notify to handle error in the UI.
-                        this.patchState({ status: ComponentStatus.LOADED, content: '' });
-
-                        return of(null);
-                    })
+                    tapResponse(
+                        (content) => {
+                            this.patchState({ status: ComponentStatus.LOADED, content, error: '' });
+                        },
+                        (error: string) => {
+                            this.patchState({
+                                status: ComponentStatus.LOADED,
+                                content: '',
+                                error: error
+                            });
+                        }
+                    )
                 );
             })
         );
@@ -86,4 +83,20 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
             tap(([_, { prompt }]) => this.generateContent(of(prompt)))
         );
     });
+
+    readonly cleanError = this.updater((state) => ({
+        ...state,
+        error: ''
+    }));
+
+    constructor(private dotAiService: DotAiService) {
+        super({
+            prompt: '',
+            content: '',
+            acceptContent: false,
+            deleteContent: false,
+            status: ComponentStatus.INIT,
+            error: ''
+        });
+    }
 }

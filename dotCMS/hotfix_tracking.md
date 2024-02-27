@@ -64,3 +64,4 @@ This maintenance release includes the following code fixes:
 57. https://github.com/dotCMS/core/issues/27051 : Don't save loading nodes in the block editor. #27051
 58. https://github.com/dotCMS/core/issues/26505 : [UI] - Make AI Image Block Production-ready #26505
 59. https://github.com/dotCMS/core/issues/27155 : Endpoint Change for AI Plugin Detection in dotCMS #27155
+60. https://github.com/dotCMS/core/issues/26853 : [UI] Implement Handle Errors from endpoint #26853

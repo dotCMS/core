@@ -3,6 +3,8 @@ import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
@@ -44,8 +46,9 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         AssetFormModule,
         DotFieldRequiredDirective,
         UploadPlaceholderComponent,
-        AIImagePromptComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        ConfirmDialogModule,
+        AIImagePromptComponent
     ],
     declarations: [
         EditorDirective,
@@ -69,6 +72,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         StringUtils,
         DotAiService,
         DotMessageService,
+        ConfirmationService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,
@@ -85,8 +89,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         BubbleFormComponent,
         DotBlockEditorComponent,
         AIContentPromptComponent,
-        AIContentActionsComponent,
-        AIImagePromptComponent
+        AIContentActionsComponent
     ]
 })
 export class BlockEditorModule {}

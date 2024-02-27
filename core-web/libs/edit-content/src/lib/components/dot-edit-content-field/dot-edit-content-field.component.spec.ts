@@ -1,5 +1,5 @@
 import { describe } from '@jest/globals';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -8,6 +8,7 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 import { FIELD_TYPES, FIELD_TYPES_COMPONENTS } from './utils';
+import { ConfirmationService } from 'primeng/api';
 
 import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
@@ -52,7 +53,8 @@ describe.each([...FIELDS_MOCK])('DotFieldComponent', (fieldMock) => {
                 {
                     provide: DotMessageService,
                     useValue: dotMessageServiceMock
-                }
+                },
+                mockProvider(ConfirmationService)
             ]
         });
     });
