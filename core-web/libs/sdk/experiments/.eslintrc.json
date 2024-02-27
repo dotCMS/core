@@ -21,7 +21,7 @@
                 "@nx/dependency-checks": [
                     "error",
                     {
-                        "ignoredFiles": ["{projectRoot}/vite.config.{js,ts,mjs,mts}"]
+                        "ignoredFiles": ["{projectRoot}/rollup.config.{js,ts,mjs,mts}"]
                     }
                 ]
             }

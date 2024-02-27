@@ -1,4 +1,4 @@
-export const EXPERIMENT_SCRIPT_FILE_NAME = 'dot-experiments.iife';
+export const EXPERIMENT_SCRIPT_FILE_NAME = 'standalone.cjs.js';
 
 export const EXPERIMENT_SCRIPT_DATA_PREFIX = 'data-experiment-';
 

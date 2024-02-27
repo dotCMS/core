@@ -157,7 +157,6 @@
         "@nx/react": "18.0.4",
         "@nx/rollup": "18.0.4",
         "@nx/storybook": "18.0.4",
-        "@nx/vite": "18.0.4",
         "@nx/web": "18.0.4",
         "@nx/workspace": "18.0.4",
         "@nxext/stencil": "17.2.2",
@@ -261,8 +260,6 @@
         "tslint-angular": "^3.0.3",
         "typedoc": "^0.25.4",
         "typescript": "5.3.3",
-        "vite": "~5.0.0",
-        "vite-plugin-dts": "~2.3.0",
         "webpack": "^5.64.0",
         "webpack-bundle-analyzer": "^4.5.0"
     }

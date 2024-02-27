@@ -5,13 +5,16 @@
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nx/vite:build",
+            "executor": "@nx/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/sdk/experiments",
-                "main": "libs/sdk/experiments/src/index.ts",
+                "main": "libs/sdk/experiments/src/lib/standalone.ts",
                 "tsConfig": "libs/sdk/experiments/tsconfig.lib.json",
-                "assets": ["libs/sdk/experiments/*.md"]
+                "assets": [],
+                "project": "libs/sdk/experiments/package.json",
+                "compiler": "swc",
+                "format": ["cjs", "esm"]
             }
         },
         "publish": {
