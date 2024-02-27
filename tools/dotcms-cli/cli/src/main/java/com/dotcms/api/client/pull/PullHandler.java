@@ -8,8 +8,10 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.pull.PullOptions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.PostConstruct;
+import picocli.CommandLine.ExitCode;
 
 /**
  * This abstract class represents a PullHandler, which is responsible for pulling elements of type T.
@@ -49,11 +51,11 @@ public abstract class PullHandler<T> {
      * @param contents    the list of T elements to pull
      * @param pullOptions the options for the pull operation
      * @param output      the output settings for the pulled elements
-     * @return true if the pull operation is successful, false otherwise
+     * @return the exit code for the pull operation
      * @throws ExecutionException   if an error occurs during the execution of the pull operation
      * @throws InterruptedException if the pull operation is interrupted
      */
-    public abstract boolean pull(List<T> contents,
+    public abstract int pull(List<T> contents,
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException;
 
@@ -85,6 +87,28 @@ public abstract class PullHandler<T> {
 
             output.info(String.format("%n%n"));
         }
+    }
+
+    protected int handleExceptions(final List<Exception> errors, final OutputOptionMixin output) {
+        int exitCode = ExitCode.OK;
+        if (!errors.isEmpty()) {
+            output.info(
+                    String.format(
+                            "%n%nFound [@|bold,red %s|@] errors during the pull process:",
+                            errors.size()
+                    )
+            );
+            final ListIterator<Exception> iterator = errors.listIterator();
+            //Lets save the first error for the exit code we assume it is the most relevant one
+            while (iterator.hasNext()) {
+                if(!iterator.hasPrevious()){
+                      exitCode = output.handleCommandException(iterator.next());
+                } else {
+                    output.handleCommandException(iterator.next());
+                }
+            }
+        }
+        return exitCode;
     }
 
 }

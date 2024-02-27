@@ -5,6 +5,8 @@ import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
 import static org.apache.commons.lang3.StringUtils.abbreviate;
 
 import com.dotcms.cli.exception.ExceptionHandler;
+import com.dotcms.cli.exception.ForceSilentExitException;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.quarkus.arc.Arc;
 import io.quarkus.devtools.messagewriter.MessageWriter;
 import io.quarkus.logging.Log;
@@ -171,6 +173,11 @@ public class OutputOptionMixin implements MessageWriter {
         return exceptionHandler;
     }
 
+/**
+     * This method is used to handle exceptions that occur during command execution
+     * @param ex The exception that was thrown
+     * @return The exit code
+     */
     public int handleCommandException(Exception ex){
         return handleCommandException(ex, null, isShowErrors());
     }
@@ -207,6 +214,11 @@ public class OutputOptionMixin implements MessageWriter {
         //Handle ExecutionException
 
         final Exception unwrappedEx = exHandler.unwrap(ex);
+
+        if (unwrappedEx instanceof ForceSilentExitException) {
+            //We don't want to print the stack trace if the exception is a ForceExitException
+            return ((ForceSilentExitException) unwrappedEx).getExitCode();
+        }
 
         //Extract the proper exception and remove all server side noise
         final Exception handledEx = exHandler.handle(unwrappedEx);

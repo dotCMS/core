@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
+import picocli.CommandLine.ExitCode;
 
 /**
  * A generic pull handler that can be used to pull any type of content. When using this handler, the
@@ -46,11 +47,9 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
      */
     public abstract String fileName(T content);
 
-    public boolean pull(List<T> contents,
+    public int pull(List<T> contents,
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException {
-
-        var failed = false;
 
         output.info(startPullingHeader(contents));
 
@@ -100,12 +99,7 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
 
         var errors = pullFuture.get();
 
-        printErrors(errors, output);
-        if (!errors.isEmpty()) {
-            failed = true;
-        }
-
-        return failed;
+        return handleExceptions(errors, output);
     }
 
 }

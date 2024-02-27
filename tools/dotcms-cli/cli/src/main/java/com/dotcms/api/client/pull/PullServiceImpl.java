@@ -3,6 +3,7 @@ package com.dotcms.api.client.pull;
 import com.dotcms.api.client.pull.exception.PullException;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.exception.ForceSilentExitException;
 import com.dotcms.model.pull.PullOptions;
 import io.quarkus.arc.DefaultBean;
 import java.util.List;
@@ -13,6 +14,7 @@ import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
+import picocli.CommandLine.ExitCode;
 
 /**
  * PullServiceImpl is a class that implements the PullService interface. It provides methods for
@@ -185,7 +187,7 @@ public class PullServiceImpl implements PullService {
         var maxRetryAttempts = pullOptions.maxRetryAttempts();
         var failed = false;
         var retryAttempts = 0;
-
+        var errorCode = ExitCode.OK;
         do {
 
             if (retryAttempts > 0) {
@@ -198,7 +200,7 @@ public class PullServiceImpl implements PullService {
                 );
             }
 
-            var foundErrors = performPull(
+            var e = performPull(
                     contents,
                     pullOptions,
                     output,
@@ -206,11 +208,16 @@ public class PullServiceImpl implements PullService {
                     retryAttempts,
                     maxRetryAttempts
             );
-            if (foundErrors) {
+            errorCode = Math.max(errorCode, e);
+            if (errorCode > ExitCode.OK) {
                 failed = true;
             }
 
         } while (failed && retryAttempts++ < maxRetryAttempts);
+        if(errorCode > ExitCode.OK){
+            //All exceptions are already handled and logged, so we can just throw a generic exception to force exit
+            throw new ForceSilentExitException(errorCode);
+        }
     }
 
     /**
@@ -226,31 +233,26 @@ public class PullServiceImpl implements PullService {
      * @return True if errors were found during the pull process, false otherwise.
      * @throws PullException        If an error occurs while pulling the contents.
      */
-    private <T> boolean performPull(List<T> contents, final PullOptions pullOptions,
+    private <T> int performPull(List<T> contents, final PullOptions pullOptions,
             final OutputOptionMixin output, final PullHandler<T> pullHandler,
             int retryAttempts, int maxRetryAttempts) {
 
         try {
-
             return pullHandler.pull(
                     contents,
                     pullOptions,
                     output
             );
-
         } catch (InterruptedException | ExecutionException e) {
-
-            var errorMessage = String.format("Error occurred while pulling contents: [%s].",
-                    e.getMessage());
+            var errorMessage = String.format("Error occurred while pulling contents: [%s].", e.getMessage());
             logger.error(errorMessage, e);
+            Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
         } catch (Exception e) { // Fail fast
-
             if (retryAttempts + 1 <= maxRetryAttempts) {
                 output.info("\n\nFound errors during the pull process:");
                 output.error(e.getMessage());
-
-                return true;
+                return ExitCode.SOFTWARE;
             } else {
                 throw e;
             }

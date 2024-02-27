@@ -16,7 +16,6 @@ import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -94,7 +93,7 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
 
     @Override
     @ActivateRequestContext
-    public boolean pull(List<FileTraverseResult> contents,
+    public int pull(List<FileTraverseResult> contents,
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException {
 
@@ -105,7 +104,8 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
 
         //Inform the user about any errors that could have occurred during the traversal process
         final List<FileTraverseResult> failed = partitioned.get(true);
-        printErrors(failed.stream().map(FileTraverseResult::exceptions).flatMap(List::stream).collect(Collectors.toList()), output);
+        //Save the error code for the traversal process. This will be used to determine the exit code of the command if greater than 0 (zero)
+        int errorCode = handleExceptions(failed.stream().map(FileTraverseResult::exceptions).flatMap(List::stream).collect(Collectors.toList()), output);
 
         //The second list will contain the results that don't have exceptions
         //We assume that the traversal process was successful for these results
@@ -121,9 +121,6 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                     getOrDefault(INCLUDE_EMPTY_FOLDERS, false);
         }
 
-        //Did we find any errors during the traversal process?
-        var fail = !failed.isEmpty();
-
         output.info(startPullingHeader(success));
 
         for (final var content : success) {
@@ -136,13 +133,14 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                     includeEmptyFolders
             );
 
-            printErrors(errors, output);
-
-            fail = fail || !errors.isEmpty();
+            final int e = handleExceptions(errors, output);
+            //This should always keep the highest error code
+            // Meaning that if no errors occurred, the error code will be 0
+            errorCode = Math.max(e, errorCode);
 
         }
 
-        return fail;
+        return errorCode;
     }
 
     /**
