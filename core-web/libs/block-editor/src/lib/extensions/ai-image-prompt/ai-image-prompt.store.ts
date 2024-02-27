@@ -120,6 +120,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                         },
                         (error: string) => {
                             this.patchState({ status: ComponentStatus.IDLE, error });
+
                             return of(null);
                         }
                     )

@@ -16,7 +16,6 @@ import { ConfirmationService } from 'primeng/api';
 import { filter, takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';

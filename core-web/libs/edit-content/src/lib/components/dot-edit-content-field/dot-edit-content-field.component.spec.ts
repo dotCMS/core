@@ -4,11 +4,12 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 import { FIELD_TYPES, FIELD_TYPES_COMPONENTS } from './utils';
-import { ConfirmationService } from 'primeng/api';
 
 import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
