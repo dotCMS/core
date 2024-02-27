@@ -36,8 +36,9 @@ export class EmaPageDropzoneComponent {
         top: '0'
     };
 
-    constructor(private readonly el: ElementRef) {}
-
+    constructor(private readonly el: ElementRef) {
+        console.log("EmaPageDropzoneComponent");
+    }
 
     /**
      * Emit place event and reset pointer position
@@ -47,6 +48,7 @@ export class EmaPageDropzoneComponent {
      */
     onDrop(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
+
         const data: ClientData = JSON.parse(target.dataset.payload);
         const isTop = this.isTop(event);
 

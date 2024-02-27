@@ -37,7 +37,7 @@ export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
                             y: containerRect.y - rowRect.top,
                             width: containerRect.width,
                             height: containerRect.height,
-                            payload: container.dataset?.['content'], //TODO: Change this
+                            payload: container.dataset?.['content'], //TODO: Change this later
                             contentlets: contentlets.map((contentlet) => {
                                 const contentletRect = contentlet.getBoundingClientRect();
 
@@ -46,17 +46,17 @@ export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
                                     y: contentletRect.y - containerRect.y,
                                     width: contentletRect.width,
                                     height: contentletRect.height,
-                                    payload: {
-                                        container:
-                                            container.dataset?.['content'] ??
-                                            getContainerData(container),
+                                    payload: JSON.stringify({
+                                        container: contentlet.dataset?.['dotContainer']
+                                            ? JSON.parse(contentlet.dataset?.['dotContainer'])
+                                            : getContainerData(contentlet),
                                         contentlet: {
                                             identifier: contentlet.dataset?.['dotIdentifier'],
                                             title: contentlet.dataset?.['dotTitle'],
                                             inode: contentlet.dataset?.['dotInode'],
                                             contentType: contentlet.dataset?.['dotType']
                                         }
-                                    }
+                                    })
                                 };
                             })
                         };
@@ -85,19 +85,3 @@ export function getContainerData(element: Element) {
         return null;
     }
 }
-
-// export function getContentletPayload(element){
-//     const target = event.target as HTMLElement;
-
-//     return {
-//         container:
-//             JSON.parse(target.dataset?.['dotContainer'] || '{}') ??
-//             getContainerData(element),
-//         contentlet: {
-//             identifier: target.dataset?.['dotIdentifier'],
-//             title: target.dataset?.['dotTitle'],
-//             inode: target.dataset?.['dotInode'],
-//             contentType: target.dataset?.['dotType']
-//         }
-//     };
-// }
