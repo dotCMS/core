@@ -1,11 +1,19 @@
-export interface ActionPayload {
-    container: ContainerPayload;
+import { DotPageApiParams } from '../services/dot-page-api.service';
+
+export interface ClientData {
     contentlet?: ContentletPayload;
+    container: ContainerPayload;
+}
+
+export interface PositionPayload extends ClientData {
+    position?: 'before' | 'after';
+}
+
+export interface ActionPayload extends PositionPayload {
     language_id: string;
     pageContainers: PageContainer[];
     pageId: string;
     personaTag?: string;
-    position?: 'before' | 'after';
     newContentletId?: string;
 }
 
@@ -19,22 +27,27 @@ export interface PageContainer {
 export interface ContainerPayload {
     acceptTypes: string;
     identifier: string;
-    contentletsId: string[];
+    contentletsId?: string[];
     maxContentlets: number;
+    variantId: string;
     uuid: string;
 }
 
-interface ContentletPayload {
+export interface ContentletPayload {
     identifier: string;
     inode: string;
     title: string;
+    contentType: string;
+    onNumberOfPages?: number;
 }
+
 export interface SetUrlPayload {
     url: string;
 }
 
 export interface SavePagePayload {
     pageContainers: PageContainer[];
+    params?: DotPageApiParams;
     pageId: string;
     whenSaved?: () => void;
 }

@@ -5,10 +5,11 @@
   DOT_SERVICE_YML="dot-service.yml"
   RUN_JAVA_VERSION=1.3.8
 
-SERVICES_FILE_CONTENT='
-- name: "default"
+SERVICES_FILE_CONTENT="
+- name: \"default\"
   active: true
-'
+  url: \"$DOT_API_URL\"
+"
 
 _make_home(){
   if [ ! -d "$DOT_CLI_HOME" ]; then
@@ -52,7 +53,6 @@ _get_run_java_script(){
 }
 
 _setup_CLI(){
-    API_URL=$1
     #Lets create the services file dot-service.yml
     #the services yml is used to store the server configurations or profiles if you Will
     DOT_SERVICES_HOME=$HOME/.dotcms/
@@ -69,13 +69,7 @@ _setup_CLI(){
     # Now generate the file
     echo "$SERVICES_FILE_CONTENT" >> "$SERVICE_FILE";
 
-    #Tell the CLI to use the demo server through the profile "default"
-    #The suffix value used to create the environment value must match the name on dot-service.yml file in this case we are using default
-    #dotcms.client.servers.default=https://demo.dotcms.com/api
-
-    export DOTCMS_CLIENT_SERVERS_DEFAULT=$API_URL
     export QUARKUS_LOG_FILE_PATH=$DOT_CLI_HOME"dotcms-cli.log"
-
 }
 
 print_log(){
@@ -105,12 +99,11 @@ _run_cli_push(){
 install_cli(){
     cli_release_download_url=$1
     force_download=$2
-    dotApiURL=$3
 
     _make_home
     _get_CLI "$cli_release_download_url" "$force_download"
     _get_run_java_script "$force_download"
-    _setup_CLI "$dotApiURL"
+    _setup_CLI
 }
 
 run_cli_push(){

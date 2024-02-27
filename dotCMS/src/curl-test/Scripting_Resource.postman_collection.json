@@ -16,7 +16,18 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);",
+									"",
+									"// Test 1: File Name Uniqueness",
+									"pm.test(\"File is valid\", function () {",
+									"  pm.response.to.not.have.status(500);",
+									"  pm.response.to.not.have.jsonBody({",
+									"    // Example error message for duplicate file name",
+									"    \"message\": \"File already exists in the selected Site or folder\\nList of non valid fields\\nBADTYPE: hostFolder/Host Or Folder\\n\\n\"",
+									"  });",
+									"});",
+									"",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -110,7 +121,9 @@
 									"    pm.expect($(\"#title\").text()).to.be.eql(\"fear.jpg\");",
 									"    pm.expect($(\"#path\").text()).not.equal(null);",
 									"",
-									"});"
+									"});",
+									"",
+									""
 								],
 								"type": "text/javascript"
 							}

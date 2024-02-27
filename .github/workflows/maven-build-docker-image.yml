@@ -65,9 +65,12 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
       - name: Checkout core
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+
+      - name: Cleanup
+        uses: ./.github/actions/cleanup-runner
 
       - name: Restore Docker Context
         id: restore-docker-context
@@ -123,10 +126,13 @@ jobs:
       - name: Set Common Vars
         id: set-common-vars
         run: |
-          build_properties=${DOCKER_BUILD_CONTEXT}/context/maven/dotserver/tomcat-9.0.60/webapps/ROOT/WEB-INF/classes/build.properties
-          if [[ ! -f ${build_properties} ]]; then
+          build_properties_path=${DOCKER_BUILD_CONTEXT}/context/maven/dotserver/tomcat-*/webapps/ROOT/WEB-INF/classes/build.properties
+          build_properties=''
+          if ! ls ${build_properties_path} 1> /dev/null 2>&1; then
             echo 'Could not find build.properties, aborting'
             exit 1
+          else
+            build_properties=$(eval find "$build_properties_path" -print)
           fi
           
           echo 'Build properties:'

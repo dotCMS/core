@@ -4,6 +4,7 @@ import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
 import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
 import static org.apache.commons.lang3.StringUtils.abbreviate;
 
+import com.dotcms.cli.exception.ExceptionHandler;
 import io.quarkus.arc.Arc;
 import io.quarkus.devtools.messagewriter.MessageWriter;
 import io.quarkus.logging.Log;
@@ -14,6 +15,7 @@ import java.util.List;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.ColorScheme;
 import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.ParameterException;
 
 public class OutputOptionMixin implements MessageWriter {
 
@@ -170,17 +172,30 @@ public class OutputOptionMixin implements MessageWriter {
     }
 
     public int handleCommandException(Exception ex, String message){
-        return handleCommandException(ex, message, !isShowErrors());
+        return handleCommandException(ex, message, isShowErrors());
     }
 
-    public int handleCommandException(Exception ex, String message, boolean showFullDetailsBanner) {
+    /**
+     * This method allows me to explicitly set the showErrors flag
+     * in certain context like when an exception is thrown from an ExecutionHandler the showErrors flag is set yet in our mixing
+     * This is because the ExecutionHandler run too early and the command hasn't been prepared yet
+     * Therefore, We need to be able to set it explicitly to remain consistent with the rest of the code
+     * @param ex The exception that was thrown
+     * @param message The message to display
+     * @param showErrors The flag to show errors
+     * @return The exit code
+     */
+    public int handleCommandException(Exception ex, String message, boolean showErrors) {
 
         final ExceptionHandler exHandler = getExceptionHandler();
 
-        if (ex instanceof CommandLine.ParameterException) {
+        // Handle ParameterException
+        if (ex instanceof ParameterException) {
             CommandLine.UnmatchedArgumentException.printSuggestions(
                     (CommandLine.ParameterException) ex, out());
         }
+
+        //Handle ExecutionException
 
         final Exception unwrappedEx = exHandler.unwrap(ex);
 
@@ -189,14 +204,15 @@ public class OutputOptionMixin implements MessageWriter {
         //Short error message
         message = String.format("%s %s  ", message,
                 handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
-                        : "No error message was provided");
+                        :  "An exception " + handledEx.getClass().getSimpleName() + " Occurred With no error message provided.");
         error(message);
         Log.error(message, ex);
         //Won't print unless the "showErrors" flag is on
-        printStackTrace(unwrappedEx);
         //We show the show message notice only if we're not already showing errors
-        if(showFullDetailsBanner) {
+        if(!showErrors) {
             info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
+        } else {
+            err().println(colorScheme().stackTraceText(unwrappedEx));
         }
 
         final CommandLine cmd = mixee.commandLine();

@@ -1082,4 +1082,36 @@ public class FileMetadataAPITest {
         assertFalse(emptyMapMetadata.isImage());
 
     }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link Contentlet#get(String)}</li>
+     *     <li><b>Given Scenario: </b>Create a test PDF file, then update the Metadata Cache
+     *     entry for this specific file with an empty Map, so that dotCMS attempts to define the
+     *     {@code editableAsText} attribute.</li>
+     *     <li><b>Expected Result: </b>When calling the {@code Contentlet.get(FileAssetAPI
+     *     .META_DATA_FIELD)} method, dotCMS will get an empty Map from cache and won't be able
+     *     to define the {@code editableAsText} attribute. This test allows us to simulate
+     *     situations in which a Contentlet is missing its binary file, so no metadata is
+     *     generated.</li>
+     * </ul>
+     */
+    @Test
+    public void calculateEditableAsTextOnlyWhenMetadataIsPresent() throws Exception {
+        prepareIfNecessary();
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF); // fileAsset
+        CacheLocator.getMetadataCache().addMetadataMap(fileAssetContent.getInode() + ":" + FileAssetAPI.BINARY_FIELD, new HashMap<>());
+        final Object metadataMap = fileAssetContent.get(FileAssetAPI.META_DATA_FIELD);
+
+        // ╔════════════════════════╗
+        // ║  Executing Assertions  ║
+        // ╚════════════════════════╝
+        assertNotNull("Metadata map cannot be null", metadataMap);
+        assertTrue("Metadata must be an instance of Map", metadataMap instanceof Map);
+        assertTrue("Metadata map must be empty as no attributes were generated", ((Map<String, Object>) metadataMap).isEmpty());
+    }
+
 }

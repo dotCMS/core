@@ -46,6 +46,7 @@
     background-color: $white;
     cursor: grab;
     margin: 0 $spacing-3;
+    z-index: 1;
 }
 
 dot-icon {

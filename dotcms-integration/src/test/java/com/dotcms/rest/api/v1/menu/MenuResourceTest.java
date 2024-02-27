@@ -40,7 +40,7 @@ public class MenuResourceTest extends IntegrationTestBase {
 
         IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.systemUser();
-        final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE;
+        final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME;
         try {
             // Using the provided Language Variable Content Type
             languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(contentTypeVelocityVarName);

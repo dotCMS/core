@@ -2,6 +2,7 @@ export * from './lib/dot-icon/dot-icon.module';
 export * from './lib/dot-spinner/dot-spinner.module';
 
 // Components
+export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/components/dot-drop-zone/dot-drop-zone.component';
 export * from './lib/dot-icon/dot-icon.component';
@@ -31,6 +32,7 @@ export * from './lib/directives/dot-avatar/dot-avatar.directive';
 
 // Services
 export * from './lib/services/clipboard/ClipboardUtil';
+export * from './lib/services/dot-copy-content-modal/dot-copy-content-modal.service';
 
 // Pipes
 export * from './lib/pipes/dot-relative-date/dot-relative-date.pipe';

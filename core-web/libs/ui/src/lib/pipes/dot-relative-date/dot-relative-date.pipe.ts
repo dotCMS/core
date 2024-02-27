@@ -11,8 +11,8 @@ export class DotRelativeDatePipe implements PipeTransform {
 
     transform(
         time: string | number = new Date().getTime(),
-        format: string = 'MM/dd/yyyy',
-        daysLimit: number = 7
+        format = 'MM/dd/yyyy',
+        daysLimit = 7
     ): string {
         const isMilliseconds = !isNaN(Number(time));
 

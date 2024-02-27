@@ -136,7 +136,7 @@ public class HostFactoryImpl implements HostFactory {
 
     // query that Exact matches should be at the top of the search results.
     private static final String PRIORITIZE_EXACT_MATCHES =
-            "ORDER BY length(%s) ";
+            "ORDER BY length(%s),  " + POSTGRES_SITENAME_COLUMN;
 
     /**
      * Default class constructor.
@@ -791,6 +791,18 @@ public class HostFactoryImpl implements HostFactory {
             hostList.addAll(APILocator.getPermissionAPI().filterCollection(siteList, PermissionAPI
                     .PERMISSION_READ, respectFrontendRoles, user));
             hostList = hostList.stream().limit(limit).collect(Collectors.toList());
+
+            //We want to include the system host in the list of hosts
+            final Host systemHost = APILocator.systemHost();
+            //Check if we need to include it, if we have the permissions and if it is in the list.
+            final boolean sysHostPermission = showSystemHost
+                    && !hostList.contains(systemHost)
+                    && APILocator.getPermissionAPI().doesSystemHostHavePermissions(systemHost, user, respectFrontendRoles, Host.class.getCanonicalName());
+
+            if(sysHostPermission){
+                hostList.add(systemHost);
+            }
+
             if(hostList.size()==limit || siteList.size() < limit){//user is admin or reach the amount of sites requested or there is no anymore sites
                 return Optional.of(hostList);
             }else{

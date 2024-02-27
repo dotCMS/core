@@ -28,6 +28,7 @@ import io.quarkus.test.junit.TestProfile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +38,6 @@ import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -82,6 +82,7 @@ class PushServiceIT {
         serviceManager.removeAll().persist(
                 ServiceBean.builder().
                         name("default").
+                        url(new URL("http://localhost:8080")).
                         active(true).
                         build()
         );
@@ -185,7 +186,6 @@ class PushServiceIT {
      *
      * @throws IOException if an I/O error occurs
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Push_New_Site() throws IOException {
 
@@ -263,8 +263,8 @@ class PushServiceIT {
             var treeNodePushInfo = treeNode.collectPushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
-            Assertions.assertEquals(5, treeNodePushInfo.assetsToPushCount());
-            Assertions.assertEquals(5, treeNodePushInfo.assetsNewCount());
+            Assertions.assertEquals(7, treeNodePushInfo.assetsToPushCount());
+            Assertions.assertEquals(7, treeNodePushInfo.assetsNewCount());
             Assertions.assertEquals(0, treeNodePushInfo.assetsModifiedCount());
             Assertions.assertEquals(0, treeNodePushInfo.assetsToDeleteCount());
             Assertions.assertEquals(9, treeNodePushInfo.foldersToPushCount());
@@ -298,11 +298,21 @@ class PushServiceIT {
             );
             var newSiteTreeNode = newSiteResults.getRight();
 
+            Assertions.assertEquals(4, newSiteTreeNode.children().size());
+
+            // Sorting the children to make the test deterministic
+            newSiteTreeNode.sortChildren();
+            newSiteTreeNode.children().get(0).sortChildren();
+            newSiteTreeNode.children().get(1).sortChildren();
+            newSiteTreeNode.children().get(2).sortChildren();
+
             //Validating the tree
             // subFolder1-1-1 (has 2 asset)
             Assertions.assertEquals(2, newSiteTreeNode.children().get(0).children().get(0).children().get(0).assets().size());
-            // subFolder2-1-1 (has 1 asset)
-            Assertions.assertEquals(1, newSiteTreeNode.children().get(1).children().get(0).children().get(0).assets().size());
+            // subFolder2-1-1-子資料夾 (has 3 asset)
+            Assertions.assertEquals(3,
+                    newSiteTreeNode.children().get(1).
+                            children().get(0).children().get(0).assets().size());
             // Folder 3 (has 1 asset)
             Assertions.assertEquals(1, newSiteTreeNode.children().get(2).assets().size());
 
@@ -320,7 +330,6 @@ class PushServiceIT {
      *
      * @throws IOException if an I/O error occurs
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Push_Modified_Data() throws IOException {
 
@@ -374,7 +383,8 @@ class PushServiceIT {
             //If we want a folder to be removed from the remote instance it needs to be removed from all our folder branches for good
             Path workingFolderToRemove = Paths.get(absolutePath.toString(),"working","en-us",testSiteName,"folder3");
             // Removing an asset
-            Path assetToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder2","subFolder2-1","subFolder2-1-1","image2.png");
+            Path assetToRemove = Paths.get(absolutePath.toString(), "live", "en-us", testSiteName,
+                    "folder2", "subFolder2-1", "subFolder2-1-1-子資料夾", "image2.png");
 
             FileUtils.deleteDirectory(liveFolderToRemove.toFile());
             FileUtils.deleteDirectory(workingFolderToRemove.toFile());
@@ -457,11 +467,22 @@ class PushServiceIT {
             );
             var updatedTreeNode = updatedResults.getRight();
 
+            Assertions.assertEquals(5, updatedTreeNode.children().size());
+
+            // Sorting the children to make the test deterministic
+            updatedTreeNode.sortChildren();
+            updatedTreeNode.children().get(0).sortChildren();
+            updatedTreeNode.children().get(1).sortChildren();
+            updatedTreeNode.children().get(2).sortChildren();
+            updatedTreeNode.children().get(3).sortChildren();
+            updatedTreeNode.children().get(4).sortChildren();
+
             //Validating the tree
             // subFolder1-1-1 (has 2 asset)
             Assertions.assertEquals(2, updatedTreeNode.children().get(0).children().get(0).children().get(0).assets().size());
-            // subFolder2-1-1 (has 0 asset)
-            Assertions.assertEquals(0, updatedTreeNode.children().get(1).children().get(0).children().get(0).assets().size());
+            // subFolder2-1-1-子資料夾 (has 2 assets) -> 1 was removed
+            Assertions.assertEquals(2, updatedTreeNode.children().
+                    get(1).children().get(0).children().get(0).assets().size());
             // Folder 4 withSpace (has 1 asset)
             Assertions.assertEquals(1, updatedTreeNode.children().get(2).assets().size());
             // Folder 5 (has 1 asset)
@@ -492,7 +513,6 @@ class PushServiceIT {
      * If the real intend if really removing the folder remotely. The folder needs to me removed  also from the "working" tree nodes branch
      * @throws IOException
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Delete_Folder() throws IOException {
 

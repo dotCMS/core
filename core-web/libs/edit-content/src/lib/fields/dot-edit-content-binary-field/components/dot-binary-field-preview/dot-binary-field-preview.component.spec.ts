@@ -42,7 +42,10 @@ describe('DotBinaryFieldPreviewComponent', () => {
 
     it('should show contentlet thumbnail', () => {
         spectator.detectChanges();
-        expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
+        const thumbnail = spectator.query(byTestId('contentlet-thumbnail')) as Element;
+        expect(thumbnail).toBeTruthy();
+        expect(thumbnail['fieldVariable']).toBe(CONTENTLET_MOCK.fieldVariable);
+        expect(thumbnail['contentlet']).toEqual(CONTENTLET_MOCK);
     });
 
     it('should show temp file thumbnail', () => {

@@ -17,6 +17,14 @@ export class DotVideoThumbnail {
     @Prop() contentlet: DotContentletItem;
 
     /**
+     *
+     *
+     * @type {string}
+     * @memberof variable
+     */
+    @Prop() variable: string;
+
+    /**
      * If the video is playable or not.
      *
      * @type {boolean}
@@ -40,7 +48,11 @@ export class DotVideoThumbnail {
         return (
             <Host>
                 {this.playable ? (
-                    <video src={`/dA/${this.contentlet.inode}`} controls></video>
+                    <video
+                        src={`/dA/${this.contentlet.inode}/${
+                            this.variable || this.contentlet.titleImage
+                        }`}
+                        controls></video>
                 ) : (
                     this.src && (
                         <div class={`thumbnail ${cssClass}`} style={bgImage}>

@@ -2,11 +2,13 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -18,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.startup.runonce.Task04210CreateDefaultLanguageVariable;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -240,11 +243,18 @@ public class ContentTypesPaginatorTest {
      * Expected Result: A list with 2 Content Type objects ordered by name.
      */
     @Test
-    public void getFilteredAllowedContentTypesOrderedByName() {
+    public void getFilteredAllowedContentTypesOrderedByName() throws DotDataException {
+        try {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+        }catch (Exception e){
+            //Create LanguageVariable Content Type in case doesn't exist
+            Task04210CreateDefaultLanguageVariable upgradeTaskCreateLanguageVariable = new Task04210CreateDefaultLanguageVariable();
+            upgradeTaskCreateLanguageVariable.executeUpgrade();
+        }
         // Initialization
         final String DEFAULT_ORDER_BY = "UPPER(name)";
         final String FILTER = "va";
-        final String contentTypeVars = "webPageContent,Vanityurl,DotAsset,htmlpageasset,languagevariable,vanityurl";
+        final String contentTypeVars = "webPageContent,Vanityurl,DotAsset,htmlpageasset,Languagevariable,vanityurl";
         final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);

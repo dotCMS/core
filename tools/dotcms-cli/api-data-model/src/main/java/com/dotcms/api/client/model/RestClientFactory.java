@@ -1,15 +1,16 @@
 package com.dotcms.api.client.model;
 
-import com.dotcms.api.exception.APIConfigurationException;
+import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.model.config.ServiceBean;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Map;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.jboss.logging.Logger;
 
 /**
@@ -21,89 +22,80 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class RestClientFactory {
 
-    public static final String NONE = "none";
-
     @Inject
     Logger logger;
-
-    /**
-     * Thread local variable containing API profile name
-     */
-    private final AtomicReference<String> instanceProfile = new AtomicReference<>(NONE);
-
-    @Inject
-    DotCmsClientConfig clientConfig;
 
     @Inject
     ServiceManager serviceManager;
 
-    private final Map<String, APIEndpoints> registry = new ConcurrentHashMap<>();
+    // Stores a reference to the current selected profile, so we don't have to get it from disk every time
+    AtomicReference<ServiceBean> profile = new AtomicReference<>();
 
-    /**
-     * Get or instantiate a Rest Client depending on its existence on the registry
-     * @param profileName config profile
-     * @param uri API URI
-     * @param clazz RestClient Class
-     * @return RestClient Instance
-     * @param <T> Rest Client class Type
-     */
-    <T> T getClient(final String profileName, final URI uri, final Class<T> clazz) {
-        return registry.computeIfAbsent(profileName, c ->
-                new APIEndpoints(uri)
-        ).getClient(clazz);
-    }
+        /**
+         * Given the selected profile this will return or instantiate a Rest Client
+         * @param clazz
+         * @return
+         * @param <T>
+         */
+        public <T > T getClient( final Class<T> clazz){
 
-    /**
-     * Given the selected profile this will return or instantiate a Rest Client
-     * @param profileName config profile
-     * @param clazz Rest Client class
-     * @return Client Instance
-     * @param <T> Rest Client class Type
-     */
-    <T> T getClient(final String profileName, final Class<T> clazz) {
-        if (registry.containsKey(profileName)) {
-            return registry.get(profileName).getClient(clazz);
-        } else {
-            if (clientConfig.servers().containsKey(profileName)) {
-                final URI server = clientConfig.servers().get(profileName);
-                return getClient(profileName, server, clazz);
-            } else {
-                throw new APIConfigurationException(profileName);
+            Optional<ServiceBean> optional;
+            try {
+                optional = getServiceProfile();
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to get current selected profile ", e);
+            }
+            if (optional.isEmpty()) {
+                throw new IllegalStateException(
+                        String.format("No dotCMS instance has been activated check your [%s] file.",
+                                YAMLFactoryServiceManagerImpl.DOT_SERVICE_YML)
+                );
+            }
+
+            URI uri;
+            try{
+               uri = toApiURI(optional.get().url());
+            } catch (URISyntaxException | IOException e) {
+                throw new IllegalStateException("  ", e);
+            }
+
+            return newRestClient(clazz, uri);
+        }
+
+    public Optional<ServiceBean> getServiceProfile() throws IOException {
+        ServiceBean val = profile.get();
+        if (val == null) {
+            // if no profile is stored in memory, get it from the service manager
+            val = serviceManager.selected().orElseThrow();
+            // Set the value only if it's currently null
+            if (!profile.compareAndSet(null, val)) {
+                // If compareAndSet fails, another thread has already set the value
+                val = profile.get();
             }
         }
+        return Optional.ofNullable(val);
     }
 
-    /**
-     * Given the selected profile this will return or instantiate a Rest Client
-     * @param clazz
-     * @return
-     * @param <T>
-     */
-    public <T> T getClient(final Class<T> clazz)  {
+    @SuppressWarnings("unchecked")
+    <T> T newRestClient(final Class<T> clazz, final URI apiBaseUri) {
+        return RestClientBuilder.newBuilder()
+                .register(ClientObjectMapper.class)
+                .baseUri(apiBaseUri)
+                .build(clazz);
+    }
 
-        final Optional<String> profile;
-        try {
-            profile = currentSelectedProfile();
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to get current selected profile ",e);
+    URI toApiURI(final URL url) throws IOException, URISyntaxException {
+        String raw = url.toString();
+        if (raw.endsWith("/")) {
+            raw = raw + "api";
+        } else {
+            if(!raw.endsWith("/api")){
+                raw = raw + "/api";
+            }
         }
-        if(profile.isEmpty()){
-            throw new IllegalStateException(
-                   String.format("No dotCMS instance has been activated check your %s file.", YAMLFactoryServiceManagerImpl.DOT_SERVICE_YML)
-            );
-        }
-        return getClient(profile.get(), clazz);
+        raw = raw.replaceAll("(?<!(http:|https:))//", "/");
+        logger.info(String.format("API URI: %s", raw));
+        return new URL(raw).toURI();
     }
-
-    public Optional<String> currentSelectedProfile() throws IOException {
-        instanceProfile.compareAndSet(NONE, service());
-        return NONE.equals(instanceProfile.get()) ? Optional.empty() : Optional.of(instanceProfile.get());
-    }
-
-    final String service() throws IOException {
-        final Optional<ServiceBean> selected = serviceManager.selected();
-        return selected.map(ServiceBean::name).orElse(NONE);
-    };
-
 
 }

@@ -30,7 +30,8 @@ export const mockPageContext: PageProviderContext = {
             container: {
                 path: 'path/to/container',
                 identifier: 'container-1',
-                maxContentlets: 100
+                maxContentlets: 100,
+                parentPermissionable: {}
             },
             containerStructures: [
                 {
@@ -43,7 +44,8 @@ export const mockPageContext: PageProviderContext = {
                         contentType: 'content-type-1',
                         identifier: 'contentlet-1',
                         title: 'Contentlet 1',
-                        inode: 'inode-1'
+                        inode: 'inode-1',
+                        onNumberOfPages: 1
                     }
                 ]
             }
@@ -52,7 +54,8 @@ export const mockPageContext: PageProviderContext = {
             container: {
                 path: 'path/to/container',
                 identifier: 'container-2',
-                maxContentlets: 100
+                maxContentlets: 100,
+                parentPermissionable: {}
             },
             containerStructures: [
                 {

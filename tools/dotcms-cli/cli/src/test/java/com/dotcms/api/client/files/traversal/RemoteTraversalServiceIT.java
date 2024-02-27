@@ -8,6 +8,7 @@ import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
@@ -15,7 +16,6 @@ import javax.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -42,6 +42,7 @@ class RemoteTraversalServiceIT {
         serviceManager.removeAll().persist(
                 ServiceBean.builder().
                         name("default").
+                        url(new URL("http://localhost:8080")).
                         active(true).
                         build()
         );
@@ -74,7 +75,6 @@ class RemoteTraversalServiceIT {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Folders_Check() throws IOException {
 
@@ -97,8 +97,16 @@ class RemoteTraversalServiceIT {
         // ============================
         //Validating the tree
         // ============================
+
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -115,8 +123,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -188,7 +197,8 @@ class RemoteTraversalServiceIT {
         // Preparing the data for the test
         final var testSiteName = filesTestHelper.prepareData();
 
-        final var folderPath = String.format("//%s/folder2/subFolder2-1/subFolder2-1-1/image2.png",
+        final var folderPath = String.format(
+                "//%s/folder2/subFolder2-1/subFolder2-1-1-子資料夾/image2.png",
                 testSiteName);
 
         var result = remoteTraversalService.traverseRemoteFolder(
@@ -205,11 +215,11 @@ class RemoteTraversalServiceIT {
         // ============================
         //Validating the tree
         // ============================
-        // subFolder2-1-1 (Root)
+        // subFolder2-1-1-子資料夾 (Root)
         Assertions.assertEquals(0, treeNode.children().size());
 
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3, treeNode.assets().size());
     }
 
     @Test
@@ -244,7 +254,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(0, treeNode.children().get(2).children().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Include() throws IOException {
 
@@ -272,6 +281,13 @@ class RemoteTraversalServiceIT {
         for (var child : treeNode.children()) {
             Assertions.assertFalse(child.folder().implicitGlobInclude());
         }
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -316,7 +332,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Include2() throws IOException {
 
@@ -344,6 +359,13 @@ class RemoteTraversalServiceIT {
         for (var child : treeNode.children()) {
             Assertions.assertFalse(child.folder().implicitGlobInclude());
         }
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -392,7 +414,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Include3() throws IOException {
 
@@ -418,6 +439,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         Assertions.assertTrue(
                 treeNode.children().get(0).folder().explicitGlobInclude());
         Assertions.assertTrue(
@@ -438,7 +466,6 @@ class RemoteTraversalServiceIT {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Include_Assets() throws IOException {
 
@@ -464,6 +491,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
         // SubFolder1-1
@@ -479,8 +513,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -497,7 +532,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Include_Assets2() throws IOException {
 
@@ -523,6 +557,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
         // SubFolder1-1
@@ -538,7 +579,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has no asset)
+        // subFolder2-1-1-子資料夾 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -556,7 +597,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Include_Assets3() throws IOException {
 
@@ -582,6 +622,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
         // SubFolder1-1
@@ -597,8 +644,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -615,7 +663,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Include_Assets4() throws IOException {
 
@@ -641,6 +688,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
         // SubFolder1-1
@@ -656,7 +710,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
+        // subFolder2-1-1-子資料夾 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -674,7 +728,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Include_Assets5() throws IOException {
 
@@ -700,6 +753,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
         // SubFolder1-1
@@ -715,7 +775,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 0 asset)
+        // subFolder2-1-1-子資料夾 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -733,7 +793,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Exclude() throws IOException {
 
@@ -761,6 +820,13 @@ class RemoteTraversalServiceIT {
         for (var child : treeNode.children()) {
             Assertions.assertTrue(child.folder().implicitGlobInclude());
         }
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -805,7 +871,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Exclude2() throws IOException {
 
@@ -833,6 +898,13 @@ class RemoteTraversalServiceIT {
         for (var child : treeNode.children()) {
             Assertions.assertTrue(child.folder().implicitGlobInclude());
         }
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -881,7 +953,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(0, treeNode.children().get(3).children().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Exclude3() throws IOException {
 
@@ -907,6 +978,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         Assertions.assertTrue(
                 treeNode.children().get(0).folder().explicitGlobExclude());
         Assertions.assertFalse(
@@ -925,7 +1003,6 @@ class RemoteTraversalServiceIT {
         }
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Exclude_Assets() throws IOException {
 
@@ -951,6 +1028,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
         // SubFolder1-1
@@ -966,7 +1050,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has no asset)
+        // subFolder2-1-1-子資料夾 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -984,7 +1068,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(1, treeNode.children().get(3).assets().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Exclude_Assets2() throws IOException {
 
@@ -1010,6 +1093,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
         // SubFolder1-1
@@ -1025,8 +1115,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -1043,7 +1134,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Exclude_Assets3() throws IOException {
 
@@ -1069,6 +1159,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
         // SubFolder1-1
@@ -1084,7 +1181,7 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 0 asset)
+        // subFolder2-1-1-子資料夾 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -1102,7 +1199,6 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(0, treeNode.children().get(3).assets().size());
     }
 
-    @Disabled("Test is intermittently failing.")
     @Test
     void Test_Exclude_Assets4() throws IOException {
 
@@ -1128,6 +1224,13 @@ class RemoteTraversalServiceIT {
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
 
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
+
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
         // SubFolder1-1
@@ -1143,8 +1246,9 @@ class RemoteTraversalServiceIT {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3

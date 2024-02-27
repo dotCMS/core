@@ -6,27 +6,19 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { EmaPageDropzoneComponent, Row } from './ema-page-dropzone.component';
+import { EmaPageDropzoneComponent } from './ema-page-dropzone.component';
+import { Row } from './types';
 
-import { ActionPayload } from '../../../shared/models';
+import { ClientData } from '../../../shared/models';
 
-const ACTION_MOCK: ActionPayload = {
+const ACTION_MOCK: ClientData = {
     container: {
         acceptTypes: 'file',
         identifier: '789',
         maxContentlets: 100,
         uuid: '2',
-        contentletsId: ['123', '455']
-    },
-    language_id: '1',
-    pageContainers: [
-        {
-            identifier: '123',
-            uuid: '1',
-            contentletsId: ['123', '455']
-        }
-    ],
-    pageId: '123'
+        variantId: '1'
+    }
 };
 
 const ITEM_MOCK = {
@@ -34,7 +26,7 @@ const ITEM_MOCK = {
     baseType: 'FILEASSET'
 };
 
-const getBoundsMock = (payload: ActionPayload): Row[] => {
+const getBoundsMock = (payload: ClientData): Row[] => {
     return [
         {
             x: 0,
@@ -56,6 +48,13 @@ const getBoundsMock = (payload: ActionPayload): Row[] => {
                             contentlets: [
                                 {
                                     x: 20,
+                                    y: 20,
+                                    width: 940,
+                                    height: 140,
+                                    payload: null
+                                },
+                                {
+                                    x: 40,
                                     y: 20,
                                     width: 940,
                                     height: 140,
@@ -110,7 +109,7 @@ describe('EmaPageDropzoneComponent', () => {
         expect(spectator.queryAll('[data-type="row"]')).toHaveLength(1);
         expect(spectator.queryAll('[data-type="column"]')).toHaveLength(1);
         expect(spectator.queryAll('[data-type="container"]')).toHaveLength(1);
-        expect(spectator.queryAll('[data-type="contentlet"]')).toHaveLength(1);
+        expect(spectator.queryAll('[data-type="contentlet"]')).toHaveLength(2);
     });
 
     describe('css', () => {
@@ -333,7 +332,7 @@ describe('EmaPageDropzoneComponent', () => {
             expect(spectator.component.place.emit).not.toHaveBeenCalled();
             expect(spyDotMessageSerivice).toHaveBeenCalledWith(
                 'edit.ema.page.dropzone.max.contentlets',
-                2
+                '2'
             );
         });
 
@@ -384,7 +383,7 @@ describe('EmaPageDropzoneComponent', () => {
             expect(spectator.component.place.emit).not.toHaveBeenCalled();
             expect(spyDotMessageSerivice).toHaveBeenCalledWith(
                 'edit.ema.page.dropzone.one.max.contentlet',
-                1
+                '1'
             );
         });
 
