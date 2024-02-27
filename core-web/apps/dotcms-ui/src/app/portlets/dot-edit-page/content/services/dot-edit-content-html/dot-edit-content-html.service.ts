@@ -42,10 +42,10 @@ import {
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
+import { DotCopyContentModalService } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
-import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
@@ -419,7 +419,7 @@ export class DotEditContentHtmlService {
      * @returns *
      * @memberof DotEditContentHtmlService
      */
-    getContentModel(addedContentId: string = ''): DotPageContainer[] {
+    getContentModel(addedContentId = ''): DotPageContainer[] {
         const { uuid, identifier } = this.currentContainer || {};
 
         return this.getEditPageIframe().contentWindow['getDotNgModel']({

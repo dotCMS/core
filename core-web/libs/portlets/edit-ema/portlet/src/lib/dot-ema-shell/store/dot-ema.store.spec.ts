@@ -6,9 +6,9 @@ import { MessageService } from 'primeng/api';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
-    MockDotMessageService,
     mockDotContainers,
     mockDotLayout,
+    MockDotMessageService,
     mockDotTemplate,
     mockSites
 } from '@dotcms/utils-testing';
@@ -27,14 +27,15 @@ const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         identifier: '123',
         inode: '123-i',
         canEdit: true,
-        canRead: true
+        canRead: true,
+        contentType: 'htmlpageasset'
     },
     viewAs: {
         language: {
             id: 1,
             language: 'English',
             countryCode: 'US',
-            languageCode: 'En',
+            languageCode: '1',
             country: 'United States'
         },
 
@@ -56,14 +57,15 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         inode: '123-i',
         canEdit: true,
         canRead: true,
-        rendered: '<html><body><h1>Hello, World!</h1></body></html>'
+        rendered: '<html><body><h1>Hello, World!</h1></body></html>',
+        contentType: 'htmlpageasset'
     },
     viewAs: {
         language: {
             id: 1,
             language: 'English',
             countryCode: 'US',
-            languageCode: 'En',
+            languageCode: '1',
             country: 'United States'
         },
 
@@ -132,9 +134,9 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADING
@@ -152,9 +154,9 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED
@@ -172,7 +174,7 @@ describe('EditEmaStore', () => {
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
-                    language_id: 'en',
+                    language_id: '1',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
                 });
@@ -199,7 +201,7 @@ describe('EditEmaStore', () => {
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
-                    language_id: 'en',
+                    language_id: '1',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
                 });
@@ -215,6 +217,32 @@ describe('EditEmaStore', () => {
                 });
             });
 
+            it("should call get method from dotPageApiService when 'save' action is dispatched", () => {
+                const dotPageApiService = spectator.inject(DotPageApiService);
+
+                dotPageApiService.save.andReturn(of({}));
+
+                spectator.service.savePage({
+                    pageContainers: [],
+                    pageId: '789',
+                    params: {
+                        language_id: '2',
+                        url: 'test-url',
+                        'com.dotmarketing.persona.id': '456'
+                    },
+                    whenSaved: () => {
+                        /** */
+                    }
+                });
+
+                // This get called twice, once for the load in the before each and once for the save
+                expect(dotPageApiService.get).toHaveBeenNthCalledWith(2, {
+                    language_id: '2',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '456'
+                });
+            });
+
             it('should add form to page and save', () => {
                 const payload: ActionPayload = {
                     pageId: 'page-identifier-123',
@@ -224,7 +252,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123']
+                        contentletsId: ['existing-contentlet-123'],
+                        variantId: '1'
                     },
                     pageContainers: [
                         {
@@ -236,7 +265,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -245,15 +275,21 @@ describe('EditEmaStore', () => {
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
-                    language_id: 'en',
+                    language_id: '1',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
                 });
                 spectator.service.saveFormToPage({
                     payload,
                     formId: 'form-identifier-789',
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    whenSaved: () => {}
+                    params: {
+                        'com.dotmarketing.persona.id': '123',
+                        url: 'test-url',
+                        language_id: '1'
+                    },
+                    whenSaved: () => {
+                        /** */
+                    }
                 });
 
                 expect(dotPageApiService.getFormIndetifier).toHaveBeenCalledWith(
@@ -269,7 +305,72 @@ describe('EditEmaStore', () => {
                             uuid: '123'
                         }
                     ],
-                    pageId: 'page-identifier-123'
+                    pageId: 'page-identifier-123',
+                    params: {
+                        'com.dotmarketing.persona.id': '123',
+                        url: 'test-url',
+                        language_id: '1'
+                    }
+                });
+            });
+
+            it('should add form to page, save and perform a get afterwards', () => {
+                const payload: ActionPayload = {
+                    pageId: 'page-identifier-123',
+                    language_id: '1',
+                    container: {
+                        identifier: 'container-identifier-123',
+                        uuid: '123',
+                        acceptTypes: 'test',
+                        maxContentlets: 1,
+                        contentletsId: ['existing-contentlet-123'],
+                        variantId: '123'
+                    },
+                    pageContainers: [
+                        {
+                            identifier: 'container-identifier-123',
+                            uuid: '123',
+                            contentletsId: ['existing-contentlet-123']
+                        }
+                    ],
+                    contentlet: {
+                        identifier: 'existing-contentlet-123',
+                        inode: 'existing-contentlet-inode-456',
+                        title: 'Hello World',
+                        contentType: 'test'
+                    }
+                };
+                const dotPageApiService = spectator.inject(DotPageApiService);
+                dotPageApiService.save.andReturn(of({}));
+                dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+                spectator.service.saveFormToPage({
+                    payload,
+                    formId: 'form-identifier-789',
+                    params: {
+                        language_id: '2',
+                        url: 'test-url',
+                        'com.dotmarketing.persona.id': '456'
+                    },
+                    whenSaved: () => {
+                        /* */
+                    }
+                });
+
+                expect(dotPageApiService.getFormIndetifier).toHaveBeenCalledWith(
+                    payload.container.identifier,
+                    'form-identifier-789'
+                );
+                expect(dotPageApiService.get).toHaveBeenCalledWith({
+                    language_id: '2',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '456'
                 });
             });
 
@@ -286,7 +387,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123', 'form-identifier-123']
+                        contentletsId: ['existing-contentlet-123', 'form-identifier-123'],
+                        variantId: '1'
                     },
                     pageContainers: [
                         {
@@ -298,7 +400,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -307,15 +410,21 @@ describe('EditEmaStore', () => {
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
-                    language_id: 'en',
+                    language_id: '1',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
                 });
                 spectator.service.saveFormToPage({
                     payload,
                     formId: 'form-identifier-789',
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    whenSaved: () => {}
+                    params: {
+                        'com.dotmarketing.persona.id': '123',
+                        url: 'test-url',
+                        language_id: '1'
+                    },
+                    whenSaved: () => {
+                        //
+                    }
                 });
 
                 expect(addMessageSpy).toHaveBeenCalledWith({
@@ -365,6 +474,8 @@ describe('EditEmaStore', () => {
                 });
             });
 
+            dotPageApiService.save.andReturn(of({}));
+
             spectator.service.load({
                 language_id: '1',
                 url: 'test-url',
@@ -378,7 +489,7 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         iframeURL: null,
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
@@ -397,7 +508,7 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         iframeURL: null,
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
@@ -415,7 +526,7 @@ describe('EditEmaStore', () => {
                 dotPageApiService.get.andReturn(of(MOCK_RESPONSE_VTL));
 
                 spectator.service.load({
-                    language_id: 'en',
+                    language_id: '1',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
                 });
@@ -441,7 +552,7 @@ describe('EditEmaStore', () => {
                 dotPageApiService.get.andReturn(of(mockResponse));
 
                 spectator.service.load({
-                    language_id: 'en',
+                    language_id: '1',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
                 });
@@ -466,7 +577,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123']
+                        contentletsId: ['existing-contentlet-123'],
+                        variantId: '1'
                     },
                     pageContainers: [
                         {
@@ -478,7 +590,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -486,15 +599,21 @@ describe('EditEmaStore', () => {
                 dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
 
                 spectator.service.load({
-                    language_id: 'en',
+                    language_id: '1',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
                 });
                 spectator.service.saveFormToPage({
                     payload,
                     formId: 'form-identifier-789',
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    whenSaved: () => {}
+                    params: {
+                        'com.dotmarketing.persona.id': '123',
+                        url: 'test-url',
+                        language_id: '1'
+                    },
+                    whenSaved: () => {
+                        //
+                    }
                 });
 
                 expect(dotPageApiService.getFormIndetifier).toHaveBeenCalledWith(
@@ -510,7 +629,12 @@ describe('EditEmaStore', () => {
                             uuid: '123'
                         }
                     ],
-                    pageId: 'page-identifier-123'
+                    pageId: 'page-identifier-123',
+                    params: {
+                        'com.dotmarketing.persona.id': '123',
+                        url: 'test-url',
+                        language_id: '1'
+                    }
                 });
             });
 
@@ -527,7 +651,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123', 'form-identifier-123']
+                        contentletsId: ['existing-contentlet-123', 'form-identifier-123'],
+                        variantId: '1'
                     },
                     pageContainers: [
                         {
@@ -539,7 +664,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -547,15 +673,21 @@ describe('EditEmaStore', () => {
                 dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
 
                 spectator.service.load({
-                    language_id: 'en',
+                    language_id: '1',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
                 });
                 spectator.service.saveFormToPage({
                     payload,
                     formId: 'form-identifier-789',
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    whenSaved: () => {}
+                    params: {
+                        'com.dotmarketing.persona.id': '123',
+                        url: 'test-url',
+                        language_id: '1'
+                    },
+                    whenSaved: () => {
+                        //
+                    }
                 });
 
                 expect(addMessageSpy).toHaveBeenCalledWith({

@@ -48,7 +48,7 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
 })
 export class DotBinarySettingsComponent implements OnInit, OnChanges {
     @Input() field: DotCMSContentTypeField;
-    @Input() isVisible: boolean = false;
+    @Input() isVisible = false;
 
     @Output() changeControls = new EventEmitter<DotDialogActions>();
     @Output() valid = new EventEmitter<boolean>();

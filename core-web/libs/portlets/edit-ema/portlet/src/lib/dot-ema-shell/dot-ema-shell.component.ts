@@ -158,7 +158,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                             contentlet: {
                                 inode: page.inode,
                                 title: page.title,
-                                identifier: page.identifier
+                                identifier: page.identifier,
+                                contentType: page.contentType
                             }
                         });
                     }

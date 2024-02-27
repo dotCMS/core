@@ -1,25 +1,31 @@
-<div *ngFor="let row of rows" [ngStyle]="getPosition(row)" data-type="row">
-    <div *ngFor="let column of row.columns" [ngStyle]="getPosition(column)" data-type="column">
+<div *ngFor="let row of rows" [ngStyle]="row | dotPosition" data-type="row">
+    <div *ngFor="let column of row.columns" [ngStyle]="column | dotPosition" data-type="column">
         <div
             *ngFor="let container of column.containers"
-            [ngStyle]="getPosition(container)"
+            [ngStyle]="container | dotPosition"
             [attr.data-payload]="container.payload"
             data-type="container">
             <div
                 *ngFor="let contentlet of container.contentlets"
                 [attr.data-payload]="contentlet.payload"
-                [ngStyle]="getPosition(contentlet)"
+                [ngStyle]="contentlet | dotPosition"
                 (drop)="onDrop($event)"
                 (dragover)="onDragover($event)"
                 data-type="contentlet"></div>
-            <div
-                class="drop-zone_error"
-                *ngIf="getErrorMessage(container.payload) as error"
-                [ngStyle]="getPosition(container)">
-                <span [innerHTML]="error"></span>
-            </div>
+
+            <ng-container
+                *ngTemplateOutlet="
+                    errorTemplate;
+                    context: { error: container | dotError : item, container: container }
+                "></ng-container>
         </div>
     </div>
 </div>
 
 <div class="pointer" [ngStyle]="pointerPosition"></div>
+
+<ng-template #errorTemplate let-error="error" let-container="container">
+    <div class="drop-zone_error" *ngIf="error.message.length" [ngStyle]="container | dotPosition">
+        <span [innerHTML]="error.message | dm : error.args"></span>
+    </div>
+</ng-template>
