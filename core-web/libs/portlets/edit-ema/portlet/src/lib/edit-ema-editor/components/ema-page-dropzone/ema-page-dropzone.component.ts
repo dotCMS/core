@@ -5,7 +5,8 @@ import {
     ElementRef,
     EventEmitter,
     Input,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -35,10 +36,7 @@ export class EmaPageDropzoneComponent {
         opacity: '0',
         top: '0'
     };
-
-    constructor(private readonly el: ElementRef) {
-        console.log("EmaPageDropzoneComponent");
-    }
+    private readonly el = inject(ElementRef);
 
     /**
      * Emit place event and reset pointer position

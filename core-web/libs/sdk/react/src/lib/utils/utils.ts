@@ -31,6 +31,7 @@ const startClassMap: Record<number, string> = {
     12: 'col-start-12'
 };
 
+//TODO: Delete later
 export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
     if (!rowsNodes) {
         return [];
@@ -94,12 +95,9 @@ export const getContainersData = (
     containers: ContainerData,
     containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0]
 ) => {
-    // console.log("container:  ",containerRef)
     const { identifier, uuid } = containerRef;
 
     const { containerStructures } = containers[identifier];
-
-    // console.log(containerStructures);
 
     // Get accepts types of content types for this container
     const acceptTypes = containerStructures.map((structure) => structure.contentTypeVar).join(',');

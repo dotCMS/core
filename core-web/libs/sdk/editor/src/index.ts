@@ -1,3 +1,3 @@
 export * from './lib/sdk-editor';
-export * from './lib/actions/editor.actions';
-export * from './lib/actions/client.actions';
+export * from './lib/models/editor.model';
+export * from './lib/models/client.model';

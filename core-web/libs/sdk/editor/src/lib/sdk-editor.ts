@@ -1,4 +1,4 @@
-import { CUSTOMER_ACTIONS, postMessageToEditor } from './actions/client.actions';
+import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model'
 import { getContainerData, getPageElementBound } from './utils/editor.utils';
 
 interface DotCMSPageEditorConfig {
@@ -6,6 +6,7 @@ interface DotCMSPageEditorConfig {
 }
 class DotCMSPageEditor {
     private config: DotCMSPageEditorConfig;
+    isInsideEditor!: boolean;
 
     constructor(config?: DotCMSPageEditorConfig) {
         this.config = config ?? { onReload: defaultReloadFn };
@@ -13,8 +14,8 @@ class DotCMSPageEditor {
 
     init() {
         console.log('SdkDotPageEditor init!');
-        const isInsideEditor = this.checkIfInsideEditor();
-        if (isInsideEditor) {
+        this.isInsideEditor = this.checkIfInsideEditor();
+        if (this.isInsideEditor) {
             this.listenEditorMessages();
             setTimeout(() => {
                 this.listenHoveredContentlet();
@@ -33,7 +34,7 @@ class DotCMSPageEditor {
         });
     }
 
-    listenEditorMessages() {
+    private listenEditorMessages() {
         window.addEventListener('message', (event: MessageEvent) => {
             switch (event.data) {
                 case 'ema-request-bounds': {
@@ -51,7 +52,7 @@ class DotCMSPageEditor {
         });
     }
 
-    listenHoveredContentlet() {
+    private listenHoveredContentlet() {
         const contentletElements = document.querySelectorAll('[data-dot-object="contentlet"]');
 
         contentletElements.forEach((element) => {
@@ -61,7 +62,6 @@ class DotCMSPageEditor {
                 const target = event.target as HTMLElement;
 
                 const { x, y, width, height } = target.getBoundingClientRect();
-                
 
                 const contentletPayload = {
                     container:
@@ -92,7 +92,7 @@ class DotCMSPageEditor {
         });
     }
 
-    scrollHandler() {
+    private scrollHandler() {
         window.addEventListener('scroll', () => {
             // console.log('scroll');
             postMessageToEditor({
@@ -101,7 +101,7 @@ class DotCMSPageEditor {
         });
     }
 
-    checkIfInsideEditor() {
+    private checkIfInsideEditor() {
         if (window.parent === window) {
             return false;
         }
@@ -111,7 +111,7 @@ class DotCMSPageEditor {
         return true;
     }
 
-    listenContentChange() {
+    private listenContentChange() {
         // const config = { attributes: true, childList: true, subtree: true };
 
         const observer = new MutationObserver((mutationsList) => {
@@ -140,13 +140,19 @@ class DotCMSPageEditor {
         return observer;
     }
 
-    setBounds() {
-        const rows = Array.from(
+    private setBounds() {
+        const rowsHeadless = Array.from(
             document.querySelectorAll('[data-dot="row"]')
         ) as unknown as HTMLDivElement[];
 
+        const rowsVTL = Array.from(
+            document.querySelectorAll('.container > .row:first-child:not([class*=" "])')
+        ) as unknown as HTMLDivElement[];
+
+        const rows = rowsHeadless.length > 0 ? rowsHeadless : rowsVTL;
+
         const positionData = getPageElementBound(rows);
-        console.log("position: ",positionData);
+        console.log('position: ', positionData);
 
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_BOUNDS,
@@ -154,7 +160,7 @@ class DotCMSPageEditor {
         });
     }
 
-    reloadPage() {
+    private reloadPage() {
         this.config.onReload();
     }
 }
@@ -220,7 +226,7 @@ const CUSTOMER_ACTIONS =  {
                 columns: Array.from(columns).map((column) => {
                     const columnRect = column.getBoundingClientRect();
                     const containers = Array.from(
-                        column.querySelectorAll('[data-dot="container"]')
+                        column.querySelectorAll('[data-dot-object="container"]')
                     ) 
     
                     const columnX = columnRect.left - rowRect.left;
@@ -242,7 +248,14 @@ const CUSTOMER_ACTIONS =  {
                                 y: containerRect.y - rowRect.top,
                                 width: containerRect.width,
                                 height: containerRect.height,
-                                payload: container.dataset?.['content'], //TODO: Change this
+                                payload: JSON.stringify({
+                                    container:{
+                                        acceptTypes: container.dataset?.['dotAcceptTypes'],
+                                        identifier: container.dataset?.['dotIdentifier'],
+                                        maxContentlets: container.dataset?.['maxContentlets'],
+                                        uuid: container.dataset?.['dotUuid'],
+                                    }
+                                }), //TODO: Change this
                                 contentlets: contentlets.map((contentlet) => {
                                     const contentletRect = contentlet.getBoundingClientRect();
     
@@ -302,7 +315,7 @@ class DotCMSPageEditor {
     }
 
     init() {
-        console.log('SdkDotPageEditor init from VTL!');
+        console.log('SdkDotPageEditor init from VTL!!!');
         const isInsideEditor = this.checkIfInsideEditor();
         if (isInsideEditor) {
             this.listenEditorMessages();
@@ -429,10 +442,13 @@ class DotCMSPageEditor {
     }
 
     setBounds() {
-        const rows = Array.from(
+        const rowsHeadless = Array.from(
             document.querySelectorAll('[data-dot="row"]')
         )
 
+        const rowsVTL = Array.from(document.querySelectorAll('.container > .row:first-child:not([class*=" "])'))
+
+        const rows = rowsHeadless.length > 0 ? rowsHeadless : rowsVTL;
         console.log("rows: ",rows);
 
         const positionData = getPageElementBound(rows);

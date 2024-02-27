@@ -258,7 +258,6 @@
         "tslint-angular": "^3.0.3",
         "typedoc": "^0.25.4",
         "typescript": "5.3.3",
-        "verdaccio": "^5.0.4",
         "webpack": "^5.64.0",
         "webpack-bundle-analyzer": "^4.5.0"
     },
