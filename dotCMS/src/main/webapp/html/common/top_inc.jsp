@@ -40,7 +40,7 @@ THIS FILE AND ITS INCLUDES
 
     <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
     <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
-	<link rel="stylesheet" href="/dotcms-block-editor/styles.css" />
+	<link rel="stylesheet" href="/html/css/dotcms-block-editor.css" />
 	<link rel="stylesheet" href="/html/assets/monaco-editor/min/vs/editor/editor.main.css" />
 
 	<%
