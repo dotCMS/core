@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { CUSTOMER_ACTIONS, postMessageToEditor, sdkDotPageEditor } from '@dotcms/editor';
+import { sdkDotPageEditor } from '@dotcms/editor';
 
-import { getPageElementBound } from '../utils/utils';
+
 
 /**
  * `PageEditorOptions` is an interface that defines the options for the `usePageEditor` hook.
@@ -50,6 +50,7 @@ interface PageEditorOptions {
  * @returns {{rowsRef: React.RefObject<HTMLDivElement>[], isInsideEditor: boolean}} - Returns a reference to the rows of the page and a boolean that indicates if the page is inside the editor.
  * @throws {Error} - Throws an error if the `pathname` is not provided.
  */
+// IDK how replace this, all logic is inside sdkDotPageEditor.init
 export const usePageEditor = (
     props: PageEditorOptions
 ): { rowsRef: React.MutableRefObject<HTMLDivElement[]>; isInsideEditor: boolean } => {

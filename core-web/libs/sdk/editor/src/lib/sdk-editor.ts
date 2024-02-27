@@ -37,7 +37,7 @@ class DotCMSPageEditor {
         window.addEventListener('message', (event: MessageEvent) => {
             switch (event.data) {
                 case 'ema-request-bounds': {
-                    // console.log('Requesting bounds');
+                    console.log('Requesting bounds');
                     this.setBounds();
                     break;
                 }
@@ -143,7 +143,7 @@ class DotCMSPageEditor {
         ) as unknown as HTMLDivElement[];
 
         const positionData = getPageElementBound(rows);
-        console.log('Position Data: ', positionData);
+
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_BOUNDS,
             payload: positionData

@@ -184,7 +184,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     private draggedPayload: DraggedPalettePayload;
 
-    rows: Row[] = [];
+    rows: Row[] = []
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
 
@@ -387,7 +387,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onDragStart(event: DragEvent) {
-        console.log('onDragStart', event);
         const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
             ContentletDragPayload,
             'type'

@@ -124,10 +124,11 @@
                 (moveStart)="moveContentlet($event)"
                 (moveStop)="resetDragProperties()"
                 data-testId="contentlet-tools" />
+             
             <dot-ema-page-dropzone
-                *ngIf="
-                    !!rows.length && !!dragItem && !currentDevice && es.state === editorState.LOADED
-                "
+            *ngIf=" 
+            !!rows.length && !!dragItem && !currentDevice && es.state === editorState.LOADED
+        "
                 [rows]="rows"
                 [item]="dragItem"
                 (place)="onPlaceItem($event)"

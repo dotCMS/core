@@ -7,7 +7,7 @@ export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
         const rowRect = row.getBoundingClientRect();
         const columns = row.children;
 
-        const obj = {
+        return {
             x: rowRect.x,
             y: rowRect.y,
             width: rowRect.width,
@@ -57,14 +57,13 @@ export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
                                             contentType: contentlet.dataset?.['dotType']
                                         }
                                     }
-                                }
+                                };
                             })
                         };
                     })
                 };
             })
         };
-        return obj;
     });
 }
 
