@@ -393,7 +393,7 @@
 									"pm.test(\"No errors\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.errorMessage).to.eql(\"Content Type does not exist\");",
+									"    pm.expect(jsonData.errorMessage).to.not.eql(\"Content Type does not exist\");",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});",
 									"",

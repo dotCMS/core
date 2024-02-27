@@ -46,7 +46,7 @@ export class DotMenuService {
      * @returns Observable<boolean>
      * @memberof DotMenuService
      */
-    isPortletInMenu(menuId: string, checkJSPPortlet: boolean = false): Observable<boolean> {
+    isPortletInMenu(menuId: string, checkJSPPortlet = false): Observable<boolean> {
         return this.getMenuItems().pipe(
             map(({ id, angular }) => {
                 const idMatch = id === menuId;

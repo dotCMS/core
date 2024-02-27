@@ -1,11 +1,10 @@
 @use "variables" as *;
 
-:host {
+.announcements__main-container {
     max-height: 100vh;
     overflow: auto;
     display: block;
-    padding: $spacing-4;
-    width: 26rem;
+    width: 24rem;
 }
 
 .announcements__list {
@@ -118,14 +117,4 @@
     position: absolute;
     left: 39px;
     top: 14px;
-}
-
-::ng-deep {
-    .toolbar-announcements__container {
-        &.p-overlaypanel {
-            .p-overlaypanel-content {
-                padding: 0;
-            }
-        }
-    }
 }

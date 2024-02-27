@@ -41,7 +41,7 @@ export class DotSiteService {
      * @return {*}  {Observable<Site[]>}
      * @memberof DotSiteService
      */
-    getSites(filter: string = '*', perPage?: number): Observable<Site[]> {
+    getSites(filter = '*', perPage?: number): Observable<Site[]> {
         return this.http
             .get<{ entity: Site[] }>(this.siteURL(filter, perPage))
             .pipe(pluck('entity'));

@@ -1,4 +1,9 @@
-import { deleteContentletFromContainer, insertContentletInContainer, sanitizeURL } from '.';
+import {
+    deleteContentletFromContainer,
+    insertContentletInContainer,
+    sanitizeURL,
+    getPersonalization
+} from '.';
 
 describe('utils functions', () => {
     describe('delete contentlet from container', () => {
@@ -13,7 +18,8 @@ describe('utils functions', () => {
                     acceptTypes: 'test',
                     uuid: 'test',
                     maxContentlets: 1,
-                    contentletsId: ['test']
+                    contentletsId: ['test'],
+                    variantId: '1'
                 },
                 pageContainers: [
                     {
@@ -25,20 +31,24 @@ describe('utils functions', () => {
                 contentlet: {
                     identifier: 'test',
                     inode: 'test',
-                    title: 'test'
+                    title: 'test',
+                    contentType: 'test'
                 },
                 personaTag: 'test',
                 position: 'after'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: [],
-                    personaTag: 'test'
-                }
-            ]);
+            expect(result).toEqual({
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: [],
+                        personaTag: 'test'
+                    }
+                ],
+                contentletsId: []
+            });
         });
 
         it('should not delete if id not found', () => {
@@ -57,14 +67,16 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['test'],
                 maxContentlets: 1,
-                acceptTypes: 'test'
+                acceptTypes: 'test',
+                variantId: '1'
             };
 
             // Contentlet to delete
             const contentlet = {
                 identifier: 'test2',
                 inode: 'test',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = deleteContentletFromContainer({
@@ -76,14 +88,17 @@ describe('utils functions', () => {
                 position: 'after'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: ['test'],
-                    personaTag: undefined
-                }
-            ]);
+            expect(result).toEqual({
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test'],
+                        personaTag: undefined
+                    }
+                ],
+                contentletsId: ['test']
+            });
         });
     });
 
@@ -104,14 +119,16 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'container-uui-123',
                 contentletsId: ['contentlet-mark-123'],
-                maxContentlets: 1
+                maxContentlets: 1,
+                variantId: '1'
             };
 
             // Contentlet position mark
             const contentlet = {
                 identifier: 'contentlet-mark-123',
                 inode: 'contentlet-mark-inode-123',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -152,14 +169,16 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1
+                maxContentlets: 1,
+                variantId: '1'
             };
 
             // Contentlet to insert
             const contentlet = {
                 identifier: 'test123',
                 inode: 'test',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -201,14 +220,16 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1
+                maxContentlets: 1,
+                variantId: '1'
             };
 
             // Contentlet to insert
             const contentlet = {
                 identifier: 'test',
                 inode: 'test',
-                title: 'test'
+                title: 'test',
+                contentType: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -262,6 +283,22 @@ describe('utils functions', () => {
 
         it('should leave as it is for a nested valid url', () => {
             expect(sanitizeURL('hello-there/general-kenobi')).toEqual('hello-there/general-kenobi');
+        });
+    });
+
+    describe('personalization', () => {
+        it('should return the correct personalization when persona exists', () => {
+            const personalization = getPersonalization({
+                contentType: 'persona',
+                keyTag: 'adminUser'
+            });
+
+            expect(personalization).toBe('dot:persona:adminUser');
+        });
+
+        it('should return the correct personalization when persona does not exist', () => {
+            const personalization = getPersonalization({});
+            expect(personalization).toBe('dot:default');
         });
     });
 });

@@ -8,6 +8,7 @@ import { ActivatedRouteSnapshot, CanActivateFn, Params, Router } from '@angular/
 import { map, switchMap } from 'rxjs/operators';
 
 import { DotPropertiesService, EmaAppConfigurationService } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { sanitizeURL } from '../../utils';
 
@@ -47,7 +48,7 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
                     return of(true);
                 }
 
-                return properties.getFeatureFlag('FEATURE_FLAG_NEW_EDIT_PAGE').pipe(
+                return properties.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_EDIT_PAGE).pipe(
                     map((flag) => {
                         if (!flag) {
                             //Go to EditPage

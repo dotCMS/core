@@ -269,7 +269,7 @@ const dotContentOptions: Array<BubbleMenuItem> = [
     }
 ];
 
-export const getBubbleMenuItem = (nodeType: string = ''): Array<BubbleMenuItem> => {
+export const getBubbleMenuItem = (nodeType = ''): Array<BubbleMenuItem> => {
     switch (nodeType) {
         case 'dotImage':
             return imageOptions;

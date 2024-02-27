@@ -6,9 +6,9 @@ import { MessageService } from 'primeng/api';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
-    MockDotMessageService,
     mockDotContainers,
     mockDotLayout,
+    MockDotMessageService,
     mockDotTemplate,
     mockSites
 } from '@dotcms/utils-testing';
@@ -27,7 +27,8 @@ const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         identifier: '123',
         inode: '123-i',
         canEdit: true,
-        canRead: true
+        canRead: true,
+        contentType: 'htmlpageasset'
     },
     viewAs: {
         language: {
@@ -56,7 +57,8 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         inode: '123-i',
         canEdit: true,
         canRead: true,
-        rendered: '<html><body><h1>Hello, World!</h1></body></html>'
+        rendered: '<html><body><h1>Hello, World!</h1></body></html>',
+        contentType: 'htmlpageasset'
     },
     viewAs: {
         language: {
@@ -132,9 +134,9 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADING
@@ -152,9 +154,9 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED
@@ -250,7 +252,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123']
+                        contentletsId: ['existing-contentlet-123'],
+                        variantId: '1'
                     },
                     pageContainers: [
                         {
@@ -262,7 +265,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -319,7 +323,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123']
+                        contentletsId: ['existing-contentlet-123'],
+                        variantId: '123'
                     },
                     pageContainers: [
                         {
@@ -331,7 +336,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -381,7 +387,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123', 'form-identifier-123']
+                        contentletsId: ['existing-contentlet-123', 'form-identifier-123'],
+                        variantId: '1'
                     },
                     pageContainers: [
                         {
@@ -393,7 +400,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -414,7 +422,9 @@ describe('EditEmaStore', () => {
                         url: 'test-url',
                         language_id: '1'
                     },
-                    whenSaved: () => {}
+                    whenSaved: () => {
+                        //
+                    }
                 });
 
                 expect(addMessageSpy).toHaveBeenCalledWith({
@@ -479,7 +489,7 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         iframeURL: null,
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
@@ -498,7 +508,7 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         iframeURL: null,
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
@@ -567,7 +577,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123']
+                        contentletsId: ['existing-contentlet-123'],
+                        variantId: '1'
                     },
                     pageContainers: [
                         {
@@ -579,7 +590,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -599,7 +611,9 @@ describe('EditEmaStore', () => {
                         url: 'test-url',
                         language_id: '1'
                     },
-                    whenSaved: () => {}
+                    whenSaved: () => {
+                        //
+                    }
                 });
 
                 expect(dotPageApiService.getFormIndetifier).toHaveBeenCalledWith(
@@ -637,7 +651,8 @@ describe('EditEmaStore', () => {
                         uuid: '123',
                         acceptTypes: 'test',
                         maxContentlets: 1,
-                        contentletsId: ['existing-contentlet-123', 'form-identifier-123']
+                        contentletsId: ['existing-contentlet-123', 'form-identifier-123'],
+                        variantId: '1'
                     },
                     pageContainers: [
                         {
@@ -649,7 +664,8 @@ describe('EditEmaStore', () => {
                     contentlet: {
                         identifier: 'existing-contentlet-123',
                         inode: 'existing-contentlet-inode-456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'test'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
@@ -669,7 +685,9 @@ describe('EditEmaStore', () => {
                         url: 'test-url',
                         language_id: '1'
                     },
-                    whenSaved: () => {}
+                    whenSaved: () => {
+                        //
+                    }
                 });
 
                 expect(addMessageSpy).toHaveBeenCalledWith({

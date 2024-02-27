@@ -150,6 +150,7 @@ describe('DotEmaDialogComponent', () => {
                 payload: PAYLOAD_MOCK
             });
         });
+
         it('should trigger editContentlet in the store', () => {
             const editContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
 
@@ -160,6 +161,7 @@ describe('DotEmaDialogComponent', () => {
                 title: PAYLOAD_MOCK.contentlet.title
             });
         });
+
         it('should trigger createContentlet in the store', () => {
             const createContentletSpy = jest.spyOn(storeSpy, 'createContentlet');
 
@@ -197,6 +199,14 @@ describe('DotEmaDialogComponent', () => {
             const resetSpy = jest.spyOn(storeSpy, 'resetDialog');
 
             component.resetDialog();
+
+            expect(resetSpy).toHaveBeenCalled();
+        });
+
+        it('should trigger a loading iframe in the store', () => {
+            const resetSpy = jest.spyOn(storeSpy, 'loadingIframe');
+
+            component.showLoadingIframe();
 
             expect(resetSpy).toHaveBeenCalled();
         });

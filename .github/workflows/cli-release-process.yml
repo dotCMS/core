@@ -208,7 +208,7 @@ jobs:
         env:
           DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         run: |
-          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
+          DOTCMS_LICENSE_PATH=~/.dotcms/license
           mkdir -p ${DOTCMS_LICENSE_PATH}
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
@@ -314,18 +314,6 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
-
-      - name: 'Setup git config'
-        run: |
-          git config user.name "${{ secrets.CI_MACHINE_USER }}"
-          git config user.email "dotCMS-Machine-User@dotcms.com"
-
-      - name: 'Tag release version in ${{ github.ref }}'
-        if: ${{ !contains(github.event.inputs.version, 'SNAPSHOT') }}
-        run: |
-          git checkout ${{ needs.precheck.outputs.HEAD }}
-          git tag -a "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}" -m "Release dotCLI version ${{ needs.precheck.outputs.RELEASE_VERSION }}"
-          git push origin "dotcms-cli${{ needs.precheck.outputs.RELEASE_VERSION }}"
 
   publish-npm-package:
     name: "Publish NPM Package"

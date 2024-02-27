@@ -16,7 +16,8 @@ const ACTION_MOCK: ClientData = {
         acceptTypes: 'file',
         identifier: '789',
         maxContentlets: 100,
-        uuid: '2'
+        uuid: '2',
+        variantId: '1'
     }
 };
 

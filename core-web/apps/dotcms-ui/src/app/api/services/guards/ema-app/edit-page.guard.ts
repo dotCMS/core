@@ -6,6 +6,7 @@ import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
 import { map } from 'rxjs/operators';
 
 import { DotPropertiesService, EmaAppConfigurationService } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 export const editPageGuard: CanActivateFn = (route) => {
     const properties = inject(DotPropertiesService);
@@ -13,7 +14,7 @@ export const editPageGuard: CanActivateFn = (route) => {
     const router = inject(Router);
 
     return combineLatest([
-        properties.getFeatureFlag('FEATURE_FLAG_NEW_EDIT_PAGE'),
+        properties.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_EDIT_PAGE),
         emaConfiguration.get(route.queryParams.url)
     ]).pipe(
         map(([flag, value]) => {

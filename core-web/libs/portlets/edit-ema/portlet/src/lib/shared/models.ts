@@ -29,14 +29,18 @@ export interface ContainerPayload {
     identifier: string;
     contentletsId?: string[];
     maxContentlets: number;
+    variantId: string;
     uuid: string;
 }
 
-interface ContentletPayload {
+export interface ContentletPayload {
     identifier: string;
     inode: string;
     title: string;
+    contentType: string;
+    onNumberOfPages?: number;
 }
+
 export interface SetUrlPayload {
     url: string;
 }
