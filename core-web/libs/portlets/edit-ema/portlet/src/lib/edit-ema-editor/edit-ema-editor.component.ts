@@ -42,10 +42,10 @@ import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
-    Row,
     ContentletArea,
     EmaDragItem,
-    ClientContentletArea
+    ClientContentletArea,
+    Container
 } from './components/ema-page-dropzone/types';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
@@ -184,7 +184,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     private draggedPayload: DraggedPalettePayload;
 
-    rows: Row[] = []
+    containers: Container[] = []
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
 
@@ -336,7 +336,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     updateCurrentDevice(device?: DotDevice & { icon?: string }) {
         this.currentDevice = device;
-        this.rows = []; // We need to reset the rows when we change the device
+        this.containers = []; // We need to reset the rows when we change the device
         this.contentlet = null; // We need to reset the contentlet when we change the device
     }
 
@@ -620,7 +620,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Row[] | ClientContentletArea;
+            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -653,7 +653,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
-                this.rows = <Row[]>data.payload;
+                this.containers = <Container[]>data.payload;
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
@@ -731,7 +731,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
 
         // Reset this on queryParams update
-        this.rows = [];
+        this.containers = [];
         this.contentlet = null;
     }
 
@@ -785,7 +785,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     protected resetDragProperties() {
         this.draggedPayload = undefined;
         this.contentlet = null;
-        this.rows = [];
+        this.containers = [];
         this.dragItem = null;
     }
 

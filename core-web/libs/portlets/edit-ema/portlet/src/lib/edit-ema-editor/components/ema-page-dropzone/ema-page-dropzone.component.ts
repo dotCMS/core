@@ -13,7 +13,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotErrorPipe } from './pipes/error/dot-error.pipe';
 import { DotPositionPipe } from './pipes/position/dot-position.pipe';
-import { Row, EmaDragItem } from './types';
+import { Container, EmaDragItem } from './types';
 
 import { PositionPayload, ClientData } from '../../../shared/models';
 
@@ -26,7 +26,7 @@ import { PositionPayload, ClientData } from '../../../shared/models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmaPageDropzoneComponent {
-    @Input() rows: Row[] = [];
+    @Input() containers: Container[] = [];
     @Input() item: EmaDragItem;
     @Output() place = new EventEmitter<PositionPayload>();
 

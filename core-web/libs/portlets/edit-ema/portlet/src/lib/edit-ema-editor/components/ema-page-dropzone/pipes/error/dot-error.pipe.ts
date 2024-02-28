@@ -20,7 +20,7 @@ export class DotErrorPipe implements PipeTransform {
     ): DotErrorPipeResponse {
         const { container = {} } =
             typeof payload === 'string' ? JSON.parse(payload) : payload || {};
-
+    
         const { acceptTypes = '', maxContentlets } = container;
 
         const contentletsLength = contentlets.length;

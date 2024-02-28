@@ -1,5 +1,6 @@
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model'
-import { getContainerData, getPageElementBound } from './utils/editor.utils';
+import { NOTIFY_CUSTOMER } from './models/editor.model';
+import { findContentletElement, getContainerData, getPageElementBound } from './utils/editor.utils';
 
 interface DotCMSPageEditorConfig {
     onReload: () => void;
@@ -13,13 +14,11 @@ class DotCMSPageEditor {
     }
 
     init() {
-        console.log('SdkDotPageEditor init!');
+        console.log('New SdkDotPageEditor init!');
         this.isInsideEditor = this.checkIfInsideEditor();
         if (this.isInsideEditor) {
             this.listenEditorMessages();
-            setTimeout(() => {
-                this.listenHoveredContentlet();
-            }, 100);
+            this.listenHoveredContentlet();
             this.scrollHandler();
             this.listenContentChange(); // We can use const observer = listenContentChange() to disconnect later
         }
@@ -37,13 +36,13 @@ class DotCMSPageEditor {
     private listenEditorMessages() {
         window.addEventListener('message', (event: MessageEvent) => {
             switch (event.data) {
-                case 'ema-request-bounds': {
-                    console.log('Requesting bounds');
+                case NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS: {
+                    console.log('Requesting bounds 2');
                     this.setBounds();
                     break;
                 }
 
-                case 'ema-reload-page': {
+                case NOTIFY_CUSTOMER.EMA_RELOAD_PAGE: {
                     console.log('Reloading page');
                     this.reloadPage();
                     break;
@@ -53,48 +52,41 @@ class DotCMSPageEditor {
     }
 
     private listenHoveredContentlet() {
-        const contentletElements = document.querySelectorAll('[data-dot-object="contentlet"]');
+        document.addEventListener('pointermove', (event) => {
+            const target = findContentletElement(event.target as HTMLElement);
+            if(!target) return;
+            const { x, y, width, height } = target.getBoundingClientRect();
 
-        contentletElements.forEach((element) => {
-            element.addEventListener('pointerenter', (event) => {
-                // Your pointer enter event handler logic here
-                // console.log('Pointer entered:', event.target);
-                const target = event.target as HTMLElement;
+            const contentletPayload = {
+                container:
+                    // Here extract dot-container from contentlet if is Headless
+                    // or search in parent container if is VTL
+                    target.dataset?.['dotContainer']
+                        ? JSON.parse(target.dataset?.['dotContainer'])
+                        : getContainerData(target),
+                contentlet: {
+                    identifier: target.dataset?.['dotIdentifier'],
+                    title: target.dataset?.['dotTitle'],
+                    inode: target.dataset?.['dotInode'],
+                    contentType: target.dataset?.['dotType']
+                }
+            };
 
-                const { x, y, width, height } = target.getBoundingClientRect();
-
-                const contentletPayload = {
-                    container:
-                        // Here extract dot-container from contentlet if is Headless
-                        // or search in parent container if is VTL
-                        target.dataset?.['dotContainer']
-                            ? JSON.parse(target.dataset?.['dotContainer'])
-                            : getContainerData(element),
-                    contentlet: {
-                        identifier: target.dataset?.['dotIdentifier'],
-                        title: target.dataset?.['dotTitle'],
-                        inode: target.dataset?.['dotInode'],
-                        contentType: target.dataset?.['dotType']
-                    }
-                };
-
-                postMessageToEditor({
-                    action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                    payload: {
-                        x,
-                        y,
-                        width,
-                        height,
-                        payload: contentletPayload
-                    }
-                });
+            postMessageToEditor({
+                action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                payload: {
+                    x,
+                    y,
+                    width,
+                    height,
+                    payload: contentletPayload
+                }
             });
         });
     }
 
     private scrollHandler() {
         window.addEventListener('scroll', () => {
-            // console.log('scroll');
             postMessageToEditor({
                 action: CUSTOMER_ACTIONS.IFRAME_SCROLL
             });
@@ -112,8 +104,6 @@ class DotCMSPageEditor {
     }
 
     private listenContentChange() {
-        // const config = { attributes: true, childList: true, subtree: true };
-
         const observer = new MutationObserver((mutationsList) => {
             for (const { addedNodes, removedNodes, type } of mutationsList) {
                 if (type === 'childList') {
@@ -141,19 +131,9 @@ class DotCMSPageEditor {
     }
 
     private setBounds() {
-        const rowsHeadless = Array.from(
-            document.querySelectorAll('[data-dot="row"]')
-        ) as unknown as HTMLDivElement[];
-
-        const rowsVTL = Array.from(
-            document.querySelectorAll('.container > .row:first-child:not([class*=" "])')
-        ) as unknown as HTMLDivElement[];
-
-        const rows = rowsHeadless.length > 0 ? rowsHeadless : rowsVTL;
-
-        const positionData = getPageElementBound(rows);
-        console.log('position: ', positionData);
-
+        const containers = Array.from(document.querySelectorAll('[data-dot-object="container"]')) as unknown as HTMLDivElement[];
+        const positionData = getPageElementBound(containers);
+        
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_BOUNDS,
             payload: positionData

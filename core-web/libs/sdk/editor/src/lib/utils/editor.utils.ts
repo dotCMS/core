@@ -1,72 +1,64 @@
-export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
-    if (!rowsNodes) {
-        return [];
-    }
 
-    return rowsNodes.map((row) => {
-        const rowRect = row.getBoundingClientRect();
-        const columns = row.children;
+export function getPageElementBound(containers: HTMLDivElement[]) {
+    return containers.map((container) => {
+        const containerRect = container.getBoundingClientRect();
+        const contentlets = Array.from(
+            container.querySelectorAll('[data-dot-object="contentlet"]')
+        ) as HTMLDivElement[];
 
         return {
-            x: rowRect.x,
-            y: rowRect.y,
-            width: rowRect.width,
-            height: rowRect.height,
-            columns: Array.from(columns).map((column) => {
-                const columnRect = column.getBoundingClientRect();
-                const containers = Array.from(
-                    column.querySelectorAll('[data-dot="container"]')
-                ) as HTMLDivElement[];
-
-                const columnX = columnRect.left - rowRect.left;
-                const columnY = columnRect.top - rowRect.top;
-
-                return {
-                    x: columnX,
-                    y: columnY,
-                    width: columnRect.width,
-                    height: columnRect.height,
-                    containers: containers.map((container) => {
-                        const containerRect = container.getBoundingClientRect();
-                        const contentlets = Array.from(
-                            container.querySelectorAll('[data-dot-object="contentlet"]')
-                        ) as HTMLDivElement[];
-
-                        return {
-                            x: 0,
-                            y: containerRect.y - rowRect.top,
-                            width: containerRect.width,
-                            height: containerRect.height,
-                            payload: container.dataset?.['content'], //TODO: Change this later
-                            contentlets: contentlets.map((contentlet) => {
-                                const contentletRect = contentlet.getBoundingClientRect();
-
-                                return {
-                                    x: 0,
-                                    y: contentletRect.y - containerRect.y,
-                                    width: contentletRect.width,
-                                    height: contentletRect.height,
-                                    payload: JSON.stringify({
-                                        container: contentlet.dataset?.['dotContainer']
-                                            ? JSON.parse(contentlet.dataset?.['dotContainer'])
-                                            : getContainerData(contentlet),
-                                        contentlet: {
-                                            identifier: contentlet.dataset?.['dotIdentifier'],
-                                            title: contentlet.dataset?.['dotTitle'],
-                                            inode: contentlet.dataset?.['dotInode'],
-                                            contentType: contentlet.dataset?.['dotType']
-                                        }
-                                    })
-                                };
-                            })
-                        };
-                    })
-                };
-            })
+            x: containerRect.x,
+            y: containerRect.y,
+            width: containerRect.width,
+            height: containerRect.height,
+            payload: container.dataset?.['content'], //TODO: Change this later
+            contentlets: getContentletsBound(containerRect, contentlets)
         };
-    });
+    })
 }
 
+export function getContainersBound(rowRect: DOMRect,containers: HTMLDivElement[]) { 
+    return containers.map((container) => {
+        const containerRect = container.getBoundingClientRect();
+        const contentlets = Array.from(
+            container.querySelectorAll('[data-dot-object="contentlet"]')
+        ) as HTMLDivElement[];
+
+        return {
+            x: containerRect.x,
+            y: containerRect.y - rowRect.top,
+            width: containerRect.width,
+            height: containerRect.height,
+            payload: container.dataset?.['content'], //TODO: Change this later
+            contentlets: getContentletsBound(containerRect, contentlets)
+        };
+    })
+}
+
+export function getContentletsBound(containerRect: DOMRect, contentlets: HTMLDivElement[]) {
+    return contentlets.map((contentlet) => {
+        const contentletRect = contentlet.getBoundingClientRect();
+
+        return {
+            x: 0,
+            y: contentletRect.y - containerRect.y,
+            width: contentletRect.width,
+            height: contentletRect.height,
+            payload: JSON.stringify({
+                container: contentlet.dataset?.['dotContainer']
+                    ? JSON.parse(contentlet.dataset?.['dotContainer'])
+                    : getContainerData(contentlet),
+                contentlet: {
+                    identifier: contentlet.dataset?.['dotIdentifier'],
+                    title: contentlet.dataset?.['dotTitle'],
+                    inode: contentlet.dataset?.['dotInode'],
+                    contentType: contentlet.dataset?.['dotType']
+                }
+            })
+        };
+    })
+}
+//Used to get container data from VTLS.
 export function getContainerData(element: Element) {
     // Find the closest ancestor element with data-dot-object="container" attribute
     const container = element.closest('[data-dot-object="container"]') as HTMLElement;
@@ -84,5 +76,16 @@ export function getContainerData(element: Element) {
         // If no container element is found, return null
         console.warn('No container found for the contentlet');
         return null;
+    }
+}
+//TODO: Fix typeLater
+// USed to find contentlets and later add the listeners "onHover"
+export function findContentletElement(element: HTMLDivElement | any) {
+    if (!element) return null;
+
+    if (element.dataset && element.dataset?.['dotObject'] === 'contentlet') {
+        return element;
+    } else {
+        return findContentletElement(element?.['parentElement']);
     }
 }
