@@ -12,9 +12,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { PromptType } from './ai-image-prompt.models';
 
 import { AIImageSize, DotAiService } from '../../shared';
-import {
-    DotAIImageGenerationResponse
-} from '../../shared/services/dot-ai/dot-ai.models';
+import { DotAIImageGenerationResponse } from '../../shared/services/dot-ai/dot-ai.models';
 
 const DEFAULT_INPUT_PROMPT: PromptType = 'input';
 

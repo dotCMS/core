@@ -29,8 +29,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
-
-import {  DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
+import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
 import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/ai-image-prompt-input.component';
 
 import { DotAIImageGenerationResponse } from '../../shared/services/dot-ai/dot-ai.models';

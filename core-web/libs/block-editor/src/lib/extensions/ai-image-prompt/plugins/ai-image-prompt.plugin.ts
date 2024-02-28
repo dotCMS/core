@@ -6,11 +6,9 @@ import { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-
 import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
-
 
 import { AIImagePromptComponent } from '../ai-image-prompt.component';
 import { AI_IMAGE_PROMPT_PLUGIN_KEY } from '../ai-image-prompt.extension';
