@@ -403,16 +403,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly updateOldRows = this.updater((state, newRows: DotGridStackWidget[]) => {
         const { rows: oldRows } = state;
 
-        const newStateRows = oldRows.map((row) => {
-            const newRow = newRows.find((newRow) => newRow.y === row.y); // Look at the row in the same Y position
+        const newStateRows = oldRows.map((oldRow) => {
+            const newRow = newRows.find((newRow) => newRow.y === oldRow.y); // Look at the row in the same Y position
 
             return {
                 ...newRow, // We want the data from the backend
-                id: row.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
+                id: oldRow.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
                 subGridOpts: {
                     ...newRow.subGridOpts,
                     children: newRow.subGridOpts.children.map((newChild) => {
-                        const oldChild = row.subGridOpts.children.find(
+                        const oldChild = oldRow.subGridOpts.children.find(
                             (oldChild) => oldChild.x === newChild.x
                         ); // Look at the column in the same X position
 
