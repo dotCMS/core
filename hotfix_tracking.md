@@ -203,3 +203,5 @@ This maintenance release includes the following code fixes:
 164. https://github.com/dotCMS/core/issues/26605 : Relation_type field too small #26605
 
 **Release-23.01.13**
+
+165. https://github.com/dotCMS/core/issues/25296 : Limited users cannot create content types on System Host #25296
