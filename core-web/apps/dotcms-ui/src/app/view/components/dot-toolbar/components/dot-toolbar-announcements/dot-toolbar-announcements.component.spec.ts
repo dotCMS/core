@@ -106,7 +106,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
         expect(mask).toBeFalsy();
     });
 
-    it('should have a target blank on the announcements link', () => {
+    it('should have about links', () => {
         spectator.detectChanges();
         const announcementLink = spectator.query(byTestId('announcements__about-link'));
         expect(announcementLink.getAttribute('target')).toBe('_blank');
