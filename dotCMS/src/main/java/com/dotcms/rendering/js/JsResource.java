@@ -550,9 +550,11 @@ public class JsResource {
 
         final  Map<Object, Object> objectObjectMap = new HashMap<>();
 
-        for (final Map.Entry<String, Object> entry : map.entrySet()) {
+        if (Objects.nonNull(map)) {
+            for (final Map.Entry<String, Object> entry : map.entrySet()) {
 
-            objectObjectMap.put(entry.getKey(), entry.getValue());
+                objectObjectMap.put(entry.getKey(), entry.getValue());
+            }
         }
 
         return objectObjectMap;
