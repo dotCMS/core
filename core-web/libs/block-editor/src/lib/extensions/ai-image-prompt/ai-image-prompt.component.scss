@@ -3,14 +3,12 @@
 .dialog-prompt__wrapper {
     gap: $spacing-5;
 
-    > div {
+    > * {
         display: flex;
         flex-direction: column;
         flex: 1;
         justify-content: center;
     }
-
-
 }
 
 .dialog-prompt__input {
@@ -31,7 +29,7 @@
 }
 
 .dialog-prompt__text {
-    textarea{
+    textarea {
         max-height: 350px;
         min-height: 350px;
     }
@@ -53,18 +51,15 @@ p-accordion {
     align-items: center;
     border-radius: $border-radius-md;
 
-    &.vertical{
+    &.s1024x1792 {
         aspect-ratio: 1/1.25;
     }
 
-    &.horizontal{
+    &.s1792x1024 {
         aspect-ratio: 1/0.5;
     }
 
-    &.square{
+    &.s1024x1024 {
         aspect-ratio: 1/1;
     }
 }
-
-
-

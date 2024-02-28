@@ -1,9 +1,10 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import {
-    FormBuilder,
+    FormControl,
+    FormGroup,
     FormGroupDirective,
     FormsModule,
     ReactiveFormsModule,
@@ -11,11 +12,12 @@ import {
 } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
-import { ConfirmationService, SelectItem } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
+import { GalleriaModule } from 'primeng/galleria';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
@@ -27,9 +29,11 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { PromptType } from './ai-image-prompt.models';
-import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
+
+import {  DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
 import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/ai-image-prompt-input.component';
+
+import { DotAIImageGenerationResponse } from '../../shared/services/dot-ai/dot-ai.models';
 
 @Component({
     selector: 'dot-ai-image-prompt',
@@ -54,24 +58,24 @@ import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/
         DropdownModule,
         InputTextareaModule,
         AccordionModule,
-        SkeletonModule
+        SkeletonModule,
+        JsonPipe,
+        GalleriaModule
     ],
     providers: [FormGroupDirective],
 
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AIImagePromptComponent {
+export class AIImagePromptComponent implements OnInit {
     protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
     protected readonly ComponentStatus = ComponentStatus;
     private confirmationService = inject(ConfirmationService);
     private dotMessageService = inject(DotMessageService);
     private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
-    sizeOptions: SelectItem<number>[] = [
-        { value: 1, label: 'Horizontal (1792 x 1024)' },
-        { value: 2, label: 'Square (1024 x 1024)' },
-        { value: 3, label: 'Vertical (1024 x 1792)' }
-    ];
+    prompt: string = '';
+    form: FormGroup;
+    galleriaActiveIndex: number = 0;
 
     /**
      * Hides the dialog.
@@ -81,16 +85,24 @@ export class AIImagePromptComponent {
         this.store.hideDialog();
     }
 
-    /**
-     * Selects the prompt type
-     *
-     * @return {void}
-     */
-    selectType(promptType: PromptType, current: PromptType): void {
-        if (current != promptType) {
-            this.store.setPromptType(promptType);
-        }
+    ngOnInit(): void {
+        this.initForm();
+
+        this.vm$.subscribe((vm) => {
+            vm.status === ComponentStatus.LOADING ? this.form.disable() : this.form.enable();
+        });
     }
+
+    // /**
+    //  * Selects the prompt type
+    //  *
+    //  * @return {void}
+    //  */
+    // selectType(promptType: PromptType, current: PromptType): void {
+    //     if (current != promptType) {
+    //         this.store.setPromptType(promptType);
+    //     }
+    // }
 
     /**
      * Generates an image based on the provided prompt.
@@ -98,8 +110,13 @@ export class AIImagePromptComponent {
      * @param {string} prompt - The text prompt used to generate the image.
      * @return {void} - This method does not return any value.
      */
-    generateImage(prompt: string): void {
-        this.store.generateImage(prompt);
+    generateImage(): void {
+        this.store.generateImage(this.form.value);
+    }
+
+    insetImage(imageInfo: DotAIImageGenerationResponse): void {
+        this.store.patchState({ selectedImage: imageInfo });
+        //TODO: add image carrousel and notify the store
     }
 
     /**
@@ -111,8 +128,13 @@ export class AIImagePromptComponent {
         this.store.cleanError();
     }
 
-    form = inject(FormBuilder).group({
-        prompt: ['', Validators.required]
-    });
     promptType = 1;
+
+    private initForm(): void {
+        this.form = new FormGroup({
+            text: new FormControl('', Validators.required),
+            type: new FormControl('input', Validators.required),
+            size: new FormControl('1792x1024', Validators.required)
+        });
+    }
 }

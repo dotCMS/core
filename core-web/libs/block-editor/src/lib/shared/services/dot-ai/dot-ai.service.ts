@@ -7,7 +7,12 @@ import { catchError, map, pluck, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { AiPluginResponse, DotAICompletionsConfig, DotAIImageResponse } from './dot-ai.models';
+import {
+    AiPluginResponse,
+    DotAICompletionsConfig,
+    DotAIImageGenerationResponse,
+    DotAIImageResponse
+} from './dot-ai.models';
 
 import { AI_PLUGIN_KEY } from '../../utils';
 
@@ -17,7 +22,7 @@ const headers = new HttpHeaders({
     'Content-Type': 'application/json'
 });
 
-type ImageSize = '1024x1024' | '1024x1792' | '1792x1024';
+export type AIImageSize = '1024x1024' | '1024x1792' | '1792x1024';
 
 @Injectable()
 export class DotAiService {
@@ -69,8 +74,8 @@ export class DotAiService {
      */
     public generateAndPublishImage(
         prompt: string,
-        size: ImageSize = '1024x1024'
-    ): Observable<DotCMSContentlet[]> {
+        size: AIImageSize = '1024x1024'
+    ): Observable<DotAIImageGenerationResponse> {
         return this.http
             .post<DotAIImageResponse>(
                 `${API_ENDPOINT}/image/generate`,
@@ -107,8 +112,10 @@ export class DotAiService {
             );
     }
 
-    private createAndPublishContentlet(image: DotAIImageResponse): Observable<DotCMSContentlet[]> {
-        const { response, tempFileName } = image;
+    private createAndPublishContentlet(
+        aiResponse: DotAIImageResponse
+    ): Observable<DotAIImageGenerationResponse> {
+        const { response, tempFileName } = aiResponse;
         const contentlets: Partial<DotCMSContentlet>[] = [
             {
                 baseType: 'dotAsset',
@@ -125,11 +132,15 @@ export class DotAiService {
             })
             .pipe(
                 pluck('entity', 'results'),
+                map((contentlets: DotCMSContentlet[]) => ({
+                    contentlet: Object.values(contentlets[0])[0],
+                    aiResponse
+                })),
                 catchError(() =>
                     throwError(
                         'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
                     )
                 )
-            ) as Observable<DotCMSContentlet[]>;
+            ) as Observable<DotAIImageGenerationResponse>;
     }
 }

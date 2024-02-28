@@ -1,3 +1,5 @@
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 export interface AiPluginResponse {
     id: string;
     object: string;
@@ -31,6 +33,11 @@ export interface DotAIImageResponse {
     revised_prompt: string;
     tempFileName: string;
     url: string;
+}
+
+export interface DotAIImageGenerationResponse {
+    contentlet: DotCMSContentlet;
+    aiResponse: DotAIImageResponse;
 }
 
 export interface DotAICompletionsConfig {
