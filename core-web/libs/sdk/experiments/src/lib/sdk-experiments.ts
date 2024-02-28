@@ -24,6 +24,7 @@ import { dotLogger } from './utils/utils';
  *
  */
 export class SdkExperiments {
+    // TODO: make this class the entrypoint of the library
     private static instance: SdkExperiments;
 
     constructor(private config: SdkExperimentConfig) {
@@ -131,7 +132,7 @@ export class SdkExperiments {
             // TODO: Final parsed data will be stored
             persistData(entity)
                 .then(() => {
-                    dotLogger(`Experiment data stored successfully `, this.getIsDebugActive());
+                    dotLogger('Experiment data stored successfully', this.getIsDebugActive());
                 })
                 .catch((onerror) => {
                     dotLogger(`Error storing data. ${onerror}`, this.getIsDebugActive());

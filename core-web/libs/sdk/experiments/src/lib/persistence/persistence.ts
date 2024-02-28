@@ -95,19 +95,9 @@ const getOnErrorMessage = (error: DOMException | null): string => {
         'A database error occurred while using IndexedDB. Your browser may not support IndexedDB or IndexedDB might not be enabled.';
 
     if (error) {
-        errorMessage += ' Details: ';
-
-        if (error.name) {
-            errorMessage += ` Error Name: ${error.name}`;
-        }
-
-        if (error.message) {
-            errorMessage += ` Error Message: ${error.message}`;
-        }
-
-        if (error.code) {
-            errorMessage += ` Error Code: ${error.code}`;
-        }
+        errorMessage += error.name ? ` Error Name: ${error.name}` : '';
+        errorMessage += error.message ? ` Error Message: ${error.message}` : '';
+        errorMessage += error.code ? ` Error Code: ${error.code}` : '';
     }
 
     return errorMessage;

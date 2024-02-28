@@ -15,6 +15,7 @@ declare global {
  *
  */
 if (window) {
+    // TODO: make this file buildable by task and publish to dotCMS/src/main/webapp/html
     try {
         const dataAttributes = getScriptDataAttributes();
         if (dataAttributes) {

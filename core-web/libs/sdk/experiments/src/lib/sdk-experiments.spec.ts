@@ -4,7 +4,6 @@ import fetchMock from 'fetch-mock';
 import { API_EXPERIMENTS_URL, EXPERIMENT_DB_KEY_PATH } from './constants';
 import { IsUserIncludedResponse } from './mocks/is-user-included.mock';
 import { SdkExperimentConfig } from './models';
-// import { persistData } from './persistence/persistence';
 import { getData, persistData } from './persistence/persistence';
 import { SdkExperiments } from './sdk-experiments';
 

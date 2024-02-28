@@ -107,9 +107,7 @@ export interface AssignedExperiments {
  */
 export interface IsUserIncludedApiResponse {
     entity: AssignedExperiments;
-    errors: never[];
-    i18nMessagesMap: Record<string, unknown>;
-    messages: unknown[];
-    pagination: unknown | null;
-    permissions: unknown[];
+    i18nMessagesMap: Record<string, string>;
+    errors: string[];
+    messages: string[];
 }
