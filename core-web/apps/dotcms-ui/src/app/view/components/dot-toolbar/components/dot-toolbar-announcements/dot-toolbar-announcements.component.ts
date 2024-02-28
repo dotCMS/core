@@ -11,12 +11,10 @@ import {
     inject,
     signal
 } from '@angular/core';
-
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
-
-import { skip } from 'rxjs/operators';
 
 import {
     Announcement,
@@ -27,7 +25,6 @@ import {
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
     selector: 'dot-toolbar-announcements',
@@ -55,7 +52,7 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
     aboutLinks: { title: string; items: AnnouncementLink[] }[] = [];
 
     constructor() {
-        this.siteService.switchSite$.pipe(takeUntilDestroyed(), skip(1)).subscribe(() => {
+        this.siteService.switchSite$.pipe(takeUntilDestroyed()).subscribe(() => {
             this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.load();
             this.aboutLinks = this.getAboutLinks();
