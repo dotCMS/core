@@ -42,6 +42,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.File;
@@ -528,10 +529,10 @@ public class JsResource {
                     .build();
 
             final JavascriptReader javascriptReader = JavascriptReaderFactory.getJavascriptReader(UtilMethods.isSet(folderName));
-            final Map queryParams = uriInfo.getQueryParameters();
+            final MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
             final Map<String, Object> contextParams = CollectionsUtils.map(
                     "pathParam", pathParam,
-                    "queryParams", ProxyHashMap.from(queryParams),
+                    "queryParams", ProxyHashMap.from((Map)queryParams),
                     "bodyMap",  ProxyHashMap.from(toObjectObjectMap(bodyMap)),
                     "binaries", ProxyArray.fromList(Arrays.asList(binaries)));
 
@@ -563,7 +564,7 @@ public class JsResource {
     private Response evalJavascript(final HttpServletRequest request, final HttpServletResponse response,
                                     final Reader javascriptReader, final Map<String, Object> contextParams,
                                     final User user, final DotJSONCache cache)
-            throws Exception {
+            throws JsException {
 
         final ScriptEngine scriptEngine = ScriptEngineFactory.getInstance().getEngine(ScriptEngineFactory.JAVASCRIPT_ENGINE);
 
@@ -585,7 +586,7 @@ public class JsResource {
             if (e.getCause() instanceof DotToolException) {
 
                 Logger.error(this,"Error evaluating javascript: " + (e.getCause()).getCause().getMessage());
-                throw (Exception) (e.getCause()).getCause();
+                throw new JsException(e.getCause().getCause());
             }
         }
 
