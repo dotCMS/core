@@ -57,6 +57,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.base.Strings;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -69,16 +70,7 @@ import io.vavr.control.Try;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.ACTIVE_FOLDER_ID;
@@ -2110,9 +2102,19 @@ public class BrowserAjax {
         boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts = hostAPI.findAll(user, respectFrontendRoles);
+		// Remove invalid hosts, before sorting the list
+		hosts.removeIf(host -> Objects.isNull(host) || Strings.isNullOrEmpty(host.getHostname()));
 		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
 		Collections.sort(hosts, new HostNameComparator());
 		for (Host h: hosts) {
+			/**
+			 * When we created the provided host list, we already validated the user's permission over the system host.
+			 * Therefore, there is no need to validate it again.
+			 **/
+			if (h.isSystemHost()){
+				hostsToReturn.add(hostMap(h));
+				continue;
+			}
 			List permissions = new ArrayList();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(h, roles, user);

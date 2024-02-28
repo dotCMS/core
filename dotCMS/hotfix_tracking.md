@@ -65,3 +65,4 @@ This maintenance release includes the following code fixes:
 58. https://github.com/dotCMS/core/issues/26505 : [UI] - Make AI Image Block Production-ready #26505
 59. https://github.com/dotCMS/core/issues/27155 : Endpoint Change for AI Plugin Detection in dotCMS #27155
 60. https://github.com/dotCMS/core/issues/26853 : [UI] Implement Handle Errors from endpoint #26853
+61. https://github.com/dotCMS/core/issues/25296 : Limited users cannot create content types on System Host #25296

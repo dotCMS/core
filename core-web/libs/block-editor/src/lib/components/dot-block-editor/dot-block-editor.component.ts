@@ -442,7 +442,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         );
 
         this.content =
-            this.allowedBlocks?.length > 1
+            this._allowedBlocks?.length > 1
                 ? removeInvalidNodes(filterContent, this._allowedBlocks)
                 : filterContent;
     }
