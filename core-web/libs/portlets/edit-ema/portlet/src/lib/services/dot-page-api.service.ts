@@ -40,7 +40,7 @@ export interface DotPageApiResponse {
         contentType: string;
         inode: string;
         identifier: string;
-    }
+    };
 }
 
 export interface DotPageApiParams {
