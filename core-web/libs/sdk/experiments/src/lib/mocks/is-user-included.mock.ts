@@ -28,7 +28,5 @@ export const IsUserIncludedResponse: IsUserIncludedApiResponse = {
     },
     errors: [],
     i18nMessagesMap: {},
-    messages: [],
-    pagination: null,
-    permissions: []
+    messages: []
 };
