@@ -31,6 +31,7 @@ export interface DotAiImagePromptComponentState {
     error: string;
     orientationOptions: SelectItem<string>[];
     selectedImage: DotAIImageGenerationResponse | null;
+    galleryActiveIndex: number;
 }
 
 export interface VmAiImagePrompt {
@@ -38,6 +39,7 @@ export interface VmAiImagePrompt {
     status: ComponentStatus;
     orientationOptions: SelectItem[];
     images: DotAIImageGenerationResponse[];
+    galleryActiveIndex: number;
 }
 
 const initialState: DotAiImagePromptComponentState = {
@@ -52,7 +54,8 @@ const initialState: DotAiImagePromptComponentState = {
         { value: '1024x1024', label: 'Square (1024 x 1024)' },
         { value: '1024x1792', label: 'Vertical (1024 x 1792)' }
     ],
-    selectedImage: null
+    selectedImage: null,
+    galleryActiveIndex: 0
 };
 
 @Injectable({ providedIn: 'root' })
@@ -91,11 +94,12 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
 
     readonly vm$: Observable<VmAiImagePrompt> = this.select(
         this.state$,
-        ({ showDialog, status, orientationOptions, images }) => ({
+        ({ showDialog, status, orientationOptions, images,galleryActiveIndex }) => ({
             showDialog,
             status,
             orientationOptions,
-            images
+            images,
+            galleryActiveIndex
         })
     );
 
@@ -129,7 +133,8 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                         (response) => {
                             this.patchState((state) => ({
                                 status: ComponentStatus.IDLE,
-                                images: [...state.images, response]
+                                images: [...state.images, response],
+                                galleryActiveIndex: state.images.length
                             }));
                         },
                         (error: string) => {

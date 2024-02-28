@@ -25,6 +25,8 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { filter } from 'rxjs/operators';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
@@ -72,9 +74,7 @@ export class AIImagePromptComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
-    prompt: string = '';
     form: FormGroup;
-    galleriaActiveIndex: number = 0;
 
     /**
      * Hides the dialog.
@@ -87,9 +87,17 @@ export class AIImagePromptComponent implements OnInit {
     ngOnInit(): void {
         this.initForm();
 
-        this.vm$.subscribe((vm) => {
-            vm.status === ComponentStatus.LOADING ? this.form.disable() : this.form.enable();
+        this.store.isLoading$.pipe().subscribe((isLoading) => {
+            isLoading ? this.form.disable() : this.form.enable();
         });
+
+        this.store.getImages$.pipe(filter(images => !!images.length)).subscribe((images) => {
+            this.form.patchValue({'text': images[images.length - 1].aiResponse.revised_prompt });
+        });
+
+        // this.vm$.subscribe((vm) => {
+        //     vm.status === ComponentStatus.LOADING ? this.form.disable() : this.form.enable();
+        // });
     }
 
     // /**

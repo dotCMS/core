@@ -55,7 +55,7 @@
                     </p-accordionTab>
                     <p-accordionTab [disabled]="form.disabled" header="Prompt" iconPos="end">
                         <div class="field dialog-prompt__text">
-                            <label dotFieldRequired>Prompt</label>
+                            <label dotFieldRequired>{{ vm.images.length ? 'AI Prompt (Rewritten)' : 'Prompt' }}</label>
 
                             <textarea
                                 class="w-full"
@@ -67,15 +67,14 @@
                         </div>
                     </p-accordionTab>
                 </p-accordion>
-
                 <button
                     class="align-self-end p-button-outlined"
                     [disabled]="form.invalid || form.disabled"
                     (click)="generateImage()"
                     pButton
                     type="submit"
-                    label="Generate">
-                    <svg
+                    [label]="vm.status === 'LOADING' ? 'Generating' : vm.images.length ? 'Regenerate' : 'Generate' ">
+                    <svg *ngIf="vm.status !== 'LOADING' else loading"
                         xmlns="http://www.w3.org/2000/svg"
                         width="18"
                         height="22"
@@ -91,6 +90,10 @@
                             d="M3.24925 6.62823L1.01825 7.57256C0.924385 7.61231 0.844063 7.68016 0.787521 7.76748C0.730978 7.8548 0.700781 7.95761 0.700781 8.06282C0.700781 8.16802 0.730978 8.27083 0.787521 8.35815C0.844063 8.44547 0.924385 8.51333 1.01825 8.55307L3.24925 9.4974L4.1592 11.8127C4.19751 11.9101 4.2629 11.9935 4.34704 12.0522C4.43118 12.1109 4.53026 12.1422 4.63163 12.1422C4.733 12.1422 4.83208 12.1109 4.91622 12.0522C5.00036 11.9935 5.06576 11.9101 5.10406 11.8127L6.01402 9.4974L8.24456 8.55307C8.33841 8.51332 8.41873 8.44546 8.47527 8.35815C8.53181 8.27083 8.56201 8.16801 8.56201 8.06282C8.56201 7.95762 8.53181 7.8548 8.47527 7.76749C8.41873 7.68017 8.33841 7.61231 8.24456 7.57256L6.01402 6.62823L5.10406 4.31342C5.06576 4.21602 5.00036 4.13266 4.91622 4.07399C4.83208 4.01531 4.733 3.98397 4.63163 3.98397C4.53026 3.98397 4.43118 4.01531 4.34704 4.07399C4.2629 4.13266 4.19751 4.21602 4.1592 4.31342L3.24925 6.62823Z"
                             fill="#426BF0" />
                     </svg>
+                    <ng-template #loading>
+                        <i class="pi pi-spin pi-spinner"></i>
+                    </ng-template>
+
                 </button>
             </form>
 
@@ -119,29 +122,37 @@
                             d="M26.5741 12.0668L22.2196 13.9099C22.0364 13.9875 21.8797 14.1199 21.7693 14.2904C21.6589 14.4608 21.6 14.6615 21.6 14.8668C21.6 15.0721 21.6589 15.2728 21.7693 15.4432C21.8797 15.6137 22.0364 15.7461 22.2196 15.8237L26.5741 17.6668L28.3502 22.1859C28.4249 22.376 28.5526 22.5387 28.7168 22.6532C28.881 22.7678 29.0744 22.8289 29.2723 22.8289C29.4701 22.8289 29.6635 22.7678 29.8277 22.6532C29.992 22.5387 30.1196 22.376 30.1944 22.1859L31.9704 17.6668L36.324 15.8237C36.5072 15.7461 36.664 15.6136 36.7743 15.4432C36.8847 15.2728 36.9436 15.0721 36.9436 14.8668C36.9436 14.6615 36.8847 14.4608 36.7743 14.2904C36.664 14.1199 36.5072 13.9875 36.324 13.9099L31.9704 12.0668L30.1944 7.5487C30.1196 7.35858 29.992 7.19589 29.8277 7.08136C29.6635 6.96684 29.4701 6.90568 29.2723 6.90568C29.0744 6.90568 28.881 6.96684 28.7168 7.08136C28.5526 7.19589 28.4249 7.35858 28.3502 7.5487L26.5741 12.0668Z"
                             fill="#7042F0" />
                     </svg>
+                    <i></i>
                 </div>
                 <ng-template #gallery>
                     <div>
-                        <p>Preview</p>
 
                         <p-galleria
                             #galleria
-                            [(activeIndex)]="galleriaActiveIndex"
-                            [value]="vm.images"
-                            [showIndicators]="true"
+                            [numVisible]="5"
+                            [circular]="true"
+                            [showItemNavigators]="true"
                             [showThumbnails]="false"
+                            [(activeIndex)]="vm.galleryActiveIndex"
+                            [value]="vm.images"
                             [containerStyle]="{ 'max-width': '100%' }">
                             <ng-template pTemplate="item" let-item>
                                 <img
                                     [src]="item.contentlet.assetVersion"
                                     style="width: 100%; display: block" />
                             </ng-template>
+                            <ng-template pTemplate="thumbnail" let-item>
+                                <div class="grid grid-nogutter justify-content-center">
+                                    <img [src]="item.contentlet.assetVersion+'/80h/q15'" />
+                                </div>
+                            </ng-template>
                         </p-galleria>
                     </div>
+                    <span> {{vm.galleryActiveIndex+1}}/{{vm.images.length}}  </span>
 
                     <button
                         class="align-self-end"
-                        (click)="insetImage(vm.images[galleria.activeIndex])"
+                        (click)="insetImage(vm.images[vm.galleryActiveIndex])"
                         pButton
                         type="submit"
                         icon="pi pi-check"
