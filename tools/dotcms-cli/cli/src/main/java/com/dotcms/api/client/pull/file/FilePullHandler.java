@@ -208,6 +208,7 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
             var errorMessage = String.format("Error occurred while pulling assets: [%s].",
                     e.getMessage());
             logger.error(errorMessage, e);
+            Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
         }
 

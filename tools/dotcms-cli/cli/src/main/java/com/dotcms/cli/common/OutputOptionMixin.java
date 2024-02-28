@@ -49,7 +49,7 @@ public class OutputOptionMixin implements MessageWriter {
     ColorScheme colorScheme() {
         ColorScheme colors = scheme;
         if (colors == null) {
-            colors = scheme = mixee.commandLine().getColorScheme();
+            colors = scheme = commandLine().getColorScheme();
         }
         return colors;
     }
@@ -57,7 +57,7 @@ public class OutputOptionMixin implements MessageWriter {
     public PrintWriter out() {
         PrintWriter o = out;
         if (o == null) {
-            o = out = mixee.commandLine().getOut();
+            o = out = commandLine().getOut();
         }
         return o;
     }
@@ -65,7 +65,7 @@ public class OutputOptionMixin implements MessageWriter {
     public PrintWriter err() {
         PrintWriter e = err;
         if (e == null) {
-            e = err = mixee.commandLine().getErr();
+            e = err = commandLine().getErr();
         }
         return e;
     }
@@ -162,6 +162,14 @@ public class OutputOptionMixin implements MessageWriter {
         }
     }
 
+    /**
+     * Returns the CommandLine object for the current command.
+     * Convenience method to avoid having to call mixee.commandLine() directly. and to allow for easy mocking
+     * @return the CommandLine object for the current command
+     */
+    public CommandLine commandLine() {
+        return mixee.commandLine();
+    }
 
     ExceptionHandler exceptionHandler;
 
@@ -235,7 +243,7 @@ public class OutputOptionMixin implements MessageWriter {
             err().println(colorScheme().stackTraceText(unwrappedEx));
         }
 
-        final CommandLine cmd = mixee.commandLine();
+        final CommandLine cmd = commandLine();
         //If we want to force usage to be printed upon certain type of exception we could do:
         // cmd.usage(cmd.getOut());
 
