@@ -138,10 +138,18 @@ describe('DotExperimentsReportsComponent', () => {
 
     beforeAll(() => {
         global.ResizeObserver = class ResizeObserver {
-            constructor() {}
-            observe() {}
-            unobserve() {}
-            disconnect() {}
+            constructor() {
+                //
+            }
+            observe() {
+                //
+            }
+            unobserve() {
+                //
+            }
+            disconnect() {
+                //
+            }
         };
     });
 

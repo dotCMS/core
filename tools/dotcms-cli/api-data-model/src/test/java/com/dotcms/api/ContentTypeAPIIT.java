@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,8 @@ class ContentTypeAPIIT {
     @BeforeEach
     public void setupTest() throws IOException {
         serviceManager.removeAll()
-                .persist(ServiceBean.builder().name("default").active(true).build());
+                .persist(ServiceBean.builder().name("default")
+                        .url(new URL("http://localhost:8080")).active(true).build());
 
         final String user = "admin@dotcms.com";
         final char[] passwd = "admin".toCharArray();

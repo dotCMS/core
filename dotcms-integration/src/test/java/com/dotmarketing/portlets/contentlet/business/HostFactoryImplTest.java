@@ -2,10 +2,13 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.*;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -23,6 +26,7 @@ import static com.dotmarketing.portlets.contentlet.business.HostFactoryImpl.SITE
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -123,6 +127,39 @@ public class HostFactoryImplTest extends IntegrationTestBase {
         //validations
         assertTrue( "Test site is not contained in list", hostsList.get().contains(testSite));
         assertEquals("Test site is not the first in the list", testSite, hostsList.get().get(0));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: {@link HostFactoryImpl#search(String, String, boolean, int, int, User, boolean, List)}</li>
+     *     <li><b>Given Scenario: Limited users should be able to create content types on System Host if given the proper permissions</b> </li>
+     *     <li><b>Expected Result:The System host should appear in the list of host </b> </li>
+     * </ul>
+     * @throws Exception
+     */
+    @Test
+    public void test_search_shouldIncludeSystemHost() throws DotDataException, DotSecurityException {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final HostFactoryImpl hostFactory = new HostFactoryImpl();
+        //Create limited user
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        //user has no permissions over the system host
+        Optional<List<Host>> hostsList =  hostFactory.search("", "cvi.live_inode IS NOT NULL",true ,15, 0, limitedUser, false, new ArrayList<>());
+        assertTrue(hostsList.isPresent() && !hostsList.get().contains(APILocator.systemHost()));
+
+        //Give Permissions Over the System Host
+        final Permission permissions = new Permission(Host.class.getCanonicalName(),
+                APILocator.systemHost().getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        permissionAPI.save(permissions, APILocator.systemHost(), APILocator.getUserAPI().getSystemUser(), false);
+        //method to test
+        hostsList =  hostFactory.search("", "cvi.live_inode IS NOT NULL",true ,15, 0, limitedUser, false, new ArrayList<>());
+        assertTrue(hostsList.isPresent() && hostsList.get().size() > 0);
+        //now the user has permissions over the system host
+        assertTrue(hostsList.get().contains(APILocator.systemHost()));
     }
 }
 

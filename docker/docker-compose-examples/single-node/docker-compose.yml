@@ -11,7 +11,7 @@ volumes:
 
 services:
   opensearch:
-    image: opensearchproject/opensearch:1.3.6
+    image: opensearchproject/opensearch:1
     environment:
       - cluster.name=elastic-cluster
       - discovery.type=single-node
@@ -71,4 +71,3 @@ services:
       - dbdata:/var/lib/postgresql/data
     networks:
       - db_net
-

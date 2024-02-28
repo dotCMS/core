@@ -2,9 +2,21 @@ package com.dotcms.api.exception;
 
 public class APIConfigurationException extends RuntimeException {
 
-    static final String MESSAGE = "API configuration is not valid for profile: %s";
-
-    public APIConfigurationException(String configName) {
-        super(MESSAGE + configName);
+    /**
+     * Simple exception constructor
+     * @param message
+     */
+    public APIConfigurationException(String message) {
+        super(message);
     }
+
+    /**
+     * Custom message exception constructor
+     * @param message
+     * @param cause
+     */
+    public APIConfigurationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

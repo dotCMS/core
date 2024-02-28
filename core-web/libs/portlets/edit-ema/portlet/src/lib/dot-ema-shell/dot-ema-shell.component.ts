@@ -158,7 +158,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                             contentlet: {
                                 inode: page.inode,
                                 title: page.title,
-                                identifier: page.identifier
+                                identifier: page.identifier,
+                                contentType: page.contentType
                             }
                         });
                     }
@@ -181,7 +182,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             .subscribe(([{ data }]) => {
                 this.store.load({
                     ...this.queryParams,
-                    clientHost: data.url
+                    clientHost: data?.url
                 });
             });
 
@@ -229,8 +230,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.router.navigate([], {
             queryParams,
             queryParamsHandling: 'merge'
-            // replaceUrl: true,
-            // skipLocationChange: false,
         });
     }
 }

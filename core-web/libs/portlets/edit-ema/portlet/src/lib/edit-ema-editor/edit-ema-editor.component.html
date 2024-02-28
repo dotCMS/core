@@ -90,12 +90,13 @@
             }">
             <iframe
                 #iframe
-                [src]="es.iframeURL | safeUrl"
+                [src]="(es.clientHost ? es.iframeURL : '') | safeUrl"
                 [title]="host"
                 [ngStyle]="{
                     pointerEvents: this.rows.length ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
+                (load)="onIframePageLoad(es)"
                 data-testId="iframe"
                 width="100%"
                 height="100%"></iframe>
@@ -108,18 +109,20 @@
 
             <dot-ema-contentlet-tools
                 *ngIf="
-                    !rows.length &&
                     !!contentlet &&
                     !currentDevice &&
                     es.editor.page.canEdit &&
                     es.state === editorState.LOADED
                 "
+                [hide]="!!rows.length"
                 [contentlet]="contentlet"
-                (edit)="dialog.editContentlet($event)"
+                (edit)="handleEditContentlet($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
+                (moveStart)="moveContentlet($event)"
+                (moveStop)="resetDragProperties()"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
