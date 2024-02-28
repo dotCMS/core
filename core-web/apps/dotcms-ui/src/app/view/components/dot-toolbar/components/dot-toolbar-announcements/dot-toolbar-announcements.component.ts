@@ -11,6 +11,7 @@ import {
     inject,
     signal
 } from '@angular/core';
+
 import { RouterLink } from '@angular/router';
 
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
@@ -26,7 +27,7 @@ import {
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
-import { Subscription } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
     selector: 'dot-toolbar-announcements',
@@ -53,28 +54,24 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
 
     aboutLinks: { title: string; items: AnnouncementLink[] }[] = [];
 
-    private currentSiteSubscription: Subscription;
-    
-    ngOnInit(): void {
-        this.announcementsStore.load();
-        this.aboutLinks = this.aboutLinks = this.getAboutLinks();
-
-        this.currentSiteSubscription = this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
+    constructor() {
+        this.siteService.switchSite$.pipe(takeUntilDestroyed(), skip(1)).subscribe(() => {
             this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.load();
             this.aboutLinks = this.getAboutLinks();
         });
+    }
 
+    ngOnInit(): void {
+        this.announcementsStore.load();
+        this.aboutLinks = this.getAboutLinks();
     }
 
     ngOnChanges(changes): void {
         if (!changes.showUnreadAnnouncement.currentValue) {
+            this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.markAnnouncementsAsRead();
         }
-    }
-
-    ngOnDestroy(): void {
-        this.currentSiteSubscription.unsubscribe();
     }
 
     /**
