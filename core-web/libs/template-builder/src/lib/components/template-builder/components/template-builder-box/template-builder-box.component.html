@@ -65,10 +65,6 @@
             <div class="template-builder-box__item" *ngFor="let item of items; let i = index">
                 <p data-testId="container-title">
                     {{ (containerMap && containerMap[item.identifier]?.title) || item.identifier }}
-                    - uuid: {{ item.uuid }}
-                    <!--
-                    IF YOU SEE THIS COMMENT PLEASE REMIND ME TO REMOVE THE UUID FROM THE BOX. IM
-                    USING THIS FOR POC MATTERS -->
                 </p>
                 <dotcms-remove-confirm-dialog
                     (deleteConfirmed)="deleteContainer.emit(i)"
