@@ -388,8 +388,14 @@ public class CircuitBreakerUrlTest {
 
         assert (breaker.isClosed());
 
-        CircuitBreakerUrl cburl = CircuitBreakerUrl.builder().setUrl("http://sdsfsf.com")
-                .setMethod(Method.POST).setTimeout(timeout).setCircuitBreaker(breaker).build();
+        CircuitBreakerUrl cburl =
+                CircuitBreakerUrl.builder()
+                        // Returns 400 Bad Request
+                        .setUrl("https://run.mocky.io/v3/434b4b0e-9a8b-4895-88e3-beab1b8d0a0d")
+                        .setMethod(Method.POST)
+                        .setTimeout(timeout)
+                        .setCircuitBreaker(breaker)
+                        .build();
         cburl.doOut(nos);
     }
 
