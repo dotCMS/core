@@ -1,4 +1,4 @@
-import { Subject, fromEvent } from 'rxjs';
+import { Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
@@ -14,7 +14,8 @@ import {
     WritableSignal,
     computed,
     inject,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -24,13 +25,23 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
-import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
+import {
+    DotPersonalizeService,
+    DotMessageService,
+    DotCopyContentService,
+    DotHttpErrorManagerService
+} from '@dotcms/data-access';
+import { DotCMSContentlet, DotDevice, DotPersona, DotTreeNode } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
+import {
+    SafeUrlPipe,
+    DotSpinnerModule,
+    DotMessagePipe,
+    DotCopyContentModalService
+} from '@dotcms/ui';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -133,7 +144,8 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         DotEmaBookmarksComponent,
         DotEditEmaWorkflowActionsComponent,
         ProgressBarModule
-    ]
+    ],
+    providers: [DotCopyContentModalService, DotCopyContentService, DotHttpErrorManagerService]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
@@ -150,6 +162,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
     private readonly cd = inject(ChangeDetectorRef);
+    private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
+    private readonly dotCopyContentService = inject(DotCopyContentService);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
@@ -176,6 +191,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 contentletsId
             }
         } as ActionPayload;
+    });
+
+    readonly currentTreeNode: Signal<DotTreeNode> = computed(() => {
+        const { contentlet, container } = this.actionPayload();
+        const { identifier: contentId } = contentlet;
+        const { variantId, uuid: relationType, contentletsId, identifier: containerId } = container;
+        const { personalization, id: pageId } = untracked(() => this.pageData());
+        const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
+
+        return {
+            contentId,
+            containerId,
+            relationType,
+            variantId,
+            personalization,
+            treeOrder,
+            pageId
+        };
     });
 
     readonly host = '*';
@@ -762,6 +795,65 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.clientData.set(positionPayload);
 
         return this.actionPayload();
+    }
+
+    /**
+     * Handle edit contentlet
+     *
+     * @protected
+     * @param {ActionPayload} payload
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    protected handleEditContentlet(payload: ActionPayload) {
+        const { contentlet } = payload;
+        const { onNumberOfPages, title } = contentlet;
+
+        if (!(onNumberOfPages > 1)) {
+            this.dialog.editContentlet(payload);
+
+            return;
+        }
+
+        this.dotCopyContentModalService
+            .open()
+            .pipe(
+                switchMap(({ shouldCopy }) => {
+                    if (!shouldCopy) {
+                        return of(contentlet);
+                    }
+
+                    this.dialog.showLoadingIframe(title);
+
+                    return this.handleCopyContent();
+                })
+            )
+            .subscribe((contentlet) => {
+                this.dialog.editContentlet({
+                    ...payload,
+                    contentlet
+                });
+            });
+    }
+
+    /**
+     * Handle copy content
+     *
+     * @private
+     * @return {*}
+     * @memberof DotEmaDialogComponent
+     */
+    private handleCopyContent(): Observable<DotCMSContentlet> {
+        return this.dotCopyContentService.copyInPage(this.currentTreeNode()).pipe(
+            catchError((error) =>
+                this.dotHttpErrorManagerService.handle(error).pipe(
+                    tap(() => this.dialog.resetDialog()), // If there is an error, we set the status to idle
+                    map(() => null)
+                )
+            ),
+            filter((contentlet: DotCMSContentlet) => !!contentlet?.inode),
+            tap(() => this.reloadIframe()) // If the contentlet is copied, we reload the iframe
+        );
     }
 
     /**

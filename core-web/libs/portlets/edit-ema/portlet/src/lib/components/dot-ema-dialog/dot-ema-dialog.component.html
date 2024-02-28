@@ -18,6 +18,7 @@
         <ng-container *ngSwitchCase="'content'">
             <iframe
                 #iframe
+                *ngIf="ds.url"
                 [style]="{
                     border: 'none',
                     display: ds.status !== dialogStatus.INIT ? 'none' : 'block'

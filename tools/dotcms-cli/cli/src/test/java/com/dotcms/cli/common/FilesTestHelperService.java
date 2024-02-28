@@ -91,7 +91,7 @@ public class FilesTestHelperService {
         final String subfolder1_2_3 = "subFolder1-2-3";
 
         // subfolder2_1 children
-        final String subfolder2_1_1 = "subFolder2-1-1";
+        final String subfolder2_1_1 = "subFolder2-1-1-子資料夾";
         final String subfolder2_1_2 = "subFolder2-1-2";
         final String subfolder2_1_3 = "subFolder2-1-3";
 
@@ -131,6 +131,12 @@ public class FilesTestHelperService {
             pushFile(true, "en-us", newSiteName,
                     String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
                     "image2.png");
+            pushFile(true, "en-us", newSiteName,
+                    String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
+                    "這就是我的想像6.png");
+            pushFile(true, "en-us", newSiteName,
+                    String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
+                    "image (7)+.png");
             pushFile(true, "en-us", newSiteName,
                     String.format("/%s", folder3),
                     "image 3.png");

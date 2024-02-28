@@ -107,16 +107,17 @@ export class DotEmaDialogComponent {
             payload
         });
     }
+
     /**
      * Edit contentlet
      *
      * @param {ActionPayload} payload
      * @memberof EditEmaEditorComponent
      */
-    editContentlet(payload: Partial<ActionPayload>) {
+    editContentlet({ contentlet }: Partial<ActionPayload>) {
         this.store.editContentlet({
-            inode: payload.contentlet.inode,
-            title: payload.contentlet.title
+            inode: contentlet.inode,
+            title: contentlet.title
         });
     }
 
@@ -145,6 +146,16 @@ export class DotEmaDialogComponent {
             name,
             payload
         });
+    }
+
+    /**
+     * Show loading iframe dialog
+     *
+     * @param {string} [title='']
+     * @memberof DotEmaDialogComponent
+     */
+    showLoadingIframe(title = '') {
+        this.store.loadingIframe(title);
     }
 
     /**

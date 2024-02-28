@@ -263,8 +263,8 @@ class PushServiceIT {
             var treeNodePushInfo = treeNode.collectPushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
-            Assertions.assertEquals(5, treeNodePushInfo.assetsToPushCount());
-            Assertions.assertEquals(5, treeNodePushInfo.assetsNewCount());
+            Assertions.assertEquals(7, treeNodePushInfo.assetsToPushCount());
+            Assertions.assertEquals(7, treeNodePushInfo.assetsNewCount());
             Assertions.assertEquals(0, treeNodePushInfo.assetsModifiedCount());
             Assertions.assertEquals(0, treeNodePushInfo.assetsToDeleteCount());
             Assertions.assertEquals(9, treeNodePushInfo.foldersToPushCount());
@@ -309,8 +309,10 @@ class PushServiceIT {
             //Validating the tree
             // subFolder1-1-1 (has 2 asset)
             Assertions.assertEquals(2, newSiteTreeNode.children().get(0).children().get(0).children().get(0).assets().size());
-            // subFolder2-1-1 (has 1 asset)
-            Assertions.assertEquals(1, newSiteTreeNode.children().get(1).children().get(0).children().get(0).assets().size());
+            // subFolder2-1-1-子資料夾 (has 3 asset)
+            Assertions.assertEquals(3,
+                    newSiteTreeNode.children().get(1).
+                            children().get(0).children().get(0).assets().size());
             // Folder 3 (has 1 asset)
             Assertions.assertEquals(1, newSiteTreeNode.children().get(2).assets().size());
 
@@ -381,7 +383,8 @@ class PushServiceIT {
             //If we want a folder to be removed from the remote instance it needs to be removed from all our folder branches for good
             Path workingFolderToRemove = Paths.get(absolutePath.toString(),"working","en-us",testSiteName,"folder3");
             // Removing an asset
-            Path assetToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder2","subFolder2-1","subFolder2-1-1","image2.png");
+            Path assetToRemove = Paths.get(absolutePath.toString(), "live", "en-us", testSiteName,
+                    "folder2", "subFolder2-1", "subFolder2-1-1-子資料夾", "image2.png");
 
             FileUtils.deleteDirectory(liveFolderToRemove.toFile());
             FileUtils.deleteDirectory(workingFolderToRemove.toFile());
@@ -477,8 +480,9 @@ class PushServiceIT {
             //Validating the tree
             // subFolder1-1-1 (has 2 asset)
             Assertions.assertEquals(2, updatedTreeNode.children().get(0).children().get(0).children().get(0).assets().size());
-            // subFolder2-1-1 (has 0 asset)
-            Assertions.assertEquals(0, updatedTreeNode.children().get(1).children().get(0).children().get(0).assets().size());
+            // subFolder2-1-1-子資料夾 (has 2 assets) -> 1 was removed
+            Assertions.assertEquals(2, updatedTreeNode.children().
+                    get(1).children().get(0).children().get(0).assets().size());
             // Folder 4 withSpace (has 1 asset)
             Assertions.assertEquals(1, updatedTreeNode.children().get(2).assets().size());
             // Folder 5 (has 1 asset)

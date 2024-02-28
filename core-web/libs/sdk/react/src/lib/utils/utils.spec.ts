@@ -49,6 +49,4 @@ describe('getPageElementBound', () => {
             }
         ]);
     });
-
-    // Add more test cases as needed...
 });
