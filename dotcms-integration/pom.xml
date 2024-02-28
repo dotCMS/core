@@ -327,7 +327,10 @@
                             <reuseForks>true</reuseForks>
                             <rerunFailingTestsCount>3</rerunFailingTestsCount>
                             <!--<skipAfterFailureCount>2</skipAfterFailureCount>-->
-                            <environmentVariables/>
+                            <environmentVariables>
+                                <SOME_APP_ENV_VAR>overriddenValue</SOME_APP_ENV_VAR>
+                                <DOT_APP_TEST_APP_PARAM_TEST_PARAM>overriddenValue</DOT_APP_TEST_APP_PARAM_TEST_PARAM>
+                            </environmentVariables>
                             <systemPropertyVariables>
                                 <!-- Following is a hack to make Intellij pick up the fork number in systemProperites
                                     for tests correctly

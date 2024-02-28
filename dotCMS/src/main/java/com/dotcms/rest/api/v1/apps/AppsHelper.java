@@ -45,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -335,11 +336,10 @@ class AppsHelper {
             final String name = stringParamEntry.getKey();
             final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
             final Input inputParam = stringParamEntry.getValue();
-            final boolean dynamic = null == describedParam;
-                final Optional<Secret> secret;
+            final Optional<Secret> secret;
 
-            if (dynamic) {
-                secret = AppsUtil.newSecret(key, name, inputParam);
+            if (Objects.isNull(describedParam)) {
+                secret = AppsUtil.dynamicSecret(key, name, inputParam);
             } else {
                 //If we're dealing with a hidden param and there's a secret already saved...
                 //The param must be overridden and replaced for that reason we must delete the existing saved secret.
@@ -351,10 +351,10 @@ class AppsHelper {
                                 Logger.debug(
                                         AppsHelper.class,
                                         () -> " hidden secret sent with masked value we must grab the value from the saved secret so we dont lose it.");
-                                return AppsUtil.newSecret(key, name, describedParam, appSecrets);
+                                return AppsUtil.hiddenSecret(key, name, describedParam, appSecrets);
                             });
                 } else {
-                    secret = AppsUtil.newSecret(key, name, inputParam.getValue(), describedParam);
+                    secret = AppsUtil.paramSecret(key, name, inputParam.getValue(), describedParam);
                 }
             }
             secret.ifPresent(s -> builder.withSecret(name, s));
@@ -373,17 +373,13 @@ class AppsHelper {
         // Since the next step is potentially risky (delete a secret that already exist).
         final AppSecrets secrets = builder.build();
         if (appSecretsOptional.isPresent()) {
-            Logger.debug(AppsHelper.class, ()->"Secrets already exist in storage. We must override it.");
+            Logger.debug(AppsHelper.class, () -> "Secrets already exist in storage. We must override it.");
             appsAPI.deleteSecrets(key, host, user);
         }
         appsAPI.saveSecrets(secrets, host, user);
 
         //This operation needs to be executed at the very end.
         appSecretsOptional.ifPresent(AppSecrets::destroy);
-    }
-
-    private boolean isHidden(ParamDescriptor describedParam, Input inputParam) {
-        return describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue());
     }
 
     /**
@@ -423,17 +419,16 @@ class AppsHelper {
                     final Input inputParam = stringParamEntry.getValue();
                     final String name = stringParamEntry.getKey();
                     final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
-                    final boolean dynamic = null == describedParam;
                     final Optional<Secret> secret;
-                    if (dynamic) {
-                        secret = AppsUtil.newSecret(key, name, inputParam);
+                    if (Objects.isNull(describedParam)) {
+                        secret = AppsUtil.dynamicSecret(key, name, inputParam);
                     } else {
                         if (isHidden(describedParam, inputParam)) {
                             Logger.debug(AppsHelper.class, () -> "skipping secret sent with no value.");
                             continue;
                         }
 
-                        secret = AppsUtil.newSecret(key, name, inputParam.getValue(), describedParam);
+                        secret = AppsUtil.paramSecret(key, name, inputParam.getValue(), describedParam);
                     }
 
                     if (secret.isPresent()) {
@@ -487,6 +482,16 @@ class AppsHelper {
         } else {
             appsAPI.deleteSecret(key, params, host, user);
         }
+    }
+
+    /**
+     * This method allows deleting a single secret/property from a stored integration.
+     *
+     * @param describedParam the param descriptor
+     * @param inputParam the input param
+     */
+    private boolean isHidden(final ParamDescriptor describedParam, final Input inputParam) {
+        return describedParam.isHidden() && isAllFilledWithStars(inputParam.getValue());
     }
 
     /**
@@ -658,7 +663,7 @@ class AppsHelper {
      * @param chars
      * @return
      */
-    private boolean isAllFilledWithAsters(final char [] chars){
+    private boolean isAllFilledWithStars(final char [] chars){
          if(isNotSet(chars)){
            return false;
          }

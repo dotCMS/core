@@ -28,7 +28,7 @@ import java.util.Objects;
  *   envshow: true
  *
  */
-public class AppSchema implements Serializable{
+public class AppSchema implements Serializable {
 
     protected final String name;
 
@@ -111,18 +111,6 @@ public class AppSchema implements Serializable{
      */
     public Map<String, ParamDescriptor> getParams() {
         return new LinkedHashMap<>(params);
-    }
-
-    public void addParam(final String name,
-                         final Object value,
-                         final boolean hidden,
-                         final Type type,
-                         final String envVar,
-                         final boolean envShow,
-                         final String label,
-                         final String hint,
-                         final boolean required) {
-        params.put(name, ParamDescriptor.newParam(value, hidden, type, envVar, envShow, label, hint, required));
     }
 
     /**

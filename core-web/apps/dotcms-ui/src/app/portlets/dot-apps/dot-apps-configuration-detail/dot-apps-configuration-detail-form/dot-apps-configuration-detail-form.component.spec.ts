@@ -28,7 +28,9 @@ const secrets = [
         required: true,
         type: 'STRING',
         value: 'test',
-        editable: true
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -39,7 +41,9 @@ const secrets = [
         required: true,
         type: 'STRING',
         value: '****',
-        editable: true
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -49,7 +53,10 @@ const secrets = [
         label: 'Enabled:',
         required: false,
         type: 'BOOL',
-        value: 'true'
+        value: 'true',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -69,7 +76,10 @@ const secrets = [
         ],
         required: true,
         type: 'SELECT',
-        value: '1'
+        value: '1',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -79,7 +89,10 @@ const secrets = [
         label: 'Integration:',
         required: false,
         type: 'BUTTON',
-        value: 'urlLink'
+        value: 'urlLink',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     }
 ];
 

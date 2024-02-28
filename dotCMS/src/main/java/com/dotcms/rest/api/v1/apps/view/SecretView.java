@@ -119,7 +119,6 @@ public class SecretView {
             ViewUtil.pushSecret(map);
             final String json = mapper.writeValueAsString(map);
             jsonGenerator.writeRawValue(json);
-
         }
 
         private void buildCommonJson(final AbstractProperty property,
@@ -127,30 +126,32 @@ public class SecretView {
             final Type type = property.getType();
             map.put("type", type);
             map.put("hidden", property.isHidden());
+            map.put("hasEnvVar", property.hasEnvVar());
+            map.put("envShow", property.isEnvShow());
+            map.put("hasEnvVarValue", property.hasEnvVarValue());
             if (type.equals(Type.BOOL)) {
                 map.put("value", property.getBoolean());
-            } else if (type.equals(Type.SELECT)) {
-                if (property instanceof Secret) {
-                    map.put("value", property.getValue());
-                } else {
-                    final List<Map> list = property.getList();
-                    map.put("options", list);
-                    final Optional<Map> selectedOptional = list.stream()
-                            .filter(m -> m.containsKey("selected")).findFirst();
-                    if (selectedOptional.isPresent()) {
-                        final Map selected = selectedOptional.get();
-                        selected.remove("selected");
-                        map.put("value", selected.get("value"));
-                    } else {
-                        map.put("value", BLANK);
-                    }
-                }
             } else {
-                final String value = property.getString();
-                map.put("value",
-                        property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK
-                                : value);
-                map.put("editable", property.isEditable());
+                if (type.equals(Type.SELECT)) {
+                    if (property instanceof Secret) {
+                        map.put("value", property.getValue());
+                    } else {
+                        final List<Map> list = property.getList();
+                        map.put("options", list);
+                        final Optional<Map> selectedOptional = list.stream()
+                                .filter(m -> m.containsKey("selected")).findFirst();
+                        if (selectedOptional.isPresent()) {
+                            final Map selected = selectedOptional.get();
+                            selected.remove("selected");
+                            map.put("value", selected.get("value"));
+                        } else {
+                            map.put("value", BLANK);
+                        }
+                    }
+                } else {
+                    final String value = property.getString();
+                    map.put("value", property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK : value);
+                }
             }
         }
 

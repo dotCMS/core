@@ -83,7 +83,7 @@ public class AnalyticsApp {
                 .map(params -> params.get(AnalyticsAppProperty.ANALYTICS_KEY.getPropertyName()))
                 .orElseThrow(() -> new DotDataException("Analytics app descriptor not found"));
         final String name = AnalyticsAppProperty.ANALYTICS_KEY.getPropertyName();
-        final Optional<Secret> secret = AppsUtil.newSecret(
+        final Optional<Secret> secret = AppsUtil.paramSecret(
                 ANALYTICS_APP_KEY,
                 name,
                 analyticsKey.jsKey().toCharArray(),

@@ -67,6 +67,8 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+
+import com.liferay.util.StringPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -259,6 +261,179 @@ public class AppsResourceTest extends IntegrationTestBase {
             assertFalse(appDetailedView.getSites().isEmpty());
             Assert.assertEquals(appDetailedView.getSites().get(0).getId(),
                     host.getIdentifier());
+
+            final Response deleteIntegrationsResponse = appsResource
+                    .deleteAllAppSecrets(request, response, appKey,
+                            host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, deleteIntegrationsResponse.getStatus());
+
+            final Response detailedIntegrationResponseAfterDelete = appsResource
+                    .getAppDetail(request, response, appKey,
+                            host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK,
+                    detailedIntegrationResponseAfterDelete.getStatus());
+
+            //Now test the entry has been removed from the list of available configurations.
+            final Response hostIntegrationsResponseAfterDelete = appsResource
+                    .getAppByKey(request, response, appKey, paginationContext());
+            Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponseAfterDelete.getStatus());
+            final ResponseEntityView responseEntityViewAfterDelete = (ResponseEntityView) hostIntegrationsResponseAfterDelete
+                    .getEntity();
+            final AppView appHostViewAfterDelete = (AppView) responseEntityViewAfterDelete
+                    .getEntity();
+
+            Assert.assertEquals(0, appHostViewAfterDelete.getConfigurationsCount());
+            Assert.assertEquals(dataGen.getName(), appHostViewAfterDelete.getName());
+            final List<SiteView> expectedEmptyHosts = appHostViewAfterDelete.getSites();
+            Assert.assertNotNull(expectedEmptyHosts);
+            // Previously this test wasn't expecting any entry here
+            // But the pagination will now return only items marked to have no configurations.
+            Assert.assertEquals("None of the returned item should have configuration", 0,
+                    expectedEmptyHosts.stream().filter(SiteView::isConfigured).count());
+        }
+    }
+
+    /**
+     * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
+     * Then we upload the file with an app definition. Then we Create an App Then list the available apps.
+     * Then we Verify the New app is listed. under the right Host.
+     * Then We delete the app and verify the pagination results make sense.
+     * Given scenario: Test we can create an app then delete it.
+     * Expected Result: Pagination shows all available sites with no configurations
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Create_app_descriptor_overriding_with_envvars_Then_Create_App_Integration_Then_Delete_The_Whole_App()
+            throws IOException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .param(
+                        "p1",
+                        ParamDescriptor.builder()
+                                .withValue(StringPool.BLANK)
+                                .withHidden(false)
+                                .withType(Type.STRING)
+                                .withRequired(true)
+                                .withLabel("label")
+                                .withHint("hint")
+                                .withEnvVar("ENV_VAR_1")
+                                .withEnvShow(true)
+                                .build())
+                .param(
+                        "p2",
+                        ParamDescriptor.builder()
+                                .withValue(StringPool.BLANK)
+                                .withHidden(false)
+                                .withType(Type.STRING)
+                                .withRequired(true)
+                                .withLabel("label")
+                                .withHint("hint")
+                                .withEnvVar("ENV_VAR_2")
+                                .withEnvShow(false)
+                                .build())
+                .stringParam("p3", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(false);
+
+        final Map<String, Input> inputParamMap = ImmutableMap.of(
+                "p1", newInputParam("v1".toCharArray(),false),
+                "p2", newInputParam("v1".toCharArray(),false),
+                "p3", newInputParam("v1".toCharArray(),false)
+        );
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+
+        final String appKey =  dataGen.getKey();
+        final String fileName =  dataGen.getFileName();
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
+            final Response appIntegrationResponse = appsResource
+                    .createApp(request, response,
+                            createFormDataMultiPart(fileName, inputStream));
+
+            Assert.assertNotNull(appIntegrationResponse);
+            Assert.assertEquals(HttpStatus.SC_OK, appIntegrationResponse.getStatus());
+            final Response availableAppsResponse = appsResource
+                    .listAvailableApps(request, response, null);
+            Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
+            final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
+                    .getEntity();
+            final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
+                    .getEntity();
+            assertFalse(integrationViewList.isEmpty());
+            Assert.assertTrue(
+                    integrationViewList.stream().anyMatch(
+                            appView -> dataGen.getName()
+                                    .equals(appView.getName())));
+
+            final SecretForm secretForm = new SecretForm(inputParamMap);
+            final Response createSecretResponse = appsResource
+                    .createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
+
+            final Response hostIntegrationsResponse = appsResource
+                    .getAppByKey(request, response, appKey, paginationContext());
+            Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponse.getStatus());
+            final ResponseEntityView responseEntityView2 = (ResponseEntityView) hostIntegrationsResponse
+                    .getEntity();
+            final AppView appWithSites = (AppView) responseEntityView2
+                    .getEntity();
+            Assert.assertEquals(1, appWithSites.getConfigurationsCount());
+            Assert.assertEquals(dataGen.getName(), appWithSites.getName());
+            final List<SiteView> sites = appWithSites.getSites();
+            Assert.assertNotNull(sites);
+            Assert.assertTrue(sites.size() >= 2);
+            Assert.assertEquals(sites.get(0).getId(), Host.SYSTEM_HOST); //system host is always the first element to come.
+            Assert.assertEquals(sites.get(1).getId(), host.getIdentifier());
+            Assert.assertTrue(
+                    sites.stream()
+                            .anyMatch(hostView -> host.getIdentifier().equals(hostView.getId()))
+            );
+
+            final Response detailedIntegrationResponse = appsResource
+                    .getAppDetail(request, response, appKey,
+                            host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
+            final ResponseEntityView responseEntityView3 = (ResponseEntityView) detailedIntegrationResponse
+                    .getEntity();
+            final AppView appDetailedView = (AppView) responseEntityView3
+                    .getEntity();
+            Assert.assertNotNull(appDetailedView.getSites());
+            assertFalse(appDetailedView.getSites().isEmpty());
+            Assert.assertEquals(appDetailedView.getSites().get(0).getId(),
+                    host.getIdentifier());
+
+            final SiteView siteView = appDetailedView.getSites().get(0);
+            int i = 0;
+            SecretView secretView = siteView.getSecrets().get(i);
+            Assert.assertTrue(secretView.getParamDescriptor().hasEnvVar());
+            Assert.assertTrue(secretView.getSecret().hasEnvVar());
+            Assert.assertEquals("ENV_VAR_" + (i + 1), secretView.getParamDescriptor().getEnvVar());
+            Assert.assertEquals("ENV_VAR_" + (i + 1), secretView.getSecret().getEnvVar());
+            Assert.assertTrue(secretView.getParamDescriptor().isEnvShow());
+            Assert.assertTrue(secretView.getSecret().isEnvShow());
+
+            secretView = siteView.getSecrets().get(++i);
+            Assert.assertTrue(secretView.getParamDescriptor().hasEnvVar());
+            Assert.assertTrue(secretView.getSecret().hasEnvVar());
+            Assert.assertEquals("ENV_VAR_" + (i + 1), secretView.getParamDescriptor().getEnvVar());
+            Assert.assertEquals("ENV_VAR_" + (i + 1), secretView.getSecret().getEnvVar());
+            Assert.assertFalse(secretView.getParamDescriptor().isEnvShow());
+            Assert.assertFalse(secretView.getSecret().isEnvShow());
+
+            secretView = siteView.getSecrets().get(++i);
+            Assert.assertFalse(secretView.getParamDescriptor().hasEnvVar());
+            Assert.assertFalse(secretView.getSecret().hasEnvVar());
+            Assert.assertNull(secretView.getParamDescriptor().getEnvVar());
+            Assert.assertNull(secretView.getSecret().getEnvVar());
+            Assert.assertTrue(secretView.getParamDescriptor().isEnvShow());
+            Assert.assertTrue(secretView.getSecret().isEnvShow());
 
             final Response deleteIntegrationsResponse = appsResource
                     .deleteAllAppSecrets(request, response, appKey,

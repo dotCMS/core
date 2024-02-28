@@ -49,7 +49,9 @@ const sites = [
                 required: true,
                 type: 'STRING',
                 value: 'John',
-                editable: true
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
             },
             {
                 dynamic: false,
@@ -60,7 +62,9 @@ const sites = [
                 required: true,
                 type: 'STRING',
                 value: '****',
-                editable: true
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
             },
             {
                 dynamic: false,
@@ -70,7 +74,10 @@ const sites = [
                 label: 'Enabled:',
                 required: false,
                 type: 'BOOL',
-                value: 'true'
+                value: 'true',
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
             }
         ]
     }
@@ -309,7 +316,9 @@ describe('DotAppsConfigurationDetailComponent', () => {
                     required: false,
                     type: 'STRING',
                     value: 'test',
-                    editable: true
+                    hasEnvVar: false,
+                    envShow: true,
+                    hasEnvVarValue: false
                 }
             ];
             const mockRoute = { data: {} };

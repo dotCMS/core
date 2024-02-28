@@ -34,7 +34,9 @@ export interface DotAppsSecret {
     required: boolean;
     type: string;
     value: string;
-    editable?: boolean;
+    hasEnvVar: boolean;
+    hasEnvVarValue: boolean;
+    envShow: boolean;
     warnings?: string[];
 }
 

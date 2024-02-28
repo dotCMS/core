@@ -454,22 +454,22 @@ public class AppsAPIImpl implements AppsAPI {
         }
         Logger.debug(AppsAPIImpl.class, () -> " ymlFiles are set under:  " + ymlFilesPath);
 
-            final AppSchema appSchema = appDescriptorHelper.readAppFile(file.toPath());
-            // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
-            if (appDescriptorHelper.validateAppDescriptor(appSchema)) {
-                final File incomingFile = new File(basePath, file.getName());
-                if (incomingFile.exists()) {
-                    throw new AlreadyExistException(
-                            String.format(
-                                    "Invalid attempt to override an existing file named '%s'.",
-                                    incomingFile.getName()));
-                }
-
-                appDescriptorHelper.writeAppFile(incomingFile, appSchema);
-
-                invalidateCache();
+        final AppSchema appSchema = appDescriptorHelper.readAppFile(file.toPath());
+        // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
+        if (appDescriptorHelper.validateAppDescriptor(appSchema)) {
+            final File incomingFile = new File(basePath, file.getName());
+            if (incomingFile.exists()) {
+                throw new AlreadyExistException(
+                        String.format(
+                                "Invalid attempt to override an existing file named '%s'.",
+                                incomingFile.getName()));
             }
-            return new AppDescriptorImpl(file.getName(), false, appSchema);
+
+            appDescriptorHelper.writeAppFile(incomingFile, appSchema);
+
+            invalidateCache();
+        }
+        return new AppDescriptorImpl(file.getName(), false, appSchema);
 
     }
 

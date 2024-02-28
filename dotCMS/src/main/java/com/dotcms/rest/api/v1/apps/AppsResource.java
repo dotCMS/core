@@ -258,7 +258,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             helper.saveSecretForm(key, siteId, secretForm, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),
