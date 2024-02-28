@@ -138,7 +138,7 @@ public class JsRole implements Serializable, Comparable<JsRole>, JsProxyObject<R
 	@HostAccess.Export
 	public ProxyHashMap toMap() {
 
-		final Map roleMap = new HashMap<>();
+		final Map<String, Object> roleMap = new HashMap<>();
 		roleMap.put("DBFQN", this.getDBFQN());
 		roleMap.put("description", this.getDescription());
 		roleMap.put("editLayouts", this.isEditLayouts());
@@ -151,7 +151,7 @@ public class JsRole implements Serializable, Comparable<JsRole>, JsProxyObject<R
 		roleMap.put("parent", this.getParent());
 		roleMap.put("roleKey", this.getRoleKey());
 		roleMap.put("system", this.isSystem());
-		return ProxyHashMap.from(roleMap);
+		return ProxyHashMap.from((Map)roleMap);
 	}
 
 	@HostAccess.Export
