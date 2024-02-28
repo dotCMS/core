@@ -15,7 +15,7 @@ import java.util.Objects;
  * Encapsulates the context of the Javascript execution.
  * @author jsanca
  */
-public class JsContext extends HashMap implements Serializable {
+public class JsContext extends HashMap<String, Object> implements Serializable {
 
     private final JsRequest request;
     private final JsResponse response;
