@@ -265,7 +265,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onCustomEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
-        this.handleNgEvent({ event, payload: payload })?.();
+        this.handleNgEvent({ event, payload })?.();
     }
 
     /**
@@ -834,6 +834,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     contentlet
                 });
             });
+    }
+
+    protected editContentMap(data: Record<string, string>): void {
+        const { inode, title, identifier, contentType } = data;
+        this.dialog.editContentlet({
+            contentlet: {
+                inode,
+                title,
+                identifier,
+                contentType
+            }
+        });
     }
 
     /**

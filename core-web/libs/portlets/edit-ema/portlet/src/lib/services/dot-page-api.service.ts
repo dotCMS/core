@@ -35,6 +35,12 @@ export interface DotPageApiResponse {
     layout: DotLayout;
     template: DotTemplate;
     containers: DotPageContainerStructure;
+    urlContentMap?: {
+        title: string;
+        contentType: string;
+        inode: string;
+        identifier: string;
+    }
 }
 
 export interface DotPageApiParams {
