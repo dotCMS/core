@@ -386,18 +386,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     });
 
     /**
-     * We know that we extended the GridStackWidget, so we can use the same object for GridStack and our store
-     * GridStack does not care and will not save the extra properties.
-     * This means that we can change styleClasses, containers, and other properties without affecting the GridStack
-     * and that means that changes will not be triggered on GridStack side.
-     *
-     * So, this method is meant to update the old rows with the new data, without modifying the id,
-     * because is the only thing that is generated in the FE everytime we recieve something from the backend, all the other GridStack properties (x, y, w, h)
-     * will remain the same because they get saved as they are and the backend sends the same data.
-     * but we need to update the data, because the backend makes some changes to the data, like modifying uuids in the containers.
-     *
-     * As long as we do not modify any GridStack main properties, we can update the data without triggering weird movements in GridStack
-     *
+     * The only reason of this updater is update the updated UUIDs we get from the backend. The `newRows` have the new UUIDs
+     * and we need to update those without touching the ids in the rows and the columns, because those are the ids that 
+     * GridStack use for the internal state and change it break it.
      * @memberof DotTemplateBuilderStore
      */
     readonly updateOldRows = this.updater((state, newRows: DotGridStackWidget[]) => {
