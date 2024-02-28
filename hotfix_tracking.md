@@ -201,3 +201,5 @@ This maintenance release includes the following code fixes:
 162. https://github.com/dotCMS/core/issues/26459 : Unable to copy a contentlet having Site/Folder Field #26459
 163. https://github.com/dotCMS/core/issues/22921 : Workflow API unable to archive contentlet #22921
 164. https://github.com/dotCMS/core/issues/26605 : Relation_type field too small #26605
+
+**Release-23.01.13**
