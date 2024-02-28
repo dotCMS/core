@@ -34,7 +34,7 @@ import {
  */
 @Injectable()
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
-    public rows$ = this.select((state) => state.rows);
+    public rows$ = this.select((state) => ({ rows: state.rows, shouldEmit: state.shouldEmit }));
     public layoutProperties$ = this.select((state) => state.layoutProperties);
     public themeId$ = this.select((state) => state.themeId);
 
@@ -58,6 +58,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return {
             ...state,
+            shouldEmit: true,
             rows: [
                 ...rows,
                 {
@@ -104,7 +105,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], y };
         });
 
-        return { ...state, rows: itemsCopy };
+        return { ...state, rows: itemsCopy, shouldEmit: true };
     });
 
     /**
@@ -115,7 +116,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly removeRow = this.updater((state, rowID: string) => {
         const { rows } = state;
 
-        return { ...state, rows: rows.filter((item: DotGridStackWidget) => item.id !== rowID) };
+        return {
+            ...state,
+            rows: rows.filter((item: DotGridStackWidget) => item.id !== rowID),
+            shouldEmit: true
+        };
     });
 
     /**
@@ -130,7 +135,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         const rowIndex = getIndexRowInItems(itemsCopy, updatedRow.id as string);
         if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], ...updatedRow };
 
-        return { ...state, rows: itemsCopy };
+        return { ...state, rows: itemsCopy, shouldEmit: true };
     });
 
     /**
@@ -140,7 +145,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly setResizingRowID = this.updater((state, resizingRowID: string = null) => ({
         ...state,
-        resizingRowID
+        resizingRowID,
+        shouldEmit: true
     }));
 
     // Columns Updaters
@@ -156,6 +162,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return {
             ...state,
+            shouldEmit: true,
             rows: rows.map((row) => {
                 if (row.id === newColumn.parentId) {
                     const resizedColumn = {
@@ -202,6 +209,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return {
             ...state,
+            shouldEmit: true,
             rows: rows.map((row) => {
                 if (row.id === columnToDelete.parentId) {
                     row.subGridOpts = {
@@ -232,6 +240,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
             return {
                 ...state,
+                shouldEmit: true,
                 rows: rows.map((row) => {
                     if (row.id != affectedColumns[0].parentId || !row.subGridOpts) {
                         return row;
@@ -256,6 +265,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
             return {
                 ...state,
+                shouldEmit: true,
                 rows: rows.map((row) => {
                     if (row.id != affectedColumn.parentId || !row.subGridOpts) {
                         return row;
@@ -284,6 +294,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return {
             ...state,
+            shouldEmit: true,
             rows: rows.map((row) => {
                 if (row.id === columnToDelete.parentId) {
                     if (row.subGridOpts) {
@@ -308,6 +319,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         (state, layoutProperties: Partial<DotTemplateLayoutProperties>) => {
             return {
                 ...state,
+                shouldEmit: true,
                 layoutProperties: {
                     ...state.layoutProperties,
                     ...layoutProperties,
@@ -333,6 +345,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return {
             ...state,
+            shouldEmit: true,
             layoutProperties: {
                 ...layoutProperties,
                 sidebar: {
@@ -355,6 +368,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return {
             ...state,
+            shouldEmit: true,
             layoutProperties: {
                 ...layoutProperties,
                 sidebar: {
@@ -372,6 +386,54 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     });
 
     /**
+     * We know that we extended the GridStackWidget, so we can use the same object for GridStack and our store
+     * GridStack does not care and will not save the extra properties.
+     * This means that we can change styleClasses, containers, and other properties without affecting the GridStack
+     * and that means that changes will not be triggered on GridStack side.
+     *
+     * So, this method is meant to update the old rows with the new data, without modifying the id,
+     * because is the only thing that is generated in the FE everytime we recieve something from the backend, all the other GridStack properties (x, y, w, h)
+     * will remain the same because they get saved as they are and the backend sends the same data.
+     * but we need to update the data, because the backend makes some changes to the data, like modifying uuids in the containers.
+     *
+     * As long as we do not modify any GridStack main properties, we can update the data without triggering weird movements in GridStack
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly updateOldRows = this.updater((state, newRows: DotGridStackWidget[]) => {
+        const { rows: oldRows } = state;
+
+        const newStateRows = oldRows.map((row) => {
+            const newRow = newRows.find((newRow) => newRow.y === row.y); // Look at the row in the same Y position
+
+            return {
+                ...newRow, // We want the data from the backend
+                id: row.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
+                subGridOpts: {
+                    ...newRow.subGridOpts,
+                    children: newRow.subGridOpts.children.map((newChild) => {
+                        const oldChild = row.subGridOpts.children.find(
+                            (oldChild) => oldChild.x === newChild.x
+                        ); // Look at the column in the same X position
+
+                        return {
+                            ...newChild, // We want the data from the backend
+                            id: oldChild.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
+                            containers: newChild.containers
+                        };
+                    })
+                }
+            };
+        });
+
+        return {
+            ...state,
+            rows: newStateRows,
+            shouldEmit: false
+        };
+    });
+
+    /**
      * @description This method deletes a container from the sidebar
      *
      * @memberof DotTemplateBuilderStore
@@ -381,6 +443,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return {
             ...state,
+            shouldEmit: true,
             layoutProperties: {
                 ...layoutProperties,
                 sidebar: {
@@ -431,6 +494,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             return {
                 ...state,
                 rows: updatedItems,
+                shouldEmit: true,
                 containerMap: { ...state.containerMap, [container.identifier]: container }
             };
         }
@@ -466,7 +530,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 return { ...row, subGridOpts: { ...row.subGridOpts, children: updatedChildren } };
             });
 
-            return { ...state, rows: updatedItems };
+            return { ...state, rows: updatedItems, shouldEmit: true };
         }
     );
 
@@ -477,7 +541,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly updateThemeId = this.updater((state, themeId: string) => ({
         ...state,
-        themeId
+        themeId,
+        shouldEmit: true
     }));
 
     // Utils methods

@@ -833,5 +833,6 @@ export const INITIAL_STATE_MOCK: DotTemplateBuilderState = {
     },
     resizingRowID: '',
     containerMap: {},
-    themeId: '123'
+    themeId: '123',
+    shouldEmit: true
 };
