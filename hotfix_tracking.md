@@ -206,3 +206,4 @@ This maintenance release includes the following code fixes:
 
 165. https://github.com/dotCMS/core/issues/25296 : Limited users cannot create content types on System Host #25296
 166. https://github.com/dotCMS/core/issues/22385 : Custom templates should push with their page no matter the filter that is selected #22385
+167. https://github.com/dotCMS/core/issues/26415 : Template Builder: System Template should create layout always #26415
