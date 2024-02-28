@@ -120,9 +120,6 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: core-web/.nvmrc
       - name: Get Date
         id: get-date
         run: |
@@ -328,9 +325,6 @@ jobs:
         with:
           java-version: 11
           distribution: 'temurin'
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: core-web/.nvmrc
       - name: Get Date
         id: get-date
         run: |
