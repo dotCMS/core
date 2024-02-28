@@ -54,14 +54,12 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
 
     ngOnInit(): void {
         this.announcementsStore.load();
+        this.aboutLinks = this.aboutLinks = this.getAboutLinks();
 
         this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
             this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.load();
-            this.aboutLinks = [
-                { title: 'announcements.knowledge.center', items: this.knowledgeCenterLinks() },
-                { title: 'announcements.knowledge.contact.us', items: this.contactLinks() }
-            ];
+            this.aboutLinks = this.getAboutLinks();
         });
     }
 
@@ -69,6 +67,17 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
         if (!changes.showUnreadAnnouncement.currentValue) {
             this.announcementsStore.markAnnouncementsAsRead();
         }
+    }
+
+    /**
+     * Get the about links
+     * @returns About links
+     */
+    getAboutLinks(): { title: string; items: AnnouncementLink[] }[] {
+        return [
+            { title: 'announcements.knowledge.center', items: this.knowledgeCenterLinks() },
+            { title: 'announcements.knowledge.contact.us', items: this.contactLinks() }
+        ];
     }
 
     /**

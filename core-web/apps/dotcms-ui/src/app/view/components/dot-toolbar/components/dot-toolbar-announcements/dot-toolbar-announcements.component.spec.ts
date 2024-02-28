@@ -105,4 +105,10 @@ describe('DotToolbarAnnouncementsComponent', () => {
         const mask = spectator.query(byTestId('dot-mask'));
         expect(mask).toBeFalsy();
     });
+
+    it('should have a target blank on the announcements link', () => {
+        spectator.detectChanges();
+        const announcementLink = spectator.query(byTestId('announcements__about-link'));
+        expect(announcementLink.getAttribute('target')).toBe('_blank');
+    });
 });
