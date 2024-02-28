@@ -387,8 +387,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
     /**
      * The only reason of this updater is update the updated UUIDs we get from the backend. The `newRows` have the new UUIDs
-     * and we need to update those without touching the ids in the rows and the columns, because those are the ids that 
-     * GridStack use for the internal state and change it break it.
+     * and we need to update those without touching the ids in the rows and the columns, because those are the ids that
+     * GridStack use for the internal state and if we change it, we break it.
      * @memberof DotTemplateBuilderStore
      */
     readonly updateOldRows = this.updater((state, newRows: DotGridStackWidget[]) => {
