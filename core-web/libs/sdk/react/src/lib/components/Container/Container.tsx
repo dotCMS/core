@@ -65,33 +65,6 @@ export function Container({ containerRef }: ContainerProps) {
         container
     };
 
-    // function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
-    //     let target = e.target as HTMLElement;
-
-    //     if (target.dataset.dot !== 'contentlet') {
-    //         target = target.closest('[data-dot="contentlet"]') as HTMLElement;
-    //     }
-
-    //     if (!target) {
-    //         return;
-    //     }
-
-    //     const { x, y, width, height } = target.getBoundingClientRect();
-
-    //     const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
-
-    //     postMessageToEditor({
-    //         action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-    //         payload: {
-    //             x,
-    //             y,
-    //             width,
-    //             height,
-    //             payload: contentletPayload
-    //         }
-    //     });
-    // }
-
     const renderContentlets = updatedContentlets.map((contentlet) => {
         const ContentTypeComponent = components[contentlet.contentType] || NoContent;
 
@@ -99,18 +72,6 @@ export function Container({ containerRef }: ContainerProps) {
             contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
                 ? EmptyContainer
                 : ContentTypeComponent;
-
-        // const contentletPayload = {
-        //     container,
-        //     contentlet: {
-        //         identifier: contentlet.identifier,
-        //         title: contentlet.widgetTitle || contentlet.title,
-        //         inode: contentlet.inode,
-        //         contentType: contentlet.contentType
-        //     }
-        // };
-
-        // console.log("Container - isInsideEditor?: ", isInsideEditor);
 
         return isInsideEditor ? (
             <div

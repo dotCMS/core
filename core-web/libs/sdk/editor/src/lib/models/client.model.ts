@@ -16,17 +16,17 @@ export enum CUSTOMER_ACTIONS {
     /**
      * Send the information of the hovered contentlet
      */
-    SET_CONTENTLET = 'set-contentlet', // Check
+    SET_CONTENTLET = 'set-contentlet', 
     /**
      * Tell the editor that the page is being scrolled
      */
-    IFRAME_SCROLL = 'scroll', // Check
+    IFRAME_SCROLL = 'scroll', 
     /**
      * Ping the editor to see if the page is inside the editor
      */
-    PING_EDITOR = 'ping-editor', //Check
+    PING_EDITOR = 'ping-editor',
 
-    CONTENT_CHANGE = 'content-change', //Check
+    CONTENT_CHANGE = 'content-change',
 
     NOOP = 'noop'
 }
