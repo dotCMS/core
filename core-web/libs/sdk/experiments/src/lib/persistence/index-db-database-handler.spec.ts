@@ -1,8 +1,8 @@
 import fakeIndexedDB from 'fake-indexeddb';
 
-import { getData, persistData } from './persistence';
+import { IndexDBDatabaseHandler } from './index-db-database-handler';
 
-import { EXPERIMENT_DB_KEY_PATH } from '../constants';
+import { EXPERIMENT_DB_KEY_PATH, EXPERIMENT_DB_STORE_NAME } from '../constants';
 import { IsUserIncludedResponse } from '../mocks/is-user-included.mock';
 
 if (!globalThis.structuredClone) {
@@ -11,22 +11,30 @@ if (!globalThis.structuredClone) {
     };
 }
 
+let persistDatabaseHandler: IndexDBDatabaseHandler;
+
 beforeAll(() => {
     Object.defineProperty(window, 'indexedDB', {
         writable: true,
         value: fakeIndexedDB
     });
+
+    persistDatabaseHandler = new IndexDBDatabaseHandler({
+        db_store: EXPERIMENT_DB_STORE_NAME,
+        db_name: EXPERIMENT_DB_STORE_NAME,
+        db_key_path: EXPERIMENT_DB_KEY_PATH
+    });
 });
 
 describe('IndexedDB tests', () => {
     it('saveData successfully saves data to the store', async () => {
-        const key = await persistData(IsUserIncludedResponse.entity);
+        const key = await persistDatabaseHandler.persistData(IsUserIncludedResponse.entity);
         expect(key).toBe(EXPERIMENT_DB_KEY_PATH);
     });
 
     it('getDataByKey successfully retrieves data from the store', async () => {
-        await persistData(IsUserIncludedResponse.entity);
-        const data = await getData();
+        await persistDatabaseHandler.persistData(IsUserIncludedResponse.entity);
+        const data = await persistDatabaseHandler.getData();
         expect(data).toEqual(IsUserIncludedResponse.entity);
     });
 });

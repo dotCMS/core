@@ -1,10 +1,10 @@
 import { EXPERIMENT_WINDOWS_KEY } from './constants';
-import { SdkExperiments } from './sdk-experiments';
+import { DotExperiments } from './dot-experiments';
 import { getScriptDataAttributes } from './utils/utils';
 
 declare global {
     interface Window {
-        [EXPERIMENT_WINDOWS_KEY]: SdkExperiments;
+        [EXPERIMENT_WINDOWS_KEY]: DotExperiments;
     }
 }
 
@@ -19,7 +19,7 @@ if (window) {
     try {
         const dataAttributes = getScriptDataAttributes();
         if (dataAttributes) {
-            window[EXPERIMENT_WINDOWS_KEY] = SdkExperiments.getInstance({ ...dataAttributes });
+            window[EXPERIMENT_WINDOWS_KEY] = DotExperiments.getInstance({ ...dataAttributes });
         }
     } catch (error) {
         throw new Error(`Error instancing SdkExperiments: ${error}`);

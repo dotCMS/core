@@ -102,8 +102,6 @@ export interface AssignedExperiments {
  * @property {never[]} errors - An array that contains any possible error messages.
  * @property {Record<string, unknown>} i18nMessagesMap - A map that contains internationalization (i18n) messages.
  * @property {unknown[]} messages - An array of generic messages.
- * @property {unknown | null} pagination - Pagination details for the response data, if applicable.
- * @property {unknown[]} permissions - An array that contains permission data.
  */
 export interface IsUserIncludedApiResponse {
     entity: AssignedExperiments;

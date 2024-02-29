@@ -1,6 +1,6 @@
-import { API_EXPERIMENTS_URL } from './constants';
+import { API_EXPERIMENTS_URL, EXPERIMENT_DB_KEY_PATH, EXPERIMENT_DB_STORE_NAME } from './constants';
 import { AssignedExperiments, IsUserIncludedApiResponse, SdkExperimentConfig } from './models';
-import { persistData } from './persistence/persistence';
+import { IndexDBDatabaseHandler } from './persistence/index-db-database-handler';
 import { dotLogger } from './utils/utils';
 
 /**
@@ -20,14 +20,14 @@ import { dotLogger } from './utils/utils';
  * ```
  *
  * @export
- * @class SdkExperiments
+ * @class DotExperiments
  *
  */
-export class SdkExperiments {
+export class DotExperiments {
     // TODO: make this class the entrypoint of the library
-    private static instance: SdkExperiments;
+    private static instance: DotExperiments;
 
-    constructor(private config: SdkExperimentConfig) {
+    private constructor(private config: SdkExperimentConfig) {
         if (!this.config['server']) {
             throw new Error('`server` must be provided and should not be empty!');
         }
@@ -53,16 +53,20 @@ export class SdkExperiments {
      * If the instance does not exist, it creates a new instance with the provided configuration and calls the `getExperimentData` method.
      *
      * @param {SdkExperimentConfig} config - The configuration object for initializing the SdkExperiments instance.
-     * @return {SdkExperiments} - The instance of the SdkExperiments class.
+     * @return {DotExperiments} - The instance of the SdkExperiments class.
      */
-    public static getInstance(config: SdkExperimentConfig): SdkExperiments {
-        if (!SdkExperiments.instance) {
-            SdkExperiments.instance = new SdkExperiments(config);
+    public static getInstance(config?: SdkExperimentConfig): DotExperiments {
+        if (!DotExperiments.instance) {
+            if (!config) {
+                throw new Error('Configuration is required to create a new instance.');
+            }
+
+            DotExperiments.instance = new DotExperiments(config);
 
             this.instance.setExperimentData();
         }
 
-        return SdkExperiments.instance;
+        return DotExperiments.instance;
     }
 
     /**
@@ -128,15 +132,24 @@ export class SdkExperiments {
      * @private
      */
     private persistExperiments(entity: AssignedExperiments) {
-        if (entity.experiments.length > 0) {
-            // TODO: Final parsed data will be stored
-            persistData(entity)
-                .then(() => {
-                    dotLogger('Experiment data stored successfully', this.getIsDebugActive());
-                })
-                .catch((onerror) => {
-                    dotLogger(`Error storing data. ${onerror}`, this.getIsDebugActive());
-                });
+        const indexDBDatabaseHandler = new IndexDBDatabaseHandler({
+            db_store: EXPERIMENT_DB_STORE_NAME,
+            db_name: EXPERIMENT_DB_STORE_NAME,
+            db_key_path: EXPERIMENT_DB_KEY_PATH
+        });
+
+        if (!entity.experiments.length) {
+            return;
         }
+
+        // TODO: Final parsed data will be stored
+        indexDBDatabaseHandler
+            .persistData(entity)
+            .then(() => {
+                dotLogger('Experiment data stored successfully', this.getIsDebugActive());
+            })
+            .catch((onerror) => {
+                dotLogger(`Error storing data. ${onerror}`, this.getIsDebugActive());
+            });
     }
 }

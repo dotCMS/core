@@ -1,5 +1,5 @@
 import { EXPERIMENT_WINDOWS_KEY } from './constants';
-import { SdkExperiments } from './sdk-experiments';
+import { DotExperiments } from './dot-experiments';
 import { getScriptDataAttributes } from './utils/utils';
 
 declare global {
@@ -18,10 +18,10 @@ describe('IIFE Execution', () => {
         delete window[EXPERIMENT_WINDOWS_KEY];
     });
     it('should call getScriptDataAttributes and set window[EXPERIMENT_WINDOWS_KEY]', () => {
-        const fakeInstance = {} as SdkExperiments;
+        const fakeInstance = {} as DotExperiments;
 
         const getInstanceMock = jest
-            .spyOn(SdkExperiments, 'getInstance')
+            .spyOn(DotExperiments, 'getInstance')
             .mockReturnValue(fakeInstance);
 
         require('./standalone');
