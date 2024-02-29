@@ -4,7 +4,7 @@ import { getScriptDataAttributes } from './utils/utils';
 
 declare global {
     interface Window {
-        [EXPERIMENT_WINDOWS_KEY]: never;
+        [EXPERIMENT_WINDOWS_KEY]?: DotExperiments;
     }
 }
 

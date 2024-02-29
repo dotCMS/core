@@ -41,6 +41,7 @@
         "prepare": "cd .. && node core-web/prepare.js",
         "test:dotcms-ui": "nx run dotcms-ui:test",
         "test:dotcms": "nx affected -t test --exclude='tag:skip:test'",
+        "test:dotcms:ci": "../mvnw -pl :dotcms-core-web test",
         "update": "nx migrate latest",
         "workspace-generator": "nx workspace-generator",
         "help": "nx help"
