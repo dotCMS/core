@@ -7,9 +7,7 @@ import { catchError, map, pluck, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { AiPluginResponse, DotAICompletionsConfig, DotAIImageResponse } from './dot-ai.models';
-
-import { AI_PLUGIN_KEY } from '../../utils';
+import { AiPluginResponse, DotAIImageResponse } from './dot-ai.models';
 
 const API_ENDPOINT = '/api/v1/ai';
 const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
@@ -93,16 +91,17 @@ export class DotAiService {
      * @return {Observable<boolean>} An observable that emits a boolean value indicating if the plugin is installed and properly configured.
      */
     checkPluginInstallation(): Observable<boolean> {
-        return this.http
-            .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
-                observe: 'response'
-            })
-            .pipe(
-                map((res) => res.status === 200 && res.body.apiKey !== AI_PLUGIN_KEY.NOT_SET),
-                catchError(() => {
-                    return of(false);
-                })
-            );
+        // return this.http
+        //     .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
+        //         observe: 'response'
+        //     })
+        //     .pipe(
+        //         map((res) => res.status === 200 && res.body.apiKey !== AI_PLUGIN_KEY.NOT_SET),
+        //         catchError(() => {
+        //             return of(false);
+        //         })
+        //     );
+        return of(false);
     }
 
     private createAndPublishContentlet(image: DotAIImageResponse): Observable<DotCMSContentlet[]> {
