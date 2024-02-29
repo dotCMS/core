@@ -14,7 +14,7 @@ class DotCMSPageEditor {
     }
 
     init() {
-        console.log('New SdkDotPageEditor init!');
+        console.log('SdkDotPageEditor Headless init!!');
         this.isInsideEditor = this.checkIfInsideEditor();
         if (this.isInsideEditor) {
             this.listenEditorMessages();
@@ -34,7 +34,7 @@ class DotCMSPageEditor {
     }
 
     private listenEditorMessages() {
-        window.addEventListener('message', (event: MessageEvent) => {
+        window?.addEventListener('message', (event: MessageEvent) => {
             switch (event.data) {
                 case NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS: {
                     this.setBounds();
@@ -84,7 +84,7 @@ class DotCMSPageEditor {
     }
 
     private scrollHandler() {
-        window.addEventListener('scroll', () => {
+        window?.addEventListener('scroll', () => {
             postMessageToEditor({
                 action: CUSTOMER_ACTIONS.IFRAME_SCROLL
             });
@@ -92,7 +92,7 @@ class DotCMSPageEditor {
     }
 
     private checkIfInsideEditor() {
-        if (window.parent === window) {
+        if (window?.parent === window) {
             return false;
         }
         postMessageToEditor({
@@ -116,8 +116,6 @@ class DotCMSPageEditor {
                         postMessageToEditor({
                             action: CUSTOMER_ACTIONS.CONTENT_CHANGE
                         });
-                        // //To add the listener to the new contents.
-                        // this.listenHoveredContentlet();
                     }
                 }
             }
@@ -145,7 +143,7 @@ class DotCMSPageEditor {
 const defaultReloadFn = () => window.location.reload();
 
 export const sdkDotPageEditor = {
-    init: (config?: DotCMSPageEditorConfig) => {
+    createClient: (config?: DotCMSPageEditorConfig) => {
         const dotCMSPageEditor = new DotCMSPageEditor(config);
         dotCMSPageEditor.init();
 

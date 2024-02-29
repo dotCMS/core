@@ -1,4 +1,5 @@
-import { usePageEditor } from '../../hooks/usePageEditor';
+import { sdkDotPageEditor } from '@dotcms/editor';
+
 import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
 
@@ -35,20 +36,16 @@ export type DotcmsPageProps = {
 export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
     const { entity } = props;
 
-    const { rowsRef, isInsideEditor } = usePageEditor({});
+    const client = sdkDotPageEditor.createClient();
+    client.init();
+    client.setUrl('/') // In usePageEditor, this value is null
 
-    const addRowRef = (el: HTMLDivElement) => {
-        if (el && !rowsRef.current.includes(el)) {
-            rowsRef.current.push(el);
-        }
-    };
-
-    entity.isInsideEditor = isInsideEditor;
+    entity.isInsideEditor = client.isInsideEditor;
 
     return (
         <PageProvider entity={entity}>
             {entity.layout.body.rows.map((row, index) => (
-                <Row ref={addRowRef} key={index} row={row} />
+                <Row key={index} row={row} />
             ))}
         </PageProvider>
     );

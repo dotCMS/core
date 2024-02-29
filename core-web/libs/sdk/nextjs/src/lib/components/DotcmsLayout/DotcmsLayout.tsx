@@ -1,6 +1,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 
-import { DotcmsPageProps, PageProvider, Row, usePageEditor } from '@dotcms/react';
+import { sdkDotPageEditor } from '@dotcms/editor';
+import { DotcmsPageProps, PageProvider, Row } from '@dotcms/react';
 
 /**
  * `DotcmsLayout` is a functional component that renders a layout for a DotCMS page.
@@ -50,23 +51,18 @@ export function DotcmsLayout(props: DotcmsPageProps) {
     const router = useRouter();
     const pathname = usePathname();
 
-    const { rowsRef, isInsideEditor } = usePageEditor({
-        reloadFunction: router.refresh,
-        pathname
+    const client = sdkDotPageEditor.createClient({
+        onReload: router.refresh
     });
+    client.init();
+    client.setUrl(pathname);
 
-    const addRowRef = (el: HTMLDivElement) => {
-        if (el && !rowsRef.current.includes(el)) {
-            rowsRef.current.push(el);
-        }
-    };
-
-    entity.isInsideEditor = isInsideEditor;
+    entity.isInsideEditor = client.isInsideEditor;
 
     return (
         <PageProvider entity={entity}>
             {entity.layout.body.rows.map((row, index) => (
-                <Row ref={addRowRef} key={index} row={row} />
+                <Row key={index} row={row} />
             ))}
         </PageProvider>
     );
