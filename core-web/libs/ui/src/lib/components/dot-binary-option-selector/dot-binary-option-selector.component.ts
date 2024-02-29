@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 export interface OPTION {
     value: string;

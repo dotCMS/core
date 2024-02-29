@@ -16,7 +16,8 @@ export async function generateMetadata({ params, searchParams }) {
     const data = await client.page.get({
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
-        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || ''
+        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || '',
+        mode: searchParams.mode
     });
 
     return {
@@ -28,7 +29,8 @@ export default async function Home({ searchParams, params }) {
     const data = await client.page.get({
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
-        personaId: searchParams['com.dotmarketing.persona.id'] || ''
+        personaId: searchParams['com.dotmarketing.persona.id'] || '',
+        mode: searchParams.mode
     });
 
     const nav = await client.nav.get({

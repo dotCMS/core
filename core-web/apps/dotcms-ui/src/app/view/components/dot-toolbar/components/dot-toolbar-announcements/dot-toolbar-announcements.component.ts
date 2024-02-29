@@ -11,11 +11,10 @@ import {
     inject,
     signal
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
-
-import { skip } from 'rxjs/operators';
 
 import {
     Announcement,
@@ -52,23 +51,35 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
 
     aboutLinks: { title: string; items: AnnouncementLink[] }[] = [];
 
-    ngOnInit(): void {
-        this.announcementsStore.load();
-
-        this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
+    constructor() {
+        this.siteService.switchSite$.pipe(takeUntilDestroyed()).subscribe(() => {
             this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.load();
-            this.aboutLinks = [
-                { title: 'announcements.knowledge.center', items: this.knowledgeCenterLinks() },
-                { title: 'announcements.knowledge.contact.us', items: this.contactLinks() }
-            ];
+            this.aboutLinks = this.getAboutLinks();
         });
+    }
+
+    ngOnInit(): void {
+        this.announcementsStore.load();
+        this.aboutLinks = this.getAboutLinks();
     }
 
     ngOnChanges(changes): void {
         if (!changes.showUnreadAnnouncement.currentValue) {
+            this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.markAnnouncementsAsRead();
         }
+    }
+
+    /**
+     * Get the about links
+     * @returns About links
+     */
+    getAboutLinks(): { title: string; items: AnnouncementLink[] }[] {
+        return [
+            { title: 'announcements.knowledge.center', items: this.knowledgeCenterLinks() },
+            { title: 'announcements.knowledge.contact.us', items: this.contactLinks() }
+        ];
     }
 
     /**

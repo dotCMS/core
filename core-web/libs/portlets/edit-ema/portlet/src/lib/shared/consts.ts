@@ -49,12 +49,14 @@ export const PAYLOAD_MOCK: ActionPayload = {
         contentletsId: ['19c5ecc0c59b17b5780acd624ad52444', '2e5d54e6-7ea3-4d72-8577-b8731b206ca0'],
         identifier: '//demo.dotcms.com/application/containers/banner/',
         maxContentlets: 25,
-        uuid: '1'
+        uuid: '1',
+        variantId: '1'
     },
     contentlet: {
         identifier: '19c5ecc0c59b17b5780acd624ad52444',
         title: 'Zelda Cafe',
         inode: 'ff10d5db-b06e-4298-870b-fbe2f5001ac2',
+        onNumberOfPages: 1,
         contentType: 'Banner'
     },
     language_id: '1',

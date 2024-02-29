@@ -37,7 +37,10 @@ export const getContainersData = (
 ) => {
     const { identifier, uuid } = containerRef;
 
-    const { containerStructures } = containers[identifier];
+    const { containerStructures, container } = containers[identifier];
+
+    // Get the variant id
+    const { variantId } = container?.parentPermissionable || {};
 
     // Get accepts types of content types for this container
     const acceptTypes = containerStructures.map((structure) => structure.contentTypeVar).join(',');
@@ -48,7 +51,8 @@ export const getContainersData = (
     return {
         ...containers[identifier].container,
         acceptTypes,
-        contentlets
+        contentlets,
+        variantId
     };
 };
 
