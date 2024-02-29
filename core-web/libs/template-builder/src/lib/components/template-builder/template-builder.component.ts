@@ -193,7 +193,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.rows$ = this.store.rows$.pipe(
             filter(({ shouldEmit }) => shouldEmit),
             map(({ rows }) => parseFromGridStackToDotObject(rows))
-        ); // Add property to avoid emitting
+        );
 
         combineLatest([this.rows$, this.store.layoutProperties$, this.themeId$])
             .pipe(
