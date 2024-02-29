@@ -20,6 +20,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.junit.CustomDataProviderRunner;
 import com.dotcms.rest.api.v1.apps.ExportSecretForm;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.IntegrationTestInitService;
@@ -68,7 +69,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@RunWith(DataProviderRunner.class)
+@RunWith(CustomDataProviderRunner.class)
 public class AppsAPIImplTest {
 
     @BeforeClass

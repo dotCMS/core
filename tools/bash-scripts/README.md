@@ -94,7 +94,7 @@ But you can pass much more.
 
 Further info is available in our API-Postman Test
 
-dotCMS/src/curl-test/Site Resource.postman_collection.json 
+dotcms-postman/src/main/resources/curl-test/Site Resource.postman_collection.json 
 
 
 **Content-Type**:
