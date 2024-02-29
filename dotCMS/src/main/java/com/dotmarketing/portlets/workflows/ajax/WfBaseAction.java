@@ -7,6 +7,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
 
+import java.util.Optional;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -69,7 +70,9 @@ abstract class WfBaseAction extends AjaxAction {
 		} catch (Exception e) {
 			Logger.error(WfBaseAction.class, "Trying to run method:" + cmd);
 			Logger.error(WfBaseAction.class, e.getMessage(), e.getCause());
-			writeError(response, e.getCause().getMessage());
+			var causeMessage = Optional.ofNullable(e.getCause()).map(Throwable::getMessage).orElse(e.getMessage());
+			Logger.error(WfBaseAction.class, causeMessage, e);
+			writeError(response, causeMessage);
 		}
 
 	}
