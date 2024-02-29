@@ -1,7 +1,7 @@
 # ----------------------------------------------
 # Stage 1:  Minimal java image with sdkman + Ubuntu LTS
 # ----------------------------------------------
-FROM mcr.microsoft.com/openjdk/jdk:11-ubuntu as base-builder
+FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu as base-builder
 
 WORKDIR /srv
 

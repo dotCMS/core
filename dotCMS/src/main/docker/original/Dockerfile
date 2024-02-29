@@ -2,7 +2,7 @@
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:ms-jdk-11 as container-base
+FROM dotcms/java-base:ms-jdk-21 as container-base
 
 WORKDIR /srv
 
