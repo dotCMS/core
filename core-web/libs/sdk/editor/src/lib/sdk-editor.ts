@@ -1,12 +1,32 @@
-import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model'
+import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
 import { NOTIFY_CUSTOMER } from './models/editor.model';
-import { findContentletElement, getClosestContainerData, getPageElementBound } from './utils/editor.utils';
+import {
+    findContentletElement,
+    getClosestContainerData,
+    getPageElementBound
+} from './utils/editor.utils';
 
 interface DotCMSPageEditorConfig {
     onReload: () => void;
 }
+interface DotCMSPageEditorListener {
+    type: 'listener';
+    event: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    callback: (ev: any) => void;
+}
+
+interface DotCMSPageEditorObserver {
+    type: 'observer';
+    observer: MutationObserver;
+}
+
+type DotCMSPageEditorSubscription = DotCMSPageEditorListener | DotCMSPageEditorObserver;
+
 class DotCMSPageEditor {
     private config: DotCMSPageEditorConfig;
+    private subscriptions: DotCMSPageEditorSubscription[] = [];
+
     isInsideEditor!: boolean;
 
     constructor(config?: DotCMSPageEditorConfig) {
@@ -14,14 +34,27 @@ class DotCMSPageEditor {
     }
 
     init() {
-        console.log('SdkDotPageEditor Headless init!!');
+        console.log('SdkDotPageEditor Headless init.');
         this.isInsideEditor = this.checkIfInsideEditor();
         if (this.isInsideEditor) {
             this.listenEditorMessages();
             this.listenHoveredContentlet();
             this.scrollHandler();
-            this.listenContentChange(); // We can use const observer = listenContentChange() to disconnect later
+            this.listenContentChange();
         }
+    }
+
+    destroy() {
+        console.log('SdkDotPageEditor Headless destroy.');
+        this.subscriptions.forEach((subscription) => {
+            if (subscription.type === 'listener') {
+                window?.removeEventListener(subscription.event, subscription.callback);
+            }
+
+            if (subscription.type === 'observer') {
+                subscription.observer.disconnect();
+            }
+        });
     }
 
     updateNavigation(pathname: string) {
@@ -34,7 +67,7 @@ class DotCMSPageEditor {
     }
 
     private listenEditorMessages() {
-        window?.addEventListener('message', (event: MessageEvent) => {
+        const messageCallback = (event: MessageEvent) => {
             switch (event.data) {
                 case NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS: {
                     this.setBounds();
@@ -46,13 +79,19 @@ class DotCMSPageEditor {
                     break;
                 }
             }
+        };
+        window?.addEventListener('message', messageCallback);
+        this.subscriptions.push({
+            type: 'listener',
+            event: 'message',
+            callback: messageCallback
         });
     }
 
     private listenHoveredContentlet() {
-        document.addEventListener('pointermove', (event) => {
+        const pointerMoveCallback = (event: PointerEvent) => {
             const target = findContentletElement(event.target as HTMLElement);
-            if(!target) return;
+            if (!target) return;
             const { x, y, width, height } = target.getBoundingClientRect();
 
             const contentletPayload = {
@@ -80,14 +119,26 @@ class DotCMSPageEditor {
                     payload: contentletPayload
                 }
             });
+        };
+        document.addEventListener('pointermove', pointerMoveCallback);
+        this.subscriptions.push({
+            type: 'listener',
+            event: 'pointermove',
+            callback: pointerMoveCallback
         });
     }
 
     private scrollHandler() {
-        window?.addEventListener('scroll', () => {
+        const scrollCallback = () => {
             postMessageToEditor({
                 action: CUSTOMER_ACTIONS.IFRAME_SCROLL
             });
+        };
+        window?.addEventListener('scroll', scrollCallback);
+        this.subscriptions.push({
+            type: 'listener',
+            event: 'scroll',
+            callback: scrollCallback
         });
     }
 
@@ -122,13 +173,18 @@ class DotCMSPageEditor {
         });
 
         observer.observe(document, { childList: true, subtree: true });
-        return observer;
+        this.subscriptions.push({
+            type: 'observer',
+            observer
+        });
     }
 
     private setBounds() {
-        const containers = Array.from(document.querySelectorAll('[data-dot-object="container"]')) as unknown as HTMLDivElement[];
+        const containers = Array.from(
+            document.querySelectorAll('[data-dot-object="container"]')
+        ) as unknown as HTMLDivElement[];
         const positionData = getPageElementBound(containers);
-        
+
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_BOUNDS,
             payload: positionData

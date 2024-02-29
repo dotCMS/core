@@ -2,6 +2,7 @@ import { useRouter, usePathname } from 'next/navigation';
 
 import { sdkDotPageEditor } from '@dotcms/editor';
 import { DotcmsPageProps, PageProvider, Row } from '@dotcms/react';
+import { useEffect } from 'react';
 
 /**
  * `DotcmsLayout` is a functional component that renders a layout for a DotCMS page.
@@ -54,8 +55,15 @@ export function DotcmsLayout(props: DotcmsPageProps) {
     const client = sdkDotPageEditor.createClient({
         onReload: router.refresh
     });
-    client.init();
-    client.updateNavigation(pathname);
+
+    useEffect(() => {
+        client.init();
+        client.updateNavigation(pathname);
+
+        return () => {
+            client.destroy();
+        };
+    }, [client, pathname]);
 
     entity.isInsideEditor = client.isInsideEditor;
 
