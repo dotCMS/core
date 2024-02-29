@@ -5,6 +5,7 @@ import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
 import static org.apache.commons.lang3.StringUtils.abbreviate;
 
 import com.dotcms.cli.exception.ExceptionHandler;
+import com.dotcms.cli.exception.ForceSilentExitException;
 import io.quarkus.arc.Arc;
 import io.quarkus.devtools.messagewriter.MessageWriter;
 import io.quarkus.logging.Log;
@@ -48,7 +49,7 @@ public class OutputOptionMixin implements MessageWriter {
     ColorScheme colorScheme() {
         ColorScheme colors = scheme;
         if (colors == null) {
-            colors = scheme = mixee.commandLine().getColorScheme();
+            colors = scheme = commandLine().getColorScheme();
         }
         return colors;
     }
@@ -56,7 +57,7 @@ public class OutputOptionMixin implements MessageWriter {
     public PrintWriter out() {
         PrintWriter o = out;
         if (o == null) {
-            o = out = mixee.commandLine().getOut();
+            o = out = commandLine().getOut();
         }
         return o;
     }
@@ -64,7 +65,7 @@ public class OutputOptionMixin implements MessageWriter {
     public PrintWriter err() {
         PrintWriter e = err;
         if (e == null) {
-            e = err = mixee.commandLine().getErr();
+            e = err = commandLine().getErr();
         }
         return e;
     }
@@ -161,6 +162,14 @@ public class OutputOptionMixin implements MessageWriter {
         }
     }
 
+    /**
+     * Returns the CommandLine object for the current command.
+     * Convenience method to avoid having to call mixee.commandLine() directly. and to allow for easy mocking
+     * @return the CommandLine object for the current command
+     */
+    public CommandLine commandLine() {
+        return mixee.commandLine();
+    }
 
     ExceptionHandler exceptionHandler;
 
@@ -171,24 +180,38 @@ public class OutputOptionMixin implements MessageWriter {
         return exceptionHandler;
     }
 
+/**
+     * This method is used to handle exceptions that occur during command execution
+     * @param ex The exception that was thrown
+     * @return The exit code
+     */
+    public int handleCommandException(Exception ex){
+        return handleCommandException(ex, null, isShowErrors());
+    }
+
+    /**
+     * This method is used to handle exceptions that occur during command execution
+     * @param ex The exception that was thrown
+     * @param message A custom message to display
+     * @return The exit code
+     */
     public int handleCommandException(Exception ex, String message){
         return handleCommandException(ex, message, isShowErrors());
     }
 
     /**
-     * This method allows me to explicitly set the showErrors flag
-     * in certain context like when an exception is thrown from an ExecutionHandler the showErrors flag is set yet in our mixing
+     * This method allows me to explicitly set the showStack flag
+     * in certain context like when an exception is thrown from an ExecutionHandler the showStack flag is set yet in our mixing
      * This is because the ExecutionHandler run too early and the command hasn't been prepared yet
      * Therefore, We need to be able to set it explicitly to remain consistent with the rest of the code
      * @param ex The exception that was thrown
-     * @param message The message to display
-     * @param showErrors The flag to show errors
+     * @param message Custom message to display
+     * @param showStack The flag to show errors
      * @return The exit code
      */
-    public int handleCommandException(Exception ex, String message, boolean showErrors) {
+    public int handleCommandException(final Exception ex, final String message, final boolean showStack) {
 
         final ExceptionHandler exHandler = getExceptionHandler();
-
         // Handle ParameterException
         if (ex instanceof ParameterException) {
             CommandLine.UnmatchedArgumentException.printSuggestions(
@@ -199,23 +222,28 @@ public class OutputOptionMixin implements MessageWriter {
 
         final Exception unwrappedEx = exHandler.unwrap(ex);
 
+        if (unwrappedEx instanceof ForceSilentExitException) {
+            //We don't want to print the stack trace if the exception is a ForceExitException
+            return ((ForceSilentExitException) unwrappedEx).getExitCode();
+        }
+
         //Extract the proper exception and remove all server side noise
         final Exception handledEx = exHandler.handle(unwrappedEx);
         //Short error message
-        message = String.format("%s %s  ", message,
-                handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
-                        :  "An exception " + handledEx.getClass().getSimpleName() + " Occurred With no error message provided.");
-        error(message);
-        Log.error(message, ex);
-        //Won't print unless the "showErrors" flag is on
+         final String errorMessage =  (message != null && !message.isEmpty() ?  message + " " : "" ) + (handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
+                :  "An exception " + handledEx.getClass().getSimpleName() + " Occurred With no error message provided.");
+
+        error(errorMessage);
+        Log.error(errorMessage, ex);
+        //Won't print unless the "showStack" flag is on
         //We show the show message notice only if we're not already showing errors
-        if(!showErrors) {
+        if(!showStack) {
             info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
         } else {
             err().println(colorScheme().stackTraceText(unwrappedEx));
         }
 
-        final CommandLine cmd = mixee.commandLine();
+        final CommandLine cmd = commandLine();
         //If we want to force usage to be printed upon certain type of exception we could do:
         // cmd.usage(cmd.getOut());
 

@@ -21,7 +21,7 @@ import org.jboss.logging.Logger;
  * @param <T> the type of content being pulled and processed
  */
 @Dependent
-public class PullTask<T> extends TaskProcessor {
+public class PullTask<T> extends TaskProcessor<PullTaskParams<T>,List<Exception>> {
 
     private PullTaskParams<T> params;
 
@@ -51,6 +51,7 @@ public class PullTask<T> extends TaskProcessor {
      *
      * @param params The parameters for the PullTask
      */
+    @Override
     public void setTaskParams(final PullTaskParams<T> params) {
         this.params = params;
     }
@@ -58,6 +59,7 @@ public class PullTask<T> extends TaskProcessor {
     /**
      * Computes the contents to pull
      */
+    @Override
     public List<Exception> compute() {
 
         CompletionService<List<Exception>> completionService =
