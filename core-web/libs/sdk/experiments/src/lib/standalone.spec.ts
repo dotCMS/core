@@ -4,7 +4,7 @@ import { getScriptDataAttributes } from './utils/utils';
 
 declare global {
     interface Window {
-        [EXPERIMENT_WINDOWS_KEY]?: DotExperiments;
+        [EXPERIMENT_WINDOWS_KEY]: DotExperiments;
     }
 }
 
@@ -15,7 +15,7 @@ jest.mock('./utils/utils', () => ({
 
 describe('IIFE Execution', () => {
     beforeEach(() => {
-        delete window[EXPERIMENT_WINDOWS_KEY];
+        // /delete window[EXPERIMENT_WINDOWS_KEY];
     });
     it('should call getScriptDataAttributes and set window[EXPERIMENT_WINDOWS_KEY]', () => {
         const fakeInstance = {} as DotExperiments;
