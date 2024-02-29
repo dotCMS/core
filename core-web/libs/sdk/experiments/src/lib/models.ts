@@ -1,12 +1,12 @@
 /**
  * Represents the configuration for the SDK experiment.
  *
- * @interface SdkExperimentConfig
+ * @interface DotExperimentConfig
  * @property {string} 'api-key' - The API key for the experiment.
  * @property {string} server - The server URL of the backend.
  * @property {boolean} debug - Specifies whether to enable debug mode for the experiment.
  */
-export interface SdkExperimentConfig {
+export interface DotExperimentConfig {
     'api-key': string;
     server: string;
     debug: boolean;

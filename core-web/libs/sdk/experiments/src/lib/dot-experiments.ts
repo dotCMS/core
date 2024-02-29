@@ -1,19 +1,19 @@
 import { API_EXPERIMENTS_URL, EXPERIMENT_DB_KEY_PATH, EXPERIMENT_DB_STORE_NAME } from './constants';
-import { AssignedExperiments, IsUserIncludedApiResponse, SdkExperimentConfig } from './models';
+import { AssignedExperiments, DotExperimentConfig, IsUserIncludedApiResponse } from './models';
 import { IndexDBDatabaseHandler } from './persistence/index-db-database-handler';
 import { dotLogger } from './utils/utils';
 
 /**
- * `SdkExperiments` is a Typescript class to handles all operations related to fetching, storing, parsing, and navigating
+ * `DotExperiments` is a Typescript class to handles all operations related to fetching, storing, parsing, and navigating
  * data for Experiments (A/B Testing).
  *
  * It requires a configuration object for instantiation, please instance it using the method `getInstance` sending
  * an object with `api-key`, `server` and `debug`.
  *
- * Here's an example of how you can instantiate SdkExperiments class:
+ * Here's an example of how you can instantiate DotExperiments class:
  * @example
  * ```typescript
- * const instance = SdkExperiments.getInstance({
+ * const instance = DotExperiments.getInstance({
  *   server: "yourServerUrl",
  *   "api-key": "yourApiKey"
  * });
@@ -27,7 +27,7 @@ export class DotExperiments {
     // TODO: make this class the entrypoint of the library
     private static instance: DotExperiments;
 
-    private constructor(private config: SdkExperimentConfig) {
+    private constructor(private config: DotExperimentConfig) {
         if (!this.config['server']) {
             throw new Error('`server` must be provided and should not be empty!');
         }
@@ -37,7 +37,7 @@ export class DotExperiments {
         }
 
         dotLogger(
-            `SDK instanced with ${JSON.stringify(config)} configuration`,
+            `DotExperiments instanced with ${JSON.stringify(config)} configuration`,
             this.getIsDebugActive()
         );
 
@@ -49,13 +49,13 @@ export class DotExperiments {
     }
 
     /**
-     * Retrieves instance of SdkExperiments class if doesn't exist create a new one.
+     * Retrieves instance of DotExperiments class if doesn't exist create a new one.
      * If the instance does not exist, it creates a new instance with the provided configuration and calls the `getExperimentData` method.
      *
-     * @param {SdkExperimentConfig} config - The configuration object for initializing the SdkExperiments instance.
-     * @return {DotExperiments} - The instance of the SdkExperiments class.
+     * @param {DotExperimentConfig} config - The configuration object for initializing the DotExperiments instance.
+     * @return {DotExperiments} - The instance of the DotExperiments class.
      */
-    public static getInstance(config?: SdkExperimentConfig): DotExperiments {
+    public static getInstance(config?: DotExperimentConfig): DotExperiments {
         if (!DotExperiments.instance) {
             if (!config) {
                 throw new Error('Configuration is required to create a new instance.');

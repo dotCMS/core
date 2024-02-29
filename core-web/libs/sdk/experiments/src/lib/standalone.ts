@@ -22,6 +22,6 @@ if (window) {
             window[EXPERIMENT_WINDOWS_KEY] = DotExperiments.getInstance({ ...dataAttributes });
         }
     } catch (error) {
-        throw new Error(`Error instancing SdkExperiments: ${error}`);
+        throw new Error(`Error instancing DotExperiments: ${error}`);
     }
 }

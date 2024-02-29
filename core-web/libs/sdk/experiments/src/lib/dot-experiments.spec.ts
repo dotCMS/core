@@ -4,7 +4,7 @@ import fetchMock from 'fetch-mock';
 import { API_EXPERIMENTS_URL, EXPERIMENT_DB_KEY_PATH, EXPERIMENT_DB_STORE_NAME } from './constants';
 import { DotExperiments } from './dot-experiments';
 import { IsUserIncludedResponse } from './mocks/is-user-included.mock';
-import { SdkExperimentConfig } from './models';
+import { DotExperimentConfig } from './models';
 import { IndexDBDatabaseHandler } from './persistence/index-db-database-handler';
 
 if (!globalThis.structuredClone) {
@@ -13,11 +13,11 @@ if (!globalThis.structuredClone) {
     };
 }
 
-describe('SdkExperiments', () => {
+describe('DotExperiments', () => {
     afterEach(() => {
         fetchMock.restore();
     });
-    const configStub: SdkExperimentConfig = {
+    const configStub: DotExperimentConfig = {
         'api-key': 'yourApiKey',
         server: 'yourServerUrl',
         debug: false

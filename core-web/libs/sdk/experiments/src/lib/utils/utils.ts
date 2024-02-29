@@ -1,5 +1,5 @@
 import { EXPERIMENT_ALLOWED_DATA_ATTRIBUTES, EXPERIMENT_SCRIPT_FILE_NAME } from '../constants';
-import { SdkExperimentConfig } from '../models';
+import { DotExperimentConfig } from '../models';
 
 /**
  * Returns the first script element that includes the experiment script identifier.
@@ -22,17 +22,17 @@ export const getExperimentScriptTag = (): HTMLScriptElement => {
  * Retrieves experiment attributes from a given script element.
  *
  *
- * @return {SdkExperimentConfig | null} - The experiment attributes or null if there are no valid attributes present.
+ * @return {DotExperimentConfig | null} - The experiment attributes or null if there are no valid attributes present.
  */
-export const getDataExperimentAttributes = (): SdkExperimentConfig | null => {
+export const getDataExperimentAttributes = (): DotExperimentConfig | null => {
     const script = getExperimentScriptTag();
-    const defaultExperimentAttributes: SdkExperimentConfig = {
+    const defaultExperimentAttributes: DotExperimentConfig = {
         'api-key': '',
         server: window.location.href,
         debug: false
     };
 
-    let experimentAttribute: Partial<SdkExperimentConfig> = {};
+    let experimentAttribute: Partial<DotExperimentConfig> = {};
 
     if (!script.hasAttribute('data-experiment-api-key')) {
         dotLogger('You need specify the `data-experiment-api-key`');
@@ -77,9 +77,9 @@ export const getDataExperimentAttributes = (): SdkExperimentConfig | null => {
  *        data-experiment-debug>
  * </script>
  *
- * @returns {SdkExperimentConfig | null} The data attributes of the experiment script tag, or null if no experiment script is found.
+ * @returns {DotExperimentConfig | null} The data attributes of the experiment script tag, or null if no experiment script is found.
  */
-export const getScriptDataAttributes = (): SdkExperimentConfig | null => {
+export const getScriptDataAttributes = (): DotExperimentConfig | null => {
     const dataExperimentAttributes = getDataExperimentAttributes();
 
     if (dataExperimentAttributes) {
