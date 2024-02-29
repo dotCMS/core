@@ -28,7 +28,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
-import { CUSTOMER_ACTIONS, NOTIFY_CUSTOMER, sdkAsString } from '@dotcms/editor';
+import { CUSTOMER_ACTIONS, NOTIFY_CUSTOMER } from '@dotcms/editor';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
@@ -184,7 +184,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     private draggedPayload: DraggedPalettePayload;
 
-    containers: Container[] = []
+    containers: Container[] = [];
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
 
@@ -225,8 +225,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     addEditorPageScript(rendered: string) {
-        const sdkEditor = sdkAsString;
-        const scriptString = `<script>${sdkEditor};</script>`;
+        const scriptString = `<script src="/html/js/editor-js/sdk-editor-vtl.esm.js"></script>`;
         const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
