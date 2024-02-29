@@ -55,7 +55,7 @@ export function DotcmsLayout(props: DotcmsPageProps) {
         onReload: router.refresh
     });
     client.init();
-    client.setUrl(pathname);
+    client.updateNavigation(pathname);
 
     entity.isInsideEditor = client.isInsideEditor;
 

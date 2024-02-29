@@ -8,7 +8,7 @@ export enum CUSTOMER_ACTIONS {
     /**
      * Tell the dotcms editor that page change
      */
-    SET_URL = 'set-url',
+    NAVIGATION_UPDATE = 'set-url',
     /**
      * Send the element position of the rows, columnsm containers and contentlets
      */

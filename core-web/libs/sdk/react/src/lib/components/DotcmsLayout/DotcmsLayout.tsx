@@ -38,7 +38,7 @@ export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
 
     const client = sdkDotPageEditor.createClient();
     client.init();
-    client.setUrl('/') // In usePageEditor, this value is null
+    client.updateNavigation('/') // In usePageEditor, this value is null
 
     entity.isInsideEditor = client.isInsideEditor;
 

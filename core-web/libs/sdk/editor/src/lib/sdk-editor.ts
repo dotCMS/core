@@ -24,9 +24,9 @@ class DotCMSPageEditor {
         }
     }
 
-    setUrl(pathname: string) {
+    updateNavigation(pathname: string) {
         postMessageToEditor({
-            action: CUSTOMER_ACTIONS.SET_URL,
+            action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
             payload: {
                 url: pathname === '/' ? 'index' : pathname?.replace('/', '')
             }

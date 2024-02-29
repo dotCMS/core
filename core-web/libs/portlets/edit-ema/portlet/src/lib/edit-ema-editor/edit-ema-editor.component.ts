@@ -630,7 +630,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.updateEditorState(EDITOR_STATE.LOADED);
             },
 
-            [CUSTOMER_ACTIONS.SET_URL]: () => {
+            [CUSTOMER_ACTIONS.NAVIGATION_UPDATE]: () => {
                 const payload = <SetUrlPayload>data.payload;
 
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
