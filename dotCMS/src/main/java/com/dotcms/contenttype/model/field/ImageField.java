@@ -16,7 +16,6 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableImageField.class)
 @JsonDeserialize(as = ImmutableImageField.class)
 @Value.Immutable
-//@com.dotcms.business.Unexportable
 public abstract class ImageField extends Field {
 
 	/**
