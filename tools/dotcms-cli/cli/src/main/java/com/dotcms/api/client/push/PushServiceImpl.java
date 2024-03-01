@@ -258,7 +258,7 @@ public class PushServiceImpl implements PushService {
                                 build()
                         );
 
-                        return task.compute();
+                        return task.compute().join();
                     });
             progressBar.setFuture(pushFuture);
 
