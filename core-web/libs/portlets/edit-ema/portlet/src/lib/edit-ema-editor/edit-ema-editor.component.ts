@@ -388,6 +388,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.currentDevice = device;
         this.rows = []; // We need to reset the rows when we change the device
         this.contentlet = null; // We need to reset the contentlet when we change the device
+        this.seoMedia = undefined; // We need to reset the seo media when we change the device
     }
 
     /**
