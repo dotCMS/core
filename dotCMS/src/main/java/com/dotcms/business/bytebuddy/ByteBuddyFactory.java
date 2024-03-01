@@ -113,11 +113,11 @@ public class ByteBuddyFactory {
                     .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
                     .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                     .type(classMatcher)
-                    .transform((builder, typeDescription, classLoader, javaModule, protectionDomain) -> {
-
+                    .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
                         DynamicType.Builder<?> newBuilder = builder;
                         for (Map.Entry<Class<? extends Annotation>, Class<?>> entry : adviceMap.entrySet()) {
-                            newBuilder = getAdvice(entry.getKey(), entry.getValue()).transform(newBuilder, typeDescription, classLoader, javaModule,null);
+                            newBuilder = getAdvice(entry.getKey(), entry.getValue()).transform(newBuilder, typeDescription, classLoader, module, protectionDomain);
+
                         }
                         return newBuilder;
 
