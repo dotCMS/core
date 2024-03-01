@@ -4,6 +4,8 @@ export CATALINA_OPTS="$CATALINA_OPTS --add-opens=java.base/java.io=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED"
 
+## needed to dynamically load ByteBuddy
+export CATALINA_OPTS="$CATALINA_OPTS -XX:+EnableDynamicAgentLoading"
 
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.transform.TransformerFactory=com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.parsers.DocumentBuilderFactory=com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl"

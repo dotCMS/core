@@ -54,7 +54,7 @@ public class ByteBuddyFactory {
             "net.bytebuddy.",
             "sun.reflect."
     );
-
+    
     private static final Set<String> packageWhitelist = Set.of(
             "com.dotcms",
             "com.dotmarketing",
@@ -113,12 +113,15 @@ public class ByteBuddyFactory {
                     .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
                     .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                     .type(classMatcher)
-                    .transform((builder, typeDescription, classLoader, module) -> {
+                    .transform((builder, typeDescription, classLoader, javaModule, protectionDomain) -> {
+
                         DynamicType.Builder<?> newBuilder = builder;
                         for (Map.Entry<Class<? extends Annotation>, Class<?>> entry : adviceMap.entrySet()) {
-                            newBuilder = getAdvice(entry.getKey(), entry.getValue()).transform(newBuilder, typeDescription, classLoader, module);
+                            newBuilder = getAdvice(entry.getKey(), entry.getValue()).transform(newBuilder, typeDescription, classLoader, javaModule,null);
                         }
                         return newBuilder;
+
+
                     })
 
                     .installOn(inst);
