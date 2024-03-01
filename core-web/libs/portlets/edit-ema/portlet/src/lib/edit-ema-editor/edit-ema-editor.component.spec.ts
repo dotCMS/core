@@ -17,7 +17,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotContentTypeService,
     DotCopyContentService,
@@ -37,6 +36,7 @@ import {
     CONTAINER_SOURCE,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
+import { CUSTOMER_ACTIONS } from '@dotcms/editor';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
@@ -1842,7 +1842,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
                 spectator.detectComponentChanges();
@@ -2125,7 +2125,7 @@ describe('EditEmaEditorComponent', () => {
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
                 expect(dropZone.item).toEqual({
                     contentType: 'File',
                     baseType: 'CONTENT'
@@ -2155,7 +2155,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'File',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
@@ -2178,13 +2178,13 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(BOUNDS_MOCK.length);
+                expect(spectator.component.containers.length).toBe(BOUNDS_MOCK.length);
 
                 spectator.component.onLanguageSelected(2); // triggers a query param change
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(0);
+                expect(spectator.component.containers.length).toBe(0);
             });
         });
 
