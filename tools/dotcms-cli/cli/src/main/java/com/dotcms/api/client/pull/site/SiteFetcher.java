@@ -31,7 +31,7 @@ public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
 
     @ActivateRequestContext
     @Override
-    public List<SiteView> fetch(Map<String, Object> customOptions) {
+    public List<SiteView> fetch(boolean failFast, Map<String, Object> customOptions) {
 
         // Fetching the all the existing sites
         final List<Site> allSites = allSites();
@@ -82,7 +82,8 @@ public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
 
     @ActivateRequestContext
     @Override
-    public SiteView fetchByKey(String siteNameOrId, Map<String, Object> customOptions)
+    public SiteView fetchByKey(String siteNameOrId, boolean failFast,
+            Map<String, Object> customOptions)
             throws NotFoundException {
 
         final var siteAPI = clientFactory.getClient(SiteAPI.class);

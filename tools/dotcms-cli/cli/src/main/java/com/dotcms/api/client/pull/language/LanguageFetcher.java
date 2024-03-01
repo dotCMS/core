@@ -24,7 +24,7 @@ public class LanguageFetcher implements ContentFetcher<Language>, Serializable {
 
     @ActivateRequestContext
     @Override
-    public List<Language> fetch(final Map<String, Object> customOptions) {
+    public List<Language> fetch(final boolean failFast, final Map<String, Object> customOptions) {
 
         final var languageAPI = clientFactory.getClient(LanguageAPI.class);
         return languageAPI.list().entity();
@@ -33,7 +33,7 @@ public class LanguageFetcher implements ContentFetcher<Language>, Serializable {
     @ActivateRequestContext
     @Override
     public Language fetchByKey(final String languageIsoOrId,
-            final Map<String, Object> customOptions) throws NotFoundException {
+            boolean failFast, final Map<String, Object> customOptions) throws NotFoundException {
 
         final Language language;
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
