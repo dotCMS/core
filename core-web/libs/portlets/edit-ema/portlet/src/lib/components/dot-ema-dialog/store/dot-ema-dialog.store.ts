@@ -122,13 +122,17 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly editContentlet = this.updater((state, payload: { inode: string; title: string }) => {
+    readonly editContentlet = this.updater((state, payload: { inode: string; title: string, urlMap?: boolean }) => {
+        const { inode, title, urlMap } = payload;
+        const extaParams = urlMap ? `&isUrlMap=${urlMap}` : '';
+        const url = this.createEditContentletUrl(inode) + extaParams;
+
         return {
             ...state,
-            header: payload.title,
+            header: title,
             status: DialogStatus.LOADING,
-            url: this.createEditContentletUrl(payload.inode),
-            type: 'content'
+            type: 'content',
+            url
         };
     });
 

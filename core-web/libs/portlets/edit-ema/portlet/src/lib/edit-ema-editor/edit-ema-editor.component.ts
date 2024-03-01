@@ -547,7 +547,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     protected handleNgEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
         const { detail } = event;
-
+        
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
             [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {
                 /* */
@@ -577,6 +577,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
+                const { shouldReloadPage } = detail.payload;
+
+                if (shouldReloadPage) {
+                    // because: https://github.com/dotCMS/core/issues/21818
+                    setTimeout(() => this.store.load(this.queryParams), 1800);
+
+                    return;
+                }
+
                 if (payload) {
                     const { pageContainers, didInsert } = insertContentletInContainer({
                         ...payload,
@@ -836,16 +845,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
     }
 
-    protected editContentMap(data: Record<string, string>): void {
-        const { inode, title, identifier, contentType } = data;
-        this.dialog.editContentlet({
-            contentlet: {
-                inode,
-                title,
-                identifier,
-                contentType
-            }
-        });
+    /**
+     * Handle edit content map
+     *
+     * @protected
+     * @param {DotCMSContentlet} contentlet
+     * @memberof EditEmaEditorComponent
+     */
+    protected editContentMap(contentlet: DotCMSContentlet): void {
+        this.dialog.editURLContentMap(contentlet);
     }
 
     /**

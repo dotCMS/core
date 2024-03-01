@@ -15,7 +15,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 import { DialogModule } from 'primeng/dialog';
 
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import {
@@ -120,6 +120,21 @@ export class DotEmaDialogComponent {
             title: contentlet.title
         });
     }
+
+    /**
+     * Edit contentlet
+     *
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    editURLContentMap(contentlet: DotCMSContentlet) {
+        this.store.editContentlet({
+            inode: contentlet.inode,
+            title: contentlet.title,
+            urlMap: true
+        });
+    }
+    
 
     /**
      * Create contentlet form

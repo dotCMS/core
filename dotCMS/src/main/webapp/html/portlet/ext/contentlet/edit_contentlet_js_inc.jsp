@@ -8,7 +8,7 @@
 <%
 
 	String catCount = (String) request.getAttribute("counter");
-
+	String isUrlMap = (String) request.getParameter("isUrlMap");
 %>
 
 <script language='javascript' type='text/javascript'>
@@ -657,6 +657,9 @@
 
 
         refreshActionPanel(data["contentletInode"]);
+
+        // If the contentlet is a urlContentMap, we need to reload the page
+        data.shouldReloadPage = "<%=isUrlMap%>" === "true" ? true : false;
 
         // if we have a referer and the contentlet comes back checked in
         var customEventDetail = {
