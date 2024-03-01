@@ -68,7 +68,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                     if (services.isEmpty()) {
                         throw new ExecutionException(
                                 parseResult.commandSpec().commandLine(),
-                                "No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup the an instance to use CLI.");
+                                "No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup an instance to use CLI.");
                     }
                 } catch (IOException e) {
                     throw new ExecutionException(parseResult.commandSpec().commandLine(),
