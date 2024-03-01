@@ -7,6 +7,7 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.model.asset.FolderView;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import javax.enterprise.context.Dependent;
@@ -88,7 +89,7 @@ public class RemoteFolderTraversalTask extends
 
         } catch (Exception e) {
             if (traversalTaskParams.failFast()) {
-                return futureWithCompleteExceptionally(e);
+                return CompletableFuture.failedFuture(e);
             } else {
                 errors.add(e);
             }
@@ -211,14 +212,14 @@ public class RemoteFolderTraversalTask extends
                         }
                         return TraverseTaskResult.builder()
                                 .exceptions(errors)
-                                .treeNode(currentNode)
+                                .treeNode(Optional.ofNullable(currentNode))
                                 .build();
                     });
         }
 
         return CompletableFuture.completedFuture(TraverseTaskResult.builder()
                 .exceptions(errors)
-                .treeNode(currentNode)
+                .treeNode(Optional.ofNullable(currentNode))
                 .build());
     }
 

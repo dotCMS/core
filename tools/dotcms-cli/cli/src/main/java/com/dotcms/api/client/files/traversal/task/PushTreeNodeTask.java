@@ -94,7 +94,7 @@ public class PushTreeNodeTask extends
             if (e instanceof SiteCreationException || traversalTaskParams.failFast()) {
                 traversalTaskParams.progressBar().done();
 
-                return futureWithCompleteExceptionally(e);
+                return CompletableFuture.failedFuture(e);
             } else {
                 errors.add(e);
             }
@@ -108,7 +108,7 @@ public class PushTreeNodeTask extends
                 if (traversalTaskParams.failFast()) {
                     traversalTaskParams.progressBar().done();
 
-                    return futureWithCompleteExceptionally(e);
+                    return CompletableFuture.failedFuture(e);
                 } else {
                     errors.add(e);
                 }

@@ -88,7 +88,7 @@ public class PullTreeNodeTask extends
             );
         } catch (Exception e) {
             if (traversalTaskParams.failFast()) {
-                return futureWithCompleteExceptionally(e);
+                return CompletableFuture.failedFuture(e);
             } else {
                 errors.add(e);
             }
@@ -104,7 +104,7 @@ public class PullTreeNodeTask extends
                 );
             } catch (Exception e) {
                 if (traversalTaskParams.failFast()) {
-                    return futureWithCompleteExceptionally(e);
+                    return CompletableFuture.failedFuture(e);
                 } else {
                     errors.add(e);
                 }
