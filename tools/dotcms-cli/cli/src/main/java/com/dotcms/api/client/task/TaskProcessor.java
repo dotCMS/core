@@ -7,11 +7,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-public class TaskProcessor {
+public abstract class TaskProcessor <P,R> {
 
     private static final int MAX_RETRIES = 3;// Maximum number of retries for a single task
     private static final int TASK_TIMEOUT = 15;// In seconds
     protected static final int THRESHOLD = 10;
+
+    public abstract void setTaskParams(final P param);
+
+    public  abstract  R compute();
 
     /**
      * Processes and waits for the results of the tasks submitted to the completion service.

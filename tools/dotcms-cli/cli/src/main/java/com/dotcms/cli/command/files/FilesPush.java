@@ -86,7 +86,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                         pushService.traverseLocalFolders(
                                 output, resolvedWorkspaceAndPath.getLeft().root().toFile(),
                                 finalInputFile, filesPushMixin.removeAssets,
-                                filesPushMixin.removeFolders, false, true)
+                                filesPushMixin.removeFolders, false, pushMixin.failFast)
         );
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -112,65 +112,77 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             return CommandLine.ExitCode.SOFTWARE;
         }
 
-        var count = 0;
-
-        if (!result.isEmpty()) {
-            for (var treeNodeData : result) {
-
-                var localPaths = treeNodeData.localPaths();
-                var treeNode = treeNodeData.treeNode();
-
-                var outputBuilder = new StringBuilder();
-
-                header(count++, localPaths, outputBuilder);
-
-                var treeNodePushInfo = treeNode.collectPushInfo();
-
-                if (treeNodePushInfo.hasChanges()) {
-
-                    changesSummary(treeNodePushInfo, outputBuilder);
-
-                    if (pushMixin.dryRun) {
-                        dryRunSummary(localPaths, treeNode, outputBuilder);
-                    }
-
-                    output.info(outputBuilder.toString());
-
-                    // ---
-                    // Pushing the tree
-                    if (!pushMixin.dryRun) {
-
-                        pushService.processTreeNodes(output, treeNodePushInfo,
-                                PushTraverseParams.builder()
-                                        .workspacePath(
-                                                resolvedWorkspaceAndPath.getLeft().root().toFile()
-                                                        .getAbsolutePath()
-                                        )
-                                        .rootNode(treeNode)
-                                        .localPaths(localPaths)
-                                        .failFast(pushMixin.failFast)
-                                        .maxRetryAttempts(pushMixin.retryAttempts)
-                                        .pushContext(pushContext)
-                                        .build()
-                        );
-                    }
-
-                } else {
-                    outputBuilder.
-                            append("\r\n").
-                            append(" ──────\n").
-                            append(
-                                    String.format(" No changes in %s to push%n%n", "Files"));
-                    output.info(outputBuilder.toString());
-                }
-            }
-        } else {
+        if (result.isEmpty()) {
             output.info(String.format("\r%n"
                     + " ──────%n"
                     + " No changes in %s to push%n%n", "Files"));
+        } else {
+            pushChangesIfAny(resolvedWorkspaceAndPath.getLeft().root(), result);
         }
 
+
         return CommandLine.ExitCode.OK;
+    }
+
+    /**
+     * Processes the results of the traversal and pushes the changes to the server.
+     * @param workspacePath The workspace path
+     * @param result The traversal result
+     */
+    private void pushChangesIfAny(final Path workspacePath, final List<TraverseResult> result) {
+        final String absolutePath = workspacePath.toFile().getAbsolutePath();
+        var count = 0;
+        for (var treeNodeData : result) {
+
+            var localPaths = treeNodeData.localPaths();
+            var optional = treeNodeData.treeNode();
+
+            if (optional.isEmpty()) {
+                continue;
+            }
+
+            final TreeNode treeNode = optional.get();
+
+            var outputBuilder = new StringBuilder();
+
+            header(count++, localPaths, outputBuilder);
+
+            var treeNodePushInfo = treeNode.collectPushInfo();
+
+            if (treeNodePushInfo.hasChanges()) {
+
+                changesSummary(treeNodePushInfo, outputBuilder);
+
+                if (pushMixin.dryRun) {
+                    dryRunSummary(localPaths, treeNode, outputBuilder);
+                }
+
+                output.info(outputBuilder.toString());
+
+                // ---
+                // Pushing the tree
+                if (!pushMixin.dryRun) {
+
+                    pushService.processTreeNodes(output, treeNodePushInfo,
+                            PushTraverseParams.builder()
+                                    .workspacePath(absolutePath)
+                                    .rootNode(treeNode)
+                                    .localPaths(localPaths)
+                                    .failFast(pushMixin.failFast)
+                                    .maxRetryAttempts(pushMixin.retryAttempts)
+                                    .pushContext(pushContext)
+                                    .build()
+                    );
+                }
+
+            } else {
+                outputBuilder.
+                        append("\r\n").
+                        append(" ──────\n").
+                        append(String.format(" No changes in %s to push%n%n", "Files"));
+                output.info(outputBuilder.toString());
+            }
+        }
     }
 
     /**

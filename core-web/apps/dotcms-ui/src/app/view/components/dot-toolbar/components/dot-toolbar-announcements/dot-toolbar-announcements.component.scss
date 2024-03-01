@@ -1,9 +1,6 @@
 @use "variables" as *;
 
 .announcements__main-container {
-    max-height: 100vh;
-    overflow: auto;
-    display: block;
     width: 24rem;
 }
 
@@ -117,4 +114,13 @@
     position: absolute;
     left: 39px;
     top: 14px;
+}
+
+::ng-deep {
+    .toolbar-announcements__container {
+        &.p-overlaypanel {
+            max-height: 80vh;
+            overflow: auto;
+        }
+    }
 }
