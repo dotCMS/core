@@ -54,6 +54,8 @@ dojo.require('dijit.form.Button');
 dojo.require('dijit.layout.BorderContainer');
 
 var isNg = new URLSearchParams(document.location.search).get('ng');
+// Contains the name of the host-field type
+const HOST_OR_FOLDER = "host or folder"
 
 dojo.declare(
     'dotcms.dijit.form.ContentSelector',
@@ -308,7 +310,7 @@ dojo.declare(
         _getSiteFolderFieldDefaultHTML: function (){
             const defaultSiteFolderField = {
                 "fieldContentlet": "system_field",
-                "fieldFieldType": "host or folder",
+                "fieldFieldType": HOST_OR_FOLDER,
                 "fieldName": "Site or Folder",
                 "fieldValues": "",
                 "fieldVelocityVarName": "siteOrFolder",
@@ -329,7 +331,7 @@ dojo.declare(
             var htmlstr = "<dl class='vertical'>";
             for (var i = 0; i < data.length; i++) {
                 var type = data[i]['fieldFieldType'];
-                if (type == 'category' || type == 'hidden' || type == "host or folder") {
+                if (type == 'category' || type == 'hidden' || type == HOST_OR_FOLDER) {
                     continue;
                 }
                 htmlstr +=
