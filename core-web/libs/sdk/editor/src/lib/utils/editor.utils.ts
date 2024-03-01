@@ -1,3 +1,10 @@
+/**
+ * Calculates the bounding information for each page element within the given containers.
+ *
+ * @export
+ * @param {HTMLDivElement[]} containers
+ * @return {*} An array of objects containing the bounding information for each page element.
+ */
 export function getPageElementBound(containers: HTMLDivElement[]) {
     return containers.map((container) => {
         const containerRect = container.getBoundingClientRect();
@@ -18,10 +25,18 @@ export function getPageElementBound(containers: HTMLDivElement[]) {
     });
 }
 
+/**
+ * An array of objects containing the bounding information for each contentlet inside a container.
+ *
+ * @export
+ * @param {DOMRect} containerRect
+ * @param {HTMLDivElement[]} contentlets
+ * @return {*}
+ */
 export function getContentletsBound(containerRect: DOMRect, contentlets: HTMLDivElement[]) {
     return contentlets.map((contentlet) => {
         const contentletRect = contentlet.getBoundingClientRect();
-
+        console.log("contentletRect", contentletRect);
         return {
             x: 0,
             y: contentletRect.y - containerRect.y,
@@ -41,7 +56,14 @@ export function getContentletsBound(containerRect: DOMRect, contentlets: HTMLDiv
         };
     });
 }
-//Used to get container data from VTLS.
+
+/**
+ * Get container data from VTLS.
+ *
+ * @export
+ * @param {HTMLElement} container
+ * @return {*}
+ */
 export function getContainerData(container: HTMLElement) {
     return {
         acceptTypes: container.dataset?.['dotAcceptTypes'],
@@ -51,6 +73,13 @@ export function getContainerData(container: HTMLElement) {
     };
 }
 
+/**
+ * Get the closest container data from the contentlet.
+ *
+ * @export
+ * @param {Element} element
+ * @return {*}
+ */
 export function getClosestContainerData(element: Element) {
     // Find the closest ancestor element with data-dot-object="container" attribute
     const container = element.closest('[data-dot-object="container"]') as HTMLElement;
@@ -65,7 +94,14 @@ export function getClosestContainerData(element: Element) {
         return null;
     }
 }
-// Used to find contentlets and later add the listeners "onHover"
+
+/**
+ * Find the closest contentlet element based on HTMLElement.
+ *
+ * @export
+ * @param {(HTMLElement | null)} element
+ * @return {*}
+ */
 export function findContentletElement(element: HTMLElement | null) {
     if (!element) return null;
 

@@ -23,7 +23,7 @@ interface DotCMSPageEditorObserver {
 
 type DotCMSPageEditorSubscription = DotCMSPageEditorListener | DotCMSPageEditorObserver;
 
-class DotCMSPageEditor {
+export class DotCMSPageEditor {
     private config: DotCMSPageEditorConfig;
     private subscriptions: DotCMSPageEditorSubscription[] = [];
 
