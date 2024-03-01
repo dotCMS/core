@@ -5,12 +5,10 @@ import { NgClass, NgFor, NgIf, TitleCasePipe } from '@angular/common';
 import { CardModule } from 'primeng/card';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { seoOGTagsMock, seoOGTagsResultMock } from '@dotcms/utils-testing';
 
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
-import {
-    seoOGTagsMock,
-    seoOGTagsResultMock
-} from '../../../../../../utils-testing/src/lib/seo-mock';
+
 
 export default {
     title: 'DotCMS/Results Seo Tool',
