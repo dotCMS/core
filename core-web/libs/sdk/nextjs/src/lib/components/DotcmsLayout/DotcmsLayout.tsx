@@ -1,8 +1,8 @@
 import { useRouter, usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 
 import { sdkDotPageEditor } from '@dotcms/editor';
 import { DotcmsPageProps, PageProvider, Row } from '@dotcms/react';
-import { useEffect } from 'react';
 
 /**
  * `DotcmsLayout` is a functional component that renders a layout for a DotCMS page.
@@ -57,7 +57,6 @@ export function DotcmsLayout(props: DotcmsPageProps) {
     });
 
     useEffect(() => {
-        client.init();
         client.updateNavigation(pathname);
 
         return () => {

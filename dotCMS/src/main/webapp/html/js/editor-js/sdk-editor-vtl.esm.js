@@ -53,16 +53,14 @@
 
 function getPageElementBound(containers) {
     return containers.map(function(container) {
-        var _container_dataset;
         var containerRect = container.getBoundingClientRect();
         var contentlets = Array.from(container.querySelectorAll('[data-dot-object="contentlet"]'));
-        var _container_dataset_content;
         return {
             x: containerRect.x,
             y: containerRect.y,
             width: containerRect.width,
             height: containerRect.height,
-            payload: (_container_dataset_content = (_container_dataset = container.dataset) === null || _container_dataset === void 0 ? void 0 : _container_dataset["content"]) !== null && _container_dataset_content !== void 0 ? _container_dataset_content : {
+            payload: {
                 container: getContainerData(container)
             },
             contentlets: getContentletsBound(containerRect, contentlets)
@@ -113,8 +111,7 @@ function getClosestContainerData(element) {
         return null;
     }
 }
-//TODO: Fix typeLater
-// USed to find contentlets and later add the listeners "onHover"
+// Used to find contentlets and later add the listeners "onHover"
 function findContentletElement(element) {
     var _element_dataset;
     if (!element) return null;
@@ -196,7 +193,7 @@ var DotCMSPageEditor = /*#__PURE__*/ function() {
         {
             key: "init",
             value: function init() {
-                console.log("SdkDotPageEditor init!");
+                console.log("SdkDotPageEditor init!!");
                 this.isInsideEditor = this.checkIfInsideEditor();
                 if (this.isInsideEditor) {
                     this.listenEditorMessages();
@@ -209,7 +206,7 @@ var DotCMSPageEditor = /*#__PURE__*/ function() {
         {
             key: "destroy",
             value: function destroy() {
-                console.log("SdkDotPageEditor Headless destroy.");
+                console.log("SdkDotPageEditor destroyed!");
                 this.subscriptions.forEach(function(subscription) {
                     if (subscription.type === "listener") {
                         var _window;
@@ -338,7 +335,7 @@ var DotCMSPageEditor = /*#__PURE__*/ function() {
                             if (type === "childList") {
                                 var didNodesChanged = _to_consumable_array(Array.from(addedNodes)).concat(_to_consumable_array(Array.from(removedNodes))).filter(function(node) {
                                     var _node_dataset;
-                                    return ((_node_dataset = node.dataset) === null || _node_dataset === void 0 ? void 0 : _node_dataset["dot"]) === "contentlet";
+                                    return ((_node_dataset = node.dataset) === null || _node_dataset === void 0 ? void 0 : _node_dataset["dotObject"]) === "contentlet";
                                 }).length;
                                 if (didNodesChanged) {
                                     postMessageToEditor({

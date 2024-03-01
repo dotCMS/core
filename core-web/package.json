@@ -260,8 +260,5 @@
         "typescript": "5.3.3",
         "webpack": "^5.64.0",
         "webpack-bundle-analyzer": "^4.5.0"
-    },
-    "nx": {
-        "includedScripts": []
     }
 }

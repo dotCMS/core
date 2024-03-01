@@ -3,7 +3,7 @@ export declare function getPageElementBound(containers: HTMLDivElement[]): {
     y: number;
     width: number;
     height: number;
-    payload: string | {
+    payload: {
         container: {
             acceptTypes: string | undefined;
             identifier: string | undefined;

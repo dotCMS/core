@@ -63,10 +63,6 @@ export function Container({ containerRef }: ContainerProps) {
         uuid
     };
 
-    const containerPayload = {
-        container
-    };
-
     const renderContentlets = updatedContentlets.map((contentlet) => {
         const ContentTypeComponent = components[contentlet.contentType] || NoContent;
 
@@ -92,7 +88,13 @@ export function Container({ containerRef }: ContainerProps) {
     });
 
     return isInsideEditor ? (
-        <div data-dot-object="container" data-content={JSON.stringify(containerPayload)}>
+        <div
+            data-dot-object="container"
+            data-dot-accept-types={acceptTypes}
+            data-dot-identifier={path ?? identifier}
+            data-max-contentlets={maxContentlets}
+            data-uuid={uuid}
+            >
             {renderContentlets}
         </div>
     ) : (

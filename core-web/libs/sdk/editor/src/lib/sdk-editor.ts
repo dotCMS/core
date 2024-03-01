@@ -34,7 +34,7 @@ class DotCMSPageEditor {
     }
 
     init() {
-        console.log('SdkDotPageEditor init!');
+        console.log('SdkDotPageEditor init!!');
         this.isInsideEditor = this.checkIfInsideEditor();
         if (this.isInsideEditor) {
             this.listenEditorMessages();
@@ -45,7 +45,7 @@ class DotCMSPageEditor {
     }
 
     destroy() {
-        console.log('SdkDotPageEditor Headless destroy.');
+        console.log('SdkDotPageEditor destroyed!');
         this.subscriptions.forEach((subscription) => {
             if (subscription.type === 'listener') {
                 window?.removeEventListener(subscription.event, subscription.callback);
@@ -160,7 +160,7 @@ class DotCMSPageEditor {
                         ...Array.from(addedNodes),
                         ...Array.from(removedNodes)
                     ].filter(
-                        (node) => (node as HTMLDivElement).dataset?.['dot'] === 'contentlet'
+                        (node) => (node as HTMLDivElement).dataset?.['dotObject'] === 'contentlet'
                     ).length;
 
                     if (didNodesChanged) {

@@ -10,7 +10,7 @@ export function getPageElementBound(containers: HTMLDivElement[]) {
             y: containerRect.y,
             width: containerRect.width,
             height: containerRect.height,
-            payload: container.dataset?.['content'] ?? {
+            payload: {
                 container: getContainerData(container)
             },
             contentlets: getContentletsBound(containerRect, contentlets)
@@ -65,8 +65,7 @@ export function getClosestContainerData(element: Element) {
         return null;
     }
 }
-//TODO: Fix typeLater
-// USed to find contentlets and later add the listeners "onHover"
+// Used to find contentlets and later add the listeners "onHover"
 export function findContentletElement(element: HTMLElement | null) {
     if (!element) return null;
 
