@@ -302,6 +302,7 @@ jobs:
             -DskipITs=true \
             deploy \
             --file dotCMS/pom.xml
+        if: github.event.inputs.deploy_artifact == 'true'
 
       - name: Generate/Push Javadoc
         run: |

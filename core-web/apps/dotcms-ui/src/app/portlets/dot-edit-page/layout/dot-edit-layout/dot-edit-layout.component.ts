@@ -6,7 +6,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
 
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
     DotHttpErrorManagerService,
@@ -41,6 +40,8 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     destroy$: Subject<boolean> = new Subject<boolean>();
     featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
 
+    containerMap: DotContainerMap;
+
     @HostBinding('style.minWidth') width = '100%';
 
     private lastLayout: DotTemplateDesigner;
@@ -50,7 +51,6 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
         private dotRouterService: DotRouterService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotEditLayoutService: DotEditLayoutService,
         private dotPageLayoutService: DotPageLayoutService,
         private dotMessageService: DotMessageService,
         private templateContainersCacheService: DotTemplateContainersCacheService,
@@ -67,6 +67,9 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             )
             .subscribe((state: DotPageRenderState) => {
                 this.pageState = state;
+
+                this.containerMap = this.pageState.containerMap; // containerMap from pageState is a get property, which causes to trigger a function everytime the Angular change detection runs.
+
                 const mappedContainers = this.getRemappedContainers(state.containers);
                 this.templateContainersCacheService.set(mappedContainers);
             });
@@ -182,6 +185,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             this.dotMessageService.get('dot.common.message.saved')
         );
         this.pageState = updatedPage;
+        this.containerMap = updatedPage.containerMap; // containerMap from pageState is a get property, which causes to trigger a function everytime the Angular change detection runs.
     }
 
     /**
