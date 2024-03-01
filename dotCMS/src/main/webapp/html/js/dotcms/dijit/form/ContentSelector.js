@@ -54,7 +54,7 @@ dojo.require('dijit.form.Button');
 dojo.require('dijit.layout.BorderContainer');
 
 var isNg = new URLSearchParams(document.location.search).get('ng');
-// Contains the name of the host-field type
+// This variable maps to the values declared in Field.FieldType.HOST_OR_FOLDER
 const HOST_OR_FOLDER = "host or folder"
 
 dojo.declare(
