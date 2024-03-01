@@ -92,12 +92,12 @@ dev-tomcat-stop:
 # Testing Commands
 
 # Executes a specified set of Postman tests
-test-postman collections='':
+test-postman collections='page':
     ./mvnw -pl :dotcms-postman verify -Dpostman.test.skip=false -Pdebug -Dpostman.collections={{ collections }}
 
 # Stops Postman-related Docker containers
 postman-stop:
-    ./mvnw -pl :dotcms-postman -Pdocker-stop
+    ./mvnw -pl :dotcms-postman -Pdocker-stop -Dpostman.test.skip=false
 
 # Runs all integration tests
 test-integration:
@@ -109,11 +109,11 @@ test-integration-debug-suspend:
 
 # Prepares the environment for running integration tests in an IDE
 test-integration-ide:
-    ./mvnw -pl :dotcms-integration -Pdocker-start
+    ./mvnw -pl :dotcms-integration -Pdocker-start -Dcoreit.test.skip=false
 
 # Stops integration test services
 test-integration-stop:
-    ./mvnw -pl :dotcms-integration -Pdocker-stop
+    ./mvnw -pl :dotcms-integration -Pdocker-stop -Dcoreit.test.skip=false
 # Docker Commands
 
 # Runs a published dotCMS Docker image on a dynamic port

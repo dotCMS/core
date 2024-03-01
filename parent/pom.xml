@@ -1345,7 +1345,7 @@
                         <configuration/>
                         <executions>
                             <execution>
-                                <id>docker-pre-stop</id>
+                                <id>docker-pre-stop-runner</id>
                                 <goals>
                                     <goal>stop</goal>
                                 </goals>
@@ -1355,7 +1355,7 @@
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>docker-start</id>
+                                <id>docker-start-runner</id>
                                 <goals>
                                     <goal>start</goal>
                                 </goals>
