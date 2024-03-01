@@ -120,6 +120,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
         spectator.component.ngOnInit();
         expect(refreshUtmParametersSpy).toHaveBeenCalled();
 
+        // Checking that is not called again in the ngOnChanges
         refreshUtmParametersSpy.calls.reset();
         spectator.component.ngOnChanges({ showUnreadAnnouncement: { currentValue: false } });
         expect(refreshUtmParametersSpy).not.toHaveBeenCalled();
