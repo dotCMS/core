@@ -152,7 +152,7 @@ jobs:
       - name: Lint Checks
         shell: bash
         run: |
-          ./mvnw -Pvalidate --fail-at-end -Dgithub.event.name=${{ github.event_name }} --file pom.xml
+          ./mvnw $JVM_TEST_MAVEN_OPTS -Pvalidate --fail-at-end -Dgithub.event.name=${{ github.event_name }} --file pom.xml
       - name: Maven Build No Test
         shell: bash
         run: |
@@ -572,6 +572,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v3.0.0
         with:
           name: build-reports-test-.*
+          name_is_regexp: true
           path: dotcms-core/target/build-reports
           if_no_artifact_found: warn
       - name: Maven Build No Test
@@ -618,6 +619,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v3.0.0
         with:
           name: "build-reports-*"
+          name_is_regexp: true
           path: /tmp/build-step-reports
           if_no_artifact_found: warn
       - name: Prepare workflow data

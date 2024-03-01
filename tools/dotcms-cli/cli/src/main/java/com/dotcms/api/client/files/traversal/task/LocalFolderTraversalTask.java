@@ -24,7 +24,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -32,7 +31,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import javax.enterprise.context.Dependent;
 import javax.ws.rs.NotFoundException;
-import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
@@ -44,7 +42,7 @@ import org.jboss.logging.Logger;
  * allowing for faster traversal of large directory structures.
  */
 @Dependent
-public class LocalFolderTraversalTask extends TaskProcessor {
+public class LocalFolderTraversalTask extends TaskProcessor<LocalFolderTraversalTaskParams,TraverseTaskResult> {
 
     private final ManagedExecutor executor;
 
@@ -85,7 +83,8 @@ public class LocalFolderTraversalTask extends TaskProcessor {
      *
      * @param params The traversal parameters
      */
-    public void setTraversalParams(final LocalFolderTraversalTaskParams params) {
+    @Override
+    public void setTaskParams(final LocalFolderTraversalTaskParams params) {
         this.traversalTaskParams = params;
     }
 
@@ -96,9 +95,10 @@ public class LocalFolderTraversalTask extends TaskProcessor {
      * @return A Pair object containing a list of exceptions encountered during traversal and the
      * resulting TreeNode representing the directory tree at the specified folder.
      */
-    public Pair<List<Exception>, TreeNode> compute() {
+    @Override
+    public TraverseTaskResult compute() {
 
-        CompletionService<Pair<List<Exception>, TreeNode>> completionService =
+        CompletionService<TraverseTaskResult> completionService =
                 new ExecutorCompletionService<>(executor);
 
         var errors = new ArrayList<Exception>();
@@ -135,7 +135,7 @@ public class LocalFolderTraversalTask extends TaskProcessor {
                                 logger, executor, retriever, fileHashService
                         );
 
-                        subTask.setTraversalParams(LocalFolderTraversalTaskParams.builder()
+                        subTask.setTaskParams(LocalFolderTraversalTaskParams.builder()
                                 .from(traversalTaskParams)
                                 .sourcePath(file.getAbsolutePath())
                                 .build()
@@ -147,16 +147,21 @@ public class LocalFolderTraversalTask extends TaskProcessor {
                 }
 
                 // Wait for all tasks to complete and gather the results
-                Function<Pair<List<Exception>, TreeNode>, Void> processFunction = taskResult -> {
-                    errors.addAll(taskResult.getLeft());
-                    currentNode.get().addChild(taskResult.getRight());
+                Function<TraverseTaskResult, Void> processFunction = taskResult -> {
+                    errors.addAll(taskResult.exceptions());
+                    taskResult.treeNode().ifPresent(currentNode.get()::addChild);
                     return null;
                 };
                 processTasks(toProcessCount, completionService, processFunction);
             }
         }
 
-        return Pair.of(errors, currentNode.get());
+        final TreeNode treeNode = currentNode.get();
+        //If the task failed to complete ad the exception got added to the list of errors instead of being thrown current node will be null
+        return TraverseTaskResult.builder()
+                .treeNode(Optional.ofNullable(treeNode))
+                .exceptions(errors)
+                .build();
     }
 
     /**

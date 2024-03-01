@@ -31,7 +31,7 @@ import org.jboss.logging.Logger;
  * Represents a task that pushes the contents of a tree node to a remote server.
  */
 @Dependent
-public class PushTreeNodeTask extends TaskProcessor {
+public class PushTreeNodeTask extends TaskProcessor<PushTreeNodeTaskParams,List<Exception>> {
 
     private final ManagedExecutor executor;
 
@@ -74,10 +74,12 @@ public class PushTreeNodeTask extends TaskProcessor {
      *
      * @param params The traversal parameters
      */
-    public void setTraversalParams(final PushTreeNodeTaskParams params) {
+    @Override
+    public void setTaskParams(final PushTreeNodeTaskParams params) {
         this.traversalTaskParams = params;
     }
 
+    @Override
     public List<Exception> compute() {
 
         CompletionService<List<Exception>> completionService =
@@ -144,7 +146,7 @@ public class PushTreeNodeTask extends TaskProcessor {
                         pushContext,
                         pusher
                 );
-                task.setTraversalParams(PushTreeNodeTaskParams.builder()
+                task.setTaskParams(PushTreeNodeTaskParams.builder()
                         .from(traversalTaskParams).rootNode(child).build()
                 );
 

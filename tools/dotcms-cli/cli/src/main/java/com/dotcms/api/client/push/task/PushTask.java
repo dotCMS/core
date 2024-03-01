@@ -23,7 +23,7 @@ import org.jboss.logging.Logger;
  * @param <T> the type of analysis result
  */
 @Dependent
-public class PushTask<T> extends TaskProcessor {
+public class PushTask<T> extends TaskProcessor <PushTaskParams<T>,List<Exception>> {
 
     private PushTaskParams<T> params;
 
