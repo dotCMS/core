@@ -8,6 +8,7 @@ import com.dotcms.cli.command.language.LanguageCommand;
 import com.dotcms.cli.command.site.SiteCommand;
 import com.dotcms.cli.common.DotExceptionHandler;
 import com.dotcms.cli.common.DotExecutionStrategy;
+import com.dotcms.cli.common.DotExitCodeExceptionMapper;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.VersionProvider;
 import com.dotcms.cli.exception.ExceptionHandlerImpl;
@@ -143,14 +144,7 @@ class CustomConfigurationUtil {
         cmdLine.setCaseInsensitiveEnumValuesAllowed(true)
                 .setExecutionStrategy(new DotExecutionStrategy(new CommandLine.RunLast()))
                 .setExecutionExceptionHandler(new DotExceptionHandler())
-                .setExitCodeExceptionMapper(t -> {
-                    // customize exit code
-                    // We usually throw an IllegalArgumentException to denote that an invalid param has been passed
-                    if (t instanceof ParameterException || t instanceof IllegalArgumentException) {
-                        return ExitCode.USAGE;
-                    }
-                    return ExitCode.SOFTWARE;
-                });
+                .setExitCodeExceptionMapper(new DotExitCodeExceptionMapper());
     }
 
     /**

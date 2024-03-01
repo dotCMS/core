@@ -13,10 +13,12 @@ import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
+import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.client.pull.PullService;
 import com.dotcms.api.client.pull.file.FileFetcher;
 import com.dotcms.api.client.pull.file.FilePullHandler;
+import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.command.PushContext;
 import com.dotcms.cli.common.FilesTestHelperService;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -149,10 +151,15 @@ class PushServiceIT {
 
             Assertions.assertNotNull(traverseResults);
             Assertions.assertEquals(2, traverseResults.size());// Live and working folders
-            Assertions.assertTrue( traverseResults.get(0).exceptions().isEmpty());// No errors should be found
-            Assertions.assertTrue( traverseResults.get(1).exceptions().isEmpty());// No errors should be found
+            final TraverseResult traverseResult1 = traverseResults.get(0);
+            final TraverseResult traverseResult2 = traverseResults.get(1);
 
-            var treeNode = traverseResults.get(0).treeNode();
+            Assertions.assertTrue( traverseResult1.exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue( traverseResult2.exceptions().isEmpty());// No errors should be found
+
+            var optional = traverseResult1.treeNode();
+            Assertions.assertTrue(optional.isPresent());
+            final TreeNode treeNode = optional.get();
             var treeNodePushInfo = treeNode.collectPushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
@@ -166,8 +173,8 @@ class PushServiceIT {
             pushService.processTreeNodes(outputOptions, treeNodePushInfo,
                     PushTraverseParams.builder()
                             .workspacePath(tempFolder.toFile().getAbsolutePath())
-                            .localPaths(traverseResults.get(0).localPaths())
-                            .rootNode(traverseResults.get(0).treeNode())
+                            .localPaths(traverseResult1.localPaths())
+                            .rootNode(treeNode)
                             .failFast(true)
                             .maxRetryAttempts(0)
                             .pushContext(pushContext)
@@ -246,20 +253,26 @@ class PushServiceIT {
 
             Assertions.assertNotNull(traverseResults);
             Assertions.assertEquals(2, traverseResults.size());// Live and working folders
+
+            final TraverseResult traverseResult1 = traverseResults.get(0);
+            final TraverseResult traverseResult2 = traverseResults.get(1);
+
             // Validating the processing order
             Assertions.assertEquals(
                     "live",
-                    traverseResults.get(0).localPaths().status()
+                    traverseResult1.localPaths().status()
             );
             Assertions.assertEquals(
                     "working",
-                    traverseResults.get(1).localPaths().status()
+                    traverseResult2.localPaths().status()
             );
             // Validating no errors were found
-            Assertions.assertTrue(traverseResults.get(0).exceptions().isEmpty());// No errors should be found
-            Assertions.assertTrue(traverseResults.get(1).exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traverseResult1.exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traverseResult2.exceptions().isEmpty());// No errors should be found
 
-            var treeNode = traverseResults.get(0).treeNode();
+            var optional = traverseResult1.treeNode();
+            Assertions.assertTrue(optional.isPresent());
+            final TreeNode treeNode = optional.get();
             var treeNodePushInfo = treeNode.collectPushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
@@ -273,8 +286,8 @@ class PushServiceIT {
             pushService.processTreeNodes(outputOptions, treeNodePushInfo,
                     PushTraverseParams.builder()
                             .workspacePath(tempFolder.toFile().getAbsolutePath())
-                            .localPaths(traverseResults.get(0).localPaths())
-                            .rootNode(traverseResults.get(0).treeNode())
+                            .localPaths(traverseResult1.localPaths())
+                            .rootNode(treeNode)
                             .failFast(true)
                             .maxRetryAttempts(0)
                             .pushContext(pushContext)
@@ -296,7 +309,9 @@ class PushServiceIT {
                     new HashSet<>(),
                     new HashSet<>()
             );
-            var newSiteTreeNode = newSiteResults.getRight();
+            var optional2 = newSiteResults.treeNode();
+            Assertions.assertTrue(optional2.isPresent());
+            var newSiteTreeNode = optional2.get();
 
             Assertions.assertEquals(4, newSiteTreeNode.children().size());
 
@@ -425,10 +440,16 @@ class PushServiceIT {
 
             Assertions.assertNotNull(traverseResults);
             Assertions.assertEquals(2, traverseResults.size());// Live and working folders
-            Assertions.assertTrue(traverseResults.get(0).exceptions().isEmpty());// No errors should be found
-            Assertions.assertTrue(traverseResults.get(1).exceptions().isEmpty());// No errors should be found
 
-            var treeNode = traverseResults.get(0).treeNode();
+            final TraverseResult traverseResult1 = traverseResults.get(0);
+            final TraverseResult traverseResult2 = traverseResults.get(1);
+
+            Assertions.assertTrue(traverseResult1.exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traverseResult2.exceptions().isEmpty());// No errors should be found
+
+            var optional = traverseResult1.treeNode();
+            Assertions.assertTrue(optional.isPresent());
+            final TreeNode treeNode = optional.get();
             var treeNodePushInfo = treeNode.collectPushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
@@ -442,8 +463,8 @@ class PushServiceIT {
             pushService.processTreeNodes(outputOptions, treeNodePushInfo,
                     PushTraverseParams.builder()
                             .workspacePath(tempFolder.toFile().getAbsolutePath())
-                            .localPaths(traverseResults.get(0).localPaths())
-                            .rootNode(traverseResults.get(0).treeNode())
+                            .localPaths(traverseResult1.localPaths())
+                            .rootNode(treeNode)
                             .failFast(true)
                             .maxRetryAttempts(0)
                             .pushContext(pushContext)
@@ -465,7 +486,10 @@ class PushServiceIT {
                     new HashSet<>(),
                     new HashSet<>()
             );
-            var updatedTreeNode = updatedResults.getRight();
+
+            var optional1 = updatedResults.treeNode();
+            Assertions.assertTrue(optional1.isPresent());
+            var updatedTreeNode = optional1.get();
 
             Assertions.assertEquals(5, updatedTreeNode.children().size());
 
@@ -574,7 +598,9 @@ class PushServiceIT {
             var traversalResultLiveRemoved = pushService.traverseLocalFolders(outputOptions, tempFolder.toFile(), tempFolder.toFile(),
                     true, true, true, true);
 
-            var treeNode1 = traversalResultLiveRemoved.get(0).treeNode();
+            var optional = traversalResultLiveRemoved.get(0).treeNode();
+            Assertions.assertTrue(optional.isPresent());
+            var treeNode1 = optional.get();
             var treeNodePushInfo1 = treeNode1.collectPushInfo();
 
             //This is zero because there is still another folder hanging under the "working"  branch which needs to be removed
@@ -586,7 +612,9 @@ class PushServiceIT {
             var traversalResultWorkingRemoved = pushService.traverseLocalFolders(outputOptions, tempFolder.toFile(), tempFolder.toFile(),
                     true, true, true, true);
 
-            var treeNode2 = traversalResultWorkingRemoved.get(0).treeNode();
+            var optional1 = traversalResultWorkingRemoved.get(0).treeNode();
+            Assertions.assertTrue(optional1.isPresent());
+            var treeNode2 = optional1.get();
             var treeNodePushInfo2 = treeNode2.collectPushInfo();
 
             //Now we should expect this to be 1, because both folder are removed

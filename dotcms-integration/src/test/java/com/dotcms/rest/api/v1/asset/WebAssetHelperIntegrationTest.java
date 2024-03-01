@@ -234,7 +234,7 @@ public class WebAssetHelperIntegrationTest {
             final Folder folder = new FolderDataGen().site(host).nextPersisted();
             final Language lang = new LanguageDataGen().nextPersisted();
 
-            final Contentlet contentlet = webAssetHelper.makeFileAsset(newTestFile, host, folder, lang);
+            final Contentlet contentlet = webAssetHelper.makeFileAsset(newTestFile, host, folder, user, lang);
             final Contentlet savedAsset = webAssetHelper.checkinOrPublish(contentlet, user, true);
             Assert.assertTrue(savedAsset.isLive());
         }finally {
