@@ -134,7 +134,6 @@ export class DotEmaDialogComponent {
             urlMap: true
         });
     }
-    
 
     /**
      * Create contentlet form
