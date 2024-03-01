@@ -28,7 +28,7 @@ import org.jboss.logging.Logger;
  * Recursive task for pulling the contents of a tree node from a remote server.
  */
 @Dependent
-public class PullTreeNodeTask extends TaskProcessor {
+public class PullTreeNodeTask extends TaskProcessor <PullTreeNodeTaskParams,List<Exception>>{
 
     private final ManagedExecutor executor;
 
@@ -70,10 +70,12 @@ public class PullTreeNodeTask extends TaskProcessor {
      *
      * @param params The traversal parameters
      */
-    public void setTraversalParams(final PullTreeNodeTaskParams params) {
+    @Override
+    public void setTaskParams(final PullTreeNodeTaskParams params) {
         this.traversalTaskParams = params;
     }
 
+    @Override
     public List<Exception> compute() {
 
         CompletionService<List<Exception>> completionService =
@@ -125,7 +127,7 @@ public class PullTreeNodeTask extends TaskProcessor {
                         downloader,
                         fileHashService
                 );
-                task.setTraversalParams(PullTreeNodeTaskParams.builder()
+                task.setTaskParams(PullTreeNodeTaskParams.builder()
                         .from(traversalTaskParams)
                         .rootNode(child)
                         .build()

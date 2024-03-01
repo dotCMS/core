@@ -56,7 +56,9 @@ public class RestClientFactory {
             try{
                uri = toApiURI(optional.get().url());
             } catch (URISyntaxException | IOException e) {
-                throw new IllegalStateException("  ", e);
+                throw new IllegalStateException(
+                        String.format("Error building rest client for [%s] ",clazz.getSimpleName()),
+                        e);
             }
 
             return newRestClient(clazz, uri);
@@ -94,7 +96,6 @@ public class RestClientFactory {
             }
         }
         raw = raw.replaceAll("(?<!(http:|https:))//", "/");
-        logger.info(String.format("API URI: %s", raw));
         return new URL(raw).toURI();
     }
 
