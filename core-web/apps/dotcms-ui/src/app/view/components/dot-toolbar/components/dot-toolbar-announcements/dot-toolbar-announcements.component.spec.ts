@@ -132,6 +132,5 @@ describe('DotToolbarAnnouncementsComponent', () => {
         links.forEach((link) => link.dispatchEvent(new MouseEvent('click')));
         spectator.detectChanges();
         expect(announcementPanel).toBeFalsy();
-
     });
 });
