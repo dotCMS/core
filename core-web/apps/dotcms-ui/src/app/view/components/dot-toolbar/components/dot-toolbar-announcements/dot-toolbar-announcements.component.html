@@ -2,6 +2,7 @@
 <p-overlayPanel
     #toolbarAnnouncements
     (onHide)="hideDialog()"
+    data-testId=""
     appendTo="body"
     styleClass="toolbar-announcements__container">
     <div class="announcements__main-container">
@@ -18,6 +19,7 @@
                 <a
                     class="announcements__url"
                     [href]="item.url"
+                    (click)="toggleDialog($event)"
                     target="_blank"
                     rel="noopener noreferrer"
                     data-testId="announcement_link"
@@ -39,6 +41,7 @@
                 <a
                     class="announcements__link"
                     [href]="linkToDotCms()"
+                    (click)="toggleDialog($event)"
                     target="_blank"
                     data-testId="announcement_link_all"
                     rel="noopener"
@@ -54,6 +57,7 @@
             <a
                 class="announcements__about-link"
                 [href]="item.url"
+                (click)="toggleDialog($event)"
                 data-testId="announcements__about-link"
                 target="_blank"
                 rel="noopener"

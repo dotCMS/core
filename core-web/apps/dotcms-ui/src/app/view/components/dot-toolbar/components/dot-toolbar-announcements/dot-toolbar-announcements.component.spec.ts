@@ -125,4 +125,13 @@ describe('DotToolbarAnnouncementsComponent', () => {
         spectator.component.ngOnChanges({ showUnreadAnnouncement: { currentValue: false } });
         expect(refreshUtmParametersSpy).not.toHaveBeenCalled();
     });
+
+    it('should close the overlaypanel when clicking on the links', () => {
+        const announcementPanel = spectator.query(byTestId('announcement_link'));
+        const links = spectator.queryAll(byTestId('announcement_link'));
+        links.forEach((link) => link.dispatchEvent(new MouseEvent('click')));
+        spectator.detectChanges();
+        expect(announcementPanel).toBeFalsy();
+
+    });
 });
