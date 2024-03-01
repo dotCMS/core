@@ -111,7 +111,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 .build()
         );
 
-        var result = task.compute();
+        var result = task.compute().join();
         return TraverseResult.builder()
                 .exceptions(result.exceptions())
                 .localPaths(localPath)
@@ -161,7 +161,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 .build()
         );
 
-        return task.compute();
+        return task.compute().join();
     }
 
 }

@@ -107,7 +107,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 .build()
         );
 
-        return task.compute();
+        return task.compute().join();
     }
 
     /**
@@ -153,7 +153,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 .build()
         );
 
-        return task.compute();
+        return task.compute().join();
     }
 
     /**
