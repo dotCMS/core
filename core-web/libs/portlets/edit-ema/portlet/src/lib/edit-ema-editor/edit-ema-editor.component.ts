@@ -25,17 +25,29 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { takeUntil, catchError, filter, map, switchMap, tap } from 'rxjs/operators';
+import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotPersonalizeService,
     DotMessageService,
     DotCopyContentService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotDevice, DotPersona, DotTreeNode } from '@dotcms/dotcms-models';
-import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import {
+    DotCMSContentlet,
+    DotDevice,
+    DotPersona,
+    DotTreeNode,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
+import {
+    DotDeviceSelectorSeoComponent,
+    DotResultsSeoToolComponent
+} from '@dotcms/portlets/dot-ema/ui';
 import {
     SafeUrlPipe,
     DotSpinnerModule,
@@ -143,7 +155,8 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         DotEmaDeviceDisplayComponent,
         DotEmaBookmarksComponent,
         DotEditEmaWorkflowActionsComponent,
-        ProgressBarModule
+        ProgressBarModule,
+        DotResultsSeoToolComponent
     ],
     providers: [DotCopyContentModalService, DotCopyContentService, DotHttpErrorManagerService]
 })
@@ -165,11 +178,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
+    private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
 
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
+    protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
     readonly pageData = toSignal(this.store.pageData$);
+
+    ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
@@ -219,6 +237,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     rows: Row[] = [];
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
+    seoMedia: string;
 
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
@@ -250,6 +269,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.iframe.nativeElement.contentDocument.open();
             this.iframe.nativeElement.contentDocument.write(editor.page.rendered);
             this.iframe.nativeElement.contentDocument.close();
+
+            this.ogTags.set(
+                this.dotSeoMetaTagsUtilService.getMetaTags(
+                    this.iframe.nativeElement.contentDocument
+                )
+            );
+
+            this.ogTagsResults$ = this.dotSeoMetaTagsService
+                .getMetaTagsResults(this.iframe.nativeElement.contentDocument)
+                .pipe(take(1));
         }
     }
 
@@ -736,6 +765,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         if (this.shouldReload(params)) {
             this.updateQueryParams(params);
         }
+    }
+
+    onSeoMediaChange(seoMedia: string) {
+        this.seoMedia = seoMedia;
     }
 
     /**

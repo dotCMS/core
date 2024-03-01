@@ -15,9 +15,8 @@ import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolb
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoginService, SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { INotification } from '@shared/models/notifications';
 
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
@@ -96,7 +95,7 @@ describe('DotToolbarNotificationsComponent', () => {
                 MockDotDropDownComponent,
                 MockDotNotificationsListComponent
             ],
-            imports: [DotPipesModule, DotMessagePipe, ButtonModule, HttpClientTestingModule],
+            imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule, HttpClientTestingModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: IframeOverlayService, useClass: IframeOverlayService },

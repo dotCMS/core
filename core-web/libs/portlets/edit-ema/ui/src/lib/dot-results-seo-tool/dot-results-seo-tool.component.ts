@@ -17,7 +17,7 @@ import { CardModule } from 'primeng/card';
 
 import { map } from 'rxjs/operators';
 
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import {
     SeoMetaTags,
     SeoMetaTagsResult,
@@ -25,10 +25,8 @@ import {
     MetaTagsPreview,
     SEO_LIMITS
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
-import { DotSeoMetaTagsUtilService } from '../../../content/services/html/dot-seo-meta-tags-util.service';
-import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo-tool.component';
 import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-image-preview.component';
 
@@ -46,8 +44,9 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
         NgSwitchCase,
         NgSwitchDefault,
         AsyncPipe,
+        DotSafeHtmlPipe,
         DotMessagePipe,
-        DotPipesModule,
+        DotMessagePipe,
         DotSelectSeoToolComponent,
         DotSeoImagePreviewComponent
     ],

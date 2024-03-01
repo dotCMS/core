@@ -44,9 +44,9 @@ import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotIconModule,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import {
     ContentTypeFieldsAddRowModule,
     ContentTypeFieldsDropZoneComponent,
@@ -128,7 +128,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotCopyLinkModule,
         DotDialogModule,
         DotDirectivesModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotSecondaryToolbarModule,
         DotFieldHelperModule,
         DotFieldValidationMessageComponent,
@@ -162,7 +162,6 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotAddToMenuModule,
         DotFieldRequiredDirective,
         DotCopyButtonComponent,
-
         OverlayPanelModule,
         DotMessagePipe
     ],

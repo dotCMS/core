@@ -14,9 +14,9 @@ import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
 
@@ -28,7 +28,7 @@ import { DotAddToMenuComponent } from './dot-add-to-menu.component';
         DotAutofocusDirective,
         DotDialogModule,
         DotFieldValidationMessageComponent,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DropdownModule,
         InputTextModule,
         RadioButtonModule,

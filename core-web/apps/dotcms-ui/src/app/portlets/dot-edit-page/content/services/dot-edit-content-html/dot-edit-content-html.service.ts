@@ -15,7 +15,9 @@ import {
     DotLicenseService,
     DotMessageService,
     DotWorkflowActionsFireService,
-    DotGlobalMessageService
+    DotGlobalMessageService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import {
     DotTreeNode,
@@ -49,8 +51,6 @@ import { DotContainerContentletService } from '../dot-container-contentlet.servi
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
-import { DotSeoMetaTagsUtilService } from '../html/dot-seo-meta-tags-util.service';
-import { DotSeoMetaTagsService } from '../html/dot-seo-meta-tags.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
 
 export enum DotContentletAction {
@@ -435,7 +435,7 @@ export class DotEditContentHtmlService {
      * @returns SeoMetaTagsResult[]
      */
     getMetaTagsResults(): Observable<SeoMetaTagsResult[]> {
-        const pageDocument = this.getEditPageDocument();
+        const pageDocument = document ?? this.getEditPageDocument();
 
         return this.dotSeoMetaTagsService.getMetaTagsResults(pageDocument);
     }
@@ -446,7 +446,7 @@ export class DotEditContentHtmlService {
      * @returns SeoMetaTags
      */
     getMetaTags(): SeoMetaTags {
-        const pageDocument = this.getEditPageDocument();
+        const pageDocument = document ?? this.getEditPageDocument();
 
         return this.dotSeoMetaTagsUtilService.getMetaTags(pageDocument);
     }

@@ -7,8 +7,7 @@ import { DropdownModule } from 'primeng/dropdown';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { AddToBundleService, DotCurrentUserService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotFieldValidationMessageComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
 
@@ -23,7 +22,7 @@ import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
         ReactiveFormsModule,
         DropdownModule,
         DotFieldValidationMessageComponent,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     providers: [AddToBundleService, DotCurrentUserService]

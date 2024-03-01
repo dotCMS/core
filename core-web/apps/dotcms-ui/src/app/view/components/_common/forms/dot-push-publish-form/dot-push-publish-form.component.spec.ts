@@ -30,7 +30,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
-import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotcmsConfigServiceMock,
@@ -39,7 +39,6 @@ import {
     MockDotRouterService,
     mockDotTimeZones
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
 
@@ -144,7 +143,7 @@ xdescribe('DotPushPublishFormComponent', () => {
                 DropdownModule,
                 DotFieldValidationMessageComponent,
                 SelectButtonModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 HttpClientTestingModule
             ]

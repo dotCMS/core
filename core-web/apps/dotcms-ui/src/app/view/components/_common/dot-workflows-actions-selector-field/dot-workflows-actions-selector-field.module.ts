@@ -5,8 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
@@ -15,6 +14,6 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
     providers: [DotWorkflowsActionsService, DotWorkflowsActionsSelectorFieldService],
     declarations: [DotWorkflowsActionsSelectorFieldComponent],
     exports: [DotWorkflowsActionsSelectorFieldComponent],
-    imports: [CommonModule, DropdownModule, FormsModule, DotPipesModule, DotMessagePipe]
+    imports: [CommonModule, DropdownModule, FormsModule, DotSafeHtmlPipe, DotMessagePipe]
 })
 export class DotWorkflowsActionsSelectorFieldModule {}

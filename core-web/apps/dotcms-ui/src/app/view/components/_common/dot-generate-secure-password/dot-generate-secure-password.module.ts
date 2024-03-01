@@ -5,8 +5,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotGenerateSecurePasswordService } from '@dotcms/data-access';
-import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotClipboardUtil, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-password.component';
 
@@ -14,6 +13,6 @@ import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-passwo
     declarations: [DotGenerateSecurePasswordComponent],
     exports: [DotGenerateSecurePasswordComponent],
     providers: [DotGenerateSecurePasswordService, DotClipboardUtil],
-    imports: [ButtonModule, CommonModule, DotDialogModule, DotPipesModule, DotMessagePipe]
+    imports: [ButtonModule, CommonModule, DotDialogModule, DotSafeHtmlPipe, DotMessagePipe]
 })
 export class DotGenerateSecurePasswordModule {}

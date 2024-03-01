@@ -7,7 +7,10 @@ import { CardModule } from 'primeng/card';
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
-import { seoOGTagsMock, seoOGTagsResultMock } from './mocks';
+import {
+    seoOGTagsMock,
+    seoOGTagsResultMock
+} from '../../../../../../utils-testing/src/lib/seo-mock';
 
 export default {
     title: 'DotCMS/Results Seo Tool',
