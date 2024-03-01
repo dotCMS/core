@@ -21,7 +21,7 @@ npm install -g @dotcms/cli
 java -jar dotcli.jar
 ```
 
-2. Configure the dotCMS instances you want to connect to using a dot-service.yml file. More details on how to do it [on this section](## CLI Instance Configuration). Make sure you make a site active in the yml file, otherwise you will have to active one using the [`instance` command](## Available Commands)
+2. Configure the dotCMS instances you want to connect to using the config command. More details on how to do it [on this section](## CLI Instance Configuration). Make sure you make a site active in the yml file, otherwise you will have to active one using the [`instance` command](## Available Commands)
 
 3. Log in to the selected instance
 ```shell script
@@ -34,6 +34,7 @@ java -jar dotcli.jar login --user={USER} --password
 
 | Command                                    | Description                                                                         |
 |--------------------------------------------|-------------------------------------------------------------------------------------|
+| [config](cli/docs/config.doc)              | Sets the initial configuration required by most commands to operate                 |
 | [content-type](cli/docs/content-type.adoc) | Performs operations over content types. For example: pull, push, remove             |
 | [files](cli/docs/files.adoc)               | Performs operations over files. For example: tree, ls, push                         |
 | [instance](cli/docs/instance.adoc)         | Prints a list of available dotCMS instances                                         |
