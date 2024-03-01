@@ -9,7 +9,6 @@ import { seoOGTagsMock, seoOGTagsResultMock } from '@dotcms/utils-testing';
 
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
 
-
 export default {
     title: 'DotCMS/Results Seo Tool',
     component: DotResultsSeoToolComponent,
