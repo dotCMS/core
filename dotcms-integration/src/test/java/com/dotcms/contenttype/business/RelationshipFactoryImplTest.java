@@ -313,7 +313,7 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
             atomicReference.set(contentletList); // Set the current list in the atomic reference
             Logger.info(RelationshipFactoryImplTest.class, "Relationships size: " + contentletList.size()); // Log the current size
             return contentletList.size(); // Return the current size for Awaitility to check
-        }, is(2)); // Check that the size is exactly 4
+        }, is(4)); // Check that the size is exactly 4
 
            } catch (ConditionTimeoutException e) {
                 // This block will execute if the condition is not met within the timeout period
