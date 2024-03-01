@@ -56,7 +56,7 @@ export class DotExperimentsAnalyticAppMisconfigurationComponent implements OnIni
     }
 
     goToBrowserBack() {
-        this.router.navigate(['edit-page/content'], { queryParamsHandling: 'merge' });
+        this.router.navigate(['edit-ema/content'], { queryParamsHandling: 'merge' });
     }
 
     private setConfiguration(title, subtitle): void {

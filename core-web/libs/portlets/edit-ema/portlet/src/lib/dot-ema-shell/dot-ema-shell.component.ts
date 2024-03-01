@@ -1,7 +1,7 @@
-import { Observable, Subject, combineLatest } from 'rxjs';
+import { combineLatest, Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, OnDestroy, ViewChild } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -22,6 +22,7 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotInfoPageComponent, DotNotLicenseComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
@@ -54,7 +55,8 @@ import { NavigationBarItem } from '../shared/models';
         {
             provide: WINDOW,
             useValue: window
-        }
+        },
+        DotExperimentsService
     ],
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
@@ -74,15 +76,7 @@ import { NavigationBarItem } from '../shared/models';
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
-
-    private readonly activatedRoute = inject(ActivatedRoute);
-    private readonly router = inject(Router);
-    private readonly siteService = inject(SiteService);
-
     readonly store = inject(EditEmaStore);
-
-    private readonly destroy$ = new Subject<boolean>();
-
     EMA_INFO_PAGES: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage> = {
         NOT_FOUND: {
             icon: 'compass',
@@ -99,19 +93,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             buttonText: 'editema.infopage.button.gotopages'
         }
     };
-    private currentComponent: unknown;
-
-    get queryParams(): DotPageApiParams {
-        const queryParams = this.activatedRoute.snapshot.queryParams;
-
-        return {
-            language_id: queryParams['language_id'],
-            url: queryParams['url'],
-            'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
-        };
-    }
-
-    // We can internally navigate, so the PageID can change
     // We need to move the logic to a function, we still need to add enterprise logic
     shellProperties$: Observable<{
         items: NavigationBarItem[];
@@ -141,7 +122,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 {
                     iconURL: 'experiments',
                     label: 'editema.editor.navbar.experiments',
-                    href: 'experiments'
+                    href: `experiments/${page.identifier}`
                 },
                 {
                     icon: 'pi-th-large',
@@ -175,6 +156,23 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             error
         }))
     );
+    private readonly activatedRoute = inject(ActivatedRoute);
+    private readonly router = inject(Router);
+    private readonly siteService = inject(SiteService);
+    private readonly destroy$ = new Subject<boolean>();
+    private currentComponent: unknown;
+
+    // We can internally navigate, so the PageID can change
+
+    get queryParams(): DotPageApiParams {
+        const queryParams = this.activatedRoute.snapshot.queryParams;
+
+        return {
+            language_id: queryParams['language_id'],
+            url: queryParams['url'],
+            'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
+        };
+    }
 
     ngOnInit(): void {
         combineLatest([this.activatedRoute.data, this.activatedRoute.queryParams])

@@ -267,6 +267,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 this.dotExperimentsService.getById(experimentId).pipe(
                     tapResponse(
                         (experiment) => {
+                            console.warn(experiment);
                             this.patchState({
                                 experiment: experiment
                             });
@@ -973,6 +974,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
         const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
+
+        console.info('route', route);
+        console.info('dotPageRenderState', dotPageRenderState);
+        console.info('configProps', configProps);
+        console.info('hasEnterpriseLicense', hasEnterpriseLicense);
+        console.info('pushPublishEnvironments', pushPublishEnvironments);
+
         super({
             ...initialState,
             hasEnterpriseLicense,
