@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .announcements__main-container {
-     width: 24rem;
+    width: 24rem;
 }
 
 .announcements__list {
@@ -116,13 +116,11 @@
     top: 14px;
 }
 
-
 ::ng-deep {
     .toolbar-announcements__container {
         &.p-overlaypanel {
             max-height: 80vh;
             overflow: auto;
         }
-    }   
-  
+    }
 }
