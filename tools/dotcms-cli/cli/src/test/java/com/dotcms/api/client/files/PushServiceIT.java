@@ -36,10 +36,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -330,6 +333,193 @@ class PushServiceIT {
                             children().get(0).children().get(0).assets().size());
             // Folder 3 (has 1 asset)
             Assertions.assertEquals(1, newSiteTreeNode.children().get(2).assets().size());
+
+        } finally {
+            // Clean up the temporal folder
+            filesTestHelper.deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * This method is a performance test for pushing and pulling a large tree of assets and
+     * folders.
+     *
+     * @throws IOException if an I/O error occurs during the test
+     */
+    @Disabled("For local testing, not for CI/CD. Performance test.")
+    @Test
+    void Test_Push_Large_Tree() throws IOException {
+
+        // Create a temporal folder for the pull
+        var tempFolder = filesTestHelper.createTempFolder();
+        var workspace = workspaceManager.getOrCreate(tempFolder);
+
+        try {
+
+            // Preparing the data for the test
+            final String newTestSiteName = String.format("site-%s", UUID.randomUUID());
+
+            final Path workspaceFilesPath = workspace.files().toAbsolutePath();
+
+            Path newSiteLiveFolder = Paths.get(
+                    workspaceFilesPath.toString(),
+                    "live",
+                    "en-us",
+                    newTestSiteName
+            );
+
+            // =====================================================================
+            // Test 1: 1000 assets and 100 folders
+            // =====================================================================
+            filesTestHelper.prepareLargeDataOnFileSystem(newSiteLiveFolder, 100);
+            var expectedAssets = 2000;
+            var expectedFolders = 1100;
+
+            // =====================================================================
+            // Test 2: 4000 assets and 2200 folders
+            // Must be used with this variable environment QUARKUS_THREAD_POOL_MAX_THREADS=6 or
+            //  quarkus.thread-pool.max-threads=6 property, otherwise dotCMS is not able to keep up
+            //  with the requests and the db connection pool is exhausted, al least in most on local
+            //  environments.
+            // =====================================================================
+            //filesTestHelper.prepareLargeDataOnFileSystem(newSiteLiveFolder, 200);
+            //expectedAssets = 4000;
+            //expectedFolders = 2200;
+
+            OutputOptionMixin outputOptions = new MockOutputOptionMixin();
+
+            // ---
+            // Push the content
+            var traverseResults = pushService.traverseLocalFolders(
+                    outputOptions,
+                    tempFolder.toFile(),
+                    tempFolder.toFile(),
+                    true,
+                    true,
+                    true,
+                    true
+            );
+
+            Assertions.assertNotNull(traverseResults);
+            Assertions.assertEquals(1, traverseResults.size());// Live folder
+            // Validating the processing order
+            Assertions.assertEquals(
+                    "live",
+                    traverseResults.get(0).localPaths().status()
+            );
+            // Validating no errors were found
+            Assertions.assertTrue(
+                    traverseResults.get(0).exceptions().isEmpty());// No errors should be found
+
+            Assertions.assertTrue(traverseResults.get(0).treeNode().isPresent());
+
+            var treeNode = traverseResults.get(0).treeNode();
+            var treeNodePushInfo = treeNode.get().collectPushInfo();
+
+            // Should be nothing to push as we are pushing the same folder we pull
+            Assertions.assertEquals(expectedAssets, treeNodePushInfo.assetsToPushCount());
+            Assertions.assertEquals(expectedAssets, treeNodePushInfo.assetsNewCount());
+            Assertions.assertEquals(0, treeNodePushInfo.assetsModifiedCount());
+            Assertions.assertEquals(0, treeNodePushInfo.assetsToDeleteCount());
+            Assertions.assertEquals(expectedFolders, treeNodePushInfo.foldersToPushCount());
+            Assertions.assertEquals(0, treeNodePushInfo.foldersToDeleteCount());
+
+            pushService.processTreeNodes(outputOptions, treeNodePushInfo,
+                    PushTraverseParams.builder()
+                            .workspacePath(tempFolder.toFile().getAbsolutePath())
+                            .localPaths(traverseResults.get(0).localPaths())
+                            .rootNode(traverseResults.get(0).treeNode().get())
+                            .failFast(true)
+                            .maxRetryAttempts(0)
+                            .pushContext(pushContext)
+                            .build());
+
+            // ---
+            // Validate some pushed data, giving some time to the system to index the new data
+            var knownFolderPath =
+                    "/folder90/subFolder-90-1/subFolder-90-2/subFolder-90-3/subFolder-90-4/"
+                            + "subFolder-90-5/subFolder-90-6/subFolder-90-7/subFolder-90-8/"
+                            + "subFolder-90-9/subFolder-90-10";
+            Path firstFileToCheck;
+
+            try (final Stream<Path> walk = Files.walk(
+                    Path.of(newSiteLiveFolder.toString(), knownFolderPath)
+            )) {
+                firstFileToCheck = walk.
+                        filter(Files::isRegularFile).
+                        findFirst().
+                        orElseThrow();
+            }
+
+            indexCheckAndWait(newTestSiteName,
+                    knownFolderPath,
+                    firstFileToCheck.getFileName().toString()
+            );
+
+            // ---
+            // Validate we pushed the data properly, or at least we have the expected amount
+            // of assets and folders
+            var newSiteResults = remoteTraversalService.traverseRemoteFolder(
+                    String.format("//%s", newTestSiteName),
+                    null,
+                    true,
+                    new HashSet<>(),
+                    new HashSet<>(),
+                    new HashSet<>(),
+                    new HashSet<>()
+            );
+            Assertions.assertNotNull(newSiteResults);
+            Assertions.assertTrue(
+                    newSiteResults.exceptions() == null || newSiteResults.exceptions().isEmpty()
+            );
+            Assertions.assertTrue(newSiteResults.treeNode().isPresent());
+
+            var newSiteTreeNode = newSiteResults.treeNode().get();
+            var treeNodeInfo = newSiteTreeNode.collectUniqueStatusAndLanguage(false);
+
+            Assertions.assertEquals(expectedAssets * 2, treeNodeInfo.assetsCount());
+            Assertions.assertEquals(expectedFolders, treeNodeInfo.foldersCount());
+
+            // ---
+            // Pulling the content
+
+            // First removing the files folders to make sure what we have there is the pulled data
+            // and not a mix of the pulled and the previous data
+            filesTestHelper.deleteTempDirectory(workspaceFilesPath);
+
+            // Execute the pull
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            contentKey(String.format("//%s", newTestSiteName)).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            customOptions(customOptions).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler
+            );
+
+            try (final Stream<Path> walk = Files.walk(newSiteLiveFolder)) {
+                long filesCount = walk.filter(Files::isRegularFile).count();
+                Assertions.assertEquals(expectedAssets, filesCount);
+            }
+
+            try (final Stream<Path> walk = Files.walk(newSiteLiveFolder)) {
+                long subdirectoriesCount = walk.filter(Files::isDirectory).count();
+                Assertions.assertEquals(expectedFolders + 1, subdirectoriesCount);
+            }
 
         } finally {
             // Clean up the temporal folder
