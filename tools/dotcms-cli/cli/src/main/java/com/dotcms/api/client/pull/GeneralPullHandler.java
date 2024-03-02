@@ -83,7 +83,7 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
                             progressBar(progressBar).build()
                     );
 
-                    return task.compute();
+                    return task.compute().join();
                 });
         progressBar.setFuture(pullFuture);
 
