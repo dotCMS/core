@@ -33,8 +33,12 @@ export class DotCMSPageEditor {
         this.config = config ?? { onReload: defaultReloadFn };
     }
 
+    /**
+     * Initializes the SDK editor.
+     * Checks if the editor is being used and sets up event listeners accordingly.
+     * @memberof DotCMSPageEditor
+     */
     init() {
-        console.log('SdkDotPageEditor init!!');
         this.isInsideEditor = this.checkIfInsideEditor();
         if (this.isInsideEditor) {
             this.listenEditorMessages();
@@ -44,8 +48,12 @@ export class DotCMSPageEditor {
         }
     }
 
+    /**
+     * Destroys the SDK editor by removing all event listeners and disconnecting all observers.
+     *
+     * @memberof DotCMSPageEditor
+     */
     destroy() {
-        console.log('SdkDotPageEditor destroyed!');
         this.subscriptions.forEach((subscription) => {
             if (subscription.type === 'listener') {
                 window?.removeEventListener(subscription.event, subscription.callback);
@@ -57,6 +65,12 @@ export class DotCMSPageEditor {
         });
     }
 
+    /**
+     *
+     * Updates the navigation in the editor.
+     * @param {string} pathname - The pathname to update the navigation with.
+     * @memberof DotCMSPageEditor
+     */
     updateNavigation(pathname: string) {
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
@@ -66,6 +80,12 @@ export class DotCMSPageEditor {
         });
     }
 
+    /**
+     * Listens for editor messages and performs corresponding actions based on the received message.
+     *
+     * @private
+     * @memberof DotCMSPageEditor
+     */
     private listenEditorMessages() {
         const messageCallback = (event: MessageEvent) => {
             switch (event.data) {
@@ -88,6 +108,12 @@ export class DotCMSPageEditor {
         });
     }
 
+    /**
+     * Listens for pointer move events and extracts information about the hovered contentlet.
+     *
+     * @private
+     * @memberof DotCMSPageEditor
+     */
     private listenHoveredContentlet() {
         const pointerMoveCallback = (event: PointerEvent) => {
             const target = findContentletElement(event.target as HTMLElement);
@@ -128,6 +154,12 @@ export class DotCMSPageEditor {
         });
     }
 
+    /**
+     * v
+     *
+     * @private
+     * @memberof DotCMSPageEditor
+     */
     private scrollHandler() {
         const scrollCallback = () => {
             postMessageToEditor({
@@ -142,6 +174,13 @@ export class DotCMSPageEditor {
         });
     }
 
+    /**
+     * Checks if the current page is inside an editor.
+     *
+     * @private
+     * @returns {boolean} Returns true if the page is inside an editor, false otherwise.
+     * @memberof DotCMSPageEditor
+     */
     private checkIfInsideEditor() {
         if (window?.parent === window) {
             return false;
@@ -152,6 +191,12 @@ export class DotCMSPageEditor {
         return true;
     }
 
+    /**
+     * Listens for changes in the content and triggers a custom action when the content changes.
+     *
+     * @private
+     * @memberof DotCMSPageEditor
+     */
     private listenContentChange() {
         const observer = new MutationObserver((mutationsList) => {
             for (const { addedNodes, removedNodes, type } of mutationsList) {
@@ -179,6 +224,12 @@ export class DotCMSPageEditor {
         });
     }
 
+    /**
+     * Sets the bounds of the containers in the editor.
+     * Retrieves the containers from the DOM and sends their position data to the editor.
+     * @private
+     * @memberof DotCMSPageEditor
+     */
     private setBounds() {
         const containers = Array.from(
             document.querySelectorAll('[data-dot-object="container"]')
@@ -196,6 +247,9 @@ export class DotCMSPageEditor {
     }
 }
 
+/**
+ * Default reload function that reloads the current window.
+ */
 const defaultReloadFn = () => window.location.reload();
 
 export const sdkDotPageEditor = {
