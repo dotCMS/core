@@ -43,7 +43,7 @@ public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
         var task = new HttpRequestTask(this, executor);
         task.setTaskParams(allSites);
 
-        return task.compute();
+        return task.compute().join();
     }
 
     /**

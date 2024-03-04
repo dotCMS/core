@@ -2,6 +2,7 @@ package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.client.files.traversal.data.Pusher;
 import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.files.traversal.task.PushTreeNodeTask;
 import com.dotcms.api.client.files.traversal.task.PushTreeNodeTaskParams;
 import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTask;
@@ -14,6 +15,7 @@ import io.quarkus.arc.DefaultBean;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -107,7 +109,16 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 .build()
         );
 
-        return task.compute();
+        try {
+            return task.compute().join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
     /**
@@ -153,7 +164,16 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 .build()
         );
 
-        return task.compute();
+        try {
+            return task.compute().join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
     /**

@@ -111,4 +111,26 @@ describe('DotToolbarAnnouncementsComponent', () => {
         const announcementLink = spectator.query(byTestId('announcements__about-link'));
         expect(announcementLink.getAttribute('target')).toBe('_blank');
     });
+
+    it('should call markAnnouncementsAsRead on ng on init', () => {
+        const refreshUtmParametersSpy = spyOn(
+            spectator.component.announcementsStore,
+            'refreshUtmParameters'
+        );
+        spectator.component.ngOnInit();
+        expect(refreshUtmParametersSpy).toHaveBeenCalled();
+
+        // Checking that is not called again in the ngOnChanges
+        refreshUtmParametersSpy.calls.reset();
+        spectator.component.ngOnChanges({ showUnreadAnnouncement: { currentValue: false } });
+        expect(refreshUtmParametersSpy).not.toHaveBeenCalled();
+    });
+
+    it('should close the overlaypanel when clicking on the links', () => {
+        const announcementPanel = spectator.query(byTestId('announcement_link'));
+        const links = spectator.queryAll(byTestId('announcement_link'));
+        links.forEach((link) => link.dispatchEvent(new MouseEvent('click')));
+        spectator.detectChanges();
+        expect(announcementPanel).toBeFalsy();
+    });
 });

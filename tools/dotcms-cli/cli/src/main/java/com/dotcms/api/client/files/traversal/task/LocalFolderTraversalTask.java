@@ -24,9 +24,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import javax.enterprise.context.Dependent;
@@ -42,7 +42,8 @@ import org.jboss.logging.Logger;
  * allowing for faster traversal of large directory structures.
  */
 @Dependent
-public class LocalFolderTraversalTask extends TaskProcessor<LocalFolderTraversalTaskParams,TraverseTaskResult> {
+public class LocalFolderTraversalTask extends
+        TaskProcessor<LocalFolderTraversalTaskParams, CompletableFuture<TraverseTaskResult>> {
 
     private final ManagedExecutor executor;
 
@@ -92,14 +93,11 @@ public class LocalFolderTraversalTask extends TaskProcessor<LocalFolderTraversal
      * Executes the folder traversal task and returns a TreeNode representing the directory tree
      * rooted at the folder specified in the constructor.
      *
-     * @return A Pair object containing a list of exceptions encountered during traversal and the
-     * resulting TreeNode representing the directory tree at the specified folder.
+     * @return A CompletableFuture containing the TreeNode representing the directory tree rooted at
+     * the folder specified in the constructor and a list of exceptions encountered during traversal.
      */
     @Override
-    public TraverseTaskResult compute() {
-
-        CompletionService<TraverseTaskResult> completionService =
-                new ExecutorCompletionService<>(executor);
+    public CompletableFuture<TraverseTaskResult> compute() {
 
         var errors = new ArrayList<Exception>();
 
@@ -113,19 +111,37 @@ public class LocalFolderTraversalTask extends TaskProcessor<LocalFolderTraversal
                     localPathStructure));
         } catch (Exception e) {
             if (traversalTaskParams.failFast()) {
-                throw e;
+                return CompletableFuture.failedFuture(e);
             } else {
                 errors.add(e);
             }
         }
 
+        return handleFolder(errors, currentNode, folderOrFile);
+    }
+
+    /**
+     * Handles a folder by traversing it and its subdirectories, creating tasks to process each
+     * subdirectory. Any encountered errors are stored in an ArrayList and the resulting tree node
+     * is returned.
+     *
+     * @param errors       The list of exceptions encountered during traversal.
+     * @param currentNode  The current tree node.
+     * @param folderOrFile The folder or file to handle.
+     * @return A CompletableFuture containing the list of exceptions encountered and the resulting
+     * tree node.
+     */
+    private CompletableFuture<TraverseTaskResult> handleFolder(
+            final ArrayList<Exception> errors, final AtomicReference<TreeNode> currentNode,
+            final File folderOrFile) {
+
         if (null != currentNode.get() && folderOrFile.isDirectory()) {
+
+            List<CompletableFuture<TraverseTaskResult>> futures = new ArrayList<>();
 
             File[] files = folderOrFile.listFiles(new HiddenFileFilter());
 
             if (files != null) {
-
-                var toProcessCount = 0;
 
                 for (File file : files) {
 
@@ -141,27 +157,40 @@ public class LocalFolderTraversalTask extends TaskProcessor<LocalFolderTraversal
                                 .build()
                         );
 
-                        completionService.submit(subTask::compute);
-                        toProcessCount++;
+                        CompletableFuture<TraverseTaskResult> future =
+                                CompletableFuture.supplyAsync(
+                                        subTask::compute, executor
+                                ).thenCompose(Function.identity());
+                        futures.add(future);
                     }
                 }
 
-                // Wait for all tasks to complete and gather the results
-                Function<TraverseTaskResult, Void> processFunction = taskResult -> {
-                    errors.addAll(taskResult.exceptions());
-                    taskResult.treeNode().ifPresent(currentNode.get()::addChild);
-                    return null;
-                };
-                processTasks(toProcessCount, completionService, processFunction);
+                return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                        .thenApply(ignored -> {
+                            for (CompletableFuture<TraverseTaskResult> future : futures) {
+                                var taskResult = future.join();
+                                errors.addAll(taskResult.exceptions());
+                                taskResult.treeNode().ifPresent(currentNode.get()::addChild);
+                            }
+
+                            final TreeNode treeNode = currentNode.get();
+                            //If the task failed to complete ad the exception got added to the list
+                            // of errors instead of being thrown current node will be null
+                            return TraverseTaskResult.builder()
+                                    .treeNode(Optional.ofNullable(treeNode))
+                                    .exceptions(errors)
+                                    .build();
+                        });
             }
         }
 
         final TreeNode treeNode = currentNode.get();
-        //If the task failed to complete ad the exception got added to the list of errors instead of being thrown current node will be null
-        return TraverseTaskResult.builder()
+        //If the task failed to complete ad the exception got added to the list of errors instead
+        // of being thrown current node will be null
+        return CompletableFuture.completedFuture(TraverseTaskResult.builder()
                 .treeNode(Optional.ofNullable(treeNode))
                 .exceptions(errors)
-                .build();
+                .build());
     }
 
     /**
