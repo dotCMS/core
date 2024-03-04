@@ -67,7 +67,6 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onTemplateItemChange(item: DotTemplateItem) {
-        this.updateTemplate.emit(item);
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
         }

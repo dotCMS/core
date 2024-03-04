@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { map, pluck, take } from 'rxjs/operators';
 
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
 
 @Injectable({
     providedIn: 'root'
@@ -57,13 +57,14 @@ export class DotPropertiesService {
 
     /**
      * Get the value of specific feature flag
-     *
      * @param {FeaturedFlags} key
      * @return {*}  {Observable<boolean>}
      * @memberof DotPropertiesService
      */
     getFeatureFlag(key: FeaturedFlags): Observable<boolean> {
-        return this.getKey(key).pipe(map((value) => value === 'true'));
+        return this.getKey(key).pipe(
+            map((value) => (value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true'))
+        );
     }
 
     /**

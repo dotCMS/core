@@ -31,6 +31,8 @@ public class JsScriptActionlet  extends WorkFlowActionlet {
     private static final List<WorkflowActionletParameter> PARAMETER_LIST = createParamList();
     private boolean stop = false;
 
+
+
     private static List<WorkflowActionletParameter> createParamList () {
 
         final ImmutableList.Builder<WorkflowActionletParameter> paramList = new ImmutableList.Builder<>();

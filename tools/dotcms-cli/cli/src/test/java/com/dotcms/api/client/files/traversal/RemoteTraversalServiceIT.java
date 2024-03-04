@@ -92,7 +92,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -169,7 +171,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -210,7 +214,10 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -239,7 +246,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -271,7 +280,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -349,7 +360,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -431,7 +444,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -483,7 +498,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -549,7 +566,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -614,7 +633,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -680,7 +701,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -745,7 +768,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -810,7 +835,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption("**/subFolder1-1/**"),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -888,7 +915,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption("**/subFolder1-1"),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -970,7 +999,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption("folder1,folder3"),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -1020,7 +1051,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption("**/*.png")
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -1085,7 +1118,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption("**/*.jpg")
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -1151,7 +1186,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption("**/*.jpg,**/*.png")
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -1216,7 +1253,9 @@ class RemoteTraversalServiceIT {
                 parsePatternOption(null),
                 parsePatternOption("folder1/subFolder1-1/subFolder1-1-1/image?.*")
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree

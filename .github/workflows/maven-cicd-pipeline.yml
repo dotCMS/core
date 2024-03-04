@@ -20,7 +20,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
   # Cancel any in-progress runs for the same branch/PR to prevent delays from changes during build
   # On master and other branches run will set as pending.  Any new builds requested will replace the pending build
-  
+
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   JVM_TEST_MAVEN_OPTS: "-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
@@ -152,7 +152,7 @@ jobs:
       - name: Lint Checks
         shell: bash
         run: |
-          ./mvnw -Pvalidate --fail-at-end -Dgithub.event.name=${{ github.event_name }} --file pom.xml
+          ./mvnw $JVM_TEST_MAVEN_OPTS -Pvalidate --fail-at-end -Dgithub.event.name=${{ github.event_name }} --file pom.xml
       - name: Maven Build No Test
         shell: bash
         run: |
@@ -301,8 +301,8 @@ jobs:
         with:
           name: "build-reports-test-cli - JDK ${{matrix.java.name}}"
           path: |
-            toole/dotcms-cli/**/target/failsafe-reports/*.xml
-            toole/dotcms-cli/**/target/jacoco-report/*.exec
+            tools/dotcms-cli/**/target/failsafe-reports/*.xml
+            tools/dotcms-cli/**/target/jacoco-report/*.exec
             target/build-report.json
             LICENSE
           retention-days: 2
@@ -473,7 +473,7 @@ jobs:
           path: /tmp/docker-image
       - name: Load Docker image from tar file
         run: docker load < /tmp/docker-image/image.tar
-        
+
       - name: Cache Node Binary
         id: cache-node-binary
         uses: actions/cache@v4
@@ -572,6 +572,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v3.0.0
         with:
           name: build-reports-test-.*
+          name_is_regexp: true
           path: dotcms-core/target/build-reports
           if_no_artifact_found: warn
       - name: Maven Build No Test
@@ -618,6 +619,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v3.0.0
         with:
           name: "build-reports-*"
+          name_is_regexp: true
           path: /tmp/build-step-reports
           if_no_artifact_found: warn
       - name: Prepare workflow data
@@ -734,6 +736,7 @@ jobs:
         with:
           name: workflow-data
           path: ./workflow-data.json
+
   final-status:
     name: Final Status
     needs: prepare-report-data

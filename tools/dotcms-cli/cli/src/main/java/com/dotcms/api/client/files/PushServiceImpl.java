@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -96,7 +98,11 @@ public class PushServiceImpl implements PushService {
             traversalResult.add(result);
         }
 
-        normalize(traversalResult);
+        if(removeFolders) {
+           // If we are removing folders we need to conciliate the paths to ensure we're not removing folders that are not meant to be removed
+           //That is we only remove folders that are marked for delete in all branches and languages and status
+           conciliatePathsForDelete(traversalResult);
+        }
         sort(traversalResult);
 
         return traversalResult;
@@ -133,15 +139,13 @@ public class PushServiceImpl implements PushService {
 
     /**
      * Any ambiguity should be held here
-     * @param traversalResult
+     * @param traversalResult the result of the local traversal process
      */
-    private void normalize(ArrayList<TraverseResult> traversalResult) {
+    private void conciliatePathsForDelete(List<TraverseResult> traversalResult) {
         // Once we have all roots data here we need to eliminate ambiguity
-        final Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite = indexByStatusLangAndSite(
-                traversalResult);
+        final Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite = indexByStatusLangAndSite(traversalResult);
         indexedByStatusLangAndSite.forEach((lang, folders) -> {
-            logger.info("Lang: " + lang);
-            folders.forEach((path, folder) -> normalizeCandidatesForDelete(indexedByStatusLangAndSite, path));
+            folders.forEach((path, folder) -> conciliateCandidatesForDelete(indexedByStatusLangAndSite, path));
         });
     }
 
@@ -168,17 +172,21 @@ public class PushServiceImpl implements PushService {
      * @param indexedByStatusLangAndSite The mapped TreeNodes
      * @param path the folder path
      */
-    private void normalizeCandidatesForDelete(Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite,
-            String path) {
+    private void conciliateCandidatesForDelete(Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite, String path) {
         // here I need to get a hold of the other folders under different languages and or status but with the same path
         // and check if they're all marked for delete as well
         // if they all are marked for delete then it is safe to keep it marked for delete
         // otherwise the delete op isn't valid
         final List<TreeNode> nodes = findAllNodesWithTheSamePath(indexedByStatusLangAndSite, path);
         if (!isAllFoldersMarkedForDelete(nodes)) {
+            if(nodes.stream().anyMatch(isMarkedForDelete)) {
+               logger.info("The folder " + path + " appears to be marked for delete but NOT in all branches. Therefore it won't be removed. ");
+            }
             nodes.forEach(node -> node.markForDelete(false));
         }
     }
+
+    final Predicate<TreeNode> isMarkedForDelete = node -> node.folder().sync().isPresent() && node.folder().sync().get().markedForDelete();
 
     /**
      * Build a map first separated by site then by status and language
@@ -192,8 +200,14 @@ public class PushServiceImpl implements PushService {
 
         Map<String,Map<String, TreeNode>> indexedFolders = new HashMap<>();
         groupBySite.forEach((site, list) -> list.forEach(ctx -> {
-            final String key = ctx.localPaths().status() + ":" + ctx.localPaths().language() + ":" + site;
-            ctx.treeNode().flattened().forEach(node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>()).put(node.folder().path(), node));
+            final Optional<TreeNode> optional = ctx.treeNode();
+            if(optional.isPresent()) {
+                final TreeNode treeNode = optional.get();
+                final String key = ctx.localPaths().status() + ":" + ctx.localPaths().language() + ":" + site;
+                treeNode.flattened().forEach(
+                        node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>())
+                                .put(node.folder().path(), node));
+            }
         }));
         return indexedFolders;
     }
@@ -212,8 +226,8 @@ public class PushServiceImpl implements PushService {
 
     /**
      * Checks if all the folders in the list are marked for delete
-     * @param nodes
-     * @return
+     * @param nodes the list of nodes to check
+     * @return true if all folders are marked for delete, false otherwise
      */
     boolean isAllFoldersMarkedForDelete(List<TreeNode> nodes) {
         return nodes.stream().map(TreeNode::folder).allMatch(folderView -> folderView.sync().isPresent() && folderView.sync().get().markedForDelete());
@@ -285,7 +299,7 @@ public class PushServiceImpl implements PushService {
                     for (final var error : errors) {
                         if (error instanceof TraversalTaskException) {
                             c++;
-                            output.handleCommandException(error, String. format("%s %n", error.getMessage()), c >= count);
+                            output.handleCommandException(error, String. format("%s %n", error.getMessage()), c < count);
 
                         } else {
                             output.error(error.getMessage());

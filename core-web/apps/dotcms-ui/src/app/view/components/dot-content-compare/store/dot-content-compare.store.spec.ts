@@ -6,9 +6,67 @@ import { DotContentCompareStore } from '@components/dot-content-compare/store/do
 import {
     DotContentletService,
     DotContentTypeService,
-    DotFormatDateService
+    DotHttpErrorManagerService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
+import { MockDotHttpErrorManagerService } from '@dotcms/utils-testing';
+
+const generateRandomString = function (length: number) {
+    const words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit'];
+
+    return Array.from({ length }, () => words[Math.floor(Math.random() * words.length)]).join(' ');
+};
+
+const generateInode = function () {
+    const hexDigits = '0123456789abcdef';
+    const segments = [8, 4, 4, 4, 12];
+    let uuid = '';
+
+    segments.forEach((segmentLength, index) => {
+        if (index !== 0) uuid += '-'; // Add dash between segments
+
+        for (let i = 0; i < segmentLength; i++) {
+            uuid += hexDigits.charAt(Math.floor(Math.random() * hexDigits.length));
+        }
+    });
+
+    return uuid;
+};
+
+const newContentObj = function () {
+    return {
+        archived: false,
+        baseType: 'CONTENT',
+        caategory: [{ boys: 'Boys' }],
+        contentType: 'ContentType1',
+        date: 1639548000000,
+        dateTime: 1639612800000,
+        folder: 'SYSTEM_FOLDER',
+        hasLiveVersion: true,
+        hasTitleImage: false,
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        hostName: 'demo.dotcms.com',
+        identifier: '758cb37699eae8500d64acc16ebc468e',
+        inode: generateInode(),
+        keyValue: { keyone: generateRandomString(1), keytwo: generateRandomString(1) },
+        languageId: 1,
+        live: true,
+        locked: false,
+        modDate: 1639784363639,
+        modUser: 'dotcms.org.1',
+        modUserName: 'Admin User',
+        owner: 'dotcms.org.1',
+        publishDate: 1639780580960,
+        sortOrder: 0,
+        stInode: '0121c052881956cd95bfe5dde968ca07',
+        text: generateRandomString(3),
+        time: 104400000,
+        title: generateRandomString(3),
+        titleImage: 'TITLE_IMAGE_NOT_FOUND',
+        url: '/content.40e5d7cd-2117-47d5-b96d-3278b188deeb',
+        working: true
+    };
+};
 
 const getContentTypeMOCKResponse = {
     baseType: 'CONTENT',
@@ -620,12 +678,15 @@ const newCompare = {
 
 describe('DotContentCompareStore', () => {
     let dotContentCompareStore: DotContentCompareStore;
+    for (let index = 0; index < 21; index++) {
+        getContentletVersionsMOCKResponse.push(newContentObj());
+    }
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 DotContentCompareStore,
-                DotFormatDateService,
+                DotHttpErrorManagerService,
                 {
                     provide: DotContentTypeService,
                     useValue: {
@@ -656,6 +717,10 @@ describe('DotContentCompareStore', () => {
                 {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
+                },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
                 }
             ]
         });
