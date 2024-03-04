@@ -127,7 +127,7 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
         typeControl.valueChanges.subscribe((type) => {
             const promptControl = this.form.get('text');
-            console.log('type', type);
+            console.log('type test', type);
             type === 'auto'
                 ? promptControl.clearValidators()
                 : promptControl.setValidators(Validators.required);
