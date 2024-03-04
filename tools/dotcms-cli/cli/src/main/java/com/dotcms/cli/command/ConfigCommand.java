@@ -29,22 +29,22 @@ import picocli.CommandLine.Option;
 
 @ActivateRequestContext
 @CommandLine.Command(
-        name = InitCommand.NAME,
-        header = "@|bold,blue Initialize the cli and Configures dotCMS instances.|@",
+        name = ConfigCommand.NAME,
+        header = "@|bold,blue Configure Create Update and Activate dotCMS instances.|@",
         description = {
-                " Creates the initial configuration file for the dotCMS CLI.",
+                " Creates the essential configuration file for the dotCMS CLI.",
                 " The file is created in the user's home directory.",
                 " The file is named [dot-service.yml]",
                 " This file is used to store the configuration of the dotCMS instances.",
-                " An instance can be activated by using the command @|yellow instance -act <instanceName>|@",
+                " An instance can also be activated by using the command @|yellow instance -act <instanceName>|@",
                 " Typically an instance holds the API URL, the user and the profile-name.",
                 " Running this command is mandatory before using the CLI.",
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class InitCommand implements Callable<Integer>, DotCommand {
+public class ConfigCommand implements Callable<Integer>, DotCommand {
 
-    public static final String NAME = "init";
+    public static final String NAME = "config";
     public static final String INSTANCE_NAME = "name";
     public static final String INSTANCE_URL = "url";
 
@@ -114,10 +114,30 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                return ExitCode.OK;
            }
            //We have a configuration file, let's update it
-            performUpdate(services);
+           final List<ServiceBean> updated = performUpdate(services);
+           //Now let's check if we need to add new instances passing the list of updated services
+           addNewInstances(updated);
         }
 
         return ExitCode.OK;
+    }
+
+    /**
+     * This method is used to add new instances
+     * @param updated the updated list of services
+     * @throws IOException if an error occurs
+     */
+     void addNewInstances(List<ServiceBean> updated) throws IOException {
+        final boolean yes = prompt.yesOrNo(false, "Do you want to add a new dotCMS instance? (Or press enter to exit)");
+        if(yes){
+             final Map<String, ServiceBean> capturedValues = updated.stream().collect(
+                     Collectors.toMap(ServiceBean::name, Function.identity()));
+             final Map<String, ServiceBean> newValues = captureAndValidate(capturedValues);
+             if(!newValues.isEmpty()){
+                 persistAndMakeActive(newValues.values().stream().sorted(
+                         comparator).collect(Collectors.toList()));
+             }
+        }
     }
 
     /**
@@ -125,13 +145,14 @@ public class InitCommand implements Callable<Integer>, DotCommand {
      * @param services the services
      * @throws IOException if an error occurs
      */
-    void performUpdate(List<ServiceBean> services) throws IOException {
+    List<ServiceBean> performUpdate(List<ServiceBean> services) throws IOException {
         List<ServiceBean> beansForUpdate = new ArrayList<>(services);
-        output.info("The CLI has been already initialized.");
+        output.info("The CLI has been already configured.");
+        int count = 0;
         while (true) {
             printServices(beansForUpdate);
             final int index = prompt.readInput(-1,
-                    "Select the number of the profile you want to @|bold edit|@ or press enter to exit. ");
+                    "Select the number of the profile you want to @|bold edit|@ or press enter. ");
             if (-1 == index) {
                 break;
             }
@@ -140,7 +161,11 @@ public class InitCommand implements Callable<Integer>, DotCommand {
             } else {
                 beansForUpdate = captureValuesThenUpdate(beansForUpdate, index);
             }
+            if (count++ >= maxCaptureAttempts()) {
+                throw new IllegalStateException("Too many attempts to capture the values.");
+            }
         }
+        return beansForUpdate;
     }
 
     /**
@@ -158,6 +183,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
         final Map<String, ServiceBean> validationMap = beansForUpdate.stream()
                 .filter(bean -> !bean.name().equals(name))
                 .collect(Collectors.toMap(ServiceBean::name, Function.identity()));
+        int count = 0;
         while (true) {
             final String newName = prompt.readInput(name, "Enter the new name for the profile [%s]. ", name);
             final String newUrl = prompt.readInput(url, "Enter the new URL for the profile [%s]. ", url);
@@ -171,13 +197,16 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                     beansForUpdate = new ArrayList<>(serviceManager.services());
                     final boolean yes = prompt.yesOrNo(false, "Do you want to update the @|bold current active|@ instance? ");
                     if(yes && !beansForUpdate.isEmpty()) {
-                        makeActive(beansForUpdate);
+                        persistAndMakeActive(beansForUpdate);
                     }
                     beansForUpdate = new ArrayList<>(serviceManager.services());
                     break;
                 } catch (IllegalArgumentException e) {
                     output.error("There are errors in the captured values : " + e.getMessage());
                 }
+            }
+            if (count++ >= maxCaptureAttempts()) {
+                throw new IllegalStateException("Too many attempts to capture the values.");
             }
         }
         return beansForUpdate;
@@ -190,9 +219,9 @@ public class InitCommand implements Callable<Integer>, DotCommand {
      void freshInit() throws IOException {
          //We don't have a configuration file, let's create one
          try {
-             final Map<String, ServiceBean> capturedValues = captureForInit();
+             final Map<String, ServiceBean> capturedValues = captureFreshValues();
              if(!capturedValues.isEmpty()) {
-                 makeActive(capturedValues.values().stream().sorted(
+                 persistAndMakeActive(capturedValues.values().stream().sorted(
                          comparator).collect(Collectors.toList()));
              }
          } catch (IllegalStateException e) {
@@ -201,12 +230,20 @@ public class InitCommand implements Callable<Integer>, DotCommand {
     }
 
     /**
-     * This method serves as the loop to capture the values for the dotCMS instance
+     * This method is used to capture the fresh values
      * @return the captured values
      */
-    private Map<String, ServiceBean> captureForInit() {
+    private Map<String, ServiceBean> captureFreshValues() {
+         return captureAndValidate(new HashMap<>());
+    }
+
+    /**
+     * This method serves as the loop to capture the values for the dotCMS instance
+     * @param capturedValues any values that were already captured
+     * @return the captured values
+     */
+    private Map<String, ServiceBean> captureAndValidate(final Map<String,ServiceBean> capturedValues) {
         final Map<String, String> suggestedValues = new HashMap<>(values);
-        final Map<String,ServiceBean> capturedValues = new HashMap<>();
         int count = 0;
         int captures = 0; //We're going to use this to append a number to the suggested name
         while (true) {
@@ -229,7 +266,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
             } catch (IllegalArgumentException e) {
                 output.error("There are errors in the captured values : " +e.getMessage());
             }
-            if (++count >= maxCaptureAttempts()) {
+            if (count++ >= maxCaptureAttempts()) {
                 throw new IllegalStateException("Too many attempts to capture the values.");
             }
         }
@@ -263,7 +300,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
                 break;
             }
             //This allows us to break the loop if we've tried too many and this gives us a chance to exit gracefully but also makes this code testable too
-            if(++count >= maxCaptureAttempts()){
+            if(count++ >= maxCaptureAttempts()){
                 throw new IllegalStateException("Too many attempts to capture the values.");
             }
         }
@@ -275,7 +312,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
      * @param capturedValues the captured values
      * @throws IOException if an error occurs
      */
-     void makeActive(final List<ServiceBean> capturedValues) throws IOException {
+     void persistAndMakeActive(final List<ServiceBean> capturedValues) throws IOException {
         if (capturedValues.isEmpty()) {
             return;
         }
@@ -465,6 +502,7 @@ public class InitCommand implements Callable<Integer>, DotCommand {
 
     /**
      * Test friendly method to set the max attempts
+     * We can easily override this method in a test to set the max attempts to 1 and avoid infinite loops
      * @return the max attempts
      */
     int maxCaptureAttempts() {

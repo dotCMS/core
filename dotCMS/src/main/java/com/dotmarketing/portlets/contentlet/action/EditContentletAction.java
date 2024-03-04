@@ -2026,6 +2026,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                                 if (null != id && UtilMethods.isSet(id.getId())) {
                                     text = id.getPath();
                                 }
+							} else if (field instanceof ImageField) {
+								final Identifier id = APILocator.getIdentifierAPI().find((String) value);
+								if (null != id && UtilMethods.isSet(id.getId())) {
+									text = id.getPath();
+								}
+
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if (field instanceof DateField) {
