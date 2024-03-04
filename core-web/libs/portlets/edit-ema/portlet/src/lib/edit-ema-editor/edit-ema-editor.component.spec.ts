@@ -63,7 +63,7 @@ import { EditEmaEditorComponent } from './edit-ema-editor.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST, PAYLOAD_MOCK } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
@@ -340,6 +340,32 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 useValue: {
                     get({ language_id }) {
                         return {
+                            4: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    rendered: '<div>New Content - Hello World</div>',
+                                    canEdit: true
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 4,
+                                        language: 'German',
+                                        countryCode: 'DE',
+                                        languageCode: 'de',
+                                        country: 'Germany'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
+                                containers: dotPageContainerStructureMock
+                            }),
                             3: of({
                                 page: {
                                     title: 'hello world',
@@ -363,6 +389,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     },
                                     persona: DEFAULT_PERSONA
                                 },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
                                 containers: dotPageContainerStructureMock
                             }),
                             2: of({
@@ -1659,25 +1686,39 @@ describe('EditEmaEditorComponent', () => {
                 );
             });
 
-            it('iframe should have the correct content when is VTL', () => {
-                store.load({
-                    url: 'index',
-                    language_id: '3',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+            describe('VTL Page', () => {
+
+                beforeEach(() => {
+                    store.load({
+                        url: 'index',
+                        language_id: '3',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+                    spectator.detectChanges();
                 });
-                spectator.detectChanges();
 
-                spectator.component.onIframePageLoad({
-                    clientHost: '',
-                    editor: { page: { rendered: '<div>hello world</div>' } }
-                } as { clientHost: string; editor: DotPageApiResponse }); // I didn't find another way to mock the iframe loading
+                it('iframe should have the correct content when is VTL', () => {
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+    
+                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                        '<div>hello world</div>'
+                    );
+                });
+    
+                it("iframe should have reload the page and add the new content", async () => {
+                    store.reload({ language_id: '4', url: 'index', 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier });
+                    spectator.detectChanges();
+                    await spectator.fixture.whenStable();
 
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
-                expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
-                    '<div>hello world</div>'
-                );
+
+                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                        '<div>New Content - Hello World</div>'
+                    );
+                });
             });
 
             it('should navigate to new url and change persona when postMessage SET_URL', () => {
