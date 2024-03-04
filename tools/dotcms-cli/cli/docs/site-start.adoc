@@ -19,7 +19,7 @@ site-start - *Use this command to start a site.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site start* [*-h*] _idOrName_
+*site start* [*-h*] [*-tk*=_<token>_] _idOrName_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -38,6 +38,9 @@ site-start - *Use this command to start a site.*
 
 *-h*, *--help*::
   Display this help message.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

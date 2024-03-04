@@ -20,7 +20,7 @@ files-push - *dotCMS Files push*
 == Synopsis
 
 *files push* [*-h*] [*--dry-run*] [*-ff*] [*-ra*] [*-rf*]
-           [*--retry-attempts*=_<retryAttempts>_] [_path_]
+           [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -52,6 +52,9 @@ files-push - *dotCMS Files push*
 
 *-rf, --removeFolders*::
   When this option is enabled, the push process allows the deletion of folders in the remote server. By default, this option is disabled, and folders will not be removed on the remote server.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

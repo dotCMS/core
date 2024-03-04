@@ -64,7 +64,7 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
         @CommandLine.ArgGroup(exclusive = false, heading = "\n@|bold,blue Password Login Options. |@\n")
         PasswordOptions passwordOptions;
 
-        @CommandLine.Option(names = {"-t", "--token"}, arity = "0..1", description = {
+        @CommandLine.Option(names = {"-tk", "--token"}, arity = "0..1", description = {
                 "dotCMS Token",
                 "A token can be used directly to authenticate with the dotCMS instance",
         }, required = true, interactive = true, echo = false)
