@@ -297,8 +297,9 @@ public class AppsResourceTest extends IntegrationTestBase {
      * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
      * Then we upload the file with an app definition. Then we Create an App Then list the available apps.
      * Then we Verify the New app is listed. under the right Host.
-     * Then We delete the app and verify the pagination results make sense.
-     * Given scenario: Test we can create an app then delete it.
+     * Then we delete the app and verify the pagination results make sense.
+     * Then we verify for app input parameters overriding through the use of environment variables (check dotcms-integration/pom.xml file for used env-vars definitions).
+     * Given scenario: Test we can create an app then delete it with overridden app parameters through environment variables.
      * Expected Result: Pagination shows all available sites with no configurations
      *
      * @throws DotDataException

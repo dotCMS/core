@@ -64,7 +64,7 @@ public class AnalyticsApp {
             .allMatch(StringUtils::isNotBlank);
     }
 
-    /**x`
+    /**
      * Stores the analytics key to App's secrets
      *
      * @param analyticsKey analytics key
