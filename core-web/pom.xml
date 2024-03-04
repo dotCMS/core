@@ -17,9 +17,6 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <node.js.version>v18.17.0</node.js.version>
-        <npm.version>9.8.1</npm.version>
-        <yarn.version>v1.22.19</yarn.version>
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
         <nx.build.options></nx.build.options>
@@ -161,7 +158,7 @@
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <arguments>run nx test</arguments>
+                            <arguments>run nx run-many -t test --exclude='tag:skip:test'</arguments>
                         </configuration>
                     </execution>
                 </executions>
