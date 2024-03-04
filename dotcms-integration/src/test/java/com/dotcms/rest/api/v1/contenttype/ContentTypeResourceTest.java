@@ -1,17 +1,5 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -47,6 +35,16 @@ import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,15 +52,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest {
@@ -262,7 +262,7 @@ public class ContentTypeResourceTest {
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(),  filter, page, perPage, orderBy, direction.toString(), "FORM",null);
+		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(),  filter, page, perPage, orderBy, direction.toString(), "FORM",null, null);
 		RestUtilTest.verifySuccessResponse(response);
 	}
 
@@ -288,7 +288,7 @@ public class ContentTypeResourceTest {
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource,new PaginationUtil(new ContentTypesPaginator()) , WorkflowHelper.getInstance(), permissionAPI);
 
-		resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), "FORM2",null);
+		resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), "FORM2",null, null);
 
 	}
 
@@ -310,20 +310,11 @@ public class ContentTypeResourceTest {
 		OrderDirection direction = OrderDirection.ASC;
 
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-		final Map<String, Object> extraParams = new HashMap<String, Object>() {
-			@Override
-			public boolean equals(final Object o) {
-				final Map other = (Map) o;
-
-				return other.size() == 0;
-			}
-		};
-
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), null,null);
+		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), null,null, null);
 		RestUtilTest.verifySuccessResponse(response);
 	}
 

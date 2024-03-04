@@ -1,18 +1,20 @@
 package com.dotcms.contenttype.business;
 
-import com.dotcms.enterprise.license.LicenseLevel;
-
-import java.util.*;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * 
@@ -189,6 +191,23 @@ public interface ContentTypeAPI {
   int count(String condition, BaseContentType base, String hostId) throws DotDataException;
 
   /**
+   * Counts the amount of Content Types in the DB filtered by the given condition, the Base
+   * Content Type, and the specific Sites they live in.
+   *
+   * @param condition Condition that the Content Type needs to meet.
+   * @param base      The {@link BaseContentType} that must be searched for. If you need to get all
+   *                  types, use {@link BaseContentType#ANY}.
+   * @param siteIds   The list of Site IDs or Site Keys -- aka, site names -- where the Content
+   *                  Types live in.
+   *
+   * @return The total number of Content Types that meet the search criteria and live in the
+   * specified Sites.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
+   */
+  int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException;
+
+  /**
    * Counts the amount of Content Types in the DB filtered by the given condition and the BaseContentType.
    *
    * @param condition Condition that the Content Type needs to met
@@ -334,6 +353,19 @@ public interface ContentTypeAPI {
   List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit, int offset, String hostId)
           throws DotDataException;
 
+  /**
+   *
+   * @param sites
+   * @param condition
+   * @param base
+   * @param orderBy
+   * @param limit
+   * @param offset
+   * @return
+   * @throws DotDataException
+   */
+  Optional<List<ContentType>> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
+          throws DotDataException;
 
   /**
    * Return the number of entries for each content types
