@@ -5,26 +5,17 @@ on:
       - 'master'
       - 'main'
       - 'trunk'
+      - 'release-*'
 jobs:
   build:
     uses: ./.github/workflows/cli-build-artifacts.yml
     with:
-     skipTests: true
-     buildNativeImage: true
-     uploadArtifacts: true
-     branch: ${{ github.ref_name }}
-    secrets: inherit
-
-#  publish:
-#    uses: ./.github/workflows/publish-npm-package.yml
-#    with:
-#      ref: ${{ github.ref }}
-#      artifact-id: dotcms-cli
-#      run-id: ${{ github.run_id }}
-#      npm-package-version-tag: ${{ github.ref_name }}
-#    secrets:
-#      gh-pat: ${{ secrets.CI_MACHINE_TOKEN }}
-#      npm-token: ${{ secrets.NPM_ORG_TOKEN }}
-
-
-
+      skipTests: true
+      buildNativeImage: false
+      uploadArtifacts: true
+      branch: ${{ github.ref_name }}
+    secrets:
+      dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+      artifactory-repo-username: ${{ secrets.EE_REPO_USERNAME }}
+      artifactory-repo-password: ${{ secrets.EE_REPO_PASSWORD }}
+      github-token: ${{ secrets.GITHUB_TOKEN }}
