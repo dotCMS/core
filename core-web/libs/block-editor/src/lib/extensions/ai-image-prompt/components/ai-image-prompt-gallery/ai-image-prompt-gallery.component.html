@@ -1,11 +1,7 @@
-<div *ngIf="!isLoading && !images?.length; else gallery"
+<div
+    *ngIf="!isLoading && !images?.length; else gallery"
     [className]="'s' + orientation + ' ai-image-gallery__placeholder'">
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="54"
-        height="52"
-        viewBox="0 0 54 52"
-        fill="none">
+    <svg xmlns="http://www.w3.org/2000/svg" width="54" height="52" viewBox="0 0 54 52" fill="none">
         <path
             fill-rule="evenodd"
             clip-rule="evenodd"
@@ -24,8 +20,7 @@
     <i></i>
 </div>
 
-<p-skeleton *ngIf="isLoading" width="10rem" styleClass="mb-2">
-</p-skeleton>
+<p-skeleton *ngIf="isLoading" width="10rem" styleClass="mb-2"> </p-skeleton>
 
 <ng-template #gallery>
     <div *ngIf="!isLoading">
@@ -40,22 +35,20 @@
             <ng-template pTemplate="item" let-item>
                 <p-image
                     [src]="item.response.contentlet.assetVersion"
-                    imageClass="ai-image-gallery__img"
                     [preview]="true"
+                    imageClass="ai-image-gallery__img"
                     alt="image"></p-image>
             </ng-template>
         </p-galleria>
     </div>
-    <span class="ai-image-gallery__count">
-        {{ index + 1 }}/{{ images.length }}
-    </span>
+    <span class="ai-image-gallery__count"> {{ index + 1 }}/{{ images.length }} </span>
 
     <button
         class="align-self-end"
         [disabled]="isLoading"
+        [label]="'block-editor.extension.ai-image.insert' | dm"
         (click)="imageSelected.emit(images[index])"
         pButton
         type="submit"
-        icon="pi pi-check"
-        [label]="'block-editor.extension.ai-image.insert' | dm"></button>
+        icon="pi pi-check"></button>
 </ng-template>

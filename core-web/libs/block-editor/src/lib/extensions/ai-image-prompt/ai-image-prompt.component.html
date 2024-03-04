@@ -9,7 +9,6 @@
         appendTo="body"
         header="{{ 'block-editor.extension.ai-image.dialog-title' | dm }}">
         <div class="dialog-prompt__wrapper flex">
-
             <dot-ai-image-prompt-form
                 *ngIf="vm.showDialog"
                 [generatedValue]="selectedImage"
@@ -17,17 +16,15 @@
                 [orientationOptions]="vm.orientationOptions"
                 [aiProcessedPrompt]="vm.images[vm.galleryActiveIndex]?.response.revised_prompt"
                 (value)="generateImage($event)"
-                (orientation)="vm.orientation = $event; console.log($event)"
-            />
+                (orientation)="vm.orientation = $event; console.log($event)" />
 
             <dot-ai-image-prompt-gallery
                 [isLoading]="vm.isLoading"
                 [images]="vm.images"
                 [index]="vm.galleryActiveIndex"
-                (indexChange)="vm.galleryActiveIndex = $event"
                 [orientation]="vm.orientation"
-                (imageSelected)="insetImage($event)"
-            />
+                (indexChange)="vm.galleryActiveIndex = $event"
+                (imageSelected)="insetImage($event)" />
         </div>
     </p-dialog>
 </ng-container>

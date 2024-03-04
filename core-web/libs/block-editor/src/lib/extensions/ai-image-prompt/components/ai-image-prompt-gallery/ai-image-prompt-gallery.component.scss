@@ -1,35 +1,34 @@
 @use "variables" as *;
 
-
 .ai-image-gallery__placeholder {
-  background-color: $color-palette-gray-200;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: $border-radius-md;
+    background-color: $color-palette-gray-200;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: $border-radius-md;
 
-  &.s1024x1792 {
-    aspect-ratio: 1/1.25;
-  }
+    &.s1024x1792 {
+        aspect-ratio: 1/1.25;
+    }
 
-  &.s1792x1024 {
-    aspect-ratio: 1/0.5;
-  }
+    &.s1792x1024 {
+        aspect-ratio: 1/0.5;
+    }
 
-  &.s1024x1024 {
-    aspect-ratio: 1/1;
-  }
+    &.s1024x1024 {
+        aspect-ratio: 1/1;
+    }
 }
 
 .ai-image-gallery__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: $border-radius-md;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: $border-radius-md;
 }
 
 .ai-image-gallery__count {
-  align-self: flex-end;
-  margin: $spacing-1 0;
+    align-self: flex-end;
+    margin: $spacing-1 0;
 }

@@ -1,6 +1,9 @@
 <form [formGroup]="form">
     <p-accordion [activeIndex]="0" expandIcon="pi pi-angle-down" collapseIcon="pi pi-angle-up">
-        <p-accordionTab [disabled]="form.disabled" [header]="'block-editor.extension.ai-image.settings'| dm" iconPos="end">
+        <p-accordionTab
+            [disabled]="form.disabled"
+            [header]="'block-editor.extension.ai-image.settings' | dm"
+            iconPos="end">
             <div class="field dialog-prompt__input">
                 <label dotFieldRequired>{{ 'block-editor.extension.ai-image.input' | dm }}</label>
                 <div>
@@ -8,48 +11,62 @@
                         formControlName="type"
                         value="input"
                         inputId="optionOne"></p-radioButton>
-                    <label class="ml-2" for="optionOne">{{'block-editor.extension.ai-image.custom.prompt' | dm}}</label>
+                    <label class="ml-2" for="optionOne">{{
+                        'block-editor.extension.ai-image.custom.prompt' | dm
+                    }}</label>
                 </div>
-                <span>{{'block-editor.extension.ai-image.custom.prompt.desc'| dm}}</span>
+                <span>{{ 'block-editor.extension.ai-image.custom.prompt.desc' | dm }}</span>
                 <div>
                     <p-radioButton
                         formControlName="type"
                         value="auto"
                         inputId="option2"></p-radioButton>
-                    <label class="ml-2" for="option2">{{'block-editor.extension.ai-image.existing.content' | dm}}</label>
+                    <label class="ml-2" for="option2">{{
+                        'block-editor.extension.ai-image.existing.content' | dm
+                    }}</label>
                 </div>
-                <span>{{'block-editor.extension.ai-image.existing.content.desc' | dm}}</span
-                >
+                <span>{{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}</span>
             </div>
             <div class="field dialog-prompt__orientation">
-                <label dotFieldRequired>{{'block-editor.extension.ai-image.orientation' | dm}}</label>
+                <label dotFieldRequired>{{
+                    'block-editor.extension.ai-image.orientation' | dm
+                }}</label>
                 <p-dropdown
                     [options]="orientationOptions"
                     formControlName="size"
                     styleClass="w-full"></p-dropdown>
             </div>
         </p-accordionTab>
-        <p-accordionTab [disabled]="form.disabled" [header]="'block-editor.extension.ai-image.prompt'| dm" iconPos="end">
+        <p-accordionTab
+            [disabled]="form.disabled"
+            [header]="'block-editor.extension.ai-image.prompt' | dm"
+            iconPos="end">
             <div
                 class="dialog-prompt__text"
                 [class.dialog-prompt__text--generated]="aiProcessedPrompt">
                 <div class="field">
-                    <label  [checkIsRequiredControl]="'size'" dotFieldRequired>{{
-                            (form.get('type').value === 'input'
+                    <label [checkIsRequiredControl]="'size'" dotFieldRequired>{{
+                        (form.get('type').value === 'input'
                             ? 'block-editor.extension.ai-image.prompt'
-                            : 'block-editor.extension.ai-image.custom.props') | dm
+                            : 'block-editor.extension.ai-image.custom.props'
+                        ) | dm
                     }}</label>
                     <textarea
                         class="w-full dialog-prompt__textarea"
+                        [placeholder]="
+                            (form.get('type').value === 'input'
+                                ? 'block-editor.extension.ai-image.custom.placeholder'
+                                : 'block-editor.extension.ai-image.placeholder'
+                            ) | dm
+                        "
                         rows="11"
                         cols="30"
                         pInputTextarea
-                        formControlName="text"
-                        [placeholder]="(form.get('type').value === 'input' ? 'block-editor.extension.ai-image.custom.placeholder' : 'block-editor.extension.ai-image.placeholder') | dm">
+                        formControlName="text">
                     </textarea>
                 </div>
                 <div class="field" *ngIf="aiProcessedPrompt">
-                    <label>{{'block-editor.extension.ai-image.rewritten' | dm }}</label>
+                    <label>{{ 'block-editor.extension.ai-image.rewritten' | dm }}</label>
                     <textarea
                         class="w-full dialog-prompt__ai-rewritten-textarea"
                         [value]="aiProcessedPrompt"
@@ -65,7 +82,14 @@
     <button
         class="align-self-end p-button-outlined"
         [disabled]="form.invalid || form.disabled"
-        [label]="(isLoading ? 'block-editor.extension.ai-image.generating' : aiProcessedPrompt ? 'block-editor.extension.ai-image.regenerate' : 'block-editor.extension.ai-image.generate') | dm"
+        [label]="
+            (isLoading
+                ? 'block-editor.extension.ai-image.generating'
+                : aiProcessedPrompt
+                ? 'block-editor.extension.ai-image.regenerate'
+                : 'block-editor.extension.ai-image.generate'
+            ) | dm
+        "
         (click)="submitForm()"
         pButton
         type="submit">
