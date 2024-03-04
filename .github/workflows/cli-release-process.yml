@@ -33,7 +33,7 @@ jobs:
     uses: ./.github/workflows/cli-build-artifacts.yml
     with:
       skipTests: true
-      buildNativeImage: false
+      buildNativeImage: true
       uploadArtifacts: true
       branch: ${{ github.ref_name }}
     secrets:
