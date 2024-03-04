@@ -1687,7 +1687,6 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('VTL Page', () => {
-
                 beforeEach(() => {
                     store.load({
                         url: 'index',
@@ -1699,20 +1698,23 @@ describe('EditEmaEditorComponent', () => {
 
                 it('iframe should have the correct content when is VTL', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-    
+
                     expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
                     expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
                         '<div>hello world</div>'
                     );
                 });
-    
-                it("iframe should have reload the page and add the new content", async () => {
-                    store.reload({ language_id: '4', url: 'index', 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier });
+
+                it('iframe should have reload the page and add the new content', async () => {
+                    store.reload({
+                        language_id: '4',
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
                     spectator.detectChanges();
                     await spectator.fixture.whenStable();
 
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
 
                     expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
                     expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
