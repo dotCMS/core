@@ -267,7 +267,7 @@ jobs:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.github-token }}
           JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.artifactory-repo-username }}
           JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.artifactory-repo-password }}
-          JRELEASER_DISTRIBUTIONS_DOTCMS-CLI-NATIVE_ACTIVE: NEVER
+          JRELEASER_DISTRIBUTIONS_DOTCMS_CLI_NATIVE_ACTIVE: NEVER
         working-directory: ${{ github.workspace }}
         run: |
           tools/dotcms-cli/mvnw -B -Prelease jreleaser:upload -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
