@@ -745,7 +745,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @CloseDBIfOpened
   @Override
-  public Optional<List<ContentType>> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
+  public List<ContentType> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
           throws DotDataException {
 
     final List<ContentType> returnTypes = new ArrayList<>();
@@ -764,7 +764,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       }
 
       final int maxAmount = (limit<0)?returnTypes.size():Math.min(limit, returnTypes.size());
-      return Optional.of(returnTypes.subList(0, maxAmount));
+      return returnTypes.subList(0, maxAmount);
     } catch (final DotSecurityException e) {
       Logger.error(this, String.format("An error occurred when searching for Content Types: " +
               "%s", ExceptionUtil.getErrorMessage(e)));
@@ -776,7 +776,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     @Override
     public List<ContentType> search(final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset, final String siteId)
             throws DotDataException {
-        return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base, orderBy, limit, offset).orElse(ImmutableList.of());
+        return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base, orderBy, limit, offset);
     }
 
   @CloseDBIfOpened

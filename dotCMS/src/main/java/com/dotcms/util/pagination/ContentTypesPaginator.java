@@ -100,10 +100,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                 contentTypes = optionalTypeList.orElseGet(ArrayList::new);
                 result.setTotalResults(contentTypeList.size());
             } else if (UtilMethods.isSet(siteList)) {
-                final Optional<List<ContentType>> contentTypesOpt =
-                        this.contentTypeAPI.search(siteList, filter, type, orderByParam, limit,
-                                offset);
-                contentTypes = contentTypesOpt.orElseGet(ArrayList::new);
+                contentTypes = this.contentTypeAPI.search(siteList, filter, type, orderByParam,
+                        limit, offset);
                 result.setTotalResults(this.getTotalRecords(BLANK, type, siteList));
             } else {
                 final String siteId = Try.of(() -> extraParams.get(HOST_PARAMETER_ID).toString()).getOrElse(BLANK);

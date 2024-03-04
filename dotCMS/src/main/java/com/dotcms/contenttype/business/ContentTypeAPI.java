@@ -354,17 +354,25 @@ public interface ContentTypeAPI {
           throws DotDataException;
 
   /**
+   * Returns a list of Content Types based on the specified list of search criteria. In
+   * particular, this method allows you to search for Content Types in a specific list of Sites
+   * only, not in all the dotCMS content repository.
    *
-   * @param sites
-   * @param condition
-   * @param base
-   * @param orderBy
-   * @param limit
-   * @param offset
-   * @return
-   * @throws DotDataException
+   * @param sites     The list of one or more Sites to search for Content Types. You can pass down
+   *                  their Identifiers or Site Keys.
+   * @param condition Allows you to add more conditions to the query via SQL code. It's internally
+   *                  sanitized by this Factory.
+   * @param base      The {@link BaseContentType} to search for.
+   * @param orderBy   The order-by clause, which is internally sanitized by this Factory.
+   * @param limit     The maximum number of returned items in the result set, for pagination
+   *                  purposes.
+   * @param offset    The requested page number of the result set, for pagination purposes.
+   *
+   * @return The list of {@link ContentType} objects matching the specified search criteria.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
    */
-  Optional<List<ContentType>> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
+  List<ContentType> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
           throws DotDataException;
 
   /**
