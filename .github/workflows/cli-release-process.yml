@@ -371,13 +371,13 @@ jobs:
               MINOR=$(echo "${BASH_REMATCH[2]}" | sed "s/\b0\+\([1-9]\)/\1/g")
               PATCH=$(echo "${BASH_REMATCH[3]}" | sed "s/\b0\+\([1-9]\)/\1/g")
               VERSION_NPM_FORMAT="${MAJOR}.${MINOR}.${PATCH}"
-              
+          
               echo "::debug::VERSION_NPM_FORMAT: ${VERSION_NPM_FORMAT}"
             else
               echo "::error::Invalid Maven version format: $MVN_BASE_VERSION"
               exit 1
             fi
-                    
+          
             LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
           
             if [[ $LAST_RC_VERSION == "$VERSION_NPM_FORMAT"* ]]; then
@@ -425,31 +425,16 @@ jobs:
           cat package.json
           cat src/postinstall.js
 
-      - name: 'Upload NPM package'
-        id: upload-npm-package
-        uses: actions/upload-artifact@v4
-        with:
-          name: dotcli-npm-package
-          path: ${{ github.workspace }}/tools/dotcms-cli/npm/
-
       - name: 'NPM Package tree'
         run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
 
       - name: 'Publish to NPM registry'
-        uses: ./.github/workflows/publish-npm-package.yml
-        with:
-          artifact-id: ${{ steps.upload-npm-package.outputs.artifact-id }}
-          run-id: ${{ github.run_id }}
-          ref: ${{ github.ref }}
-          npm-package-version-tag: ${{ env.NPM_PACKAGE_VERSION_TAG }}
-
-#      - name: 'Publish to NPM registry'
-#        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
-#        env:
-#          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
-#        run: |
-#          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
-#          npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+          npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
 
   clean-up:
     name: "Clean Up"

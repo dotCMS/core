@@ -33,10 +33,10 @@ jobs:
   publish-npm-package:
     runs-on: ubuntu-latest
     steps:
-#      - name: 'Checkout'
-#        uses: actions/checkout@v4
-#        with:
-#          ref: ${{ inputs.ref }}
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - uses: ./.github/actions/cleanup-runner
 

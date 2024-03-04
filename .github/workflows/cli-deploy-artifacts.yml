@@ -1,0 +1,30 @@
+name: 'CLI Deploy Artifacts'
+on:
+  push:
+    branches:
+      - 'master'
+      - 'main'
+      - 'trunk'
+jobs:
+  build:
+    uses: ./.github/workflows/cli-build-artifacts.yml
+    with:
+     skipTests: true
+     buildNativeImage: true
+     uploadArtifacts: true
+     branch: ${{ github.ref_name }}
+    secrets: inherit
+
+#  publish:
+#    uses: ./.github/workflows/publish-npm-package.yml
+#    with:
+#      ref: ${{ github.ref }}
+#      artifact-id: dotcms-cli
+#      run-id: ${{ github.run_id }}
+#      npm-package-version-tag: ${{ github.ref_name }}
+#    secrets:
+#      gh-pat: ${{ secrets.CI_MACHINE_TOKEN }}
+#      npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+
+
+
