@@ -7,21 +7,36 @@ import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_EMPTY_FOLD
 import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_FOLDER_PATTERNS;
 import static com.dotcms.api.client.pull.file.OptionConstants.NON_RECURSIVE;
 import static com.dotcms.api.client.pull.file.OptionConstants.PRESERVE;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.client.pull.PullService;
 import com.dotcms.api.client.pull.file.FileFetcher;
 import com.dotcms.api.client.pull.file.FilePullHandler;
+import com.dotcms.api.client.pull.file.FileTraverseResult;
+import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.FilesTestHelperService;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.exception.ForceSilentExitException;
 import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.asset.AssetVersionsView;
+import com.dotcms.model.asset.AssetView;
+import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.pull.PullOptions;
+import io.quarkus.security.UnauthorizedException;
+import io.quarkus.test.Mock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,12 +46,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
@@ -803,5 +822,108 @@ class PullServiceIT {
             filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
+
+    /**
+     * Given scenario: Here we want to test fetchByKeys method see if the pullService still throws a ForceSilentExitException carrying the ExitCode.SOFTWARE
+     * First we use a non-existent site to force an exception
+     * Expected behavior: The pullService should throw a ForceSilentExitException with the ExitCode.SOFTWARE
+     * @throws IOException if there is an error creating the temporary folder or deleting it
+     */
+    @Test
+    void Test_Handle_Early_Thrown_Exception_Expect_SOFTWARE_ExitCode() throws IOException {
+        Exception exception = null;
+        // Creating a site, for this test we don't need to create any content
+        final var testSiteName = String.format("non-existent-site-%s", UUID.randomUUID());
+        final var folderPath = String.format("//%s", testSiteName);
+        OutputOptionMixin outputOptions = new MockOutputOptionMixin();
+        var tempFolder = filesTestHelper.createTempFolder();
+        var workspace = workspaceManager.getOrCreate(tempFolder);
+        try {
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            //pullService must be called with the contentKey param to trigger the fetchByKeys method
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(false).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler
+            );
+        } catch (Exception e) {
+               exception = e;
+        } finally {
+                // Clean up the temporal folder
+                filesTestHelper.deleteTempDirectory(tempFolder);
+        }
+        Assertions.assertNotNull(exception);
+        Assertions.assertTrue(exception instanceof ForceSilentExitException);
+        ForceSilentExitException forceSilentExitException = (ForceSilentExitException) exception;
+        Assertions.assertEquals(ExitCode.SOFTWARE, forceSilentExitException.getExitCode());
+    }
+
+
+    /**
+     * Given scenario: Similarly to the previous test, we want to test the fetch Method and see if the pullService still throws a ForceSilentExitException carrying the ExitCode.SOFTWARE
+     * This time we're going to feed the service with a FieldFetcher that throws brings mixed elements of FileTraverseResult with exceptions and without exceptions
+     * Expected behavior: The elements with exceptions should be written to the output and the first exception should be the one that triggers the exit code
+     * @throws IOException if there is an error creating the temporary folder or deleting it
+     */
+    @Test
+    void Test_Handle_Multiple_Thrown_Exceptions() throws IOException {
+        Exception exception = null;
+        // Creating a site, for this test we don't need to create any content
+        final var testSiteName = String.format("any-site-%s", UUID.randomUUID());
+
+        MockOutputOptionMixin outputOptions = new MockOutputOptionMixin();
+        FileFetcher mockedProvider = Mockito.mock(FileFetcher.class);
+
+
+        //But here is where the real test lies. We are going to return a List of FileTraverseResult with multiple exceptions
+        //They all should be logged and the first one should be the one that triggers the exit code
+        when(mockedProvider.fetch(anyBoolean(), any())).thenReturn(
+                List.of(
+                     FileTraverseResult.builder().tree(Optional.empty()).exceptions(List.of(new UnauthorizedException())).build(),
+                     FileTraverseResult.builder().tree(Optional.empty()).exceptions(List.of(new TraversalTaskException("Unexpected Error Traversing folders "))).build(),
+                     FileTraverseResult.builder().tree(
+                             new TreeNode(FolderView.builder().host(testSiteName).path("/test").name("name").build())
+                     ).exceptions(List.of()).build()
+                ));
+
+       //We're going to use PullHandler but this time we do not specify the contentKey so the fetch method gets called
+        var tempFolder = filesTestHelper.createTempFolder();
+        var workspace = workspaceManager.getOrCreate(tempFolder);
+        try {
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            isShortOutput(false).
+                            failFast(false).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    mockedProvider,
+                    filePullHandler
+            );
+        } catch (Exception e) {
+            exception = e;
+        } finally {
+            // Clean up the temporal folder
+            filesTestHelper.deleteTempDirectory(tempFolder);
+        }
+        Assertions.assertNotNull(exception);
+        Assertions.assertTrue(exception instanceof ForceSilentExitException);
+        ForceSilentExitException forceSilentExitException = (ForceSilentExitException) exception;
+        //Test that the exit code is the one from the first exception thrown
+        Assertions.assertEquals(ExitCode.SOFTWARE, forceSilentExitException.getExitCode());
+       // Here we simply test that the output contains the expected messages making sure they were written to the output
+       // WebApplicationExceptions are transformed a bit so UnauthorizedException  gets rendered as Forbidden: You don't have permission to access this resource
+        Assertions.assertTrue(outputOptions.getMockErr().contains("Forbidden: You don't have permission to access this resource"));
+        Assertions.assertTrue(outputOptions.getMockErr().contains("Unexpected Error Traversing folders"));
+
+    }
+
 
 }

@@ -6,6 +6,7 @@ import io.quarkus.arc.Priority;
 import io.quarkus.security.UnauthorizedException;
 import java.io.ByteArrayInputStream;
 import javax.validation.ValidationException;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
@@ -53,6 +54,9 @@ public class DefaultResponseExceptionMapper implements
                 break;
             case 401:
                 re = new UnauthorizedException(message);
+                break;
+            case 403:
+                re = new ForbiddenException(message);
                 break;
             case 404:
                 re = new NotFoundException(message);

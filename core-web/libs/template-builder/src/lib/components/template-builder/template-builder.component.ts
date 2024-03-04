@@ -18,10 +18,12 @@ import {
     EventEmitter,
     HostListener,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
     QueryList,
+    SimpleChanges,
     ViewChild,
     ViewChildren
 } from '@angular/core';
@@ -74,7 +76,7 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore]
 })
-export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
+export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     @Input()
     layout!: DotLayout;
 
@@ -127,6 +129,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
 
     grid!: GridStack;
+
     addBoxIsDragging = false;
 
     get layoutProperties(): DotTemplateLayoutProperties {
@@ -187,7 +190,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private dotMessage: DotMessageService,
         private cd: ChangeDetectorRef
     ) {
-        this.rows$ = this.store.rows$.pipe(map((rows) => parseFromGridStackToDotObject(rows)));
+        this.rows$ = this.store.rows$.pipe(
+            filter(({ shouldEmit }) => shouldEmit),
+            map(({ rows }) => parseFromGridStackToDotObject(rows))
+        );
 
         combineLatest([this.rows$, this.store.layoutProperties$, this.themeId$])
             .pipe(
@@ -220,8 +226,17 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
             containerMap: this.containerMap,
-            themeId: this.themeId
+            themeId: this.themeId,
+            shouldEmit: true
         });
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (!changes.layout?.firstChange && changes.layout.currentValue) {
+            this.store.updateOldRows(
+                parseFromDotObjectToGridStack(changes.layout.currentValue.body)
+            );
+        }
     }
 
     ngAfterViewInit() {
