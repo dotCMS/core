@@ -248,7 +248,7 @@
                     }
 
                     const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
-                    const block = blockEditor.querySelector('.ProseMirror');
+
                     const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
 
                     /**
@@ -266,7 +266,18 @@
                      * to the editor.
                      */
                     blockEditor.addEventListener('valueChange', (event) => {
-                        field.value = block.editor.isEmpty ? null : JSON.stringify(event.detail);;
+                        const block = blockEditor.querySelector('.ProseMirror');
+
+                        if(!block.editor){
+                            return;
+                        }
+
+                        try {
+                            field.value = block.editor.isEmpty ? null : JSON.stringify(event.detail);;
+                        } catch (error) {
+                            console.warn('Editor content not valid');
+                        }
+
                     });
 
                     if (content) {

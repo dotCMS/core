@@ -158,6 +158,13 @@ export class AIContentActionsView {
                 // eslint-disable-next-line no-case-declarations
                 const placeholder = getAIPlaceholderImage(this.editor);
                 delete placeholder.node.attrs.data[AI_IMAGE_PLACEHOLDER_PROPERTY];
+
+                this.view.dispatch(
+                    this.view.state.tr.setNodeMarkup(placeholder.from, undefined, {
+                        data: placeholder.node.attrs.data
+                    })
+                );
+
                 break;
         }
     }

@@ -27,7 +27,7 @@ jobs:
 #    runs-on: ubuntu-20.04
 #    name: SonarQube
 #    steps:
-#      - uses: actions/checkout@v3
+#      - uses: actions/checkout@v4
 #      - uses: sonarsource/sonarqube-scan-action@master
 #        with:
 #          projectBaseDir: core-web
@@ -95,7 +95,7 @@ jobs:
 #    runs-on: ubuntu-20.04
 #    name: Frontend Checks
 #    steps: # what steps it will perform
-#      - uses: actions/checkout@v3 # checkout whatever branch the PR is using
+#      - uses: actions/checkout@v4 # checkout whatever branch the PR is using
 #        with:
 #          fetch-depth: 0
 #      - uses: actions/setup-node@v3
