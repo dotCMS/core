@@ -2,6 +2,7 @@ import { NgIf } from '@angular/common';
 import {
     Component,
     EventEmitter,
+    inject,
     Input,
     OnChanges,
     OnInit,
@@ -23,8 +24,10 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
+import { AIImageSize } from '../../../../shared';
 import {
     AIImagePrompt,
     DotGeneratedAIImage
@@ -44,16 +47,14 @@ import {
         ButtonModule,
         NgIf,
         InputTextareaModule,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        DotMessagePipe
     ],
     styleUrls: ['./ai-image-prompt-form.component.scss']
 })
 export class AiImagePromptFormComponent implements OnChanges, OnInit {
     @Input()
     aiProcessedPrompt: string;
-
-    @Input()
-    orientationOptions: SelectItem<string>[];
 
     @Input()
     generatedValue: DotGeneratedAIImage;
@@ -64,7 +65,30 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     @Output()
     value = new EventEmitter<AIImagePrompt>();
 
+    @Output()
+    orientation = new EventEmitter<AIImageSize>();
+
     form: FormGroup;
+    dotMessageService = inject(DotMessageService);
+
+    orientationOptions: SelectItem<AIImageSize>[] = [
+        {
+            value: '1792x1024',
+            label: this.dotMessageService.get(
+                'block-editor.extension.ai-image.orientation.horizontal'
+            )
+        },
+        {
+            value: '1024x1024',
+            label: this.dotMessageService.get('block-editor.extension.ai-image.orientation.square')
+        },
+        {
+            value: '1024x1792',
+            label: this.dotMessageService.get(
+                'block-editor.extension.ai-image.orientation.vertical'
+            )
+        }
+    ];
 
     ngOnInit(): void {
         this.initForm();
@@ -92,6 +116,23 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
             text: new FormControl('', Validators.required),
             type: new FormControl('input', Validators.required),
             size: new FormControl('1792x1024', Validators.required)
+        });
+
+        const sizeControl = this.form.get('size');
+        const typeControl = this.form.get('type');
+
+        sizeControl.valueChanges.subscribe((size) => {
+            this.orientation.emit(size);
+        });
+
+        typeControl.valueChanges.subscribe((type) => {
+            const promptControl = this.form.get('text');
+            console.log('type', type);
+            type === 'auto'
+                ? promptControl.clearValidators()
+                : promptControl.setValidators(Validators.required);
+
+            promptControl.updateValueAndValidity();
         });
     }
 }

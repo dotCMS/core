@@ -11,28 +11,5 @@
     }
 }
 
-.dialog-prompt__placeholder {
-    background-color: $color-palette-gray-200;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: $border-radius-md;
 
-    &.s1024x1792 {
-        aspect-ratio: 1/1.25;
-    }
 
-    &.s1792x1024 {
-        aspect-ratio: 1/0.5;
-    }
-
-    &.s1024x1024 {
-        aspect-ratio: 1/1;
-    }
-}
-
-.dialog-prompt__gallery-count {
-    align-self: flex-end;
-    margin: $spacing-1 0;
-}

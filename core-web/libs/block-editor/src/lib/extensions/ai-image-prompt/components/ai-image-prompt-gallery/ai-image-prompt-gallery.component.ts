@@ -1,0 +1,51 @@
+import { NgIf } from '@angular/common';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+
+import { SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { GalleriaModule } from 'primeng/galleria';
+import { ImageModule } from 'primeng/image';
+import { SkeletonModule } from 'primeng/skeleton';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { AIImageSize } from '../../../../shared';
+import { DotGeneratedAIImage } from '../../../../shared/services/dot-ai/dot-ai.models';
+
+@Component({
+    selector: 'dot-ai-image-prompt-gallery',
+    standalone: true,
+    templateUrl: './ai-image-prompt-gallery.component.html',
+    imports: [
+        ButtonModule,
+        GalleriaModule,
+        ImageModule,
+        NgIf,
+        SharedModule,
+        SkeletonModule,
+        DotMessagePipe
+    ],
+    styleUrls: ['./ai-image-prompt-gallery.component.scss']
+})
+export class AiImagePromptGalleryComponent {
+    @Input()
+    isLoading = false;
+
+    @Input()
+    images: DotGeneratedAIImage[] = [];
+
+    @Input()
+    index = 0;
+
+    @Input()
+    orientation: AIImageSize;
+
+    @Output()
+    indexChange = new EventEmitter<number>();
+
+    @Output()
+    imageSelected = new EventEmitter<DotGeneratedAIImage>();
+
+    dotMessageService = inject(DotMessageService);
+}

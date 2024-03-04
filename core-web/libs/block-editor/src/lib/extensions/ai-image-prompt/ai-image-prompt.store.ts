@@ -3,15 +3,13 @@ import { EMPTY, Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { SelectItem } from 'primeng/api';
-
 import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { PromptType } from './ai-image-prompt.models';
 
-import { DotAiService } from '../../shared';
+import { AIImageSize, DotAiService } from '../../shared';
 import { AIImagePrompt, DotGeneratedAIImage } from '../../shared/services/dot-ai/dot-ai.models';
 
 const DEFAULT_INPUT_PROMPT: PromptType = 'input';
@@ -23,17 +21,18 @@ export interface DotAiImagePromptComponentState {
     images: DotGeneratedAIImage[];
     status: ComponentStatus;
     error: string;
-    orientationOptions: SelectItem<string>[];
     selectedImage: DotGeneratedAIImage | null;
     galleryActiveIndex: number;
+    orientation: AIImageSize;
 }
 
 export interface VmAiImagePrompt {
     showDialog: boolean;
     status: ComponentStatus;
-    orientationOptions: SelectItem[];
     images: DotGeneratedAIImage[];
     galleryActiveIndex: number;
+    orientation: AIImageSize;
+    isLoading: boolean;
 }
 
 const initialState: DotAiImagePromptComponentState = {
@@ -43,13 +42,9 @@ const initialState: DotAiImagePromptComponentState = {
     prompt: null,
     editorContent: null,
     error: '',
-    orientationOptions: [
-        { value: '1792x1024', label: 'Horizontal (1792 x 1024)' },
-        { value: '1024x1024', label: 'Square (1024 x 1024)' },
-        { value: '1024x1792', label: 'Vertical (1024 x 1792)' }
-    ],
     selectedImage: null,
-    galleryActiveIndex: 0
+    galleryActiveIndex: 0,
+    orientation: '1792x1024'
 };
 
 @Injectable({ providedIn: 'root' })
@@ -91,12 +86,14 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
 
     readonly vm$: Observable<VmAiImagePrompt> = this.select(
         this.state$,
-        ({ showDialog, status, orientationOptions, images, galleryActiveIndex }) => ({
+        this.isLoading$,
+        ({ showDialog, status, images, galleryActiveIndex, orientation }, isLoading) => ({
             showDialog,
             status,
-            orientationOptions,
             images,
-            galleryActiveIndex
+            galleryActiveIndex,
+            orientation,
+            isLoading
         })
     );
 
