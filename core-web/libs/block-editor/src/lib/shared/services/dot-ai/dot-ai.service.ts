@@ -9,7 +9,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import {
     AiPluginResponse,
-    DotAICompletionsConfig, DotAIImageContent,
+    DotAICompletionsConfig,
+    DotAIImageContent,
     DotAIImageResponse
 } from './dot-ai.models';
 

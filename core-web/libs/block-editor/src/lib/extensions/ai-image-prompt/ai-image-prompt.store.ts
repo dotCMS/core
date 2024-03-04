@@ -11,15 +11,10 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { PromptType } from './ai-image-prompt.models';
 
-import {  DotAiService } from '../../shared';
-import {
-    AIImagePrompt,
-    DotGeneratedAIImage
-} from '../../shared/services/dot-ai/dot-ai.models';
+import { DotAiService } from '../../shared';
+import { AIImagePrompt, DotGeneratedAIImage } from '../../shared/services/dot-ai/dot-ai.models';
 
 const DEFAULT_INPUT_PROMPT: PromptType = 'input';
-
-
 
 export interface DotAiImagePromptComponentState {
     showDialog: boolean;
@@ -66,7 +61,10 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         ({ status }) => status === ComponentStatus.LOADING
     );
 
-    readonly activeGalleryIndex$ = this.select(this.state$, ({ galleryActiveIndex }) => galleryActiveIndex);
+    readonly activeGalleryIndex$ = this.select(
+        this.state$,
+        ({ galleryActiveIndex }) => galleryActiveIndex
+    );
 
     readonly selectedImage$ = this.select(this.state$, ({ selectedImage }) => selectedImage);
 
@@ -132,7 +130,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                         (response) => {
                             this.patchState((state) => ({
                                 status: ComponentStatus.IDLE,
-                                images: [...state.images, {request: prompt, response: response}],
+                                images: [...state.images, { request: prompt, response: response }],
                                 galleryActiveIndex: state.images.length
                             }));
                         },

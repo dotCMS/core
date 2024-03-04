@@ -1,55 +1,52 @@
 @use "variables" as *;
 
 form {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  justify-content: center;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: center;
 }
 
 .dialog-prompt__input {
-  display: flex;
-  flex-direction: column;
-
-  > div {
     display: flex;
-    align-items: center;
-  }
+    flex-direction: column;
 
-  > span {
-    display: flex;
-    margin: $spacing-0 0 $spacing-1 $spacing-5;
-    font-size: $font-size-sm;
-    color: $color-palette-gray-700;
-  }
+    > div {
+        display: flex;
+        align-items: center;
+    }
+
+    > span {
+        display: flex;
+        margin: $spacing-0 0 $spacing-1 $spacing-5;
+        font-size: $font-size-sm;
+        color: $color-palette-gray-700;
+    }
 }
 
 .dialog-prompt__text {
-  max-height: 350px;
-  min-height: 350px;
+    max-height: 350px;
+    min-height: 350px;
 
-  .dialog-prompt__textarea {
-    height: 309px;
-  }
-
-
-  &.dialog-prompt__text--generated {
-
-    .dialog-prompt__textarea{
-      height: 80px;
+    .dialog-prompt__textarea {
+        height: 309px;
     }
 
-    .dialog-prompt__ai-rewritten-textarea {
-      height: 195px;
-    }
+    &.dialog-prompt__text--generated {
+        .dialog-prompt__textarea {
+            height: 80px;
+        }
 
-  }
+        .dialog-prompt__ai-rewritten-textarea {
+            height: 195px;
+        }
+    }
 }
 
 .dialog-prompt__orientation {
-  margin-bottom: 9rem;
+    margin-bottom: 9rem;
 }
 
 p-accordion {
-  min-height: 590px;
+    min-height: 590px;
 }

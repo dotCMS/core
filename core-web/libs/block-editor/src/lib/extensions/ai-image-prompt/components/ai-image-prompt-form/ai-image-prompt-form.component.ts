@@ -1,6 +1,20 @@
 import { NgIf } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnChanges,
+    OnInit,
+    Output,
+    SimpleChanges
+} from '@angular/core';
+import {
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
 import { SelectItem } from 'primeng/api';
@@ -11,8 +25,10 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { AIImagePrompt, DotGeneratedAIImage } from '../../../../shared/services/dot-ai/dot-ai.models';
-
+import {
+    AIImagePrompt,
+    DotGeneratedAIImage
+} from '../../../../shared/services/dot-ai/dot-ai.models';
 
 @Component({
     selector: 'dot-ai-image-prompt-form',
@@ -33,13 +49,11 @@ import { AIImagePrompt, DotGeneratedAIImage } from '../../../../shared/services/
     styleUrls: ['./ai-image-prompt-form.component.scss']
 })
 export class AiImagePromptFormComponent implements OnChanges, OnInit {
-
-
     @Input()
     aiProcessedPrompt: string;
 
     @Input()
-    orientationOptions: SelectItem<string>[]
+    orientationOptions: SelectItem<string>[];
 
     @Input()
     generatedValue: DotGeneratedAIImage;
@@ -47,18 +61,13 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     @Input()
     isLoading = false;
 
-
     @Output()
-    value = new EventEmitter<AIImagePrompt>;
-
-
+    value = new EventEmitter<AIImagePrompt>();
 
     form: FormGroup;
 
-
     ngOnInit(): void {
         this.initForm();
-
     }
 
     submitForm(): void {
@@ -78,7 +87,6 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         }
     }
 
-
     private initForm(): void {
         this.form = new FormGroup({
             text: new FormControl('', Validators.required),
@@ -86,5 +94,4 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
             size: new FormControl('1792x1024', Validators.required)
         });
     }
-
 }

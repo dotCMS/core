@@ -45,13 +45,13 @@ export interface AIImagePrompt {
     size: AIImageSize;
 }
 
-export interface DotAIImageContent extends  DotAIImageResponse {
+export interface DotAIImageContent extends DotAIImageResponse {
     contentlet: DotCMSContentlet;
 }
 
 export interface DotGeneratedAIImage {
-    request:AIImagePrompt
-    response:DotAIImageContent
+    request: AIImagePrompt;
+    response: DotAIImageContent;
 }
 
 export interface DotAICompletionsConfig {

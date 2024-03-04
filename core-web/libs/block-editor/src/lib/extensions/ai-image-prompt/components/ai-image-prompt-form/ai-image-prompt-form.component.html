@@ -1,8 +1,5 @@
 <form [formGroup]="form">
-    <p-accordion
-        [activeIndex]="0"
-        expandIcon="pi pi-angle-down"
-        collapseIcon="pi pi-angle-up">
+    <p-accordion [activeIndex]="0" expandIcon="pi pi-angle-down" collapseIcon="pi pi-angle-up">
         <p-accordionTab [disabled]="form.disabled" header="Settings" iconPos="end">
             <div class="field dialog-prompt__input">
                 <label dotFieldRequired>Input</label>
@@ -11,26 +8,22 @@
                         formControlName="type"
                         value="input"
                         inputId="optionOne"></p-radioButton>
-                    <label class="ml-2" for="optionOne"
-                    >Create with Custom Prompt</label
-                    >
+                    <label class="ml-2" for="optionOne">Create with Custom Prompt</label>
                 </div>
                 <span
-                >Write your own prompt and have full creative control over the image
-                                generation.</span
+                    >Write your own prompt and have full creative control over the image
+                    generation.</span
                 >
                 <div>
                     <p-radioButton
                         formControlName="type"
                         value="auto"
                         inputId="option2"></p-radioButton>
-                    <label class="ml-2" for="option2"
-                    >Create based on Existing Content</label
-                    >
+                    <label class="ml-2" for="option2">Create based on Existing Content</label>
                 </div>
                 <span
-                >Generate and image based on provided content. You may Customize
-                                with mood, colors and size.</span
+                    >Generate and image based on provided content. You may Customize with mood,
+                    colors and size.</span
                 >
             </div>
             <div class="field dialog-prompt__orientation">
@@ -43,13 +36,15 @@
             </div>
         </p-accordionTab>
         <p-accordionTab [disabled]="form.disabled" header="Prompt" iconPos="end">
-            <div class="dialog-prompt__text" [class.dialog-prompt__text--generated]="aiProcessedPrompt">
+            <div
+                class="dialog-prompt__text"
+                [class.dialog-prompt__text--generated]="aiProcessedPrompt">
                 <div class="field">
                     <label dotFieldRequired>{{
-                            form.get('type').value === 'input'
-                                ? 'Prompt'
-                                : 'Customize images Properties ( Optional )'
-                        }}</label>
+                        form.get('type').value === 'input'
+                            ? 'Prompt'
+                            : 'Customize images Properties ( Optional )'
+                    }}</label>
                     <textarea
                         class="w-full dialog-prompt__textarea"
                         rows="11"
@@ -57,17 +52,17 @@
                         pInputTextarea
                         formControlName="text"
                         placeholder="Describe the image you want to create, including details like subjects, colors, mood, and style. The more specific, the better!">
-                                </textarea>
+                    </textarea>
                 </div>
                 <div class="field" *ngIf="aiProcessedPrompt">
                     <label>AI Prompt (Rewritten)</label>
                     <textarea
                         class="w-full dialog-prompt__ai-rewritten-textarea"
+                        [value]="aiProcessedPrompt"
                         rows="11"
                         cols="30"
                         pInputTextarea
-                        readonly
-                        [value]="aiProcessedPrompt">
+                        readonly>
                     </textarea>
                 </div>
             </div>
@@ -76,13 +71,7 @@
     <button
         class="align-self-end p-button-outlined"
         [disabled]="form.invalid || form.disabled"
-        [label]="
-                        isLoading
-                            ? 'Generating'
-                            : aiProcessedPrompt
-                            ? 'Regenerate'
-                            : 'Generate'
-                    "
+        [label]="isLoading ? 'Generating' : aiProcessedPrompt ? 'Regenerate' : 'Generate'"
         (click)="submitForm()"
         pButton
         type="submit">
@@ -107,5 +96,5 @@
             <i class="pi pi-spin pi-spinner"></i>
         </ng-template>
     </button>
-    <h2>{{isLoading}}</h2>
+    <h2>{{ isLoading }}</h2>
 </form>

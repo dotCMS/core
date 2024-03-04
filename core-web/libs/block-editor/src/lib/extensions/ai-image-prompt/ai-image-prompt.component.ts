@@ -10,7 +10,6 @@ import {
     Validators
 } from '@angular/forms';
 
-
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -25,7 +24,7 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import {  DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
@@ -67,7 +66,7 @@ export class AIImagePromptComponent implements OnInit {
     private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
     form: FormGroup;
-    selectedImage : DotGeneratedAIImage;
+    selectedImage: DotGeneratedAIImage;
 
     /**
      * Hides the dialog.
