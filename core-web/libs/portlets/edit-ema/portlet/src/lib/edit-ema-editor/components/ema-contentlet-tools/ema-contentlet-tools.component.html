@@ -17,6 +17,13 @@
     [ngStyle]="getActionPosition()"
     data-testId="actions">
     <p-button
+        (dragstart)="dragStart($event, contentlet.payload)"
+        (dragend)="dragEnd()"
+        draggable="true"
+        data-testId="drag-button"
+        styleClass="p-button-rounded p-button-raised"
+        icon="pi pi-arrows-alt" />
+    <p-button
         (click)="delete.emit(contentlet.payload)"
         data-testId="delete-button"
         styleClass="p-button-rounded p-button-raised delete"
@@ -29,3 +36,6 @@
 </div>
 
 <div class="bounds" [ngStyle]="getPosition()" data-testId="bounds"></div>
+<div class="drag-image" #dragImage data-testId="drag-image">
+    {{ contentlet.payload.contentlet.contentType }}
+</div>

@@ -11,7 +11,8 @@ const FAKE_CONTENLET = {
     title: 'TEMP_EMPTY_CONTENTLET',
     contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
     inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
-    widgetTitle: 'TEMP_EMPTY_CONTENTLET'
+    widgetTitle: 'TEMP_EMPTY_CONTENTLET',
+    onNumberOfPages: 1
 };
 
 function EmptyContainer() {
@@ -44,10 +45,11 @@ export function Container({ containerRef }: ContainerProps) {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, page, viewAs, components, isInsideEditor } =
-        useContext<PageProviderContext | null>(PageContext) as PageProviderContext;
+    const { containers, components, isInsideEditor } = useContext<PageProviderContext | null>(
+        PageContext
+    ) as PageProviderContext;
 
-    const { acceptTypes, contentlets, maxContentlets, pageContainers, path } = getContainersData(
+    const { acceptTypes, contentlets, maxContentlets, variantId, path } = getContainersData(
         containers,
         containerRef
     );
@@ -55,22 +57,16 @@ export function Container({ containerRef }: ContainerProps) {
     const updatedContentlets =
         contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
 
-    const contentletsId = updatedContentlets.map((contentlet) => contentlet.identifier);
-
     const container = {
         acceptTypes,
-        contentletsId,
         identifier: path ?? identifier,
         maxContentlets,
+        variantId,
         uuid
     };
 
     const containerPayload = {
-        container,
-        language_id: viewAs.language.id,
-        pageContainers,
-        pageId: page.identifier,
-        personaTag: viewAs.persona?.keyTag
+        container
     };
 
     function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
@@ -85,9 +81,7 @@ export function Container({ containerRef }: ContainerProps) {
         }
 
         const { x, y, width, height } = target.getBoundingClientRect();
-
         const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
-
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_CONTENTLET,
             payload: {
@@ -113,12 +107,10 @@ export function Container({ containerRef }: ContainerProps) {
             contentlet: {
                 identifier: contentlet.identifier,
                 title: contentlet.widgetTitle || contentlet.title,
-                inode: contentlet.inode
-            },
-            language_id: viewAs.language.id,
-            pageContainers,
-            pageId: page.identifier,
-            personaTag: viewAs.persona?.keyTag
+                inode: contentlet.inode,
+                onNumberOfPages: contentlet.onNumberOfPages,
+                contentType: contentlet.contentType
+            }
         };
 
         return isInsideEditor ? (

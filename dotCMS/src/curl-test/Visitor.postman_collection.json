@@ -300,13 +300,19 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/application/displayip",
+					"raw": "{{serverURL}}/application/displayip?dotcache=no",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"application",
 						"displayip"
+					],
+					"query": [
+						{
+							"key": "dotcache",
+							"value": "no"
+						}
 					]
 				}
 			},
@@ -348,13 +354,19 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/application/displayip",
+					"raw": "{{serverURL}}/application/displayip?dotcache=no",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"application",
 						"displayip"
+					],
+					"query": [
+						{
+							"key": "dotcache",
+							"value": "no"
+						}
 					]
 				}
 			},

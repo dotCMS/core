@@ -22,6 +22,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.util.List;
@@ -91,7 +92,7 @@ public class FilesTestHelperService {
         final String subfolder1_2_3 = "subFolder1-2-3";
 
         // subfolder2_1 children
-        final String subfolder2_1_1 = "subFolder2-1-1";
+        final String subfolder2_1_1 = "subFolder2-1-1-子資料夾";
         final String subfolder2_1_2 = "subFolder2-1-2";
         final String subfolder2_1_3 = "subFolder2-1-3";
 
@@ -132,6 +133,12 @@ public class FilesTestHelperService {
                     String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
                     "image2.png");
             pushFile(true, "en-us", newSiteName,
+                    String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
+                    "這就是我的想像6.png");
+            pushFile(true, "en-us", newSiteName,
+                    String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
+                    "image (7)+.png");
+            pushFile(true, "en-us", newSiteName,
                     String.format("/%s", folder3),
                     "image 3.png");
             pushFile(true, "en-us", newSiteName,
@@ -140,6 +147,55 @@ public class FilesTestHelperService {
         }
 
         return newSiteName;
+    }
+
+    /**
+     * Generates a large data structure on the file system with the specified root folder and number
+     * of folders.
+     *
+     * @param rootFolder  The root folder where the data structure will be generated.
+     * @param noOfFolders The number of root folders to create.
+     * @throws IOException If an I/O error occurs.
+     */
+    public void prepareLargeDataOnFileSystem(Path rootFolder, final int noOfFolders)
+            throws IOException {
+
+        //final int noOfFolders = 100; // number of root folders to create
+        final int depth = 10; // number of sub-folders in each root folder
+        final int filesPerFolder = 2; // number of files in each folder
+        final String[] availableFiles = {"image (7)+.png", "image1.png", "image2.png",
+                "image 3.png", "image4.jpg", "image5.jpg", "這就是我的想像6.png"};
+
+        int fileCounter = 0; // A counter for rotating through the availableFiles array
+
+        // Generate folder structure
+        for (int i = 0; i < noOfFolders; i++) {
+            Path folder = rootFolder.resolve("folder" + (i + 1));
+            for (int j = 0; j < depth; j++) {
+                folder = folder.resolve("subfolder-" + (i + 1) + "-" + (j + 1));
+
+                // Create folder
+                Files.createDirectories(folder);
+
+                // Populate with files
+                for (int k = 0; k < filesPerFolder; k++) {
+                    int assetIndex = fileCounter % availableFiles.length;
+                    String fileName = availableFiles[assetIndex];
+                    Path file = folder.resolve(fileName);
+
+                    try (InputStream inputStream = getClass().getResourceAsStream(
+                            String.format("/%s", fileName))) {
+
+                        Assertions.assertNotNull(inputStream,
+                                String.format("File %s not found", fileName));
+
+                        Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
+                    }
+
+                    fileCounter++;
+                }
+            }
+        }
     }
 
     /**

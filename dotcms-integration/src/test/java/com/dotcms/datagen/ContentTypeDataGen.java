@@ -1,6 +1,7 @@
 package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -300,7 +301,13 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         final User systemUser = APILocator.systemUser();
 
         try {
-            ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+            ContentType languageVariableContentType = null;
+
+            try {
+                languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+            } catch (NotFoundInDbException ex) {
+              Logger.info(ContentTypeDataGen.class, "Content type "+LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME+" not found Creating language variable content type");
+            }
 
             if (languageVariableContentType == null) {
                 final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen();

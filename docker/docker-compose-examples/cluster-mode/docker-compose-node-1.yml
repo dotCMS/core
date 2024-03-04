@@ -18,6 +18,7 @@ services:
       - data
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xmx1G "
+      - plugins.security.disabled=true
     ulimits:
       memlock:
         soft: -1 # Set memlock to unlimited (no soft or hard limit)
@@ -46,7 +47,7 @@ services:
         DOT_ES_ENDPOINTS: 'https://opensearch:9200'
         DOT_INITIAL_ADMIN_PASSWORD: 'admin'
         DOT_DOTCMS_CLUSTER_ID:  'dotcms-production'
-        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240213/starter-20240213.zip'
     depends_on:
       - opensearch
       - db

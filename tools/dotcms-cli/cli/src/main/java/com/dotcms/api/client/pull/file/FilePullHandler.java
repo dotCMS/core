@@ -17,8 +17,10 @@ import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -91,9 +93,23 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
 
     @Override
     @ActivateRequestContext
-    public boolean pull(List<FileTraverseResult> contents,
+    public int pull(List<FileTraverseResult> contents,
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException {
+
+        //Now we're going to partition the list of results into two lists:
+        //The first one will contain the results that have exceptions and the second one will contain the results that don't have exceptions
+        final Map<Boolean, List<FileTraverseResult>> partitioned = contents.stream()
+                .collect(Collectors.partitioningBy(pojo -> !pojo.exceptions().isEmpty()));
+
+        //Inform the user about any errors that could have occurred during the traversal process
+        final List<FileTraverseResult> failed = partitioned.get(true);
+        //Save the error code for the traversal process. This will be used to determine the exit code of the command if greater than 0 (zero)
+        int errorCode = handleExceptions(failed.stream().map(FileTraverseResult::exceptions).flatMap(List::stream).collect(Collectors.toList()), output);
+
+        //The second list will contain the results that don't have exceptions
+        //We assume that the traversal process was successful for these results
+        final List<FileTraverseResult> success = partitioned.get(false);
 
         boolean preserve = false;
         boolean includeEmptyFolders = false;
@@ -105,11 +121,9 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                     getOrDefault(INCLUDE_EMPTY_FOLDERS, false);
         }
 
-        var failed = false;
+        output.info(startPullingHeader(success));
 
-        output.info(startPullingHeader(contents));
-
-        for (final var content : contents) {
+        for (final var content : success) {
 
             var errors = pullTree(
                     content,
@@ -119,13 +133,14 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                     includeEmptyFolders
             );
 
-            printErrors(errors, output);
-            if (!errors.isEmpty()) {
-                failed = true;
-            }
+            final int e = handleExceptions(errors, output);
+            //This should always keep the highest error code
+            // Meaning that if no errors occurred, the error code will be 0
+            errorCode = Math.max(e, errorCode);
+
         }
 
-        return failed;
+        return errorCode;
     }
 
     /**
@@ -193,6 +208,7 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
             var errorMessage = String.format("Error occurred while pulling assets: [%s].",
                     e.getMessage());
             logger.error(errorMessage, e);
+            Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
         }
 

@@ -16,9 +16,8 @@ import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-emp
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotSiteBrowserService } from '@dotcms/data-access';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotBinaryOptionSelectorComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
-import { DotBinaryOptionSelectorComponent } from '@portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
 
 import { DotTemplateListComponent } from './dot-template-list.component';
 
