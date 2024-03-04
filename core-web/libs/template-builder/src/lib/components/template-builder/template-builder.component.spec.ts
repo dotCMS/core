@@ -132,6 +132,26 @@ describe('TemplateBuilderComponent', () => {
         expect(changeMock).not.toHaveBeenCalled();
     });
 
+    it("should call updateOldRows from the store when the layout changes and it's not the first time", () => {
+        const updateOldRowsMock = jest.spyOn(store, 'updateOldRows');
+        const templateUpdateMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+        spectator.setInput('layout', {
+            body: FULL_DATA_MOCK,
+            header: true,
+            footer: true,
+            sidebar: null,
+            width: 'Mobile',
+            title: 'Test Title'
+        });
+
+        spectator.detectChanges();
+
+        expect(updateOldRowsMock).toHaveBeenCalled();
+
+        expect(templateUpdateMock).not.toHaveBeenCalled();
+    });
+
     it('should have a Add Row Button', () => {
         expect(spectator.query(byTestId('add-row'))).toBeTruthy();
     });

@@ -116,7 +116,7 @@
                 "
                 [hide]="!!rows.length"
                 [contentlet]="contentlet"
-                (edit)="dialog.editContentlet($event)"
+                (edit)="handleEditContentlet($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
