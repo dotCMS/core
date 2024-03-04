@@ -55,6 +55,7 @@
                     </dl>
                 </div>
                 <div dojoAttachPoint="search_languages_table"></div>
+                <div dojoAttachPoint="site_folder_field_pop"></div>
                 <div dojoAttachPoint="search_fields_table"></div>
                 <div dojoAttachPoint="search_categories_table">
                     <dl
