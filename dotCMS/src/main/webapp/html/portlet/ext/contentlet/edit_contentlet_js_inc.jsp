@@ -445,7 +445,18 @@
         }else {
             isContentSaving = true;
         }
-        ContentletAjax.saveContent(fmData,isAutoSave,isCheckin,publish,saveContentCallback);
+
+        const isURLMapContent = "<%=isUrlMap%>" === "true";
+
+        /**
+         * If the content is a URLMap, we need to wait until the re-index process is done.
+         * This is beacuse we may need to redirect the user to the new URLMap contentlet.
+         * We need to wait until the re-index process is done to avoid a 404 error.
+         * More info: https://github.com/dotCMS/core/issues/21818
+         */
+        const newSaveContentCallBack = isURLMapContent ? (data) => setTimeout(() => saveContentCallback(data), 1800) : saveContentCallback;
+
+        ContentletAjax.saveContent(fmData, isAutoSave, isCheckin, publish, newSaveContentCallBack);
     }
 
 
@@ -659,7 +670,7 @@
         refreshActionPanel(data["contentletInode"]);
 
         // If the contentlet is a urlContentMap, we need to reload the page
-        data.shouldReloadPage = "<%=isUrlMap%>" === "true" ? true : false;
+        data.shouldReloadPage = "<%=isUrlMap%>" === "true";
 
         // if we have a referer and the contentlet comes back checked in
         var customEventDetail = {

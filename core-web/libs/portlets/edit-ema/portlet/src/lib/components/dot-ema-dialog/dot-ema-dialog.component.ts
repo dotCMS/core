@@ -111,27 +111,15 @@ export class DotEmaDialogComponent {
     /**
      * Edit contentlet
      *
-     * @param {ActionPayload} payload
-     * @memberof EditEmaEditorComponent
+     * @param {Partial<DotCMSContentlet>} contentlet
+     * @param {boolean} [isUrlMap=false]
+     * @memberof DotEmaDialogComponent
      */
-    editContentlet({ contentlet }: Partial<ActionPayload>) {
-        this.store.editContentlet({
-            inode: contentlet.inode,
-            title: contentlet.title
-        });
-    }
-
-    /**
-     * Edit contentlet
-     *
-     * @param {ActionPayload} payload
-     * @memberof EditEmaEditorComponent
-     */
-    editURLContentMap(contentlet: DotCMSContentlet) {
+    editContentlet(contentlet: Partial<DotCMSContentlet>, isUrlMap = false) {
         this.store.editContentlet({
             inode: contentlet.inode,
             title: contentlet.title,
-            urlMap: true
+            isUrlMap
         });
     }
 

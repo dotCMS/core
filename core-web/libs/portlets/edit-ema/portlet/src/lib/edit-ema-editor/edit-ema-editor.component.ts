@@ -577,40 +577,41 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
-                const { shouldReloadPage } = detail.payload;
+                const { shouldReloadPage, contentletIdentifier } = detail.payload;
 
                 if (shouldReloadPage) {
-                    // because: https://github.com/dotCMS/core/issues/21818
-                    setTimeout(() => this.store.load(this.queryParams), 1800);
+                    this.store.load(this.queryParams);
 
                     return;
                 }
 
-                if (payload) {
-                    const { pageContainers, didInsert } = insertContentletInContainer({
-                        ...payload,
-                        newContentletId: detail.payload.contentletIdentifier
-                    });
-
-                    if (!didInsert) {
-                        this.handleDuplicatedContentlet();
-
-                        return;
-                    }
-
-                    // Save when created
-                    this.store.savePage({
-                        pageContainers,
-                        pageId: payload.pageId,
-                        params: this.queryParams,
-                        whenSaved: () => {
-                            this.dialog.resetDialog();
-                            this.reloadIframe();
-                        }
-                    });
-                } else {
+                if (!payload) {
                     this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+
+                    return;
                 }
+
+                const { pageContainers, didInsert } = insertContentletInContainer({
+                    ...payload,
+                    newContentletId: contentletIdentifier
+                });
+
+                if (!didInsert) {
+                    this.handleDuplicatedContentlet();
+
+                    return;
+                }
+
+                // Save when created
+                this.store.savePage({
+                    pageContainers,
+                    pageId: payload.pageId,
+                    params: this.queryParams,
+                    whenSaved: () => {
+                        this.dialog.resetDialog();
+                        this.reloadIframe();
+                    }
+                });
             },
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
@@ -819,7 +820,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const { onNumberOfPages, title } = contentlet;
 
         if (!(onNumberOfPages > 1)) {
-            this.dialog.editContentlet(payload);
+            this.dialog.editContentlet(contentlet);
 
             return;
         }
@@ -837,12 +838,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return this.handleCopyContent();
                 })
             )
-            .subscribe((contentlet) => {
-                this.dialog.editContentlet({
-                    ...payload,
-                    contentlet
-                });
-            });
+            .subscribe((contentlet) => this.dialog.editContentlet(contentlet));
     }
 
     /**
@@ -853,7 +849,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     protected editContentMap(contentlet: DotCMSContentlet): void {
-        this.dialog.editURLContentMap(contentlet);
+        this.dialog.editContentlet(contentlet, true);
     }
 
     /**

@@ -34,6 +34,12 @@ export interface CreateFromPaletteAction {
     payload: ActionPayload;
 }
 
+interface EditContentI {
+    inode: string;
+    title: string;
+    isUrlMap?: boolean;
+}
+
 @Injectable()
 export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     constructor() {
@@ -122,21 +128,17 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly editContentlet = this.updater(
-        (state, payload: { inode: string; title: string; urlMap?: boolean }) => {
-            const { inode, title, urlMap } = payload;
-            const extaParams = urlMap ? `&isUrlMap=${urlMap}` : '';
-            const url = this.createEditContentletUrl(inode) + extaParams;
+    readonly editContentlet = this.updater((state, { inode, title, isUrlMap }: EditContentI) => {
+        const url = this.createEditContentletUrl(inode, isUrlMap);
 
-            return {
-                ...state,
-                header: title,
-                status: DialogStatus.LOADING,
-                type: 'content',
-                url
-            };
-        }
-    );
+        return {
+            ...state,
+            header: title,
+            status: DialogStatus.LOADING,
+            type: 'content',
+            url
+        };
+    });
 
     /**
      * This method is called when the user clicks on the [+ add] button
@@ -216,8 +218,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @return {*}
      * @memberof DotEmaComponent
      */
-    private createEditContentletUrl(inode: string): string {
-        return `${EDIT_CONTENTLET_URL}${inode}`;
+    private createEditContentletUrl(inode: string, isUrlMap?: boolean): string {
+        const extraQueryParam = isUrlMap ? `&isUrlMap=${isUrlMap}` : '';
+        
+        return `${EDIT_CONTENTLET_URL}${inode}${extraQueryParam}`;
     }
 
     /**

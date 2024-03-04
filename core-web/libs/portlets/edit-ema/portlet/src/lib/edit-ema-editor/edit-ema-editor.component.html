@@ -18,7 +18,7 @@
             <p-button
                 *ngIf="es.editor.urlContentMap as urlContentMap"
                 [label]="'editpage.toolbar.edit.url.map.content' | dm : [urlContentMap.contentType]"
-                (onClick)="editContentMap(urlContentMap.urlContentMap)"
+                (onClick)="editContentMap(urlContentMap)"
                 icon="pi pi-pencil"
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
