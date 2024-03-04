@@ -80,7 +80,7 @@ export class DotCMSPageEditor {
                 }
             }
         };
-        window?.addEventListener('message', messageCallback);
+        window.addEventListener('message', messageCallback);
         this.subscriptions.push({
             type: 'listener',
             event: 'message',

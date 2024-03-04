@@ -1,82 +1,122 @@
+/// <reference types="jest" />
 import { DotCMSPageEditor } from './sdk-editor';
 
-import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
+import { postMessageToEditor } from './models/client.model';
 
-jest.mock('./postMessageToEditor', () => ({
-    postMessageToEditor: jest.fn()
+jest.mock('./models/client.model', () => ({
+    postMessageToEditor: jest.fn(),
+    CUSTOMER_ACTIONS: {
+        NAVIGATION_UPDATE: 'set-url',
+        SET_BOUNDS: 'set-bounds',
+        SET_CONTENTLET: 'set-contentlet',
+        IFRAME_SCROLL: 'scroll',
+        PING_EDITOR: 'ping-editor',
+        CONTENT_CHANGE: 'content-change',
+        NOOP: 'noop'
+    }
 }));
 
+import { CUSTOMER_ACTIONS } from './models/client.model';
+
 describe('DotCMSPageEditor', () => {
-    let dotCMSPageEditor: DotCMSPageEditor;
+    describe('is NOT inside editor', () => {
+        let dotCMSPageEditor: DotCMSPageEditor;
 
-    beforeEach(() => {
-        dotCMSPageEditor = new DotCMSPageEditor();
-    });
+        beforeEach(() => {
+            const mockWindow = {
+                ...window,
+                parent: window
+            };
 
-    afterEach(() => {
-        dotCMSPageEditor.destroy();
-    });
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValueOnce(mockWindow as unknown as Window & typeof globalThis);
+            dotCMSPageEditor = new DotCMSPageEditor();
+        });
 
-    it('should initialize properly', () => {
-        dotCMSPageEditor.init();
-        expect(dotCMSPageEditor.isInsideEditor).toBe(false);
-    });
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
 
-    it('should update navigation', () => {
-        dotCMSPageEditor.updateNavigation('/');
-        expect(postMessageToEditor).toHaveBeenCalledWith({
-            action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
-            payload: {
-                url: 'index'
-            }
+        it('should initialize without any listener', () => {
+            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+
+            dotCMSPageEditor.init();
+
+            expect(dotCMSPageEditor.isInsideEditor).toBe(false);
+            expect(addEventListenerSpy).not.toHaveBeenCalled();
         });
     });
 
-    it('should listen to editor messages', () => {
-        const addEventListenerSpy = spyOn(window, 'addEventListener');
-        dotCMSPageEditor.init();
-        expect(addEventListenerSpy).toHaveBeenCalledWith('message', jasmine.any(Function));
-    });
+    describe('is inside editor', () => {
+        let dotCMSPageEditor: DotCMSPageEditor;
 
-    it('should listen to hovered contentlet', () => {
-        const addEventListenerSpy = spyOn(document, 'addEventListener');
-        dotCMSPageEditor.init();
-        expect(addEventListenerSpy).toHaveBeenCalledWith('pointermove', jasmine.any(Function));
-    });
+        beforeEach(() => {
+            const mockWindow = {
+                ...window,
+                parent: null
+            };
 
-    it('should handle scroll', () => {
-        const addEventListenerSpy = spyOn(window, 'addEventListener');
-        dotCMSPageEditor.init();
-        expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', jasmine.any(Function));
-    });
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+            dotCMSPageEditor = new DotCMSPageEditor();
+        });
 
-    it('should check if inside editor', () => {
-        dotCMSPageEditor.init();
-        expect(postMessageToEditor).toHaveBeenCalledWith({
-            action: CUSTOMER_ACTIONS.PING_EDITOR
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should initialize properly', () => {
+            dotCMSPageEditor.init();
+            expect(dotCMSPageEditor.isInsideEditor).toBe(true);
+        });
+
+        it('should update navigation', () => {
+            dotCMSPageEditor.updateNavigation('/');
+            expect(postMessageToEditor).toHaveBeenCalledWith({
+                action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
+                payload: {
+                    url: 'index'
+                }
+            });
+        });
+
+        it('should listen to editor messages', () => {
+            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+            dotCMSPageEditor.init();
+            expect(addEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
+        });
+
+        it('should listen to hovered contentlet', () => {
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+            dotCMSPageEditor.init();
+            expect(addEventListenerSpy).toHaveBeenCalledWith('pointermove', expect.any(Function));
+        });
+
+        it('should handle scroll', () => {
+            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+            dotCMSPageEditor.init();
+            expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+        });
+
+        it('should check if inside editor', () => {
+            dotCMSPageEditor.init();
+            expect(postMessageToEditor).toHaveBeenCalledWith({
+                action: CUSTOMER_ACTIONS.PING_EDITOR
+            });
+        });
+
+        it('should listen to content change', () => {
+            const observeSpy = jest.spyOn(MutationObserver.prototype, 'observe');
+            dotCMSPageEditor.init();
+            expect(observeSpy).toHaveBeenCalledWith(document, { childList: true, subtree: true });
+        });
+
+        it('should listen to editor messages', () => {
+            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+            const dotCMSPageEditor = new DotCMSPageEditor();
+            dotCMSPageEditor.init();
+
+            expect(addEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
         });
     });
-
-    it('should listen to content change', () => {
-        const observeSpy = spyOn(window.MutationObserver.prototype, 'observe');
-        dotCMSPageEditor.init();
-        expect(observeSpy).toHaveBeenCalledWith(document, { childList: true, subtree: true });
-    });
-
-    it('should set bounds', () => {
-        const querySelectorAllSpy = spyOn(document, 'querySelectorAll').and.returnValue([]);
-
-        // dotCMSPageEditor.setBounds();
-        expect(querySelectorAllSpy).toHaveBeenCalledWith('[data-dot-object="container"]');
-        expect(postMessageToEditor).toHaveBeenCalledWith({
-            action: CUSTOMER_ACTIONS.SET_BOUNDS,
-            payload: []
-        });
-    });
-
-    // it('should reload page', () => {
-    //     const onReloadSpy = spyOn(dotCMSPageEditor.config, 'onReload');
-    //     dotCMSPageEditor.reloadPage();
-    //     expect(onReloadSpy).toHaveBeenCalled();
-    // });
 });

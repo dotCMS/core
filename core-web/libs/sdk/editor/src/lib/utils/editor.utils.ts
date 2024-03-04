@@ -36,7 +36,7 @@ export function getPageElementBound(containers: HTMLDivElement[]) {
 export function getContentletsBound(containerRect: DOMRect, contentlets: HTMLDivElement[]) {
     return contentlets.map((contentlet) => {
         const contentletRect = contentlet.getBoundingClientRect();
-        console.log("contentletRect", contentletRect);
+
         return {
             x: 0,
             y: contentletRect.y - containerRect.y,

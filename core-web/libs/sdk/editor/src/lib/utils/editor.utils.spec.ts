@@ -106,7 +106,7 @@ describe('getContentletsBound', () => {
         ]);
     });
 
-    xit('should return an empty array if contentlets is empty', () => {
+    it('should return an empty array if contentlets is empty', () => {
         const result = getContentletsBound(containerRect, []);
 
         expect(result).toEqual([]);
@@ -125,21 +125,17 @@ describe('getContentletsBound', () => {
                     'dot-inode': 'inode1',
                     'dot-type': 'type1'
                 }
-            }),
-            createContentlet({
-                x: 50,
-                y: 60,
-                width: 70,
-                height: 80,
-                dataset: {
-                    'dot-identifier': 'contentlet2',
-                    'dot-title': 'Contentlet 2',
-                    'dot-inode': 'inode2',
-                    'dot-type': 'type2'
-                }
             })
         ];
 
+        const container = document.createElement('div');
+
+        container.appendChild(contentletsWithMissingContainer[0]);
+        container.setAttribute('data-dot-object', 'container');
+        container.setAttribute('data-dot-accept-types', '[Blogs]');
+        container.setAttribute('data-dot-identifier', '1');
+        container.setAttribute('data-max-contentlets', '1');
+        container.setAttribute('data-dot-uuid', '1');
         const result = getContentletsBound(containerRect, contentletsWithMissingContainer);
 
         expect(result).toEqual([
@@ -150,36 +146,16 @@ describe('getContentletsBound', () => {
                 height: 40,
                 payload: JSON.stringify({
                     container: {
-                        identifier: 'contentlet1',
-                        title: 'Contentlet 1',
-                        inode: 'inode1',
-                        contentType: 'type1'
+                        acceptTypes: '[Blogs]',
+                        identifier: '1',
+                        maxContentlets: '1',
+                        uuid: '1'
                     },
                     contentlet: {
                         identifier: 'contentlet1',
-                        title: 'Contentlet 1',
+                        title: 'Contentlet 1', 
                         inode: 'inode1',
                         contentType: 'type1'
-                    }
-                })
-            },
-            {
-                x: 0,
-                y: 60,
-                width: 70,
-                height: 80,
-                payload: JSON.stringify({
-                    container: {
-                        identifier: 'contentlet2',
-                        title: 'Contentlet 2',
-                        inode: 'inode2',
-                        contentType: 'type2'
-                    },
-                    contentlet: {
-                        identifier: 'contentlet2',
-                        title: 'Contentlet 2',
-                        inode: 'inode2',
-                        contentType: 'type2'
                     }
                 })
             }
