@@ -47,7 +47,7 @@ public class ContentTypeFetcher implements ContentFetcher<ContentType>, Serializ
         var task = new HttpRequestTask(this, executor);
         task.setTaskParams(allContentTypes);
 
-        return task.compute();
+        return task.compute().join();
     }
 
     @ActivateRequestContext
