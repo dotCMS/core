@@ -29,7 +29,9 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import {
@@ -37,6 +39,7 @@ import {
     CONTAINER_SOURCE,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
+import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
@@ -46,7 +49,8 @@ import {
     mockDotDevices,
     LoginServiceMock,
     DotCurrentUserServiceMock,
-    dotcmsContentletMock
+    dotcmsContentletMock,
+    seoOGTagsResultMock
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
@@ -273,7 +277,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe],
         declarations: [
             MockComponent(DotEditEmaWorkflowActionsComponent),
-            MockComponent(DotEmaDialogComponent)
+            MockComponent(DotEmaDialogComponent),
+            MockComponent(DotResultsSeoToolComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -323,6 +328,11 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ],
         providers: [
+            {
+                provide: DotSeoMetaTagsService,
+                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
+            },
+            DotSeoMetaTagsUtilService,
             DialogService,
             DotCopyContentService,
             DotCopyContentModalService,
@@ -633,6 +643,25 @@ describe('EditEmaEditorComponent', () => {
                 componentsToShow.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).not.toBeNull();
                 });
+            });
+
+            it('should open seo results when clicking on a social media tile', () => {
+                // We only support VTL
+
+                store.load({
+                    url: 'index',
+                    language_id: '3',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'Facebook');
+
+                expect(spectator.query(byTestId('results-seo-tool'))).not.toBeNull(); // This components share the same logic as the preview by device
             });
         });
 

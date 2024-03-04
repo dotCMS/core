@@ -77,7 +77,8 @@
         *ngIf="seoMedia"
         [seoMedia]="seoMedia"
         [seoOGTags]="ogTags()"
-        [seoOGTagsResults]="ogTagsResults$"></dot-results-seo-tool>
+        [seoOGTagsResults]="ogTagsResults$"
+        data-testId="results-seo-tool"></dot-results-seo-tool>
     <div
         class="editor-content"
         *ngIf="!seoMedia"
