@@ -190,6 +190,32 @@ describe('EditEmaStore', () => {
                 });
             });
 
+            it('should handle successful data reload', (done) => {
+                const dotPageApiService = spectator.inject(DotPageApiService);
+
+                const spyGetPage = jest
+                    .spyOn(dotPageApiService, 'get')
+                    .mockReturnValue(of(MOCK_RESPONSE_HEADLESS));
+                const params = {
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                };
+
+                spectator.service.reload(params);
+
+                spectator.service.state$.subscribe((state) => {
+                    expect(state).toEqual({
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        isEnterpriseLicense: true,
+                        editorState: EDITOR_STATE.LOADED
+                    });
+                    expect(spyGetPage).toHaveBeenCalledWith(params);
+                    done();
+                });
+            });
+
             it("should call save method from dotPageApiService when 'save' action is dispatched", () => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
                 const mockResponse = {

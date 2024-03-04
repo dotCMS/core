@@ -166,11 +166,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
-    readonly editorState$ = this.store.editorState$;
+    readonly editorState$ = this.store.editorState$.pipe(
+        tap(({ clientHost }) => {
+            if (clientHost) {
+                return;
+            }
+
+            // For VTL, we need to add the VTL in the iframe
+            // So we force the iframe to reload
+            this.iframe?.nativeElement.dispatchEvent(new Event('load'));
+        })
+    );
+
     readonly destroy$ = new Subject<boolean>();
 
     readonly pageData = toSignal(this.store.pageData$);
-
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
@@ -245,12 +255,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onIframePageLoad({ clientHost, editor }: { clientHost: string; editor: DotPageApiResponse }) {
-        if (!clientHost) {
-            // Is VTL
-            this.iframe.nativeElement.contentDocument.open();
-            this.iframe.nativeElement.contentDocument.write(editor.page.rendered);
-            this.iframe.nativeElement.contentDocument.close();
+        if (clientHost) {
+            return;
         }
+
+        // Is VTL
+        this.iframe.nativeElement.contentDocument.open();
+        this.iframe.nativeElement.contentDocument.write(editor.page.rendered);
+        this.iframe.nativeElement.contentDocument.close();
     }
 
     ngOnDestroy(): void {
@@ -580,7 +592,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
 
                 if (shouldReloadPage) {
-                    this.store.load(this.queryParams);
+                    this.store.reload(this.queryParams);
 
                     return;
                 }

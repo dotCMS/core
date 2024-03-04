@@ -15,6 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
@@ -267,10 +268,17 @@ const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
     position: 'before'
 };
 
+const URL_CONTENT_MAP_MOCK = {
+    contentType: 'Blog',
+    identifier: '123',
+    inode: '1234',
+    title: 'hello world'
+};
+
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe],
+        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ButtonModule],
         declarations: [
             MockComponent(DotEditEmaWorkflowActionsComponent),
             MockComponent(DotEmaDialogComponent)
@@ -402,6 +410,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     },
                                     persona: DEFAULT_PERSONA
                                 },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
                                 containers: dotPageContainerStructureMock
                             })
                         }[language_id];
@@ -909,6 +918,14 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('edit', () => {
+                const baseContentletPayload = {
+                    x: 100,
+                    y: 100,
+                    width: 500,
+                    height: 500,
+                    payload: EDIT_ACTION_PAYLOAD_MOCK
+                };
+
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
 
@@ -916,13 +933,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    spectator.setInput('contentlet', {
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
+                    spectator.setInput('contentlet', baseContentletPayload);
 
                     spectator.detectComponentChanges();
 
@@ -956,6 +967,46 @@ describe('EditEmaEditorComponent', () => {
                             done();
                         }
                     );
+                });
+
+                it('should reload the page after editing a urlContentMap', () => {
+                    spectator.detectChanges();
+
+                    const editURLContentButton = spectator.debugElement.query(
+                        By.css('[data-testId="edit-url-content-map"] .p-button')
+                    );
+                    const dialog = spectator.debugElement.query(
+                        By.css('[data-testId="ema-dialog"]')
+                    );
+
+                    const spy = jest.spyOn(store, 'reload');
+                    const spyDialog = jest.spyOn(spectator.component.dialog, 'editContentlet');
+
+                    spectator.setInput('contentlet', baseContentletPayload);
+                    spectator.detectComponentChanges();
+
+                    editURLContentButton.triggerEventHandler('click', {});
+
+                    spectator.detectComponentChanges();
+
+                    triggerCustomEvent(dialog, 'action', {
+                        event: new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                                payload: {
+                                    shouldReloadPage: true,
+                                    htmlPageReferer: '/my-awesome-page'
+                                }
+                            }
+                        })
+                    });
+
+                    spectator.detectChanges();
+                    expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK, true);
+                    expect(spy).toHaveBeenCalledWith({
+                        language_id: 1,
+                        url: 'page-one'
+                    });
                 });
 
                 describe('Copy content', () => {
@@ -2250,26 +2301,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(routerSpy).not.toHaveBeenCalled();
             });
         });
-
-        // describe('reaload iframe', () => {
-        //     let spy: jest.SpyInstance;
-        //     let dialog: DebugElement;
-
-        //     beforeEach(() => {
-        //         spy = jest.spyOn(
-        //             spectator.component.iframe.nativeElement.contentWindow,
-        //             'postMessage'
-        //         );
-        //         spectator.detectChanges();
-        //         dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
-        //     });
-
-        //     it('should update to Loading state', () => {
-        //         triggerCustomEvent(dialog, 'reloadIframe', true);
-        //         spectator.detectChanges();
-        //         expect(spy).toHaveBeenCalledWith('ema-reload-page', '*');
-        //     });
-        // });
     });
 
     describe('without edit permission', () => {

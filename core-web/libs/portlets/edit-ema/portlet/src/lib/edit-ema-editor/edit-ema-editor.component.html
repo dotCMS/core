@@ -21,7 +21,7 @@
                 (onClick)="editContentMap(urlContentMap)"
                 icon="pi pi-pencil"
                 styleClass="p-button-text p-button-sm"
-                data-testId="ema-preview" />
+                data-testId="edit-url-content-map" />
             <p-button
                 *ngIf="currentDevice"
                 [label]="'editema.editor.preview.back-to-edit' | dm"
@@ -97,7 +97,7 @@
             }">
             <iframe
                 #iframe
-                [src]="(es.clientHost ? es.iframeURL : '') | safeUrl"
+                [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
                     pointerEvents: this.rows.length ? 'none' : 'auto',
