@@ -38,8 +38,8 @@ jobs:
       branch: ${{ github.ref_name }}
     secrets:
       dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
-      artifactory-repo-username: ${{ secrets.ARTIFACTORY_REPO_USERNAME }}
-      artifactory-repo-password: ${{ secrets.ARTIFACTORY_REPO_PASSWORD }}
+      artifactory-repo-username: ${{ secrets.EE_REPO_USERNAME }}
+      artifactory-repo-password: ${{ secrets.EE_REPO_PASSWORD }}
       github-token: ${{ secrets.GITHUB_TOKEN }}
 #  precheck:
 #    name: 'Pre-check'
