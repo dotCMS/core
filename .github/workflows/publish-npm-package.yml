@@ -10,11 +10,18 @@ on:
         description: 'Artifact id'
         required: true
         type: string
+      run-id:
+        description: 'Run id'
+        required: true
+        type: number
       npm-package-version-tag:
         description: 'NPM package version tag'
         required: true
         type: string
     secrets:
+      gh-pat:
+        description: 'GitHub Personal Access Token'
+        required: true
       npm-token:
         description: 'NPM registry token'
         required: false
@@ -26,10 +33,10 @@ jobs:
   publish-npm-package:
     runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
+#      - name: 'Checkout'
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
 
       - uses: ./.github/actions/cleanup-runner
 
@@ -43,6 +50,8 @@ jobs:
         with:
           path: ${{ github.workspace }}/npm-package
           name: ${{ inputs.artifact-id }}
+          run-id: ${{ inputs.run-id }}
+          github-token: ${{ secrets.gh-pat }} # token with actions:read permissions on target repo
 
       - name: 'Validate NPM package'
         run: |
