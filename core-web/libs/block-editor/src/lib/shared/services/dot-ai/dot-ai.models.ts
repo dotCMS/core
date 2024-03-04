@@ -1,5 +1,9 @@
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { AIImageSize } from './dot-ai.service';
+
+import { PromptType } from '../../../extensions/ai-image-prompt/ai-image-prompt.models';
+
 export interface AiPluginResponse {
     id: string;
     object: string;
@@ -35,9 +39,19 @@ export interface DotAIImageResponse {
     url: string;
 }
 
-export interface DotAIImageGenerationResponse {
+export interface AIImagePrompt {
+    text: string;
+    type: PromptType;
+    size: AIImageSize;
+}
+
+export interface DotAIImageContent extends  DotAIImageResponse {
     contentlet: DotCMSContentlet;
-    aiResponse: DotAIImageResponse;
+}
+
+export interface DotGeneratedAIImage {
+    request:AIImagePrompt
+    response:DotAIImageContent
 }
 
 export interface DotAICompletionsConfig {

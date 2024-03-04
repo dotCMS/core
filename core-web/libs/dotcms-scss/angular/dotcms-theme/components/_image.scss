@@ -1,0 +1,41 @@
+.p-image-mask {
+  --maskbg: rgba(0, 0, 0, 0.9);
+}
+
+.p-image-preview-indicator {
+  background-color: transparent;
+  color: #f8f9fa;
+  transition: color 0.15s, box-shadow 0.15s;
+}
+
+.p-image-preview-container:hover > .p-image-preview-indicator {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.p-image-toolbar {
+  padding: 1rem;
+}
+
+.p-image-action.p-link {
+  color: #f8f9fa;
+  background-color: transparent;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  transition: color 0.15s, box-shadow 0.15s;
+  margin-right: 0.5rem;
+}
+.p-image-action.p-link:last-child {
+  margin-right: 0;
+}
+.p-image-action.p-link:hover {
+  color: #f8f9fa;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.p-image-action.p-link i {
+  font-size: 1.5rem;
+}
+.p-image-action.p-link .p-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}

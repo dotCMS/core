@@ -11,37 +11,6 @@
     }
 }
 
-.dialog-prompt__input {
-    display: flex;
-    flex-direction: column;
-
-    > div {
-        display: flex;
-        align-items: center;
-    }
-
-    > span {
-        display: flex;
-        margin: $spacing-0 0 $spacing-1 $spacing-5;
-        font-size: $font-size-sm;
-        color: $color-palette-gray-700;
-    }
-}
-
-.dialog-prompt__text {
-    textarea {
-        max-height: 350px;
-        min-height: 350px;
-    }
-}
-
-.dialog-prompt__orientation {
-    margin-bottom: 9rem;
-}
-
-p-accordion {
-    min-height: 590px;
-}
 
 .dialog-prompt__placeholder {
     background-color: $color-palette-gray-200;
@@ -62,4 +31,9 @@ p-accordion {
     &.s1024x1024 {
         aspect-ratio: 1/1;
     }
+}
+
+.dialog-prompt__gallery-count {
+    align-self: flex-end;
+    margin: $spacing-1 0;
 }

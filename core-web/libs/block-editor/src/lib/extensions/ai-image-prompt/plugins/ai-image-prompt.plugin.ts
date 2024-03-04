@@ -85,10 +85,10 @@ export class AIImagePromptView {
                 takeUntil(this.destroy$)
             )
             .subscribe((selectedImage) => {
-                this.editor.chain().insertImage(selectedImage.contentlet).run();
+                this.editor.chain().insertImage(selectedImage.response.contentlet).run();
                 // A new image is being inserted
                 this.store.hideDialog();
-                this.editor.chain().insertLoaderNode().closeImagePrompt().run();
+                this.editor.chain().closeImagePrompt().run();
             });
 
         /**

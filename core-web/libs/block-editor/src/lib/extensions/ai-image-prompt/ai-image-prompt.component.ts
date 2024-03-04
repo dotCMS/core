@@ -6,22 +6,18 @@ import {
     FormControl,
     FormGroup,
     FormGroupDirective,
-    FormsModule,
     ReactiveFormsModule,
     Validators
 } from '@angular/forms';
 
-import { AccordionModule } from 'primeng/accordion';
+
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
 import { GalleriaModule } from 'primeng/galleria';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { ImageModule } from 'primeng/image';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
-import { PanelModule } from 'primeng/panel';
-import { RadioButtonModule } from 'primeng/radiobutton';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -29,12 +25,13 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {  DotMessagePipe } from '@dotcms/ui';
 
 import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
+import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/ai-image-prompt-input.component';
 
-import { DotAIImageGenerationResponse } from '../../shared/services/dot-ai/dot-ai.models';
+import { AIImagePrompt, DotGeneratedAIImage } from '../../shared/services/dot-ai/dot-ai.models';
 
 @Component({
     selector: 'dot-ai-image-prompt',
@@ -52,16 +49,11 @@ import { DotAIImageGenerationResponse } from '../../shared/services/dot-ai/dot-a
         AsyncPipe,
         DotMessagePipe,
         ConfirmDialogModule,
-        PanelModule,
-        DotFieldRequiredDirective,
-        FormsModule,
-        RadioButtonModule,
-        DropdownModule,
-        InputTextareaModule,
-        AccordionModule,
         SkeletonModule,
         JsonPipe,
-        GalleriaModule
+        GalleriaModule,
+        ImageModule,
+        AiImagePromptFormComponent
     ],
     providers: [FormGroupDirective],
 
@@ -75,6 +67,7 @@ export class AIImagePromptComponent implements OnInit {
     private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
     form: FormGroup;
+    selectedImage : DotGeneratedAIImage;
 
     /**
      * Hides the dialog.
@@ -91,8 +84,20 @@ export class AIImagePromptComponent implements OnInit {
             isLoading ? this.form.disable() : this.form.enable();
         });
 
-        this.store.getImages$.pipe(filter(images => !!images.length)).subscribe((images) => {
-            this.form.patchValue({'text': images[images.length - 1].aiResponse.revised_prompt });
+        // this.store.isOpenDialog$.pipe().subscribe(() => {
+        //     this.initForm();
+        // });
+
+        // this.store.activeGalleryIndex$.pipe().subscribe((activeGalleryIndex) => {
+        //     console.log('activeGalleryIndex', activeGalleryIndex);
+        //     this.form.patchValue({text: this.store.getImages$[activeGalleryIndex].aiResponse.originalPrompt})
+        // });
+
+        this.store.getImages$.pipe(filter((images) => !!images.length)).subscribe((images) => {
+            this.selectedImage = images[images.length - 1];
+
+            // this.form.patchValue({ text: images[images.length - 1].aiResponse.originalPrompt });
+            // this.generatedValue = images[images.length - 1].aiResponse;
         });
 
         // this.vm$.subscribe((vm) => {
@@ -114,14 +119,14 @@ export class AIImagePromptComponent implements OnInit {
     /**
      * Generates an image based on the provided prompt.
      *
-     * @param {string} prompt - The text prompt used to generate the image.
+     * @param {AIImagePrompt} formValue - The object prompt used to generate the image.
      * @return {void} - This method does not return any value.
      */
-    generateImage(): void {
-        this.store.generateImage(this.form.value);
+    generateImage(formValue: AIImagePrompt): void {
+        this.store.generateImage(formValue);
     }
 
-    insetImage(imageInfo: DotAIImageGenerationResponse): void {
+    insetImage(imageInfo: DotGeneratedAIImage): void {
         this.store.patchState({ selectedImage: imageInfo });
         //TODO: add image carrousel and notify the store
     }

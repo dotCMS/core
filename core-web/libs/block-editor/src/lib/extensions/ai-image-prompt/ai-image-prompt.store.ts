@@ -11,26 +11,25 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { PromptType } from './ai-image-prompt.models';
 
-import { AIImageSize, DotAiService } from '../../shared';
-import { DotAIImageGenerationResponse } from '../../shared/services/dot-ai/dot-ai.models';
+import {  DotAiService } from '../../shared';
+import {
+    AIImagePrompt,
+    DotGeneratedAIImage
+} from '../../shared/services/dot-ai/dot-ai.models';
 
 const DEFAULT_INPUT_PROMPT: PromptType = 'input';
 
-export interface AIImagePrompt {
-    text: string;
-    type: PromptType;
-    size: AIImageSize;
-}
+
 
 export interface DotAiImagePromptComponentState {
     showDialog: boolean;
     prompt: string | null; // we always have the final prompt here
     editorContent: string | null;
-    images: DotAIImageGenerationResponse[];
+    images: DotGeneratedAIImage[];
     status: ComponentStatus;
     error: string;
     orientationOptions: SelectItem<string>[];
-    selectedImage: DotAIImageGenerationResponse | null;
+    selectedImage: DotGeneratedAIImage | null;
     galleryActiveIndex: number;
 }
 
@@ -38,7 +37,7 @@ export interface VmAiImagePrompt {
     showDialog: boolean;
     status: ComponentStatus;
     orientationOptions: SelectItem[];
-    images: DotAIImageGenerationResponse[];
+    images: DotGeneratedAIImage[];
     galleryActiveIndex: number;
 }
 
@@ -67,6 +66,8 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         ({ status }) => status === ComponentStatus.LOADING
     );
 
+    readonly activeGalleryIndex$ = this.select(this.state$, ({ galleryActiveIndex }) => galleryActiveIndex);
+
     readonly selectedImage$ = this.select(this.state$, ({ selectedImage }) => selectedImage);
 
     readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
@@ -86,15 +87,13 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         error: ''
     }));
 
-    readonly hideDialog = this.updater((state) => ({
-        ...state,
-        showDialog: false,
-        selectedPromptType: null
+    readonly hideDialog = this.updater(() => ({
+        ...initialState
     }));
 
     readonly vm$: Observable<VmAiImagePrompt> = this.select(
         this.state$,
-        ({ showDialog, status, orientationOptions, images,galleryActiveIndex }) => ({
+        ({ showDialog, status, orientationOptions, images, galleryActiveIndex }) => ({
             showDialog,
             status,
             orientationOptions,
@@ -133,7 +132,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                         (response) => {
                             this.patchState((state) => ({
                                 status: ComponentStatus.IDLE,
-                                images: [...state.images, response],
+                                images: [...state.images, {request: prompt, response: response}],
                                 galleryActiveIndex: state.images.length
                             }));
                         },

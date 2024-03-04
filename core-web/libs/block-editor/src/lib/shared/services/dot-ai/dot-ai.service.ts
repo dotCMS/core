@@ -9,8 +9,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import {
     AiPluginResponse,
-    DotAICompletionsConfig,
-    DotAIImageGenerationResponse,
+    DotAICompletionsConfig, DotAIImageContent,
     DotAIImageResponse
 } from './dot-ai.models';
 
@@ -70,12 +69,12 @@ export class DotAiService {
      *
      * @param {string} prompt - The prompt for generating the image.
      * @param {string} size - The size of the image to be generated (default: '1024x1024').
-     * @returns {Observable<DotCMSContentlet[]>} - An observable that emits an array of DotCMSContentlet objects.
+     * @returns {Observable<DotAIImageContent[]>} - An observable that emits an array of DotCMSContentlet objects.
      */
     public generateAndPublishImage(
         prompt: string,
         size: AIImageSize = '1024x1024'
-    ): Observable<DotAIImageGenerationResponse> {
+    ): Observable<DotAIImageContent> {
         return this.http
             .post<DotAIImageResponse>(
                 `${API_ENDPOINT}/image/generate`,
@@ -114,7 +113,7 @@ export class DotAiService {
 
     private createAndPublishContentlet(
         aiResponse: DotAIImageResponse
-    ): Observable<DotAIImageGenerationResponse> {
+    ): Observable<DotAIImageContent> {
         const { response, tempFileName } = aiResponse;
         const contentlets: Partial<DotCMSContentlet>[] = [
             {
@@ -134,13 +133,13 @@ export class DotAiService {
                 pluck('entity', 'results'),
                 map((contentlets: DotCMSContentlet[]) => ({
                     contentlet: Object.values(contentlets[0])[0],
-                    aiResponse
+                    ...aiResponse
                 })),
                 catchError(() =>
                     throwError(
                         'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
                     )
                 )
-            ) as Observable<DotAIImageGenerationResponse>;
+            ) as Observable<DotAIImageContent>;
     }
 }
