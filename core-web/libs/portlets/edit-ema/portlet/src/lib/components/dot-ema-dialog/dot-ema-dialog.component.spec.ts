@@ -154,11 +154,24 @@ describe('DotEmaDialogComponent', () => {
         it('should trigger editContentlet in the store', () => {
             const editContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
 
-            component.editContentlet(PAYLOAD_MOCK);
+            component.editContentlet(PAYLOAD_MOCK.contentlet);
 
             expect(editContentletSpy).toHaveBeenCalledWith({
                 inode: PAYLOAD_MOCK.contentlet.inode,
-                title: PAYLOAD_MOCK.contentlet.title
+                title: PAYLOAD_MOCK.contentlet.title,
+                isUrlMap: false
+            });
+        });
+
+        it('should trigger editContentlet in the store for url Map', () => {
+            const editContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
+
+            component.editContentlet(PAYLOAD_MOCK.contentlet, true);
+
+            expect(editContentletSpy).toHaveBeenCalledWith({
+                inode: PAYLOAD_MOCK.contentlet.inode,
+                title: PAYLOAD_MOCK.contentlet.title,
+                isUrlMap: true
             });
         });
 

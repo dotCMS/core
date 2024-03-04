@@ -220,7 +220,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      */
     private createEditContentletUrl(inode: string, isUrlMap?: boolean): string {
         const extraQueryParam = isUrlMap ? `&isUrlMap=${isUrlMap}` : '';
-        
+
         return `${EDIT_CONTENTLET_URL}${inode}${extraQueryParam}`;
     }
 

@@ -1024,10 +1024,7 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(copySpy).toHaveBeenCalledWith(TREE_NODE_MOCK); // It's not being called
                         expect(dialogLoadingSpy).toHaveBeenCalledWith('Hello World');
-                        expect(editContentletSpy).toHaveBeenCalledWith({
-                            ...EDIT_ACTION_PAYLOAD_MOCK,
-                            contentlet: newContentlet
-                        });
+                        expect(editContentletSpy).toHaveBeenCalledWith(newContentlet);
                         expect(modalSpy).toHaveBeenCalled();
                         expect(reloadIframeSpy).toHaveBeenCalledWith('ema-reload-page', '*');
                     });
@@ -1084,7 +1081,7 @@ describe('EditEmaEditorComponent', () => {
                         expect(copySpy).not.toHaveBeenCalled();
                         expect(dialogLoadingSpy).not.toHaveBeenCalled();
                         expect(editContentletSpy).toHaveBeenCalledWith(
-                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
+                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES.contentlet
                         );
                         expect(modalSpy).toHaveBeenCalled();
                         expect(reloadIframeSpy).not.toHaveBeenCalledWith();
