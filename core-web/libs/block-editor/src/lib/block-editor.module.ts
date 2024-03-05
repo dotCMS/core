@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
@@ -32,10 +31,6 @@ import { ContentletBlockComponent } from './nodes';
 import { DotAiService, DotUploadFileService, EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
-
-const initTranslations = (dotMessageService: DotMessageService) => {
-    return () => dotMessageService.init();
-};
 
 @NgModule({
     imports: [
@@ -72,14 +67,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         LoggerService,
         StringUtils,
         DotAiService,
-        DotMessageService,
-        ConfirmationService,
-        {
-            provide: APP_INITIALIZER,
-            useFactory: initTranslations,
-            deps: [DotMessageService],
-            multi: true
-        }
+        ConfirmationService
     ],
     exports: [
         EditorDirective,
