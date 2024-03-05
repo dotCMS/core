@@ -75,7 +75,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiResponse, DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import {
     ActionPayload,
     PositionPayload,
@@ -231,16 +231,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly host = '*';
     readonly editorState = EDITOR_STATE;
+    readonly editorMode = EDITOR_MODE;
 
     private draggedPayload: DraggedPalettePayload;
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
-    seoMedia: string;
-
-    // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
-    currentDevice: DotDevice & { icon?: string };
 
     get queryParams(): DotPageApiParams {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
@@ -266,19 +263,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     onIframePageLoad({ clientHost, editor }: { clientHost: string; editor: DotPageApiResponse }) {
         if (!clientHost) {
             // Is VTL
-            this.iframe.nativeElement.contentDocument.open();
-            this.iframe.nativeElement.contentDocument.write(editor.page.rendered);
-            this.iframe.nativeElement.contentDocument.close();
+            const doc = this.iframe?.nativeElement.contentDocument; // Iframe can be undefined
 
-            this.ogTags.set(
-                this.dotSeoMetaTagsUtilService.getMetaTags(
-                    this.iframe.nativeElement.contentDocument
-                )
-            );
+            if (doc) {
+                doc.open();
+                doc.write(editor.page.rendered);
+                doc.close();
 
-            this.ogTagsResults$ = this.dotSeoMetaTagsService
-                .getMetaTagsResults(this.iframe.nativeElement.contentDocument)
-                .pipe(take(1));
+                this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+
+                this.ogTagsResults$ = this.dotSeoMetaTagsService
+                    .getMetaTagsResults(doc)
+                    .pipe(take(1));
+            }
         }
     }
 
@@ -384,11 +381,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {DotDevice} [device]
      * @memberof EditEmaEditorComponent
      */
-    updateCurrentDevice(device?: DotDevice & { icon?: string }) {
-        this.currentDevice = device;
+    updateCurrentDevice(device: DotDevice & { icon?: string }) {
+        this.store.updatePreviewState({
+            editorMode: EDITOR_MODE.PREVIEW,
+            device
+        });
+
         this.rows = []; // We need to reset the rows when we change the device
         this.contentlet = null; // We need to reset the contentlet when we change the device
-        this.seoMedia = undefined; // We need to reset the seo media when we change the device
+    }
+
+    goToEditMode() {
+        this.store.updatePreviewState({
+            editorMode: EDITOR_MODE.EDIT
+        });
+
+        this.rows = []; // We need to reset the rows when we change the device
+        this.contentlet = null; // We need to reset the contentlet when we change the device
     }
 
     /**
@@ -769,7 +778,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     onSeoMediaChange(seoMedia: string) {
-        this.seoMedia = seoMedia;
+        this.store.updatePreviewState({
+            editorMode: EDITOR_MODE.PREVIEW,
+            socialMedia: seoMedia
+        });
     }
 
     /**
