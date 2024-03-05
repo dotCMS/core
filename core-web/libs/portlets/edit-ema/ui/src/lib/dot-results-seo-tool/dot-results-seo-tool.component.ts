@@ -11,7 +11,7 @@ import {
     NgSwitchDefault,
     TitleCasePipe
 } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 
@@ -55,11 +55,11 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
     styleUrls: ['./dot-results-seo-tool.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotResultsSeoToolComponent implements OnInit, OnChanges {
+export class DotResultsSeoToolComponent implements OnChanges {
     @Input() hostName: string;
     @Input() seoMedia: string;
-    @Input() seoOGTags: SeoMetaTags;
-    @Input() seoOGTagsResults: Observable<SeoMetaTagsResult[]>;
+    @Input() seoOGTags?: SeoMetaTags;
+    @Input() seoOGTagsResults?: Observable<SeoMetaTagsResult[]>;
     currentResults$: Observable<SeoMetaTagsResult[]>;
     readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
 
@@ -69,14 +69,14 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     seoMediaTypes = SEO_MEDIA_TYPES;
     noFavicon = false;
 
-    ngOnInit() {
+    ngOnChanges() {
         const title =
-            this.seoOGTags['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
-            this.seoOGTags.title?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
+            this.seoOGTags?.['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
+            this.seoOGTags?.title?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
 
         const description =
-            this.seoOGTags['og:description']?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) ||
-            this.seoOGTags.description?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
+            this.seoOGTags?.['og:description']?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) ||
+            this.seoOGTags?.description?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
 
         const twitterDescriptionProperties = [
             'twitter:description',
@@ -87,13 +87,13 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
 
         const twitterDescription = twitterDescriptionProperties
             .map((property) =>
-                this.seoOGTags[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
+                this.seoOGTags?.[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
             )
             .find((value) => value !== undefined);
 
         const twitterTitle = twitterTitleProperties
             .map((property) =>
-                this.seoOGTags[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
+                this.seoOGTags?.[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
             )
             .find((value) => value !== undefined);
 
@@ -104,11 +104,11 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
                 description,
                 type: 'Desktop',
                 isMobile: false,
-                image: this.seoOGTags['og:image'],
+                image: this.seoOGTags?.['og:image'],
                 twitterTitle,
                 twitterDescription,
-                twitterCard: this.seoOGTags['twitter:card'],
-                twitterImage: this.seoOGTags['twitter:image']
+                twitterCard: this.seoOGTags?.['twitter:card'],
+                twitterImage: this.seoOGTags?.['twitter:image']
             },
             {
                 hostName: this.hostName,
@@ -122,10 +122,8 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
         const [preview] = this.allPreview;
         this.mainPreview = preview;
         this.readMoreValues = this.dotSeoMetaTagsUtilService.getReadMore();
-    }
 
-    ngOnChanges() {
-        this.currentResults$ = this.seoOGTagsResults.pipe(
+        this.currentResults$ = this.seoOGTagsResults?.pipe(
             map((tags) => {
                 return this.dotSeoMetaTagsUtilService.getFilteredMetaTagsByMedia(
                     tags,

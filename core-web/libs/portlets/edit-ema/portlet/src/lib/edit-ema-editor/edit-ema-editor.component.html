@@ -80,10 +80,10 @@
         data-testId="results-seo-tool"></dot-results-seo-tool>
     <div
         class="editor-content"
-        *ngIf="!es.previewState.socialMedia"
         [ngClass]="{
             'editor-content--device': !!es.previewState.device,
-            'editor-content--expanded': !es.editor.page.canEdit
+            'editor-content--expanded': !es.editor.page.canEdit,
+            'editor-content--hidden': es.previewState.socialMedia
         }"
         data-testId="editor-content">
         <div
