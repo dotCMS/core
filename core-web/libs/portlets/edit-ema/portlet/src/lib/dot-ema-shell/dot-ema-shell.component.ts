@@ -155,12 +155,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     label: 'editema.editor.navbar.properties',
                     action: () => {
                         this.dialog.editContentlet({
-                            contentlet: {
-                                inode: page.inode,
-                                title: page.title,
-                                identifier: page.identifier,
-                                contentType: page.contentType
-                            }
+                            inode: page.inode,
+                            title: page.title,
+                            identifier: page.identifier,
+                            contentType: page.contentType
                         });
                     }
                 }

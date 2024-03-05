@@ -190,6 +190,36 @@ describe('EditEmaStore', () => {
                 });
             });
 
+            it('should handle successful data reload', (done) => {
+                const dotPageApiService = spectator.inject(DotPageApiService);
+                const spyWhenReloaded = jest.fn();
+                const spyGetPage = jest
+                    .spyOn(dotPageApiService, 'get')
+                    .mockReturnValue(of(MOCK_RESPONSE_HEADLESS));
+                const params = {
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                };
+
+                spectator.service.reload({
+                    params,
+                    whenReloaded: spyWhenReloaded
+                });
+
+                spectator.service.state$.subscribe((state) => {
+                    expect(state).toEqual({
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        isEnterpriseLicense: true,
+                        editorState: EDITOR_STATE.LOADED
+                    });
+                    expect(spyGetPage).toHaveBeenCalledWith(params);
+                    expect(spyWhenReloaded).toHaveBeenCalled();
+                    done();
+                });
+            });
+
             it("should call save method from dotPageApiService when 'save' action is dispatched", () => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
                 const mockResponse = {
@@ -490,7 +520,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
-                        iframeURL: null,
+                        iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED
@@ -509,7 +539,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
-                        iframeURL: null,
+                        iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED

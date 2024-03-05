@@ -52,6 +52,11 @@ export interface SavePagePayload {
     whenSaved?: () => void;
 }
 
+export interface ReloadPagePayload {
+    params: DotPageApiParams;
+    whenReloaded?: () => void;
+}
+
 export interface NavigationBarItem {
     icon?: string;
     iconURL?: string;
