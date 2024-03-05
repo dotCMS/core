@@ -131,7 +131,7 @@ public class FileAssetTemplate extends Template {
 
     @Override
     public String getTheme() {
-        return Try.of(()-> FileAssetTemplateUtil.getInstance().getThemeIdFromPath(theme)).getOrNull();
+        return Try.of(()-> FileAssetTemplateUtil.getInstance().getThemeIdFromPath(super.getTheme())).getOrNull();
     }
 
     @Override

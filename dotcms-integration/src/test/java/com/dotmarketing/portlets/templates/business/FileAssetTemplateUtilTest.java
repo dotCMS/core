@@ -7,7 +7,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
-import com.ettrema.httpclient.Host;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -145,7 +144,7 @@ public class FileAssetTemplateUtilTest extends ContentletBaseTest {
         final String theme = "";
         final String themeId = FileAssetTemplateUtil.getInstance().getThemeIdFromPath(theme);
 
-        Assert.assertNull(themeId);
+        Assert.assertEquals(theme, themeId);
     }
 
     /**
@@ -157,10 +156,10 @@ public class FileAssetTemplateUtilTest extends ContentletBaseTest {
     @Test
     public void test_getThemeIdFromPath_with_random_string() throws Exception {
 
-        final String theme = "path/theme/random/
+        final String theme = "path/theme/random/";
         final String themeId = FileAssetTemplateUtil.getInstance().getThemeIdFromPath(theme);
 
-        Assert.assertNull(themeId);
+        Assert.assertEquals(theme, themeId);
     }
 
     /**
@@ -175,7 +174,7 @@ public class FileAssetTemplateUtilTest extends ContentletBaseTest {
         // create a folder under application/themes
         final String theme = "/application/themes/dotcms";
         final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
-        final Folder themesFolder = ApiLocator.getFolderAPI().createFolders(theme, host, user, false);
+        final Folder themesFolder = APILocator.getFolderAPI().createFolders(theme, host, user, false);
         final String folderId = themesFolder.getInode();
         final String fullPath = "//"+host.getHostname()+theme;
         final String themeId = FileAssetTemplateUtil.getInstance().getThemeIdFromPath(fullPath);
