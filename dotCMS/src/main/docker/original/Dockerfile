@@ -50,6 +50,7 @@ RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
 
 # ----------------------------------------------
 # Stage 2:  Copy pg_dump binary
+#     - pg_dump v. 16.2 for Ubuntu 20.04
 # ----------------------------------------------
 FROM dotcms/pg-base:20.04_16.2 as composed-base
 COPY --from=container-base / /
