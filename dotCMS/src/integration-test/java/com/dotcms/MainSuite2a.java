@@ -200,7 +200,8 @@ import org.junit.runners.Suite.SuiteClasses;
         IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
         GoogleTranslationServiceIntegrationTest.class,
-        Task240102AlterVarcharLengthOfRelationTypeTest.class
+        Task240102AlterVarcharLengthOfRelationTypeTest.class,
+        Task240131UpdateLanguageVariableContentTypeTest.class
 })
 
 public class MainSuite2a {
