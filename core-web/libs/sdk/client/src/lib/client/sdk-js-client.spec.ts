@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DotCmsClient, dotcmsClient } from './sdk-js-client';
 global.fetch = jest.fn();

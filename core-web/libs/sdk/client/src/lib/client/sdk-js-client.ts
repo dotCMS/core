@@ -292,6 +292,6 @@ export const dotcmsClient = {
      * @returns {DotCmsClient} - An instance of the {@link DotCmsClient} class.
      */
     init: (config: ClientConfig): DotCmsClient => {
-        return new DotCmsClient(config);
+        return new DotCmsClient(config); 
     }
 };

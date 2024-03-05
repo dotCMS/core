@@ -1,4 +1,4 @@
-import { sdkDotPageEditor } from '@dotcms/editor';
+import { dotPageEditor } from '@dotcms/client';
 
 import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
@@ -36,7 +36,7 @@ export type DotcmsPageProps = {
 export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
     const { entity } = props;
 
-    const client = sdkDotPageEditor.createClient();
+    const client = dotPageEditor.createClient();
     client.init();
     client.updateNavigation('/') // In usePageEditor, this value is null
 

@@ -1,7 +1,6 @@
 /// <reference types="jest" />
+import { postMessageToEditor, CUSTOMER_ACTIONS } from './models/client.model';
 import { DotCMSPageEditor } from './sdk-editor';
-
-import { postMessageToEditor } from './models/client.model';
 
 jest.mock('./models/client.model', () => ({
     postMessageToEditor: jest.fn(),
@@ -15,8 +14,6 @@ jest.mock('./models/client.model', () => ({
         NOOP: 'noop'
     }
 }));
-
-import { CUSTOMER_ACTIONS } from './models/client.model';
 
 describe('DotCMSPageEditor', () => {
     describe('is NOT inside editor', () => {

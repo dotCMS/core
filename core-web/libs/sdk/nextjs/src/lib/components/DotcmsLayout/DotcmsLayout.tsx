@@ -1,7 +1,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { sdkDotPageEditor } from '@dotcms/editor';
+import { dotPageEditor } from '@dotcms/client';
 import { DotcmsPageProps, PageProvider, Row } from '@dotcms/react';
 
 /**
@@ -52,7 +52,7 @@ export function DotcmsLayout(props: DotcmsPageProps) {
     const router = useRouter();
     const pathname = usePathname();
 
-    const client = sdkDotPageEditor.createClient({
+    const client = dotPageEditor.createClient({
         onReload: router.refresh
     });
 
@@ -64,6 +64,7 @@ export function DotcmsLayout(props: DotcmsPageProps) {
         };
     }, [client, pathname]);
 
+    
     entity.isInsideEditor = client.isInsideEditor;
 
     return (

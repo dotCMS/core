@@ -100,6 +100,7 @@ export class DotCMSPageEditor {
                 }
             }
         };
+
         window.addEventListener('message', messageCallback);
         this.subscriptions.push({
             type: 'listener',
@@ -146,6 +147,7 @@ export class DotCMSPageEditor {
                 }
             });
         };
+
         document.addEventListener('pointermove', pointerMoveCallback);
         this.subscriptions.push({
             type: 'listener',
@@ -166,6 +168,7 @@ export class DotCMSPageEditor {
                 action: CUSTOMER_ACTIONS.IFRAME_SCROLL
             });
         };
+
         window?.addEventListener('scroll', scrollCallback);
         this.subscriptions.push({
             type: 'listener',
@@ -185,9 +188,11 @@ export class DotCMSPageEditor {
         if (window?.parent === window) {
             return false;
         }
+        
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.PING_EDITOR
         });
+
         return true;
     }
 
@@ -252,7 +257,7 @@ export class DotCMSPageEditor {
  */
 const defaultReloadFn = () => window.location.reload();
 
-export const sdkDotPageEditor = {
+export const dotPageEditor = {
     createClient: (config?: DotCMSPageEditorConfig) => {
         const dotCMSPageEditor = new DotCMSPageEditor(config);
         dotCMSPageEditor.init();

@@ -27,6 +27,7 @@ import { ProgressBarModule } from 'primeng/progressbar';
 
 import { takeUntil, catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
+import { CUSTOMER_ACTIONS, NOTIFY_CUSTOMER } from '@dotcms/client';
 import {
     DotPersonalizeService,
     DotMessageService,
@@ -34,7 +35,6 @@ import {
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotDevice, DotPersona, DotTreeNode } from '@dotcms/dotcms-models';
-import { CUSTOMER_ACTIONS, NOTIFY_CUSTOMER } from '@dotcms/editor';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import {
     SafeUrlPipe,
