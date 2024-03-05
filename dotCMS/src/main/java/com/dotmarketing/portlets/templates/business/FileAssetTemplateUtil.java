@@ -429,15 +429,21 @@ public class FileAssetTemplateUtil {
      * @param themePath String
      * @return String
      */
-    public String getThemeIdFromPath (final String themePath) throws DotDataException, DotSecurityException {
+    public String getThemeIdFromPath (final String themePath)  {
 
         if (Objects.nonNull(themePath) && themePath.startsWith(HOST_INDICATOR)) {
 
-            final String hostname = this.getHostNameForTheme(themePath);
-            final Host host   = this.getHostFromHostname(hostname);
-            final String path = this.getPathFromFullPath(hostname, themePath);
-            final Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host, APILocator.systemUser(), false);
-            return folder.getInode();
+            try {
+                final String hostname = this.getHostNameForTheme(themePath);
+                final Host host = this.getHostFromHostname(hostname);
+                final String path = this.getPathFromFullPath(hostname, themePath);
+                final Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host, APILocator.systemUser(), false);
+                return Objects.nonNull(folder) ? folder.getInode() : themePath;
+            } catch (Exception e) {
+
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
+            }
         }
 
         return themePath;
