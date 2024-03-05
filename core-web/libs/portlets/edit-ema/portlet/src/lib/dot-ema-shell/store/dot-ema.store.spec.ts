@@ -221,7 +221,10 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED
+                        editorState: EDITOR_STATE.LOADED,
+                        previewState: {
+                            editorMode: EDITOR_MODE.EDIT
+                        }
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
                     expect(spyWhenReloaded).toHaveBeenCalled();
