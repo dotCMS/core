@@ -8,7 +8,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaDialogComponent } from './dot-ema-dialog.component';
@@ -154,7 +154,18 @@ describe('DotEmaDialogComponent', () => {
         it('should trigger editContentlet in the store', () => {
             const editContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
 
-            component.editContentlet(PAYLOAD_MOCK);
+            component.editContentlet(PAYLOAD_MOCK.contentlet);
+
+            expect(editContentletSpy).toHaveBeenCalledWith({
+                inode: PAYLOAD_MOCK.contentlet.inode,
+                title: PAYLOAD_MOCK.contentlet.title
+            });
+        });
+
+        it('should trigger editContentlet in the store for url Map', () => {
+            const editContentletSpy = jest.spyOn(storeSpy, 'editUrlContentMapContentlet');
+
+            component.editUrlContentMapContentlet(PAYLOAD_MOCK.contentlet as DotCMSContentlet);
 
             expect(editContentletSpy).toHaveBeenCalledWith({
                 inode: PAYLOAD_MOCK.contentlet.inode,

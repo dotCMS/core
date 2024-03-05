@@ -347,55 +347,55 @@ jobs:
       # Distinguishes between snapshots and releases
       - name: 'Dynamic configuration of NPM package Version and Tag'
         run: |
-          MVN_PACKAGE_VERSION=$(echo ${{ github.event.inputs.version }} | tr '[:lower:]' '[:upper:]') 
+          MVN_PACKAGE_VERSION=$(echo ${{ github.event.inputs.version }} | tr '[:lower:]' '[:upper:]')
           PACKAGE_FULL_NAME=${{ env.NPM_PACKAGE_SCOPE }}/${{ env.NPM_PACKAGE_NAME }}
-          
+
           # Check if the npm package exists
           if ! npm view $PACKAGE_FULL_NAME &> /dev/null; then
             echo "::error::The package $PACKAGE_FULL_NAME does not exist on npm."
             exit 1
           fi
-          
+
           # Check if the package is a snapshot
           REGEX="([0-9]+\.[0-9]+\.[0-9]+)-SNAPSHOT"
-          
+
           if [[ $MVN_PACKAGE_VERSION =~ $REGEX ]]; then
             echo "::debug::Snapshot version found."
-          
+
             NPM_PACKAGE_VERSION_TAG="rc"
             MVN_BASE_VERSION="${BASH_REMATCH[1]}"
-          
+
             # Use regular expression to extract version components
             if [[ $MVN_BASE_VERSION =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
               MAJOR=$(echo "${BASH_REMATCH[1]}" | sed "s/\b0\+\([1-9]\)/\1/g")
               MINOR=$(echo "${BASH_REMATCH[2]}" | sed "s/\b0\+\([1-9]\)/\1/g")
               PATCH=$(echo "${BASH_REMATCH[3]}" | sed "s/\b0\+\([1-9]\)/\1/g")
               VERSION_NPM_FORMAT="${MAJOR}.${MINOR}.${PATCH}"
-              
+
               echo "::debug::VERSION_NPM_FORMAT: ${VERSION_NPM_FORMAT}"
             else
               echo "::error::Invalid Maven version format: $MVN_BASE_VERSION"
               exit 1
             fi
-                    
+
             LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
-          
+
             if [[ $LAST_RC_VERSION == "$VERSION_NPM_FORMAT"* ]]; then
               NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
               RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
             else
               RC_SUFFIX="-rc1"
             fi;
-          
+
             NPM_PACKAGE_VERSION=${MVN_BASE_VERSION}${RC_SUFFIX}
           else
             echo "::debug::Release version found."
             NPM_PACKAGE_VERSION_TAG="latest"
             NPM_PACKAGE_VERSION=${MVN_PACKAGE_VERSION}
-          fi;          
+          fi;
           echo "::debug::NPM_PACKAGE_VERSION: $NPM_PACKAGE_VERSION"
           echo "::debug::NPM_PACKAGE_VERSION_TAG: $NPM_PACKAGE_VERSION_TAG"
-          
+
           echo "NPM_PACKAGE_VERSION=$NPM_PACKAGE_VERSION" >> $GITHUB_ENV
           echo "NPM_PACKAGE_VERSION_TAG=$NPM_PACKAGE_VERSION_TAG" >> $GITHUB_ENV
 

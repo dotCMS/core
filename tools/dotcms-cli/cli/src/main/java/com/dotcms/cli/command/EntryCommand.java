@@ -35,7 +35,7 @@ import picocli.CommandLine.Model.OptionSpec;
         header = "dotCMS dotCLI",
         subcommands = {
                 //-- Miscellaneous stuff
-                InitCommand.class,
+                ConfigCommand.class,
                 InstanceCommand.class,
                 StatusCommand.class,
                 LoginCommand.class,
