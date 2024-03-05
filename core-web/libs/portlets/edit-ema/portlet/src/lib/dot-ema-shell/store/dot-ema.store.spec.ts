@@ -192,7 +192,7 @@ describe('EditEmaStore', () => {
 
             it('should handle successful data reload', (done) => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
-
+                const spyWhenReloaded = jest.fn();
                 const spyGetPage = jest
                     .spyOn(dotPageApiService, 'get')
                     .mockReturnValue(of(MOCK_RESPONSE_HEADLESS));
@@ -202,7 +202,10 @@ describe('EditEmaStore', () => {
                     'com.dotmarketing.persona.id': '123'
                 };
 
-                spectator.service.reload(params);
+                spectator.service.reload({
+                    params,
+                    whenReloaded: spyWhenReloaded
+                });
 
                 spectator.service.state$.subscribe((state) => {
                     expect(state).toEqual({
@@ -212,6 +215,7 @@ describe('EditEmaStore', () => {
                         editorState: EDITOR_STATE.LOADED
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
+                    expect(spyWhenReloaded).toHaveBeenCalled();
                     done();
                 });
             });

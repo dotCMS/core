@@ -592,7 +592,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
 
                 if (shouldReloadPage) {
-                    this.store.reload(this.queryParams);
+                    this.store.reload({
+                        params: this.queryParams,
+                        whenReloaded: () => {
+                            this.dialog.resetDialog();
+                            this.reloadIframe();
+                        }
+                    });
 
                     return;
                 }

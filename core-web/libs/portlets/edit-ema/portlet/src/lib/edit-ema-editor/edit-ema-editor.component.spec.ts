@@ -1031,8 +1031,11 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
                     expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK, true);
                     expect(spy).toHaveBeenCalledWith({
-                        language_id: 1,
-                        url: 'page-one'
+                        params: {
+                            language_id: 1,
+                            url: 'page-one'
+                        },
+                        whenReloaded: expect.any(Function)
                     });
                 });
 
@@ -1706,10 +1709,17 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('iframe should have reload the page and add the new content', async () => {
-                    store.reload({
+                    const params = {
                         language_id: '4',
                         url: 'index',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    };
+
+                    store.reload({
+                        params,
+                        whenReloaded: () => {
+                            /* */
+                        }
                     });
                     spectator.detectChanges();
                     await spectator.fixture.whenStable();

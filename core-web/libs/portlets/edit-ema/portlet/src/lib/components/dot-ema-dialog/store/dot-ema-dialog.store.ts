@@ -34,7 +34,7 @@ export interface CreateFromPaletteAction {
     payload: ActionPayload;
 }
 
-interface EditContentI {
+interface EditContentletPayload {
     inode: string;
     title: string;
     isUrlMap?: boolean;
@@ -128,17 +128,19 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly editContentlet = this.updater((state, { inode, title, isUrlMap }: EditContentI) => {
-        const url = this.createEditContentletUrl(inode, isUrlMap);
+    readonly editContentlet = this.updater(
+        (state, { inode, title, isUrlMap }: EditContentletPayload) => {
+            const url = this.createEditContentletUrl(inode, isUrlMap);
 
-        return {
-            ...state,
-            header: title,
-            status: DialogStatus.LOADING,
-            type: 'content',
-            url
-        };
-    });
+            return {
+                ...state,
+                header: title,
+                status: DialogStatus.LOADING,
+                type: 'content',
+                url
+            };
+        }
+    );
 
     /**
      * This method is called when the user clicks on the [+ add] button

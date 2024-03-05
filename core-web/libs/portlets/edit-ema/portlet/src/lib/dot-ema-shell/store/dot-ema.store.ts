@@ -18,7 +18,7 @@ import {
 } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
-import { ActionPayload, SavePagePayload } from '../../shared/models';
+import { ActionPayload, ReloadPagePayload, SavePagePayload } from '../../shared/models';
 import { insertContentletInContainer, sanitizeURL, getPersonalization } from '../../utils';
 
 export interface EditEmaState {
@@ -176,16 +176,17 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    readonly reload = this.effect((params$: Observable<DotPageApiParams>) => {
-        return params$.pipe(
+    readonly reload = this.effect((payload$: Observable<ReloadPagePayload>) => {
+        return payload$.pipe(
             tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
-            switchMap((params) => {
+            switchMap(({ params, whenReloaded }) => {
                 return this.dotPageApiService.get(params).pipe(
-                    tap({
+                    tapResponse({
                         next: (editor) =>
                             this.patchState({ editor, editorState: EDITOR_STATE.LOADED }),
                         error: ({ status }: HttpErrorResponse) =>
-                            this.createEmptyState({ canEdit: false, canRead: false }, status)
+                            this.createEmptyState({ canEdit: false, canRead: false }, status),
+                        finalize: () => whenReloaded?.()
                     }),
                     catchError(() => EMPTY)
                 );
