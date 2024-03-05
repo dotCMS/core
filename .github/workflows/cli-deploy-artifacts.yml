@@ -2,7 +2,6 @@ name: 'CLI Deploy Artifacts'
 on:
   push:
     branches:
-      - 'issue-27286-deploy-cli-on-new-merged-code'
       - 'master'
       - 'main'
       - 'trunk'
