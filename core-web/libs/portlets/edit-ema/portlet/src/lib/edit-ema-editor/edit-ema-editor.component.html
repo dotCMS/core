@@ -2,7 +2,7 @@
     <dot-device-selector-seo
         #deviceSelector
         [apiLink]="es.iframeURL"
-        [hideMediaTiles]="!!es.clientHost"
+        [hideSocialMedia]="!!es.clientHost"
         (selected)="updateCurrentDevice($event)"
         (changeSeoMedia)="onSeoMediaChange($event)"
         appendTo="body"
