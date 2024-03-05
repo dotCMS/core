@@ -8,7 +8,7 @@
 <%
 
 	String catCount = (String) request.getAttribute("counter");
-	String isUrlMap = (String) request.getParameter("isUrlMap");
+	String isURLMap = (String) request.getParameter("isURLMap");
 %>
 
 <script language='javascript' type='text/javascript'>
@@ -446,7 +446,7 @@
             isContentSaving = true;
         }
 
-        const isURLMapContent = "<%=isUrlMap%>" === "true";
+        const isURLMapContent = "<%=isURLMap%>" === "true";
 
         /**
          * If the content is a URLMap, we need to wait until the re-index process is done.
@@ -670,7 +670,7 @@
         refreshActionPanel(data["contentletInode"]);
 
         // If the contentlet is a urlContentMap, we need to reload the page
-        data.shouldReloadPage = "<%=isUrlMap%>" === "true";
+        data.shouldReloadPage = "<%=isURLMap%>" === "true";
 
         // if we have a referer and the contentlet comes back checked in
         var customEventDetail = {

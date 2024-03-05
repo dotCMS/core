@@ -594,10 +594,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 if (shouldReloadPage) {
                     this.store.reload({
                         params: this.queryParams,
-                        whenReloaded: () => {
-                            this.dialog.resetDialog();
-                            this.reloadIframe();
-                        }
+                        whenReloaded: () => this.reloadIframe()
                     });
 
                     return;
@@ -867,7 +864,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     protected editContentMap(contentlet: DotCMSContentlet): void {
-        this.dialog.editContentlet(contentlet, true);
+        this.dialog.editUrlContentMapContentlet(contentlet);
     }
 
     /**

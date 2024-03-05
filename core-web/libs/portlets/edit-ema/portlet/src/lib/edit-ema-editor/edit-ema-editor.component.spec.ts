@@ -1007,7 +1007,11 @@ describe('EditEmaEditorComponent', () => {
                     );
 
                     const spy = jest.spyOn(store, 'reload');
-                    const spyDialog = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const spyDialog = jest.spyOn(
+                        spectator.component.dialog,
+                        'editUrlContentMapContentlet'
+                    );
+                    const spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
 
                     spectator.setInput('contentlet', baseContentletPayload);
                     spectator.detectComponentChanges();
@@ -1029,7 +1033,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     spectator.detectChanges();
-                    expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK, true);
+                    expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
                     expect(spy).toHaveBeenCalledWith({
                         params: {
                             language_id: 1,
@@ -1037,6 +1041,7 @@ describe('EditEmaEditorComponent', () => {
                         },
                         whenReloaded: expect.any(Function)
                     });
+                    expect(spyReloadIframe).toHaveBeenCalled();
                 });
 
                 describe('Copy content', () => {

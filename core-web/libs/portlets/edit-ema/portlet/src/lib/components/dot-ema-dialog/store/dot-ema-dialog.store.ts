@@ -37,7 +37,6 @@ export interface CreateFromPaletteAction {
 interface EditContentletPayload {
     inode: string;
     title: string;
-    isUrlMap?: boolean;
 }
 
 @Injectable()
@@ -128,9 +127,24 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly editContentlet = this.updater(
-        (state, { inode, title, isUrlMap }: EditContentletPayload) => {
-            const url = this.createEditContentletUrl(inode, isUrlMap);
+    readonly editContentlet = this.updater((state, { inode, title }: EditContentletPayload) => {
+        return {
+            ...state,
+            header: title,
+            status: DialogStatus.LOADING,
+            type: 'content',
+            url: this.createEditContentletUrl(inode)
+        };
+    });
+
+    /**
+     * This method is called when the user clicks on the edit URL Content Map button
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly editUrlContentMapContentlet = this.updater(
+        (state, { inode, title }: EditContentletPayload) => {
+            const url = this.createEditContentletUrl(inode) + '&isURLMap=true';
 
             return {
                 ...state,
@@ -220,10 +234,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @return {*}
      * @memberof DotEmaComponent
      */
-    private createEditContentletUrl(inode: string, isUrlMap?: boolean): string {
-        const extraQueryParam = isUrlMap ? `&isUrlMap=${isUrlMap}` : '';
-
-        return `${EDIT_CONTENTLET_URL}${inode}${extraQueryParam}`;
+    private createEditContentletUrl(inode: string): string {
+        return `${EDIT_CONTENTLET_URL}${inode}`;
     }
 
     /**
