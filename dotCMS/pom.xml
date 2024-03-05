@@ -17,7 +17,7 @@
         <version.spotless.plugin>2.36.0</version.spotless.plugin>
         <jackson.version>2.13.4</jackson.version>
         <batik.version>1.16</batik.version>
-        <glowroot.version>0.13.1</glowroot.version>
+        <glowroot.version>0.14.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
         <assembly-directory>${basedir}/target/dist</assembly-directory>
         <docker.skip.build>${docker.skip}</docker.skip.build>

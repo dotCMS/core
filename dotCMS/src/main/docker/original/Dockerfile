@@ -2,7 +2,7 @@
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:ms-jdk-11 as container-base
+FROM dotcms/java-base:ms-jdk-21 as container-base
 
 WORKDIR /srv
 
@@ -50,8 +50,9 @@ RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
 
 # ----------------------------------------------
 # Stage 2:  Copy pg_dump binary
+#     - pg_dump v. 16.2 for Ubuntu 22.04
 # ----------------------------------------------
-FROM dotcms/pg-base:22.02 as composed-base
+FROM dotcms/pg-base:16.2 as composed-base
 COPY --from=container-base / /
 
 # ----------------------------------------------
