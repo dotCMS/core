@@ -11,9 +11,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotAvatarDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
+
+import { DotPipesModule } from '../../pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({
     'modes.persona.selector.title.preview': 'Previewing As',

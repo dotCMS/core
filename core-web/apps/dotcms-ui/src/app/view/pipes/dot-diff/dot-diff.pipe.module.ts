@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotDiffPipe } from '@dotcms/app/view/pipes';
+import { DotDiffPipe } from './dot-diff.pipe';
 
 @NgModule({
     imports: [CommonModule],

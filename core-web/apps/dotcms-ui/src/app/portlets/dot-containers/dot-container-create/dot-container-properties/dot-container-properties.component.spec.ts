@@ -30,9 +30,6 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { InplaceModule } from 'primeng/inplace';
 import { MenuModule } from 'primeng/menu';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -63,10 +60,14 @@ import {
     DotMessageDisplayServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
+import { dotEventSocketURLFactory } from '../../../../test/dot-test-bed';
+import { DotActionButtonModule } from '../../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotActionMenuButtonModule } from '../../../../view/components/_common/dot-action-menu-button/dot-action-menu-button.module';
+import { DotAddToBundleModule } from '../../../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 
 @Component({
     selector: 'dot-container-code',

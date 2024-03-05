@@ -4,10 +4,10 @@ import { NgModule } from '@angular/core';
 import { SplitButtonModule } from 'primeng/splitbutton';
 
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ActionHeaderComponent } from './action-header.component';
 
+import { DotPipesModule } from '../../../pipes/dot-pipes.module';
 import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 
 @NgModule({

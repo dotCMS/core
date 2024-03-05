@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import {
     DotContentletLockerService,
     DotESContentService,
@@ -15,18 +14,18 @@ import {
     DotExperimentsConfigResolver,
     DotExperimentsService
 } from '@dotcms/portlets/dot-experiments/data-access';
-import {
-    DotPushPublishEnvironmentsResolver,
-    DotEnterpriseLicenseResolver
-} from '@portlets/shared/resolvers';
-import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
-import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { DotPageStateService } from './content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageRoutingModule } from './dot-edit-page-routing.module';
 import { DotEditLayoutModule } from './layout/dot-edit-layout.module';
 import { DotEditPageMainModule } from './main/dot-edit-page-main/dot-edit-page-main.module';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
+
+import { DotAppsService } from '../../api/services/dot-apps/dot-apps.service';
+import { DotDirectivesModule } from '../../shared/dot-directives.module';
+import { DotEnterpriseLicenseResolver } from '../shared/resolvers/dot-enterprise-license-resolver.service';
+import { DotFeatureFlagResolver } from '../shared/resolvers/dot-feature-flag-resolver.service';
+import { DotPushPublishEnvironmentsResolver } from '../shared/resolvers/dot-push-publish-enviroments-resolver.service';
 
 @NgModule({
     imports: [

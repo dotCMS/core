@@ -1,1 +1,1 @@
-export * from "./src/lib/sdk-editor-vtl";
+export * from "./src/lib/editor/sdk-editor-vtl";

@@ -6,9 +6,10 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
+
+import { DotPipesModule } from '../../../../view/pipes/dot-pipes.module';
 
 @NgModule({
     imports: [

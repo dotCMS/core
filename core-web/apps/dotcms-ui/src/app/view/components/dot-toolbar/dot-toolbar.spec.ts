@@ -9,14 +9,14 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotRouterService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotToolbarComponent } from './dot-toolbar.component';
 
+import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-logo.service';
+import { DOTTestBed } from '../../../test/dot-test-bed';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 

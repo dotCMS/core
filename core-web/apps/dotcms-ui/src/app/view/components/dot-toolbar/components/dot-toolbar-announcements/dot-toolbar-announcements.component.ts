@@ -16,15 +16,16 @@ import { RouterLink } from '@angular/router';
 
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
+
 import {
     Announcement,
     TypesIcons,
     AnnouncementsStore,
     AnnouncementLink
-} from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
-import { DotMessageService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+} from './store/dot-announcements.store';
 
 @Component({
     selector: 'dot-toolbar-announcements',

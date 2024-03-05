@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Directive, Input, OnInit } from '@angular/core';
 
 import { Avatar } from 'primeng/avatar';
 
-import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
+import { DotGravatarService } from '../../../api/services/dot-gravatar-service';
 
 @Directive({
     selector: 'p-avatar[dotGravatar]',

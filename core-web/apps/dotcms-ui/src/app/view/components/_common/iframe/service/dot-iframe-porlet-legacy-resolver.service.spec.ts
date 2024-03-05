@@ -6,7 +6,6 @@ import { waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotContentletLockerService,
     DotESContentService,
@@ -25,9 +24,11 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
+
+import { DotPageStateService } from '../../../../../portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'

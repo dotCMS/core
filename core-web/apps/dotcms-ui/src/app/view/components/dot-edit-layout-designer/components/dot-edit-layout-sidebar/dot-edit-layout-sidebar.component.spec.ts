@@ -4,10 +4,6 @@ import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotLayoutSideBar } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -19,6 +15,10 @@ import {
 
 import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
 
+import { DotEditLayoutService } from '../../../../../api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '../../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DotContainerSelectorLayoutModule } from '../../../dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
 
 let fakeValue: DotLayoutSideBar;

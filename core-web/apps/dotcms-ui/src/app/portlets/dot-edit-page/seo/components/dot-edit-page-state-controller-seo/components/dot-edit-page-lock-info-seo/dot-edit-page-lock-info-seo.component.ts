@@ -3,9 +3,10 @@ import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 
 import { InputSwitchModule } from 'primeng/inputswitch';
 
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotPipesModule } from '../../../../../../../view/pipes/dot-pipes.module';
 
 /**
  * Basic page information for edit mode

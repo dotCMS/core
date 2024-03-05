@@ -8,13 +8,12 @@ import {
     DotLayoutRow,
     DotPageContainer
 } from '@dotcms/dotcms-models';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
-import {
-    DotContainerColumnBox,
-    DotLayoutGrid,
-    DotLayoutGridBox,
-    DotLayoutGridRow
-} from '@shared/models/dot-edit-layout-designer';
+
+import { DotContainerColumnBox } from '../../../shared/models/dot-edit-layout-designer/dot-container-column-box.model';
+import { DotLayoutGridBox } from '../../../shared/models/dot-edit-layout-designer/dot-layout-grid-box.model';
+import { DotLayoutGridRow } from '../../../shared/models/dot-edit-layout-designer/dot-layout-grid-row.model';
+import { DotLayoutGrid } from '../../../shared/models/dot-edit-layout-designer/dot-layout-grid.model';
+import { DotTemplateContainersCacheService } from '../dot-template-containers-cache/dot-template-containers-cache.service';
 
 /**
  * Provide methods to transform NgGrid model into PageView model and viceversa.

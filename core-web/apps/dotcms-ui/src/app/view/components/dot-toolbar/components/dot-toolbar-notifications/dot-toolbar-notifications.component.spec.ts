@@ -10,17 +10,18 @@ import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
-import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoginService, SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { INotification } from '@shared/models/notifications';
 
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
+
+import { NotificationsService } from '../../../../../api/services/notifications-service';
+import { INotification } from '../../../../../shared/models/notifications/notification.model';
+import { DotPipesModule } from '../../../../pipes/dot-pipes.module';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { AnnouncementsStore } from '../dot-toolbar-announcements/store/dot-announcements.store';
 
 @Component({
     selector: 'dot-dropdown-component',

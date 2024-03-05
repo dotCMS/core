@@ -5,7 +5,7 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotEditPageNavComponent } from '@portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component';
+import { DotEditPageNavComponent } from '../dot-edit-page-nav.component';
 
 const urlPortletRules = {
     content: { clazz: 'portlet-content' },

@@ -3,14 +3,13 @@ import { TestBed } from '@angular/core/testing';
 import { DotRouterService } from '@dotcms/data-access';
 import { CONTAINER_SOURCE, DotLayoutBody } from '@dotcms/dotcms-models';
 import { dotContainerMapMock, mockDotContainers, processedContainers } from '@dotcms/utils-testing';
-import {
-    DotContainerColumnBox,
-    DotLayoutGrid,
-    DotLayoutGridBox
-} from '@models/dot-edit-layout-designer';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 
 import { DotEditLayoutService } from './dot-edit-layout.service';
+
+import { DotContainerColumnBox } from '../../../shared/models/dot-edit-layout-designer/dot-container-column-box.model';
+import { DotLayoutGridBox } from '../../../shared/models/dot-edit-layout-designer/dot-layout-grid-box.model';
+import { DotLayoutGrid } from '../../../shared/models/dot-edit-layout-designer/dot-layout-grid.model';
+import { DotTemplateContainersCacheService } from '../dot-template-containers-cache/dot-template-containers-cache.service';
 
 describe('DotEditLayoutService', () => {
     const containers = dotContainerMapMock();

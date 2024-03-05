@@ -10,9 +10,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { SearchableDropdownComponent } from '.';
+
+import { DotMessagePipe } from '../../../../../test/dot-message-mock.pipe';
 
 export default {
     title: 'DotCMS/Searchable Dropdown',

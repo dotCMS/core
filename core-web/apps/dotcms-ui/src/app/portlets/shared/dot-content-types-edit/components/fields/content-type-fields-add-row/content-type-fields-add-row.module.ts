@@ -6,9 +6,10 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
+
+import { DotPipesModule } from '../../../../../../view/pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [ContentTypeFieldsAddRowComponent],

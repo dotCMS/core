@@ -5,9 +5,10 @@ import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPaletteInputFilterComponent } from './dot-palette-input-filter.component';
+
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 
 @NgModule({
     imports: [

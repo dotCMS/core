@@ -7,9 +7,10 @@ import { ButtonModule } from 'primeng/button';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEmptyStateComponent } from './dot-empty-state.component';
+
+import { DotPipesModule } from '../../../pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({
     'message.template.empty.title': 'Your template list is empty',

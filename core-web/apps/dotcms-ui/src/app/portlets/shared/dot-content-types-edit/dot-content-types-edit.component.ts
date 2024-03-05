@@ -8,7 +8,6 @@ import { MenuItem } from 'primeng/api';
 
 import { mergeMap, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import {
     DotContentTypesInfoService,
     DotCrudService,
@@ -28,6 +27,8 @@ import { DotEditContentTypeCacheService } from './components/fields/content-type
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/index';
 import { FieldService } from './components/fields/service';
 import { ContentTypesFormComponent } from './components/form';
+
+import { DotDialogActions } from '../../../view/components/dot-dialog/dot-dialog.component';
 
 /**
  * Portlet component for edit content types

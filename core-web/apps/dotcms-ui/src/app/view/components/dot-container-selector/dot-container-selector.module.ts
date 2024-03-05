@@ -5,10 +5,10 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 
+import { DotPipesModule } from '../../pipes/dot-pipes.module';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
 @NgModule({

@@ -19,16 +19,16 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
-                "tsConfig": "libs/sdk/editor/tsconfig.lib.json",
-                "project": "libs/sdk/editor/package.json",
-                "entryFile": "libs/sdk/editor/src/lib/sdk-editor-vtl.ts",
+                "tsConfig": "libs/sdk/client/tsconfig.lib.json",
+                "project": "libs/sdk/client/package.json",
+                "entryFile": "libs/sdk/client/src/lib/editor/sdk-editor-vtl.ts",
                 "external": ["react/jsx-runtime"],
                 "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
                 "compiler": "swc",
                 "extractCss": false,
                 "assets": [
                     {
-                        "glob": "libs/sdk/editor/README.md",
+                        "glob": "libs/sdk/client/README.md",
                         "input": ".",
                         "output": "."
                     }

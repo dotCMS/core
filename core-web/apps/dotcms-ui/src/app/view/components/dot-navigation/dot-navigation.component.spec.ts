@@ -13,13 +13,10 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { skip } from 'rxjs/operators';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotMenu } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
-import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
 import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
@@ -27,6 +24,10 @@ import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.compone
 import { DotNavigationComponent } from './dot-navigation.component';
 import { DotNavigationService } from './services/dot-navigation.service';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
+
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DotRandomIconPipeModule } from '../../pipes/dot-radom-icon/dot-random-icon.pipe.module';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 class FakeNavigationService {
     _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(

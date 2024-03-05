@@ -15,16 +15,16 @@ import {
 
 import { takeUntil } from 'rxjs/operators';
 
+import { DotMessageService, DotWizardService } from '@dotcms/data-access';
+import { DotWizardStep, DotWizardInput, DotWizardComponentEnum } from '@dotcms/dotcms-models';
+
+import { DotFormModel } from '../../../../shared/models/dot-form/dot-form.model';
+import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
 import {
     DialogButton,
     DotDialogActions,
     DotDialogComponent
-} from '@components/dot-dialog/dot-dialog.component';
-import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
-import { DotMessageService, DotWizardService } from '@dotcms/data-access';
-import { DotWizardStep, DotWizardInput, DotWizardComponentEnum } from '@dotcms/dotcms-models';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
-
+} from '../../dot-dialog/dot-dialog.component';
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 

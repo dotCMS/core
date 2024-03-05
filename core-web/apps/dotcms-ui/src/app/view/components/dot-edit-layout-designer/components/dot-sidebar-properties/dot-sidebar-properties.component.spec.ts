@@ -5,12 +5,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.component';
+
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
 
 describe('DotSidebarPropertiesComponent', () => {
     let component: DotSidebarPropertiesComponent;

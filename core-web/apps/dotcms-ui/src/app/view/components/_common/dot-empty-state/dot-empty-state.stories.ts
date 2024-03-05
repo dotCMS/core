@@ -3,9 +3,10 @@ import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEmptyStateModule } from './dot-empty-state.module';
+
+import { DotPipesModule } from '../../../pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({
     'message.template.empty.title': 'Your template list is empty',

@@ -5,9 +5,9 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
 
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
-
 import { DotCategoriesListState, DotCategoriesListStore } from './store/dot-categories-list-store';
+
+import { DotCategory } from '../../../shared/models/dot-categories/dot-categories.model';
 
 @Component({
     selector: 'dot-categories-list',

@@ -13,7 +13,6 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotEventsService,
@@ -51,9 +50,11 @@ import {
     mockDotPage,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
-import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 
 import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-actions.component';
+
+import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
+import { MockPushPublishService } from '../../../../shared/dot-content-types-listing/dot-content-types.component.spec';
 
 @Component({
     selector: 'dot-test-host-component',

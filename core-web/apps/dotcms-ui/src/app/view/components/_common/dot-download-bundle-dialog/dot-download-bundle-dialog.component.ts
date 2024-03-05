@@ -7,14 +7,15 @@ import { SelectItem } from 'primeng/api';
 
 import { catchError, map, take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import {
     DotMessageService,
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { getDownloadLink } from '@dotcms/utils';
+
+import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
 
 enum DownloadType {
     UNPUBLISH = 'unpublish',

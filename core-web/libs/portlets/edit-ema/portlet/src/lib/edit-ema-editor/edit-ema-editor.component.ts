@@ -249,7 +249,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         if (!clientHost) {
             // Is VTL
             this.iframe.nativeElement.contentDocument.open();
-            // this.iframe.nativeElement.contentDocument.write(editor.page.rendered);
             this.iframe.nativeElement.contentDocument.write(
                 this.addEditorPageScript(editor.page.rendered)
             );

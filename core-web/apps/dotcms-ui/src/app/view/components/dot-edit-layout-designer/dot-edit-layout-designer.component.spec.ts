@@ -15,11 +15,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
     DotEventsService,
     DotHttpErrorManagerService,
@@ -38,9 +33,15 @@ import {
     mockDotRenderedPage,
     mockDotThemes
 } from '@dotcms/utils-testing';
-import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
+
+import { DotEditLayoutService } from '../../../api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotEditPageInfoModule } from '../../../portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
+import { DotActionButtonModule } from '../_common/dot-action-button/dot-action-button.module';
+import { DotGlobalMessageModule } from '../_common/dot-global-message/dot-global-message.module';
+import { DotSecondaryToolbarModule } from '../dot-secondary-toolbar/dot-secondary-toolbar.module';
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',

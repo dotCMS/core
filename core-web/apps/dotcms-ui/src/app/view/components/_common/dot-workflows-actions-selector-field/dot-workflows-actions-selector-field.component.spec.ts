@@ -8,7 +8,6 @@ import { By } from '@angular/platform-browser';
 import { SelectItemGroup } from 'primeng/api';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -17,14 +16,15 @@ import { MockDotMessageService, mockWorkflows } from '@dotcms/utils-testing';
 import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
+import { DOTTestBed } from '../../../../test/dot-test-bed';
+
 @Component({
     selector: 'dot-fake-form',
     template: `
         <form [formGroup]="form">
             <dot-workflows-actions-selector-field
                 [workflows]="workfows"
-                formControlName="action"
-            ></dot-workflows-actions-selector-field>
+                formControlName="action"></dot-workflows-actions-selector-field>
             {{ form.value | json }}
         </form>
     `

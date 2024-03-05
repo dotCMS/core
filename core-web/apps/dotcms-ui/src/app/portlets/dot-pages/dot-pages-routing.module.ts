@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { DotCreateContentletComponent } from '@components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
-import { DotCreateContentletResolver } from '@components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.resolver.service';
-
 import { DotPagesComponent } from './dot-pages.component';
+
+import { DotCreateContentletComponent } from '../../view/components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
+import { DotCreateContentletResolver } from '../../view/components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.resolver.service';
 
 const routes: Routes = [
     {

@@ -8,13 +8,14 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { NamePropertyComponent } from './index';
+
+import { DotCopyLinkModule } from '../../../../../../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotPipesModule } from '../../../../../../../../view/pipes/dot-pipes.module';
 
 @Component({
     selector: 'dot-field-validation-message',

@@ -4,9 +4,11 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotLoopEditorComponent } from '@portlets/dot-containers/dot-container-create/dot-loop-editor/dot-loop-editor.component';
+
+import { DotLoopEditorComponent } from './dot-loop-editor.component';
+
+import { DotTextareaContentModule } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
 
 @NgModule({
     declarations: [DotLoopEditorComponent],

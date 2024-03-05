@@ -6,11 +6,11 @@ import { ActivatedRoute } from '@angular/router';
 
 import { pluck, takeUntil, tap } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 
+import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 
 @Component({

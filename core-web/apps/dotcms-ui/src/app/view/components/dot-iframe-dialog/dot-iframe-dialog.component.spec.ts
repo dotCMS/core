@@ -7,16 +7,16 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 
+import { DOTTestBed } from '../../../test/dot-test-bed';
 import { IFrameModule } from '../_common/iframe';
 import { IframeComponent } from '../_common/iframe/iframe-component';
+import { DotDialogComponent } from '../dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '../dot-dialog/dot-dialog.module';
 
 let component: DotIframeDialogComponent;
 let de: DebugElement;

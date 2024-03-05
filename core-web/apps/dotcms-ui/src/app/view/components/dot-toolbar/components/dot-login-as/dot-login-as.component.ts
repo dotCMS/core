@@ -20,11 +20,12 @@ import {
 
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';
+
+import { LOCATION_TOKEN } from '../../../../../providers';
+import { DotDialogActions } from '../../../dot-dialog/dot-dialog.component';
+import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 
 @Component({
     selector: 'dot-login-as',

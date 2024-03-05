@@ -8,9 +8,10 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAvatarDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
+
+import { DotPipesModule } from '../../pipes/dot-pipes.module';
 
 @NgModule({
     imports: [

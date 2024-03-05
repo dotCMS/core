@@ -6,8 +6,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
 
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -25,6 +23,9 @@ import {
     DotTemplateDesigner,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+
+import { DotEditLayoutService } from '../../../../api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 
 export const DEBOUNCE_TIME = 5000;
 

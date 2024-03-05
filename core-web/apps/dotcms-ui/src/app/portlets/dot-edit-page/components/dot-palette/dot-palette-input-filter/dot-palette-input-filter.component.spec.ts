@@ -6,9 +6,10 @@ import { By } from '@angular/platform-browser';
 
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPaletteInputFilterComponent } from './dot-palette-input-filter.component';
+
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 
 @Component({
     selector: 'dot-icon',

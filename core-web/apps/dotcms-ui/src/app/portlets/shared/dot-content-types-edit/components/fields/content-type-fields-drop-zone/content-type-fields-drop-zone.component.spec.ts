@@ -26,9 +26,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import {
     DotEventsService,
     DotHttpErrorManagerService,
@@ -59,6 +56,12 @@ import {
 import { ContentTypeFieldsDropZoneComponent } from '.';
 
 import { ContentTypeFieldsAddRowModule } from '..';
+import { DotActionButtonModule } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.module';
+import {
+    DotDialogActions,
+    DotDialogComponent
+} from '../../../../../../view/components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '../../../../../../view/components/dot-dialog/dot-dialog.module';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';

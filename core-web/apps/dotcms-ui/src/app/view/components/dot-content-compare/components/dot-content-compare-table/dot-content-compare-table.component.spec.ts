@@ -11,15 +11,16 @@ import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 
-import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
-import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
+
+import { DotDiffPipeModule } from '../../../../pipes/dot-diff/dot-diff.pipe.module';
+import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
+import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 
 @Component({
     selector: 'dot-test-host-component',

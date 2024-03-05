@@ -10,7 +10,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 // App is our top level component
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -19,6 +18,7 @@ import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
 import { ENV_PROVIDERS } from './providers';
 import { DotDirectivesModule } from './shared/dot-directives.module';
 import { SharedModule } from './shared/shared.module';
+import { DotPipesModule } from './view/pipes/dot-pipes.module';
 
 @NgModule({
     bootstrap: [AppComponent],

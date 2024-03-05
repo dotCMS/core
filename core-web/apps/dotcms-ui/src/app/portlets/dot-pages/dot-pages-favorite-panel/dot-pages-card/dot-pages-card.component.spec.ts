@@ -14,9 +14,10 @@ import {
     DotPagesFavoritePageEmptySkeletonComponent
 } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
+
+import { DotPipesModule } from '../../../../view/pipes/dot-pipes.module';
 
 describe('DotPagesCardComponent', () => {
     let component: DotPagesCardComponent;

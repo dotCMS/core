@@ -20,8 +20,6 @@ import {
 
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     dialogAction,
@@ -30,6 +28,9 @@ import {
     DotAppsImportConfiguration,
     DotAppsSite
 } from '@dotcms/dotcms-models';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotDialogActions } from '../../../view/components/dot-dialog/dot-dialog.component';
 
 @Component({
     selector: 'dot-apps-import-export-dialog',

@@ -5,13 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotCardinalitySelectorComponent } from './dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotEditRelationshipsComponent } from './dot-edit-relationship/dot-edit-relationships.component';
@@ -19,6 +17,9 @@ import { DotNewRelationshipsComponent } from './dot-new-relationships/dot-new-re
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 import { DotEditContentTypeCacheService } from './services/dot-edit-content-type-cache.service';
 import { DotRelationshipService } from './services/dot-relationship.service';
+
+import { SearchableDropDownModule } from '../../../../../../../../view/components/_common/searchable-dropdown/searchable-dropdown.module';
+import { DotPipesModule } from '../../../../../../../../view/pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [

@@ -7,14 +7,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
 import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-password.component';
+
+import { DotPipesModule } from '../../../pipes/dot-pipes.module';
+import { DotDialogComponent } from '../../dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '../../dot-dialog/dot-dialog.module';
 
 @Component({
     selector: 'dot-test-host-component',

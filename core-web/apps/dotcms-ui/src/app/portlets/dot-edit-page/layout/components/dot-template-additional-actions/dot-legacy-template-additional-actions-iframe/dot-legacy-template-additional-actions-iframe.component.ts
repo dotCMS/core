@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { combineLatest, switchMap } from 'rxjs/operators';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
 
 @Component({
     selector: 'dot-legacy-addtional-actions',

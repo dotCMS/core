@@ -7,19 +7,19 @@ import { DropdownModule } from 'primeng/dropdown';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 
-import { DotContentCompareTableComponent } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component';
-import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
-import { DotContentCompareComponent } from '@components/dot-content-compare/dot-content-compare.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotContentletService, DotVersionableService } from '@dotcms/data-access';
 import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
-import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 
 import { DotContentCompareBlockEditorComponent } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component';
 import { DotContentCompareDialogComponent } from './components/dot-content-compare-dialog/dot-content-compare-dialog.component';
+import { DotContentCompareTableComponent } from './components/dot-content-compare-table/dot-content-compare-table.component';
+import { DotContentComparePreviewFieldComponent } from './components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
+import { DotContentCompareComponent } from './dot-content-compare.component';
 
+import { DotDiffPipeModule } from '../../pipes/dot-diff/dot-diff.pipe.module';
 import { DotPipesModule } from '../../pipes/dot-pipes.module';
+import { DotDialogModule } from '../dot-dialog/dot-dialog.module';
 
 @NgModule({
     declarations: [

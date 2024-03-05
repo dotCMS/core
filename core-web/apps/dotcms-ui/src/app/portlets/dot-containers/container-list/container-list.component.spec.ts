@@ -16,12 +16,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
 import { Table, TableModule } from 'primeng/table';
 
-import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
-import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
@@ -55,12 +49,19 @@ import {
     MockDotMessageService,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { ContainerListRoutingModule } from './container-list-routing.module';
 import { ContainerListComponent } from './container-list.component';
 import { DotContainerListStore } from './store/dot-container-list.store';
+
+import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
+import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
+import { DotActionMenuButtonComponent } from '../../../view/components/_common/dot-action-menu-button/dot-action-menu-button.component';
+import { DotActionMenuButtonModule } from '../../../view/components/_common/dot-action-menu-button/dot-action-menu-button.module';
+import { DotAddToBundleModule } from '../../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
+import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
+import { ActionHeaderModule } from '../../../view/components/dot-listing-data-table/action-header/action-header.module';
+import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
 
 const containersMock: DotContainer[] = [
     {

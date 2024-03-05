@@ -1,8 +1,8 @@
-import { dotPageEditor } from '@dotcms/client';
+import { DotCMSPageEditorConfig, isInsideEditor } from '@dotcms/client';
 
+import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
 import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
-
 /**
  * `DotcmsPageProps` is a type that defines the properties for the `DotcmsLayout` component.
  * It includes a readonly `entity` property that represents the context for a DotCMS page.
@@ -23,6 +23,8 @@ export type DotcmsPageProps = {
      * @readonly
      */
     readonly entity: PageProviderContext;
+
+    readonly options: DotCMSPageEditorConfig;
 };
 
 /**
@@ -33,14 +35,10 @@ export type DotcmsPageProps = {
  * @param {DotcmsPageProps} props - The properties for the DotCMS page.
  * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
  */
-export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
-    const { entity } = props;
+export function DotcmsLayout({ entity, options }: DotcmsPageProps): JSX.Element {
+    useDotcmsEditor(options);
 
-    const client = dotPageEditor.createClient();
-    client.init();
-    client.updateNavigation('/') // In usePageEditor, this value is null
-
-    entity.isInsideEditor = client.isInsideEditor;
+    entity.isInsideEditor = isInsideEditor();
 
     return (
         <PageProvider entity={entity}>

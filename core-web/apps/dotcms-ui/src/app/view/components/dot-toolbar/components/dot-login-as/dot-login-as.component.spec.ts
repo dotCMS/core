@@ -17,11 +17,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -29,7 +24,12 @@ import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils
 
 import { DotLoginAsComponent } from './dot-login-as.component';
 
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { LOCATION_TOKEN } from '../../../../../providers';
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { SEARCHABLE_NGFACES_MODULES } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
+import { DotDialogModule } from '../../../dot-dialog/dot-dialog.module';
+import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 
 @Component({
     selector: 'dot-searchable-dropdown',

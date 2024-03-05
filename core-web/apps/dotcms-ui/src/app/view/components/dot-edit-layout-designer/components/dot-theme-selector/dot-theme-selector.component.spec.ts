@@ -8,7 +8,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DataViewModule } from 'primeng/dataview';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import {
     DotEventsService,
     DotMessageService,
@@ -27,6 +26,8 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';
+
+import { DotDialogModule } from '../../../dot-dialog/dot-dialog.module';
 
 @Component({
     selector: 'dot-site-selector',

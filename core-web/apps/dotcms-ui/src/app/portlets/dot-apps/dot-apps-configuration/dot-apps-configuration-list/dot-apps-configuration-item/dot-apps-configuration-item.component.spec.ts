@@ -7,13 +7,14 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCopyLinkModule } from '@dotcms/app/view/components/dot-copy-link/dot-copy-link.module';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
+
+import { DotCopyLinkModule } from '../../../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 
 const messages = {
     'apps.key': 'Key',

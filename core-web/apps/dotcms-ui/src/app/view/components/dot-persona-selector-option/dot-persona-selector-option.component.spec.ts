@@ -10,9 +10,10 @@ import { ButtonModule } from 'primeng/button';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
+
+import { DotPipesModule } from '../../pipes/dot-pipes.module';
 
 @Component({
     template: ` <dot-persona-selector-option [persona]="persona"></dot-persona-selector-option>`

@@ -23,11 +23,11 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { catchError, take, tap } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotDialogActions } from '../../../../../view/components/dot-dialog/dot-dialog.component';
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
 @Component({

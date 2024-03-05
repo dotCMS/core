@@ -5,6 +5,11 @@
         "declaration": true,
         "types": ["node"]
     },
-    "include": ["src/**/*.ts", "../client/src/lib/editor/sdk-editor-vtl.ts", "../client/src/lib/editor/sdk-editor.spec.ts", "../client/src/lib/editor/sdk-editor.ts"],
+    "include": [
+        "src/**/*.ts",
+        "../client/src/lib/editor/sdk-editor-vtl.ts",
+        "../client/src/lib/editor/sdk-editor.spec.ts",
+        "../client/src/lib/editor/sdk-editor.ts"
+    ],
     "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
 }

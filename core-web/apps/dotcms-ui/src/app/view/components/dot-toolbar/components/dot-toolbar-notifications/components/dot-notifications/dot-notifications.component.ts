@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
-import { INotification, NotificationIcons } from '@models/notifications';
+import {
+    INotification,
+    NotificationIcons
+} from '../../../../../../../shared/models/notifications/notification.model';
 @Component({
     selector: 'dot-notifications-item',
     styleUrls: ['./dot-notifications-item.component.scss'],

@@ -7,9 +7,10 @@ import { ChipsModule } from 'primeng/chips';
 
 import { DotTagsService } from '@dotcms/data-access';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
+
+import { DotPipesModule } from '../../../pipes/dot-pipes.module';
 
 @NgModule({
     imports: [

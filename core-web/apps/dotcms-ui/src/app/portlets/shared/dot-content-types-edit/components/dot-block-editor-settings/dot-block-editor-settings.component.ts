@@ -17,11 +17,11 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { catchError, take, takeUntil, tap } from 'rxjs/operators';
 
 // Services
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 
+import { DotDialogActions } from '../../../../../view/components/dot-dialog/dot-dialog.component';
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
 /* Uncomment this when Content Assets variable is ready

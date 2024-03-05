@@ -19,9 +19,11 @@ import { take } from 'rxjs/operators';
 
 import { OrderDirection, PaginatorService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
-import { DataTableColumn } from '@models/data-table/data-table-column';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
+
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { ButtonAction } from '../../../shared/models/action-header/button-action.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
+import { DotActionMenuItem } from '../../../shared/models/dot-action-menu/dot-action-menu-item.model';
 
 function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
     return dotListingDataTableComponent.dataTable;

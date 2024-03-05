@@ -16,15 +16,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { MenuModule } from 'primeng/menu';
 import { PasswordModule } from 'primeng/password';
 
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotEventsService,
     DotRouterService,
@@ -44,11 +35,20 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
+import { DotGravatarService } from '../../../../../api/services/dot-gravatar-service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { LOCATION_TOKEN } from '../../../../../providers';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { DotGravatarDirective } from '../../../../directives/dot-gravatar/dot-gravatar.directive';
+import { DotPipesModule } from '../../../../pipes/dot-pipes.module';
+import { SearchableDropDownModule } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
+import { DotDialogModule } from '../../../dot-dialog/dot-dialog.module';
+import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
 import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
 

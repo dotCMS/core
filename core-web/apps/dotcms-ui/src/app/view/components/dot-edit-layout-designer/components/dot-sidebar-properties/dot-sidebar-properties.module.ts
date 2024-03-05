@@ -7,9 +7,10 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.component';
+
+import { DotPipesModule } from '../../../../pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotSidebarPropertiesComponent],

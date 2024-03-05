@@ -1,11 +1,25 @@
 {
-  "name": "@dotcms/editor",
-  "version": "0.0.1",
-  "dependencies": {
-    "tslib": "^2.3.0"
-  },
+  "name": "@dotcms/client",
+  "version": "0.0.1-alpha.7",
   "type": "module",
-  "main": "./src/index.js",
-  "typings": "./src/index.d.ts",
-  "module": "./sdk-editor-vtl.esm.js"
+  "description": "Official JavaScript library for interacting with DotCMS REST APIs.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dotCMS/core.git#master"
+  },
+  "keywords": [
+    "dotCMS",
+    "CMS",
+    "Content Management",
+    "API Client",
+    "REST API"
+  ],
+  "author": "dotcms <dev@dotcms.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dotCMS/core/issues"
+  },
+  "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/client/README.md",
+  "module": "./sdk-editor-vtl.esm.js",
+  "main": "./sdk-editor-vtl.esm.js"
 }

@@ -7,14 +7,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageService, PushPublishService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
+
+import { DotDialogComponent } from '../../dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '../../dot-dialog/dot-dialog.module';
 
 class PushPublishServiceMock {
     pushPublishContent(): Observable<any> {

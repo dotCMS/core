@@ -13,25 +13,23 @@ import { By } from '@angular/platform-browser';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 
-import {
-    DotFolder,
-    DotPageSelectorItem
-} from '@components/_common/dot-page-selector/models/dot-page-selector.models';
-import {
-    expectedFolderMap,
-    expectedPagesMap,
-    expectedSitesMap
-} from '@components/_common/dot-page-selector/service/dot-page-selector.service.spec';
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { DotPageSelectorComponent } from './dot-page-selector.component';
+import { DotFolder, DotPageSelectorItem } from './models/dot-page-selector.models';
 import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
+import {
+    expectedFolderMap,
+    expectedPagesMap,
+    expectedSitesMap
+} from './service/dot-page-selector.service.spec';
+
+import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
+import { DotPipesModule } from '../../../pipes/dot-pipes.module';
+import { DotFieldHelperModule } from '../../dot-field-helper/dot-field-helper.module';
 
 export const mockDotPageSelectorResults = {
     type: 'page',

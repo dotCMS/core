@@ -6,9 +6,10 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
+
+import { DotPipesModule } from '../../../../view/pipes/dot-pipes.module';
 
 @NgModule({
     imports: [

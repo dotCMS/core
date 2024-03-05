@@ -10,12 +10,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -47,6 +41,12 @@ import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dot
 
 import { MainComponentLegacyComponent } from './main-legacy.component';
 
+import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { DotDownloadBundleDialogModule } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotWizardModule } from '../_common/dot-wizard/dot-wizard.module';
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 
 @Component({

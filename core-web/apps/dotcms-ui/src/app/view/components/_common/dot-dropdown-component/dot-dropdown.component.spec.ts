@@ -5,9 +5,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-
 import { DotDropdownComponent } from './dot-dropdown.component';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-test-host-component',

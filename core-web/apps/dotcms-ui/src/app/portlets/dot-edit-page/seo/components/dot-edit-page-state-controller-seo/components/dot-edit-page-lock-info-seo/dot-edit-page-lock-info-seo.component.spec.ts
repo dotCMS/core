@@ -5,9 +5,10 @@ import { By } from '@angular/platform-browser';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageLockInfoSeoComponent } from './dot-edit-page-lock-info-seo.component';
+
+import { DotPipesModule } from '../../../../../../../view/pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.toolbar.page.cant.edit': 'No permissions...',

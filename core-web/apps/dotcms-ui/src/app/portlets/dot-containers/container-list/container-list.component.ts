@@ -14,7 +14,6 @@ import { Menu } from 'primeng/menu';
 
 import { skip, takeUntil } from 'rxjs/operators';
 
-import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
@@ -26,8 +25,11 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
+
+import { DotContainerListStore } from './store/dot-container-list.store';
+
+import { DotActionMenuItem } from '../../../shared/models/dot-action-menu/dot-action-menu-item.model';
+import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 
 @Component({
     selector: 'dot-container-list',

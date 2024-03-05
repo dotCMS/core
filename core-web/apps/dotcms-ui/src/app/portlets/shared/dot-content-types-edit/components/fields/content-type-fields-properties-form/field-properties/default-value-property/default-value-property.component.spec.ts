@@ -11,9 +11,10 @@ import { By } from '@angular/platform-browser';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DefaultValuePropertyComponent } from './index';
+
+import { DotPipesModule } from '../../../../../../../../view/pipes/dot-pipes.module';
 
 describe('DefaultValuePropertyComponent', () => {
     let comp: DefaultValuePropertyComponent;

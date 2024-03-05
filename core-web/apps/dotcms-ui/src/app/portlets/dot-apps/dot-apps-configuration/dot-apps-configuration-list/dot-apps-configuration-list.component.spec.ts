@@ -9,10 +9,11 @@ import { ButtonModule } from 'primeng/button';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/dot-apps-configuration-item.module';
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list.component';
+
+import { DotPipesModule } from '../../../../view/pipes/dot-pipes.module';
 
 const messages = {
     'apps.configurations.show.more': 'SHOW MORE'

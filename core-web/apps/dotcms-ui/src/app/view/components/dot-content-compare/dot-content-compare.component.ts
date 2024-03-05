@@ -2,11 +2,9 @@ import { Observable } from 'rxjs';
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
-import {
-    DotContentCompareState,
-    DotContentCompareStore
-} from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
+
+import { DotContentCompareState, DotContentCompareStore } from './store/dot-content-compare.store';
 
 export interface DotContentCompareEvent {
     inode: string;

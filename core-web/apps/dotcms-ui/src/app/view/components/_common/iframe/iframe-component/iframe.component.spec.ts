@@ -5,9 +5,6 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
-import { DotSafeUrlPipe } from '@components/_common/iframe/pipes/dot-safe-url/dot-safe-url.pipe';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -17,12 +14,15 @@ import {
     LoginServiceMock,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { IframeComponent } from './iframe.component';
 
+import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { DotPipesModule } from '../../../../pipes/dot-pipes.module';
+import { DotOverlayMaskModule } from '../../dot-overlay-mask/dot-overlay-mask.module';
+import { DotSafeUrlPipe } from '../pipes/dot-safe-url/dot-safe-url.pipe';
 
 const fakeHtmlEl = {
     hello: 'html'

@@ -3,12 +3,14 @@ import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { Injectable } from '@angular/core';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
+
+import { DotPaletteComponent } from './dot-palette.component';
+
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotFilterPipeModule } from '../../../../view/pipes/dot-filter/dot-filter-pipe.module';
 
 const data = [
     {

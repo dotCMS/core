@@ -7,9 +7,10 @@ import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
+
+import { DotPipesModule } from '../../pipes/dot-pipes.module';
 
 @NgModule({
     imports: [

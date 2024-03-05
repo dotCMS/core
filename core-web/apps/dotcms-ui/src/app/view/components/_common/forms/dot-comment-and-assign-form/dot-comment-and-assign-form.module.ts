@@ -5,11 +5,13 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
-import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotRolesService } from '@dotcms/data-access';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
+
+import { DotPipesModule } from '../../../../pipes/dot-pipes.module';
+import { DotPageSelectorModule } from '../../dot-page-selector/dot-page-selector.module';
 
 @NgModule({
     imports: [

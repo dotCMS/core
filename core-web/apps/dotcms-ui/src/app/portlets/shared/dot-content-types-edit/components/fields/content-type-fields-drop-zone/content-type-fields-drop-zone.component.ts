@@ -19,7 +19,6 @@ import {
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentType,
@@ -30,6 +29,7 @@ import {
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { FieldUtil } from '@dotcms/utils-testing';
 
+import { DotDialogActions } from '../../../../../../view/components/dot-dialog/dot-dialog.component';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { FieldType } from '../models';
 import { DropFieldData, FieldDragDropService } from '../service';

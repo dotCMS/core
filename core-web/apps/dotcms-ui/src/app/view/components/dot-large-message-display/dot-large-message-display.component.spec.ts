@@ -2,12 +2,13 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotLargeMessageDisplayComponent } from './dot-large-message-display.component';
+
+import { DotParseHtmlService } from '../../../api/services/dot-parse-html/dot-parse-html.service';
+import { DotDialogModule } from '../dot-dialog/dot-dialog.module';
 
 @Component({
     selector: 'dot-test-host-component',

@@ -6,9 +6,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotRelationshipTreeComponent } from './dot-relationship-tree.component';
+
+import { DotPipesModule } from '../../pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({
     'relationship.query.title': 'Lucene Query'

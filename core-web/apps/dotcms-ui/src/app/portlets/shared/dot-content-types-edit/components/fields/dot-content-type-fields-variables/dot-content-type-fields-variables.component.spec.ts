@@ -4,7 +4,6 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageDisplayService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
@@ -19,6 +18,8 @@ import {
 
 import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
+
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-test-host-component',

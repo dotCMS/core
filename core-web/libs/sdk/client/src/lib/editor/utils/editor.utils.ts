@@ -91,6 +91,7 @@ export function getClosestContainerData(element: Element) {
     } else {
         // If no container element is found, return null
         console.warn('No container found for the contentlet');
+
         return null;
     }
 }

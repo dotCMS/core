@@ -10,11 +10,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotEventsService,
@@ -27,6 +22,12 @@ import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
+
+import { DotEditLayoutService } from '../../../../../api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '../../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DotContainerSelectorLayoutModule } from '../../../dot-container-selector-layout/dot-container-selector-layout.module';
+import { DotDialogActions } from '../../../dot-dialog/dot-dialog.component';
 
 let fakeValue: DotLayoutBody;
 

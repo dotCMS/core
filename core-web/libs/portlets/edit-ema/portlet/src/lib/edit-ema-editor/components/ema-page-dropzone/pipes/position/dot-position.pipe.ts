@@ -11,7 +11,7 @@ export class DotPositionPipe implements PipeTransform {
         return {
             position: 'absolute',
             left: `${isError ? '0' : item.x}px`,
-            top: `${isError ? '0' :item.y}px`,
+            top: `${isError ? '0' : item.y}px`,
             width: `${item.width}px`,
             height: `${item.height}px`
         };

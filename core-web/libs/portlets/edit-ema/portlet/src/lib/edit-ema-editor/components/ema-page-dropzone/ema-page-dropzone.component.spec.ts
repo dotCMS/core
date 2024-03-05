@@ -73,7 +73,7 @@ describe('EmaPageDropzoneComponent', () => {
         providers: [
             {
                 provide: DotMessageService,
-                useValue: messageServiceMock 
+                useValue: messageServiceMock
             }
         ]
     });
@@ -95,7 +95,6 @@ describe('EmaPageDropzoneComponent', () => {
     });
 
     describe('css', () => {
-
         it('should apply styles to container correctly', () => {
             spectator.setInput('containers', BOUNDS_MOCK);
 

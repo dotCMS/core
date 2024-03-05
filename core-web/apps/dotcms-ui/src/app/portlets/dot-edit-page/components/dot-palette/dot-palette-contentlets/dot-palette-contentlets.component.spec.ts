@@ -9,15 +9,15 @@ import { By } from '@angular/platform-browser';
 import { LazyLoadEvent } from 'primeng/api';
 import { PaginatorModule } from 'primeng/paginator';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
-import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPaletteContentletsComponent } from './dot-palette-contentlets.component';
 
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotFilterPipeModule } from '../../../../../view/pipes/dot-filter/dot-filter-pipe.module';
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
 
 export const contentletFormDataMock = {
@@ -65,8 +65,7 @@ export const contentletProductDataMock = {
         <dot-palette-contentlets
             [items]="items"
             [loading]="loading"
-            [totalRecords]="totalRecords"
-        ></dot-palette-contentlets>
+            [totalRecords]="totalRecords"></dot-palette-contentlets>
     `
 })
 class TestHostComponent {

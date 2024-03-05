@@ -11,8 +11,6 @@ import { TableModule } from 'primeng/table';
 
 import { delay } from 'rxjs/operators';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -24,6 +22,9 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotFormSelectorComponent } from './dot-form-selector.component';
+
+import { DotDialogModule } from '../../../../../view/components/dot-dialog/dot-dialog.module';
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 
 const mockContentType: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,

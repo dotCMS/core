@@ -8,9 +8,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { filter, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
     DotAlertConfirmService,
     DotMessageDisplayService,
@@ -27,9 +24,13 @@ import {
     DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
-import { ActionHeaderOptions } from '@models/action-header';
-import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
+
+import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
+import { DotActionMenuItem } from '../../../shared/models/dot-action-menu/dot-action-menu-item.model';
+import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 @Component({
     selector: 'dot-template-list',

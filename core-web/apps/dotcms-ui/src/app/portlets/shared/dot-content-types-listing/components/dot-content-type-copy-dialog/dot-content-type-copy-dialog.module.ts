@@ -4,20 +4,21 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotMdIconSelectorModule } from '@components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
-import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
+
+import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
+import { SiteSelectorFieldModule } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
+import { DotBaseTypeSelectorModule } from '../../../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
+import { DotDialogModule } from '../../../../../view/components/dot-dialog/dot-dialog.module';
+import { DotListingDataTableModule } from '../../../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 
 @NgModule({
     imports: [

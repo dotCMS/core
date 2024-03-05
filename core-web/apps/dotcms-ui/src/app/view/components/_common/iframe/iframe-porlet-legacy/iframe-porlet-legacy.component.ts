@@ -5,11 +5,12 @@ import { ActivatedRoute, UrlSegment } from '@angular/router';
 
 import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
 
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotContentTypeService, DotRouterService } from '@dotcms/data-access';
 import { LoggerService, SiteService } from '@dotcms/dotcms-js';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
+
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 
 @Component({
     selector: 'dot-iframe-porlet',

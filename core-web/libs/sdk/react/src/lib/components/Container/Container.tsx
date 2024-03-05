@@ -93,8 +93,7 @@ export function Container({ containerRef }: ContainerProps) {
             data-dot-accept-types={acceptTypes}
             data-dot-identifier={path ?? identifier}
             data-max-contentlets={maxContentlets}
-            data-uuid={uuid}
-            >
+            data-uuid={uuid}>
             {renderContentlets}
         </div>
     ) : (

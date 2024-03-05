@@ -1,9 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotContainer } from '@dotcms/dotcms-models';
-import { DotContainerColumnBox } from '@shared/models/dot-edit-layout-designer/dot-container-column-box.model';
+
+import { DotTemplateContainersCacheService } from '../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotContainerColumnBox } from '../../../shared/models/dot-edit-layout-designer/dot-container-column-box.model';
 
 @Component({
     selector: 'dot-container-selector-layout',

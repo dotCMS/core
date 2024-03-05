@@ -7,9 +7,10 @@ import { MultiSelectModule } from 'primeng/multiselect';
 
 import { DotCurrentUserService, PushPublishService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
+
+import { DotPipesModule } from '../../../pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [PushPublishEnvSelectorComponent],

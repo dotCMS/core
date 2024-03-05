@@ -1,14 +1,14 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 
-import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
-import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
-import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { INotification } from '@models/notifications';
 
+import { NotificationsService } from '../../../../../api/services/notifications-service';
+import { INotification } from '../../../../../shared/models/notifications/notification.model';
+import { DotDropdownComponent } from '../../../_common/dot-dropdown-component/dot-dropdown.component';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/dot-toolbar-announcements.component';
+import { AnnouncementsStore } from '../dot-toolbar-announcements/store/dot-announcements.store';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

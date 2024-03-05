@@ -15,9 +15,10 @@ import { DotRolesService, DotFormatDateService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
+
+import { DotPipesModule } from '../../../../pipes/dot-pipes.module';
 
 @Component({
     selector: 'dot-test-host-component',

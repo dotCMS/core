@@ -9,8 +9,6 @@ import { By } from '@angular/platform-browser';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DotApp,
@@ -20,9 +18,12 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotDialogModule } from '../../../view/components/dot-dialog/dot-dialog.module';
+import { DotPipesModule } from '../../../view/pipes/dot-pipes.module';
 
 export class DotAppsServiceMock {
     exportConfiguration(_configuration: DotAppsExportConfiguration): Promise<string> {

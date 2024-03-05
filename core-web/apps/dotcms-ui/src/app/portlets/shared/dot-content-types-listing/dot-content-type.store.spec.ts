@@ -14,7 +14,8 @@ import {
     dotcmsContentTypeBasicMock,
     mockResponseView
 } from '@dotcms/utils-testing';
-import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
+
+import { DotContentTypeStore } from './dot-content-type.store';
 
 describe('DotContentTypeComponentStore', () => {
     let store: DotContentTypeStore;

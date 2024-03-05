@@ -3,9 +3,6 @@ import { TitleStrategy } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     CanDeactivateGuardService,
     DotAlertConfirmService,
@@ -26,10 +23,10 @@ import {
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
 import { DotAppsService } from './api/services/dot-apps/dot-apps.service';
+import { DotMenuService } from './api/services/dot-menu.service';
 import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
@@ -42,7 +39,10 @@ import { ColorUtil } from './api/util/ColorUtil';
 import { StringPixels } from './api/util/string-pixels-util';
 import { StringFormat } from './api/util/stringFormat';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
+import { DotTitleStrategy } from './shared/services/dot-title-strategy.service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
+import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
+import { DotLoginPageStateService } from './view/components/login/shared/services/dot-login-page-state.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 

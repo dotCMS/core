@@ -12,13 +12,6 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMenuServiceMock } from '@components/dot-navigation/services/dot-navigation.service.spec';
-import {
-    DotAddToMenuService,
-    DotCreateCustomTool
-} from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
@@ -27,10 +20,18 @@ import {
     dotcmsContentTypeBasicMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
+
+import {
+    DotAddToMenuService,
+    DotCreateCustomTool
+} from '../../../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotDialogModule } from '../../../../../view/components/dot-dialog/dot-dialog.module';
+import { DotMenuServiceMock } from '../../../../../view/components/dot-navigation/services/dot-navigation.service.spec';
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
+import { DotFormSelectorModule } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 
 const contentTypeVar = {
     ...dotcmsContentTypeBasicMock,

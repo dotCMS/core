@@ -12,10 +12,10 @@ import {
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPropertiesService, DotRouterService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotTemplateItem } from '../store/dot-template.store';
 
 export const AUTOSAVE_DEBOUNCE_TIME = 5000;

@@ -6,9 +6,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -22,6 +19,10 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotTemplateItem, DotTemplateStore } from './dot-template.store';
+
+import { DotEditLayoutService } from '../../../../api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.message.saved': 'saved',

@@ -15,9 +15,10 @@ import { DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
+
+import { DotPipesModule } from '../../../pipes/dot-pipes.module';
 
 const mockResponse = [
     { label: 'test', siteId: '1', siteName: 'Site', persona: false },

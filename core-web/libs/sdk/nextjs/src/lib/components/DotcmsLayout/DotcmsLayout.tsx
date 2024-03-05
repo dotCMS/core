@@ -1,7 +1,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { dotPageEditor } from '@dotcms/client';
+import { destroyEditor, initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
 import { DotcmsPageProps, PageProvider, Row } from '@dotcms/react';
 
 /**
@@ -49,23 +49,22 @@ import { DotcmsPageProps, PageProvider, Row } from '@dotcms/react';
  */
 export function DotcmsLayout(props: DotcmsPageProps) {
     const { entity } = props;
-    const router = useRouter();
-    const pathname = usePathname();
+    // const router = useRouter();
+    // const pathname = usePathname();
 
-    const client = dotPageEditor.createClient({
-        onReload: router.refresh
-    });
+    // initEditor({
+    //     onReload: router.refresh
+    // });
 
-    useEffect(() => {
-        client.updateNavigation(pathname);
+    // useEffect(() => {
+    //     updateNavigation(pathname);
 
-        return () => {
-            client.destroy();
-        };
-    }, [client, pathname]);
+    //     return () => {
+    //         destroyEditor();
+    //     };
+    // }, [pathname]);
 
-    
-    entity.isInsideEditor = client.isInsideEditor;
+    // entity.isInsideEditor = isInsideEditor();
 
     return (
         <PageProvider entity={entity}>

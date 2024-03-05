@@ -4,7 +4,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { take } from 'rxjs/operators';
 
 import { PushPublishService } from '@dotcms/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
+
+import { DotEnvironment } from '../../../../shared/models/dot-environment/dot-environment';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-push-publish-env-selector',

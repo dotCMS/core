@@ -1,4 +1,4 @@
-import { dotPageEditor } from './sdk-editor';
+import { initEditor } from './sdk-editor';
 
 /**
  * This is the main entry point for the SDK VTL. It initializes the client and returns it.
@@ -6,5 +6,4 @@ import { dotPageEditor } from './sdk-editor';
  *
  * @type {*}
  */
-const client = dotPageEditor.createClient();
-client.init();
+initEditor();

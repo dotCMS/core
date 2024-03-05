@@ -5,9 +5,10 @@ import { By } from '@angular/platform-browser';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotLinkComponent } from '././dot-link.component';
+
+import { DotPipesModule } from '../../pipes/dot-pipes.module';
 
 @Component({
     template: ` <dot-link [href]="href" [icon]="icon" [label]="label"></dot-link>`

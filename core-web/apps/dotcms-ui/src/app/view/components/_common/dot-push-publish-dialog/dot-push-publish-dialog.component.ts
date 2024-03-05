@@ -4,7 +4,6 @@ import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/cor
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService, PushPublishService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
@@ -12,6 +11,8 @@ import {
     DotPushPublishDialogData,
     DotPushPublishData
 } from '@dotcms/dotcms-models';
+
+import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
 
 @Component({
     selector: 'dot-push-publish-dialog',

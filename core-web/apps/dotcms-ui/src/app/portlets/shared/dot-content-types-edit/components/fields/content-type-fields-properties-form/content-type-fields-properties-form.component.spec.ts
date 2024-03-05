@@ -22,10 +22,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
 
+import { DotPipesModule } from '../../../../../../view/pipes/dot-pipes.module';
 import { FieldPropertyService } from '../service';
 
 const mockDFormFieldData = {

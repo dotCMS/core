@@ -6,15 +6,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type.component';
 
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotFilterPipeModule } from '../../../../../view/pipes/dot-filter/dot-filter-pipe.module';
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
 
 export const contentTypeDataMock = [
@@ -62,8 +62,7 @@ export const contentTypeDataMock = [
         <dot-palette-content-type
             [items]="items"
             [loading]="loading"
-            [viewContentlet]="viewContentlet"
-        ></dot-palette-content-type>
+            [viewContentlet]="viewContentlet"></dot-palette-content-type>
     `
 })
 class TestHostComponent {

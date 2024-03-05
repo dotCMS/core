@@ -6,9 +6,9 @@ import { By } from '@angular/platform-browser';
 
 import { AvatarModule } from 'primeng/avatar';
 
-import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
-
 import { DotGravatarDirective } from './dot-gravatar.directive';
+
+import { DotGravatarService } from '../../../api/services/dot-gravatar-service';
 
 @Component({
     template: `<p-avatar [email]="email" dotGravatar></p-avatar> `

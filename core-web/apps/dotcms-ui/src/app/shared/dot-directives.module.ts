@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { RippleEffectModule } from '@directives/ripple/ripple-effect.module';
+import { RippleEffectModule } from '../view/directives/ripple/ripple-effect.module';
 
 @NgModule({
     declarations: [],

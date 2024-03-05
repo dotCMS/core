@@ -6,12 +6,13 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
+
+import { DotPipesModule } from '../../../../pipes/dot-pipes.module';
+import { DotDialogModule } from '../../../dot-dialog/dot-dialog.module';
 
 @NgModule({
     imports: [

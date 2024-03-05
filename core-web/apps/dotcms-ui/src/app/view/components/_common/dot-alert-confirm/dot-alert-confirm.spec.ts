@@ -3,12 +3,13 @@ import { ComponentFixture, fakeAsync, tick, waitForAsync } from '@angular/core/t
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotAlertConfirmComponent } from './dot-alert-confirm';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 describe('DotAlertConfirmComponent', () => {
     let component: DotAlertConfirmComponent;

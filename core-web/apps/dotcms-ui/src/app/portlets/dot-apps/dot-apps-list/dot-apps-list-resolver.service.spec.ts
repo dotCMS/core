@@ -5,11 +5,12 @@ import { of as observableOf, of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotLicenseService } from '@dotcms/data-access';
 
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
 import { appsResponse, AppsServicesMock } from './dot-apps-list.component.spec';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 class DotLicenseServicesMock {
     canAccessEnterprisePortlet(_url: string) {

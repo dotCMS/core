@@ -7,11 +7,12 @@ import { LazyLoadEvent, MenuItem } from 'primeng/api';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
-import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { DotMessageService, OrderDirection } from '@dotcms/data-access';
-import { DataTableColumn } from '@models/data-table';
+
+import { DotCategoriesService } from '../../../../api/services/dot-categories/dot-categories.service';
+import { DataTableColumn } from '../../../../shared/models/data-table/data-table-column';
+import { DotActionMenuItem } from '../../../../shared/models/dot-action-menu/dot-action-menu-item.model';
+import { DotCategory } from '../../../../shared/models/dot-categories/dot-categories.model';
 
 export interface DotCategoriesListState {
     categoriesBulkActions: MenuItem[];

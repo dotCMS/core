@@ -1,9 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { DotContainerListResolver } from '@portlets/dot-containers/container-list/dot-container-list-resolver.service';
-
 import { ContainerListComponent } from './container-list.component';
+import { DotContainerListResolver } from './dot-container-list-resolver.service';
 
 const routes: Routes = [
     {

@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, ViewChild } from '@angular/core';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
 
 @Component({
     selector: 'dot-container-history',

@@ -8,7 +8,6 @@ import { ActivatedRoute } from '@angular/router';
 
 import { Checkbox, CheckboxModule } from 'primeng/checkbox';
 
-import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -20,6 +19,8 @@ import {
 
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
+
+import { DotAccountService } from '../../api/services/dot-account-service';
 
 const messages = {
     'starter.title': 'Welcome!',

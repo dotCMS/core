@@ -153,7 +153,7 @@ describe('getContentletsBound', () => {
                     },
                     contentlet: {
                         identifier: 'contentlet1',
-                        title: 'Contentlet 1', 
+                        title: 'Contentlet 1',
                         inode: 'inode1',
                         contentType: 'type1'
                     }

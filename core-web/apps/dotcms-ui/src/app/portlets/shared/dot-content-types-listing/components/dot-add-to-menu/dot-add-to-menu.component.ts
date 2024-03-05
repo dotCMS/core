@@ -14,14 +14,15 @@ import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms
 
 import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentType, DotMenu } from '@dotcms/dotcms-models';
+
 import {
     DotAddToMenuService,
     DotCreateCustomTool
-} from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentType, DotMenu } from '@dotcms/dotcms-models';
+} from '../../../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotDialogActions } from '../../../../../view/components/dot-dialog/dot-dialog.component';
 
 @Component({
     selector: 'dot-add-to-menu',

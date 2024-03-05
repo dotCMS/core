@@ -5,12 +5,13 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { AddToBundleService, DotCurrentUserService } from '@dotcms/data-access';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
+
+import { DotPipesModule } from '../../../pipes/dot-pipes.module';
+import { DotDialogModule } from '../../dot-dialog/dot-dialog.module';
 
 @NgModule({
     declarations: [DotAddToBundleComponent],

@@ -6,19 +6,20 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotAddToMenuService } from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
+
+import { DotAddToMenuService } from '../../../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotDialogModule } from '../../../../../view/components/dot-dialog/dot-dialog.module';
+import { DotNavigationService } from '../../../../../view/components/dot-navigation/services/dot-navigation.service';
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotAddToMenuComponent],

@@ -20,7 +20,6 @@ import { FormControl, FormGroup, UntypedFormBuilder } from '@angular/forms';
 
 import { take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import {
     DotEventsService,
     DotHttpErrorHandled,
@@ -38,6 +37,8 @@ import {
     DotTemplateDesigner,
     DotTheme
 } from '@dotcms/dotcms-models';
+
+import { DotEditLayoutService } from '../../../api/services/dot-edit-layout/dot-edit-layout.service';
 
 type TemplateDesignerForm = {
     title: FormControl<string | null>;

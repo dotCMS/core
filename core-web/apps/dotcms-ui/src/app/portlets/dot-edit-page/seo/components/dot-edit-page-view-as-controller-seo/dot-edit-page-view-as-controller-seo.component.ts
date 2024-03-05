@@ -13,10 +13,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
-import { DotDeviceSelectorModule } from '@components/dot-device-selector/dot-device-selector.module';
-import { DotIframeDialogModule } from '@components/dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-persona.selector.module';
 import {
     DotAlertConfirmService,
     DotLicenseService,
@@ -33,8 +29,12 @@ import {
     DotVariantData
 } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
+import { DotDeviceSelectorModule } from '../../../../../view/components/dot-device-selector/dot-device-selector.module';
+import { DotIframeDialogModule } from '../../../../../view/components/dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorModule } from '../../../../../view/components/dot-persona-selector/dot-persona.selector.module';
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
 @Component({

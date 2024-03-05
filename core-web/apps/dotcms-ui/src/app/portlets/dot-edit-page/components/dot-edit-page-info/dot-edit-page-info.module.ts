@@ -3,12 +3,13 @@ import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotLinkComponent } from '@components/dot-link/dot-link.component';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
+
+import { LOCATION_TOKEN } from '../../../../providers';
+import { DotLinkComponent } from '../../../../view/components/dot-link/dot-link.component';
+import { DotPipesModule } from '../../../../view/pipes/dot-pipes.module';
 
 @NgModule({
     imports: [

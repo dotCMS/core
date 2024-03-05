@@ -9,7 +9,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { catchError, filter, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotEnvironment } from '@dotcms/app/shared/models/dot-environment/dot-environment';
 import {
     DotCMSPageWorkflowState,
     DotCurrentUserService,
@@ -51,6 +50,7 @@ import {
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
+import { DotEnvironment } from '../../../shared/models/dot-environment/dot-environment';
 import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 export interface DotPagesInfo {
     actionMenuDomId?: string;

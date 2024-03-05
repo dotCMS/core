@@ -36,11 +36,11 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotLicenseServiceMock } from '@portlets/dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
+import { DotLicenseServiceMock } from '../../../content/services/html/dot-edit-content-toolbar-html.service.spec';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'

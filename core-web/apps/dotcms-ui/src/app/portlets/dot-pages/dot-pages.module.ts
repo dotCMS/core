@@ -5,7 +5,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     DotESContentService,
     DotLanguagesService,
@@ -26,6 +25,8 @@ import { DotPagesFavoritePanelModule } from './dot-pages-favorite-panel/dot-page
 import { DotPagesListingPanelModule } from './dot-pages-listing-panel/dot-pages-listing-panel.module';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesComponent } from './dot-pages.component';
+
+import { DotAddToBundleModule } from '../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 
 @NgModule({
     declarations: [DotPagesComponent],

@@ -3,10 +3,11 @@ import { ActivatedRoute } from '@angular/router';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
-import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotKeyValue } from '../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 @Component({
     selector: 'dot-apps-configuration-detail',

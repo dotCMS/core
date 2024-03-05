@@ -42,9 +42,10 @@ import {
     mockUser,
     mockUserAuth
 } from '@dotcms/utils-testing';
-import { DotLicenseServiceMock } from '@portlets/dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 
 import { DotPageStateService } from './dot-page-state.service';
+
+import { DotLicenseServiceMock } from '../html/dot-edit-content-toolbar-html.service.spec';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet, runningExperiment = null) => {

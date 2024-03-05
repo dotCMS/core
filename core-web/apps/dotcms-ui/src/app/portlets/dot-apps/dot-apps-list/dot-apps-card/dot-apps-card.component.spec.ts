@@ -10,9 +10,10 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAvatarDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
+
+import { DotPipesModule } from '../../../../view/pipes/dot-pipes.module';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector

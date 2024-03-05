@@ -2,10 +2,10 @@ import { BehaviorSubject } from 'rxjs';
 
 import { Component, Input, OnInit } from '@angular/core';
 
-import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
 
+import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-logo.service';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 

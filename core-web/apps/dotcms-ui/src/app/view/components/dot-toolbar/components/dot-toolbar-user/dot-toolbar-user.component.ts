@@ -4,11 +4,10 @@ import { ChangeDetectionStrategy, Component, OnInit, ViewChild, signal } from '@
 import { AvatarModule } from 'primeng/avatar';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
-
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
+import { DotGravatarDirective } from '../../../../directives/dot-gravatar/dot-gravatar.directive';
+import { DotPipesModule } from '../../../../pipes/dot-pipes.module';
 import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
 import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
 

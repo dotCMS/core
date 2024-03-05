@@ -8,7 +8,6 @@ import { MenuItem } from 'primeng/api';
 
 import { pluck, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -23,10 +22,12 @@ import {
     DotBulkFailItem,
     DotContainer
 } from '@dotcms/dotcms-models';
-import { ActionHeaderOptions } from '@models/action-header';
-import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
+import { ActionHeaderOptions } from '../../../../shared/models/action-header/action-header-options.model';
+import { DataTableColumn } from '../../../../shared/models/data-table/data-table-column';
+import { DotActionMenuItem } from '../../../../shared/models/dot-action-menu/dot-action-menu-item.model';
+import { DotListingDataTableComponent } from '../../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];

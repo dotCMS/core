@@ -7,12 +7,13 @@ import { MenuModule } from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
+
+import { DotContentletEditorModule } from '../../../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotPipesModule } from '../../../../../view/pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotEditPageStateControllerComponent, DotEditPageLockInfoComponent],
