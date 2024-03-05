@@ -3,9 +3,11 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateAsFileDataGen;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
+import com.ettrema.httpclient.Host;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -114,6 +116,71 @@ public class FileAssetTemplateUtilTest extends ContentletBaseTest {
         } finally {
             APILocator.getHostAPI().makeDefault(currentDefaultHost, APILocator.systemUser(), false);
         }
+    }
+
+    /**
+     * Method to test: Test the method getThemeIdFromPath, will null
+     * Given Scenario: Receives a null theme path
+     * ExpectedResult: Expected null
+     *
+     */
+    @Test
+    public void test_getThemeIdFromPath_with_null() throws Exception {
+
+        final String theme = null;
+        final String themeId = FileAssetTemplateUtil.getInstance().getThemeIdFromPath(theme);
+
+        Assert.assertNull(themeId);
+    }
+
+    /**
+     * Method to test: Test the method getThemeIdFromPath, will empty string
+     * Given Scenario: Receives a empty string theme path
+     * ExpectedResult: Expected null
+     *
+     */
+    @Test
+    public void test_getThemeIdFromPath_with_empty_string() throws Exception {
+
+        final String theme = "";
+        final String themeId = FileAssetTemplateUtil.getInstance().getThemeIdFromPath(theme);
+
+        Assert.assertNull(themeId);
+    }
+
+    /**
+     * Method to test: Test the method getThemeIdFromPath, will random string
+     * Given Scenario: Receives a random string theme path
+     * ExpectedResult: Expected null
+     *
+     */
+    @Test
+    public void test_getThemeIdFromPath_with_random_string() throws Exception {
+
+        final String theme = "path/theme/random/
+        final String themeId = FileAssetTemplateUtil.getInstance().getThemeIdFromPath(theme);
+
+        Assert.assertNull(themeId);
+    }
+
+    /**
+     * Method to test: Test the method getThemeIdFromPath, will send a full theme path
+     * Given Scenario: Creates a theme folder and sends the full path
+     * ExpectedResult: Expected the theme id (folder id)
+     *
+     */
+    @Test
+    public void test_getThemeIdFromPath_with_full_path_theme() throws Exception {
+
+        // create a folder under application/themes
+        final String theme = "/application/themes/dotcms";
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder themesFolder = ApiLocator.getFolderAPI().createFolders(theme, host, user, false);
+        final String folderId = themesFolder.getInode();
+        final String fullPath = "//"+host.getHostname()+theme;
+        final String themeId = FileAssetTemplateUtil.getInstance().getThemeIdFromPath(fullPath);
+
+        Assert.assertEquals(folderId, themeId);
     }
 
 }
