@@ -3,15 +3,18 @@ package com.dotcms.analytics.app;
 import com.dotcms.analytics.model.AnalyticsProperties;
 import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.AnalyticsAppProperty;
+import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.AppsUtil;
+import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Secret;
-import com.dotcms.security.apps.Type;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
@@ -73,13 +76,24 @@ public class AnalyticsApp {
             return;
         }
 
+        final User user = APILocator.systemUser();
+        final Optional<AppDescriptor> appDescriptor =
+                APILocator.getAppsAPI().getAppDescriptor(ANALYTICS_APP_KEY, user);
+        final ParamDescriptor paramDescriptor = appDescriptor.map(AppDescriptor::getParams)
+                .map(params -> params.get(AnalyticsAppProperty.ANALYTICS_KEY.getPropertyName()))
+                .orElseThrow(() -> new DotDataException("Analytics app descriptor not found"));
+        final String name = AnalyticsAppProperty.ANALYTICS_KEY.getPropertyName();
+        final Optional<Secret> secret = AppsUtil.paramSecret(
+                ANALYTICS_APP_KEY,
+                name,
+                analyticsKey.jsKey().toCharArray(),
+                paramDescriptor);
+
         APILocator.getAppsAPI().saveSecret(
             ANALYTICS_APP_KEY,
-            new Tuple2<>(
-                AnalyticsAppProperty.ANALYTICS_KEY.getPropertyName(),
-                Secret.newSecret(analyticsKey.jsKey().toCharArray(), Type.STRING, false)),
+            new Tuple2<>(name, secret.orElseThrow(() -> new DotDataException("Secret not found"))),
             host,
-            APILocator.systemUser());
+            user);
     }
 
     /**
