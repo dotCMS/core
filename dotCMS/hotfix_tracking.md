@@ -66,3 +66,5 @@ This maintenance release includes the following code fixes:
 59. https://github.com/dotCMS/core/issues/27155 : Endpoint Change for AI Plugin Detection in dotCMS #27155
 60. https://github.com/dotCMS/core/issues/26853 : [UI] Implement Handle Errors from endpoint #26853
 61. https://github.com/dotCMS/core/issues/25296 : Limited users cannot create content types on System Host #25296
+62. https://github.com/dotCMS/core/issues/26542 : Hide the download button for bundles pushed to static environments #26542
+63. https://github.com/dotCMS/core/issues/26415 : Template Builder: System Template should create layout always #26415
