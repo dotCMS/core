@@ -68,3 +68,4 @@ This maintenance release includes the following code fixes:
 61. https://github.com/dotCMS/core/issues/25296 : Limited users cannot create content types on System Host #25296
 62. https://github.com/dotCMS/core/issues/26542 : Hide the download button for bundles pushed to static environments #26542
 63. https://github.com/dotCMS/core/issues/26415 : Template Builder: System Template should create layout always #26415
+64. https://github.com/dotCMS/core/issues/22385 : Custom templates should push with their page no matter the filter that is selected #22385
