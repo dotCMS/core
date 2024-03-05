@@ -68,7 +68,7 @@ import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST, PAYLOAD_MOCK } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
 
 global.URL.createObjectURL = jest.fn(
@@ -578,8 +578,10 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('Preview mode', () => {
-            it('should reset the selection on click on the x button', () => {
+            it('should reset the selection on click on the go to edit button', () => {
                 spectator.detectChanges();
+
+                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
 
                 const deviceSelector = spectator.debugElement.query(
                     By.css('[data-testId="dot-device-selector"]')
@@ -590,15 +592,19 @@ describe('EditEmaEditorComponent', () => {
                 spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
                 spectator.detectChanges();
 
-                const deviceDisplay = spectator.debugElement.query(
-                    By.css('[data-testId="device-display"]')
+                const backToEditButton = spectator.debugElement.query(
+                    By.css('[data-testId="ema-back-to-edit"]')
                 );
 
-                spectator.triggerEventHandler(deviceDisplay, 'resetDevice', {});
+                spectator.triggerEventHandler(backToEditButton, 'onClick', {});
 
                 const selectedDevice = spectator.query(byTestId('selected-device'));
 
                 expect(selectedDevice).toBeNull();
+
+                expect(updatePreviewStateMock).toHaveBeenNthCalledWith(2, {
+                    editorMode: EDITOR_MODE.EDIT
+                });
             });
 
             it('should hide the components that are not needed for preview mode', () => {
@@ -645,8 +651,30 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            it('should call updatePreviewState from the store', () => {
+                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
+
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                expect(updatePreviewStateMock).toHaveBeenCalledWith({
+                    editorMode: EDITOR_MODE.PREVIEW,
+                    device: iphone
+                });
+            });
+
             it('should open seo results when clicking on a social media tile', () => {
                 // We only support VTL
+
+                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
 
                 store.load({
                     url: 'index',
@@ -662,6 +690,11 @@ describe('EditEmaEditorComponent', () => {
                 spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'Facebook');
 
                 expect(spectator.query(byTestId('results-seo-tool'))).not.toBeNull(); // This components share the same logic as the preview by device
+
+                expect(updatePreviewStateMock).toHaveBeenCalledWith({
+                    editorMode: EDITOR_MODE.PREVIEW,
+                    socialMedia: 'Facebook'
+                });
             });
         });
 
@@ -2282,26 +2315,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(routerSpy).not.toHaveBeenCalled();
             });
         });
-
-        // describe('reaload iframe', () => {
-        //     let spy: jest.SpyInstance;
-        //     let dialog: DebugElement;
-
-        //     beforeEach(() => {
-        //         spy = jest.spyOn(
-        //             spectator.component.iframe.nativeElement.contentWindow,
-        //             'postMessage'
-        //         );
-        //         spectator.detectChanges();
-        //         dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
-        //     });
-
-        //     it('should update to Loading state', () => {
-        //         triggerCustomEvent(dialog, 'reloadIframe', true);
-        //         spectator.detectChanges();
-        //         expect(spy).toHaveBeenCalledWith('ema-reload-page', '*');
-        //     });
-        // });
     });
 
     describe('without edit permission', () => {

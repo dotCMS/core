@@ -65,6 +65,7 @@
         *ngIf="es.previewState.device || !es.editor.page.canEdit"
         data-testId="editor-banner">
         <dot-ema-device-display
+            *ngIf="es.previewState.device"
             [currentDevice]="es.previewState.device"
             data-testId="device-display" />
         <div class="editor-banner--message" *ngIf="!es.editor.page.canEdit">

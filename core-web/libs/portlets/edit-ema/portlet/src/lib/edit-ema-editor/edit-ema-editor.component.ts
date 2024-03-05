@@ -187,7 +187,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly pageData = toSignal(this.store.pageData$);
 
-    ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
+    readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
