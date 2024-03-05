@@ -160,18 +160,19 @@
         (dragStart)="onDragStart($event)"
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
-    <ng-container *ngIf="es.previewState.editorMode === editorMode.EDIT">
-        <dot-edit-ema-dialog
-            #dialog
-            (action)="onCustomEvent($event)"
-            data-testId="ema-dialog"></dot-edit-ema-dialog>
-        <p-confirmDialog
-            [style]="{
-                width: '400px'
-            }"
-            rejectIcon="hidden"
-            acceptIcon="hidden"
-            rejectButtonStyleClass="p-button-outlined"
-            data-testId="confirm-dialog"></p-confirmDialog>
-    </ng-container>
+
+    @if(es.previewState.editorMode === editorMode.EDIT) {
+    <dot-edit-ema-dialog
+        #dialog
+        (action)="onCustomEvent($event)"
+        data-testId="ema-dialog"></dot-edit-ema-dialog>
+    <p-confirmDialog
+        [style]="{
+            width: '400px'
+        }"
+        rejectIcon="hidden"
+        acceptIcon="hidden"
+        rejectButtonStyleClass="p-button-outlined"
+        data-testId="confirm-dialog"></p-confirmDialog>
+    }
 </ng-container>
