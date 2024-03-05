@@ -181,7 +181,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
 
-    readonly editorState$ = this.store.editorState$;
+    readonly editorState$ = this.store.editorState$.pipe(
+        tap(({ clientHost }) => {
+            if (clientHost) {
+                return;
+            }
+
+            // For VTL, we need to add the VTL in the iframe
+            // So we force the iframe to reload
+            this.iframe?.nativeElement.dispatchEvent(new Event('load'));
+        })
+    );
+
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
@@ -261,21 +272,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onIframePageLoad({ clientHost, editor }: { clientHost: string; editor: DotPageApiResponse }) {
-        if (!clientHost) {
-            // Is VTL
-            const doc = this.iframe?.nativeElement.contentDocument; // Iframe can be undefined
+        if (clientHost) {
+            // Is Headless
+            return;
+        }
 
-            if (doc) {
-                doc.open();
-                doc.write(editor.page.rendered);
-                doc.close();
+        // Is VTL
+        const doc = this.iframe?.nativeElement.contentDocument; // Iframe can be undefined
 
-                this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+        if (doc) {
+            doc.open();
+            doc.write(editor.page.rendered);
+            doc.close();
 
-                this.ogTagsResults$ = this.dotSeoMetaTagsService
-                    .getMetaTagsResults(doc)
-                    .pipe(take(1));
-            }
+            this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+
+            this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
         }
     }
 
@@ -291,7 +303,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onCustomEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
-        this.handleNgEvent({ event, payload: payload })?.();
+        this.handleNgEvent({ event, payload })?.();
     }
 
     /**
@@ -616,31 +628,44 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
-                if (payload) {
-                    const { pageContainers, didInsert } = insertContentletInContainer({
-                        ...payload,
-                        newContentletId: detail.payload.contentletIdentifier
-                    });
+                const { shouldReloadPage, contentletIdentifier } = detail.payload;
 
-                    if (!didInsert) {
-                        this.handleDuplicatedContentlet();
-
-                        return;
-                    }
-
-                    // Save when created
-                    this.store.savePage({
-                        pageContainers,
-                        pageId: payload.pageId,
+                if (shouldReloadPage) {
+                    this.store.reload({
                         params: this.queryParams,
-                        whenSaved: () => {
-                            this.dialog.resetDialog();
-                            this.reloadIframe();
-                        }
+                        whenReloaded: () => this.reloadIframe()
                     });
-                } else {
-                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+
+                    return;
                 }
+
+                if (!payload) {
+                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+
+                    return;
+                }
+
+                const { pageContainers, didInsert } = insertContentletInContainer({
+                    ...payload,
+                    newContentletId: contentletIdentifier
+                });
+
+                if (!didInsert) {
+                    this.handleDuplicatedContentlet();
+
+                    return;
+                }
+
+                // Save when created
+                this.store.savePage({
+                    pageContainers,
+                    pageId: payload.pageId,
+                    params: this.queryParams,
+                    whenSaved: () => {
+                        this.dialog.resetDialog();
+                        this.reloadIframe();
+                    }
+                });
             },
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
@@ -856,7 +881,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const { onNumberOfPages, title } = contentlet;
 
         if (!(onNumberOfPages > 1)) {
-            this.dialog.editContentlet(payload);
+            this.dialog.editContentlet(contentlet);
 
             return;
         }
@@ -874,12 +899,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return this.handleCopyContent();
                 })
             )
-            .subscribe((contentlet) => {
-                this.dialog.editContentlet({
-                    ...payload,
-                    contentlet
-                });
-            });
+            .subscribe((contentlet) => this.dialog.editContentlet(contentlet));
+    }
+
+    /**
+     * Handle edit content map
+     *
+     * @protected
+     * @param {DotCMSContentlet} contentlet
+     * @memberof EditEmaEditorComponent
+     */
+    protected editContentMap(contentlet: DotCMSContentlet): void {
+        this.dialog.editUrlContentMapContentlet(contentlet);
     }
 
     /**

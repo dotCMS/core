@@ -18,7 +18,13 @@ import {
 } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
-import { ActionPayload, EditEmaState, PreviewState, SavePagePayload } from '../../shared/models';
+import {
+    ActionPayload,
+    EditEmaState,
+    PreviewState,
+    ReloadPagePayload,
+    SavePagePayload
+} from '../../shared/models';
 import { insertContentletInContainer, sanitizeURL, getPersonalization } from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
@@ -78,7 +84,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             siteId: state.editor.site.identifier
         });
 
-        const iframeURL = state.clientHost ? `${state.clientHost}/${pageURL}` : null;
+        const iframeURL = state.clientHost ? `${state.clientHost}/${pageURL}` : '';
 
         return {
             clientHost: state.clientHost,
@@ -97,6 +103,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             previewState: state.previewState
         };
     });
+
+    readonly clientHost$ = this.select((state) => state.clientHost);
 
     readonly layoutProperties$ = this.select((state) => ({
         layout: state.editor.layout,
@@ -169,6 +177,24 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             );
         }
     );
+
+    readonly reload = this.effect((payload$: Observable<ReloadPagePayload>) => {
+        return payload$.pipe(
+            tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
+            switchMap(({ params, whenReloaded }) => {
+                return this.dotPageApiService.get(params).pipe(
+                    tapResponse({
+                        next: (editor) =>
+                            this.patchState({ editor, editorState: EDITOR_STATE.LOADED }),
+                        error: ({ status }: HttpErrorResponse) =>
+                            this.createEmptyState({ canEdit: false, canRead: false }, status),
+                        finalize: () => whenReloaded?.()
+                    }),
+                    catchError(() => EMPTY)
+                );
+            })
+        );
+    });
 
     /**
      * Saves data to a page.
