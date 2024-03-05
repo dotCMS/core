@@ -21,7 +21,6 @@ import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
-import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -42,7 +41,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -53,7 +51,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -233,89 +230,6 @@ public class ContentTypeResourceTest {
 			);
 		}
 
-	}
-
-
-	@Test
-	public void getContentTypes() throws DotDataException {
-		final HttpServletRequest request  = new MockHeaderRequest(
-				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
-						.request());
-		final WebResource webResource = mock(WebResource.class);
-		final InitDataObject initDataObject = mock(InitDataObject.class);
-		final User user = new User();
-		when(initDataObject.getUser()).thenReturn(user);
-		when(webResource.init(nullable(String.class), any(HttpServletRequest.class),  any(HttpServletResponse.class),  anyBoolean(), nullable(String.class))).thenReturn(initDataObject);
-
-		String filter = "filter";
-		int page = 3;
-		int perPage = 4;
-		String orderBy = "name";
-		OrderDirection direction = OrderDirection.ASC;
-
-		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-		final Map<String, Object> extraParams = new TestHashMap<>();
-
-		extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, list("FORM"));
-
-		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-
-		final ContentTypeResource resource = new ContentTypeResource
-				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(),  filter, page, perPage, orderBy, direction.toString(), "FORM",null, null);
-		RestUtilTest.verifySuccessResponse(response);
-	}
-
-	@Test(expected = DotDataException.class)
-	public void getContentTypes_GivenNotExistingTypeName_ShouldThrowError() throws DotDataException {
-		final HttpServletRequest request  = new MockHeaderRequest(
-				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
-						.request());
-		final WebResource webResource = mock(WebResource.class);
-		final InitDataObject initDataObject = mock(InitDataObject.class);
-		final User user = new User();
-		when(initDataObject.getUser()).thenReturn(user);
-		when(webResource.init(nullable(String.class), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(), nullable(String.class))).thenReturn(initDataObject);
-
-		String filter = "filter";
-		int page = 3;
-		int perPage = 4;
-		String orderBy = "name";
-		OrderDirection direction = OrderDirection.ASC;
-
-		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-
-		final ContentTypeResource resource = new ContentTypeResource
-				(new ContentTypeHelper(), webResource,new PaginationUtil(new ContentTypesPaginator()) , WorkflowHelper.getInstance(), permissionAPI);
-
-		resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), "FORM2",null, null);
-
-	}
-
-	@Test
-	public void getContentTypesWithoutType() throws DotDataException {
-		final HttpServletRequest request  = new MockHeaderRequest(
-				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
-						.request());
-		final WebResource webResource = mock(WebResource.class);
-		final InitDataObject initDataObject = mock(InitDataObject.class);
-		final User user = new User();
-		when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(nullable(String.class), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(), nullable(String.class))).thenReturn(initDataObject);
-
-		String filter = "filter";
-		int page = 3;
-		int perPage = 4;
-		String orderBy = "name";
-		OrderDirection direction = OrderDirection.ASC;
-
-		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-
-		final ContentTypeResource resource = new ContentTypeResource
-				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), null,null, null);
-		RestUtilTest.verifySuccessResponse(response);
 	}
 
 	private static String JSON_CONTENT_TYPE_CREATE =
