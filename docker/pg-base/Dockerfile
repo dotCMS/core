@@ -1,7 +1,7 @@
 # ----------------------------------------------
 # Stage 1:  Minimal image with pg_dump and psql built from source 
 # ----------------------------------------------
-FROM ubuntu:22.04 as pg-base-builder
+FROM ubuntu:20.04 as pg-base-builder
 
 SHELL ["/bin/bash", "-c"] 
 ARG DEBIAN_FRONTEND=noninteractive
