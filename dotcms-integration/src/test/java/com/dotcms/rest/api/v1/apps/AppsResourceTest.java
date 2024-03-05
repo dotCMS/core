@@ -294,13 +294,11 @@ public class AppsResourceTest extends IntegrationTestBase {
     }
 
     /**
-     * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
+     * In this method we create a yml file that exist physically on disc.
      * Then we upload the file with an app definition. Then we Create an App Then list the available apps.
-     * Then we Verify the New app is listed. under the right Host.
-     * Then we delete the app and verify the pagination results make sense.
      * Then we verify for app input parameters overriding through the use of environment variables (check dotcms-integration/pom.xml file for used env-vars definitions).
-     * Given scenario: Test we can create an app then delete it with overridden app parameters through environment variables.
-     * Expected Result: Pagination shows all available sites with no configurations
+     * Given scenario: Test we can create an app with overridden app parameters through environment variables.
+     * Expected Result: app params values para overridden with what is present in the env-vars
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -360,55 +358,18 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             Assert.assertNotNull(appIntegrationResponse);
             Assert.assertEquals(HttpStatus.SC_OK, appIntegrationResponse.getStatus());
-            final Response availableAppsResponse = appsResource
-                    .listAvailableApps(request, response, null);
-            Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
-            final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
-                    .getEntity();
-            final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
-                    .getEntity();
-            assertFalse(integrationViewList.isEmpty());
-            Assert.assertTrue(
-                    integrationViewList.stream().anyMatch(
-                            appView -> dataGen.getName()
-                                    .equals(appView.getName())));
 
             final SecretForm secretForm = new SecretForm(inputParamMap);
-            final Response createSecretResponse = appsResource
-                    .createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
-            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
-
-            final Response hostIntegrationsResponse = appsResource
-                    .getAppByKey(request, response, appKey, paginationContext());
-            Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponse.getStatus());
-            final ResponseEntityView responseEntityView2 = (ResponseEntityView) hostIntegrationsResponse
-                    .getEntity();
-            final AppView appWithSites = (AppView) responseEntityView2
-                    .getEntity();
-            Assert.assertEquals(1, appWithSites.getConfigurationsCount());
-            Assert.assertEquals(dataGen.getName(), appWithSites.getName());
-            final List<SiteView> sites = appWithSites.getSites();
-            Assert.assertNotNull(sites);
-            Assert.assertTrue(sites.size() >= 2);
-            Assert.assertEquals(sites.get(0).getId(), Host.SYSTEM_HOST); //system host is always the first element to come.
-            Assert.assertEquals(sites.get(1).getId(), host.getIdentifier());
-            Assert.assertTrue(
-                    sites.stream()
-                            .anyMatch(hostView -> host.getIdentifier().equals(hostView.getId()))
-            );
+            appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
 
             final Response detailedIntegrationResponse = appsResource
-                    .getAppDetail(request, response, appKey,
+                    .getAppDetail(
+                            request,
+                            response,
+                            appKey,
                             host.getIdentifier());
-            Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
-            final ResponseEntityView responseEntityView3 = (ResponseEntityView) detailedIntegrationResponse
-                    .getEntity();
-            final AppView appDetailedView = (AppView) responseEntityView3
-                    .getEntity();
-            Assert.assertNotNull(appDetailedView.getSites());
-            assertFalse(appDetailedView.getSites().isEmpty());
-            Assert.assertEquals(appDetailedView.getSites().get(0).getId(),
-                    host.getIdentifier());
+            final ResponseEntityView responseEntityView3 = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+            final AppView appDetailedView = (AppView) responseEntityView3.getEntity();
 
             final SiteView siteView = appDetailedView.getSites().get(0);
             int i = 0;
@@ -436,37 +397,9 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertTrue(secretView.getParamDescriptor().isEnvShow());
             Assert.assertTrue(secretView.getSecret().isEnvShow());
 
-            final Response deleteIntegrationsResponse = appsResource
-                    .deleteAllAppSecrets(request, response, appKey,
-                            host.getIdentifier());
-            Assert.assertEquals(HttpStatus.SC_OK, deleteIntegrationsResponse.getStatus());
-
-            final Response detailedIntegrationResponseAfterDelete = appsResource
-                    .getAppDetail(request, response, appKey,
-                            host.getIdentifier());
-            Assert.assertEquals(HttpStatus.SC_OK,
-                    detailedIntegrationResponseAfterDelete.getStatus());
-
-            //Now test the entry has been removed from the list of available configurations.
-            final Response hostIntegrationsResponseAfterDelete = appsResource
-                    .getAppByKey(request, response, appKey, paginationContext());
-            Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponseAfterDelete.getStatus());
-            final ResponseEntityView responseEntityViewAfterDelete = (ResponseEntityView) hostIntegrationsResponseAfterDelete
-                    .getEntity();
-            final AppView appHostViewAfterDelete = (AppView) responseEntityViewAfterDelete
-                    .getEntity();
-
-            Assert.assertEquals(0, appHostViewAfterDelete.getConfigurationsCount());
-            Assert.assertEquals(dataGen.getName(), appHostViewAfterDelete.getName());
-            final List<SiteView> expectedEmptyHosts = appHostViewAfterDelete.getSites();
-            Assert.assertNotNull(expectedEmptyHosts);
-            // Previously this test wasn't expecting any entry here
-            // But the pagination will now return only items marked to have no configurations.
-            Assert.assertEquals("None of the returned item should have configuration", 0,
-                    expectedEmptyHosts.stream().filter(SiteView::isConfigured).count());
+            appsResource.deleteAllAppSecrets(request, response, appKey, host.getIdentifier());
         }
     }
-
 
     /**
      * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
