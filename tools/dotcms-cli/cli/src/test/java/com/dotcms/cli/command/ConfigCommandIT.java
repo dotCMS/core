@@ -31,7 +31,7 @@ import picocli.CommandLine.Model.CommandSpec;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
-class InitCommandIT {
+class ConfigCommandIT {
 
     public static final String LOCALHOST_8080 = "http://localhost:8080";
 
@@ -54,7 +54,7 @@ class InitCommandIT {
 
     @Spy
     @InjectMocks
-    InitCommand initCommand;
+    ConfigCommand configCommand;
 
     /**
      * Given scenario: Test that we call the command with no configuration file found and the delete option passed.
@@ -64,8 +64,8 @@ class InitCommandIT {
     @Test
     void testNoConfigurationFoundDeleteOptionPassed() throws Exception {
         when(serviceManager.services()).thenReturn(List.of());
-        initCommand.delete = true;
-        final Integer status = initCommand.call();
+        configCommand.delete = true;
+        final Integer status = configCommand.call();
         Assertions.assertEquals(ExitCode.OK, status);
         verify(output).info("No configuration file found. Nothing to delete. Re-run the command without the -d option.");
     }
@@ -84,9 +84,9 @@ class InitCommandIT {
        when(prompt.yesOrNo(true, "Are these values OK? (Enter to confirm or N to cancel) ")).thenReturn(true);
        when(prompt.yesOrNo(true, "Do you want to continue adding another dotCMS instance? ")).thenReturn(false);
 
-       final Integer status = initCommand.call();
+       final Integer status = configCommand.call();
        Assertions.assertEquals(ExitCode.OK, status);
-       verify(initCommand,times(1)).freshInit();
+       verify(configCommand,times(1)).freshInit();
        verify(output).info("The current active profile is now [local]");
     }
 
@@ -112,9 +112,9 @@ class InitCommandIT {
         when(prompt.readInput(-1, // Index starts at 0, and we want to select the last one therefore we need to select 2
                 "Enter the number of the profile to be made default or press enter to exit. ")).thenReturn(2);
 
-        final Integer status = initCommand.call();
+        final Integer status = configCommand.call();
         Assertions.assertEquals(ExitCode.OK, status);
-        verify(initCommand,times(1)).freshInit();
+        verify(configCommand,times(1)).freshInit();
         verify(output).info("One of these profiles needs to be made the current active one. Please select the number of the profile you want to activate.");
         verify(output).info("The current active profile is now [local#2]");
     }
@@ -137,12 +137,12 @@ class InitCommandIT {
         when(prompt.yesOrNo(true, "Do you want to continue adding another dotCMS instance? ")).thenAnswer(invocation -> count.getAndIncrement() <= 1);
         //We want to return 2, so we can break the loop
         when(prompt.readInput(-1, "Enter the number of the profile to be made default or press enter to exit. ")).thenReturn(2);
-        when(initCommand.maxCaptureAttempts()).thenReturn(2);
+        when(configCommand.maxCaptureAttempts()).thenReturn(2);
 
-        final Integer status = initCommand.call();
+        final Integer status = configCommand.call();
         Assertions.assertEquals(ExitCode.OK, status);
-        verify(initCommand,times(1)).freshInit();
-        verify(initCommand,never()).makeActive(anyList());
+        verify(configCommand,times(1)).freshInit();
+        verify(configCommand,never()).persistAndMakeActive(anyList());
         //The name [local] is already in use.
         verify(output,atLeastOnce()).error("There are errors in the captured values : The name [local] is already in use.");
 
@@ -162,11 +162,11 @@ class InitCommandIT {
         when(prompt.readInput(LOCALHOST_8080, "Enter the dotCMS base URL (must be a valid URL starting protocol http or https) [%s] ", LOCALHOST_8080)).thenReturn(invalidURL);
         when(prompt.yesOrNo(true, "Are these values OK? (Enter to confirm or N to cancel) ")).thenReturn(true);
         when(prompt.yesOrNo(true, "Do you want to continue adding another dotCMS instance? ")).thenReturn(false);
-        when(initCommand.maxCaptureAttempts()).thenReturn(1);
-        final Integer status = initCommand.call();
+        when(configCommand.maxCaptureAttempts()).thenReturn(1);
+        final Integer status = configCommand.call();
         Assertions.assertEquals(ExitCode.OK, status);
-        verify(initCommand,times(1)).freshInit();
-        verify(initCommand,never()).makeActive(anyList());
+        verify(configCommand,times(1)).freshInit();
+        verify(configCommand,never()).persistAndMakeActive(anyList());
         //The name [local] is already in use.
         verify(output,atLeastOnce()).error("There are errors in the captured values : Invalid URL: http:\\demo.dotcms.com");
     }
@@ -203,7 +203,7 @@ class InitCommandIT {
         //Keep track of the number of times the prompt is called, so we can exit the loop after the first time
         final AtomicInteger count = new AtomicInteger(1);
         when(prompt.readInput(-1,
-                "Select the number of the profile you want to @|bold edit|@ or press enter to exit. ")).thenAnswer(invocation -> count.getAndIncrement() <= 1 ? 1 : -1);
+                "Select the number of the profile you want to @|bold edit|@ or press enter. ")).thenAnswer(invocation -> count.getAndIncrement() <= 1 ? 1 : -1);
         // return the new name of the profile
         when(prompt.readInput("demo", "Enter the new name for the profile [%s]. ", "demo")).thenReturn("demo-updated");
         when(prompt.readInput("https://demo.dotcms.com", "Enter the new URL for the profile [%s]. ", "https://demo.dotcms.com")).thenReturn("https://demo.updated.dotcms.com");
@@ -212,13 +212,21 @@ class InitCommandIT {
         when(prompt.yesOrNo(false, "Do you want to update the @|bold current active|@ instance? ")).thenReturn(true);
         when(prompt.readInput(-1, "Enter the number of the profile to be made default or press enter to exit. ")).thenReturn(1);
 
-        final Integer status = initCommand.call();
+        when(prompt.yesOrNo(false, "Do you want to add a new dotCMS instance? (Or press enter to exit)")).thenReturn(true);
+        when(prompt.readInput("local", "Enter the key/name that will serve to identify the dotCMS instance (must be unique) [%s].  ","local")).thenReturn("local2");
+        when(prompt.readInput(LOCALHOST_8080, "Enter the dotCMS base URL (must be a valid URL starting protocol http or https) [%s] ", LOCALHOST_8080)).thenReturn(LOCALHOST_8080);
+        when(prompt.yesOrNo(true, "Are these values OK? (Enter to confirm or N to cancel) ")).thenReturn(true);
+        when(prompt.yesOrNo(true, "Do you want to continue adding another dotCMS instance? ")).thenReturn(false);
+        when(configCommand.maxCaptureAttempts()).thenReturn(1);
+
+        final Integer status = configCommand.call();
         Assertions.assertEquals(ExitCode.OK, status);
-        verify(initCommand,times(1)).performUpdate(anyList());
-        verify(initCommand,times(1)).makeActive(anyList());
+        verify(configCommand,times(1)).performUpdate(anyList());
+        verify(configCommand,times(1)).addNewInstances(anyList());
+        verify(configCommand,times(2)).persistAndMakeActive(anyList());
         verify(output).info("The profile [demo-updated] has been updated.");
-        verify(output).info("One of these profiles needs to be made the current active one. Please select the number of the profile you want to activate.");
-        verify(output).info("The current active profile is now [demo-updated]");
+        verify(output,times(2)).info("One of these profiles needs to be made the current active one. Please select the number of the profile you want to activate.");
+        verify(output,times(2)).info("The current active profile is now [demo-updated]");
     }
 
 

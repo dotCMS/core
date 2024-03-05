@@ -202,6 +202,7 @@
                     <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
                     <arguments>
                         <argument>--outdir=${project.basedir}/docs</argument>
+                        <argument>com.dotcms.cli.command.ConfigCommand</argument>
                         <argument>com.dotcms.cli.command.InstanceCommand</argument>
                         <argument>com.dotcms.cli.command.LoginCommand</argument>
                         <argument>com.dotcms.cli.command.PushCommand</argument>
