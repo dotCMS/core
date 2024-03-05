@@ -435,7 +435,7 @@ export class DotEditContentHtmlService {
      * @returns SeoMetaTagsResult[]
      */
     getMetaTagsResults(): Observable<SeoMetaTagsResult[]> {
-        const pageDocument = document ?? this.getEditPageDocument();
+        const pageDocument = this.getEditPageDocument();
 
         return this.dotSeoMetaTagsService.getMetaTagsResults(pageDocument);
     }
@@ -446,7 +446,7 @@ export class DotEditContentHtmlService {
      * @returns SeoMetaTags
      */
     getMetaTags(): SeoMetaTags {
-        const pageDocument = document ?? this.getEditPageDocument();
+        const pageDocument = this.getEditPageDocument();
 
         return this.dotSeoMetaTagsUtilService.getMetaTags(pageDocument);
     }
