@@ -21,10 +21,8 @@ import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
-import picocli.CommandLine.ParameterException;
 
 @TopCommand
 @CommandLine.Command(

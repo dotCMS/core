@@ -85,6 +85,12 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
+        if(loginOptions == null){
+            output.error("Missing required options: ");
+            output.error("Once an instance is selected. Use this command to open a session");
+            return ExitCode.USAGE;
+        }
+
         if(null != loginOptions.passwordOptions) {
             output.info(String.format("Logging in as [@|bold,cyan %s|@]. ", loginOptions.passwordOptions.user));
             authenticationContext.login(loginOptions.passwordOptions.user, loginOptions.passwordOptions.password);
