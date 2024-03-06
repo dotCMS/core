@@ -19,10 +19,10 @@
     </svg>
 </div>
 
-
-
-<p-skeleton *ngIf="isLoading" width="100%" height="400px" styleClass="ai-image-gallery_skeleton"> </p-skeleton>
-<p-skeleton *ngIf="isLoading" width="30px" height="20px" class="ai-image-gallery__count-skeleton"> </p-skeleton>
+<p-skeleton *ngIf="isLoading" width="100%" height="400px" styleClass="ai-image-gallery_skeleton">
+</p-skeleton>
+<p-skeleton class="ai-image-gallery__count-skeleton" *ngIf="isLoading" width="30px" height="20px">
+</p-skeleton>
 <p-galleria
     *ngIf="!isLoading && images?.length"
     [(activeIndex)]="index"
@@ -40,7 +40,6 @@
             alt="image"></p-image>
     </ng-template>
 </p-galleria>
-<span *ngIf="!isLoading && images?.length" class="ai-image-gallery__count align-self-end"> {{ index + 1 }}/{{ images.length }} </span>
-
-
-
+<span class="ai-image-gallery__count align-self-end" *ngIf="!isLoading && images?.length">
+    {{ index + 1 }}/{{ images.length }}
+</span>

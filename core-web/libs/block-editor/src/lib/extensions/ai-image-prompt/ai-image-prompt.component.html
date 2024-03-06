@@ -15,7 +15,7 @@
                 [isLoading]="vm.isLoading"
                 (value)="generateImage($event)"
                 (orientation)="vm.orientation = $event" />
-            <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading" >
+            <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading">
                 <dot-ai-image-prompt-gallery
                     [isLoading]="vm.isLoading"
                     [images]="vm.images"
@@ -30,8 +30,7 @@
                     (click)="insetImage(vm.images[vm.galleryActiveIndex])"
                     pButton
                     type="submit"
-                    icon="pi pi-check">
-                </button>
+                    icon="pi pi-check"></button>
             </div>
         </div>
     </p-dialog>

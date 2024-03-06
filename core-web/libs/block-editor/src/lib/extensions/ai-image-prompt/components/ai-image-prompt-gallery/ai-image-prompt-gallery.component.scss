@@ -26,7 +26,7 @@
     }
 }
 
-p-galleria{
+p-galleria {
     height: 400px;
     background-color: $color-palette-gray-200;
     display: flex;
@@ -34,7 +34,7 @@ p-galleria{
 }
 
 .ai-image-gallery__count {
-    margin-top: $spacing-1 ;
+    margin-top: $spacing-1;
 }
 
 ::ng-deep {
@@ -43,7 +43,7 @@ p-galleria{
         max-height: 400px;
     }
 
-    p-galleriacontent{
+    p-galleriacontent {
         width: 100%;
     }
 
@@ -53,8 +53,8 @@ p-galleria{
         display: flex;
     }
 
-    .ai-image-gallery__count-skeleton{
-        margin-top: $spacing-1 ;
+    .ai-image-gallery__count-skeleton {
+        margin-top: $spacing-1;
         align-self: end;
     }
 }
