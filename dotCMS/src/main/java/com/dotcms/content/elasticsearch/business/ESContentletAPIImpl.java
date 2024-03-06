@@ -8404,7 +8404,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 cve.addInvalidContentRelationship(relationship,
                                         contentsInRelationship);
                             }
-                        } catch (final DotSecurityException | DotDataException e) {
+                        } catch (final DotDataException e) {
                             Logger.error(this,
                                     "An error occurred when retrieving information from related Contentlet"
                                             +
@@ -8510,7 +8510,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
                 return false;
             }
-        } catch (final DotSecurityException | DotDataException e) {
+        } catch (final DotDataException e) {
             Logger.error(this,
                     "An error occurred when retrieving information from related Contentlet" +
                             " [" + contentsInRelationship.get(0).getIdentifier() + "]", e);
