@@ -245,9 +245,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        // THIS IS AN ANTI PATTER THO. But since we can pass code to an iframe
+        // in the template, there is no other way I can think of.
+
+        // THIS IS IT... code change iframe gets updated.
         this.store.code$.subscribe((code) => {
 
-            // THIS IS IT... code change iframe gets updated.
+            // YOU WAIT FOR THE NEXT FRAME TO GET THE IFRAME
             requestAnimationFrame(() => {
                 const doc = this.iframe?.nativeElement.contentDocument;
 
@@ -257,7 +261,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     doc.close();
 
                     this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-                    this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
+                    this.ogTagsResults$ = this.dotSeoMetaTagsService
+                        .getMetaTagsResults(doc)
+                        .pipe(take(1));
                 }
             });
         });
@@ -280,7 +286,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onIframePageLoad(e: Event) {
         // NOT SURE IF WE NEED THIS AFTER ALL... MAYBE TO REMOVE THE LOADER INDICATOR
-        console.log(e)
+        console.log(e);
     }
 
     ngOnDestroy(): void {
