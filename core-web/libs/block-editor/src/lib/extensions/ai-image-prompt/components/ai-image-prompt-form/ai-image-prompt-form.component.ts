@@ -54,9 +54,6 @@ import {
 })
 export class AiImagePromptFormComponent implements OnChanges, OnInit {
     @Input()
-    aiProcessedPrompt: string;
-
-    @Input()
     generatedValue: DotGeneratedAIImage;
 
     @Input()
@@ -69,6 +66,7 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     orientation = new EventEmitter<AIImageSize>();
 
     form: FormGroup;
+    aiProcessedPrompt: string;
     dotMessageService = inject(DotMessageService);
 
     orientationOptions: SelectItem<AIImageSize>[] = [
@@ -100,13 +98,16 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
     ngOnChanges(changes: SimpleChanges): void {
         const { generatedValue, isLoading } = changes;
-        if (generatedValue?.currentValue) {
-            this.form.patchValue(generatedValue.currentValue.request);
+        if (generatedValue?.currentValue && !generatedValue.firstChange) {
+            const updatedValue: DotGeneratedAIImage = generatedValue.currentValue;
+            this.form.patchValue(updatedValue.request);
             this.form.clearValidators();
             this.form.updateValueAndValidity();
+
+            this.aiProcessedPrompt = updatedValue.response.revised_prompt;
         }
 
-        if (!isLoading.firstChange) {
+        if (isLoading && !isLoading.firstChange) {
             isLoading.currentValue ? this.form.disable() : this.form.enable();
         }
     }
@@ -127,7 +128,6 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
         typeControl.valueChanges.subscribe((type) => {
             const promptControl = this.form.get('text');
-            console.log('type test 2', type);
             type === 'auto'
                 ? promptControl.clearValidators()
                 : promptControl.setValidators(Validators.required);

@@ -11,20 +11,28 @@
         <div class="dialog-prompt__wrapper flex">
             <dot-ai-image-prompt-form
                 *ngIf="vm.showDialog"
-                [generatedValue]="selectedImage"
+                [generatedValue]="vm.images[vm.galleryActiveIndex]"
                 [isLoading]="vm.isLoading"
-                [orientationOptions]="vm.orientationOptions"
-                [aiProcessedPrompt]="vm.images[vm.galleryActiveIndex]?.response.revised_prompt"
                 (value)="generateImage($event)"
-                (orientation)="vm.orientation = $event; console.log($event)" />
-
-            <dot-ai-image-prompt-gallery
-                [isLoading]="vm.isLoading"
-                [images]="vm.images"
-                [index]="vm.galleryActiveIndex"
-                [orientation]="vm.orientation"
-                (indexChange)="vm.galleryActiveIndex = $event"
-                (imageSelected)="insetImage($event)" />
+                (orientation)="vm.orientation = $event" />
+            <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading" >
+                <dot-ai-image-prompt-gallery
+                    [isLoading]="vm.isLoading"
+                    [images]="vm.images"
+                    [index]="vm.galleryActiveIndex"
+                    [orientation]="vm.orientation"
+                    (activeIndexChange)="vm.galleryActiveIndex = $event" />
+                <button
+                    class="align-self-end"
+                    *ngIf="vm.images.length || vm.isLoading"
+                    [disabled]="vm.isLoading"
+                    [label]="'block-editor.extension.ai-image.insert' | dm"
+                    (click)="insetImage(vm.images[vm.galleryActiveIndex])"
+                    pButton
+                    type="submit"
+                    icon="pi pi-check">
+                </button>
+            </div>
         </div>
     </p-dialog>
 </ng-container>

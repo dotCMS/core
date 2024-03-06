@@ -1,5 +1,5 @@
 <div
-    *ngIf="!isLoading && !images?.length; else gallery"
+    *ngIf="!isLoading && !images?.length"
     [className]="'s' + orientation + ' ai-image-gallery__placeholder'">
     <svg xmlns="http://www.w3.org/2000/svg" width="54" height="52" viewBox="0 0 54 52" fill="none">
         <path
@@ -17,38 +17,30 @@
             d="M26.5741 12.0668L22.2196 13.9099C22.0364 13.9875 21.8797 14.1199 21.7693 14.2904C21.6589 14.4608 21.6 14.6615 21.6 14.8668C21.6 15.0721 21.6589 15.2728 21.7693 15.4432C21.8797 15.6137 22.0364 15.7461 22.2196 15.8237L26.5741 17.6668L28.3502 22.1859C28.4249 22.376 28.5526 22.5387 28.7168 22.6532C28.881 22.7678 29.0744 22.8289 29.2723 22.8289C29.4701 22.8289 29.6635 22.7678 29.8277 22.6532C29.992 22.5387 30.1196 22.376 30.1944 22.1859L31.9704 17.6668L36.324 15.8237C36.5072 15.7461 36.664 15.6136 36.7743 15.4432C36.8847 15.2728 36.9436 15.0721 36.9436 14.8668C36.9436 14.6615 36.8847 14.4608 36.7743 14.2904C36.664 14.1199 36.5072 13.9875 36.324 13.9099L31.9704 12.0668L30.1944 7.5487C30.1196 7.35858 29.992 7.19589 29.8277 7.08136C29.6635 6.96684 29.4701 6.90568 29.2723 6.90568C29.0744 6.90568 28.881 6.96684 28.7168 7.08136C28.5526 7.19589 28.4249 7.35858 28.3502 7.5487L26.5741 12.0668Z"
             fill="#7042F0" />
     </svg>
-    <i></i>
 </div>
 
-<p-skeleton *ngIf="isLoading" width="10rem" styleClass="mb-2"> </p-skeleton>
 
-<ng-template #gallery>
-    <div *ngIf="!isLoading">
-        <p-galleria
-            [(activeIndex)]="index"
-            [circular]="true"
-            [showItemNavigators]="true"
-            [showThumbnails]="false"
-            [value]="images"
-            [containerStyle]="{ 'max-width': '100%' }"
-            visible="true">
-            <ng-template pTemplate="item" let-item>
-                <p-image
-                    [src]="item.response.contentlet.assetVersion"
-                    [preview]="true"
-                    imageClass="ai-image-gallery__img"
-                    alt="image"></p-image>
-            </ng-template>
-        </p-galleria>
-    </div>
-    <span class="ai-image-gallery__count"> {{ index + 1 }}/{{ images.length }} </span>
 
-    <button
-        class="align-self-end"
-        [disabled]="isLoading"
-        [label]="'block-editor.extension.ai-image.insert' | dm"
-        (click)="imageSelected.emit(images[index])"
-        pButton
-        type="submit"
-        icon="pi pi-check"></button>
-</ng-template>
+<p-skeleton *ngIf="isLoading" width="100%" height="400px" styleClass="ai-image-gallery_skeleton"> </p-skeleton>
+<p-skeleton *ngIf="isLoading" width="30px" height="20px" class="ai-image-gallery__count-skeleton"> </p-skeleton>
+<p-galleria
+    *ngIf="!isLoading && images?.length"
+    [(activeIndex)]="index"
+    [circular]="true"
+    [showItemNavigators]="true"
+    [showThumbnails]="false"
+    [value]="images"
+    (activeIndexChange)="activeIndexChange.emit($event)"
+    visible="true">
+    <ng-template pTemplate="item" let-item>
+        <p-image
+            [src]="item.response.contentlet.assetVersion"
+            [preview]="false"
+            imageClass="ai-image-gallery__img"
+            alt="image"></p-image>
+    </ng-template>
+</p-galleria>
+<span *ngIf="!isLoading && images?.length" class="ai-image-gallery__count align-self-end"> {{ index + 1 }}/{{ images.length }} </span>
+
+
+

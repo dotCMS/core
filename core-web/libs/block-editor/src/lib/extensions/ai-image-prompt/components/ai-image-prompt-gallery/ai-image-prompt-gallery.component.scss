@@ -1,5 +1,10 @@
 @use "variables" as *;
 
+:host {
+    display: flex;
+    flex-direction: column;
+}
+
 .ai-image-gallery__placeholder {
     background-color: $color-palette-gray-200;
     width: 100%;
@@ -21,14 +26,35 @@
     }
 }
 
-.ai-image-gallery__img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: $border-radius-md;
+p-galleria{
+    height: 400px;
+    background-color: $color-palette-gray-200;
+    display: flex;
+    align-items: center;
 }
 
 .ai-image-gallery__count {
-    align-self: flex-end;
-    margin: $spacing-1 0;
+    margin-top: $spacing-1 ;
+}
+
+::ng-deep {
+    .ai-image-gallery__img {
+        width: 100%;
+        max-height: 400px;
+    }
+
+    p-galleriacontent{
+        width: 100%;
+    }
+
+    .ai-image-gallery_skeleton {
+        width: 100%;
+        height: 400px;
+        display: flex;
+    }
+
+    .ai-image-gallery__count-skeleton{
+        margin-top: $spacing-1 ;
+        align-self: end;
+    }
 }

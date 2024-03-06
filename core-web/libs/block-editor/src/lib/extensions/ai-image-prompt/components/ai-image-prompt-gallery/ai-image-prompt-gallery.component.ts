@@ -42,10 +42,7 @@ export class AiImagePromptGalleryComponent {
     orientation: AIImageSize;
 
     @Output()
-    indexChange = new EventEmitter<number>();
-
-    @Output()
-    imageSelected = new EventEmitter<DotGeneratedAIImage>();
+    activeIndexChange = new EventEmitter<number>();
 
     dotMessageService = inject(DotMessageService);
 }

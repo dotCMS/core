@@ -1,5 +1,7 @@
+@use "variables" as *;
+
 .p-galleria .p-galleria-close {
-    margin: 0.5rem;
+    margin: $spacing-1;
     background: transparent;
     color: rgba(255, 255, 255, 0.6);
     width: 4rem;
@@ -8,19 +10,19 @@
     border-radius: 4px;
 }
 .p-galleria .p-galleria-close .p-galleria-close-icon {
-    font-size: 2rem;
+    font-size: 1.5rem;
 }
 .p-galleria .p-galleria-close .p-icon-wrapper .p-icon {
-    width: 2rem;
-    height: 2rem;
+    width: 1.5rem;
+    height: 1.5rem;
 }
 .p-galleria .p-galleria-close:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.87);
+    color: $white;
 }
 .p-galleria .p-galleria-item-nav {
     background: transparent;
-    color: rgba(255, 255, 255, 0.6);
+    color: $white;
     width: 4rem;
     height: 4rem;
     transition: color 0.15s, box-shadow 0.15s;
@@ -35,22 +37,22 @@
     width: 2rem;
     height: 2rem;
 }
-.p-galleria .p-galleria-item-nav:not(.p-disabled):hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
-}
+//.p-galleria .p-galleria-item-nav:not(.p-disabled):hover {
+//    background: rgba(255, 255, 255, 0.1);
+//    color: $white;
+//}
 .p-galleria .p-galleria-caption {
     background: rgba(0, 0, 0, 0.5);
-    color: rgba(255, 255, 255, 0.6);
-    padding: 1rem;
+    color: $white;
+    padding: $spacing-3;
 }
 .p-galleria .p-galleria-indicators {
-    padding: 1rem;
+    padding: $spacing-3;
 }
 .p-galleria .p-galleria-indicators .p-galleria-indicator button {
     background-color: #7789a1;
-    width: 1rem;
-    height: 1rem;
+    width: $spacing-3;
+    height: $spacing-3;
     transition: color 0.15s, box-shadow 0.15s;
     border-radius: 4px;
 }

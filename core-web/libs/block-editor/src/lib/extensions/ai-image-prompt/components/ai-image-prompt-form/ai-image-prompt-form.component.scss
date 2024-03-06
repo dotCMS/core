@@ -7,7 +7,7 @@ form {
     justify-content: center;
 }
 
-.dialog-prompt__input {
+.ai-image-prompt__input {
     display: flex;
     flex-direction: column;
 
@@ -24,26 +24,28 @@ form {
     }
 }
 
-.dialog-prompt__text {
-    max-height: 350px;
-    min-height: 350px;
+.ai-image-prompt__text {
 
-    .dialog-prompt__textarea {
-        height: 309px;
+    .field:last-child {
+        margin-bottom: 0;
     }
 
-    &.dialog-prompt__text--generated {
-        .dialog-prompt__textarea {
-            height: 80px;
+    .ai-image-prompt__textarea {
+        height: 365px;
+    }
+
+    &.ai-image-prompt__text--generated {
+        .ai-image-prompt__textarea {
+            height: 90px;
         }
 
-        .dialog-prompt__ai-rewritten-textarea {
-            height: 195px;
+        .ai-image-prompt__rewritten-textarea {
+            height: 230px;
         }
     }
 }
 
-.dialog-prompt__orientation {
+.ai-image-prompt__orientation {
     margin-bottom: 9rem;
 }
 
