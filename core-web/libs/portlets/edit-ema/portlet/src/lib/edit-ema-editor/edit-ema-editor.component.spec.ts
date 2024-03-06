@@ -18,6 +18,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotContentTypeService,
     DotCopyContentService,
@@ -37,7 +38,6 @@ import {
     CONTAINER_SOURCE,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
-import { CUSTOMER_ACTIONS } from '@dotcms/editor';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
