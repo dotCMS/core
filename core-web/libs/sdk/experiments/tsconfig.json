@@ -1,16 +1,24 @@
 {
     "extends": "../../../tsconfig.base.json",
     "compilerOptions": {
-        "module": "commonjs",
-        "forceConsistentCasingInFileNames": true,
+        "target": "ESNext",
+        "useDefineForClassFields": true,
+        "module": "ESNext",
         "strict": true,
-        "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true
+        "moduleResolution": "Node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "types": ["vite/client"],
+        "noEmit": true,
+        "lib": ["ESNext", "DOM"],
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true
     },
     "files": [],
-    "include": [],
+    "include": ["src"],
     "references": [
         {
             "path": "./tsconfig.lib.json"

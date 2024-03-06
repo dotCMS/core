@@ -10,7 +10,7 @@ export const EXPERIMENT_WINDOWS_KEY = 'dotExperiment';
  *
  * @constant {string}
  */
-export const EXPERIMENT_SCRIPT_FILE_NAME = 'standalone.cjs.js';
+export const EXPERIMENT_SCRIPT_FILE_NAME = 'dot-experiments.min.iife.js';
 
 /**
  * The prefix used for the experiment script data attributes.
