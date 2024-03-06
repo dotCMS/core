@@ -19,6 +19,9 @@
     "bugs": {
         "url": "https://github.com/dotCMS/core/issues"
     },
-    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/experiments/README.md"
+    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/experiments/README.md",
+    "dependencies": {
+        "@jitsu/sdk-js": "^3.1.5"
+    }
 
 }
