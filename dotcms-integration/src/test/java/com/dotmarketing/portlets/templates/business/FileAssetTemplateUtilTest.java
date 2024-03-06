@@ -193,7 +193,7 @@ public class FileAssetTemplateUtilTest extends ContentletBaseTest {
     public void test_getThemeIdFromPath_with_full_path_theme_doesnot_exist() throws Exception {
 
         // create a folder under application/themes
-        final String theme = "//noexists/application/themes/dotcms";
+        final String theme = "//noexists/app/xxxx/yyyy";
         final String themeId = FileAssetTemplateUtil.getInstance().getThemeIdFromPath(theme);
 
         Assert.assertEquals(theme, themeId);
