@@ -471,7 +471,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @CloseDBIfOpened
   @Override
   public int count(final String condition, final BaseContentType base, final String siteId) throws DotDataException {
-    return countForSites(condition, base, UtilMethods.isSet(siteId) ? ImmutableList.of(siteId) : null);
+    return countForSites(condition, base, UtilMethods.isSet(siteId) ? List.of(siteId) : null);
   }
 
   @CloseDBIfOpened

@@ -79,18 +79,20 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             final OrderDirection direction, final Map<String, Object> extraParams) {
         final List<String> contentTypeList = Try.of(() -> (List<String>) extraParams.get(TYPES_PARAMETER_NAME)).getOrNull();
         final List<String> siteList = Try.of(() -> (List<String>) extraParams.get(SITES_PARAMETER_NAME)).getOrNull();
-        final String typeName = Try.of(() -> extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", BLANK)).getOrElse(BaseContentType.ANY.name());
+        final String typeName = Try.of(() -> extraParams.get(TYPE_PARAMETER_NAME).toString().replace("\\[","").replace("\\]", BLANK)).getOrElse(BaseContentType.ANY.name());
         final BaseContentType type = BaseContentType.getBaseContentType(typeName);
 
+        final String ascOrder = OrderDirection.ASC.name().toLowerCase();
+        final String descOrder = OrderDirection.DESC.name().toLowerCase();
         String orderByParam = UtilMethods.isSet(orderBy)
                 ? orderBy.trim().toLowerCase()
-                : ContentTypeFactory.MOD_DATE_COLUMN + SPACE + OrderDirection.DESC.name().toLowerCase();
-        orderByParam = orderByParam.endsWith(SPACE + OrderDirection.ASC.name().toLowerCase()) ||
-                orderByParam.endsWith(SPACE + OrderDirection.DESC.name().toLowerCase())
-                    ? orderByParam
-                    : orderByParam + SPACE + (UtilMethods.isSet(direction)
-                                                ? direction.toString().toLowerCase()
-                                                : OrderDirection.ASC.name().toLowerCase());
+                : ContentTypeFactory.MOD_DATE_COLUMN + SPACE + descOrder;
+
+        if (!orderByParam.endsWith(SPACE + ascOrder) && !orderByParam.endsWith(SPACE + descOrder)) {
+            orderByParam = orderByParam + SPACE + (UtilMethods.isSet(direction)
+                    ? direction.toString().toLowerCase()
+                    : ascOrder);
+        }
         try {
             List<ContentType> contentTypes;
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();

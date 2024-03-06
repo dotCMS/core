@@ -796,10 +796,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     if (LOAD_FROM_CACHE.get()) {
         return dc.loadObjectResults()
                 .stream()
-                .map(type -> Try.of(() -> find((String) type.get("inode")))
+                .map(type -> Try.of(() -> find((String) type.get(INODE_COLUMN)))
                         .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
                                 String.format("Failed to retrieve Content Type with Inode '%s': %s",
-                                        type.get("inode"), ExceptionUtil.getErrorMessage(e)), e))
+                                        type.get(INODE_COLUMN), ExceptionUtil.getErrorMessage(e)), e))
                         .getOrNull())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
