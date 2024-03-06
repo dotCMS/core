@@ -245,7 +245,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        // THIS IS AN ANTI PATTER THO. But since we can pass code to an iframe
+        // THIS IS AN ANTI PATTER THO. But since we can't pass code to an iframe
         // in the template, there is no other way I can think of.
 
         // THIS IS IT... code change iframe gets updated.
