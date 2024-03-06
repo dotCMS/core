@@ -202,7 +202,6 @@ function _unsupported_iterable_to_array(o, minLen) {
 /**
  * Reloads the page and triggers the onReload callback if it exists in the config object.
  */ function reloadPage() {
-    console.log("Called reloadPage!", pageEditorConfig.onReload);
     pageEditorConfig === null || pageEditorConfig === void 0 ? void 0 : pageEditorConfig.onReload();
 }
 /**
@@ -211,9 +210,7 @@ function _unsupported_iterable_to_array(o, minLen) {
  * @private
  * @memberof DotCMSPageEditor
  */ function listenEditorMessages() {
-    console.log("Listen Editor Messages first time");
     var messageCallback = function(event) {
-        console.log("Listen Editor Messages", event.data);
         switch(event.data){
             case NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS:
                 {
@@ -294,7 +291,6 @@ function _unsupported_iterable_to_array(o, minLen) {
                         return ((_node_dataset = node.dataset) === null || _node_dataset === void 0 ? void 0 : _node_dataset["dotObject"]) === "contentlet";
                     }).length;
                     if (didNodesChanged) {
-                        console.log("Encontr\xe9 cambios en el contenido del VTL");
                         postMessageToEditor({
                             action: CUSTOMER_ACTIONS.CONTENT_CHANGE
                         });
@@ -342,7 +338,6 @@ function _unsupported_iterable_to_array(o, minLen) {
     if (config) {
         pageEditorConfig = config;
     }
-    console.log("Init Editor");
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();
@@ -357,6 +352,3 @@ function _unsupported_iterable_to_array(o, minLen) {
  */ if (isInsideEditor()) {
     initEditor();
 }
-window.addEventListener("beforeunload", function(ev) {
-    console.log(ev);
-});

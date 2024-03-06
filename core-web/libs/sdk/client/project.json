@@ -19,6 +19,7 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
+                "format": ["esm"],
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json",
                 "project": "libs/sdk/client/package.json",
                 "entryFile": "libs/sdk/client/src/lib/editor/sdk-editor-vtl.ts",

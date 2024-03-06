@@ -79,7 +79,6 @@ function setBounds() {
  * Reloads the page and triggers the onReload callback if it exists in the config object.
  */
 function reloadPage() {
-    console.log('Called reloadPage!', pageEditorConfig.onReload);
     pageEditorConfig?.onReload();
 }
 
@@ -90,10 +89,7 @@ function reloadPage() {
  * @memberof DotCMSPageEditor
  */
 function listenEditorMessages() {
-    console.log("Listen Editor Messages first time")
     const messageCallback = (event: MessageEvent) => {
-        console.log('Listen Editor Messages', event.data);
-
         switch (event.data) {
             case NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS: {
                 setBounds();
@@ -102,7 +98,7 @@ function listenEditorMessages() {
 
             case NOTIFY_CUSTOMER.EMA_RELOAD_PAGE: {
                 reloadPage();
-                break; 
+                break;
             }
         }
     };
@@ -204,7 +200,6 @@ function listenContentChange() {
                 ).length;
 
                 if (didNodesChanged) {
-                    console.log("Encontré cambios en el contenido del VTL");
                     postMessageToEditor({
                         action: CUSTOMER_ACTIONS.CONTENT_CHANGE
                     });
@@ -246,7 +241,7 @@ export function initEditor(config?: DotCMSPageEditorConfig) {
     if (config) {
         pageEditorConfig = config;
     }
-    console.log('Init Editor');
+
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();

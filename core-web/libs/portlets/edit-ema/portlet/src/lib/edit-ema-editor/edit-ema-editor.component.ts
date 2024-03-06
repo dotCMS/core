@@ -166,17 +166,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
-    readonly editorState$ = this.store.editorState$.pipe(
-        tap(({ clientHost }) => {
-            if (clientHost) {
-                return;
-            }
-
-            // For VTL, we need to add the VTL in the iframe
-            // So we force the iframe to reload
-            this.iframe?.nativeElement.dispatchEvent(new Event('load'));
-        })
-    );
+    readonly editorState$ = this.store.editorState$;
 
     readonly destroy$ = new Subject<boolean>();
 
@@ -258,10 +248,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         if (clientHost) {
             return;
         }
-        console.log("Se carga el HTML del VTL");
-        // Is VTL
+
+        // Is VTLF
         this.iframe.nativeElement.contentDocument.open();
-        this.iframe.nativeElement.contentDocument.write(this.addEditorPageScript(editor.page.rendered));
+        this.iframe.nativeElement.contentDocument.write(
+            this.addEditorPageScript(editor.page.rendered)
+        );
         this.iframe.nativeElement.contentDocument.close();
     }
 
@@ -269,7 +261,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * Add the editor page script to VTL pages
      *
      * @param {string} rendered
-     * @return {*} 
+     * @return {*}
      * @memberof EditEmaEditorComponent
      */
     addEditorPageScript(rendered: string) {
@@ -598,17 +590,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     whenSaved: () => {
                         this.dialog.resetDialog();
                         this.reloadIframe();
-                        this.cd.detectChanges();
                     }
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
-
                 if (shouldReloadPage) {
                     this.store.reload({
                         params: this.queryParams,
-                        whenReloaded: () => this.reloadIframe()
+                        whenReloaded: () => {
+                            this.reloadIframe();
+                        }
                     });
 
                     return;
@@ -733,7 +725,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
-                console.log('Ping Editor');
                 this.iframe?.nativeElement?.contentWindow.postMessage(
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
@@ -752,9 +743,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     reloadIframe() {
-        debugger;
-        console.log("Reload iframe from Editor");
-        this.iframe.nativeElement.contentWindow?.postMessage(
+        this.cd.detectChanges();
+        this.iframe?.nativeElement?.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
         );

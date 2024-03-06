@@ -1948,7 +1948,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
                 spectator.detectComponentChanges();
@@ -2231,7 +2231,7 @@ describe('EditEmaEditorComponent', () => {
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
                 expect(dropZone.item).toEqual({
                     contentType: 'File',
                     baseType: 'CONTENT'
@@ -2261,7 +2261,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'File',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
@@ -2284,13 +2284,13 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(BOUNDS_MOCK.length);
+                expect(spectator.component.containers.length).toBe(BOUNDS_MOCK.length);
 
                 spectator.component.onLanguageSelected(2); // triggers a query param change
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(0);
+                expect(spectator.component.containers.length).toBe(0);
             });
         });
 

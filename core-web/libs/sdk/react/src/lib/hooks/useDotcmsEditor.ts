@@ -1,6 +1,12 @@
 import { useEffect } from 'react';
 
-import { DotCMSPageEditorConfig, destroyEditor, initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
+import {
+    DotCMSPageEditorConfig,
+    destroyEditor,
+    initEditor,
+    isInsideEditor,
+    updateNavigation
+} from '@dotcms/client';
 
 export const useDotcmsEditor = (options?: DotCMSPageEditorConfig) => {
     const isInsideEditorPage = isInsideEditor();

@@ -133,7 +133,10 @@
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
-                    !!containers.length && !!dragItem && !currentDevice && es.state === editorState.LOADED
+                    !!containers.length &&
+                    !!dragItem &&
+                    !currentDevice &&
+                    es.state === editorState.LOADED
                 "
                 [containers]="containers"
                 [item]="dragItem"

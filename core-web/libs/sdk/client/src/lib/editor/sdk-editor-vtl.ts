@@ -10,7 +10,3 @@ import { initEditor, isInsideEditor } from './sdk-editor';
 if (isInsideEditor()) {
     initEditor();
 }
-
-window.addEventListener('beforeunload', (ev) => {
-    console.log(ev);
-});
