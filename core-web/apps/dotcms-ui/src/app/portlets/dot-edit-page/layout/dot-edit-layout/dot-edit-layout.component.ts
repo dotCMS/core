@@ -24,7 +24,6 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
-import { DotEditLayoutService } from '../../../../api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 
 export const DEBOUNCE_TIME = 5000;

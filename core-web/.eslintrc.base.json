@@ -1,6 +1,7 @@
 {
+    "root": true,
     "ignorePatterns": ["**/*"],
-    "plugins": ["eslint-plugin-import", "ban"],
+    "plugins": ["@nx", "eslint-plugin-import", "ban"],
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
@@ -23,6 +24,7 @@
         },
         {
             "files": ["*.ts", "*.tsx"],
+            "extends": ["plugin:@nx/typescript"],
             "rules": {
                 "@nx/dependency-checks": [
                     "error",
@@ -185,6 +187,7 @@
         },
         {
             "files": ["*.js", "*.jsx"],
+            "extends": ["plugin:@nx/javascript"],
             "rules": {}
         },
         {
@@ -194,6 +197,5 @@
             },
             "rules": {}
         }
-    ],
-    "extends": ["plugin:storybook/recommended", "./.eslintrc.base.json"]
+    ]
 }

@@ -1,7 +1,3 @@
-import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
-
-import { destroyEditor, initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
 import { DotcmsPageProps, PageProvider, Row } from '@dotcms/react';
 
 /**

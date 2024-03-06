@@ -15,4 +15,3 @@ require(['/html/js/dragula-3.7.2/dragula.min.js'], function(dragula) {
     ${EDIT_MODE_DRAG_DROP}
 });
 `;
-

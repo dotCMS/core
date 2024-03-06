@@ -40,7 +40,6 @@ export class DotDragDropAPIHtmlService {
     private getDragAndDropScript(): HTMLScriptElement {
         const dragAndDropScript =
             this.dotDOMHtmlUtilService.createInlineScriptElement(EDIT_MODE_DRAG_DROP);
-        
 
         return dragAndDropScript;
     }
