@@ -84,7 +84,7 @@
         </div>
     </div>
     <dot-results-seo-tool
-        *ngIf="es.previewState.socialMedia"
+        *ngIf="es.previewState.socialMedia && ogTags() && ogTagsResults$"
         [seoMedia]="es.previewState.socialMedia"
         [seoOGTags]="ogTags()"
         [seoOGTagsResults]="ogTagsResults$"

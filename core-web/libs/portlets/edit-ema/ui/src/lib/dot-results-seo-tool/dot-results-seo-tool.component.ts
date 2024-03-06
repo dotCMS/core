@@ -11,7 +11,7 @@ import {
     NgSwitchDefault,
     TitleCasePipe
 } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 
@@ -55,7 +55,7 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
     styleUrls: ['./dot-results-seo-tool.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotResultsSeoToolComponent implements OnChanges {
+export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     @Input() hostName: string;
     @Input() seoMedia: string;
     @Input() seoOGTags?: SeoMetaTags;
@@ -69,7 +69,7 @@ export class DotResultsSeoToolComponent implements OnChanges {
     seoMediaTypes = SEO_MEDIA_TYPES;
     noFavicon = false;
 
-    ngOnChanges() {
+    ngOnInit(): void {
         const title =
             this.seoOGTags?.['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
             this.seoOGTags?.title?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
@@ -122,7 +122,9 @@ export class DotResultsSeoToolComponent implements OnChanges {
         const [preview] = this.allPreview;
         this.mainPreview = preview;
         this.readMoreValues = this.dotSeoMetaTagsUtilService.getReadMore();
+    }
 
+    ngOnChanges() {
         this.currentResults$ = this.seoOGTagsResults?.pipe(
             map((tags) => {
                 return this.dotSeoMetaTagsUtilService.getFilteredMetaTagsByMedia(
