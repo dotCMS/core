@@ -14,9 +14,8 @@ import { ButtonModule } from 'primeng/button';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
@@ -158,7 +157,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 CommonModule,
                 DotCopyButtonComponent,
                 DotAppsConfigurationHeaderModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 MarkdownModule.forRoot()
             ],

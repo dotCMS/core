@@ -36,8 +36,7 @@ import {
     DotFavoritePageComponent,
     DotDeviceSelectorSeoComponent
 } from '@dotcms/portlets/dot-ema/ui';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 
@@ -61,7 +60,7 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
         FormsModule,
         ToolbarModule,
         TooltipModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotGlobalMessageModule,
         DotFavoritePageComponent,
         DotIconModule,
