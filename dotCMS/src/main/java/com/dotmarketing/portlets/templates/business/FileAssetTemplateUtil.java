@@ -132,11 +132,11 @@ public class FileAssetTemplateUtil {
     }
 
     /**
-     * Retrieve the host name from the path for a theme
+     * Retrieve the site name from the path for a theme
      * @param path String
      * @return String
      */
-    public String getHostNameForTheme(final String path) {
+    public String getSiteNameForTheme(final String path) {
         try {
             String tmp = path;
 
@@ -156,7 +156,7 @@ public class FileAssetTemplateUtil {
             return UtilMethods.isSet(tmp) ? tmp : null;
         } catch (Exception e) {
             Logger.error(FileAssetTemplateUtil.class, String.format(
-                    "An error occurred while extracting host name from path `%s` defaulting to systemHost ",
+                    "An error occurred while extracting host name from path `%s`",
                     path), e);
             return null;
         }
@@ -434,7 +434,7 @@ public class FileAssetTemplateUtil {
         if (Objects.nonNull(themePath) && themePath.startsWith(HOST_INDICATOR)) {
 
             try {
-                final String hostname = this.getHostNameForTheme(themePath);
+                final String hostname = this.getSiteNameForTheme(themePath);
                 final Host host = this.getHostFromHostname(hostname);
                 final String path = this.getPathFromFullPath(hostname, themePath);
                 final Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host, APILocator.systemUser(), false);
