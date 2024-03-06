@@ -71,3 +71,4 @@ This maintenance release includes the following code fixes:
 64. https://github.com/dotCMS/core/issues/22385 : Custom templates should push with their page no matter the filter that is selected #22385
 65. https://github.com/dotCMS/core/issues/25891 : [Empty Starter] : The Language Variable Content Type is not visible from the Content portlet #25891
 66. https://github.com/dotCMS/core/issues/27832 : Return IDP configuration Id instead of site id as part of the ACS URL in the SAML authentication request #27832
+67. Enable Experiments feature by default
