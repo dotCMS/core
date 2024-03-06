@@ -14,8 +14,8 @@ import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
-    AIContentPromptComponent,
     AIContentActionsComponent,
+    AIContentPromptComponent,
     AIImagePromptComponent,
     BubbleFormComponent,
     BubbleLinkFormComponent,
@@ -72,7 +72,6 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         LoggerService,
         StringUtils,
         DotAiService,
-        DotMessageService,
         ConfirmationService,
         {
             provide: APP_INITIALIZER,
