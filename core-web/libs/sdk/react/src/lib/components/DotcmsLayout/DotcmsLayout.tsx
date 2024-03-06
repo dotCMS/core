@@ -24,7 +24,7 @@ export type DotcmsPageProps = {
      */
     readonly entity: PageProviderContext;
 
-    readonly options: DotCMSPageEditorConfig;
+    readonly options?: DotCMSPageEditorConfig;
 };
 
 /**
