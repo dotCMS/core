@@ -70,6 +70,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * Selectors
      *******************/
 
+    readonly code$ = this.select((state) => state.editor.page.rendered);
+
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
             url: state.editor.page.pageURI,

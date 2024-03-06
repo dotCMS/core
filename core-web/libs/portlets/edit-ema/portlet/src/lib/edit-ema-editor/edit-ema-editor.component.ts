@@ -181,17 +181,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
 
-    readonly editorState$ = this.store.editorState$.pipe(
-        tap(({ clientHost }) => {
-            if (clientHost) {
-                return;
-            }
-
-            // For VTL, we need to add the VTL in the iframe
-            // So we force the iframe to reload
-            this.iframe?.nativeElement.dispatchEvent(new Event('load'));
-        })
-    );
+    readonly editorState$ = this.store.editorState$;
 
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
@@ -255,6 +245,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        this.store.code$.subscribe((code) => {
+
+            // THIS IS IT... code change iframe gets updated.
+            requestAnimationFrame(() => {
+                const doc = this.iframe?.nativeElement.contentDocument;
+
+                if (doc) {
+                    doc.open();
+                    doc.write(code);
+                    doc.close();
+
+                    this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+                    this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
+                }
+            });
+        });
+
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
@@ -271,24 +278,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {string} clientHost
      * @memberof EditEmaEditorComponent
      */
-    onIframePageLoad({ clientHost, editor }: { clientHost: string; editor: DotPageApiResponse }) {
-        if (clientHost) {
-            // Is Headless
-            return;
-        }
-
-        // Is VTL
-        const doc = this.iframe?.nativeElement.contentDocument; // Iframe can be undefined
-
-        if (doc) {
-            doc.open();
-            doc.write(editor.page.rendered);
-            doc.close();
-
-            this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-
-            this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
-        }
+    onIframePageLoad(e: Event) {
+        // NOT SURE IF WE NEED THIS AFTER ALL... MAYBE TO REMOVE THE LOADER INDICATOR
+        console.log(e)
     }
 
     ngOnDestroy(): void {
