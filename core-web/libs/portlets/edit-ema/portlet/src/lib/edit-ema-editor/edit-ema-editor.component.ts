@@ -53,10 +53,10 @@ import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
-    Row,
     ContentletArea,
     EmaDragItem,
-    ClientContentletArea
+    ClientContentletArea,
+    Container
 } from './components/ema-page-dropzone/types';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
@@ -226,7 +226,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     private draggedPayload: DraggedPalettePayload;
 
-    rows: Row[] = [];
+    containers: Container[] = [];
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
 
@@ -258,11 +258,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         if (clientHost) {
             return;
         }
-
+        console.log("Se carga el HTML del VTL");
         // Is VTL
         this.iframe.nativeElement.contentDocument.open();
-        this.iframe.nativeElement.contentDocument.write(editor.page.rendered);
+        this.iframe.nativeElement.contentDocument.write(this.addEditorPageScript(editor.page.rendered));
         this.iframe.nativeElement.contentDocument.close();
+    }
+
+    /**
+     * Add the editor page script to VTL pages
+     *
+     * @param {string} rendered
+     * @return {*} 
+     * @memberof EditEmaEditorComponent
+     */
+    addEditorPageScript(rendered: string) {
+        const scriptString = `<script src="/html/js/editor-js/sdk-editor-vtl.esm.js"></script>`;
+        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
+
+        return updatedRendered;
     }
 
     ngOnDestroy(): void {
@@ -369,7 +383,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     updateCurrentDevice(device?: DotDevice & { icon?: string }) {
         this.currentDevice = device;
-        this.rows = []; // We need to reset the rows when we change the device
+        this.containers = []; // We need to reset the rows when we change the device
         this.contentlet = null; // We need to reset the contentlet when we change the device
     }
 
@@ -666,7 +680,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Row[] | ClientContentletArea;
+            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -676,7 +690,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.updateEditorState(EDITOR_STATE.LOADED);
             },
 
-            [CUSTOMER_ACTIONS.SET_URL]: () => {
+            [CUSTOMER_ACTIONS.NAVIGATION_UPDATE]: () => {
                 const payload = <SetUrlPayload>data.payload;
 
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
@@ -699,7 +713,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
-                this.rows = <Row[]>data.payload;
+                this.containers = <Container[]>data.payload;
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
@@ -719,6 +733,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
+                console.log('Ping Editor');
                 this.iframe?.nativeElement?.contentWindow.postMessage(
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
@@ -737,6 +752,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     reloadIframe() {
+        debugger;
+        console.log("Reload iframe from Editor");
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
@@ -777,7 +794,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
 
         // Reset this on queryParams update
-        this.rows = [];
+        this.containers = [];
         this.contentlet = null;
     }
 
@@ -896,7 +913,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     protected resetDragProperties() {
         this.draggedPayload = undefined;
         this.contentlet = null;
-        this.rows = [];
+        this.containers = [];
         this.dragItem = null;
     }
 

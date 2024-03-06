@@ -31,65 +31,6 @@ const startClassMap: Record<number, string> = {
     12: 'col-start-12'
 };
 
-export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
-    if (!rowsNodes) {
-        return [];
-    }
-
-    return rowsNodes.map((row) => {
-        const rowRect = row.getBoundingClientRect();
-        const columns = row.children;
-
-        return {
-            x: rowRect.x,
-            y: rowRect.y,
-            width: rowRect.width,
-            height: rowRect.height,
-            columns: Array.from(columns).map((column) => {
-                const columnRect = column.getBoundingClientRect();
-                const containers = Array.from(
-                    column.querySelectorAll('[data-dot="container"]')
-                ) as HTMLDivElement[];
-
-                const columnX = columnRect.left - rowRect.left;
-                const columnY = columnRect.top - rowRect.top;
-
-                return {
-                    x: columnX,
-                    y: columnY,
-                    width: columnRect.width,
-                    height: columnRect.height,
-                    containers: containers.map((container) => {
-                        const containerRect = container.getBoundingClientRect();
-                        const contentlets = Array.from(
-                            container.querySelectorAll('[data-dot="contentlet"]')
-                        ) as HTMLDivElement[];
-
-                        return {
-                            x: 0,
-                            y: containerRect.y - rowRect.top,
-                            width: containerRect.width,
-                            height: containerRect.height,
-                            payload: container.dataset.content,
-                            contentlets: contentlets.map((contentlet) => {
-                                const contentletRect = contentlet.getBoundingClientRect();
-
-                                return {
-                                    x: 0,
-                                    y: contentletRect.y - containerRect.y,
-                                    width: contentletRect.width,
-                                    height: contentletRect.height,
-                                    payload: contentlet.dataset.content
-                                };
-                            })
-                        };
-                    })
-                };
-            })
-        };
-    });
-}
-
 export const getContainersData = (
     containers: ContainerData,
     containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0]

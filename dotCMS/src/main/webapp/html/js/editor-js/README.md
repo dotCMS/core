@@ -1,68 +1,86 @@
-# @dotcms/nextjs
+# @dotcms/client
 
-`@dotcms/nextjs` is the official Next.js library designed to work seamlessly with DotCMS and React, providing a set of components and utilities optimized for Next.js applications.
+`@dotcms/client` is the official dotCMS JavaScript library designed to simplify interactions with the DotCMS REST APIs.
+
+This client library provides a streamlined, promise-based interface to fetch pages and navigation API.
+
+## Features
+
+-   Easy-to-use methods to interact with the [DotCMS Page](https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas) and [Navigation APIs](https://www.dotcms.com/docs/latest/navigation-rest-api).
+-   Support for custom actions to communicate with the DotCMS page editor.
+-   Comprehensive TypeScript typings for better development experience.
 
 ## Installation
 
 Install the package via npm:
 
 ```bash
-npm install @dotcms/nextjs
+npm install @dotcms/client
 ```
 
 Or using Yarn:
 
 ```bash
-yarn add @dotcms/nextjs
+yarn add @dotcms/client
 ```
 
-## Components
+## Usage
 
-### `DotcmsLayout`
+First, initialize the client with your DotCMS instance details.
 
-A functional component that renders a layout for a DotCMS page using Next.js navigation and the `@dotcms/react` package. This component should be used as a client component because it utilizes hooks from `@dotcms/react`.
+```javascript
+import { dotcmsClient } from '@dotcms/client';
 
-#### Props
-
--   **props**: `DotcmsPageProps` - The properties for the DotCMS page.
-
-#### Usage
-
-This component needs to be used as a client component due to its reliance on Next.js and `@dotcms/react` hooks.
-
-```tsx
-'use client';
-
-import { DotcmsLayout } from '@dotcms/nextjs';
-import { Header, Footer, Navigation } from '../components';
-
-export function MyPage({ data, nav }) {
-    return (
-        <div className="flex flex-col min-h-screen gap-6">
-            {data.layout.header && (
-                <Header>
-                    <Navigation items={nav} />
-                </Header>
-            )}
-            <main className="container flex flex-col gap-8 m-auto">
-                <DotcmsLayout
-                    entity={{
-                        components: {
-                            webPageContent: WebPageContent,
-                            Banner: Banner,
-                            Activity: Activity,
-                            Product: Product,
-                            Image: ImageComponent
-                        },
-                        ...data
-                    }}
-                />
-            </main>
-            {data.layout.footer && <Footer />}
-        </div>
-    );
-}
+const client = dotcmsClient.init({
+    dotcmsUrl: 'https://your-dotcms-instance.com',
+    authToken: 'your-auth-token',
+    siteId: 'your-site-id'
+});
 ```
+
+### Fetching a Page
+
+Retrieve the elements of any page in your DotCMS system in JSON format.
+
+```javascript
+const pageData = await client.page.get({
+    path: '/your-page-path',
+    language_id: 1,
+    personaId: 'optional-persona-id'
+});
+
+console.log(pageData);
+```
+
+### Fetching Navigation
+
+Retrieve information about the DotCMS file and folder tree.
+
+```javascript
+const navData = await client.nav.get({
+    path: '/',
+    depth: 2,
+    languageId: 1
+});
+
+console.log(navData);
+```
+
+## API Reference
+
+Detailed documentation of the `@dotcms/client` methods, parameters, and types can be found below:
+
+### `dotcmsClient.init(config: ClientConfig): DotCmsClient`
+
+Initializes the DotCMS client with the specified configuration.
+
+### `DotCmsClient.page.get(options: PageApiOptions): Promise<unknown>`
+
+Retrieves the specified page's elements from your DotCMS system in JSON format.
+
+### `DotCmsClient.nav.get(options: NavApiOptions): Promise<unknown>`
+
+Retrieves information about the DotCMS file and folder tree.
 
 ## Contributing
 

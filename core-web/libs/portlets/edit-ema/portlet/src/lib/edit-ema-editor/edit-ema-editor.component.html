@@ -100,7 +100,7 @@
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
-                    pointerEvents: this.rows.length ? 'none' : 'auto',
+                    pointerEvents: this.containers.length ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
                 (load)="onIframePageLoad(es)"
@@ -121,7 +121,7 @@
                     es.editor.page.canEdit &&
                     es.state === editorState.LOADED
                 "
-                [hide]="!!rows.length"
+                [hide]="!!containers.length"
                 [contentlet]="contentlet"
                 (edit)="handleEditContentlet($event)"
                 (delete)="deleteContentlet($event)"
@@ -133,9 +133,9 @@
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
-                    !!rows.length && !!dragItem && !currentDevice && es.state === editorState.LOADED
+                    !!containers.length && !!dragItem && !currentDevice && es.state === editorState.LOADED
                 "
-                [rows]="rows"
+                [containers]="containers"
                 [item]="dragItem"
                 (place)="onPlaceItem($event)"
                 data-testId="dropzone" />

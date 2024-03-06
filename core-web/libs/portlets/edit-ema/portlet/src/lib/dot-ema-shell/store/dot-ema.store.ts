@@ -160,9 +160,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     editor: pageData,
                                     isEnterpriseLicense: licenseData,
                                     //This to stop the progress bar. Testing yet
-                                    editorState: isHeadlessPage
-                                        ? EDITOR_STATE.LOADING
-                                        : EDITOR_STATE.LOADED
+                                    editorState:
+                                        // EDITOR_STATE.LOADED,
+                                        isHeadlessPage ? EDITOR_STATE.LOADING : EDITOR_STATE.LOADED
                                 });
                             },
                             error: ({ status }: HttpErrorResponse) => {

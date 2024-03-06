@@ -5,14 +5,15 @@ import {
     ElementRef,
     EventEmitter,
     Input,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotErrorPipe } from './pipes/error/dot-error.pipe';
 import { DotPositionPipe } from './pipes/position/dot-position.pipe';
-import { Row, EmaDragItem } from './types';
+import { EmaDragItem, Container } from './types';
 
 import { PositionPayload, ClientData } from '../../../shared/models';
 
@@ -25,7 +26,7 @@ import { PositionPayload, ClientData } from '../../../shared/models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmaPageDropzoneComponent {
-    @Input() rows: Row[] = [];
+    @Input() containers: Container[] = [];
     @Input() item: EmaDragItem;
     @Output() place = new EventEmitter<PositionPayload>();
 
@@ -36,7 +37,7 @@ export class EmaPageDropzoneComponent {
         top: '0'
     };
 
-    constructor(private readonly el: ElementRef) {}
+    private readonly el = inject(ElementRef);
 
     /**
      * Emit place event and reset pointer position
