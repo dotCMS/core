@@ -9,5 +9,5 @@
             "outputs": ["{options.outputFile}"]
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

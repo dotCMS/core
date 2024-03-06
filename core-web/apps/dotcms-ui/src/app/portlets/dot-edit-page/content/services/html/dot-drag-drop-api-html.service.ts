@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import DRAGULA_CSS from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/dragula.css';
 
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
-import { EDIT_PAGE_JS_DOJO_REQUIRE } from './libraries/index';
+import { EDIT_MODE_DRAG_DROP, EDIT_PAGE_JS_DOJO_REQUIRE } from './libraries/index';
 
 /**
  * Util class for init the dragula API.
@@ -39,7 +39,8 @@ export class DotDragDropAPIHtmlService {
 
     private getDragAndDropScript(): HTMLScriptElement {
         const dragAndDropScript =
-            this.dotDOMHtmlUtilService.createInlineScriptElement(EDIT_PAGE_DRAG_DROP);
+            this.dotDOMHtmlUtilService.createInlineScriptElement(EDIT_MODE_DRAG_DROP);
+        
 
         return dragAndDropScript;
     }
