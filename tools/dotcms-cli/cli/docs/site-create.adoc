@@ -19,7 +19,7 @@ site-create - *Quick way to create a Site *
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site create* [*-h*] _<siteName>_
+*site create* [*-h*] [*-tk*=_<token>_] _<siteName>_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -42,6 +42,9 @@ site-create - *Quick way to create a Site *
 
 *-h*, *--help*::
   Display this help message.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

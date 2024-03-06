@@ -18,9 +18,8 @@ import {
     DotAppsImportConfiguration,
     DotAppsSite
 } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
@@ -81,7 +80,7 @@ describe('DotAppsImportExportDialogComponent', () => {
                 DotDialogModule,
                 CommonModule,
                 ReactiveFormsModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 HttpClientTestingModule
             ],

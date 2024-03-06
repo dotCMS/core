@@ -8,8 +8,7 @@ import { PasswordModule } from 'primeng/password';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotFieldRequiredDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
 
@@ -21,7 +20,7 @@ import { DotMyAccountComponent } from './dot-my-account.component';
         DotDialogModule,
         CommonModule,
         CheckboxModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],

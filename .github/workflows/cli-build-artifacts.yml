@@ -10,6 +10,19 @@ on:
         type: boolean
       branch:
         type: string
+    secrets:
+      dotcms-license:
+        description: 'DotCMS License Key'
+        required: true
+      artifactory-repo-username:
+        description: 'Artifactory Repository Username'
+        required: true
+      artifactory-repo-password:
+        description: 'Artifactory Repository Password'
+        required: true
+      github-token:
+        description: 'GitHub Token'
+        required: true
 
 env:
   JAVA_VERSION: 11
@@ -158,7 +171,7 @@ jobs:
       - name: 'Prepare dotCMS license'
         if: ${{ inputs.skipTests == false }}
         env:
-          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+          DOTCMS_LICENSE_KEY: ${{ secrets.dotcms-license }}
         run: |
           DOTCMS_LICENSE_PATH=${{ github.workspace }}/tools/dotcms-cli/license
           mkdir -p ${DOTCMS_LICENSE_PATH}
@@ -251,12 +264,17 @@ jobs:
 
       - name: 'Upload to Artifactory'
         env:
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.github-token }}
+          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.artifactory-repo-username }}
+          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.artifactory-repo-password }}
         working-directory: ${{ github.workspace }}
         run: |
-          tools/dotcms-cli/mvnw -B -Prelease jreleaser:upload -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+          if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
+            DOTCMS_CLI_NATIVE_ACTIVE=ALWAYS
+          else
+            DOTCMS_CLI_NATIVE_ACTIVE=NEVER
+          fi
+          tools/dotcms-cli/mvnw -B -Prelease jreleaser:upload -DartifactsDir=artifacts -Djreleaser.distributions.dotcms.cli.native.active=$DOTCMS_CLI_NATIVE_ACTIVE -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
 
       - name: 'Cleanup'
         run: |

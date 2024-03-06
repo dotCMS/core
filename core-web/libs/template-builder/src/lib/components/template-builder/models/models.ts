@@ -70,6 +70,7 @@ export interface DotTemplateBuilderState {
     layoutProperties: DotTemplateLayoutProperties;
     resizingRowID: string;
     themeId: string;
+    shouldEmit: boolean;
 }
 
 export type WidgetType = 'col' | 'row';

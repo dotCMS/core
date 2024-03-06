@@ -20,7 +20,7 @@ files-ls - *dotCMS Files ls*
 == Synopsis
 
 *files ls* [*-h*] [*-ee*] [*-ea*=_patterns_] [*-ef*=_patterns_] [*-ia*=_patterns_] [*-if*=_patterns_]
-         _path_
+         [*-tk*=_<token>_] _path_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -52,6 +52,9 @@ files-ls - *dotCMS Files ls*
 
 *-if, --includeFolder*=_patterns_::
   Include directories matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

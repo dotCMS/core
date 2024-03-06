@@ -6,8 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.component';
 
@@ -20,7 +19,7 @@ import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.componen
         RadioButtonModule,
         OverlayPanelModule,
         ReactiveFormsModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     exports: [DotSidebarPropertiesComponent]

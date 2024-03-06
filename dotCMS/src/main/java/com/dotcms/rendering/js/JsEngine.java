@@ -70,7 +70,7 @@ public class JsEngine implements ScriptEngine {
     public static final String WEB_INF = "WEB-INF";
     private final JsFileSystem jsFileSystem = new JsFileSystem();
     private final JsDotLogger jsDotLogger = new JsDotLogger();
-    private final Map<String, Class> jsRequestViewToolMap = new ConcurrentHashMap<>();
+    private final Map<String, Class<? extends JsViewTool>> jsRequestViewToolMap = new ConcurrentHashMap<>();
     private final Map<String, JsViewTool> jsAplicationViewToolMap = new ConcurrentHashMap<>();
 
     private final Lazy<Boolean> allowAllHostAccess = Lazy.of(()-> Config.getBooleanProperty("ALLOW_ALL_HOST_ACCESS", false));
@@ -124,7 +124,7 @@ public class JsEngine implements ScriptEngine {
      * Remove a JsViewTool from the engine
      * @param jsViewTool
      */
-    public void removeJsViewTool(final Class jsViewTool) {
+    public <T extends JsViewTool> void removeJsViewTool(final Class<T> jsViewTool) {
 
         this.jsRequestViewToolMap.remove(jsViewTool.getName());
     }
@@ -140,7 +140,8 @@ public class JsEngine implements ScriptEngine {
                 .err(new ConsumerOutputStream(msg->Logger.debug(JsEngine.class, msg)))
                 .fileSystem(jsFileSystem);
 
-                if (allowAllHostAccess.get()) {
+                final boolean allowAllHostAccess = this.allowAllHostAccess.get();
+                if (allowAllHostAccess) {
                     builder.allowHostAccess(HostAccess.ALL);
                 }
                 //allows access to all Java classes
@@ -162,7 +163,7 @@ public class JsEngine implements ScriptEngine {
             final List<Source> dotSources = getDotSources();
             final Value bindings = context.getBindings(ENGINE_JS);
             contextParams.entrySet().forEach(entry -> bindings.putMember(entry.getKey(), entry.getValue()));
-            this.addTools(request, response, bindings, contextParams);
+            this.addTools(request, response, bindings);
 
             final JsRequest jsRequest   = new JsRequest(request, contextParams);
             final JsResponse jsResponse = new JsResponse(response);
@@ -207,6 +208,7 @@ public class JsEngine implements ScriptEngine {
         }
 
         final Value finalValue = eval;
+        // note: we can not parametrized this Map, b/c literally we do not know what it is, could be anything coming from the JS
         final Map resultMap = Try.of(()-> finalValue.as(Map.class)).getOrNull();
         if (Objects.nonNull(resultMap)) {
             return CollectionsUtils.toSerializableMap(resultMap); // we need to do that b.c the context will be close after the return and the resultMap won;t be usable.
@@ -419,8 +421,7 @@ public class JsEngine implements ScriptEngine {
 
     private void addTools(final HttpServletRequest request,
                           final HttpServletResponse response,
-                          final Value bindings,
-                          final Map<String, Object> contextParams) {
+                          final Value bindings) {
 
         this.jsRequestViewToolMap.entrySet().forEach(entry -> {
 

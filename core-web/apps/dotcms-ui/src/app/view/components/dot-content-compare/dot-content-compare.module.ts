@@ -13,13 +13,11 @@ import { DotContentCompareComponent } from '@components/dot-content-compare/dot-
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotContentletService, DotVersionableService } from '@dotcms/data-access';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRelativeDatePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 
 import { DotContentCompareBlockEditorComponent } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component';
 import { DotContentCompareDialogComponent } from './components/dot-content-compare-dialog/dot-content-compare-dialog.component';
-
-import { DotPipesModule } from '../../pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [
@@ -41,7 +39,7 @@ import { DotPipesModule } from '../../pipes/dot-pipes.module';
         DotDiffPipeModule,
         ButtonModule,
         BlockEditorModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotRelativeDatePipe
     ],
     providers: [DotContentletService, DotVersionableService]

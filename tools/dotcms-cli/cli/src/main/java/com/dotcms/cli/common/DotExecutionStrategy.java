@@ -1,7 +1,7 @@
 package com.dotcms.cli.common;
 
 import com.dotcms.api.client.model.ServiceManager;
-import com.dotcms.cli.command.InitCommand;
+import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.arc.Arc;
 import java.io.IOException;
@@ -61,14 +61,14 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
            final String parentCommand = commandsChain.firstSubcommand().map(p -> p.commandSpec().name()).orElse("UNKNOWN");
 
-            if (!InitCommand.NAME.equals(parentCommand)){
+            if (!ConfigCommand.NAME.equals(parentCommand)){
                 final ServiceManager manager = getServiceManager();
                 try {
                     final List<ServiceBean> services = manager.services();
                     if (services.isEmpty()) {
                         throw new ExecutionException(
                                 parseResult.commandSpec().commandLine(),
-                                "No dotCMS configured instances were found. Please run 'init' to initialize the CLI.");
+                                "No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup an instance to use CLI.");
                     }
                 } catch (IOException e) {
                     throw new ExecutionException(parseResult.commandSpec().commandLine(),

@@ -20,7 +20,7 @@ language-push - *Push languages*
 == Synopsis
 
 *language push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-rl*] [*--byIso*=_<languageIso>_]
-              [*--retry-attempts*=_<retryAttempts>_] [_path_]
+              [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -55,6 +55,9 @@ This command enables the pushing of languages to the server. It accommodates the
 
 *-rl, --removeLanguages*::
   When this option is enabled, the push process allows the deletion of languages in the remote server. By default, this option is disabled, and languages will not be removed on the remote server.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

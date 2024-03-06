@@ -258,7 +258,7 @@ public class PushServiceImpl implements PushService {
                                 build()
                         );
 
-                        return task.compute();
+                        return task.compute().join();
                     });
             progressBar.setFuture(pushFuture);
 
@@ -285,7 +285,7 @@ public class PushServiceImpl implements PushService {
                     for (final var error : errors) {
                         c++;
                         output.handleCommandException(error,
-                                String.format("%s %n", error.getMessage()), c >= count);
+                                String.format("%s %n", error.getMessage()), c < count);
                     }
                 }
 

@@ -16,10 +16,9 @@ import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-
 @NgModule({
     declarations: [DotPushPublishFormComponent],
     exports: [DotPushPublishFormComponent],
@@ -34,7 +33,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DropdownModule,
         DotFieldValidationMessageComponent,
         SelectButtonModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],

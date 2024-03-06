@@ -20,12 +20,14 @@ import {
     DotESContentService,
     DotLicenseService,
     DotPageRenderService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCopyContentModalService, DotIconModule } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotResultsSeoToolComponent, DotSelectSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotCopyContentModalService, DotIconModule, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { DotEditPageStateControllerModule } from './components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
@@ -39,12 +41,8 @@ import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
-import { DotSeoMetaTagsUtilService } from './services/html/dot-seo-meta-tags-util.service';
-import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
-import { DotResultsSeoToolComponent } from '../seo/components/dot-results-seo-tool/dot-results-seo-tool.component';
-import { DotSelectSeoToolComponent } from '../seo/components/dot-select-seo-tool/dot-select-seo-tool.component';
 const routes: Routes = [
     {
         component: DotEditContentComponent,
@@ -61,8 +59,8 @@ const routes: Routes = [
         CheckboxModule,
         RouterModule.forChild(routes),
         DotContentletEditorModule,
+        DotSafeHtmlPipe,
         DotDirectivesModule,
-        DotPipesModule,
         DotWhatsChangedModule,
         DotFormSelectorModule,
         TooltipModule,
