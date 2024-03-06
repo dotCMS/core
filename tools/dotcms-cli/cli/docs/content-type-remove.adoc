@@ -19,7 +19,7 @@ content-type-remove - *Use this command to remove Content-types.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*content-type remove* [*-h*] [*--non-interactive*] _<idOrVar>_
+*content-type remove* [*-h*] [*--non-interactive*] [*-tk*=_<token>_] _<idOrVar>_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -33,6 +33,9 @@ content-type-remove - *Use this command to remove Content-types.*
 
 // tag::picocli-generated-man-section-options[]
 == Options
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 *-h*, *--help*::
   Display this help message.

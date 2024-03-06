@@ -19,7 +19,7 @@ language-remove - *Remove a language*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*language remove* [*-h*] [*--non-interactive*] _<languageIdOrIso>_
+*language remove* [*-h*] [*--non-interactive*] [*-tk*=_<token>_] _<languageIdOrIso>_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -41,6 +41,9 @@ language-remove - *Remove a language*
   When specified, user confirmation is bypassed, allowing the command to run without asking for confirmation.
 +
 By default, this is false.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

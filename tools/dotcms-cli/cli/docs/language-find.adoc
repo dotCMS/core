@@ -19,7 +19,7 @@ language-find - *Get all existing languages*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*language find* [*-h*]
+*language find* [*-h*] [*-tk*=_<token>_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -37,6 +37,9 @@ language-find - *Get all existing languages*
 
 *-h*, *--help*::
   Display this help message.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

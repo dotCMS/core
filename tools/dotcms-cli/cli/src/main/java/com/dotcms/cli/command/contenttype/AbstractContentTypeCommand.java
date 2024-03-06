@@ -2,6 +2,7 @@ package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -21,6 +22,9 @@ public abstract class AbstractContentTypeCommand {
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    protected AuthenticationMixin authenticationMixin;
 
     @CommandLine.Mixin
     protected HelpOptionMixin helpOption;

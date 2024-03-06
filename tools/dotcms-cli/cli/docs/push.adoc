@@ -20,7 +20,7 @@ push - *dotCMS global push*
 == Synopsis
 
 *push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*--retry-attempts*=_<retryAttempts>_]
-     [*--token*=_<token>_] [_path_]
+     [*-tk*=_<token>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -50,7 +50,7 @@ push - *dotCMS global push*
 *--retry-attempts*=_<retryAttempts>_::
   Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
 
-*--token*=_<token>_::
+*-tk, --token*=_<token>_::
   A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
