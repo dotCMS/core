@@ -1,5 +1,6 @@
 <img src="https://www.dotcms.com/dA/99fe3769-d649/256w/dotcms.png" title="dotcms open source hybrid content management system">
 
+TEST commit do not merge to core
 
 [![Maven CICD Pipeline](https://github.com/dotCMS/core/actions/workflows/maven-cicd-pipeline.yml/badge.svg?branch=master&event=push)](https://github.com/dotCMS/core/queue/master)
 
