@@ -1,0 +1,158 @@
+name: Maven Build Docker Image
+on:
+  workflow_call:
+    inputs:
+      docker_platforms:
+        description: 'Docker platforms to build the image on'
+        required: false
+        type: string
+        default: 'linux/amd64'
+      docker_registry:
+        description: 'Docker registry to push the image to (DOCKER.IO, GHCR.IO, BOTH)'
+        required: false
+        type: string
+        default: 'DOCKER.IO'
+      build_run_id:
+        description: 'The run id of the build to pull the artifact from'
+        required: true
+        type: string
+      commit_id:
+        description: 'The commit id that triggered the build'
+        required: true
+        type: string
+      docker_tag:
+        description: 'The docker tag to use for the image'
+        required: true
+        type: string
+      do_deploy:
+        description: 'Actually do the final deploy, set to false for testing'
+        required: true
+        type: string
+        default: true
+    secrets:
+      docker_io_username:
+        description: 'Docker.io username'
+        required: false
+      docker_io_token:
+        description: 'Docker.io token'
+        required: false
+      ghcr_io_username:
+        description: 'GHCR.io username'
+        required: false
+      ghcr_io_token:
+        description: 'GHCR.io token'
+        required: false
+    outputs:
+      tags:
+        value: ${{ jobs.build-push-image.outputs.tags }}
+      version:
+        value: ${{ jobs.build-push-image.outputs.version }}
+      formatted_tags:
+        value: ${{ jobs.build-push-image.outputs.formatted_tags }}
+jobs:
+  build-push-image:
+    name: Build/Push Image
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_CONTEXT_DIR: docker-context
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      formatted_tags: ${{ steps.format-tags.outputs.formatted_tags }}
+    if: success()
+    steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+
+      - name: Download Docker Build Context
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-build-context
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.build_run_id}}
+
+      - name: Docker.io login
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.docker_io_username }}
+          password: ${{ secrets.docker_io_token }}
+        if: (inputs.docker_registry == 'DOCKER.IO' || inputs.docker_registry == 'BOTH') && !inputs.do_deploy
+
+      - name: GHCR.io login
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.ghcr_io_username }}
+          password: ${{ secrets.ghcr_io_token }}
+        if: (inputs.docker_registry == 'GHCR.IO' || inputs.docker_registry == 'BOTH') && !inputs.do_deploy
+
+      - name: Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            dotcms/dotcms
+          tags: |
+            type=raw,value=${{ steps.set-common-vars.outputs.version }}_{{sha}},enable=true
+            type=raw,value=${{ steps.set-common-vars.outputs.version }}_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_snapshot }}
+            type=raw,value=${{ steps.set-common-vars.outputs.version }}_latest_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_trunk_snapshot }}
+            type=raw,value=${{ steps.set-common-vars.outputs.version }},enable=${{ steps.set-common-vars.outputs.is_release }}
+            type=raw,value=latest,enable=${{ steps.set-common-vars.outputs.is_latest }}
+            type=raw,value={{sha}},enable=${{ steps.set-common-vars.outputs.is_custom }}
+        if: success()
+
+      - name: Debug Docker Metadata
+        run: |
+          echo "${{ fromJSON(steps.meta.outputs.json) }}"
+        if: success()
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.0.0
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: ${{ inputs.docker_platforms }}
+        if: success()
+
+      - name: Docker Setup Buildx
+        id: docker-setup-buildx
+        uses: docker/setup-buildx-action@v3.0.0
+        with:
+          version: latest
+          platforms: ${{ inputs.docker_platforms }}
+          driver-opts: |
+            image=moby/buildkit:v0.12.2
+        if: success()
+
+      - name: Setup Context
+        id: setup-docker-context
+        run: |
+          mkdir -p ${{ env.DOCKER_CONTEXT_DIR }}
+          tar -xvf docker-build.tar -C ${{ env.DOCKER_CONTEXT_DIR }}
+        if: success()
+
+      - name: Build/Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.DOCKER_CONTEXT_DIR }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ inputs.docker_platforms }}
+          pull: true
+          push: ${{ inputs.do_deploy }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        if: success()
+
+      - name: Format Tags
+        id: format-tags
+        run: |
+          tags=''
+          tags_arr=( ${{ steps.meta.outputs.tags }} )
+
+          for tag in "${tags_arr[@]}"
+          do
+          [[ -n "${tags}" ]] && tags="${tags}, "
+          tags="${tags}\`${tag}\`"
+          done
+
+          echo "formatted_tags=${tags}" >> $GITHUB_OUTPUT

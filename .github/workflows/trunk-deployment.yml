@@ -1,0 +1,35 @@
+name: Trunk Deployment
+run-name: Trunk Deployment - ${{ github.event.workflow_run.name }}
+concurrency: trunk-deployment  # move to deployment job if we need to queue up and not skip backlogged deployments
+on:
+  workflow_run:
+    workflows: ['Maven CICD Pipeline']
+    types: [completed]
+permissions:
+  contents: read
+  actions: read # allow access to other job artifacts with GITHUB_TOKEN
+jobs:
+  deployment:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master' }}
+    runs-on: ubuntu-latest
+    environment: trunk
+    steps:
+      # Should checkout from master referenced workflows need to be in master
+      # for security reasons
+      - name: Checkout core
+        uses: actions/checkout@v4
+      - name: Build/Push Docker Image
+        uses: .github/workflows/deploy-artifact-docker.yml
+        with:
+          docker_platforms: linux/amd64,linux/arm64
+          build_run_id: ${{ github.event.workflow_run.id }}
+          docker_tag: master_latest_SNAPSHOT
+          do_deploy: false
+        secrets:
+          docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+      - name: Download Docker Build Context
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-build-context
+          github-token: ${{ secrets.GITHUB_TOKEN }}
