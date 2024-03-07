@@ -241,7 +241,7 @@ public class UtilMethods {
 
 
     private static final String[] DEFAULT_IMAGE_EXTENSIONS=                {
-            "png", "gif", "webp", "jpeg", ".jpg", "pdf", "tiff", "bpm", "svg", "avif",
+            "png", "gif", "webp", "jpeg", ".jpg", "tiff", "bpm", "svg", "avif",
             "bmp",
             "tif", "tiff"
     };
