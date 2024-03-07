@@ -616,7 +616,6 @@ describe('EditEmaEditorComponent', () => {
         describe('Preview mode', () => {
             beforeEach(() => {
                 jest.useFakeTimers(); // Mock the timers
-        
             });
 
             afterEach(() => {
@@ -718,7 +717,7 @@ describe('EditEmaEditorComponent', () => {
 
             it('should open seo results when clicking on a social media tile', () => {
                 // We only support VTL
-                jest.useFakeTimers(); 
+                jest.useFakeTimers();
                 const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
 
                 store.load({
@@ -1776,7 +1775,7 @@ describe('EditEmaEditorComponent', () => {
                     });
                     spectator.detectChanges();
                 });
-                
+
                 afterEach(() => {
                     jest.useRealTimers(); // Restore the real timers after each test
                 });
@@ -1797,7 +1796,6 @@ describe('EditEmaEditorComponent', () => {
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                     };
 
-                    
                     store.reload({
                         params,
                         whenReloaded: () => {
@@ -1805,7 +1803,7 @@ describe('EditEmaEditorComponent', () => {
                         }
                     });
                     spectator.detectChanges();
-                    
+
                     jest.runOnlyPendingTimers();
 
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
