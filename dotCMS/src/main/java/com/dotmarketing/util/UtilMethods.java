@@ -40,8 +40,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -66,8 +64,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.activation.MimetypesFileTypeMap;
-import javax.imageio.ImageIO;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -250,7 +246,7 @@ public class UtilMethods {
      * returns the valid image extensions with a . in front of the extension, e.g.
      * png -> .png
      */
-    private final static Lazy<String[]> IMAGE_EXTENSIONS = Lazy.of(() ->
+    private static final Lazy<String[]> IMAGE_EXTENSIONS = Lazy.of(() ->
 
                     Try.of(() -> Arrays.stream(Config.getStringArrayProperty("VALID_IMAGE_EXTENSIONS",DEFAULT_IMAGE_EXTENSIONS))
                             .map(x -> x.startsWith(".") ? x : "." + x)
