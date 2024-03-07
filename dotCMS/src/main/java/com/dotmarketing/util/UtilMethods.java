@@ -24,6 +24,8 @@ import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.beans.PropertyDescriptor;
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,6 +40,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -62,6 +66,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import javax.activation.MimetypesFileTypeMap;
 import javax.imageio.ImageIO;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -234,12 +239,31 @@ public class UtilMethods {
         }
     }
 
-    public static final boolean isImage(String x) {
-        if (x == null)
-            return false;
+    private static final String[] DEFAULT_IMAGE_EXTENSIONS=                {
+            ".png", ".gif", ".webp", ".jpeg", ".jpg", ".pdf", ".tiff", ".bpm", ".svg", ".avif",
+            ".bmp",
+            ".tif", ".tiff"
+    };
 
-        return ImageIO.getImageReadersByFormatName(getFileExtension(x)).hasNext();
+    private final static Lazy<String[]> imageExtensions = Lazy.of(
+            () -> Try.of(() -> Config.getStringArrayProperty("VALID_IMAGE_EXTENSIONS",
+                    DEFAULT_IMAGE_EXTENSIONS
+                    )
+            ).getOrElse(DEFAULT_IMAGE_EXTENSIONS));
+
+    public static final boolean isImage(String x) {
+        if (UtilMethods.isEmpty(x)) {
+            return false;
+        }
+        final String imageName = x.toLowerCase();
+        for (String ext : imageExtensions.get()) {
+            if (imageName.endsWith(ext)) {
+                return true;
+            }
+        }
+        return false;
     }
+
 
     public static final String getMonthFromNow() {
         java.util.GregorianCalendar cal = new java.util.GregorianCalendar();
