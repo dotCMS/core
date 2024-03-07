@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Default implementation of {@link SystemTableFactory}
@@ -32,7 +33,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
         Object value = null;
         if (UtilMethods.isSet(key)) {
 
-            value = this.systemCache.getOrUpdate(key, ()-> {
+            final Supplier<Object> supplier = ()-> {
 
                 List<Map<String, Object>> result;
                 try {
@@ -48,7 +49,13 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
                 final Object v = null == result || result.isEmpty()? null : result.get(0).get("value");
                 return Objects.nonNull(v)?v.toString():VALUE_404;
 
-            });
+            };
+            value = this.systemCache.get(key);
+            if (null == value) {
+
+                value = supplier.get();
+                this.systemCache.put(key, value);
+            }
         }
 
         return  Objects.isNull(value) || VALUE_404.equals(value)?

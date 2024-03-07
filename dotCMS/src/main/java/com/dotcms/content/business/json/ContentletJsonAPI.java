@@ -58,8 +58,7 @@ public interface ContentletJsonAPI {
      * @return
      */
     default boolean isPersistContentAsJson(){
-        return isJsonSupportedDatabase()
-                && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        return isJsonSupportedDatabase();
     }
 
     /**
