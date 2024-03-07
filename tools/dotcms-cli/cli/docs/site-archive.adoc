@@ -19,7 +19,7 @@ site-archive - *Use this command to archive a site.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site archive* [*-h*] _idOrName_
+*site archive* [*-h*] [*-tk*=_<token>_] _idOrName_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -39,6 +39,9 @@ site-archive - *Use this command to archive a site.*
 
 *-h*, *--help*::
   Display this help message.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

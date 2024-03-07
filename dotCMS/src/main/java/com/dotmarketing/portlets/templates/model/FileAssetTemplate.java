@@ -12,11 +12,13 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This is a {@link Template} plus a list of {@link FileAsset}
@@ -125,6 +127,11 @@ public class FileAssetTemplate extends Template {
         //inode of the template is the inode of the properties.vtl
         return
                 Try.of(()->APILocator.getContentletAPI().find(this.inode,APILocator.systemUser(),false)).getOrNull();
+    }
+
+    @Override
+    public String getTheme() {
+        return Try.of(()-> FileAssetTemplateUtil.getInstance().getThemeIdFromPath(super.getTheme())).getOrNull();
     }
 
     @Override
