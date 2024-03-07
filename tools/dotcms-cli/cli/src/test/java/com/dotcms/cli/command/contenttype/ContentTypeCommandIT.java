@@ -906,4 +906,24 @@ class ContentTypeCommandIT extends CommandTest {
         }
     }
 
+    /**
+     * Test Find by name authenticated with token
+     * Given scenario: We want to find a content type by name using a token
+     * Expected result: The content type should be found and returned
+     */
+    @Test
+    void Test_Command_Content_Find_Authenticated_With_Token() {
+        final String token = requestToken();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME, "--name", "FileAsset", "--token", token);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.startsWith("varName:"));
+        }
+    }
+
+
 }

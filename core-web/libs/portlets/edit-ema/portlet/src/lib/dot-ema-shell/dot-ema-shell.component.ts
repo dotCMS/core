@@ -17,7 +17,9 @@ import {
     DotLanguagesService,
     DotPageLayoutService,
     DotPageRenderService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
@@ -51,6 +53,8 @@ import { NavigationBarItem } from '../shared/models';
         DotESContentService,
         DialogService,
         DotPageRenderService,
+        DotSeoMetaTagsService,
+        DotSeoMetaTagsUtilService,
         {
             provide: WINDOW,
             useValue: window

@@ -7,12 +7,12 @@ import { DotPushPublishFormModule } from '@components/_common/forms/dot-push-pub
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
 import { DotWizardService } from '@dotcms/data-access';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotSafeHtmlPipe } from '@dotcms/ui';
 
 @NgModule({
     imports: [
         CommonModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotCommentAndAssignFormModule,
         DotPushPublishFormModule,
         DotDialogModule,

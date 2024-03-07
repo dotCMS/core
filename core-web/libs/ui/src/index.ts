@@ -41,6 +41,7 @@ export * from './lib/pipes/dot-file-size-format/dot-file-size-format.pipe';
 export * from './lib/pipes/dot-string-format/dot-string-format.pipe';
 export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
 export * from './lib/pipes/safe-url/safe-url.pipe';
+export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 
 //Resolvers
 export * from './lib/resolvers/dot-portlet-have-license.resolver';

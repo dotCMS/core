@@ -17,7 +17,7 @@ import { EditEmaStore } from './dot-ema.store';
 
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../shared/consts';
-import { EDITOR_STATE } from '../../shared/enums';
+import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload } from '../../shared/models';
 
 const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
@@ -139,7 +139,10 @@ describe('EditEmaStore', () => {
                             'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADING
+                        state: EDITOR_STATE.LOADING,
+                        previewState: {
+                            editorMode: EDITOR_MODE.EDIT
+                        }
                     });
                     done();
                 });
@@ -159,7 +162,10 @@ describe('EditEmaStore', () => {
                             'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED
+                        state: EDITOR_STATE.LOADED,
+                        previewState: {
+                            editorMode: EDITOR_MODE.EDIT
+                        }
                     });
                     done();
                 });
@@ -184,7 +190,10 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADING
+                        editorState: EDITOR_STATE.LOADING,
+                        previewState: {
+                            editorMode: EDITOR_MODE.EDIT
+                        }
                     });
                     done();
                 });
@@ -212,7 +221,10 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED
+                        editorState: EDITOR_STATE.LOADED,
+                        previewState: {
+                            editorMode: EDITOR_MODE.EDIT
+                        }
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
                     expect(spyWhenReloaded).toHaveBeenCalled();
@@ -523,7 +535,10 @@ describe('EditEmaStore', () => {
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED
+                        state: EDITOR_STATE.LOADED,
+                        previewState: {
+                            editorMode: EDITOR_MODE.EDIT
+                        }
                     });
                     done();
                 });
@@ -542,7 +557,10 @@ describe('EditEmaStore', () => {
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED
+                        state: EDITOR_STATE.LOADED,
+                        previewState: {
+                            editorMode: EDITOR_MODE.EDIT
+                        }
                     });
                     done();
                 });
@@ -566,7 +584,10 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED
+                        editorState: EDITOR_STATE.LOADED,
+                        previewState: {
+                            editorMode: EDITOR_MODE.EDIT
+                        }
                     });
                     done();
                 });

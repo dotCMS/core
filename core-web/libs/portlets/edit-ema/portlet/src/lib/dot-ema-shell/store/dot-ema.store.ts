@@ -17,17 +17,15 @@ import {
     DotPageApiService
 } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../shared/consts';
-import { EDITOR_STATE } from '../../shared/enums';
-import { ActionPayload, ReloadPagePayload, SavePagePayload } from '../../shared/models';
+import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
+import {
+    ActionPayload,
+    EditEmaState,
+    PreviewState,
+    ReloadPagePayload,
+    SavePagePayload
+} from '../../shared/models';
 import { insertContentletInContainer, sanitizeURL, getPersonalization } from '../../utils';
-
-export interface EditEmaState {
-    clientHost: string;
-    error?: number;
-    editor: DotPageApiResponse;
-    isEnterpriseLicense: boolean;
-    editorState: EDITOR_STATE;
-}
 
 interface GetFormIdPayload extends SavePagePayload {
     payload: ActionPayload;
@@ -101,7 +99,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 }
             },
             isEnterpriseLicense: state.isEnterpriseLicense,
-            state: state.editorState ?? EDITOR_STATE.LOADING
+            state: state.editorState ?? EDITOR_STATE.LOADING,
+            previewState: state.previewState
         };
     });
 
@@ -162,7 +161,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     //This to stop the progress bar. Testing yet
                                     editorState: isHeadlessPage
                                         ? EDITOR_STATE.LOADING
-                                        : EDITOR_STATE.LOADED
+                                        : EDITOR_STATE.LOADED,
+                                    previewState: {
+                                        editorMode: EDITOR_MODE.EDIT
+                                    }
                                 });
                             },
                             error: ({ status }: HttpErrorResponse) => {
@@ -336,6 +338,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }));
 
     /**
+     * Update the preview state
+     *
+     * @memberof EditEmaStore
+     */
+    readonly updatePreviewState = this.updater((state, previewState: PreviewState) => ({
+        ...state,
+        previewState
+    }));
+
+    /**
      * Update the page containers
      *
      * @private
@@ -432,7 +444,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             clientHost: '',
             isEnterpriseLicense: false,
             error,
-            editorState: EDITOR_STATE.LOADED
+            editorState: EDITOR_STATE.LOADED,
+            previewState: {
+                editorMode: EDITOR_MODE.EDIT
+            }
         });
     }
 
