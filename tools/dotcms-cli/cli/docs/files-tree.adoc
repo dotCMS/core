@@ -20,7 +20,7 @@ files-tree - *dotCMS Files Tree*
 == Synopsis
 
 *files tree* [*-h*] [*-ee*] [*-d*=_<depth>_] [*-ea*=_patterns_] [*-ef*=_patterns_] [*-ia*=_patterns_]
-           [*-if*=_patterns_] _path_
+           [*-if*=_patterns_] [*-tk*=_<token>_] _path_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -56,6 +56,9 @@ files-tree - *dotCMS Files Tree*
 
 *-if, --includeFolder*=_patterns_::
   Include directories matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

@@ -19,7 +19,8 @@ login - *Use this command to login to a dotCMS instance.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*login* [*-h*] *-p*[=_<password>_] [*-p*[=_<password>_]]... *-u*=_<user>_
+*login* [*-h*] [*-tk*[=_<token>_] [*-tk*[=_<token>_]]... | [*-u*=_<user>_ *-p*[=_<password>_] [*-p*
+      [=_<password>_]]...]]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -40,6 +41,10 @@ login - *Use this command to login to a dotCMS instance.*
 
 *-h*, *--help*::
   Display this help message.
+
+== 
+*Password Login Options. *
+
 
 *-p*, *--password*[=_<password>_]::
   Passphrase
@@ -62,6 +67,15 @@ as the password will be visible in the command history.
 
 *-u*, *--user*=_<user>_::
   User name
+
+== 
+*Token login Options. *
+
+
+*-tk, --token*[=_<token>_]::
+  dotCMS Token
++
+A token can be used directly to authenticate with the dotCMS instance
 
 // end::picocli-generated-man-section-options[]
 

@@ -9,6 +9,7 @@ import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
+import com.dotcms.model.user.User;
 import io.quarkus.arc.All;
 import io.quarkus.arc.DefaultBean;
 import java.io.IOException;
@@ -112,6 +113,14 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
                 APITokenRequest.builder().user(user).password(password)
                         .expirationDays(expirationDays).build());
         saveCredentials(user, responseEntityView.entity().token());
+    }
+
+    @Override
+    public void login(char[] token) throws IOException {
+        authenticationParam.setToken(token);
+        final UserAPI userAPI = clientFactory.getClient(UserAPI.class);
+        final User user = userAPI.getCurrent();
+        saveCredentials(user.userId(), token);
     }
 
     private void saveCredentials(final String user, final char[] token) {
