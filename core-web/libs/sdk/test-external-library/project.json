@@ -1,0 +1,30 @@
+{
+    "name": "test-external-library",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/test-external-library/src",
+    "projectType": "library",
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/sdk/test-external-library",
+                "main": "libs/sdk/test-external-library/src/index.ts",
+                "tsConfig": "libs/sdk/test-external-library/tsconfig.lib.json",
+                "assets": ["libs/sdk/test-external-library/*.md"]
+            }
+        },
+        "publish": {
+            "command": "node tools/scripts/publish.mjs test-external-library {args.ver} {args.tag}",
+            "dependsOn": ["build"]
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/sdk/test-external-library/jest.config.ts"
+            }
+        }
+    },
+    "tags": []
+}

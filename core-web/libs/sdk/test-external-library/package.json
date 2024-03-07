@@ -1,0 +1,11 @@
+{
+    "name": "@dotcms/test-external-library",
+    "version": "0.0.1",
+    "dependencies": {
+        "@jitsu/sdk-js": "^3.1.5",
+        "tslib": "^2.3.0"
+    },
+    "type": "commonjs",
+    "main": "./src/index.js",
+    "typings": "./src/index.d.ts"
+}
