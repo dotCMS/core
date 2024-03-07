@@ -51,15 +51,10 @@ jobs:
         with:
           filters: .github/filters.yaml
           list-files: 'escape'
-      - name: Check CICD_SKIP_TESTS Environment
-        id: check-skip
-        run: |
-          skip_tests=${{ github.event.inputs.CICD_SKIP_TESTS || 'false' }}
-          echo "skip_tests=${skip_tests}" >> $GITHUB_ENV
       - name: Rewrite Filter
         id: filter-rewrite
         env:
-          CICD_SKIP_TESTS: ${{ env.CICD_SKIP_TESTS }}
+          CICD_SKIP_TESTS: ${{ vars.CICD_SKIP_TESTS }}
         run: |
           # Default action outcomes based on paths-filter action outputs
           frontend=${{ steps.filter.outputs.frontend }}
