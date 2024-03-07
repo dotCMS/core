@@ -7,6 +7,7 @@ This image, intended for development, runs Ubuntu 22.04 and contains dotCMS, Pos
 This image takes all the normal dotCMS docker config switches - keep in mind that the DB and ES come pre-wired, so no need to change those.  This image also takes the following env variables:
 
 - `DOTCMS_SOURCE_ENVIRONMENT` : the url for the environment you wish to clone, e.g. https://demo.dotcms.com .
+- `DOTCMS_CLONE_TYPE` : either `dump` or `starter`, defaults to `dump`.  Set this to dump to take a database dump and asset backup (recommended for large sites).  Set this to `starter` to force the target environment to generate a starter to download.
 - `DOTCMS_API_TOKEN` : A valid dotCMS API Token from an admin user in the source environment.
 - `DOTCMS_USERNAME_PASSWORD` :  The username:password for an admin user in the source environment.
 - `DOTCMS_DEBUG` :  Run dotCMS in debug mode and listen for a remote debugger on port 8000, defaults to `false`.
@@ -18,6 +19,10 @@ This image takes all the normal dotCMS docker config switches - keep in mind tha
 When running this image, if you specify a source environment and a valid means to authenticate, the image will attempt to pull the **assets** and **db** from the source environment.  To do this, you start the image up and pass it a `DOTCMS_SOURCE_ENVIRONMENT` and either an `DOTCMS_API_TOKEN` or `DOTCMS_USERNAME_PASSWORD` (e.g. `admin@dotcms.com:admin`).  On startup, the image will try to reach out and download the database and assets from the specified dotCMS instance, load the db and assets and start dotCMS in debug mode. Once the server starts, you need to run a full reindex.
 
 
+
+All of these examples expect you to login using:
+
+https://local.dotcms.site:8443/dotAdmin
 
 #### Clone demo with a dotCMS API Token
 ```
@@ -41,6 +46,20 @@ docker run --rm \
 -e DOTCMS_USERNAME_PASSWORD="admin@dotcms.com:admin" \
  dotcms/dotcms-dev:latest
 ```
+
+
+#### Clone demo using a starter.zip 
+
+```
+docker run --rm \
+-p 8443:8443 \
+-v $PWD/data:/data \
+-e DOTCMS_SOURCE_ENVIRONMENT=https://demo.dotcms.com \
+-e DOTCMS_USERNAME_PASSWORD="admin@dotcms.com:admin" \
+-e DOTCMS_CLONE_TYPE=starter \
+dotcms/dotcms-dev:latest
+```
+
 
 #### Run normal startup with Postgres port exposed, running debug
 ```
@@ -74,6 +93,14 @@ wget --header="$AUTH_HEADER" -t 1 -O assets.zip  $DOTCMS_SOURCE_ENVIRONMENT/api/
 wget --header="$AUTH_HEADER" -t 1 -O dotcms_db.sql.gz $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadDb 
 
 ```
+
+#### Example wget to download a new starter.zip
+```
+wget --header="$AUTH_HEADER" -t 1 -O starter.zip $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadStarterWithAssets?oldAssets=false
+
+```
+
+
 
 #### Starting from a clean slate
 Your development instance can be deleted and reset by deleting the ./data directory that is mapped in. 
