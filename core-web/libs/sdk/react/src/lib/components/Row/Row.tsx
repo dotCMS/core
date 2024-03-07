@@ -32,12 +32,10 @@ export interface RowProps {
  * @return {*}
  */
 export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) => {
-
-
     const { row } = props;
 
     const combinedClasses = combineClasses([styles.row, row.styleClass]);
-    
+
     const rowProps = isInsideEditor() ? { 'data-dot': 'row', 'data-testid': 'row', ref } : {};
 
     return (

@@ -46,5 +46,5 @@ describe('DotPositionPipe', () => {
             height: '10px'
         });
         expect(pipe).toBeTruthy();
-    })
+    });
 });

@@ -37,7 +37,7 @@ export type DotcmsPageProps = {
  */
 export function DotcmsLayout({ entity, options }: DotcmsPageProps): JSX.Element {
     useDotcmsEditor(options);
-    
+
     return (
         <PageProvider entity={entity}>
             {entity.layout.body.rows.map((row, index) => (

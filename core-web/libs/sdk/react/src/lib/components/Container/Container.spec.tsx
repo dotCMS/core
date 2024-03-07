@@ -8,7 +8,6 @@ import { Container } from './Container';
 
 import { MockContextRender, mockPageContext } from '../../mocks/mockPageContext';
 
-
 describe('Container', () => {
     // Mock data for your context and container
     jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
@@ -23,7 +22,7 @@ describe('Container', () => {
         it('renders NoContent component for unsupported content types', () => {
             const updatedContext = {
                 ...mockPageContext,
-                components: {},
+                components: {}
             };
 
             render(
@@ -44,10 +43,9 @@ describe('Container', () => {
                 containers: []
             };
             it('renders EmptyContainer component in editor mode', () => {
-                
                 const updatedContext = {
                     ...mockPageContext,
-                    components: {},
+                    components: {}
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>
@@ -65,7 +63,7 @@ describe('Container', () => {
 
                 const updatedContext = {
                     ...mockPageContext,
-                    components: {},
+                    components: {}
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>
