@@ -24,6 +24,7 @@
                     (activeIndexChange)="vm.galleryActiveIndex = $event" />
                 <button
                     class="align-self-end"
+                    data-testid="submit-btn"
                     *ngIf="vm.images.length || vm.isLoading"
                     [disabled]="vm.isLoading"
                     [label]="'block-editor.extension.ai-image.insert' | dm"

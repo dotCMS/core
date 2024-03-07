@@ -44,7 +44,6 @@ import {
         ReactiveFormsModule,
         FormsModule,
         DropdownModule,
-        ButtonModule,
         NgIf,
         InputTextareaModule,
         DotFieldRequiredDirective,
@@ -98,7 +97,11 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
     ngOnChanges(changes: SimpleChanges): void {
         const { generatedValue, isLoading } = changes;
-        if (generatedValue?.currentValue && !generatedValue.firstChange) {
+        if (
+            generatedValue?.currentValue &&
+            !generatedValue.firstChange &&
+            !isLoading?.currentValue
+        ) {
             const updatedValue: DotGeneratedAIImage = generatedValue.currentValue;
             this.form.patchValue(updatedValue.request);
             this.form.clearValidators();

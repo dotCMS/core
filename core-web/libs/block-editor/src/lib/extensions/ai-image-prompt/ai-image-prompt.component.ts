@@ -17,7 +17,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gallery/ai-image-prompt-gallery.component';
-import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/ai-image-prompt-input.component';
 
 import { AIImagePrompt, DotGeneratedAIImage } from '../../shared/services/dot-ai/dot-ai.models';
 
@@ -29,7 +28,6 @@ import { AIImagePrompt, DotGeneratedAIImage } from '../../shared/services/dot-ai
     imports: [
         NgIf,
         DialogModule,
-        AiImagePromptInputComponent,
         AsyncPipe,
         DotMessagePipe,
         ConfirmDialogModule,
@@ -58,16 +56,8 @@ export class AIImagePromptComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        // this.store.activeGalleryIndex$.pipe().subscribe((activeGalleryIndex) => {
-        //     console.log('activeGalleryIndex', activeGalleryIndex);
-        //     this.form.patchValue({text: this.store.getImages$[activeGalleryIndex].aiResponse.originalPrompt})
-        // });
-
         this.store.getImages$.pipe(filter((images) => !!images.length)).subscribe((images) => {
             this.selectedImage = images[images.length - 1];
-
-            // this.form.patchValue({ text: images[images.length - 1].aiResponse.originalPrompt });
-            // this.generatedValue = images[images.length - 1].aiResponse;
         });
     }
 
