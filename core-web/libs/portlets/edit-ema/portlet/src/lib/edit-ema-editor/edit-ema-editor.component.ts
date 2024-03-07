@@ -986,10 +986,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // If the URL is the same, we need to fetch the new page data
                 this.store.reload({
                     params: this.queryParams,
-                    whenReloaded: () => {
-                        this.reloadIframe();
-                        this.store.updateEditorState(EDITOR_STATE.LOADED);
-                    }
+                    whenReloaded: () => this.reloadIframe()
                 });
             });
     }
