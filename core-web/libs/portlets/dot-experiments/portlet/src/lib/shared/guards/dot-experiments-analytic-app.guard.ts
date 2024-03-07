@@ -19,7 +19,7 @@ export const AnalyticsAppGuard = () => {
             tap((value) => {
                 return value === HealthStatusTypes.OK
                     ? true
-                    : router.navigate(['/edit-ema/experiments/analytic-app-misconfiguration'], {
+                    : router.navigate(['/edit-page/experiments/analytic-app-misconfiguration'], {
                           queryParamsHandling: 'merge',
                           state: { healthStatus: value }
                       });

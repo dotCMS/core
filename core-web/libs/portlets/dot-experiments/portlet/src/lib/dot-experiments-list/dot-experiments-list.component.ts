@@ -98,7 +98,7 @@ export class DotExperimentsListComponent {
      * @memberof DotExperimentsShellComponent
      */
     goToBrowserBack(): void {
-        this.router.navigate(['edit-ema/content'], {
+        this.router.navigate(['edit-page/content'], {
             queryParams: {
                 mode: null,
                 variantName: null,
@@ -116,7 +116,7 @@ export class DotExperimentsListComponent {
      */
 
     goToContainerAction(experiment: DotExperiment) {
-        const route = ['/edit-ema/experiments/', experiment.pageId, experiment.id];
+        const route = ['/edit-page/experiments/', experiment.pageId, experiment.id];
 
         if (
             experiment.status === DotExperimentStatus.RUNNING ||

@@ -87,7 +87,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      * @memberof DotExperimentsConfigurationComponent
      */
     goToExperimentList(pageId: string) {
-        this.router.navigate(['/edit-ema/experiments/', pageId], {
+        this.router.navigate(['/edit-page/experiments/', pageId], {
             queryParams: {
                 mode: null,
                 variantName: null,

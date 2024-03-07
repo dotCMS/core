@@ -244,7 +244,7 @@ export class DotExperimentsListStore
 
                                 this.router.navigate(
                                     [
-                                        '/edit-ema/experiments/',
+                                        '/edit-page/experiments/',
                                         experiment.pageId,
                                         experiment.id,
                                         'configuration'
