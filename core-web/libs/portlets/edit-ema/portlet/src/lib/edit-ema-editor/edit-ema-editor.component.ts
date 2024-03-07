@@ -565,6 +565,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 whenSaved: () => {
                     this.reloadIframe();
                     this.resetDragProperties();
+                    this.cd.detectChanges();
                 }
             });
 
