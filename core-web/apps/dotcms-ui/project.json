@@ -104,7 +104,6 @@
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development"
-
             }
         },
         "extract-i18n": {

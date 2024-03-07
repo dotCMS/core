@@ -1,14 +1,8 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { DEFAULT_PERSONA } from 'libs/portlets/edit-ema/portlet/src/lib/shared/consts';
-import { of } from 'rxjs';
 
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Params, Router } from '@angular/router';
-
-import { map, switchMap } from 'rxjs/operators';
-
-import { DotPropertiesService, EmaAppConfigurationService } from '@dotcms/data-access';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { sanitizeURL } from '../../utils';
 
@@ -22,58 +16,20 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     const [content] = route.firstChild.url;
 
     const router = inject(Router);
-    const properties = inject(DotPropertiesService);
 
     const { didQueryParamsGetCompleted, newQueryParams } = confirmQueryParams(route.queryParams);
 
-    const url = didQueryParamsGetCompleted ? newQueryParams.url : route.queryParams.url;
+    if (didQueryParamsGetCompleted) {
+        router.navigate([`/edit-page/${content.path}`], {
+            queryParams: {
+                ...route.queryParams,
+                ...newQueryParams
+            },
+            replaceUrl: true
+        });
+    }
 
-    return inject(EmaAppConfigurationService)
-        .get(url)
-        .pipe(
-            switchMap((value) => {
-                if (value) {
-                    if (didQueryParamsGetCompleted) {
-                        router.navigate([`/edit-ema/${content.path}`], {
-                            queryParams: {
-                                ...route.queryParams,
-                                ...newQueryParams
-                            },
-                            replaceUrl: true
-                        });
-
-                        return of(true);
-                    }
-
-                    return of(true);
-                }
-
-                return properties.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_EDIT_PAGE).pipe(
-                    map((flag) => {
-                        if (!flag) {
-                            //Go to EditPage
-                            router.navigate(['/edit-page/content'], {
-                                queryParams: route.queryParams
-                            });
-
-                            return false;
-                        }
-
-                        if (didQueryParamsGetCompleted) {
-                            router.navigate([`/edit-ema/${content.path}`], {
-                                queryParams: {
-                                    ...route.queryParams,
-                                    ...newQueryParams
-                                },
-                                replaceUrl: true
-                            });
-                        }
-
-                        return true;
-                    })
-                );
-            })
-        );
+    return true;
 };
 
 function confirmQueryParams(queryParams: Params): {

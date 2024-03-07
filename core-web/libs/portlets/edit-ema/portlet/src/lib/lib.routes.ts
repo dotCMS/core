@@ -1,3 +1,5 @@
+// WE NEED TO DELETE THIS WHEN ARCADIO FNISHES THE WORK ON THE CIRCULAR DEPENDECIES, REMIND ME OF THIS IF YOU READ THIS.
+/* eslint-disable @nx/enforce-module-boundaries */
 import { Route } from '@angular/router';
 
 import {
