@@ -72,3 +72,4 @@ This maintenance release includes the following code fixes:
 65. https://github.com/dotCMS/core/issues/25891 : [Empty Starter] : The Language Variable Content Type is not visible from the Content portlet #25891
 66. https://github.com/dotCMS/core/issues/27832 : Return IDP configuration Id instead of site id as part of the ACS URL in the SAML authentication request #27832
 67. Enable Experiments feature by default
+68. https://github.com/dotCMS/core/issues/27883 : fix(perf) : Prevent UtilMethods.isImage from blocking #27883

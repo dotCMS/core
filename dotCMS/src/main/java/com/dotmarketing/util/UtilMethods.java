@@ -67,6 +67,9 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -234,11 +237,37 @@ public class UtilMethods {
         }
     }
 
-    public static final boolean isImage(String x) {
-        if (x == null)
-            return false;
+    private static final String[] DEFAULT_IMAGE_EXTENSIONS=                {
+            "png", "gif", "webp", "jpeg", ".jpg", "pdf", "tiff", "bpm", "svg", "avif",
+            "bmp",
+            "tif", "tiff"
+    };
 
-        return ImageIO.getImageReadersByFormatName(getFileExtension(x)).hasNext();
+    /**
+     * returns the valid image extensions with a . in front of the extension, e.g.
+     * png -> .png
+     */
+    private final static Lazy<String[]> IMAGE_EXTENSIONS = Lazy.of(() ->
+
+            Try.of(() -> Arrays.stream(Config.getStringArrayProperty("VALID_IMAGE_EXTENSIONS",DEFAULT_IMAGE_EXTENSIONS))
+                    .map(x -> x.startsWith(".") ? x : "." + x)
+                    .toArray(String[]::new)
+            ).getOrElse(() -> Arrays.stream(DEFAULT_IMAGE_EXTENSIONS)
+                    .map(x -> x.startsWith(".") ? x : "." + x)
+                    .toArray(String[]::new))
+    );
+
+    public static final boolean isImage(String x) {
+        if (UtilMethods.isEmpty(x)) {
+            return false;
+        }
+        final String imageName = x.toLowerCase();
+        for (String ext : IMAGE_EXTENSIONS.get()) {
+            if (imageName.endsWith(ext)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static final String getMonthFromNow() {
