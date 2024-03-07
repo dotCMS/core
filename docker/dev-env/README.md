@@ -25,6 +25,8 @@ All of these examples expect you to login using:
 https://local.dotcms.site:8443/dotAdmin
 
 #### Clone demo with a dotCMS API Token
+This pulls down the assets and a SQL dump that is then imported into the new dotCMS instance.  You will need to login with the same
+credientals that are used in the target environment.
 ```
 export TOK=XXXXXXX_YOUR_DOTCMS_TOKEN.eXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
@@ -38,6 +40,8 @@ docker run --rm \
 ```
 
 #### Clone demo with UserID/Password
+This pulls down the assets and a SQL dump that is then imported into the new dotCMS instance.  You will need to login with the same
+credientals that are used in the target environment.
 ```
 docker run --rm \
 -p 8443:8443 \
@@ -49,7 +53,7 @@ docker run --rm \
 
 
 #### Clone demo using a starter.zip 
-
+This asks the source server to generate a starter.zip, which can be time-consuming to generate AND to import initially.  
 ```
 docker run --rm \
 -p 8443:8443 \
@@ -61,7 +65,8 @@ dotcms/dotcms-dev:latest
 ```
 
 
-#### Run normal startup with Postgres port exposed, running debug
+#### DEV DEBUG - with Postgres port exposed.  
+In this case dotCMS java waits to start up until a debugger is connected to it on port 8000.
 ```
 docker run --rm  \
 -p 8443:8443 \
