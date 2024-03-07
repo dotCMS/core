@@ -1,5 +1,5 @@
 import { postMessageToEditor, CUSTOMER_ACTIONS } from './models/client.model';
-import { initEditor, isInsideEditor, updateNavigation } from './sdk-editor';
+import { initEditor, isInsideEditor, pingEditor, updateNavigation } from './sdk-editor';
 
 jest.mock('./models/client.model', () => ({
     postMessageToEditor: jest.fn(),
@@ -85,8 +85,8 @@ describe('DotCMSPageEditor', () => {
             expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
         });
 
-        it('should check if inside editor', () => {
-            isInsideEditor();
+        it('should send ping to editor', () => {
+            pingEditor();
             expect(postMessageToEditor).toHaveBeenCalledWith({
                 action: CUSTOMER_ACTIONS.PING_EDITOR
             });

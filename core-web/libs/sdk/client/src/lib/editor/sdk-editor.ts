@@ -206,7 +206,7 @@ function listenContentChange() {
  * Sends a ping message to the editor.
  *
  */
-function pingEditor() {
+export function pingEditor() {
     postMessageToEditor({
         action: CUSTOMER_ACTIONS.PING_EDITOR
     });
