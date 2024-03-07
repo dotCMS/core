@@ -34,7 +34,8 @@ import {
     DotCopyContentService,
     DotHttpErrorManagerService,
     DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
+    DotSeoMetaTagsUtilService,
+    DotContentletService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -180,18 +181,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
+    private readonly dotContentletService = inject(DotContentletService);
 
-    readonly editorState$ = this.store.editorState$.pipe(
-        tap(({ clientHost }) => {
-            if (clientHost) {
-                return;
-            }
-
-            // For VTL, we need to add the VTL in the iframe
-            // So we force the iframe to reload
-            this.iframe?.nativeElement.dispatchEvent(new Event('load'));
-        })
-    );
+    readonly editorState$ = this.store.editorState$;
 
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
@@ -631,10 +623,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
 
                 if (shouldReloadPage) {
-                    this.store.reload({
-                        params: this.queryParams,
-                        whenReloaded: () => this.reloadIframe()
-                    });
+                    this.reloadURLContentMapPage(contentletIdentifier);
 
                     return;
                 }
@@ -972,6 +961,37 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 ...contentletToMove // The contentlet that was dragged
             }
         };
+    }
+
+    /**
+     * Reload the URL content map page
+     *
+     * @private
+     * @param {string} inodeOrIdentifier
+     * @memberof EditEmaEditorComponent
+     */
+    private reloadURLContentMapPage(inodeOrIdentifier: string): void {
+        this.dotContentletService
+            .getContentletByInode(inodeOrIdentifier)
+            .pipe(tap(() => this.store.updateEditorState(EDITOR_STATE.LOADING)))
+            .subscribe(({ URL_MAP_FOR_CONTENT }) => {
+                if (URL_MAP_FOR_CONTENT != this.queryParams.url) {
+                    this.store.updateEditorState(EDITOR_STATE.LOADED);
+                    // If the URL is different, we need to navigate to the new URL
+                    this.updateQueryParams({ url: URL_MAP_FOR_CONTENT });
+
+                    return;
+                }
+
+                // If the URL is the same, we need to fetch the new page data
+                this.store.reload({
+                    params: this.queryParams,
+                    whenReloaded: () => {
+                        this.reloadIframe();
+                        this.store.updateEditorState(EDITOR_STATE.LOADED);
+                    }
+                });
+            });
     }
 
     /**

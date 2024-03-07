@@ -21,6 +21,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotContentTypeService,
+    DotContentletService,
     DotCopyContentService,
     DotCurrentUserService,
     DotDevicesService,
@@ -51,7 +52,8 @@ import {
     LoginServiceMock,
     DotCurrentUserServiceMock,
     dotcmsContentletMock,
-    seoOGTagsResultMock
+    seoOGTagsResultMock,
+    URL_MAP_CONTENTLET
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
@@ -296,6 +298,12 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             DotFavoritePageService,
             DotESContentService,
             {
+                provide: DotContentletService,
+                useValue: {
+                    getContentletByInode: () => of(URL_MAP_CONTENTLET)
+                }
+            },
+            {
                 provide: DotHttpErrorManagerService,
                 useValue: {
                     handle() {
@@ -503,6 +511,7 @@ describe('EditEmaEditorComponent', () => {
         let addMessageSpy: jest.SpyInstance;
         let dotCopyContentModalService: DotCopyContentModalService;
         let dotCopyContentService: DotCopyContentService;
+        let dotContentletService: DotContentletService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
         const createComponent = createRouting({ canEdit: true, canRead: true });
@@ -531,6 +540,7 @@ describe('EditEmaEditorComponent', () => {
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
+            dotContentletService = spectator.inject(DotContentletService, true);
 
             addMessageSpy = jest.spyOn(messageService, 'add');
 
@@ -1058,52 +1068,127 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
-                it('should reload the page after editing a urlContentMap', () => {
-                    spectator.detectChanges();
+                describe('reload', () => {
+                    it('should reload the page after editing a urlContentMap if the url do not change', () => {
+                        spectator.detectChanges();
 
-                    const editURLContentButton = spectator.debugElement.query(
-                        By.css('[data-testId="edit-url-content-map"] .p-button')
-                    );
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
+                        const editURLContentButton = spectator.debugElement.query(
+                            By.css('[data-testId="edit-url-content-map"] .p-button')
+                        );
+                        const dialog = spectator.debugElement.query(
+                            By.css('[data-testId="ema-dialog"]')
+                        );
 
-                    const spy = jest.spyOn(store, 'reload');
-                    const spyDialog = jest.spyOn(
-                        spectator.component.dialog,
-                        'editUrlContentMapContentlet'
-                    );
-                    const spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
+                        const spy = jest.spyOn(store, 'reload');
+                        const spyDialog = jest.spyOn(
+                            spectator.component.dialog,
+                            'editUrlContentMapContentlet'
+                        );
+                        const spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
+                        const spyContentlet = jest
+                            .spyOn(dotContentletService, 'getContentletByInode')
+                            .mockReturnValue(
+                                of({
+                                    ...URL_MAP_CONTENTLET,
+                                    URL_MAP_FOR_CONTENT: 'page-one'
+                                })
+                            );
 
-                    spectator.setInput('contentlet', baseContentletPayload);
-                    spectator.detectComponentChanges();
+                        spectator.setInput('contentlet', baseContentletPayload);
+                        spectator.detectComponentChanges();
 
-                    editURLContentButton.triggerEventHandler('click', {});
+                        editURLContentButton.triggerEventHandler('click', {});
 
-                    spectator.detectComponentChanges();
+                        spectator.detectComponentChanges();
 
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                                payload: {
-                                    shouldReloadPage: true,
-                                    htmlPageReferer: '/my-awesome-page'
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                                    payload: {
+                                        shouldReloadPage: true,
+                                        contentletIdentifier: URL_MAP_CONTENTLET.identifier,
+                                        htmlPageReferer: '/my-awesome-page'
+                                    }
                                 }
-                            }
-                        })
+                            })
+                        });
+
+                        spectator.detectChanges();
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(spy).toHaveBeenCalledWith({
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            },
+                            whenReloaded: expect.any(Function)
+                        });
+                        expect(spyReloadIframe).toHaveBeenCalled();
+                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
                     });
 
-                    spectator.detectChanges();
-                    expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                    expect(spy).toHaveBeenCalledWith({
-                        params: {
-                            language_id: 1,
-                            url: 'page-one'
-                        },
-                        whenReloaded: expect.any(Function)
+                    it('should update the query params after editing a urlContentMap if the url changed', () => {
+                        spectator.detectChanges();
+                        const router = spectator.inject(Router);
+
+                        const editURLContentButton = spectator.debugElement.query(
+                            By.css('[data-testId="edit-url-content-map"] .p-button')
+                        );
+                        const dialog = spectator.debugElement.query(
+                            By.css('[data-testId="ema-dialog"]')
+                        );
+
+                        const spy = jest.spyOn(store, 'reload');
+                        const spyDialog = jest.spyOn(
+                            spectator.component.dialog,
+                            'editUrlContentMapContentlet'
+                        );
+                        const spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
+                        const spyContentlet = jest
+                            .spyOn(dotContentletService, 'getContentletByInode')
+                            .mockReturnValue(of(URL_MAP_CONTENTLET));
+                        const spyUpdateQueryParams = jest.spyOn(router, 'navigate');
+
+                        spectator.setInput('contentlet', baseContentletPayload);
+                        spectator.detectComponentChanges();
+
+                        editURLContentButton.triggerEventHandler('click', {});
+
+                        spectator.detectComponentChanges();
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                                    payload: {
+                                        shouldReloadPage: true,
+                                        contentletIdentifier: URL_MAP_CONTENTLET.identifier,
+                                        htmlPageReferer: '/my-awesome-page'
+                                    }
+                                }
+                            })
+                        });
+
+                        const queryParams = {
+                            queryParams: {
+                                url: URL_MAP_CONTENTLET.URL_MAP_FOR_CONTENT
+                            },
+                            queryParamsHandling: 'merge'
+                        };
+
+                        spectator.detectChanges();
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyUpdateQueryParams).toHaveBeenCalledWith([], queryParams);
+                        expect(spy).not.toHaveBeenCalledWith({
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            },
+                            whenReloaded: expect.any(Function)
+                        });
+                        expect(spyReloadIframe).not.toHaveBeenCalled();
                     });
-                    expect(spyReloadIframe).toHaveBeenCalled();
                 });
 
                 describe('Copy content', () => {
