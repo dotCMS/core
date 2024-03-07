@@ -20,8 +20,7 @@ import java.util.function.Supplier;
 public class SystemTableFactoryImpl extends SystemTableFactory {
 
     private final SystemCache systemCache;
-
-    private final static String VALUE_404 = "DOT_SYSTEM_TABLE_404";
+    private final static String DOT_SYSTEM_CACHE_LOADED = "DOT_SYSTEM_CACHE_LOADED";
 
     public SystemTableFactoryImpl () {
 
@@ -33,34 +32,15 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
         Object value = null;
         if (UtilMethods.isSet(key)) {
 
-            final Supplier<Object> supplier = ()-> {
-
-                List<Map<String, Object>> result;
-                try {
-                    result = new DotConnect()
-                            .setSQL(" SELECT * FROM system_table WHERE key = ? ")
-                            .addParam(key)
-                            .loadObjectResults();
-                } catch (final DotDataException e) {
-                    throw new DotRuntimeException(String.format("Failed to retrieve key '%s': %s"
-                            , key, ExceptionUtil.getErrorMessage(e)), e);
-                }
-
-                final Object v = null == result || result.isEmpty()? null : result.get(0).get("value");
-                return Objects.nonNull(v)?v.toString():VALUE_404;
-
-            };
             value = this.systemCache.get(key);
-            if (null == value) {
+            if(Objects.isNull(value) && Objects.isNull((systemCache.get(DOT_SYSTEM_CACHE_LOADED)))){
 
-                value = supplier.get();
-                this.systemCache.put(key, value);
+                this.findAll();
+                return find(key);
             }
         }
 
-        return  Objects.isNull(value) || VALUE_404.equals(value)?
-                Optional.empty():
-                Optional.ofNullable(toString(value));
+        return  Optional.ofNullable(toString(value));
     }
 
     @Override
@@ -82,6 +62,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
             }
         }
 
+        this.systemCache.put(DOT_SYSTEM_CACHE_LOADED, true);
         return records;
     }
 
@@ -99,7 +80,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
                     .addParam(value)
                     .loadResult();
 
-            this.systemCache.remove(key);
+            this.clearCache();
         } else {
 
             throw new DotDataException("The key and value should not be null");
@@ -115,7 +96,7 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
                 .setSQL("DELETE FROM system_table WHERE key=?")
                 .addParam(key)
                 .loadResult();
-            this.systemCache.remove(key);
+            this.clearCache();
         } else {
 
             throw new DotDataException("The key should not be null");
