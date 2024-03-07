@@ -24,11 +24,11 @@
                     (activeIndexChange)="vm.galleryActiveIndex = $event" />
                 <button
                     class="align-self-end"
-                    data-testid="submit-btn"
                     *ngIf="vm.images.length || vm.isLoading"
                     [disabled]="vm.isLoading"
                     [label]="'block-editor.extension.ai-image.insert' | dm"
                     (click)="insetImage(vm.images[vm.galleryActiveIndex])"
+                    data-testid="submit-btn"
                     pButton
                     type="submit"
                     icon="pi pi-check"></button>
