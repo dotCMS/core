@@ -14,7 +14,7 @@ ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
 
 ARG PG_VERSION=16
-
+ENV PG_VERSION=16
 RUN groupadd -f -g $USER_GID $USER_GROUP
 # Creating default non-user
 # the useradd

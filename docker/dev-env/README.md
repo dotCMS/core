@@ -1,6 +1,6 @@
 # dotCMS Development Docker Image
 ### All in one docker image including Postgres and Opensearch
-This image, intended for development, runs Ubuntu 22.04 and contains dotCMS, Postgres 15 and Opensearch 1.x. All dotCMS, db and es index data is stored in the `/data` directory, which should be mapped in if you want your environment to persist.  The beauty of this image that it can be used to CLONE an existing dotCMS instance.  
+This image, intended for development, runs Ubuntu 22.04 and contains dotCMS, Postgres 16 and Opensearch 1.x. All dotCMS, db and es index data is stored in the `/data` directory, which should be mapped in if you want your environment to persist.  The beauty of this image that it can be used to CLONE an existing dotCMS instance.  
 
 
 ## Running the image
@@ -31,6 +31,7 @@ credientals that are used in the target environment.
 export TOK=XXXXXXX_YOUR_DOTCMS_TOKEN.eXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 docker run --rm \
+--pull always \
 -p 8000:8000 \
 -p 8443:8443 \
 -v $PWD/data:/data \
@@ -44,6 +45,7 @@ This pulls down the assets and a SQL dump that is then imported into the new dot
 credientals that are used in the target environment.
 ```
 docker run --rm \
+--pull always \
 -p 8443:8443 \
 -v $PWD/data:/data \
 -e DOTCMS_SOURCE_ENVIRONMENT=https://demo.dotcms.com \
@@ -56,6 +58,7 @@ docker run --rm \
 This asks the source server to generate a starter.zip, which can be time-consuming to generate AND to import initially.  
 ```
 docker run --rm \
+--pull always \
 -p 8443:8443 \
 -v $PWD/data:/data \
 -e DOTCMS_SOURCE_ENVIRONMENT=https://demo.dotcms.com \
@@ -69,6 +72,7 @@ dotcms/dotcms-dev:latest
 In this case dotCMS java waits to start up until a debugger is connected to it on port 8000.
 ```
 docker run --rm  \
+--pull always \
 -p 8443:8443 \
 -p 5432:5432 \
 -p 8000:8000 \
