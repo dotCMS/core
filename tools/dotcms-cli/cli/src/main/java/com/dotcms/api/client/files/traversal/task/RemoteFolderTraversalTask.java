@@ -7,8 +7,8 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.model.asset.FolderView;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import javax.enterprise.context.Dependent;
 import org.apache.commons.lang3.tuple.Pair;
@@ -21,7 +21,8 @@ import org.jboss.logging.Logger;
  * that can be executed in parallel, allowing for faster traversal of large directory structures.
  */
 @Dependent
-public class RemoteFolderTraversalTask extends TaskProcessor<RemoteFolderTraversalTaskParams,TraverseTaskResult> {
+public class RemoteFolderTraversalTask extends
+        TaskProcessor<RemoteFolderTraversalTaskParams, CompletableFuture<TraverseTaskResult>> {
 
     private final ManagedExecutor executor;
     private final Logger logger;
@@ -59,6 +60,7 @@ public class RemoteFolderTraversalTask extends TaskProcessor<RemoteFolderTravers
      *
      * @param params The traversal parameters
      */
+    @Override
     public void setTaskParams(final RemoteFolderTraversalTaskParams params) {
         this.traversalTaskParams = params;
     }
@@ -70,50 +72,44 @@ public class RemoteFolderTraversalTask extends TaskProcessor<RemoteFolderTravers
      * @return A Pair object containing a list of exceptions encountered during traversal and the
      * resulting TreeNode representing the directory tree at the specified folder.
      */
-    public TraverseTaskResult compute() {
-
-        CompletionService<TraverseTaskResult> completionService =
-                new ExecutorCompletionService<>(executor);
+    @Override
+    public CompletableFuture<TraverseTaskResult> compute() {
 
         var errors = new ArrayList<Exception>();
+        TreeNode currentNode = null;
+        FolderView currentFolder = null;
 
-        // Processing the current folder
-        var processResult = processCurrentFolder(
-                errors
-        );
-        var currentNode = processResult.getLeft();
-        var currentFolder = processResult.getRight();
+        try {
+
+            // Processing the current folder
+            var processResult = processCurrentFolder();
+
+            currentNode = processResult.getLeft();
+            currentFolder = processResult.getRight();
+
+        } catch (Exception e) {
+            if (traversalTaskParams.failFast()) {
+                return CompletableFuture.failedFuture(e);
+            } else {
+                errors.add(e);
+            }
+        }
 
         // And now its sub-folders
-        int toProcessCount = processSubFolders(
+        return processSubFolders(
                 currentNode,
                 currentFolder,
-                errors,
-                completionService
+                errors
         );
-
-        // Wait for all tasks to complete and gather the results
-        Function<TraverseTaskResult, Void> processFunction = taskResult -> {
-            errors.addAll(taskResult.exceptions());
-            taskResult.treeNode().ifPresent(currentNode::addChild);
-        return null;
-        };
-        processTasks(toProcessCount, completionService, processFunction);
-
-        return TraverseTaskResult.builder()
-                .exceptions(errors)
-                .treeNode(currentNode)
-                .build();
     }
 
     /**
      * Processes the current folder and returns a TreeNode representing it.
      *
-     * @param errors The list of exceptions to which any error should be added.
      * @return A Pair object containing the TreeNode representing the processed folder and the
      * FolderView object representing the current folder.
      */
-    private Pair<TreeNode, FolderView> processCurrentFolder(List<Exception> errors) {
+    private Pair<TreeNode, FolderView> processCurrentFolder() {
 
         var currentNode = new TreeNode(traversalTaskParams.folder());
         var currentFolder = traversalTaskParams.folder();
@@ -145,8 +141,10 @@ public class RemoteFolderTraversalTask extends TaskProcessor<RemoteFolderTravers
                 if (currentFolder.assets() != null) {
                     currentNode.assets(currentFolder.assets().versions());
                 }
+            } catch (TraversalTaskException e) {
+                throw e;
             } catch (Exception e) {
-                handleException(errors, e);
+                throw new TraversalTaskException(e.getMessage(), e);
             }
         }
 
@@ -154,22 +152,24 @@ public class RemoteFolderTraversalTask extends TaskProcessor<RemoteFolderTravers
     }
 
     /**
-     * Processes the sub-folders of the given folder.
+     * Processes the sub-folders of the current folder and returns a CompletableFuture containing a
+     * pair of a list of exceptions encountered during the traversal and a TreeNode representing the
+     * current folder.
      *
-     * @param currentNode       The current TreeNode representing the current folder.
-     * @param currentFolder     The FolderView object representing the current folder to process.
-     * @param errors            The list of exceptions to which any error should be added.
-     * @param completionService The CompletionService for parallel execution of traversal tasks.
-     * @return The number of sub-folders to be processed.
+     * @param currentNode   The current TreeNode representing the current folder.
+     * @param currentFolder The FolderView object representing the current folder to process.
+     * @param errors        The list of exceptions to which any error should be added.
+     * @return a CompletableFuture containing a list of exceptions encountered during the traversal
+     * and a TreeNode representing the processed folder.
      */
-    private int processSubFolders(TreeNode currentNode, FolderView currentFolder,
-            List<Exception> errors,
-            CompletionService<TraverseTaskResult> completionService) {
-
-        var toProcessCount = 0;
+    private CompletableFuture<TraverseTaskResult> processSubFolders(
+            TreeNode currentNode, FolderView currentFolder, List<Exception> errors) {
 
         // Traverse all sub-folders of the current folder
-        if (currentFolder.subFolders() != null) {
+        if (currentFolder != null && currentFolder.subFolders() != null) {
+
+            List<CompletableFuture<TraverseTaskResult>> futures = new ArrayList<>();
+
             for (FolderView subFolder : currentFolder.subFolders()) {
 
                 if (traversalTaskParams.depth() == -1
@@ -186,10 +186,15 @@ public class RemoteFolderTraversalTask extends TaskProcessor<RemoteFolderTravers
                                 subFolder.explicitGlobExclude()
                         );
 
-                        completionService.submit(task::compute);
-                        toProcessCount++;
+                        CompletableFuture<TraverseTaskResult> future =
+                                CompletableFuture.supplyAsync(
+                                        task::compute, executor
+                                ).thenCompose(Function.identity());
+                        futures.add(future);
+                    } catch (TraversalTaskException e) {
+                        throw e;
                     } catch (Exception e) {
-                        handleException(errors, e);
+                        throw new TraversalTaskException(e.getMessage(), e);
                     }
                 } else {
 
@@ -197,9 +202,25 @@ public class RemoteFolderTraversalTask extends TaskProcessor<RemoteFolderTravers
                     currentNode.addChild(new TreeNode(subFolder));
                 }
             }
+
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .thenApply(ignored -> {
+                        for (CompletableFuture<TraverseTaskResult> future : futures) {
+                            var taskResult = future.join();
+                            errors.addAll(taskResult.exceptions());
+                            taskResult.treeNode().ifPresent(currentNode::addChild);
+                        }
+                        return TraverseTaskResult.builder()
+                                .exceptions(errors)
+                                .treeNode(Optional.ofNullable(currentNode))
+                                .build();
+                    });
         }
 
-        return toProcessCount;
+        return CompletableFuture.completedFuture(TraverseTaskResult.builder()
+                .exceptions(errors)
+                .treeNode(Optional.ofNullable(currentNode))
+                .build());
     }
 
     /**
@@ -311,26 +332,6 @@ public class RemoteFolderTraversalTask extends TaskProcessor<RemoteFolderTravers
             var message = String.format("Error retrieving folder information [%s]", folderPath);
             logger.error(message, e);
             throw new TraversalTaskException(message, e);
-        }
-    }
-
-    /**
-     * Handles an exception that occurred during the execution of a traversal task.
-     *
-     * @param errors The list of exceptions to which the error should be added.
-     * @param e      The exception that occurred.
-     */
-    private void handleException(List<Exception> errors, Exception e) {
-
-        if (traversalTaskParams.failFast()) {
-
-            if (e instanceof TraversalTaskException) {
-                throw (TraversalTaskException) e;
-            }
-
-            throw new TraversalTaskException(e.getMessage(), e);
-        } else {
-            errors.add(e);
         }
     }
 

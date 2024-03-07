@@ -54,7 +54,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 })
 export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
-    @Input() hideMediaTiles = false;
+    @Input() hideSocialMedia = false;
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
     @Output() hideOverlayPanel = new EventEmitter<string>();

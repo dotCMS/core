@@ -18,8 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import javax.enterprise.context.Dependent;
 import javax.ws.rs.NotFoundException;
@@ -31,7 +30,8 @@ import org.jboss.logging.Logger;
  * Represents a task that pushes the contents of a tree node to a remote server.
  */
 @Dependent
-public class PushTreeNodeTask extends TaskProcessor<PushTreeNodeTaskParams,List<Exception>> {
+public class PushTreeNodeTask extends
+        TaskProcessor<PushTreeNodeTaskParams, CompletableFuture<List<Exception>>> {
 
     private final ManagedExecutor executor;
 
@@ -80,10 +80,7 @@ public class PushTreeNodeTask extends TaskProcessor<PushTreeNodeTaskParams,List<
     }
 
     @Override
-    public List<Exception> compute() {
-
-        CompletionService<List<Exception>> completionService =
-                new ExecutorCompletionService<>(executor);
+    public CompletableFuture<List<Exception>> compute() {
 
         var errors = new ArrayList<Exception>();
         final TreeNode rootNode = traversalTaskParams.rootNode();
@@ -93,15 +90,13 @@ public class PushTreeNodeTask extends TaskProcessor<PushTreeNodeTaskParams,List<
             processFolder(rootNode.folder(), pushContext);
         } catch (Exception e) {
 
-            if (traversalTaskParams.failFast()) {
-                throw e;
+            // If we failed to create the site there is not point in continuing
+            if (e instanceof SiteCreationException || traversalTaskParams.failFast()) {
+                traversalTaskParams.progressBar().done();
+
+                return CompletableFuture.failedFuture(e);
             } else {
                 errors.add(e);
-            }
-
-            // If we failed to create the site there is not point in continuing
-            if (e instanceof SiteCreationException) {
-                return errors;
             }
         }
 
@@ -111,18 +106,16 @@ public class PushTreeNodeTask extends TaskProcessor<PushTreeNodeTaskParams,List<
                 processAsset(rootNode.folder(), asset, pushContext);
             } catch (Exception e) {
                 if (traversalTaskParams.failFast()) {
-                    //This adds a line so when the exception gets written to the console it looks consistent
                     traversalTaskParams.progressBar().done();
-                    throw e;
+
+                    return CompletableFuture.failedFuture(e);
                 } else {
                     errors.add(e);
                 }
             }
         }
 
-        handleChildren(errors, rootNode, completionService);
-
-        return errors;
+        return handleChildren(errors, rootNode);
     }
 
     /**
@@ -131,12 +124,12 @@ public class PushTreeNodeTask extends TaskProcessor<PushTreeNodeTaskParams,List<
      * @param errors   the list of errors to add to
      * @param rootNode the root node to process
      */
-    private void handleChildren(ArrayList<Exception> errors, TreeNode rootNode,
-            CompletionService<List<Exception>> completionService) {
+    private CompletableFuture<List<Exception>> handleChildren(final ArrayList<Exception> errors,
+            final TreeNode rootNode) {
 
         if (rootNode.children() != null && !rootNode.children().isEmpty()) {
 
-            var toProcessCount = 0;
+            List<CompletableFuture<List<Exception>>> futures = new ArrayList<>();
 
             for (TreeNode child : rootNode.children()) {
 
@@ -150,17 +143,22 @@ public class PushTreeNodeTask extends TaskProcessor<PushTreeNodeTaskParams,List<
                         .from(traversalTaskParams).rootNode(child).build()
                 );
 
-                completionService.submit(task::compute);
-                toProcessCount++;
+                CompletableFuture<List<Exception>> future = CompletableFuture.supplyAsync(
+                        task::compute, executor
+                ).thenCompose(Function.identity());
+                futures.add(future);
             }
 
-            // Wait for all tasks to complete and gather the results
-            Function<List<Exception>, Void> processFunction = taskResult -> {
-                errors.addAll(taskResult);
-                return null;
-            };
-            processTasks(toProcessCount, completionService, processFunction);
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .thenApply(ignored -> {
+                        for (CompletableFuture<List<Exception>> future : futures) {
+                            errors.addAll(future.join());
+                        }
+                        return errors;
+                    });
         }
+
+        return CompletableFuture.completedFuture(errors);
     }
 
     /**
@@ -240,6 +238,11 @@ public class PushTreeNodeTask extends TaskProcessor<PushTreeNodeTaskParams,List<
                 // If we are trying to create a folder that already exist we could ignore the error on retries
                 if (!traversalTaskParams.isRetry() || !alreadyExist) {
                     logger.error(message, e);
+
+                    if (e instanceof TraversalTaskException) {
+                        throw (TraversalTaskException) e;
+                    }
+
                     throw new TraversalTaskException(message, e);
                 }
             }
@@ -334,6 +337,11 @@ public class PushTreeNodeTask extends TaskProcessor<PushTreeNodeTaskParams,List<
 
             // If we are trying to push an asset that already exist we could ignore the error on retries
             if (!traversalTaskParams.isRetry() || !alreadyExist) {
+
+                if (e instanceof TraversalTaskException) {
+                    throw (TraversalTaskException) e;
+                }
+
                 var message = String.format("Error pushing asset [%s%s]", folder.path(),
                         asset.name());
                 logger.error(message, e);

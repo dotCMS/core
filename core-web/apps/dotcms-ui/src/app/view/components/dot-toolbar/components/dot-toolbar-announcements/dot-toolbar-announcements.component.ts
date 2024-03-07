@@ -61,12 +61,12 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
 
     ngOnInit(): void {
         this.announcementsStore.load();
+        this.announcementsStore.refreshUtmParameters();
         this.aboutLinks = this.getAboutLinks();
     }
 
     ngOnChanges(changes): void {
         if (!changes.showUnreadAnnouncement.currentValue) {
-            this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.markAnnouncementsAsRead();
         }
     }

@@ -18,6 +18,33 @@ const defaultPostmanTestsDir = '../dotCMS/src/curl-test'; // Default directory
 const defaultConfigFilePath = 'config.json'; // Default config file path
 const defaultPostmanTestsResultsDir = 'target/failsafe-reports'; // Default results directory
 
+
+// Function to fetch JWT
+async function fetchJWT(serverUrl ) {
+    const username = 'admin@dotcms.com';
+    const password = 'admin';
+    const base64 = Buffer.from(`${username}:${password}`).toString('base64');
+
+    const response = await fetch(serverUrl+"/api/v1/apitoken", {
+        "headers": {
+            "accept": "*/*",
+            "content-type": "application/json",
+            "Authorization": `Basic ${base64}`
+        },
+        "body": JSON.stringify({
+            "expirationSeconds": 60000,
+            "userId": "dotcms.org.1",
+            "network": "0.0.0.0/0",
+            "claims": {"label": "postman-tests"}
+        }),
+        "method": "POST"
+    });
+
+    const data = await response.json();
+    return data.entity.jwt; // Return JWT token
+}
+
+
 // Function to generate failsafe-summary.xml
 function generateFailsafeSummaryXml(postmanTestsResultsDir) {
     const builder = new xml2js.Builder();
@@ -42,18 +69,22 @@ function generateFailsafeSummaryXml(postmanTestsResultsDir) {
 }
 
 // Function to run Newman as a Promise
-async function runNewman(serverUrl, collectionName, postmanTestsDir, postmanTestsResultsDir) {
+async function runNewman(serverUrl, collectionName, postmanTestsDir, postmanTestsResultsDir, jwt) {
     return new Promise((resolve, reject) => {
         const collectionPath = path.join(postmanTestsDir, `${collectionName}.json`);
         const resultPath = path.join(postmanTestsResultsDir, `TEST-${collectionName}.xml`);
 
         console.log('Running collection:', collectionName);
 
+        console.log('using jwt:', jwt);
         newman.run(
             {
                 collection: require(collectionPath),
                 //delayRequest: 2000,
-                envVar: [{ key: 'serverURL', value: serverUrl }],
+                envVar: [
+                    { key: 'serverURL', value: serverUrl },
+                    { key: 'jwt', value: jwt }
+                ],
                 reporters: ['cli', 'junit'],
                 reporter: {
                     junit: { export: resultPath }
@@ -91,7 +122,8 @@ async function processCollections(
     groupname,
     postmanTestsDir,
     postmanTestsResultsDir,
-    config
+    config,
+    jwt
 ) {
     console.log(`Starting collections for groupname: ${groupname}`);
 
@@ -126,7 +158,7 @@ async function processCollections(
     // Run Newman for each collection and track failures
     for (let collection of collectionsToRun) {
         try {
-            await runNewman(serverUrl, collection, postmanTestsDir, postmanTestsResultsDir);
+            await runNewman(serverUrl, collection, postmanTestsDir, postmanTestsResultsDir, jwt);
             console.log(`Collection ${collection} executed successfully.`);
         } catch (error) {
             console.error('Error in collection:', collection, error.message);
@@ -137,7 +169,7 @@ async function processCollections(
 }
 
 // Function to process all collections sequentially
-async function processAllCollections(serverUrl, postmanTestsDir, postmanTestsResultsDir, config) {
+async function processAllCollections(serverUrl, postmanTestsDir, postmanTestsResultsDir, config, jwt) {
     console.log('Processing all collection groups:');
 
     for (const item of config) {
@@ -151,10 +183,11 @@ async function processAllCollections(serverUrl, postmanTestsDir, postmanTestsRes
             item.name,
             postmanTestsDir,
             postmanTestsResultsDir,
-            config
+            config,
+            jwt
         );
     }
-    await processCollections(serverUrl, 'default', postmanTestsDir, postmanTestsResultsDir, config);
+    await processCollections(serverUrl, 'default', postmanTestsDir, postmanTestsResultsDir, config, jwt);
 }
 /**
  * Parses command line arguments for named parameters.
@@ -199,6 +232,9 @@ async function main() {
     const configFilePath = path.resolve(__dirname, argv.configFilePath);
     const postmanTestsResultsDir = path.resolve(__dirname, argv.postmanTestsResultsDir);
 
+    const jwt = await fetchJWT(serverUrl);
+
+    console.log(`Got jwt: ${jwt}`);
     // Ensure results directory exists
     if (!fs.existsSync(postmanTestsResultsDir)) {
         fs.mkdirSync(postmanTestsResultsDir, { recursive: true });
@@ -214,7 +250,7 @@ async function main() {
     try {
         if (groupname === 'all') {
             console.log('All collections');
-            await processAllCollections(serverUrl, postmanTestsDir, postmanTestsResultsDir, config);
+            await processAllCollections(serverUrl, postmanTestsDir, postmanTestsResultsDir, config, jwt);
         } else {
             const groupNames = groupname.split(',');
             for (const name of groupNames) {
@@ -223,7 +259,8 @@ async function main() {
                     name.trim(),
                     postmanTestsDir,
                     postmanTestsResultsDir,
-                    config
+                    config,
+                    jwt
                 );
             }
         }

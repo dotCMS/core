@@ -18,7 +18,7 @@ import {
     IMG_NOT_FOUND_KEY
 } from '@dotcms/dotcms-models';
 
-import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
+import { DotSeoMetaTagsUtilService } from '../dot-seo-meta-tags-utils/dot-seo-meta-tags-util.service';
 
 @Injectable()
 export class DotSeoMetaTagsService {

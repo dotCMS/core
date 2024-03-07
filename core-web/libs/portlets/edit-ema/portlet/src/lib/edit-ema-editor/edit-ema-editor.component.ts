@@ -25,17 +25,29 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { takeUntil, catchError, filter, map, switchMap, tap } from 'rxjs/operators';
+import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotPersonalizeService,
     DotMessageService,
     DotCopyContentService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotDevice, DotPersona, DotTreeNode } from '@dotcms/dotcms-models';
-import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import {
+    DotCMSContentlet,
+    DotDevice,
+    DotPersona,
+    DotTreeNode,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
+import {
+    DotDeviceSelectorSeoComponent,
+    DotResultsSeoToolComponent
+} from '@dotcms/portlets/dot-ema/ui';
 import {
     SafeUrlPipe,
     DotSpinnerModule,
@@ -63,7 +75,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiResponse, DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import {
     ActionPayload,
     PositionPayload,
@@ -143,7 +155,8 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         DotEmaDeviceDisplayComponent,
         DotEmaBookmarksComponent,
         DotEditEmaWorkflowActionsComponent,
-        ProgressBarModule
+        ProgressBarModule,
+        DotResultsSeoToolComponent
     ],
     providers: [DotCopyContentModalService, DotCopyContentService, DotHttpErrorManagerService]
 })
@@ -165,11 +178,27 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
+    private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
 
-    readonly editorState$ = this.store.editorState$;
+    readonly editorState$ = this.store.editorState$.pipe(
+        tap(({ clientHost }) => {
+            if (clientHost) {
+                return;
+            }
+
+            // For VTL, we need to add the VTL in the iframe
+            // So we force the iframe to reload
+            this.iframe?.nativeElement.dispatchEvent(new Event('load'));
+        })
+    );
+
     readonly destroy$ = new Subject<boolean>();
+    protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
     readonly pageData = toSignal(this.store.pageData$);
+
+    readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
@@ -213,15 +242,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly host = '*';
     readonly editorState = EDITOR_STATE;
+    readonly editorMode = EDITOR_MODE;
 
     private draggedPayload: DraggedPalettePayload;
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
-
-    // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
-    currentDevice: DotDevice & { icon?: string };
 
     get queryParams(): DotPageApiParams {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
@@ -245,11 +272,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onIframePageLoad({ clientHost, editor }: { clientHost: string; editor: DotPageApiResponse }) {
-        if (!clientHost) {
-            // Is VTL
-            this.iframe.nativeElement.contentDocument.open();
-            this.iframe.nativeElement.contentDocument.write(editor.page.rendered);
-            this.iframe.nativeElement.contentDocument.close();
+        if (clientHost) {
+            // Is Headless
+            return;
+        }
+
+        // Is VTL
+        const doc = this.iframe?.nativeElement.contentDocument; // Iframe can be undefined
+
+        if (doc) {
+            doc.open();
+            doc.write(editor.page.rendered);
+            doc.close();
+
+            this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+
+            this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
         }
     }
 
@@ -265,7 +303,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onCustomEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
-        this.handleNgEvent({ event, payload: payload })?.();
+        this.handleNgEvent({ event, payload })?.();
     }
 
     /**
@@ -355,8 +393,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {DotDevice} [device]
      * @memberof EditEmaEditorComponent
      */
-    updateCurrentDevice(device?: DotDevice & { icon?: string }) {
-        this.currentDevice = device;
+    updateCurrentDevice(device: DotDevice & { icon?: string }) {
+        this.store.updatePreviewState({
+            editorMode: EDITOR_MODE.PREVIEW,
+            device
+        });
+
+        this.rows = []; // We need to reset the rows when we change the device
+        this.contentlet = null; // We need to reset the contentlet when we change the device
+    }
+
+    goToEditMode() {
+        this.store.updatePreviewState({
+            editorMode: EDITOR_MODE.EDIT
+        });
+
         this.rows = []; // We need to reset the rows when we change the device
         this.contentlet = null; // We need to reset the contentlet when we change the device
     }
@@ -577,31 +628,44 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
-                if (payload) {
-                    const { pageContainers, didInsert } = insertContentletInContainer({
-                        ...payload,
-                        newContentletId: detail.payload.contentletIdentifier
-                    });
+                const { shouldReloadPage, contentletIdentifier } = detail.payload;
 
-                    if (!didInsert) {
-                        this.handleDuplicatedContentlet();
-
-                        return;
-                    }
-
-                    // Save when created
-                    this.store.savePage({
-                        pageContainers,
-                        pageId: payload.pageId,
+                if (shouldReloadPage) {
+                    this.store.reload({
                         params: this.queryParams,
-                        whenSaved: () => {
-                            this.dialog.resetDialog();
-                            this.reloadIframe();
-                        }
+                        whenReloaded: () => this.reloadIframe()
                     });
-                } else {
-                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+
+                    return;
                 }
+
+                if (!payload) {
+                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+
+                    return;
+                }
+
+                const { pageContainers, didInsert } = insertContentletInContainer({
+                    ...payload,
+                    newContentletId: contentletIdentifier
+                });
+
+                if (!didInsert) {
+                    this.handleDuplicatedContentlet();
+
+                    return;
+                }
+
+                // Save when created
+                this.store.savePage({
+                    pageContainers,
+                    pageId: payload.pageId,
+                    params: this.queryParams,
+                    whenSaved: () => {
+                        this.dialog.resetDialog();
+                        this.reloadIframe();
+                    }
+                });
             },
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
@@ -738,6 +802,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
     }
 
+    onSeoMediaChange(seoMedia: string) {
+        this.store.updatePreviewState({
+            editorMode: EDITOR_MODE.PREVIEW,
+            socialMedia: seoMedia
+        });
+    }
+
     /**
      * Update the query params
      *
@@ -810,7 +881,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const { onNumberOfPages, title } = contentlet;
 
         if (!(onNumberOfPages > 1)) {
-            this.dialog.editContentlet(payload);
+            this.dialog.editContentlet(contentlet);
 
             return;
         }
@@ -828,12 +899,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return this.handleCopyContent();
                 })
             )
-            .subscribe((contentlet) => {
-                this.dialog.editContentlet({
-                    ...payload,
-                    contentlet
-                });
-            });
+            .subscribe((contentlet) => this.dialog.editContentlet(contentlet));
+    }
+
+    /**
+     * Handle edit content map
+     *
+     * @protected
+     * @param {DotCMSContentlet} contentlet
+     * @memberof EditEmaEditorComponent
+     */
+    protected editContentMap(contentlet: DotCMSContentlet): void {
+        this.dialog.editUrlContentMapContentlet(contentlet);
     }
 
     /**

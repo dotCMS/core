@@ -7,6 +7,7 @@ import { catchError, map, pluck } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
 import {
+    DotCMSContentlet,
     DotLanguage,
     DotLayout,
     DotPageContainerStructure,
@@ -35,6 +36,7 @@ export interface DotPageApiResponse {
     layout: DotLayout;
     template: DotTemplate;
     containers: DotPageContainerStructure;
+    urlContentMap?: DotCMSContentlet;
 }
 
 export interface DotPageApiParams {

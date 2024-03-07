@@ -17,7 +17,9 @@ import {
     DotLanguagesService,
     DotPageLayoutService,
     DotPageRenderService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
@@ -52,6 +54,8 @@ import { NavigationBarItem } from '../shared/models';
         DotESContentService,
         DialogService,
         DotPageRenderService,
+        DotSeoMetaTagsService,
+        DotSeoMetaTagsUtilService,
         {
             provide: WINDOW,
             useValue: window
@@ -136,12 +140,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     label: 'editema.editor.navbar.properties',
                     action: () => {
                         this.dialog.editContentlet({
-                            contentlet: {
-                                inode: page.inode,
-                                title: page.title,
-                                identifier: page.identifier,
-                                contentType: page.contentType
-                            }
+                            inode: page.inode,
+                            title: page.title,
+                            identifier: page.identifier,
+                            contentType: page.contentType
                         });
                     }
                 }
