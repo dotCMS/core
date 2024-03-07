@@ -19,7 +19,7 @@ jobs:
       - name: Checkout core
         uses: actions/checkout@v4
       - name: Build/Push Docker Image
-        uses: .github/workflows/deploy-artifact-docker.yml
+        uses: ./.github/workflows/deploy-artifact-docker.yml
         with:
           docker_platforms: linux/amd64,linux/arm64
           build_run_id: ${{ github.event.workflow_run.id }}
