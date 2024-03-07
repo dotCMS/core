@@ -18,3 +18,21 @@ export enum NOTIFY_CUSTOMER {
      */
     EMA_EDITOR_PONG = 'ema-editor-pong'
 }
+
+export interface DotCMSPageEditorConfig {
+    onReload: () => void;
+}
+
+interface DotCMSPageEditorListener {
+    type: 'listener';
+    event: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    callback: (ev: any) => void;
+}
+
+interface DotCMSPageEditorObserver {
+    type: 'observer';
+    observer: MutationObserver;
+}
+
+export type DotCMSPageEditorSubscription = DotCMSPageEditorListener | DotCMSPageEditorObserver;

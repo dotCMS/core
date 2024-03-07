@@ -50,8 +50,8 @@ describe('useDotcmsEditor', () => {
     it('should call initEditor with options', () => {
         isInsideEditorSpy.mockReturnValueOnce(true);
 
-        renderHook(() => useDotcmsEditor());
+        renderHook(() => useDotcmsEditor({ onReload: jest.fn() }));
 
-        expect(initEditorSpy).toHaveBeenCalled();
+        expect(initEditorSpy).toHaveBeenCalledWith({ onReload: expect.any(Function) });
     });
 });

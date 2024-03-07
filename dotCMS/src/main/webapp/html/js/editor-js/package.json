@@ -20,6 +20,6 @@
     "url": "https://github.com/dotCMS/core/issues"
   },
   "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/client/README.md",
-  "module": "./sdk-editor-vtl.esm.js",
-  "main": "./sdk-editor-vtl.esm.js"
+  "module": "./sdk-editor.esm.js",
+  "main": "./sdk-editor.esm.js"
 }

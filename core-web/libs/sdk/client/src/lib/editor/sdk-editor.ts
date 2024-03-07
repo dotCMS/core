@@ -1,28 +1,14 @@
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
-import { NOTIFY_CUSTOMER } from './models/editor.model';
+import {
+    DotCMSPageEditorConfig,
+    DotCMSPageEditorSubscription,
+    NOTIFY_CUSTOMER
+} from './models/editor.model';
 import {
     findContentletElement,
     getClosestContainerData,
     getPageElementBound
 } from './utils/editor.utils';
-
-export interface DotCMSPageEditorConfig {
-    onReload: () => void;
-}
-
-interface DotCMSPageEditorListener {
-    type: 'listener';
-    event: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    callback: (ev: any) => void;
-}
-
-interface DotCMSPageEditorObserver {
-    type: 'observer';
-    observer: MutationObserver;
-}
-
-type DotCMSPageEditorSubscription = DotCMSPageEditorListener | DotCMSPageEditorObserver;
 
 /**
  * Default reload function that reloads the current window.
@@ -217,6 +203,16 @@ function listenContentChange() {
 }
 
 /**
+ * Sends a ping message to the editor.
+ *
+ */
+function pingEditor() {
+    postMessageToEditor({
+        action: CUSTOMER_ACTIONS.PING_EDITOR
+    });
+}
+
+/**
  * Checks if the code is running inside an editor.
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
  */
@@ -224,10 +220,6 @@ export function isInsideEditor() {
     if (window?.parent === window) {
         return false;
     }
-
-    postMessageToEditor({
-        action: CUSTOMER_ACTIONS.PING_EDITOR
-    });
 
     return true;
 }
@@ -242,6 +234,7 @@ export function initEditor(config?: DotCMSPageEditorConfig) {
         pageEditorConfig = config;
     }
 
+    pingEditor();
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();

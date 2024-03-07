@@ -1,4 +1,4 @@
-import { DotCMSPageEditorConfig, isInsideEditor } from '@dotcms/client';
+import { DotCMSPageEditorConfig } from '@dotcms/client';
 
 import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
 import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
@@ -37,8 +37,7 @@ export type DotcmsPageProps = {
  */
 export function DotcmsLayout({ entity, options }: DotcmsPageProps): JSX.Element {
     useDotcmsEditor(options);
-    entity.isInsideEditor = isInsideEditor();
-
+    
     return (
         <PageProvider entity={entity}>
             {entity.layout.body.rows.map((row, index) => (

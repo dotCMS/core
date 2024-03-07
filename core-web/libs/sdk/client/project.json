@@ -19,6 +19,7 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
+                "outputFileName": "sdk-editor",
                 "format": ["esm"],
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json",
                 "project": "libs/sdk/client/package.json",
@@ -26,14 +27,7 @@
                 "external": ["react/jsx-runtime"],
                 "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
                 "compiler": "swc",
-                "extractCss": false,
-                "assets": [
-                    {
-                        "glob": "libs/sdk/client/README.md",
-                        "input": ".",
-                        "output": "."
-                    }
-                ]
+                "extractCss": false
             }
         },
         "publish": {

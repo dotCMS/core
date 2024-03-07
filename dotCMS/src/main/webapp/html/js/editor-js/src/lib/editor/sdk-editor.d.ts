@@ -1,6 +1,4 @@
-export interface DotCMSPageEditorConfig {
-    onReload: () => void;
-}
+import { DotCMSPageEditorConfig } from './models/editor.model';
 /**
  *
  * Updates the navigation in the editor.

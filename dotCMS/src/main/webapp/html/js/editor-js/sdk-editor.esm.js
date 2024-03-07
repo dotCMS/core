@@ -318,6 +318,14 @@ function _unsupported_iterable_to_array(o, minLen) {
     });
 }
 /**
+ * Sends a ping message to the editor.
+ *
+ */ function pingEditor() {
+    postMessageToEditor({
+        action: CUSTOMER_ACTIONS.PING_EDITOR
+    });
+}
+/**
  * Checks if the code is running inside an editor.
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
  */ function isInsideEditor() {
@@ -325,9 +333,6 @@ function _unsupported_iterable_to_array(o, minLen) {
     if (((_window = window) === null || _window === void 0 ? void 0 : _window.parent) === window) {
         return false;
     }
-    postMessageToEditor({
-        action: CUSTOMER_ACTIONS.PING_EDITOR
-    });
     return true;
 }
 /**
@@ -338,6 +343,7 @@ function _unsupported_iterable_to_array(o, minLen) {
     if (config) {
         pageEditorConfig = config;
     }
+    pingEditor();
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();

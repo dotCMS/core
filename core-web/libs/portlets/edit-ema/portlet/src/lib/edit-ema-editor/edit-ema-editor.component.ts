@@ -248,20 +248,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.code$
             .pipe(
                 takeUntil(this.destroy$),
-                switchMap((code) => {
-                    return this.store.clientHost$.pipe(
-                        map((clientHost) => {
-                            return { code, clientHost };
-                        })
-                    );
-                })
+                filter((code) => !!code)
             )
-            .subscribe(({ code, clientHost }) => {
+            .subscribe((code) => {
                 requestAnimationFrame(() => {
-                    if (clientHost) {
-                        return;
-                    }
-
                     const doc = this.iframe?.nativeElement.contentDocument;
 
                     if (doc) {
@@ -305,7 +295,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addEditorPageScript(rendered: string) {
-        const scriptString = `<script src="/html/js/editor-js/sdk-editor-vtl.esm.js"></script>`;
+        const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
         const updatedRendered = rendered?.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
@@ -796,7 +786,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     reloadIframe() {
-        this.cd.detectChanges();
         this.iframe?.nativeElement?.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
