@@ -759,8 +759,7 @@ public class ContentTypeResource implements Serializable {
 	 *                     reference, please check
 	 *                     {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}.
 	 * @param direction    The direction of the sorting. It can be either "ASC" or "DESC".
-	 * @param types        A comma-separated list of Content Type Velocity variable names to
-	 *                     retrieve.
+	 * @param type         The Velocity variable name of the Content Type  to retrieve.
 	 * @param siteId       The identifier of the Site to filter the Content Types by.
 	 * @param sites        A comma-separated list of Site identifiers to filter the Content Types
 	 *                     by.
@@ -781,7 +780,7 @@ public class ContentTypeResource implements Serializable {
 										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
 										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderByParam,
 										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-										  @QueryParam("type") String types,
+										  @QueryParam("type") String type,
 										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) final String siteId,
 										  @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) final String sites) throws DotDataException {
 
@@ -792,9 +791,8 @@ public class ContentTypeResource implements Serializable {
 		final String orderBy = this.getOrderByRealName(orderByParam);
 		try {
 			final Map<String, Object> extraParams = new HashMap<>();
-			if (null != types) {
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME,
-						Arrays.asList(types.split(COMMA)));
+			if (null != type) {
+				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, type);
 			}
 			if (null != siteId) {
 				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);

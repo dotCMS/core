@@ -79,7 +79,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             final OrderDirection direction, final Map<String, Object> extraParams) {
         final List<String> contentTypeList = Try.of(() -> (List<String>) extraParams.get(TYPES_PARAMETER_NAME)).getOrNull();
         final List<String> siteList = Try.of(() -> (List<String>) extraParams.get(SITES_PARAMETER_NAME)).getOrNull();
-        final String typeName = Try.of(() -> extraParams.get(TYPE_PARAMETER_NAME).toString().replace("\\[","").replace("\\]", BLANK)).getOrElse(BaseContentType.ANY.name());
+        final String typeName = Try.of(() -> extraParams.get(TYPE_PARAMETER_NAME).toString().replace("[",BLANK).replace("]", BLANK))
+                .getOrElse(BaseContentType.ANY.name());
         final BaseContentType type = BaseContentType.getBaseContentType(typeName);
 
         final String ascOrder = OrderDirection.ASC.name().toLowerCase();
