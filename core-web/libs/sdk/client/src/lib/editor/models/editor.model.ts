@@ -21,6 +21,7 @@ export enum NOTIFY_CUSTOMER {
 
 export interface DotCMSPageEditorConfig {
     onReload: () => void;
+    pathname?: string;
 }
 
 interface DotCMSPageEditorListener {

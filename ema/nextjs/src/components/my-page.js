@@ -11,10 +11,12 @@ import ImageComponent from "./content-types/image";
 import Header from "./layout/header";
 import Footer from "./layout/footer";
 import Navigation from "./layout/navigation";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function MyPage({ data, nav }) {
   const { refresh } = useRouter();
+  const pathname = usePathname();
+
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
       {data.layout.header && (
@@ -35,7 +37,7 @@ export function MyPage({ data, nav }) {
             },
             ...data,
           }}
-          options={{ onReload: refresh }}
+          options={{ onReload: refresh, pathname }}
         />
       </main>
       {data.layout.footer && <Footer />}
