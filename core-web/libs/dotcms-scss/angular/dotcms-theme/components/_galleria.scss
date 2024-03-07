@@ -1,112 +1,114 @@
-@use "variables" as *;
+//TODO: Implement Galleria styles.
 
-.p-galleria .p-galleria-close {
-    margin: $spacing-1;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.6);
-    width: 4rem;
-    height: 4rem;
-    transition: color 0.15s, box-shadow 0.15s;
-    border-radius: 4px;
-}
-.p-galleria .p-galleria-close .p-galleria-close-icon {
-    font-size: 1.5rem;
-}
-.p-galleria .p-galleria-close .p-icon-wrapper .p-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-}
-.p-galleria .p-galleria-close:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: $white;
-}
-.p-galleria .p-galleria-item-nav {
-    background: transparent;
-    color: $white;
-    width: 4rem;
-    height: 4rem;
-    transition: color 0.15s, box-shadow 0.15s;
-    border-radius: 4px;
-    margin: 0 0.5rem;
-}
-.p-galleria .p-galleria-item-nav .p-galleria-item-prev-icon,
-.p-galleria .p-galleria-item-nav .p-galleria-item-next-icon {
-    font-size: 2rem;
-}
-.p-galleria .p-galleria-item-nav .p-icon-wrapper .p-icon {
-    width: 2rem;
-    height: 2rem;
-}
-//.p-galleria .p-galleria-item-nav:not(.p-disabled):hover {
+//@use "variables" as *;
+//
+//.p-galleria .p-galleria-close {
+//    margin: $spacing-1;
+//    background: transparent;
+//    color: rgba(255, 255, 255, 0.6);
+//    width: 4rem;
+//    height: 4rem;
+//    transition: color 0.15s, box-shadow 0.15s;
+//    border-radius: 4px;
+//}
+//.p-galleria .p-galleria-close .p-galleria-close-icon {
+//    font-size: 1.5rem;
+//}
+//.p-galleria .p-galleria-close .p-icon-wrapper .p-icon {
+//    width: 1.5rem;
+//    height: 1.5rem;
+//}
+//.p-galleria .p-galleria-close:hover {
 //    background: rgba(255, 255, 255, 0.1);
 //    color: $white;
 //}
-.p-galleria .p-galleria-caption {
-    background: rgba(0, 0, 0, 0.5);
-    color: $white;
-    padding: $spacing-3;
-}
-.p-galleria .p-galleria-indicators {
-    padding: $spacing-3;
-}
-.p-galleria .p-galleria-indicators .p-galleria-indicator button {
-    background-color: #7789a1;
-    width: $spacing-3;
-    height: $spacing-3;
-    transition: color 0.15s, box-shadow 0.15s;
-    border-radius: 4px;
-}
-.p-galleria .p-galleria-indicators .p-galleria-indicator button:hover {
-    background: #687c97;
-}
-.p-galleria .p-galleria-indicators .p-galleria-indicator.p-highlight button {
-    background: #8dd0ff;
-    color: #151515;
-}
-.p-galleria.p-galleria-indicators-bottom .p-galleria-indicator,
-.p-galleria.p-galleria-indicators-top .p-galleria-indicator {
-    margin-right: 0.5rem;
-}
-.p-galleria.p-galleria-indicators-left .p-galleria-indicator,
-.p-galleria.p-galleria-indicators-right .p-galleria-indicator {
-    margin-bottom: 0.5rem;
-}
-.p-galleria.p-galleria-indicator-onitem .p-galleria-indicators {
-    background: rgba(0, 0, 0, 0.5);
-}
-.p-galleria.p-galleria-indicator-onitem .p-galleria-indicators .p-galleria-indicator button {
-    background: rgba(255, 255, 255, 0.4);
-}
-.p-galleria.p-galleria-indicator-onitem .p-galleria-indicators .p-galleria-indicator button:hover {
-    background: rgba(255, 255, 255, 0.6);
-}
-.p-galleria.p-galleria-indicator-onitem
-    .p-galleria-indicators
-    .p-galleria-indicator.p-highlight
-    button {
-    background: #8dd0ff;
-    color: #151515;
-}
-.p-galleria .p-galleria-thumbnail-container {
-    background: rgba(0, 0, 0, 0.9);
-    padding: 1rem 0.25rem;
-}
-.p-galleria .p-galleria-thumbnail-container .p-galleria-thumbnail-prev,
-.p-galleria .p-galleria-thumbnail-container .p-galleria-thumbnail-next {
-    margin: 0.5rem;
-    background-color: transparent;
-    color: rgba(255, 255, 255, 0.6);
-    width: 2rem;
-    height: 2rem;
-    transition: color 0.15s, box-shadow 0.15s;
-    border-radius: 4px;
-}
-.p-galleria .p-galleria-thumbnail-container .p-galleria-thumbnail-prev:hover,
-.p-galleria .p-galleria-thumbnail-container .p-galleria-thumbnail-next:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.p-galleria-mask {
-    --maskbg: rgba(0, 0, 0, 0.9);
-}
+//.p-galleria .p-galleria-item-nav {
+//    background: transparent;
+//    color: $white;
+//    width: 4rem;
+//    height: 4rem;
+//    transition: color 0.15s, box-shadow 0.15s;
+//    border-radius: 4px;
+//    margin: 0 0.5rem;
+//}
+//.p-galleria .p-galleria-item-nav .p-galleria-item-prev-icon,
+//.p-galleria .p-galleria-item-nav .p-galleria-item-next-icon {
+//    font-size: 2rem;
+//}
+//.p-galleria .p-galleria-item-nav .p-icon-wrapper .p-icon {
+//    width: 2rem;
+//    height: 2rem;
+//}
+////.p-galleria .p-galleria-item-nav:not(.p-disabled):hover {
+////    background: rgba(255, 255, 255, 0.1);
+////    color: $white;
+////}
+//.p-galleria .p-galleria-caption {
+//    background: rgba(0, 0, 0, 0.5);
+//    color: $white;
+//    padding: $spacing-3;
+//}
+//.p-galleria .p-galleria-indicators {
+//    padding: $spacing-3;
+//}
+//.p-galleria .p-galleria-indicators .p-galleria-indicator button {
+//    background-color: #7789a1;
+//    width: $spacing-3;
+//    height: $spacing-3;
+//    transition: color 0.15s, box-shadow 0.15s;
+//    border-radius: 4px;
+//}
+//.p-galleria .p-galleria-indicators .p-galleria-indicator button:hover {
+//    background: #687c97;
+//}
+//.p-galleria .p-galleria-indicators .p-galleria-indicator.p-highlight button {
+//    background: #8dd0ff;
+//    color: #151515;
+//}
+//.p-galleria.p-galleria-indicators-bottom .p-galleria-indicator,
+//.p-galleria.p-galleria-indicators-top .p-galleria-indicator {
+//    margin-right: 0.5rem;
+//}
+//.p-galleria.p-galleria-indicators-left .p-galleria-indicator,
+//.p-galleria.p-galleria-indicators-right .p-galleria-indicator {
+//    margin-bottom: 0.5rem;
+//}
+//.p-galleria.p-galleria-indicator-onitem .p-galleria-indicators {
+//    background: rgba(0, 0, 0, 0.5);
+//}
+//.p-galleria.p-galleria-indicator-onitem .p-galleria-indicators .p-galleria-indicator button {
+//    background: rgba(255, 255, 255, 0.4);
+//}
+//.p-galleria.p-galleria-indicator-onitem .p-galleria-indicators .p-galleria-indicator button:hover {
+//    background: rgba(255, 255, 255, 0.6);
+//}
+//.p-galleria.p-galleria-indicator-onitem
+//    .p-galleria-indicators
+//    .p-galleria-indicator.p-highlight
+//    button {
+//    background: #8dd0ff;
+//    color: #151515;
+//}
+//.p-galleria .p-galleria-thumbnail-container {
+//    background: rgba(0, 0, 0, 0.9);
+//    padding: 1rem 0.25rem;
+//}
+//.p-galleria .p-galleria-thumbnail-container .p-galleria-thumbnail-prev,
+//.p-galleria .p-galleria-thumbnail-container .p-galleria-thumbnail-next {
+//    margin: 0.5rem;
+//    background-color: transparent;
+//    color: rgba(255, 255, 255, 0.6);
+//    width: 2rem;
+//    height: 2rem;
+//    transition: color 0.15s, box-shadow 0.15s;
+//    border-radius: 4px;
+//}
+//.p-galleria .p-galleria-thumbnail-container .p-galleria-thumbnail-prev:hover,
+//.p-galleria .p-galleria-thumbnail-container .p-galleria-thumbnail-next:hover {
+//    background: rgba(255, 255, 255, 0.1);
+//    color: rgba(255, 255, 255, 0.6);
+//}
+//
+//.p-galleria-mask {
+//    --maskbg: rgba(0, 0, 0, 0.9);
+//}

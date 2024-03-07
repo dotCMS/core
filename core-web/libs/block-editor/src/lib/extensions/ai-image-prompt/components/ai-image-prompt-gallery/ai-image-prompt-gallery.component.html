@@ -50,6 +50,6 @@
             alt="image"></p-image>
     </ng-template>
 </p-galleria>
-<span class="ai-image-gallery__count align-self-end" *ngIf="!isLoading && images?.length">
-    {{ index + 1 }}/{{ images.length }}
+<span class="ai-image-gallery__count align-self-center" *ngIf="!isLoading && images?.length">
+    {{ index + 1 }} {{ 'of' | dm }} {{ images.length }}
 </span>

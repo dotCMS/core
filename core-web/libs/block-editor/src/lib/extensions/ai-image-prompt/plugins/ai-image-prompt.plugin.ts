@@ -29,8 +29,6 @@ export type AIImagePromptViewProps = AIImagePromptProps & {
     view: EditorView;
 };
 
-export const AI_IMAGE_PLACEHOLDER_PROPERTY = 'isAIPlaceholder';
-
 export class AIImagePromptView {
     public editor: Editor;
 
@@ -52,6 +50,10 @@ export class AIImagePromptView {
 
     private store: DotAiImagePromptStore;
 
+    /**
+     * Creates a new instance of the AIImagePromptView class.
+     * @param {AIImagePromptViewProps} props - The properties for the component.
+     */
     constructor(props: AIImagePromptViewProps) {
         const { editor, element, view, pluginKey, component } = props;
 
@@ -79,6 +81,10 @@ export class AIImagePromptView {
                 this.editor.commands.closeImagePrompt();
             });
 
+        /**
+         * Subscription fired by the store when image is seleted
+         * from the gallery to be inserted it into the editor
+         */
         this.store.selectedImage$
             .pipe(
                 filter((selectedImage) => !!selectedImage),
@@ -90,86 +96,6 @@ export class AIImagePromptView {
                 this.store.hideDialog();
                 this.editor.chain().closeImagePrompt().run();
             });
-
-        /**
-         * Subscription fired by the store when the dialog change of the state
-         * Handle the click of Generate button
-         */
-        // this.store.isLoading$
-        //     .pipe(
-        //         filter((isLoading) => isLoading === true),
-        //         takeUntil(this.destroy$)
-        //     )
-        //     .subscribe(() => {
-        //         const placeholder = getAIPlaceholderImage(this.editor);
-        //
-        //         if (placeholder) {
-        //             // A regenerate has been requested, so we need to delete the placeholder image
-        //             this.editor
-        //                 .chain()
-        //                 .deleteRange({
-        //                     from: placeholder.from,
-        //                     to: placeholder.to
-        //                 })
-        //                 .insertLoaderNode(true, placeholder.from)
-        //                 .run();
-        //         } else {
-        //             // A new image is being inserted
-        //             this.store.hideDialog();
-        //             this.editor.chain().insertLoaderNode().closeImagePrompt().run();
-        //         }
-        //     });
-
-        /**
-         * Subscription fired by an error and remove the loader node
-         */
-        // this.store.errorMsg$
-        //     .pipe(
-        //         filter((hasError) => !!hasError),
-        //         takeUntil(this.destroy$)
-        //     )
-        //     .subscribe((error) => {
-        //         const loaderNodes = findNodeByType(this.editor, NodeTypes.LOADER);
-        //         this.editor.commands.deleteRange({
-        //             from: loaderNodes[0].from,
-        //             to: loaderNodes[0].to
-        //         });
-        //         // call the confirmation service
-        //
-        //         this.component.injector.get(ConfirmationService).confirm({
-        //             key: 'ai-image-prompt-msg',
-        //             message: this.component.injector.get(DotMessageService).get(error),
-        //             header: 'Error',
-        //             rejectVisible: false,
-        //             acceptVisible: false
-        //         });
-        //     });
-
-        /**
-         * Subscription fired by the store when the prompt get a new contentlet to show
-         */
-        // this.store.getContentlets$
-        //     .pipe(
-        //         filter((contentlets) => contentlets.length > 0),
-        //         takeUntil(this.destroy$)
-        //     )
-        //     .subscribe((contentlets) => {
-        //         const data = Object.values(contentlets[0])[0];
-        //
-        //         const loaderNodes = findNodeByType(this.editor, NodeTypes.LOADER);
-        //
-        //         //Trust in this property to identify the image as a placeholder, until the user accept the content.
-        //         data[AI_IMAGE_PLACEHOLDER_PROPERTY] = true;
-        //
-        //         if (loaderNodes) {
-        //             this.editor
-        //                 .chain()
-        //                 .deleteRange({ from: loaderNodes[0].from, to: loaderNodes[0].to })
-        //                 .insertImage(data, loaderNodes[0].from)
-        //                 .openAIContentActions(DOT_AI_IMAGE_CONTENT_KEY)
-        //                 .run();
-        //         }
-        //     });
     }
 
     update(view: EditorView, prevState: EditorState) {

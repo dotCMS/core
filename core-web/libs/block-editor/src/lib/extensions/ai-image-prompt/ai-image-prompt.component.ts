@@ -83,6 +83,4 @@ export class AIImagePromptComponent implements OnInit {
     onHideConfirm(): void {
         this.store.cleanError();
     }
-
-    protected readonly console = console;
 }
