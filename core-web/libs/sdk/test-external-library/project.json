@@ -4,7 +4,7 @@
     "sourceRoot": "libs/sdk/test-external-library/src",
     "projectType": "library",
     "targets": {
-        "build": {
+        "old_build": {
             "executor": "@nx/js:tsc",
             "outputs": ["{options.outputPath}"],
             "options": {
@@ -23,6 +23,35 @@
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "libs/sdk/test-external-library/jest.config.ts"
+            }
+        },
+        "build": {
+            "executor": "@nx/rollup:rollup",
+            "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "production",
+            "options": {
+                "main": "libs/sdk/test-external-library/src/index.ts",
+                "outputPath": "dist/libs/sdk/test-external-library",
+                "tsConfig": "libs/sdk/test-external-library/tsconfig.lib.json",
+                "rollupConfig": "libs/sdk/test-external-library/rollup.config.cjs"
+                // "compiler": "tsc",
+                // "project": "libs/sdk/test-external-library/package.json",
+                // "assets": [
+                //     {
+                //         "glob": "libs/sdk/test-external-library/README.md",
+                //         "input": ".",
+                //         "output": "."
+                //     }
+                // ]
+            },
+            "configurations": {
+                "production": {
+                    "optimization": true,
+                    "sourceMap": false,
+                    "namedChunks": false,
+                    "extractLicenses": true,
+                    "vendorChunk": false
+                }
             }
         }
     },

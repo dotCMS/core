@@ -111,6 +111,11 @@
             "cache": true,
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
+        },
+        "@nx/rollup:rollup": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
         }
     },
     "namedInputs": {
