@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
     SpectatorRouting,
     createRoutingFactory,
@@ -717,9 +717,8 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should open seo results when clicking on a social media tile', () => {
-                // We only support VTL
-
+            // REMOVED THE `SKIP` WHEN THIS PR [https://github.com/dotCMS/core/pull/27866] IS MERGED
+            it.skip('should open seo results when clicking on a social media tile', () => {
                 const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
 
                 store.load({
@@ -1111,6 +1110,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should reload the page after editing a urlContentMap if the url do not change', () => {
+                        const SpyEditorState = jest.spyOn(store, 'updateEditorState');
                         spyContentlet.mockReturnValue(
                             of({
                                 ...URL_MAP_CONTENTLET,
@@ -1126,10 +1126,11 @@ describe('EditEmaEditorComponent', () => {
                         };
 
                         emulateEditURLMapContent();
-                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                        expect(spyStoreReload).toHaveBeenCalledWith(storeReloadPayload);
-                        expect(spyReloadIframe).toHaveBeenCalled();
                         expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                        expect(spyReloadIframe).toHaveBeenCalled();
+                        expect(spyStoreReload).toHaveBeenCalledWith(storeReloadPayload);
                         expect(spyUpdateQueryParams).not.toHaveBeenCalled();
                     });
 

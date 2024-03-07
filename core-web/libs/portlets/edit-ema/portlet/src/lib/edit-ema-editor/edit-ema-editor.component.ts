@@ -159,7 +159,12 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         ProgressBarModule,
         DotResultsSeoToolComponent
     ],
-    providers: [DotCopyContentModalService, DotCopyContentService, DotHttpErrorManagerService]
+    providers: [
+        DotCopyContentModalService,
+        DotCopyContentService,
+        DotHttpErrorManagerService,
+        DotContentletService
+    ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
@@ -184,7 +189,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotContentletService = inject(DotContentletService);
 
     readonly editorState$ = this.store.editorState$;
-
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
