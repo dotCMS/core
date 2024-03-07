@@ -14,7 +14,7 @@ export const useDotcmsEditor = (options?: DotCMSPageEditorConfig) => {
     useEffect(() => {
         if (isInsideEditorPage) {
             initEditor(options);
-            updateNavigation('');
+            updateNavigation('/');
         }
 
         return () => {

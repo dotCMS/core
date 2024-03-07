@@ -73,7 +73,7 @@ import {
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
-import { DotPageApiResponse, DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import {
@@ -245,6 +245,42 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        this.store.code$
+            .pipe(
+                takeUntil(this.destroy$),
+                switchMap((code) => {
+                    return this.store.clientHost$.pipe(
+                        map((clientHost) => {
+                            return { code, clientHost };
+                        })
+                    );
+                })
+            )
+            .subscribe(({ code, clientHost }) => {
+                requestAnimationFrame(() => {
+                    if (clientHost) {
+                        return;
+                    }
+
+                    const doc = this.iframe?.nativeElement.contentDocument;
+
+                    if (doc) {
+                        doc.open();
+                        doc.write(this.addEditorPageScript(code));
+                        doc.close();
+
+                        this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+                        this.ogTagsResults$ = this.dotSeoMetaTagsService
+                            .getMetaTagsResults(doc)
+                            .pipe(take(1));
+                    }
+                });
+            });
+
+        // this.store.code$.pipe(takeUntil(this.destroy$)).subscribe((code) => {
+
+        // });
+
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
@@ -261,24 +297,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {string} clientHost
      * @memberof EditEmaEditorComponent
      */
-    onIframePageLoad({ clientHost, editor }: { clientHost: string; editor: DotPageApiResponse }) {
-        if (clientHost) {
-            // Is Headless
-            return;
-        }
-
-        // Is VTL
-        const doc = this.iframe?.nativeElement.contentDocument; // Iframe can be undefined
-
-        if (doc) {
-            doc.open();
-            doc.write(this.addEditorPageScript(editor.page.rendered));
-            doc.close();
-
-            this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-
-            this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
-        }
+    onIframePageLoad() {
+        this.store.updateEditorState(EDITOR_STATE.LOADED);
     }
 
     /**
