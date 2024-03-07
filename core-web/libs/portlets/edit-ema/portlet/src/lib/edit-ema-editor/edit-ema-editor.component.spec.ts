@@ -1069,9 +1069,13 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('reload', () => {
-                    it('should reload the page after editing a urlContentMap if the url do not change', () => {
-                        spectator.detectChanges();
+                    let spyContentlet: jest.SpyInstance;
+                    let spyDialog: jest.SpyInstance;
+                    let spyReloadIframe: jest.SpyInstance;
+                    let spyStoreReload: jest.SpyInstance;
+                    let spyUpdateQueryParams: jest.SpyInstance;
 
+                    const emulateEditURLMapContent = () => {
                         const editURLContentButton = spectator.debugElement.query(
                             By.css('[data-testId="edit-url-content-map"] .p-button')
                         );
@@ -1079,28 +1083,8 @@ describe('EditEmaEditorComponent', () => {
                             By.css('[data-testId="ema-dialog"]')
                         );
 
-                        const spy = jest.spyOn(store, 'reload');
-                        const spyDialog = jest.spyOn(
-                            spectator.component.dialog,
-                            'editUrlContentMapContentlet'
-                        );
-                        const spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
-                        const spyContentlet = jest
-                            .spyOn(dotContentletService, 'getContentletByInode')
-                            .mockReturnValue(
-                                of({
-                                    ...URL_MAP_CONTENTLET,
-                                    URL_MAP_FOR_CONTENT: 'page-one'
-                                })
-                            );
-
                         spectator.setInput('contentlet', baseContentletPayload);
-                        spectator.detectComponentChanges();
-
                         editURLContentButton.triggerEventHandler('click', {});
-
-                        spectator.detectComponentChanges();
-
                         triggerCustomEvent(dialog, 'action', {
                             event: new CustomEvent('ng-event', {
                                 detail: {
@@ -1113,62 +1097,44 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             })
                         });
+                    };
 
+                    beforeEach(() => {
+                        const router = spectator.inject(Router, true);
+                        const dialog = spectator.component.dialog;
+                        spyContentlet = jest.spyOn(dotContentletService, 'getContentletByInode');
+                        spyDialog = jest.spyOn(dialog, 'editUrlContentMapContentlet');
+                        spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
+                        spyStoreReload = jest.spyOn(store, 'reload');
+                        spyUpdateQueryParams = jest.spyOn(router, 'navigate');
                         spectator.detectChanges();
-                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                        expect(spy).toHaveBeenCalledWith({
+                    });
+
+                    it('should reload the page after editing a urlContentMap if the url do not change', () => {
+                        spyContentlet.mockReturnValue(
+                            of({
+                                ...URL_MAP_CONTENTLET,
+                                URL_MAP_FOR_CONTENT: 'page-one'
+                            })
+                        );
+                        const storeReloadPayload = {
                             params: {
                                 language_id: 1,
                                 url: 'page-one'
                             },
                             whenReloaded: expect.any(Function)
-                        });
+                        };
+
+                        emulateEditURLMapContent();
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(spyStoreReload).toHaveBeenCalledWith(storeReloadPayload);
                         expect(spyReloadIframe).toHaveBeenCalled();
                         expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyUpdateQueryParams).not.toHaveBeenCalled();
                     });
 
                     it('should update the query params after editing a urlContentMap if the url changed', () => {
-                        spectator.detectChanges();
-                        const router = spectator.inject(Router);
-
-                        const editURLContentButton = spectator.debugElement.query(
-                            By.css('[data-testId="edit-url-content-map"] .p-button')
-                        );
-                        const dialog = spectator.debugElement.query(
-                            By.css('[data-testId="ema-dialog"]')
-                        );
-
-                        const spy = jest.spyOn(store, 'reload');
-                        const spyDialog = jest.spyOn(
-                            spectator.component.dialog,
-                            'editUrlContentMapContentlet'
-                        );
-                        const spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
-                        const spyContentlet = jest
-                            .spyOn(dotContentletService, 'getContentletByInode')
-                            .mockReturnValue(of(URL_MAP_CONTENTLET));
-                        const spyUpdateQueryParams = jest.spyOn(router, 'navigate');
-
-                        spectator.setInput('contentlet', baseContentletPayload);
-                        spectator.detectComponentChanges();
-
-                        editURLContentButton.triggerEventHandler('click', {});
-
-                        spectator.detectComponentChanges();
-
-                        triggerCustomEvent(dialog, 'action', {
-                            event: new CustomEvent('ng-event', {
-                                detail: {
-                                    name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                                    payload: {
-                                        shouldReloadPage: true,
-                                        contentletIdentifier: URL_MAP_CONTENTLET.identifier,
-                                        htmlPageReferer: '/my-awesome-page'
-                                    }
-                                }
-                            })
-                        });
-
+                        spyContentlet.mockReturnValue(of(URL_MAP_CONTENTLET));
                         const queryParams = {
                             queryParams: {
                                 url: URL_MAP_CONTENTLET.URL_MAP_FOR_CONTENT
@@ -1176,17 +1142,11 @@ describe('EditEmaEditorComponent', () => {
                             queryParamsHandling: 'merge'
                         };
 
-                        spectator.detectChanges();
+                        emulateEditURLMapContent();
                         expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
                         expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
                         expect(spyUpdateQueryParams).toHaveBeenCalledWith([], queryParams);
-                        expect(spy).not.toHaveBeenCalledWith({
-                            params: {
-                                language_id: 1,
-                                url: 'page-one'
-                            },
-                            whenReloaded: expect.any(Function)
-                        });
+                        expect(spyStoreReload).not.toHaveBeenCalled();
                         expect(spyReloadIframe).not.toHaveBeenCalled();
                     });
                 });
