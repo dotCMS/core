@@ -1216,6 +1216,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
+
         final Optional<ContentletVersionInfo> contentVersionDeleted = FactoryLocator.getVersionableFactory()
                 .findAnyContentletVersionInfo(identifier, true);
 

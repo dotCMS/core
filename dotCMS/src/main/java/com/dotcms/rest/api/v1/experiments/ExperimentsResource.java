@@ -484,7 +484,6 @@ public class ExperimentsResource {
             @Context final HttpServletResponse response,
             final ExcludedExperimentListForm excludedExperimentListForm
     ) throws DotDataException, DotSecurityException {
-
         return new ResponseEntityExperimentSelectedView(
                 WebAPILocator.getExperimentWebAPI().isUserIncluded(request, response,
                         UtilMethods.isSet(excludedExperimentListForm) ? excludedExperimentListForm.getExclude()
