@@ -277,7 +277,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             });
 
-
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
@@ -307,7 +306,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     addEditorPageScript(rendered: string) {
         const scriptString = `<script src="/html/js/editor-js/sdk-editor-vtl.esm.js"></script>`;
-        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
+        const updatedRendered = rendered?.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
     }
