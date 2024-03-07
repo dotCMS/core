@@ -1,11 +1,23 @@
 import { AssignedExperiments, ExperimentParsed } from '../models';
 
 /**
- * Parses data for analytics.
+ * This arrow function parses a given set of assigned experiments for analytics.
  *
- * @param {AssignedExperiments} data - The assigned experiments data.
- * @param {Location} location - The current location object.
- * @returns {ExperimentParsed} - The parsed experiment data for analytics.
+ * This process involves iterating over the experiments, which are currently in the "Running" state as received from the DotCMS endpoint,
+ * analyzing each experiment's relevant data such as running ID, variant name, and look back window value.
+ * It also performs regular expression verification for both 'isExperimentPage' and 'isTargetPage' against the current URL.
+ *
+ * The parsed data is useful for tracking and understanding the user's interaction with the experiment-targeted components during their visit.
+ *
+ * @param {AssignedExperiments} data - This parameter represents the assigned experiments data received from DotCMS endpoint.
+ * Contains an object with experiments information.
+ *
+ * @param {Location} location - This parameter is the object representing the current location (URL) of the user.
+ * Mostly employed for matching the regular expressions to detect whether the current page is an 'ExperimentPage' or a 'TargetPage'.
+ *
+ * @returns {ExperimentParsed} - The function returns an object with the original URL and an array of each experiment's comprehensive detail.
+ * The return object is suitable for further analytical operations. Each experiment's detail includes the experiment ID, running ID, variant name,
+ * look back window value, and booleans that represent whether current URL is 'isExperimentPage' or 'isTargetPage' for the respective experiment.
  */
 export const parseDataForAnalytics = (
     data: AssignedExperiments,
@@ -28,11 +40,11 @@ export const parseDataForAnalytics = (
 };
 
 /**
- * Verifies if a given regular expression matches a URL.
+ * This utility function performs regular expression (regex) matching on a supplied URL.
  *
  * @param {string | null} regexToCheck - The regular expression to match against the URL.
- * @param {string} href - The URL to be matched against the regular expression.
- * @returns {boolean} - True if the regular expression matches the URL, false otherwise.
+ * @param {string} href - This is the target URL, which is aimed to be matched against the provided regular expression.
+ * @returns {boolean} -The function returns a Boolean value.
  */
 const verifyRegex = (regexToCheck: string | null, href: string): boolean => {
     if (regexToCheck === null) {

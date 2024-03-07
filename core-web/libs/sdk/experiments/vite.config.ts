@@ -42,8 +42,6 @@ export default defineConfig({
             entry: 'src/lib/standalone.ts',
             name: 'DotExperiment',
             fileName: 'dot-experiments.min',
-            // Change this to the formats you want to support.
-            // Don't forget to update your package.json as well.
             formats: ['iife']
         },
         rollupOptions: {
