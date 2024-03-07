@@ -13,9 +13,9 @@ import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
 
@@ -26,7 +26,7 @@ import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialo
         InputTextModule,
         DotListingDataTableModule,
         DotBaseTypeSelectorModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotFieldValidationMessageComponent,
         DotDialogModule,
         DotMdIconSelectorModule,

@@ -48,7 +48,9 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowService,
     DotGlobalMessageService,
-    DotIframeService
+    DotIframeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -105,8 +107,6 @@ import { DotPageStateService } from './services/dot-page-state/dot-page-state.se
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
-import { DotSeoMetaTagsUtilService } from './services/html/dot-seo-meta-tags-util.service';
-import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 

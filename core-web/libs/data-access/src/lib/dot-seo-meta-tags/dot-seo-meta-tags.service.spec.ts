@@ -1,3 +1,4 @@
+import { expect, it } from '@jest/globals';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -5,12 +6,11 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { IMG_NOT_FOUND_KEY } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { seoOGTagsResultOgMock } from '@dotcms/utils-testing';
 
-import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from './dot-seo-meta-tags.service';
 
-import { seoOGTagsResultOgMock } from '../../../seo/components/dot-results-seo-tool/mocks';
+import { DotSeoMetaTagsUtilService } from '../dot-seo-meta-tags-utils/dot-seo-meta-tags-util.service';
 
 function createTestDocument(): XMLDocument {
     return document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
@@ -21,7 +21,7 @@ describe('DotSetMetaTagsService', () => {
     let serviceUtil: DotSeoMetaTagsUtilService;
     let testDoc: XMLDocument;
     let head: HTMLElement;
-    let getImageFileSizeSpy;
+    let getImageFileSizeSpy: jest.SpyInstance;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -31,107 +31,16 @@ describe('DotSetMetaTagsService', () => {
                 DotSeoMetaTagsUtilService,
                 {
                     provide: DotMessageService,
-                    useValue: new MockDotMessageService({
-                        'seo.rules.favicon.not.found':
-                            'Favicon not found, or image link in Favicon not valid!',
-                        'seo.rules.favicon.more.one.found': 'More than 1 Favicon found!',
-                        'seo.rules.favicon.found': 'Favicon found!',
-                        'seo.rules.description.found.empty':
-                            'Meta Description found, but is empty!',
-                        'seo.rules.description.found': 'Meta Description found!',
-                        'seo.rules.title.not.found': 'HTML Title not found!',
-                        'seo.rules.title.more.one.found': 'More than 1 HTML Title found!',
-                        'seo.rules.title.greater':
-                            'HTML Title found, but has more than 60 characters.',
-                        'seo.rules.title.less':
-                            'HTML Title found, but has fewer than 30 characters of content.',
-                        'seo.rules.title.found':
-                            'HTML Title found, with an appropriate amount of content!',
-                        'seo.resuls.tool.read.more': 'Read More',
-                        'seo.resuls.tool.version': 'Version',
-                        'seo.rules.og-title.not.found':
-                            'og:title meta tag not found! Showing HTML Title instead.',
-                        'seo.rules.og-title.more.one.found': 'more than 1 og:title meta tag found!',
-                        'seo.rules.og-title.more.one.found.empty':
-                            'og:title meta tag found, but is empty!',
-                        'seo.rules.og-title.greater':
-                            'og:title meta tag found, but has more than 160 characters.',
-                        'seo.rules.og-title.less':
-                            'title meta tag found, but has fewer than 30 characters of content.',
-                        'seo.rules.og-title.found':
-                            'og:title meta tag found, with an appropriate amount of content!',
-                        'seo.rules.og-image.not.found': 'og:image meta tag not found!',
-                        'seo.rules.og-image.more.one.found': 'more than 1 og:image meta tag found!',
-                        'seo.rules.og-image.more.one.found.empty':
-                            'og:image meta tag found, but is empty!',
-                        'seo.rules.og-image.over':
-                            'og:image meta tag found, but image is over 8 MB.',
-                        'seo.rules.og-image.found':
-                            'og:image meta tag found, with an appropriate sized image!',
-                        'seo.rules.twitter-card.not.found': 'twitter:card meta tag not found!',
-                        'seo.rules.twitter-card.more.one.found':
-                            'more than 1 twitter:card meta tag found!',
-                        'seo.rules.twitter-card.more.one.found.empty':
-                            'twitter:card meta tag found, but is empty!',
-                        'seo.rules.twitter-card.found': 'twitter:card meta tag found!',
-                        'seo.rules.twitter-card-title.not.found':
-                            'twitter:title meta tag not found! Showing HTML Title instead.',
-                        'seo.rules.twitter-card-title.more.one.found':
-                            'more than 1 twitter:title meta tag found!',
-                        'seo.rules.twitter-card-title.more.one.found.empty':
-                            'twitter:title meta tag found, but is empty!',
-                        'seo.rules.twitter-card.title.greater':
-                            'twitter:title meta tag found, but has more than 70 characters.',
-                        'seo.rules.twitter-card.title.less=twitter':
-                            'title meta tag found, but has fewer than 30 characters of content.',
-                        'seo.rules.twitter-card-title.found': 'twitter:title meta tag found!',
-                        'seo.rules.twitter-card-description.not.found':
-                            'twitter:description meta tag not found! Showing Description instead.',
-                        'seo.rules.twitter-card-description.more.one.found':
-                            'more than 1 twitter:description meta tag found!',
-                        'seo.rules.twitter-card-description.more.one.found.empty':
-                            'twitter:description meta tag found, but is empty!',
-                        'seo.rules.twitter-card-description.found':
-                            'twitter:description meta tag with valid content found!',
-                        'seo.rules.twitter-card-description.greater':
-                            'twitter:description meta tag found, but has more than 200 characters.',
-                        'seo.rules.twitter-image.not.found': 'twitter:image meta tag not found!',
-                        'seo.rules.twitter-image.more.one.found':
-                            'more than 1 twitter:image meta tag found!',
-                        'seo.rules.twitter-image.more.one.found.empty':
-                            'twitter:image meta tag found, but is empty!',
-                        'seo.rules.twitter-image.found':
-                            'twitter:image meta tag found, with an appropriate sized image!',
-                        'seo.rules.twitter-image.over':
-                            'twitter:image meta tag found, but image is over 5 MB.',
-                        'seo.rules.og-description.more.one.found':
-                            'more than 1 og:description meta tag found!',
-                        'seo.rules.og-description.found.empty':
-                            'og:description meta tag found, but is empty!',
-                        'seo.rules.og-description.not.found':
-                            'og:description meta tag not found! Showing Meta Description instead.',
-                        'seo.rules.og-description.greater':
-                            'og:description meta tag found, but has more than 150 characters.',
-                        'seo.rules.og-description.less':
-                            'og:description meta tag found, but has fewer than 55 characters of content.',
-                        'seo.rules.og-description.found':
-                            'og:description meta tag with valid content found!',
-                        'seo.rules.description.more.one.found':
-                            'More than 1 Meta Description found!',
-                        'seo.rules.og-description.description.not.found':
-                            'og:description meta tag, and Meta Description not found!',
-                        'seo.rules.twitter-card-description.description.not.found':
-                            'twitter:description meta tag, and Meta Description not found!',
-                        'seo.rules.twitter-card-title.title.not.found':
-                            'twitter:title meta tag not found, and HTML Title not found!'
-                    })
+                    useValue: {
+                        get: (key: string) => key // Lang properties value can change but not the key.
+                    }
                 },
                 DotUploadService
             ]
         });
         service = TestBed.inject(DotSeoMetaTagsService);
         serviceUtil = TestBed.inject(DotSeoMetaTagsUtilService);
-        getImageFileSizeSpy = spyOn(serviceUtil, 'getImageFileSize').and.returnValue(
+        getImageFileSizeSpy = jest.spyOn(serviceUtil, 'getImageFileSize').mockReturnValue(
             of({
                 length: 8000000,
                 url: 'https://www.dotcms.com/dA/4e870b9fe0/1200w/jpeg/70/dotcms-defualt-og.jpg'
@@ -227,12 +136,8 @@ describe('DotSetMetaTagsService', () => {
         testDoc.head.appendChild(ogMetaDescriptionSecond);
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual(
-                'more than 1 <code>og:description</code> meta tag found!'
-            );
-            expect(value[5].items[1].message).toEqual(
-                '<code>og:description</code> meta tag found, but has fewer than 55 characters of content.'
-            );
+            expect(value[5].items[0].message).toEqual('seo.rules.og-description.more.one.found');
+            expect(value[5].items[1].message).toEqual('seo.rules.og-description.less');
             done();
         });
     });
@@ -250,12 +155,8 @@ describe('DotSetMetaTagsService', () => {
         testDoc.head.appendChild(ogMetaTitleSecond);
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[2].items[0].message).toEqual(
-                'more than 1 <code>og:title</code> meta tag found!'
-            );
-            expect(value[2].items[1].message).toEqual(
-                'title meta tag found, but has fewer than 30 characters of content.'
-            );
+            expect(value[2].items[0].message).toEqual('seo.rules.og-title.more.one.found');
+            expect(value[2].items[1].message).toEqual('seo.rules.og-title.less');
             done();
         });
     });
@@ -268,14 +169,14 @@ describe('DotSetMetaTagsService', () => {
         testDoc.head.appendChild(description);
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('More than 1 Meta Description found!');
+            expect(value[0].items[0].message).toEqual('seo.rules.description.more.one.found');
             done();
         });
     });
 
     it('should get description found', (done) => {
         service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('Meta Description found!');
+            expect(value[0].items[0].message).toEqual('seo.rules.description.found');
             done();
         });
     });
@@ -285,7 +186,7 @@ describe('DotSetMetaTagsService', () => {
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
             expect(value[5].items[0].message).toEqual(
-                '<code>og:description</code> meta tag, and Meta Description not found!'
+                'seo.rules.og-description.description.not.found'
             );
             done();
         });
@@ -301,15 +202,15 @@ describe('DotSetMetaTagsService', () => {
         imageDocument.documentElement.appendChild(ogImage);
         head.appendChild(ogImage);
 
-        getImageFileSizeSpy.and.callFake(() => {
-            return of({
+        getImageFileSizeSpy.mockReturnValueOnce(
+            of({
                 length: 0,
                 url: IMG_NOT_FOUND_KEY
-            });
-        });
+            })
+        );
 
         service.getMetaTagsResults(imageDocument).subscribe((value) => {
-            expect(value[1].items[0].message).toEqual('<code>og:image</code> meta tag not found!');
+            expect(value[1].items[0].message).toEqual('seo.rules.og-image.not.found');
             done();
         });
     });
@@ -329,9 +230,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(ogDescription);
 
         service.getMetaTagsResults(descriptionDocument).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual(
-                '<code>og:description</code> meta tag found, but has more than 150 characters.'
-            );
+            expect(value[5].items[0].message).toEqual('seo.rules.og-description.greater');
             done();
         });
     });
@@ -347,9 +246,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(title);
 
         service.getMetaTagsResults(titleDoc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual(
-                'HTML Title found, with an appropriate amount of content!'
-            );
+            expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
             done();
         });
     });
@@ -365,9 +262,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(title);
 
         service.getMetaTagsResults(titleDoc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual(
-                'HTML Title found, with an appropriate amount of content!'
-            );
+            expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
             done();
         });
     });
@@ -383,9 +278,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(title);
 
         service.getMetaTagsResults(titleDoc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual(
-                'HTML Title found, with an appropriate amount of content!'
-            );
+            expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
             done();
         });
     });
@@ -401,9 +294,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(title);
 
         service.getMetaTagsResults(titleDoc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual(
-                'HTML Title found, with an appropriate amount of content!'
-            );
+            expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
             done();
         });
     });
@@ -420,7 +311,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(metaDesc);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('Meta Description found!');
+            expect(value[0].items[0].message).toEqual('seo.rules.description.found');
             done();
         });
     });
@@ -438,7 +329,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(metaDesc);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('Meta Description found!');
+            expect(value[0].items[0].message).toEqual('seo.rules.description.found');
             done();
         });
     });
@@ -455,9 +346,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(metaTitle);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[2].items[0].message).toEqual(
-                '<code>og:title</code> meta tag found, with an appropriate amount of content!'
-            );
+            expect(value[2].items[0].message).toEqual('seo.rules.og-title.found');
             done();
         });
     });
@@ -474,9 +363,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(metaTitle);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[2].items[0].message).toEqual(
-                '<code>og:title</code> meta tag found, with an appropriate amount of content!'
-            );
+            expect(value[2].items[0].message).toEqual('seo.rules.og-title.found');
             done();
         });
     });
@@ -493,9 +380,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(metaDesc);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual(
-                '<code>og:description</code> meta tag with valid content found!'
-            );
+            expect(value[5].items[0].message).toEqual('seo.rules.og-description.found');
             done();
         });
     });
@@ -513,9 +398,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(metaDesc);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual(
-                '<code>og:description</code> meta tag with valid content found!'
-            );
+            expect(value[5].items[0].message).toEqual('seo.rules.og-description.found');
             done();
         });
     });
@@ -533,9 +416,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(twitterDesc);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[8].items[0].message).toEqual(
-                '<code>twitter:description</code> meta tag with valid content found!'
-            );
+            expect(value[8].items[0].message).toEqual('seo.rules.twitter-card-description.found');
             done();
         });
     });
@@ -552,9 +433,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(twitterDesc);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[8].items[0].message).toEqual(
-                '<code>twitter:description</code> meta tag with valid content found!'
-            );
+            expect(value[8].items[0].message).toEqual('seo.rules.twitter-card-description.found');
             done();
         });
     });
@@ -573,7 +452,7 @@ describe('DotSetMetaTagsService', () => {
 
         service.getMetaTagsResults(doc).subscribe((value) => {
             expect(value[8].items[0].message).toEqual(
-                '<code>twitter:description</code> meta tag not found! Showing Description instead.'
+                'seo.rules.twitter-card-description.not.found'
             );
             done();
         });
@@ -587,7 +466,7 @@ describe('DotSetMetaTagsService', () => {
 
         service.getMetaTagsResults(doc).subscribe((value) => {
             expect(value[8].items[0].message).toEqual(
-                '<code>twitter:description</code> meta tag, and Meta Description not found!'
+                'seo.rules.twitter-card-description.description.not.found'
             );
             done();
         });
@@ -601,7 +480,7 @@ describe('DotSetMetaTagsService', () => {
 
         service.getMetaTagsResults(doc).subscribe((value) => {
             expect(value[7].items[0].message).toEqual(
-                '<code>twitter:title</code> meta tag not found, and HTML Title not found!'
+                'seo.rules.twitter-card-title.title.not.found'
             );
             done();
         });
@@ -618,9 +497,7 @@ describe('DotSetMetaTagsService', () => {
         head.appendChild(title);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[7].items[0].message).toEqual(
-                '<code>twitter:title</code> meta tag not found! Showing HTML Title instead.'
-            );
+            expect(value[7].items[0].message).toEqual('seo.rules.twitter-card-title.not.found');
             done();
         });
     });

@@ -19,8 +19,8 @@ content-type-find - *Use this command to find Content-types.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*content-type find* [*-h*] [*--non-interactive*] [[*-n*=_<typeName>_] [*-s*=_<site>_]
-                  [*-o*=_<orderBy>_] [*-p*=_<page>_] [*-ps*=_<pageSize>_]]
+*content-type find* [*-h*] [*--non-interactive*] [*-tk*=_<token>_] [[*-n*=_<typeName>_]
+                  [*-s*=_<site>_] [*-o*=_<orderBy>_] [*-p*=_<page>_] [*-ps*=_<pageSize>_]]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -34,6 +34,9 @@ Use --name in conjunction with *Filter/Search* Options.
 
 // tag::picocli-generated-man-section-options[]
 == Options
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 *-h*, *--help*::
   Display this help message.
