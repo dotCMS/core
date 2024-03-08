@@ -115,7 +115,6 @@ export class DotEmaDialogComponent {
      * @memberof DotEmaDialogComponent
      */
     editContentlet(contentlet: Partial<DotCMSContentlet>) {
-
         this.store.editContentlet({
             inode: contentlet.inode,
             title: contentlet.title

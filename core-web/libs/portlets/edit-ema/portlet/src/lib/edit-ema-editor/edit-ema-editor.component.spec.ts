@@ -1109,7 +1109,7 @@ describe('EditEmaEditorComponent', () => {
                         params: {
                             language_id: 1,
                             url: 'page-one'
-                        },
+                        }
                     });
                     expect(spyReloadIframe).toHaveBeenCalled();
                 });
@@ -1161,7 +1161,6 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should copy and open edit dialog', () => {
-                        
                         copySpy.mockReturnValue(of(newContentlet));
                         modalSpy.mockReturnValue(of({ shouldCopy: true }));
 

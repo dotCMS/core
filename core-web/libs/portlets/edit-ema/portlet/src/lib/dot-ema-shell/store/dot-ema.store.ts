@@ -179,8 +179,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     );
 
     readonly reload = this.effect((payload$: Observable<ReloadPagePayload>) => {
-        
-
         return payload$.pipe(
             tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
             switchMap(({ params, whenReloaded }) => {
