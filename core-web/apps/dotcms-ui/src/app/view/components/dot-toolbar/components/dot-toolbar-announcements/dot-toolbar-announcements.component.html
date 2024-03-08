@@ -52,7 +52,7 @@
         @for (item of aboutLinks; track $index) {
         <h5 class="announcements__title">{{ item.title | dm }}</h5>
         <div class="announcements__about">
-            @for (item of item.items; track $index) {
+            @for (item of item.items(); track $index) {
             <a
                 class="announcements__about-link"
                 [href]="item.url"
