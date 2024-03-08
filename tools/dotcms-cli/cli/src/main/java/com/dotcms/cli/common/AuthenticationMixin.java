@@ -14,7 +14,7 @@ import picocli.CommandLine.Model.CommandSpec;
  */
 public class AuthenticationMixin {
 
-    @CommandLine.Option(names = {"--token"},
+    @CommandLine.Option(names = {"--token","-tk"},
             description = {
                     "A dot CMS token to use for authentication. "}, parameterConsumer = TokenConsumer.class)
     String token;

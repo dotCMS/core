@@ -33,7 +33,7 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -45,7 +45,6 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
@@ -148,7 +147,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 InputSwitchModule,
                 SelectButtonModule,
                 TooltipModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 CommonModule,
                 FormsModule,

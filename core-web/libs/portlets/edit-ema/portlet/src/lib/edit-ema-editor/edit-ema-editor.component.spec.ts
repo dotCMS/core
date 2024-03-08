@@ -30,7 +30,9 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import {
@@ -38,6 +40,7 @@ import {
     CONTAINER_SOURCE,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
+import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
@@ -47,7 +50,8 @@ import {
     mockDotDevices,
     LoginServiceMock,
     DotCurrentUserServiceMock,
-    dotcmsContentletMock
+    dotcmsContentletMock,
+    seoOGTagsResultMock
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
@@ -65,7 +69,7 @@ import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST, PAYLOAD_MOCK } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
 
 global.URL.createObjectURL = jest.fn(
@@ -281,7 +285,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ButtonModule],
         declarations: [
             MockComponent(DotEditEmaWorkflowActionsComponent),
-            MockComponent(DotEmaDialogComponent)
+            MockComponent(DotEmaDialogComponent),
+            MockComponent(DotResultsSeoToolComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -331,6 +336,11 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ],
         providers: [
+            {
+                provide: DotSeoMetaTagsService,
+                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
+            },
+            DotSeoMetaTagsUtilService,
             DialogService,
             DotCopyContentService,
             DotCopyContentModalService,
@@ -604,8 +614,18 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('Preview mode', () => {
-            it('should reset the selection on click on the x button', () => {
+            beforeEach(() => {
+                jest.useFakeTimers(); // Mock the timers
+            });
+
+            afterEach(() => {
+                jest.useRealTimers(); // Restore the real timers after each test
+            });
+
+            it('should reset the selection on click on the go to edit button', () => {
                 spectator.detectChanges();
+
+                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
 
                 const deviceSelector = spectator.debugElement.query(
                     By.css('[data-testId="dot-device-selector"]')
@@ -616,15 +636,19 @@ describe('EditEmaEditorComponent', () => {
                 spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
                 spectator.detectChanges();
 
-                const deviceDisplay = spectator.debugElement.query(
-                    By.css('[data-testId="device-display"]')
+                const backToEditButton = spectator.debugElement.query(
+                    By.css('[data-testId="ema-back-to-edit"]')
                 );
 
-                spectator.triggerEventHandler(deviceDisplay, 'resetDevice', {});
+                spectator.triggerEventHandler(backToEditButton, 'onClick', {});
 
                 const selectedDevice = spectator.query(byTestId('selected-device'));
 
                 expect(selectedDevice).toBeNull();
+
+                expect(updatePreviewStateMock).toHaveBeenNthCalledWith(2, {
+                    editorMode: EDITOR_MODE.EDIT
+                });
             });
 
             it('should hide the components that are not needed for preview mode', () => {
@@ -668,6 +692,53 @@ describe('EditEmaEditorComponent', () => {
 
                 componentsToShow.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).not.toBeNull();
+                });
+            });
+
+            it('should call updatePreviewState from the store', () => {
+                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
+
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                expect(updatePreviewStateMock).toHaveBeenCalledWith({
+                    editorMode: EDITOR_MODE.PREVIEW,
+                    device: iphone
+                });
+            });
+
+            it('should open seo results when clicking on a social media tile', () => {
+                // We only support VTL
+                jest.useFakeTimers();
+                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
+
+                store.load({
+                    url: 'index',
+                    language_id: '3',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+
+                jest.runOnlyPendingTimers();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'Facebook');
+
+                expect(spectator.query(byTestId('results-seo-tool'))).not.toBeNull(); // This components share the same logic as the preview by device
+
+                expect(updatePreviewStateMock).toHaveBeenCalledWith({
+                    editorMode: EDITOR_MODE.PREVIEW,
+                    socialMedia: 'Facebook'
                 });
             });
         });
@@ -1696,6 +1767,7 @@ describe('EditEmaEditorComponent', () => {
 
             describe('VTL Page', () => {
                 beforeEach(() => {
+                    jest.useFakeTimers(); // Mock the timers
                     store.load({
                         url: 'index',
                         language_id: '3',
@@ -1704,16 +1776,20 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
                 });
 
-                it('iframe should have the correct content when is VTL', () => {
-                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                afterEach(() => {
+                    jest.useRealTimers(); // Restore the real timers after each test
+                });
 
+                it('iframe should have the correct content when is VTL', () => {
+                    jest.runOnlyPendingTimers();
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
                     expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
                     expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
                         '<div>hello world</div>'
                     );
                 });
 
-                it('iframe should have reload the page and add the new content', async () => {
+                it('iframe should have reload the page and add the new content', () => {
                     const params = {
                         language_id: '4',
                         url: 'index',
@@ -1727,7 +1803,8 @@ describe('EditEmaEditorComponent', () => {
                         }
                     });
                     spectator.detectChanges();
-                    await spectator.fixture.whenStable();
+
+                    jest.runOnlyPendingTimers();
 
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
@@ -1948,7 +2025,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
                 spectator.detectComponentChanges();
@@ -2231,7 +2308,7 @@ describe('EditEmaEditorComponent', () => {
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
                 expect(dropZone.item).toEqual({
                     contentType: 'File',
                     baseType: 'CONTENT'
@@ -2261,7 +2338,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'File',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
@@ -2284,13 +2361,13 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(BOUNDS_MOCK.length);
+                expect(spectator.component.containers.length).toBe(BOUNDS_MOCK.length);
 
                 spectator.component.onLanguageSelected(2); // triggers a query param change
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(0);
+                expect(spectator.component.containers.length).toBe(0);
             });
         });
 

@@ -87,4 +87,6 @@ public class StringPool {
 
 	public static final String PIPE = "|";
 
+	public static final String TRUE = Boolean.TRUE.toString();
+
 }

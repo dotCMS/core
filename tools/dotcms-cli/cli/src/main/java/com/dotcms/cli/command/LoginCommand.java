@@ -34,21 +34,45 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
     @CommandLine.Mixin
     HelpOptionMixin helpOption;
 
-    @CommandLine.Option(names = {"-u", "--user"}, arity = "1", description = "User name", required = true )
-    String user;
+    /**
+     * Here we encapsulate the password options
+     */
+    static class PasswordOptions {
+        @CommandLine.Option(names = {"-u",
+                "--user"}, arity = "1", description = "User name", required = true)
+        String user;
 
-    @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = {
-        "Passphrase",
-        "The following is the recommended way to use this param ",
-        "as the password will be promoted securely",
-        "@|yellow login -u=admin@dotCMS.com -p |@",
-        "Both options, user and password are mandatory",
-        "and they can also be provided inline as follows:",
-        "@|yellow login -u=admin@dotCMS.com -p=admin |@",
-        "However, this opens a possibility for @|cyan password theft|@",
-        "as the password will be visible in the command history."
-    }, required = true, interactive = true, echo = false )
-    char[] password;
+        @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = {
+                "Passphrase",
+                "The following is the recommended way to use this param ",
+                "as the password will be promoted securely",
+                "@|yellow login -u=admin@dotCMS.com -p |@",
+                "Both options, user and password are mandatory",
+                "and they can also be provided inline as follows:",
+                "@|yellow login -u=admin@dotCMS.com -p=admin |@",
+                "However, this opens a possibility for @|cyan password theft|@",
+                "as the password will be visible in the command history."
+        }, required = true, interactive = true, echo = false)
+        char[] password;
+    }
+
+    /**
+     * Here we encapsulate the login options
+     */
+    static class LoginOptions {
+
+        @CommandLine.ArgGroup(exclusive = false, heading = "\n@|bold,blue Password Login Options. |@\n")
+        PasswordOptions passwordOptions;
+
+        @CommandLine.Option(names = {"-tk", "--token"}, arity = "0..1", description = {
+                "dotCMS Token",
+                "A token can be used directly to authenticate with the dotCMS instance",
+        }, required = true, interactive = true, echo = false)
+        char[] token;
+    }
+
+    @CommandLine.ArgGroup(exclusive = true, heading = "\n@|bold,blue Token login Options. |@\n")
+    LoginOptions loginOptions;
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -61,10 +85,22 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
+        if(loginOptions == null){
+            output.error("Missing required options: ");
+            output.error("Once an instance is selected. Use this command to open a session");
+            return ExitCode.USAGE;
+        }
 
-        output.info(String.format("Logging in as [@|bold,cyan %s|@]. ",user));
-        authenticationContext.login(user, password);
-        output.info(String.format("@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]", user));
+        if(null != loginOptions.passwordOptions) {
+            output.info(String.format("Logging in as [@|bold,cyan %s|@]. ", loginOptions.passwordOptions.user));
+            authenticationContext.login(loginOptions.passwordOptions.user, loginOptions.passwordOptions.password);
+            output.info(String.format("@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]",
+                    loginOptions.passwordOptions.user));
+        } else {
+            output.info("Logging in with token");
+            authenticationContext.login(loginOptions.token);
+            output.info("Successfully logged-in with token");
+        }
         return ExitCode.OK;
     }
 

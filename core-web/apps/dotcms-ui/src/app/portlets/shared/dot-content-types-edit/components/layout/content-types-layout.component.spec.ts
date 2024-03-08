@@ -25,14 +25,14 @@ import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
     DotIconModule,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
@@ -141,7 +141,7 @@ describe('ContentTypesLayoutComponent', () => {
                 RouterTestingModule,
                 DotApiLinkComponent,
                 DotCopyLinkModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 SplitButtonModule,
                 DotInlineEditModule,

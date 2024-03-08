@@ -4,13 +4,19 @@ import static com.dotcms.security.apps.AppsUtil.bytesToCharArrayUTF;
 import static com.dotcms.security.apps.AppsUtil.charsToBytesUTF;
 import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.rest.api.v1.apps.Input;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.liferay.util.Encryptor;
 import com.liferay.util.EncryptorException;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -20,6 +26,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
@@ -29,6 +36,9 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class AppsUtilTest {
+
+    private static final char[] VALUE = "value".toCharArray();
+    private static final char[] OVERRIDDEN_VALUE = "overriddenValue".toCharArray();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -175,5 +185,225 @@ public class AppsUtilTest {
          assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(3)).length(),32);
          assertEquals(AppsUtil.keySeed(RandomStringUtils.randomAlphanumeric(0)).length(),32);
      }
+
+    /**
+     * Given a null {@link Input} object
+     * Then method should return an empty optional.
+     */
+    @Test
+    public void Test_dynamicSecret_empty() {
+         final Optional<Secret> emptySecret = AppsUtil.dynamicSecret("key", "param", null);
+         assertTrue(emptySecret.isEmpty());
+    }
+
+    /**
+     * Given a non-null {@link Input} object
+     * Then method should return a non-empty optional
+     * And with the secret created based on the given input.
+     */
+    @Test
+    public void Test_dynamicSecret() {
+        final Input input = Input.newInputParam("value".toCharArray(), false);
+        final Optional<Secret> secret = AppsUtil.dynamicSecret("key", "param", input);
+        assertTrue(secret.isPresent());
+        assertEquals("value", String.valueOf(secret.get().getValue()));
+        assertFalse(secret.get().isHidden());
+        assertSame(Type.STRING, secret.get().getType());
+        assertNull(secret.get().getEnvVar());
+        assertTrue(secret.get().isEnvShow());
+        assertArrayEquals(StringUtils.BLANK_CHARS, secret.get().envVarValue);
+    }
+
+    /**
+     * Given a null {@link ParamDescriptor} object
+     * Then method should return an empty optional.
+     */
+    @Test
+    public void Test_paramSecret_empty() {
+        final Optional<Secret> emptySecret = AppsUtil.paramSecret("key", "param", VALUE, null);
+        assertTrue(emptySecret.isEmpty());
+    }
+
+    /**
+     * Given a non-null {@link ParamDescriptor} object
+     * Then method should return a non-empty optional
+     * And with the secret created based on the given param descriptor.
+     */
+    @Test
+    public void Test_paramSecret() {
+        final ParamDescriptor paramDescriptor = ParamDescriptor.builder()
+                .withValue(VALUE)
+                .withHidden(false)
+                .withType(Type.STRING)
+                .withEnvVar("envVar")
+                .withEnvShow(true)
+                .build();
+        final Optional<Secret> secret = AppsUtil.paramSecret("key", "param", VALUE, paramDescriptor);
+        assertTrue(secret.isPresent());
+        assertArrayEquals(VALUE, secret.get().getValue());
+        assertFalse(secret.get().isHidden());
+        assertSame(Type.STRING, secret.get().getType());
+        assertEquals("envVar", secret.get().getEnvVar());
+        assertTrue(secret.get().isEnvShow());
+        assertArrayEquals(StringUtils.BLANK_CHARS, secret.get().envVarValue);
+    }
+
+    /**
+     * Given a non-null {@link ParamDescriptor} object
+     * And environment variables are set
+     * Then method should return a non-empty optional
+     * And with the secret created based on the given param descriptor.
+     */
+    @Test
+    public void Test_paramSecret_overrideWithEnvVar() {
+        final ParamDescriptor paramDescriptor1 = ParamDescriptor.builder()
+                .withHidden(true)
+                .withType(Type.STRING)
+                .withEnvVar("SOME_APP_ENV_VAR")
+                .withEnvShow(true)
+                .build();
+        final Optional<Secret> secret1 = AppsUtil.paramSecret("key", "param", VALUE, paramDescriptor1);
+        assertTrue(secret1.isPresent());
+        assertArrayEquals(VALUE, secret1.get().getValue());
+        assertTrue(secret1.get().isHidden());
+        assertSame(Type.STRING, secret1.get().getType());
+        assertEquals("SOME_APP_ENV_VAR", secret1.get().getEnvVar());
+        assertTrue(secret1.get().isEnvShow());
+        assertArrayEquals(OVERRIDDEN_VALUE, secret1.get().envVarValue);
+
+        final ParamDescriptor paramDescriptor2 = ParamDescriptor.builder()
+                .withHidden(true)
+                .withType(Type.STRING)
+                .withEnvShow(true)
+                .build();
+        final Optional<Secret> secret2 = AppsUtil.paramSecret("testApp", "testParam", VALUE, paramDescriptor2);
+        assertTrue(secret2.isPresent());
+        assertArrayEquals(VALUE, secret2.get().getValue());
+        assertTrue(secret2.get().isHidden());
+        assertSame(Type.STRING, secret2.get().getType());
+        assertNull(secret2.get().getEnvVar());
+        assertTrue(secret2.get().isEnvShow());
+        assertArrayEquals(OVERRIDDEN_VALUE, secret2.get().envVarValue);
+    }
+
+    /**
+     * Given a null {@link ParamDescriptor} object
+     * And a null {@link AppSecrets} object
+     * And providing an non-existing key
+     * And providing a missing param descriptor
+     * Then method should return an empty optional.
+     */
+    @Test
+    public void Test_hiddenSecret_empty() {
+        final Optional<Secret> emptySecret1 = AppsUtil.hiddenSecret("key", "param", null, null);
+        assertTrue(emptySecret1.isEmpty());
+
+        final Optional<Secret> emptySecret2 = AppsUtil.hiddenSecret("key", "param", null, AppSecrets.empty());
+        assertTrue(emptySecret2.isEmpty());
+
+        final Optional<Secret> emptySecret3 = AppsUtil.hiddenSecret(
+                "key",
+                "not-to-be-found",
+                null,
+                AppSecrets.builder()
+                        .withKey("key")
+                        .withHiddenSecret("param", "value")
+                        .build());
+        assertTrue(emptySecret3.isEmpty());
+
+        final Optional<Secret> emptySecret4 = AppsUtil.hiddenSecret(
+                "key",
+                "param",
+                null,
+                AppSecrets.builder()
+                        .withKey("key")
+                        .withHiddenSecret("param", "value")
+                        .build());
+        assertTrue(emptySecret4.isEmpty());
+    }
+
+    /**
+     * Given a non-null {@link ParamDescriptor} object
+     * And a non-null {@link AppSecrets} object
+     * Then method should return a non-empty optional
+     * And with the secret created based on the given param descriptor and app secrets.
+     */
+    @Test
+    public void Test_hiddenSecret() {
+        final ParamDescriptor paramDescriptor = ParamDescriptor.builder()
+                .withHidden(false)
+                .withType(Type.STRING)
+                .withEnvVar("envVar")
+                .withEnvShow(true)
+                .build();
+        final Optional<Secret> secret = AppsUtil.hiddenSecret(
+                "key",
+                "param",
+                paramDescriptor,
+                AppSecrets.builder()
+                        .withKey("key")
+                        .withHiddenSecret("param", "value")
+                        .build());
+        assertTrue(secret.isPresent());
+        assertArrayEquals(VALUE, secret.get().getValue());
+        assertFalse(secret.get().isHidden());
+        assertSame(Type.STRING, secret.get().getType());
+        assertEquals("envVar", secret.get().getEnvVar());
+        assertTrue(secret.get().isEnvShow());
+        assertArrayEquals(StringUtils.BLANK_CHARS, secret.get().envVarValue);
+    }
+
+    /**
+     * Given a non-null {@link ParamDescriptor} object
+     * And a non-null {@link AppSecrets} object
+     * And environment variables are set
+     * Then method should return a non-empty optional
+     * And with the secret created based on the given param descriptor and app secrets.
+     */
+    @Test
+    public void Test_hiddenSecret_overrideWithEnVar() {
+        final ParamDescriptor paramDescriptor1 = ParamDescriptor.builder()
+                .withHidden(true)
+                .withType(Type.STRING)
+                .withEnvVar("SOME_APP_ENV_VAR")
+                .withEnvShow(true)
+                .build();
+        final Optional<Secret> secret1 = AppsUtil.hiddenSecret(
+                "key",
+                "param",
+                paramDescriptor1,
+                AppSecrets.builder()
+                        .withKey("key")
+                        .withHiddenSecret("param", "value")
+                        .build());
+        assertTrue(secret1.isPresent());
+        assertArrayEquals(VALUE, secret1.get().getValue());
+        assertTrue(secret1.get().isHidden());
+        assertSame(Type.STRING, secret1.get().getType());
+        assertEquals("SOME_APP_ENV_VAR", secret1.get().getEnvVar());
+        assertTrue(secret1.get().isEnvShow());
+        assertArrayEquals(OVERRIDDEN_VALUE, secret1.get().envVarValue);
+
+        final ParamDescriptor paramDescriptor2 = ParamDescriptor.builder()
+                .withHidden(true)
+                .withType(Type.STRING)
+                .withEnvShow(true)
+                .build();
+        final Optional<Secret> secret2 = AppsUtil.hiddenSecret(
+                "testApp",
+                "testParam",
+                paramDescriptor2,
+                AppSecrets.builder()
+                        .withKey("testApp")
+                        .withHiddenSecret("testParam", "value")
+                        .build());
+        assertTrue(secret2.isPresent());
+        assertArrayEquals(VALUE, secret2.get().getValue());
+        assertTrue(secret2.get().isHidden());
+        assertSame(Type.STRING, secret2.get().getType());
+        assertNull(secret2.get().getEnvVar());
+        assertTrue(secret2.get().isEnvShow());
+        assertArrayEquals(OVERRIDDEN_VALUE, secret2.get().envVarValue);
+    }
 
 }

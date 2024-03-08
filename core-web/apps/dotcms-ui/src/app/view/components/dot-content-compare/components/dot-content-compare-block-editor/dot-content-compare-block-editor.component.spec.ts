@@ -7,9 +7,8 @@ import { By } from '@angular/platform-browser';
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotDiffPipe } from '@dotcms/app/view/pipes';
 import { DotDiffPipeModule } from '@dotcms/app/view/pipes/dot-diff/dot-diff.pipe.module';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { BlockEditorMockComponent } from './block-editor-mock/block-editor-mock.component';
@@ -242,7 +241,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
                 HttpClientTestingModule,
                 CommonModule,
                 BlockEditorMockComponent,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ]
         }).compileComponents();

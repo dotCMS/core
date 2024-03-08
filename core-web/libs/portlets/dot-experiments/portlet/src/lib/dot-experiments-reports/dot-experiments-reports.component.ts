@@ -19,8 +19,7 @@ import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsExperimentSummaryComponent } from './components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
@@ -45,7 +44,7 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         PercentPipe,
         NgClass,
         DotExperimentsUiHeaderComponent,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsReportsSkeletonComponent,
         DotExperimentsReportsChartComponent,
