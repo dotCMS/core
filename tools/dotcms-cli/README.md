@@ -237,7 +237,6 @@ If the `dot-service.yml` file does not exist, the CLI will prompt to create one 
 The CLI provides a `config` command to set the initial configuration required by all commands to operate. The command will guide you through the process of adding a new instance profile to the `dot-service.yml` file. and setting the active profile.
 See the [Configuration](cli/docs/config.adoc) section for more details. And the [Examples](#examples) section for a practical example.
 
-```shell script
 
 ### Workspace
 
@@ -245,6 +244,7 @@ The CLI needs a workspace to be able to pull and push content to a dotCMS instan
 The workspace is basically a set of directories and files used to house and organize the different type of assets that can be managed by the CLI.
 Additionally, a marker file called `.dot-workspace.yml` indicates to the CLI that the current directory is a valid workspace.
 In the following table you can see the different directories and files that conform a workspace.
+
 
 | File/Directory       | Type | Description             |
 |----------------------|------|-------------------------|

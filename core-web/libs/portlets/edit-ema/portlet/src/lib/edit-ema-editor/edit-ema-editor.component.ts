@@ -2,6 +2,7 @@ import { Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -34,7 +35,8 @@ import {
     DotCopyContentService,
     DotHttpErrorManagerService,
     DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
+    DotSeoMetaTagsUtilService,
+    DotContentletService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -158,7 +160,12 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         ProgressBarModule,
         DotResultsSeoToolComponent
     ],
-    providers: [DotCopyContentModalService, DotCopyContentService, DotHttpErrorManagerService]
+    providers: [
+        DotCopyContentModalService,
+        DotCopyContentService,
+        DotHttpErrorManagerService,
+        DotContentletService
+    ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
@@ -180,9 +187,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
+    private readonly dotContentletService = inject(DotContentletService);
 
     readonly editorState$ = this.store.editorState$;
-
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
@@ -253,7 +260,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((res) => res === EDITOR_STATE.LOADED)
             )
             .subscribe(() => {
-                this.reloadIframe();
+                if (!this.isVTLPage()) {
+                    this.reloadIframe();
+                }
             });
 
         this.store.code$
@@ -651,9 +660,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
                 if (shouldReloadPage) {
-                    this.store.reload({
-                        params: this.queryParams
-                    });
+                    this.reloadURLContentMapPage(contentletIdentifier);
 
                     return;
                 }
@@ -797,12 +804,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     reloadIframe() {
         // Only reload if is Headless.
         // If is VTL, the content is updated by store.code$
-        if (!this.isVTLPage()) {
-            this.iframe?.nativeElement?.contentWindow?.postMessage(
-                NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
-                this.host
-            );
-        }
+
+        this.iframe?.nativeElement?.contentWindow?.postMessage(
+            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
+            this.host
+        );
     }
 
     /**
@@ -1001,6 +1007,39 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Reload the URL content map page
+     *
+     * @private
+     * @param {string} inodeOrIdentifier
+     * @memberof EditEmaEditorComponent
+     */
+    private reloadURLContentMapPage(inodeOrIdentifier: string): void {
+        // Set loading state to prevent the user to interact with the iframe
+        this.store.updateEditorState(EDITOR_STATE.LOADING);
+
+        this.dotContentletService
+            .getContentletByInode(inodeOrIdentifier)
+            .pipe(
+                catchError((error) => this.handlerError(error)),
+                filter((contentlet) => !!contentlet)
+            )
+            .subscribe(({ URL_MAP_FOR_CONTENT }) => {
+                if (URL_MAP_FOR_CONTENT != this.queryParams.url) {
+                    this.store.updateEditorState(EDITOR_STATE.LOADED);
+                    // If the URL is different, we need to navigate to the new URL
+                    this.updateQueryParams({ url: URL_MAP_FOR_CONTENT });
+
+                    return;
+                }
+
+                // If the URL is the same, we need to fetch the new page data
+                this.store.reload({
+                    params: this.queryParams
+                });
+            });
+    }
+
+    /**
      * Create the payload to insert a contentlet after deleting it
      *
      * @private
@@ -1034,5 +1073,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             contentlet: pivotContentlet,
             position: positionToInsert
         };
+    }
+
+    /**
+     * Handle the error
+     *
+     * @private
+     * @param {HttpErrorResponse} error
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    private handlerError(error: HttpErrorResponse) {
+        this.store.updateEditorState(EDITOR_STATE.ERROR);
+
+        return this.dotHttpErrorManagerService.handle(error).pipe(map(() => null));
     }
 }
