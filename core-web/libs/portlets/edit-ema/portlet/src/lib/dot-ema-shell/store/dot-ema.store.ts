@@ -58,10 +58,10 @@ function getFormId(dotPageApiService: DotPageApiService) {
 @Injectable()
 export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
-        private dotPageApiService: DotPageApiService,
-        private dotLicenseService: DotLicenseService,
-        private messageService: MessageService,
-        private dotMessageService: DotMessageService
+        private readonly dotPageApiService: DotPageApiService,
+        private readonly dotLicenseService: DotLicenseService,
+        private readonly messageService: MessageService,
+        private readonly dotMessageService: DotMessageService
     ) {
         super();
     }
