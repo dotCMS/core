@@ -70,6 +70,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * Selectors
      *******************/
 
+    readonly code$ = this.select((state) => state.editor.page.rendered);
+
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
             url: state.editor.page.pageURI,
@@ -153,15 +155,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     }).pipe(
                         tap({
                             next: ({ pageData, licenseData }) => {
-                                const isHeadlessPage = !!params.clientHost;
                                 this.setState({
                                     clientHost: params.clientHost,
                                     editor: pageData,
                                     isEnterpriseLicense: licenseData,
-                                    //This to stop the progress bar. Testing yet
-                                    editorState: isHeadlessPage
-                                        ? EDITOR_STATE.LOADING
-                                        : EDITOR_STATE.LOADED,
+                                    editorState: EDITOR_STATE.LOADING,
                                     previewState: {
                                         editorMode: EDITOR_MODE.EDIT
                                     }

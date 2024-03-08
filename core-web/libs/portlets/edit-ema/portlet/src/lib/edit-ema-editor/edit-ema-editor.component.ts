@@ -67,15 +67,15 @@ import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
-    Row,
     ContentletArea,
     EmaDragItem,
-    ClientContentletArea
+    ClientContentletArea,
+    Container
 } from './components/ema-page-dropzone/types';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
-import { DotPageApiResponse, DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import {
@@ -243,7 +243,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     private draggedPayload: DraggedPalettePayload;
 
-    rows: Row[] = [];
+    containers: Container[] = [];
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
 
@@ -252,6 +252,28 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        this.store.code$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((code) => !!code)
+            )
+            .subscribe((code) => {
+                requestAnimationFrame(() => {
+                    const doc = this.iframe?.nativeElement.contentDocument;
+
+                    if (doc) {
+                        doc.open();
+                        doc.write(this.addEditorPageScript(code));
+                        doc.close();
+
+                        this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+                        this.ogTagsResults$ = this.dotSeoMetaTagsService
+                            .getMetaTagsResults(doc)
+                            .pipe(take(1));
+                    }
+                });
+            });
+
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
@@ -268,24 +290,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {string} clientHost
      * @memberof EditEmaEditorComponent
      */
-    onIframePageLoad({ clientHost, editor }: { clientHost: string; editor: DotPageApiResponse }) {
-        if (clientHost) {
-            // Is Headless
-            return;
-        }
+    onIframePageLoad() {
+        this.store.updateEditorState(EDITOR_STATE.LOADED);
+    }
 
-        // Is VTL
-        const doc = this.iframe?.nativeElement.contentDocument; // Iframe can be undefined
+    /**
+     * Add the editor page script to VTL pages
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addEditorPageScript(rendered: string) {
+        const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
+        const updatedRendered = rendered?.replace('</body>', scriptString + '</body>');
 
-        if (doc) {
-            doc.open();
-            doc.write(editor.page.rendered);
-            doc.close();
-
-            this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-
-            this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
-        }
+        return updatedRendered;
     }
 
     ngOnDestroy(): void {
@@ -396,7 +416,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             device
         });
 
-        this.rows = []; // We need to reset the rows when we change the device
+        this.containers = []; // We need to reset the rows when we change the device
         this.contentlet = null; // We need to reset the contentlet when we change the device
     }
 
@@ -405,7 +425,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             editorMode: EDITOR_MODE.EDIT
         });
 
-        this.rows = []; // We need to reset the rows when we change the device
+        this.containers = []; // We need to reset the rows when we change the device
         this.contentlet = null; // We need to reset the contentlet when we change the device
     }
 
@@ -552,6 +572,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 whenSaved: () => {
                     this.reloadIframe();
                     this.resetDragProperties();
+                    this.cd.detectChanges();
                 }
             });
 
@@ -620,13 +641,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     whenSaved: () => {
                         this.dialog.resetDialog();
                         this.reloadIframe();
-                        this.cd.detectChanges();
                     }
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
-
                 if (shouldReloadPage) {
                     this.reloadURLContentMapPage(contentletIdentifier);
 
@@ -699,7 +718,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Row[] | ClientContentletArea;
+            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -709,7 +728,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.updateEditorState(EDITOR_STATE.LOADED);
             },
 
-            [CUSTOMER_ACTIONS.SET_URL]: () => {
+            [CUSTOMER_ACTIONS.NAVIGATION_UPDATE]: () => {
                 const payload = <SetUrlPayload>data.payload;
 
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
@@ -732,7 +751,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
-                this.rows = <Row[]>data.payload;
+                this.containers = <Container[]>data.payload;
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
@@ -770,7 +789,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     reloadIframe() {
-        this.iframe.nativeElement.contentWindow?.postMessage(
+        this.iframe?.nativeElement?.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
         );
@@ -817,7 +836,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
 
         // Reset this on queryParams update
-        this.rows = [];
+        this.containers = [];
         this.contentlet = null;
     }
 
@@ -936,7 +955,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     protected resetDragProperties() {
         this.draggedPayload = undefined;
         this.contentlet = null;
-        this.rows = [];
+        this.containers = [];
         this.dragItem = null;
     }
 

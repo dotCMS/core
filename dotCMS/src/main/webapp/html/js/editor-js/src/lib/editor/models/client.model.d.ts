@@ -4,33 +4,30 @@
  * @export
  * @enum {number}
  */
-export enum CUSTOMER_ACTIONS {
+export declare enum CUSTOMER_ACTIONS {
     /**
      * Tell the dotcms editor that page change
      */
-    SET_URL = 'set-url',
+    NAVIGATION_UPDATE = "set-url",
     /**
      * Send the element position of the rows, columnsm containers and contentlets
      */
-    SET_BOUNDS = 'set-bounds',
+    SET_BOUNDS = "set-bounds",
     /**
      * Send the information of the hovered contentlet
      */
-    SET_CONTENTLET = 'set-contentlet',
+    SET_CONTENTLET = "set-contentlet",
     /**
      * Tell the editor that the page is being scrolled
      */
-    IFRAME_SCROLL = 'scroll',
+    IFRAME_SCROLL = "scroll",
     /**
      * Ping the editor to see if the page is inside the editor
      */
-    PING_EDITOR = 'ping-editor',
-
-    CONTENT_CHANGE = 'content-change',
-
-    NOOP = 'noop'
+    PING_EDITOR = "ping-editor",
+    CONTENT_CHANGE = "content-change",
+    NOOP = "noop"
 }
-
 /**
  * Post message props
  *
@@ -42,7 +39,6 @@ type PostMessageProps<T> = {
     action: CUSTOMER_ACTIONS;
     payload?: T;
 };
-
 /**
  * Post message to dotcms page editor
  *
@@ -50,6 +46,5 @@ type PostMessageProps<T> = {
  * @template T
  * @param {PostMessageProps<T>} message
  */
-export function postMessageToEditor<T = unknown>(message: PostMessageProps<T>) {
-    window.parent.postMessage(message, '*');
-}
+export declare function postMessageToEditor<T = unknown>(message: PostMessageProps<T>): void;
+export {};
