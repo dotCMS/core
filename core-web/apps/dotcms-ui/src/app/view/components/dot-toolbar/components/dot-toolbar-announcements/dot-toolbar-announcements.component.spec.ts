@@ -118,7 +118,6 @@ describe('DotToolbarAnnouncementsComponent', () => {
             'markAnnouncementsAsRead'
         );
 
-        // Checking that is not called again in the ngOnChanges
         spectator.component.ngOnChanges({ showUnreadAnnouncement: { currentValue: false } });
         expect(markAnnouncementsAsReadSpy).toHaveBeenCalled();
     });
