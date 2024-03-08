@@ -112,9 +112,7 @@ export class DotAiService {
             );
     }
 
-    private createAndPublishContentlet(
-        aiResponse: DotAIImageResponse
-    ): Observable<DotAIImageContent> {
+    createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {
         const { response, tempFileName } = aiResponse;
         const contentlets: Partial<DotCMSContentlet>[] = [
             {

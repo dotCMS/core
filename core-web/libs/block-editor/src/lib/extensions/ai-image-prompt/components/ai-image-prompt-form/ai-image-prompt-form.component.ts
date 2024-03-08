@@ -91,6 +91,11 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         this.initForm();
     }
 
+    /**
+     * Submits the form and emits the form value.
+     * @return {void}
+     * @memberof AiImagePromptFormComponent
+     */
     submitForm(): void {
         this.value.emit(this.form.value);
     }

@@ -56,11 +56,6 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         ({ status }) => status === ComponentStatus.LOADING
     );
 
-    readonly activeGalleryIndex$ = this.select(
-        this.state$,
-        ({ galleryActiveIndex }) => galleryActiveIndex
-    );
-
     readonly selectedImage$ = this.select(this.state$, ({ selectedImage }) => selectedImage);
 
     readonly errorMsg$ = this.select(this.state$, ({ error }) => error);

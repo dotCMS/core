@@ -1,14 +1,12 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormGroupDirective } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-
-import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -38,14 +36,12 @@ import { AIImagePrompt, DotGeneratedAIImage } from '../../shared/services/dot-ai
 
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AIImagePromptComponent implements OnInit {
+export class AIImagePromptComponent {
     protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
     protected readonly ComponentStatus = ComponentStatus;
     private confirmationService = inject(ConfirmationService);
     private dotMessageService = inject(DotMessageService);
     private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
-
-    selectedImage: DotGeneratedAIImage;
 
     /**
      * Hides the dialog.
@@ -53,12 +49,6 @@ export class AIImagePromptComponent implements OnInit {
      */
     hideDialog(): void {
         this.store.hideDialog();
-    }
-
-    ngOnInit(): void {
-        this.store.getImages$.pipe(filter((images) => !!images.length)).subscribe((images) => {
-            this.selectedImage = images[images.length - 1];
-        });
     }
 
     /**
