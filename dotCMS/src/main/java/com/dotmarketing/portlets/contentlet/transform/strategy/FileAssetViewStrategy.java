@@ -92,7 +92,7 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
         final String parent = fileAsset.getParent();
         map.put("parent",  isSet(parent) ? parent : BLANK );
 
-        if(isImage(underlyingFileName)) {
+        if(fileAsset.isImage()) {
             map.put("width", fileAsset.getWidth());
             map.put("height", fileAsset.getHeight());
         }

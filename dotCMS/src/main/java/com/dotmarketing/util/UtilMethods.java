@@ -238,7 +238,7 @@ public class UtilMethods {
     }
 
     private static final String[] DEFAULT_IMAGE_EXTENSIONS=                {
-            "png", "gif", "webp", "jpeg", ".jpg", "pdf", "tiff", "bpm", "svg", "avif",
+            "png", "gif", "webp", "jpeg", ".jpg", "tiff", "bpm", "svg", "avif",
             "bmp",
             "tif", "tiff"
     };
@@ -247,7 +247,7 @@ public class UtilMethods {
      * returns the valid image extensions with a . in front of the extension, e.g.
      * png -> .png
      */
-    private final static Lazy<String[]> IMAGE_EXTENSIONS = Lazy.of(() ->
+    private static final Lazy<String[]> IMAGE_EXTENSIONS = Lazy.of(() ->
 
             Try.of(() -> Arrays.stream(Config.getStringArrayProperty("VALID_IMAGE_EXTENSIONS",DEFAULT_IMAGE_EXTENSIONS))
                     .map(x -> x.startsWith(".") ? x : "." + x)
