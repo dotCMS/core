@@ -361,8 +361,16 @@ public  class WebResource {
                 String.format(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS +  " permission exceeded - system set to %s but %s was required", AnonymousAccess.systemSetting().name(), builder.anonAccess.name()),
                 Response.Status.UNAUTHORIZED);
           }
-        } 
-        
+        }
+
+
+        if (builder.requireAdmin || builder.requiredRolesSet.contains(Role.CMS_ADMINISTRATOR_ROLE) && !user.isAdmin()) {
+            throw new SecurityException(
+                    String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
+                            + " is not a %s", Role.CMS_ADMINISTRATOR_ROLE),
+                    Response.Status.UNAUTHORIZED);
+        }
+
         if (!builder.requiredRolesSet.isEmpty()) {
             final RoleAPI roleAPI = APILocator.getRoleAPI();
             
@@ -770,7 +778,7 @@ public  class WebResource {
         private final Set<String> requiredRolesSet = new HashSet<>();
         private AnonymousAccess anonAccess=AnonymousAccess.NONE;
         private boolean requireLicense = false;
-        
+        private boolean requireAdmin = false;
         public InitBuilder() {
           this(new WebResource());
 
@@ -813,6 +821,17 @@ public  class WebResource {
             return this;
         }
 
+       public InitBuilder requireAdmin(final boolean requireAdmin) {
+           this.requireAdmin = requireAdmin;
+           if (requireAdmin) {
+               requiredRolesSet.add(Role.CMS_ADMINISTRATOR_ROLE);
+           } else {
+               requiredRolesSet.remove(Role.CMS_ADMINISTRATOR_ROLE);
+           }
+           return this;
+       }
+
+
         public InitBuilder requiredFrontendUser(final boolean requiredFrontendUser) {
             if (requiredFrontendUser) {
                 requiredRolesSet.add(Role.DOTCMS_FRONT_END_USER);
@@ -824,6 +843,9 @@ public  class WebResource {
 
         public InitBuilder requiredRoles(final String... requiredRoles) {
             requiredRolesSet.addAll(Arrays.asList(requiredRoles));
+            if(requiredRolesSet.contains(Role.CMS_ADMINISTRATOR_ROLE)){
+                requireAdmin(true);
+            }
             return this;
         }
 
