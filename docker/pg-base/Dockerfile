@@ -1,3 +1,4 @@
+# DEPRECATED: Moved this to java-base/Dockerfile
 # ----------------------------------------------
 # Stage 1:  Minimal image with pg_dump and psql built from source 
 # ----------------------------------------------

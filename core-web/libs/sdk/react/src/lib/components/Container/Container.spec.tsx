@@ -2,12 +2,15 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
+import * as dotcmsClient from '@dotcms/client';
+
 import { Container } from './Container';
 
 import { MockContextRender, mockPageContext } from '../../mocks/mockPageContext';
 
 describe('Container', () => {
     // Mock data for your context and container
+    jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
 
     describe('with contentlets', () => {
         const mockContainerRef = {
@@ -19,8 +22,7 @@ describe('Container', () => {
         it('renders NoContent component for unsupported content types', () => {
             const updatedContext = {
                 ...mockPageContext,
-                components: {},
-                isInsideEditor: true
+                components: {}
             };
 
             render(
@@ -43,8 +45,7 @@ describe('Container', () => {
             it('renders EmptyContainer component in editor mode', () => {
                 const updatedContext = {
                     ...mockPageContext,
-                    components: {},
-                    isInsideEditor: true
+                    components: {}
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>
@@ -58,10 +59,11 @@ describe('Container', () => {
             });
 
             it('dont render EmptyContainer component outside editor mode', () => {
+                jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
+
                 const updatedContext = {
                     ...mockPageContext,
-                    components: {},
-                    isInsideEditor: false
+                    components: {}
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>
