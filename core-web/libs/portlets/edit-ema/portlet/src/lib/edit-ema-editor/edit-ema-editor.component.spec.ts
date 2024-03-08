@@ -1104,19 +1104,12 @@ describe('EditEmaEditorComponent', () => {
                         spyContentlet = jest.spyOn(dotContentletService, 'getContentletByInode');
                         spyDialog = jest.spyOn(dialog, 'editUrlContentMapContentlet');
                         spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
-                        spyStoreReload = jest.spyOn(store, 'reload');
                         spyUpdateQueryParams = jest.spyOn(router, 'navigate');
+                        spyStoreReload = jest.spyOn(store, 'reload');
                         spectator.detectChanges();
                     });
 
                     it('should reload the page after editing a urlContentMap if the url do not change', () => {
-                        const SpyEditorState = jest.spyOn(store, 'updateEditorState');
-                        spyContentlet.mockReturnValue(
-                            of({
-                                ...URL_MAP_CONTENTLET,
-                                URL_MAP_FOR_CONTENT: 'page-one'
-                            })
-                        );
                         const storeReloadPayload = {
                             params: {
                                 language_id: 1,
@@ -1125,17 +1118,41 @@ describe('EditEmaEditorComponent', () => {
                             whenReloaded: expect.any(Function)
                         };
 
+                        spyContentlet.mockReturnValue(
+                            of({
+                                ...URL_MAP_CONTENTLET,
+                                URL_MAP_FOR_CONTENT: 'page-one'
+                            })
+                        );
+
                         emulateEditURLMapContent();
                         expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
                         expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
                         expect(spyReloadIframe).toHaveBeenCalled();
                         expect(spyStoreReload).toHaveBeenCalledWith(storeReloadPayload);
                         expect(spyUpdateQueryParams).not.toHaveBeenCalled();
                     });
 
                     it('should update the query params after editing a urlContentMap if the url changed', () => {
-                        spyContentlet.mockReturnValue(of(URL_MAP_CONTENTLET));
+                        const SpyEditorState = jest.spyOn(store, 'updateEditorState');
+                        const SpyHandlerError = jest
+                            .spyOn(dotHttpErrorManagerService, 'handle')
+                            .mockReturnValue(of(null));
+
+                        spyContentlet.mockReturnValue(throwError({}));
+
+                        emulateEditURLMapContent();
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(SpyHandlerError).toHaveBeenCalledWith({});
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.ERROR);
+                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyUpdateQueryParams).not.toHaveBeenCalled();
+                        expect(spyStoreReload).not.toHaveBeenCalled();
+                        expect(spyReloadIframe).not.toHaveBeenCalled();
+                    });
+
+                    it('should handler error', () => {
+                        const SpyEditorState = jest.spyOn(store, 'updateEditorState');
                         const queryParams = {
                             queryParams: {
                                 url: URL_MAP_CONTENTLET.URL_MAP_FOR_CONTENT
@@ -1143,8 +1160,11 @@ describe('EditEmaEditorComponent', () => {
                             queryParamsHandling: 'merge'
                         };
 
+                        spyContentlet.mockReturnValue(of(URL_MAP_CONTENTLET));
+
                         emulateEditURLMapContent();
                         expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
                         expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
                         expect(spyUpdateQueryParams).toHaveBeenCalledWith([], queryParams);
                         expect(spyStoreReload).not.toHaveBeenCalled();

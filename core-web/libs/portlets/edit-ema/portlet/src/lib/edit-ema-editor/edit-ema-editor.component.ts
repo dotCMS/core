@@ -2,6 +2,7 @@ import { Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -975,9 +976,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private reloadURLContentMapPage(inodeOrIdentifier: string): void {
+        // Set loading state to prevent the user to interact with the iframe
+        this.store.updateEditorState(EDITOR_STATE.LOADING);
+
         this.dotContentletService
             .getContentletByInode(inodeOrIdentifier)
-            .pipe(tap(() => this.store.updateEditorState(EDITOR_STATE.LOADING)))
+            .pipe(
+                catchError((error) => this.handlerError(error)),
+                filter((contentlet) => !!contentlet)
+            )
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
                 if (URL_MAP_FOR_CONTENT != this.queryParams.url) {
                     this.store.updateEditorState(EDITOR_STATE.LOADED);
@@ -1029,5 +1036,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             contentlet: pivotContentlet,
             position: positionToInsert
         };
+    }
+
+    /**
+     * Handle the error
+     *
+     * @private
+     * @param {HttpErrorResponse} error
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    private handlerError(error: HttpErrorResponse) {
+        this.store.updateEditorState(EDITOR_STATE.ERROR);
+
+        return this.dotHttpErrorManagerService.handle(error).pipe(map(() => null));
     }
 }
