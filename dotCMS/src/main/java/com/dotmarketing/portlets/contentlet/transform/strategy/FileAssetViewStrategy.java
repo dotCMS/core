@@ -25,7 +25,7 @@ import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.UNDERLY
 import static com.dotmarketing.util.UtilHTML.getIconClass;
 import static com.dotmarketing.util.UtilHTML.getStatusIcons;
 import static com.dotmarketing.util.UtilMethods.getFileExtension;
-import static com.dotmarketing.util.UtilMethods.isImage;
+
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 import static com.dotmarketing.util.UtilMethods.isSet;
 import static com.liferay.util.StringPool.BLANK;
@@ -111,7 +111,7 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
         final String parent = fileAsset.getParent();
         map.put("parent",  isSet(parent) ? parent : BLANK );
 
-        if(isImage(underlyingFileName)) {
+        if(fileAsset.isImage()) {
             map.put("width", fileAsset.getWidth());
             map.put("height", fileAsset.getHeight());
         }
