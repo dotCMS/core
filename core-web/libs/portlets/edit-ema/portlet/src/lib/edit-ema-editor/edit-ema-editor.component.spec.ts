@@ -1123,7 +1123,7 @@ describe('EditEmaEditorComponent', () => {
                             params: {
                                 language_id: 1,
                                 url: 'page-one'
-                            },
+                            }
                         };
 
                         spyContentlet.mockReturnValue(
