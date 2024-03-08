@@ -25,7 +25,17 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
+import {
+    takeUntil,
+    catchError,
+    filter,
+    map,
+    switchMap,
+    tap,
+    take,
+    distinctUntilChanged,
+    pairwise
+} from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
@@ -244,27 +254,38 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
     }
 
+    isVTLPage = toSignal(this.editorState$.pipe(map((state) => !state.clientHost)));
+
     ngOnInit(): void {
+        // this.store.pageState$
+        //     .pipe(distinctUntilChanged((x, y) => x.inode === y.inode))
+        //     .subscribe((res) => {
+        //         console.log('A change in pageState :o');
+        //         console.log(res);
+        //         console.log('------');
+        //         this.reloadIframe();
+        //     });
+        this.store.stateLoad$
+            .pipe(
+                // distinctUntilChanged((before, current) => {
+                //     console.log({ before, current });
+
+                //     return !(before === EDITOR_STATE.LOADING || current === EDITOR_STATE.LOADED);
+                // })
+                // pairwise()
+                filter((res) => res === EDITOR_STATE.LOADED)
+            )
+            .subscribe(() => {
+                this.reloadIframe();
+            });
+
         this.store.code$
             .pipe(
                 takeUntil(this.destroy$),
                 filter((code) => !!code)
             )
             .subscribe((code) => {
-                requestAnimationFrame(() => {
-                    const doc = this.iframe?.nativeElement.contentDocument;
-
-                    if (doc) {
-                        doc.open();
-                        doc.write(this.addEditorPageScript(code));
-                        doc.close();
-
-                        this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-                        this.ogTagsResults$ = this.dotSeoMetaTagsService
-                            .getMetaTagsResults(doc)
-                            .pipe(take(1));
-                    }
-                });
+                this.loadVTLIFrameContent(code);
             });
 
         fromEvent(this.window, 'message')
@@ -563,9 +584,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 pageId: payload.pageId,
                 params: this.queryParams,
                 whenSaved: () => {
-                    this.reloadIframe();
                     this.resetDragProperties();
-                    this.cd.detectChanges();
+                    // this.cd.detectChanges();
                 }
             });
 
@@ -600,9 +620,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
-                        this.reloadIframe();
                     }
                 }); // Save when selected
+            }
+        });
+    }
+
+    loadVTLIFrameContent(code) {
+        requestAnimationFrame(() => {
+            const doc = this.iframe?.nativeElement.contentDocument;
+
+            if (doc) {
+                doc.open();
+                doc.write(this.addEditorPageScript(code));
+                doc.close();
+
+                this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+                this.ogTagsResults$ = this.dotSeoMetaTagsService
+                    .getMetaTagsResults(doc)
+                    .pipe(take(1));
             }
         });
     }
@@ -633,50 +669,54 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
-                        this.reloadIframe();
                     }
                 });
             },
+            // [NG_CUSTOM_EVENTS.EDITED_CONTENTLET]: () => {
+            //     console.log("Called 'NG_CUSTOM_EVENTS.EDITED_CONTENTLET'");
+            //     this.reloadIframe();
+            // },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
-                if (shouldReloadPage) {
-                    this.store.reload({
-                        params: this.queryParams,
-                        whenReloaded: () => {
-                            this.reloadIframe();
-                        }
-                    });
+                // if (shouldReloadPage) {
+                //     this.store.reload({
+                //         params: this.queryParams
+                //     });
 
-                    return;
-                }
+                //     return;
+                // }
 
                 if (!payload) {
-                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+                    console.log('No payload');
+                    this.store.reload({
+                        params: this.queryParams
+                    });
+
+                    // this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
 
                     return;
                 }
 
-                const { pageContainers, didInsert } = insertContentletInContainer({
-                    ...payload,
-                    newContentletId: contentletIdentifier
-                });
+                // const { pageContainers, didInsert } = insertContentletInContainer({
+                //     ...payload,
+                //     newContentletId: contentletIdentifier
+                // });
 
-                if (!didInsert) {
-                    this.handleDuplicatedContentlet();
+                // if (!didInsert) {
+                //     this.handleDuplicatedContentlet();
 
-                    return;
-                }
+                //     return;
+                // }
 
-                // Save when created
-                this.store.savePage({
-                    pageContainers,
-                    pageId: payload.pageId,
-                    params: this.queryParams,
-                    whenSaved: () => {
-                        this.dialog.resetDialog();
-                        this.reloadIframe();
-                    }
-                });
+                // // Save when created
+                // this.store.savePage({
+                //     pageContainers,
+                //     pageId: payload.pageId,
+                //     params: this.queryParams,
+                //     whenSaved: () => {
+                //         this.dialog.resetDialog();
+                //     }
+                // });
             },
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
@@ -694,7 +734,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
-                        this.reloadIframe();
                     }
                 });
             }
@@ -787,10 +826,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     reloadIframe() {
-        this.iframe?.nativeElement?.contentWindow?.postMessage(
-            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
-            this.host
-        );
+        if (!this.isVTLPage()) {
+            console.log('ReloadIframe!!!!!');
+            this.iframe?.nativeElement?.contentWindow?.postMessage(
+                NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
+                this.host
+            );
+            this.cd.detectChanges();
+        }
     }
 
     /**
@@ -889,9 +932,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     protected handleEditContentlet(payload: ActionPayload) {
         const { contentlet } = payload;
+        console.log('handleEditContentlet', contentlet);
         const { onNumberOfPages, title } = contentlet;
 
         if (!(onNumberOfPages > 1)) {
+            console.log('handleEditContentlet');
             this.dialog.editContentlet(contentlet);
 
             return;
@@ -910,7 +955,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return this.handleCopyContent();
                 })
             )
-            .subscribe((contentlet) => this.dialog.editContentlet(contentlet));
+            .subscribe((contentlet) => {
+                this.dialog.editContentlet(contentlet);
+            });
     }
 
     /**
@@ -932,6 +979,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaDialogComponent
      */
     private handleCopyContent(): Observable<DotCMSContentlet> {
+        // console.log('we should reload store');
+
         return this.dotCopyContentService.copyInPage(this.currentTreeNode()).pipe(
             catchError((error) =>
                 this.dotHttpErrorManagerService.handle(error).pipe(
@@ -939,8 +988,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     map(() => null)
                 )
             ),
-            filter((contentlet: DotCMSContentlet) => !!contentlet?.inode),
-            tap(() => this.reloadIframe()) // If the contentlet is copied, we reload the iframe
+            filter((contentlet: DotCMSContentlet) => !!contentlet?.inode)
+            // tap(() => this.reloadIframe()) // If the contentlet is copied, we reload the iframe
         );
     }
 

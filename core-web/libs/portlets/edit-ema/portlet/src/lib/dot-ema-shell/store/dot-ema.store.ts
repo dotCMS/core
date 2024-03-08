@@ -26,6 +26,7 @@ import {
     SavePagePayload
 } from '../../shared/models';
 import { insertContentletInContainer, sanitizeURL, getPersonalization } from '../../utils';
+import { state } from '@angular/animations';
 
 interface GetFormIdPayload extends SavePagePayload {
     payload: ActionPayload;
@@ -71,6 +72,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *******************/
 
     readonly code$ = this.select((state) => state.editor.page.rendered);
+
+    readonly pageState$ = this.select((state) => ({ ...state.editor.page }));
+
+    readonly stateLoad$ = this.select((state) => state.editorState);
 
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
@@ -177,13 +182,17 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     );
 
     readonly reload = this.effect((payload$: Observable<ReloadPagePayload>) => {
+        
+
         return payload$.pipe(
             tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
             switchMap(({ params, whenReloaded }) => {
                 return this.dotPageApiService.get(params).pipe(
                     tapResponse({
-                        next: (editor) =>
-                            this.patchState({ editor, editorState: EDITOR_STATE.LOADED }),
+                        next: (editor) => {
+                            this.patchState({ editor });
+                            this.updateEditorState(EDITOR_STATE.LOADED);
+                        },
                         error: ({ status }: HttpErrorResponse) =>
                             this.createEmptyState({ canEdit: false, canRead: false }, status),
                         finalize: () => whenReloaded?.()
