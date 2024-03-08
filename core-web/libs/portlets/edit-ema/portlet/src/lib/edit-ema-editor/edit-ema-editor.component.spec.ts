@@ -614,6 +614,14 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('Preview mode', () => {
+            beforeEach(() => {
+                jest.useFakeTimers(); // Mock the timers
+            });
+
+            afterEach(() => {
+                jest.useRealTimers(); // Restore the real timers after each test
+            });
+
             it('should reset the selection on click on the go to edit button', () => {
                 spectator.detectChanges();
 
@@ -709,7 +717,7 @@ describe('EditEmaEditorComponent', () => {
 
             it('should open seo results when clicking on a social media tile', () => {
                 // We only support VTL
-
+                jest.useFakeTimers();
                 const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
 
                 store.load({
@@ -717,7 +725,8 @@ describe('EditEmaEditorComponent', () => {
                     language_id: '3',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
-                spectator.detectChanges();
+
+                jest.runOnlyPendingTimers();
 
                 const deviceSelector = spectator.debugElement.query(
                     By.css('[data-testId="dot-device-selector"]')
@@ -1758,6 +1767,7 @@ describe('EditEmaEditorComponent', () => {
 
             describe('VTL Page', () => {
                 beforeEach(() => {
+                    jest.useFakeTimers(); // Mock the timers
                     store.load({
                         url: 'index',
                         language_id: '3',
@@ -1766,16 +1776,20 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
                 });
 
-                it('iframe should have the correct content when is VTL', () => {
-                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                afterEach(() => {
+                    jest.useRealTimers(); // Restore the real timers after each test
+                });
 
+                it('iframe should have the correct content when is VTL', () => {
+                    jest.runOnlyPendingTimers();
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
                     expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
                     expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
                         '<div>hello world</div>'
                     );
                 });
 
-                it('iframe should have reload the page and add the new content', async () => {
+                it('iframe should have reload the page and add the new content', () => {
                     const params = {
                         language_id: '4',
                         url: 'index',
@@ -1789,7 +1803,8 @@ describe('EditEmaEditorComponent', () => {
                         }
                     });
                     spectator.detectChanges();
-                    await spectator.fixture.whenStable();
+
+                    jest.runOnlyPendingTimers();
 
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
@@ -2010,7 +2025,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
                 spectator.detectComponentChanges();
@@ -2293,7 +2308,7 @@ describe('EditEmaEditorComponent', () => {
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
                 expect(dropZone.item).toEqual({
                     contentType: 'File',
                     baseType: 'CONTENT'
@@ -2323,7 +2338,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'File',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
@@ -2346,13 +2361,13 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(BOUNDS_MOCK.length);
+                expect(spectator.component.containers.length).toBe(BOUNDS_MOCK.length);
 
                 spectator.component.onLanguageSelected(2); // triggers a query param change
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(0);
+                expect(spectator.component.containers.length).toBe(0);
             });
         });
 

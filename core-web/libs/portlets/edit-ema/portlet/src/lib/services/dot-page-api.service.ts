@@ -79,7 +79,7 @@ export class DotPageApiService {
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
         const pageType = params.clientHost ? 'json' : 'render';
-        const apiUrl = `/api/v1/page/${pageType}/${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
+        const apiUrl = `/api/v1/page/${pageType}/${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}&mode=EDIT_MODE`;
 
         return this.http
             .get<{
