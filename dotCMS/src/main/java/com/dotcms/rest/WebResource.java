@@ -364,7 +364,7 @@ public  class WebResource {
         }
 
 
-        if (builder.requireAdmin || builder.requiredRolesSet.contains(Role.CMS_ADMINISTRATOR_ROLE) && !user.isAdmin()) {
+        if (builder.requiredRolesSet.contains(Role.CMS_ADMINISTRATOR_ROLE) && !user.isAdmin()) {
             throw new SecurityException(
                     String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
                             + " is not a %s", Role.CMS_ADMINISTRATOR_ROLE),
@@ -418,7 +418,7 @@ public  class WebResource {
      * @param request  {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param paramsMap {@link Map}
-     * @param rejectWhenNoUser {@link Boolean}
+     * @param access {@link AnonymousAccess}
      *
      * @return the login user or the login as user if exist any
      */
@@ -778,7 +778,6 @@ public  class WebResource {
         private final Set<String> requiredRolesSet = new HashSet<>();
         private AnonymousAccess anonAccess=AnonymousAccess.NONE;
         private boolean requireLicense = false;
-        private boolean requireAdmin = false;
         public InitBuilder() {
           this(new WebResource());
 
@@ -822,7 +821,6 @@ public  class WebResource {
         }
 
        public InitBuilder requireAdmin(final boolean requireAdmin) {
-           this.requireAdmin = requireAdmin;
            if (requireAdmin) {
                requiredRolesSet.add(Role.CMS_ADMINISTRATOR_ROLE);
            } else {
