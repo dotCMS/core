@@ -26,7 +26,6 @@ import {
     SavePagePayload
 } from '../../shared/models';
 import { insertContentletInContainer, sanitizeURL, getPersonalization } from '../../utils';
-import { state } from '@angular/animations';
 
 interface GetFormIdPayload extends SavePagePayload {
     payload: ActionPayload;
@@ -72,8 +71,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *******************/
 
     readonly code$ = this.select((state) => state.editor.page.rendered);
-
-    readonly pageState$ = this.select((state) => ({ ...state.editor.page }));
 
     readonly stateLoad$ = this.select((state) => state.editorState);
 

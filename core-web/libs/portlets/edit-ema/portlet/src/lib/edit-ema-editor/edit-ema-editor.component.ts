@@ -25,17 +25,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import {
-    takeUntil,
-    catchError,
-    filter,
-    map,
-    switchMap,
-    tap,
-    take,
-    distinctUntilChanged,
-    pairwise
-} from 'rxjs/operators';
+import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
@@ -254,25 +244,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
     }
 
-    isVTLPage = toSignal(this.editorState$.pipe(map((state) => !state.clientHost)));
+    isVTLPage = toSignal(this.store.clientHost$.pipe(map((clientHost) => !clientHost)));
 
     ngOnInit(): void {
-        // this.store.pageState$
-        //     .pipe(distinctUntilChanged((x, y) => x.inode === y.inode))
-        //     .subscribe((res) => {
-        //         console.log('A change in pageState :o');
-        //         console.log(res);
-        //         console.log('------');
-        //         this.reloadIframe();
-        //     });
         this.store.stateLoad$
             .pipe(
-                // distinctUntilChanged((before, current) => {
-                //     console.log({ before, current });
-
-                //     return !(before === EDITOR_STATE.LOADING || current === EDITOR_STATE.LOADED);
-                // })
-                // pairwise()
+                takeUntil(this.destroy$),
                 filter((res) => res === EDITOR_STATE.LOADED)
             )
             .subscribe(() => {
@@ -585,7 +562,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 params: this.queryParams,
                 whenSaved: () => {
                     this.resetDragProperties();
-                    // this.cd.detectChanges();
                 }
             });
 
@@ -672,51 +648,44 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     }
                 });
             },
-            // [NG_CUSTOM_EVENTS.EDITED_CONTENTLET]: () => {
-            //     console.log("Called 'NG_CUSTOM_EVENTS.EDITED_CONTENTLET'");
-            //     this.reloadIframe();
-            // },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
-                // if (shouldReloadPage) {
-                //     this.store.reload({
-                //         params: this.queryParams
-                //     });
-
-                //     return;
-                // }
-
-                if (!payload) {
-                    console.log('No payload');
+                if (shouldReloadPage) {
                     this.store.reload({
                         params: this.queryParams
                     });
 
-                    // this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+                    return;
+                }
+
+                if (!payload) {
+                    this.store.reload({
+                        params: this.queryParams
+                    });
 
                     return;
                 }
 
-                // const { pageContainers, didInsert } = insertContentletInContainer({
-                //     ...payload,
-                //     newContentletId: contentletIdentifier
-                // });
+                const { pageContainers, didInsert } = insertContentletInContainer({
+                    ...payload,
+                    newContentletId: contentletIdentifier
+                });
 
-                // if (!didInsert) {
-                //     this.handleDuplicatedContentlet();
+                if (!didInsert) {
+                    this.handleDuplicatedContentlet();
 
-                //     return;
-                // }
+                    return;
+                }
 
                 // // Save when created
-                // this.store.savePage({
-                //     pageContainers,
-                //     pageId: payload.pageId,
-                //     params: this.queryParams,
-                //     whenSaved: () => {
-                //         this.dialog.resetDialog();
-                //     }
-                // });
+                this.store.savePage({
+                    pageContainers,
+                    pageId: payload.pageId,
+                    params: this.queryParams,
+                    whenSaved: () => {
+                        this.dialog.resetDialog();
+                    }
+                });
             },
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
@@ -826,13 +795,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     reloadIframe() {
+        // Only reload if is Headless.
+        // If is VTL, the content is updated by store.code$
         if (!this.isVTLPage()) {
-            console.log('ReloadIframe!!!!!');
             this.iframe?.nativeElement?.contentWindow?.postMessage(
                 NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
                 this.host
             );
-            this.cd.detectChanges();
         }
     }
 
@@ -932,11 +901,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     protected handleEditContentlet(payload: ActionPayload) {
         const { contentlet } = payload;
-        console.log('handleEditContentlet', contentlet);
         const { onNumberOfPages, title } = contentlet;
 
         if (!(onNumberOfPages > 1)) {
-            console.log('handleEditContentlet');
             this.dialog.editContentlet(contentlet);
 
             return;
@@ -989,7 +956,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 )
             ),
             filter((contentlet: DotCMSContentlet) => !!contentlet?.inode)
-            // tap(() => this.reloadIframe()) // If the contentlet is copied, we reload the iframe
         );
     }
 

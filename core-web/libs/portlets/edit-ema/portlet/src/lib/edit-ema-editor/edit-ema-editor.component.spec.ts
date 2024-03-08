@@ -1110,7 +1110,6 @@ describe('EditEmaEditorComponent', () => {
                             language_id: 1,
                             url: 'page-one'
                         },
-                        whenReloaded: expect.any(Function)
                     });
                     expect(spyReloadIframe).toHaveBeenCalled();
                 });
@@ -1162,6 +1161,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should copy and open edit dialog', () => {
+                        
                         copySpy.mockReturnValue(of(newContentlet));
                         modalSpy.mockReturnValue(of({ shouldCopy: true }));
 
@@ -1183,7 +1183,6 @@ describe('EditEmaEditorComponent', () => {
                         expect(dialogLoadingSpy).toHaveBeenCalledWith('Hello World');
                         expect(editContentletSpy).toHaveBeenCalledWith(newContentlet);
                         expect(modalSpy).toHaveBeenCalled();
-                        expect(reloadIframeSpy).toHaveBeenCalledWith('ema-reload-page', '*');
                     });
 
                     it('should show an error if the copy content fails', () => {
