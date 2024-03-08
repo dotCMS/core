@@ -54,7 +54,7 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
             announcements: [],
             showUnreadAnnouncement: false,
             utmParameters: '',
-            currentSite: null,
+            currentSite: null
         });
     }
 
@@ -91,60 +91,56 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         (state) => state.showUnreadAnnouncement
     );
 
-    readonly selectKnowledgeCenterLinks: Signal<AnnouncementLink[]> = this.selectSignal(
-        (state) => [
-            {
-                id: '1',
-                url: `https://www.dotcms.com/announcement-menu-documentation?${state.utmParameters}`,
-                label: this.dotMessageService.get('announcements.knowledge.center.documentation')
-            },
-            {
-                url: `https://www.dotcms.com/announcement-menu-user-forum?${state.utmParameters}`,
-                id: '2',
-                label: this.dotMessageService.get('announcements.knowledge.center.forum')
-            },
-            {
-                url: `https://www.dotcms.com/announcement-menu-online-training?${state.utmParameters}`,
-                id: '3',
-                label: this.dotMessageService.get('announcements.knowledge.center.training')
-            },
-            {
-                id: '4',
-                label: this.dotMessageService.get('announcements.knowledge.center.blog'),
-                url: `https://www.dotcms.com/announcement-menu-dotcms-blog?${state.utmParameters}`
-            },
-            {
-                url: `https://www.dotcms.com/announcement-menu-github-repository?${state.utmParameters}`,
-                id: '5',
-                label: this.dotMessageService.get('announcements.knowledge.center.github')
-            }
-        ]
-    );
+    readonly selectKnowledgeCenterLinks: Signal<AnnouncementLink[]> = this.selectSignal((state) => [
+        {
+            id: '1',
+            url: `https://www.dotcms.com/announcement-menu-documentation?${state.utmParameters}`,
+            label: this.dotMessageService.get('announcements.knowledge.center.documentation')
+        },
+        {
+            url: `https://www.dotcms.com/announcement-menu-user-forum?${state.utmParameters}`,
+            id: '2',
+            label: this.dotMessageService.get('announcements.knowledge.center.forum')
+        },
+        {
+            url: `https://www.dotcms.com/announcement-menu-online-training?${state.utmParameters}`,
+            id: '3',
+            label: this.dotMessageService.get('announcements.knowledge.center.training')
+        },
+        {
+            id: '4',
+            label: this.dotMessageService.get('announcements.knowledge.center.blog'),
+            url: `https://www.dotcms.com/announcement-menu-dotcms-blog?${state.utmParameters}`
+        },
+        {
+            url: `https://www.dotcms.com/announcement-menu-github-repository?${state.utmParameters}`,
+            id: '5',
+            label: this.dotMessageService.get('announcements.knowledge.center.github')
+        }
+    ]);
 
-    readonly selectContactLinks: Signal<AnnouncementLink[]> = this.selectSignal(
-        (state) => [
-            {
-                label: this.dotMessageService.get('announcements.contact.customer.support'),
-                url: `https://www.dotcms.com/announcement-menu-customer-support?${state.utmParameters}`,
-                id: '1'
-            },
-            {
-                id: '2',
-                label: this.dotMessageService.get('announcements.contact.professional.services'),
-                url: `https://www.dotcms.com/announcement-menu-professional-services?${state.utmParameters}`
-            },
-            {
-                label: this.dotMessageService.get('announcements.contact.request.feature'),
-                url: `https://www.dotcms.com/announcement-menu-request-a-feature?${state.utmParameters}`,
-                id: '3'
-            },
-            {
-                id: '4',
-                label: this.dotMessageService.get('announcements.contact.report.bug'),
-                url: `https://www.dotcms.com/announcement-menu-report-a-bug?${state.utmParameters}`
-            }
-        ]
-    );
+    readonly selectContactLinks: Signal<AnnouncementLink[]> = this.selectSignal((state) => [
+        {
+            label: this.dotMessageService.get('announcements.contact.customer.support'),
+            url: `https://www.dotcms.com/announcement-menu-customer-support?${state.utmParameters}`,
+            id: '1'
+        },
+        {
+            id: '2',
+            label: this.dotMessageService.get('announcements.contact.professional.services'),
+            url: `https://www.dotcms.com/announcement-menu-professional-services?${state.utmParameters}`
+        },
+        {
+            label: this.dotMessageService.get('announcements.contact.request.feature'),
+            url: `https://www.dotcms.com/announcement-menu-request-a-feature?${state.utmParameters}`,
+            id: '3'
+        },
+        {
+            id: '4',
+            label: this.dotMessageService.get('announcements.contact.report.bug'),
+            url: `https://www.dotcms.com/announcement-menu-report-a-bug?${state.utmParameters}`
+        }
+    ]);
 
     readonly selectLinkToDotCms: Signal<string> = this.selectSignal((state) => {
         return `https://www.dotcms.com/announcement-menu-show-all?${state.utmParameters}`;
