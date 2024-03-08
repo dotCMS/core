@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.InvalidLicenseException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -196,6 +198,17 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
     assertEquals("CMS Admin should be allowed", initDataObject.getUser(), cmsAdmin);
 
   }
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void disallow_backend_access_server_if_multiple_required_roles_include_cmsAdmin() throws Exception {
+
+    final InitDataObject initDataObject = new WebResource.InitBuilder()
+            .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE, Role.DOTCMS_BACK_END_USER)
+            .requestAndResponse(backEndRequest(), response)
+            .init();
+  }
+
+
 
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_backend_access_server_if_backendUser_tries_to_access_cmsadmin() throws Exception {
