@@ -261,6 +261,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 if (!this.isVTLPage()) {
+                    // Only reload if is Headless.
+                    // If is VTL, the content is updated by store.code$
                     this.reloadIframe();
                 }
             });
@@ -802,9 +804,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     reloadIframe() {
-        // Only reload if is Headless.
-        // If is VTL, the content is updated by store.code$
-
         this.iframe?.nativeElement?.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host

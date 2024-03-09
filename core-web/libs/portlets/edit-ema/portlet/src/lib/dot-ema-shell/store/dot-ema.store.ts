@@ -185,8 +185,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 return this.dotPageApiService.get(params).pipe(
                     tapResponse({
                         next: (editor) => {
-                            this.patchState({ editor });
-                            this.updateEditorState(EDITOR_STATE.LOADED);
+                            this.patchState({ editor, editorState: EDITOR_STATE.LOADED });
                         },
                         error: ({ status }: HttpErrorResponse) =>
                             this.createEmptyState({ canEdit: false, canRead: false }, status),

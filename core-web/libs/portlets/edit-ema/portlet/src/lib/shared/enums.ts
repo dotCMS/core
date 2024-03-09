@@ -10,8 +10,7 @@ export enum NG_CUSTOM_EVENTS {
     CONTENT_SEARCH_SELECT = 'select-contentlet',
     CREATE_CONTENTLET = 'create-contentlet-from-edit-page',
     SAVE_PAGE = 'save-page',
-    FORM_SELECTED = 'form-selected',
-    EDITED_CONTENTLET = 'edit-contentlet-data-updated'
+    FORM_SELECTED = 'form-selected'
 }
 
 // The current state of the editor
