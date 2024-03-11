@@ -22,11 +22,6 @@ export default defineConfig({
         })
     ],
 
-    // Uncomment this if you are using workers.
-    // worker: {
-    //  plugins: [ nxViteTsPaths() ],
-    // },
-
     // Configuration for building your library.
     // See: https://vitejs.dev/guide/build.html#library-mode
     build: {

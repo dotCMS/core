@@ -71,3 +71,14 @@ export const EXPERIMENT_DB_KEY_PATH = 'running_experiment';
  * @const
  */
 export const EXPERIMENT_DB_DEFAULT_VERSION = 1;
+
+/**
+ * Enumeration of debug levels.
+ *
+ * @enum {string}
+ * @readonly
+ */
+export enum DEBUG_LEVELS {
+    DEBUG = 'DEBUG',
+    WARN = 'WARN'
+}

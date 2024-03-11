@@ -1,6 +1,11 @@
 import { jitsuClient, JitsuClient } from '@jitsu/sdk-js';
 
-import { API_EXPERIMENTS_URL, EXPERIMENT_DB_KEY_PATH, EXPERIMENT_DB_STORE_NAME } from './constants';
+import {
+    API_EXPERIMENTS_URL,
+    DEBUG_LEVELS,
+    EXPERIMENT_DB_KEY_PATH,
+    EXPERIMENT_DB_STORE_NAME
+} from './constants';
 import {
     AssignedExperiments,
     DotExperimentConfig,
@@ -203,7 +208,7 @@ export class DotExperiments {
             this.analytics = jitsuClient({
                 key: this.config['api-key'],
                 tracking_host: this.config['server'],
-                log_level: this.config['debug'] ? 'DEBUG' : 'WARN'
+                log_level: this.config['debug'] ? DEBUG_LEVELS.DEBUG : DEBUG_LEVELS.WARN
             });
 
             const { experiments } = await this.getDataForAnalytics();
