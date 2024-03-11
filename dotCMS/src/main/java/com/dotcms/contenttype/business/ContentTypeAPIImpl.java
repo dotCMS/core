@@ -23,6 +23,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
@@ -52,8 +53,9 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.elasticsearch.action.search.SearchResponse;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -62,7 +64,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.elasticsearch.action.search.SearchResponse;
 
 /**
  * Implementation class for the {@link ContentTypeAPI}. Each content item in dotCMS is an instance of a Content Type. The
@@ -467,14 +468,21 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return count(condition,base,null);
   }
 
+  @CloseDBIfOpened
+  @Override
+  public int count(final String condition, final BaseContentType base, final String siteId) throws DotDataException {
+    return countForSites(condition, base, UtilMethods.isSet(siteId) ? List.of(siteId) : null);
+  }
 
   @CloseDBIfOpened
   @Override
-  public int count(final String condition, final BaseContentType base, final String hostId) throws DotDataException {
+  public int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException {
     try {
-      return perms.filterCollection(this.contentTypeFactory.search(condition, base.getType(), "mod_date", -1, 0,hostId), PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles, user).size();
-    } catch (DotSecurityException e) {
+      return perms.filterCollection(this.contentTypeFactory.search(siteIds, condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0), PermissionAPI.PERMISSION_READ,
+              respectFrontendRoles, user).size();
+    } catch (final DotSecurityException e) {
+      Logger.error(this, String.format("An error occurred when getting the Content Type count for Sites " +
+              "[ %s ] with condition [ %s ]: %s", siteIds, condition, ExceptionUtil.getErrorMessage(e)), e);
       throw new DotStateException(e);
     }
   }
@@ -735,32 +743,40 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return this.search( condition, base, orderBy,  limit,  offset,null);
   }
 
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
+          throws DotDataException {
+
+    final List<ContentType> returnTypes = new ArrayList<>();
+    int rollingOffset = offset;
+    try {
+      while ((limit<0)||(returnTypes.size() < limit)) {
+        final List<ContentType> rawContentTypes = this.contentTypeFactory.search(sites, condition, base.getType(), orderBy, limit, rollingOffset);
+        if (rawContentTypes.isEmpty()) {
+          break;
+        }
+        returnTypes.addAll(perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+        if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
+          break;
+        }
+        rollingOffset += limit;
+      }
+
+      final int maxAmount = (limit<0)?returnTypes.size():Math.min(limit, returnTypes.size());
+      return returnTypes.subList(0, maxAmount);
+    } catch (final DotSecurityException e) {
+      Logger.error(this, String.format("An error occurred when searching for Content Types: " +
+              "%s", ExceptionUtil.getErrorMessage(e)));
+      throw new DotStateException(e);
+    }
+  }
+
     @CloseDBIfOpened
     @Override
-    public List<ContentType> search(String condition, BaseContentType base, final String orderBy, final int limit, final int offset, final String hostId)
+    public List<ContentType> search(final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset, final String siteId)
             throws DotDataException {
-
-        final List<ContentType> returnTypes = new ArrayList<>();
-        int rollingOffset = offset;
-        try {
-            while ((limit<0)||(returnTypes.size() < limit)) {
-                final List<ContentType> rawContentTypes = this.contentTypeFactory.search(condition, base.getType(), orderBy, limit, rollingOffset,hostId);
-                if (rawContentTypes.isEmpty()) {
-                    break;
-                }
-                returnTypes.addAll(perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-                if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
-                    break;
-                }
-                rollingOffset += limit;
-            }
-
-            final int maxAmount = (limit<0)?returnTypes.size():Math.min(limit, returnTypes.size());
-            return returnTypes.subList(0, maxAmount);
-        } catch (DotSecurityException e) {
-            throw new DotStateException(e);
-        }
-
+        return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base, orderBy, limit, offset);
     }
 
   @CloseDBIfOpened

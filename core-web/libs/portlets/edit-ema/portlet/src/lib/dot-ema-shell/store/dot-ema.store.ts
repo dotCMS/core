@@ -58,10 +58,10 @@ function getFormId(dotPageApiService: DotPageApiService) {
 @Injectable()
 export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
-        private dotPageApiService: DotPageApiService,
-        private dotLicenseService: DotLicenseService,
-        private messageService: MessageService,
-        private dotMessageService: DotMessageService
+        private readonly dotPageApiService: DotPageApiService,
+        private readonly dotLicenseService: DotLicenseService,
+        private readonly messageService: MessageService,
+        private readonly dotMessageService: DotMessageService
     ) {
         super();
     }
@@ -69,6 +69,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     /*******************
      * Selectors
      *******************/
+
+    readonly code$ = this.select((state) => state.editor.page.rendered);
 
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
@@ -153,15 +155,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     }).pipe(
                         tap({
                             next: ({ pageData, licenseData }) => {
-                                const isHeadlessPage = !!params.clientHost;
                                 this.setState({
                                     clientHost: params.clientHost,
                                     editor: pageData,
                                     isEnterpriseLicense: licenseData,
-                                    //This to stop the progress bar. Testing yet
-                                    editorState: isHeadlessPage
-                                        ? EDITOR_STATE.LOADING
-                                        : EDITOR_STATE.LOADED,
+                                    editorState: EDITOR_STATE.LOADING,
                                     previewState: {
                                         editorMode: EDITOR_MODE.EDIT
                                     }

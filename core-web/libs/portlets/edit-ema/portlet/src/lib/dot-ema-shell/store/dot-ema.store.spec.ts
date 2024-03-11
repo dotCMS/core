@@ -535,7 +535,7 @@ describe('EditEmaStore', () => {
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.LOADING,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -584,7 +584,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED,
+                        editorState: EDITOR_STATE.LOADING,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
