@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.liferay.portal.language.LanguageUtil;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -28,8 +29,9 @@ import java.util.stream.Stream;
 
 public class Task240306MigrateLegacyLanguageVariables implements StartupTask {
 
-    Lazy<Path> messagesDir = Lazy.of(() -> Paths.get(ConfigUtils.getDynamicContentPath(), "messages"));
-
+    Path messagesDir() {
+        return Paths.get(ConfigUtils.getDynamicContentPath(),"messages");
+     }
     @Override
     public boolean forceRun() {
         return true;
@@ -38,7 +40,8 @@ public class Task240306MigrateLegacyLanguageVariables implements StartupTask {
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
-            migrateLegacyLanguageVariables(messagesDir.get());
+            final Path path = messagesDir();
+            migrateLegacyLanguageVariables(path);
         } catch (Exception e) {
             throw new DotRuntimeException("Error migrating legacy language variables", e);
         }
@@ -52,18 +55,24 @@ public class Task240306MigrateLegacyLanguageVariables implements StartupTask {
         return contentType;
     });
 
-    void migrateLegacyLanguageVariables(final Path messagesDir) throws IOException {
+    @CanIgnoreReturnValue
+    boolean migrateLegacyLanguageVariables(final Path messagesDir) throws IOException {
+        if (!Files.exists(messagesDir)) {
+            Logger.info(this," No messages directory found. Skipping language variable migration.");
+            return false;
+        }
         try (Stream<Path> files = Files.list(messagesDir).filter(path -> path.toString().endsWith(".properties")).sorted(Comparator.comparing(o -> o.getFileName().toString()))){
             files.forEach(path -> {
                 // Do stuff
                 final String fileName = path.getFileName().toString();
-                final String cmsLanguage = fileName.replaceAll("cms_language_", "").replaceAll(".properties", "");
+                final String cmsLanguage = fileName.replace("cms_language_", "").replace(".properties", "");
                 Logger.info(this," Extracted language code: " + cmsLanguage);
                 final Locale locale = LanguageUtil.validateLanguageTag(cmsLanguage);
                 final long languageId = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(),locale.getCountry()).getId();
-               Logger.info(this," Extracted language id: " + languageId);
+                Logger.info(this," Extracted language id: " + languageId);
             });
         }
+        return true;
     }
 
     Contentlet saveLanguageVariableContent(final String key, final String value, final long languageId) {
