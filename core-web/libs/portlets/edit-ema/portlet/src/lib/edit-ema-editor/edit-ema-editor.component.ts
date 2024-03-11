@@ -620,7 +620,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * 
+     *
      * Sets the content of the iframe with the provided code.
      * @param code - The code to be added to the iframe.
      * @memberof EditEmaEditorComponent
