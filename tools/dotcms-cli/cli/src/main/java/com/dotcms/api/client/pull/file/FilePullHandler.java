@@ -18,7 +18,6 @@ import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -30,9 +29,9 @@ import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
- * The FilePullHandler class is responsible for pulling files from dotCMS.
- * It extends the PullHandler class and handles the pulling of FileTraverseResult objects providing
- * its own implementation of the pull method.
+ * The FilePullHandler class is responsible for pulling files from dotCMS. It extends the
+ * PullHandler class and handles the pulling of FileTraverseResult objects providing its own
+ * implementation of the pull method.
  */
 @Dependent
 public class FilePullHandler extends PullHandler<FileTraverseResult> {
@@ -100,7 +99,6 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
     public int pull(List<FileTraverseResult> contents,
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException {
-
 
         //Collect all exceptions from the returned contents
         final List<Exception> allExceptions = contents.stream().map(FileTraverseResult::exceptions)
