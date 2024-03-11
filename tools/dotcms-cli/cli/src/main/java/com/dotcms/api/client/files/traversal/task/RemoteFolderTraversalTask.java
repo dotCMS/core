@@ -191,10 +191,8 @@ public class RemoteFolderTraversalTask extends
                                         task::compute, executor
                                 ).thenCompose(Function.identity());
                         futures.add(future);
-                    } catch (TraversalTaskException e) {
-                        throw e;
                     } catch (Exception e) {
-                        throw new TraversalTaskException(e.getMessage(), e);
+                        handleException(errors, e);
                     }
                 } else {
 
@@ -332,6 +330,26 @@ public class RemoteFolderTraversalTask extends
             var message = String.format("Error retrieving folder information [%s]", folderPath);
             logger.error(message, e);
             throw new TraversalTaskException(message, e);
+        }
+    }
+
+    /**
+     * Handles an exception that occurred during the execution of a traversal task.
+     *
+     * @param errors The list of exceptions to which the error should be added.
+     * @param e      The exception that occurred.
+     */
+    private void handleException(List<Exception> errors, Exception e) {
+
+        if (traversalTaskParams.failFast()) {
+
+            if (e instanceof TraversalTaskException) {
+                throw (TraversalTaskException) e;
+            }
+
+            throw new TraversalTaskException(e.getMessage(), e);
+        } else {
+            errors.add(e);
         }
     }
 
