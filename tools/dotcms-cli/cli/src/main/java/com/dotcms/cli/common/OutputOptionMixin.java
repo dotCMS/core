@@ -180,23 +180,48 @@ public class OutputOptionMixin implements MessageWriter {
         return exceptionHandler;
     }
 
-/**
+    /**
      * This method is used to handle exceptions that occur during command execution
+     *
      * @param ex The exception that was thrown
      * @return The exit code
      */
-    public int handleCommandException(Exception ex){
-        return handleCommandException(ex, null, isShowErrors());
+    public int handleCommandException(Exception ex) {
+        return handleCommandException(ex, null, isShowErrors(), true);
     }
 
     /**
      * This method is used to handle exceptions that occur during command execution
-     * @param ex The exception that was thrown
+     *
+     * @param ex            The exception that was thrown
+     * @param showStackHelp Flag to show command help for error display
+     * @return The exit code
+     */
+    public int handleCommandException(Exception ex, final boolean showStackHelp) {
+        return handleCommandException(ex, null, isShowErrors(), showStackHelp);
+    }
+
+    /**
+     * This method is used to handle exceptions that occur during command execution
+     *
+     * @param ex      The exception that was thrown
      * @param message A custom message to display
      * @return The exit code
      */
-    public int handleCommandException(Exception ex, String message){
-        return handleCommandException(ex, message, isShowErrors());
+    public int handleCommandException(Exception ex, String message) {
+        return handleCommandException(ex, message, isShowErrors(), true);
+    }
+
+    /**
+     * This method is used to handle exceptions that occur during command execution
+     *
+     * @param ex            The exception that was thrown
+     * @param message       A custom message to display
+     * @param showStackHelp Flag to show command help for error display
+     * @return The exit code
+     */
+    public int handleCommandException(Exception ex, String message, final boolean showStackHelp) {
+        return handleCommandException(ex, message, isShowErrors(), showStackHelp);
     }
 
     /**
@@ -207,9 +232,11 @@ public class OutputOptionMixin implements MessageWriter {
      * @param ex The exception that was thrown
      * @param message Custom message to display
      * @param showStack The flag to show errors
+     * @param showStackHelp Flag to show command help for error display
      * @return The exit code
      */
-    public int handleCommandException(final Exception ex, final String message, final boolean showStack) {
+    public int handleCommandException(final Exception ex, final String message,
+            final boolean showStack, final boolean showStackHelp) {
 
         final ExceptionHandler exHandler = getExceptionHandler();
         // Handle ParameterException
@@ -219,7 +246,6 @@ public class OutputOptionMixin implements MessageWriter {
         }
 
         //Handle ExecutionException
-
         final Exception unwrappedEx = exHandler.unwrap(ex);
 
         if (unwrappedEx instanceof ForceSilentExitException) {
@@ -230,16 +256,18 @@ public class OutputOptionMixin implements MessageWriter {
         //Extract the proper exception and remove all server side noise
         final Exception handledEx = exHandler.handle(unwrappedEx);
         //Short error message
-         final String errorMessage =  (message != null && !message.isEmpty() ?  message + " " : "" ) + (handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
+        final String errorMessage = (message != null && !message.isEmpty() ? message + " " : "")
+                + (handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(),
+                "...", 200)
                 :  "An exception " + handledEx.getClass().getSimpleName() + " Occurred With no error message provided.");
 
         error(errorMessage);
         Log.error(errorMessage, ex);
         //Won't print unless the "showStack" flag is on
         //We show the show message notice only if we're not already showing errors
-        if(!showStack) {
+        if (!showStack && showStackHelp) {
             info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
-        } else {
+        } else if (showStack) {
             err().println(colorScheme().stackTraceText(unwrappedEx));
         }
 
