@@ -4,23 +4,23 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.InvalidLicenseException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotcms.business.CloseDB;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class WebResourceIntegrationTest extends IntegrationTestBase {
 
@@ -90,8 +90,6 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
     return request;
   }
 
-
-
   
   private HttpServletRequest apiRequest() {
     final HttpServletRequest request = anonymousRequest();
@@ -126,6 +124,54 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
         .requestAndResponse(anonymousRequest(), response)
         .init();
   }
+
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void test_checkAnonymousPermissions_NONE() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, NONE);
+    final InitBuilder initBuilder = new WebResource.InitBuilder()
+            .rejectWhenNoUser(true)
+            .requestAndResponse(anonymousRequest(), response);
+
+    new WebResource().checkAnonymousPermissions(initBuilder,APILocator.getUserAPI().getAnonymousUser() );
+
+  }
+
+  @Test
+  public void test_checkAnonymousPermissions_READ_works() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
+    final InitBuilder initBuilder = new WebResource.InitBuilder()
+            .requiredAnonAccess(AnonymousAccess.READ)
+            .requestAndResponse(anonymousRequest(), response);
+
+    new WebResource().checkAnonymousPermissions(initBuilder,APILocator.getUserAPI().getAnonymousUser() );
+    assertTrue("Anonymous read should be allowed", true);
+  }
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void test_checkAnonymousPermissions_READ_fails_when_write_requested() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
+    final InitBuilder initBuilder = new WebResource.InitBuilder()
+            .requiredAnonAccess(AnonymousAccess.WRITE)
+            .requestAndResponse(anonymousRequest(), response);
+
+    new WebResource().checkAnonymousPermissions(initBuilder,APILocator.getUserAPI().getAnonymousUser() );
+    assertTrue("Anonymous read should be allowed", true);
+  }
+
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void test_checkAnonymousPermissions_fails_when_reject_with_no_user() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
+    final InitBuilder initBuilder = new WebResource.InitBuilder()
+            .rejectWhenNoUser(true)
+            .requestAndResponse(anonymousRequest(), response);
+
+    new WebResource().checkAnonymousPermissions(initBuilder,APILocator.getUserAPI().getAnonymousUser() );
+    assertTrue("Anonymous read should be allowed", true);
+  }
+
+
 
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_anon_access_server_if_anon_access_set_NONE() throws Exception {
