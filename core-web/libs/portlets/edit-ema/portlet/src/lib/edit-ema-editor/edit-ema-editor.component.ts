@@ -288,7 +288,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                this.loadVTLIFrameContent(code);
+                this.setIframeContent(code);
             });
     }
 
@@ -619,7 +619,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
     }
 
-    loadVTLIFrameContent(code) {
+    /**
+     * 
+     * Sets the content of the iframe with the provided code.
+     * @param code - The code to be added to the iframe.
+     * @memberof EditEmaEditorComponent
+     */
+    setIframeContent(code) {
         requestAnimationFrame(() => {
             const doc = this.iframe?.nativeElement.contentDocument;
 
@@ -692,7 +698,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                // // Save when created
                 this.store.savePage({
                     pageContainers,
                     pageId: payload.pageId,

@@ -38,14 +38,6 @@ export type DotcmsPageProps = {
 export function DotcmsLayout({ entity, options }: DotcmsPageProps): JSX.Element {
     useDotcmsEditor(options);
 
-    /**
-     * 1. Create useState for rows.
-     * 2. Implement useEffect to set rows
-     * 3. Listen to postMessage(reload/or new method) from SDK wich retrieve
-     * the new rows insted of reload the enteire iframe and re-make the request.
-     *
-     */
-
     return (
         <PageProvider entity={entity}>
             {entity.layout.body.rows.map((row, index) => (
