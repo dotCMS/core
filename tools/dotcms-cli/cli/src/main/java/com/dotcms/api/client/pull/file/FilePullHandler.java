@@ -101,21 +101,17 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException {
 
-        //Now we're going to partition the list of results into two lists:
-        //The first one will contain the results that have exceptions and the second one will contain the results that don't have exceptions
-        final Map<Boolean, List<FileTraverseResult>> partitioned = contents.stream()
-                .collect(Collectors.partitioningBy(pojo -> !pojo.exceptions().isEmpty()));
 
-        //Inform the user about any errors that could have occurred during the traversal process
-        final List<FileTraverseResult> failed = partitioned.get(true);
-        //Save the error code for the traversal process. This will be used to determine the exit code of the command if greater than 0 (zero)
-        int errorCode = errorHandlerUtil.handlePullExceptions(
-                failed.stream().map(FileTraverseResult::exceptions
-                ).flatMap(List::stream).collect(Collectors.toList()), output);
+        //Collect all exceptions from the returned contents
+        final List<Exception> allExceptions = contents.stream().map(FileTraverseResult::exceptions)
+                .flatMap(List::stream).collect(Collectors.toList());
 
-        //The second list will contain the results that don't have exceptions
-        //We assume that the traversal process was successful for these results
-        final List<FileTraverseResult> success = partitioned.get(false);
+        //Any failed TreeNode will not be present
+        //So no need to separate the results
+
+        //Save the error code for the traversal process. This will be used to determine the exit
+        // code of the command if greater than 0 (zero)
+        int errorCode = errorHandlerUtil.handlePullExceptions(allExceptions, output);
 
         boolean preserve = false;
         boolean includeEmptyFolders = false;
@@ -127,9 +123,9 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                     getOrDefault(INCLUDE_EMPTY_FOLDERS, false);
         }
 
-        output.info(startPullingHeader(success));
+        output.info(startPullingHeader(contents));
 
-        for (final var content : success) {
+        for (final var content : contents) {
 
             var errors = pullTree(
                     content,
