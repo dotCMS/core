@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 
+import * as dotcmsClient from '@dotcms/client';
+
 import { Row } from './Row';
 
-import { MockContextRender } from '../../mocks/mockPageContext';
 import { ColumnProps } from '../Column/Column';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
@@ -47,11 +48,8 @@ describe('Row', () => {
 
     describe('row is inside editor', () => {
         beforeEach(() => {
-            render(
-                <MockContextRender mockContext={{ isInsideEditor: true }}>
-                    <Row row={mockRowData} />
-                </MockContextRender>
-            );
+            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
+            render(<Row row={mockRowData} />);
         });
 
         it('should set the data-dot attribute', () => {
@@ -78,11 +76,8 @@ describe('Row', () => {
     });
     describe('row is not inside editor', () => {
         beforeEach(() => {
-            render(
-                <MockContextRender mockContext={{ isInsideEditor: false }}>
-                    <Row row={mockRowData} />
-                </MockContextRender>
-            );
+            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
+            render(<Row row={mockRowData} />);
         });
 
         it('should not have dot attr', () => {

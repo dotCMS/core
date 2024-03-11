@@ -54,7 +54,7 @@ import picocli.CommandLine.Model.OptionSpec;
 )
 public class EntryCommand implements DotCommand{
 
-    public static final String NAME = "@|bold,magenta dotCLI|@";
+    public static final String NAME = "dotCLI";
 
     // Declared here, so we have an instance available via Arc container on the Customized CommandLine
     @Inject
