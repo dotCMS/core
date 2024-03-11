@@ -7,6 +7,7 @@ import { catchError, map, pluck } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
 import {
+    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotLanguage,
     DotLayout,
@@ -15,6 +16,7 @@ import {
     DotTemplate
 } from '@dotcms/dotcms-models';
 
+import { DEFAULT_PERSONA } from '../shared/consts';
 import { SavePagePayload } from '../shared/models';
 
 export interface DotPageApiResponse {
@@ -43,6 +45,9 @@ export interface DotPageApiParams {
     url: string;
     language_id: string;
     'com.dotmarketing.persona.id': string;
+    variantName: string;
+    experimentId?: string;
+    mode?: string;
 }
 
 export interface GetPersonasParams {
@@ -79,7 +84,18 @@ export class DotPageApiService {
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
         const pageType = params.clientHost ? 'json' : 'render';
-        const apiUrl = `/api/v1/page/${pageType}/${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}&mode=EDIT_MODE`;
+
+        const newQueryParams = this.buildQueryParams({
+            language_id: params.language_id ?? '1',
+            'com.dotmarketing.persona.id':
+                params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
+            variantName: params.variantName ?? DEFAULT_VARIANT_ID,
+            mode: 'EDIT_MODE',
+            experimentId: params.experimentId
+        });
+
+        // Refactor this. It's a mess
+        const apiUrl = `/api/v1/page/${pageType}/${url}?${newQueryParams}`;
 
         return this.http
             .get<{
@@ -95,9 +111,11 @@ export class DotPageApiService {
      * @return {*}  {Observable<unknown>}
      * @memberof DotPageApiService
      */
-    save({ pageContainers, pageId }: SavePagePayload): Observable<unknown> {
+    save({ pageContainers, pageId, params }: SavePagePayload): Observable<unknown> {
+        const variantName = params.variantName ?? DEFAULT_VARIANT_ID;
+
         return this.http
-            .post(`/api/v1/page/${pageId}/content`, pageContainers)
+            .post(`/api/v1/page/${pageId}/content?variantName=${variantName}`, pageContainers)
             .pipe(catchError(() => EMPTY));
     }
 
@@ -158,5 +176,16 @@ export class DotPageApiService {
         }
 
         return apiUrl + queryParams.toString();
+    }
+
+    private buildQueryParams(params: Record<string, string>): string {
+        // Filter out undefined values
+        Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
+
+        const queryParams = new URLSearchParams({
+            ...params
+        });
+
+        return queryParams.toString();
     }
 }

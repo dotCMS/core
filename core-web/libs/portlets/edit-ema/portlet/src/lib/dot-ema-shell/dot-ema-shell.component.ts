@@ -172,7 +172,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         return {
             language_id: queryParams['language_id'],
             url: queryParams['url'],
-            'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
+            'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id'],
+            variantName: queryParams['variantName']
         };
     }
 

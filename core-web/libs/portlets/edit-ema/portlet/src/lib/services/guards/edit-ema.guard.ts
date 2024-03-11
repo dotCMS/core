@@ -10,6 +10,7 @@ type EmaQueryParams = {
     url: string;
     language_id: number;
     'com.dotmarketing.persona.id': string;
+    variantName: string;
 };
 
 export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {

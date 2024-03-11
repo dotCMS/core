@@ -9,7 +9,12 @@ import { MessageService } from 'primeng/api';
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotContainerMap,
+    DotLayout,
+    DotPageContainerStructure
+} from '@dotcms/dotcms-models';
 
 import {
     DotPageApiParams,
@@ -77,7 +82,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             url: state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id':
-                state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
+                state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier,
+            variantName: DEFAULT_VARIANT_ID // Do we have this in the page api?
         });
 
         const favoritePageURL = this.createFavoritePagesURL({
@@ -159,7 +165,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     clientHost: params.clientHost,
                                     editor: pageData,
                                     isEnterpriseLicense: licenseData,
-                                    editorState: EDITOR_STATE.LOADING,
+                                    editorState: EDITOR_STATE.LOADED,
                                     previewState: {
                                         editorMode: EDITOR_MODE.EDIT
                                     }
