@@ -2,12 +2,10 @@ package com.dotmarketing.util;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
-import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.LowerKeyMap;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
@@ -15,8 +13,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -55,7 +51,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.net.URL;
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -67,6 +62,8 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -689,7 +686,7 @@ public class ImportUtil {
             //Building a values HashMap based on the headers/columns position
             HashMap<Integer, Object> values = new HashMap<>();
             Set<Category> categories = new HashSet<>();
-            boolean headersIncludeHostField = false;
+            Pair<Host, Folder> siteAndFolder = null;
             for ( Integer column : headers.keySet() ) {
                 Field field = headers.get( column );
                 if ( line.length < column ) {
@@ -747,50 +744,12 @@ public class ImportUtil {
                 } else if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
                     valueObj = value;
                 } else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                    Identifier identifier = null;
-                    valueObj = null;
-                    try{
-                        identifier = APILocator.getIdentifierAPI().findFromInode(value);
-                    } catch (DotStateException dse) {
-                        Logger.debug(ImportUtil.class, dse.getMessage());
-                    }
-                    if(identifier != null && InodeUtils.isSet(identifier.getInode())){
-                        valueObj = value;
-                        headersIncludeHostField = true;
-                    }else if(value.contains("//")){
-                        String hostName=null;
-                        StringWriter path = null;
-
-                        String[] arr = value.split("/");
-                        path = new StringWriter().append("/");
-                        for(String y : arr){
-                            if(UtilMethods.isSet(y) && hostName == null){
-                                hostName = y;
-                            } else if (UtilMethods.isSet(y)) {
-                                path.append(y);
-                                path.append("/");
-                            }
-                        }
-                        Host host = APILocator.getHostAPI().findByName(hostName, user, false);
-                        if(UtilMethods.isSet(host)){
-                            valueObj=host.getIdentifier();
-                            Folder f = APILocator.getFolderAPI().findFolderByPath(path.toString(), host, user, false);
-                            if(UtilMethods.isSet(f)) {
-                                valueObj=f.getInode();
-                            }
-                            headersIncludeHostField = true;
-                        }
-                    } else {
-                        Host h = APILocator.getHostAPI().findByName(value, user, false);
-                        if(UtilMethods.isSet(h)){
-                            valueObj = h.getIdentifier();
-                            headersIncludeHostField = true;
-                        }
-                    }
-
-                    if(valueObj ==null){
+                    siteAndFolder = getSiteAndFolderFromIdOrName(value, user);
+                    if (siteAndFolder == null) {
                         throw new DotRuntimeException("Line #" + lineNumber + " contains errors. Column: '" + field.getVelocityVarName() +
                                 "', value: '" + value + "', invalid site/folder inode found. Line will be ignored.");
+                    } else {
+                        valueObj = value;
                     }
                 } else if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName())){
                     if(UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)){
@@ -962,8 +921,19 @@ public class ImportUtil {
                         throw new DotRuntimeException("Line #" + lineNumber + " key field " + field.getVelocityVarName() + " is required since it was defined as a key\n");
                     }else{
                         if(field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                            buffy.append(" +(conhost:").append(text).append(" conFolder:")
-                                    .append(text).append(")");
+                            if (siteAndFolder != null) {
+                                if (siteAndFolder.getLeft() != null) {
+                                    final Host host = siteAndFolder.getLeft();
+                                    buffy.append(" +conhost:").append(host.getIdentifier());
+                                }
+                                if (siteAndFolder.getRight() != null) {
+                                    final Folder folder = siteAndFolder.getRight();
+                                    buffy.append(" +conFolder:").append(folder.getInode());
+                                }
+                            } else {
+                                buffy.append(" +(conhost:").append(text).append(" conFolder:")
+                                        .append(text).append(")");
+                            }
                         } else {
                             buffy.append(" +").append(contentType.getVelocityVarName()).append(StringPool.PERIOD)
                                     .append(field.getVelocityVarName()).append(field.isUnique()? ESUtils.SHA_256: "_dotraw")
@@ -1200,34 +1170,32 @@ public class ImportUtil {
                     }
                 }
 
+                //Set the site and folder
+                if (siteAndFolder != null) {
+                    final Host host = siteAndFolder.getLeft();
+                    final Folder folder = siteAndFolder.getRight();
+                    if (UtilMethods.isSet(folder) && !folder.isSystemFolder()) {
+                        if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
+                            throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
+                        }
+                    } else if (UtilMethods.isSet(host)) {
+                        if (!permissionAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
+                            throw new DotSecurityException("User has no Add Children Permissions on selected host");
+                        }
+                    }
+                    if (UtilMethods.isSet(host) && UtilMethods.isSet(folder)) {
+                        cont.setHost(host.getIdentifier());
+                        cont.setFolder(folder.getInode());
+                    }
+                }
+
                 //Fill the new contentlet with the data
                 for (Integer column : headers.keySet()) {
                     Field field = headers.get(column);
                     Object value = values.get(column);
 
                     if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484
-
-                        //Verify if the value belongs to a Host or to a Folder
-                        Folder folder = null;
-                        Host host = hostAPI.find( value.toString(), user, false );
-                        //If a host was not found using the given value (identifier) it must be a folder
-                        if ( !UtilMethods.isSet( host ) || !InodeUtils.isSet( host.getInode() ) ) {
-                            folder = folderAPI.find( value.toString(), user, false );
-                        }
-
-                        if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {
-                            if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                                throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
-                            }
-                            cont.setHost(folder.getHostId());
-                            cont.setFolder(value.toString());
-                        } else if (host != null) {
-                            if (!permissionAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                                throw new DotSecurityException("User has no Add Children Permissions on selected host");
-                            }
-                            cont.setHost(value.toString());
-                            cont.setFolder(FolderAPI.SYSTEM_FOLDER);
-                        }
+                        // Site and Folder are already set, so we can continue
                         continue;
                     }
 
@@ -1454,15 +1422,10 @@ public class ImportUtil {
                             if (field.getFieldType().equals(Field.FieldType.TAG.toString()) &&
                                     value instanceof String) {
                                 String[] tags = ((String)value).split(",");
-                                Host host = null;
-                                String hostId = "";
-                                if(headersIncludeHostField){
+                                if(siteAndFolder != null){
                                     //the CSV File has a Host Or Field Column, with a valid value
-                                    try{
-                                        host = APILocator.getHostAPI().find(cont.getHost(), user, true);
-                                    }catch(Exception e){
-                                        Logger.error(ImportUtil.class, "Unable to get host from content: " + e.getMessage());
-                                    }
+                                    final Host host = siteAndFolder.getLeft();
+                                    String hostId = "";
                                     if(UtilMethods.isSet(host)){
                                         if(host.getIdentifier().equals(Host.SYSTEM_HOST))
                                             hostId = Host.SYSTEM_HOST;
@@ -1517,6 +1480,70 @@ public class ImportUtil {
                     lineNumber, e.getMessage()), e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Get the site and folder from the given identifier or name
+     * @param idOrName the identifier or name
+     *                 it can be a host identifier, a folder identifier, a path to a folder or a host name
+     * @param user current user
+     * @return a pair with the host and folder
+     */
+    private static Pair<Host, Folder> getSiteAndFolderFromIdOrName(String idOrName, User user)
+            throws DotDataException, DotSecurityException {
+
+        if (UtilMethods.isSet(idOrName)) {
+
+            // Verify if the value belongs to a host identifier
+            Folder folder = null;
+            Host host = hostAPI.find(idOrName, user, false);
+
+            // If a host was not found using the given value (identifier) it can be a folder
+            if (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier())) {
+                folder = folderAPI.find(idOrName, user, false);
+            }
+
+            // If a host or folder was not found using the given value (identifier)
+            // it can be a path to a folder or a host name
+            if ((!UtilMethods.isSet(folder) || !InodeUtils.isSet(folder.getInode()))
+                    && (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier()))) {
+                if (idOrName.contains("//")) {
+                    // double slash is used to include the host name followed by the path
+                    String hostName = null;
+                    final String[] arr = idOrName.split("/");
+                    final StringBuilder path = new StringBuilder().append("/");
+                    for (String pathPart : arr) {
+                        if (UtilMethods.isSet(pathPart) && hostName == null) {
+                            hostName = pathPart;
+                        } else if (UtilMethods.isSet(pathPart)) {
+                            path.append(pathPart);
+                            path.append("/");
+                        }
+                    }
+                    if (UtilMethods.isSet(hostName)) {
+                        host = APILocator.getHostAPI().findByName(
+                                hostName, user, false);
+                        if (UtilMethods.isSet(host) && UtilMethods.isSet(host.getIdentifier())) {
+                            folder = APILocator.getFolderAPI().findFolderByPath(
+                                    path.toString(), host, user, false);
+                        }
+                    }
+                } else {
+                    // no host + path, so we only check if the value is a host name
+                    host = APILocator.getHostAPI().findByName(
+                            idOrName, user, false);
+                }
+            }
+
+            if (UtilMethods.isSet(folder) && InodeUtils.isSet(folder.getInode())) {
+                return ImmutablePair.of(folder.getHost(), folder);
+            } else if (UtilMethods.isSet(host) && UtilMethods.isSet(host.getIdentifier())) {
+                return ImmutablePair.of(host, APILocator.getFolderAPI().findSystemFolder());
+            }
+        }
+
+        return null;
+
     }
 
     private static Contentlet runWorkflowIfCould(final User user, final List<Permission> contentTypePermissions,
