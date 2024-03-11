@@ -254,27 +254,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     isVTLPage = toSignal(this.store.clientHost$.pipe(map((clientHost) => !clientHost)));
 
     ngOnInit(): void {
-        this.store.stateLoad$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((res) => res === EDITOR_STATE.LOADED)
-            )
-            .subscribe(() => {
-                if (!this.isVTLPage()) {
-                    // Only reload if is Headless.
-                    // If is VTL, the content is updated by store.code$
-                    this.reloadIframe();
-                }
-            });
-
-        this.store.code$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((code) => !!code)
-            )
-            .subscribe((code) => {
-                this.loadVTLIFrameContent(code);
-            });
+        this.handleReloadContent();
 
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
@@ -284,6 +264,32 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
         // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
         // this.store.updateEditorState(EDITOR_STATE.LOADING);
+    }
+
+    /**
+     * Handles the reload of content in the editor.
+     * If the editor state is LOADED and the content is not VTL, it reloads the iframe.
+     * If the content is VTL, it loads the VTL iframe content.
+     * @memberof EditEmaEditorComponent
+     */
+    handleReloadContent() {
+        this.store.stateLoad$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((editorState) => editorState === EDITOR_STATE.LOADED),
+                switchMap(() => this.store.code$)
+            )
+            .subscribe((code) => {
+                if (!this.isVTLPage()) {
+                    // Only reload if is Headless.
+                    // If is VTL, the content is updated by store.code$
+                    this.reloadIframe();
+
+                    return;
+                }
+
+                this.loadVTLIFrameContent(code);
+            });
     }
 
     /**
