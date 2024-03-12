@@ -1,4 +1,5 @@
 /* NAV SUB STYLES 2.0 */
+/* Test change do not merge to core */
 #admin-banner-logo-div{position:absolute;top:10px;left:20px;height:20px;width:80px;text-indent:-9999px;background: url(/html/images/skin/skin-sprite.png) no-repeat 0 -300px;}
 #admin-site-tools-div {position:absolute; top:4px;right:30px;font-size: 85%;color:#ddd;}
 #admin-site-tools-div a{display:inline-block;color:#fff;text-decoration:none;vertical-align:top;padding:5px 0 0 0;margin-right:15px;}
