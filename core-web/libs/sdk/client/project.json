@@ -24,9 +24,7 @@
                 "project": "libs/sdk/client/package.json",
                 "entryFile": "libs/sdk/client/src/lib/editor/sdk-editor-vtl.ts",
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json",
-                "compiler": "swc",
-                "skipPackageJson": true,
-                "skipValidation": true
+                "compiler": "swc"
             }
         },
         "publish": {
