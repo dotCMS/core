@@ -54,6 +54,7 @@
                     }}</label>
                     <textarea
                         class="w-full ai-image-prompt__textarea"
+                        id="prompt"
                         [placeholder]="
                             (form.get('type').value === 'input'
                                 ? 'block-editor.extension.ai-image.custom.placeholder'
@@ -63,22 +64,21 @@
                         rows="11"
                         cols="30"
                         pInputTextarea
-                        formControlName="text"
-                        id="prompt"
-                        >
+                        formControlName="text">
                     </textarea>
                 </div>
                 <div class="field" *ngIf="aiProcessedPrompt && !isLoading">
-                    <label for="prompt-rewritten">{{ 'block-editor.extension.ai-image.rewritten' | dm }}</label>
+                    <label for="prompt-rewritten">{{
+                        'block-editor.extension.ai-image.rewritten' | dm
+                    }}</label>
                     <textarea
                         class="w-full ai-image-prompt__rewritten-textarea"
+                        id="prompt-rewritten"
                         [value]="aiProcessedPrompt"
                         rows="11"
                         cols="30"
                         pInputTextarea
-                        readonly
-                        id="prompt-rewritten"
-                        >
+                        readonly>
                     </textarea>
                 </div>
             </div>
