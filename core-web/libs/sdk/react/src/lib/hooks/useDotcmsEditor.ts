@@ -8,13 +8,13 @@ import {
     updateNavigation
 } from '@dotcms/client';
 
-export const useDotcmsEditor = (options?: DotCMSPageEditorConfig) => {
+export const useDotcmsEditor = (config?: DotCMSPageEditorConfig) => {
     const isInsideEditorPage = isInsideEditor();
 
     useEffect(() => {
         if (isInsideEditorPage) {
-            initEditor(options);
-            updateNavigation(options?.pathname || '/');
+            initEditor(config);
+            updateNavigation(config?.pathname || '/');
         }
 
         return () => {
@@ -22,5 +22,5 @@ export const useDotcmsEditor = (options?: DotCMSPageEditorConfig) => {
                 destroyEditor();
             }
         };
-    }, [isInsideEditorPage, options]);
+    }, [isInsideEditorPage, config]);
 };

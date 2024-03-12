@@ -206,7 +206,7 @@ function listenContentChange() {
  * Sends a ping message to the editor.
  *
  */
-export function pingEditor() {
+function pingEditor() {
     postMessageToEditor({
         action: CUSTOMER_ACTIONS.PING_EDITOR
     });
@@ -217,7 +217,11 @@ export function pingEditor() {
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
  */
 export function isInsideEditor() {
-    if (window?.parent === window) {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    if (window.parent === window) {
         return false;
     }
 

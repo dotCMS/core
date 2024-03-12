@@ -28,7 +28,7 @@ import { ProgressBarModule } from 'primeng/progressbar';
 
 import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
+import { CUSTOMER_ACTIONS,  } from '@dotcms/client';
 import {
     DotPersonalizeService,
     DotMessageService,
