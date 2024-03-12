@@ -73,51 +73,90 @@ public class PortletResource implements Serializable {
     this.portletApi = portletApi;
   }
 
-    /**
-     * Creates a Portlet for a given name content-types and Display view
-     * @param request
-     * @param formData
-     * @return
-     */
-  @POST
-  @Path("/custom")
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response createContentPortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
+//    /**
+//     * Creates a Portlet for a given name content-types and Display view
+//     * @param request
+//     * @param formData
+//     * @return
+//     */
+//  @POST
+//  @Path("/custom")
+//  @JSONP
+//  @NoCache
+//  @Consumes(MediaType.APPLICATION_JSON)
+//  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+//  public final Response createContentPortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
+//
+//    final InitDataObject initData = new WebResource.InitBuilder(webResource)
+//            .requiredBackendUser(true)
+//            .requiredFrontendUser(false)
+//            .requestAndResponse(request, null)
+//            .rejectWhenNoUser(true)
+//            .requiredPortlet("roles")
+//            .init();
+//
+//    Response response = null;
+//
+//    try {
+//
+//      final Portlet contentPortlet = portletApi.findPortlet("content");
+//
+//      final Map<String, String> initValues = new HashMap<>(contentPortlet.getInitParams());
+//      initValues.put("name", formData.portletName);
+//      initValues.put("baseTypes", formData.baseTypes);
+//      initValues.put("contentTypes", formData.contentTypes);
+//      initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
+//
+//      final Portlet newPortlet = APILocator.getPortletAPI()
+//          .savePortlet(new DotPortlet(formData.portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
+//
+//      return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
+//
+//    } catch (Exception e) {
+//      response = ResponseUtil.mapExceptionResponse(e);
+//    }
+//
+//    return response;
+//  }
 
-    final InitDataObject initData = new WebResource.InitBuilder(webResource)
-            .requiredBackendUser(true)
-            .requiredFrontendUser(false)
-            .requestAndResponse(request, null)
-            .rejectWhenNoUser(true)
-            .requiredPortlet("roles")
-            .init();
+    @POST
+    @Path("/custom")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response createOrUpdateContentPortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("roles")
+                .init();
 
-    Response response = null;
+        Response response = null;
 
-    try {
+        try {
 
-      final Portlet contentPortlet = portletApi.findPortlet("content");
+            final Portlet contentPortlet = portletApi.findPortlet("content");
 
-      final Map<String, String> initValues = new HashMap<>(contentPortlet.getInitParams());
-      initValues.put("name", formData.portletName);
-      initValues.put("baseTypes", formData.baseTypes);
-      initValues.put("contentTypes", formData.contentTypes);
-      initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
+            final Map<String, String> initValues = new HashMap<>(contentPortlet.getInitParams());
+            initValues.put("name", formData.portletName);
+            initValues.put("baseTypes", formData.baseTypes);
+            initValues.put("contentTypes", formData.contentTypes);
+            initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
 
-      final Portlet newPortlet = APILocator.getPortletAPI()
-          .savePortlet(new DotPortlet(formData.portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
+            final Portlet newPortlet = APILocator.getPortletAPI()
+                    .createOrUpdatePortlet(new DotPortlet(formData.portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
-      return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
+            return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
 
-    } catch (Exception e) {
-      response = ResponseUtil.mapExceptionResponse(e);
+        } catch (Exception e) {
+            response = ResponseUtil.mapExceptionResponse(e);
+        }
+
+        return response;
     }
-
-    return response;
-  }
 
     /**
      * This endpoint links a layout with a portlet Security is considered so the user must have

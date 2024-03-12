@@ -2,7 +2,10 @@ package com.dotmarketing.business.portal;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -40,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.ServletContext;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 public class PortletAPIImpl implements PortletAPI {
 
@@ -107,16 +112,23 @@ public class PortletAPIImpl implements PortletAPI {
     @WrapInTransaction
     public Portlet savePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException {
 
+        //todo: we have to refactor this method to be able to update or create a portlet
+
+
+        //todo: keep required fields validation
         if(!UtilMethods.isSet(portlet.getPortletId())) {
             throw new DotDataValidationException("Portlet Id is Required");
         }
+
+        if(!UtilMethods.isSet(portlet.getInitParams().get("name"))) {
+            throw new DotDataValidationException("Portlet Name is Required");
+        }
+        //todo: if al ready exists that means that we are updating
         final String portletId = CONTENT_PORTLET_PREFIX + portlet.getPortletId();
         if (UtilMethods.isSet(findPortlet(portletId))) {
             throw new DotDataValidationException("Portlet Id already Exists");
         }
-        if(!UtilMethods.isSet(portlet.getInitParams().get("name"))) {
-            throw new DotDataValidationException("Portlet Name is Required");
-        }
+
         if(!UtilMethods.isSet(portlet.getPortletClass())) {
             throw new DotDataValidationException("You cannot save a portlet without an implementing portletClass");
         }
@@ -163,6 +175,76 @@ public class PortletAPIImpl implements PortletAPI {
     }
 
 
+    @Override
+    public Portlet createOrUpdatePortlet(Portlet portlet, User user) throws DotDataException, LanguageException {
+
+        final String portletId = CONTENT_PORTLET_PREFIX + portlet.getPortletId();
+        // if true means that we are creating a new portlet
+        final boolean isNewPortlet = !UtilMethods.isSet(findPortlet(portletId));
+
+        //get the content types and base types
+        final List<String> contentTypes = checkContentTypes(portlet.getInitParams().get("contentTypes")).stream().map(ct -> ct.variable())
+                .collect(Collectors.toList());
+        final List<String> baseTypes = checkBaseTypes(portlet.getInitParams().get("baseTypes")).stream().map(bt -> bt.name())
+                .collect(Collectors.toList());
+
+        // validation required in create and update
+        portletFieldsValidations(isNewPortlet, portlet, contentTypes, baseTypes);
+
+        // xml values
+        final HashMap<String, String> newMap = new HashMap<>(portlet.getInitParams());
+        newMap.put("portletSource", "db");
+        //cleaning up whitespaces from content types and base types
+        newMap.put("contentTypes", String.join(",", contentTypes));
+        newMap.put("baseTypes", String.join(",", baseTypes));
+
+        //we create or update the portlet
+        final Portlet newPortlet =  portletFac.insertPortlet(new Portlet(portletId, portlet.getPortletClass(),newMap));
+        //Add Languague Variable
+        Map<String, String> keys = ImmutableMap
+                .of(com.dotcms.repackage.javax.portlet.Portlet.class.getPackage().getName()
+                        + ".title." + portletId, newPortlet.getInitParams().get("name"));
+        try {
+            for (Language lang : APILocator.getLanguageAPI().getLanguages()) {
+                APILocator.getLanguageAPI()
+                        .saveLanguageKeys(lang, keys, new HashMap<>(), ImmutableSet.of());
+            }
+        } catch (DotDataException e) {
+            Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+        }
+        // set a message depending on the action
+        final String messageKey = isNewPortlet ? "custom.content.portlet.created" : "custom.content.portlet.updated";
+        final String defaultMessage = isNewPortlet ? "Custom Content Created" : "Custom Content Updated";
+        SystemMessageEventUtil.getInstance().pushMessage(portletId + user.getUserId(), new SystemMessageBuilder()
+                .setMessage(Try.of(() -> LanguageUtil.get(user.getLocale(), messageKey))
+                        .getOrElse(defaultMessage)).create(),list(user.getUserId()));
+
+        return newPortlet;
+    }
+
+    private void portletFieldsValidations(boolean isNewPortlet, Portlet portletToValidate, List<String> contentTypes, List<String> baseTypes ) throws DotDataValidationException {
+
+        final String action = isNewPortlet ? "create" : "update";
+
+        if(!UtilMethods.isSet(portletToValidate.getPortletId())) {
+            throw new DotDataValidationException("Portlet Id is Required");
+        }
+
+        if(!UtilMethods.isSet(portletToValidate.getInitParams().get("name"))) {
+            throw new DotDataValidationException("Portlet Name is Required");
+        }
+
+        if(!UtilMethods.isSet(portletToValidate.getPortletClass())) {
+            throw new DotDataValidationException("You cannot "+ action +" a portlet without an implementing portletClass");
+        }
+        if (contentTypes.size() + baseTypes.size() == 0) {
+            throw new DotDataValidationException("You must specify at least one baseType or Content Type");
+        }
+
+        if(contentTypes.stream().anyMatch(Host.HOST_VELOCITY_VAR_NAME::equalsIgnoreCase)){
+            throw new DotDataValidationException("Invalid attempt to "+ action +" Portlet for restricted Content Type Host. ");
+        }
+    }
 
     @CloseDBIfOpened
     public void InitPortlets() throws SystemException {
