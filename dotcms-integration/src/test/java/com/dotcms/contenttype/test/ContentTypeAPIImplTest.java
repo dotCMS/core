@@ -119,6 +119,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+/**
+ * This Integration Test verifies that the {@link ContentTypeAPI} is working as expected.
+ *
+ * @author Will Ezell
+ * @since Nov 14th, 2016
+ */
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
@@ -789,7 +795,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
 				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
-				APILocator.getLocalSystemEventsAPI(), APILocator.getHostAPI());
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			List<Field> fields = APILocator.getContentTypeFieldAPI().byContentTypeId(contentGenericType.id());
@@ -1233,7 +1239,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		final ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
 				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
-				APILocator.getLocalSystemEventsAPI(), APILocator.getHostAPI());
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			contentTypeAPI.delete(newType);
@@ -1383,7 +1389,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false,
 				FactoryLocator.getContentTypeFactory(),
 				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
-				APILocator.getLocalSystemEventsAPI(), APILocator.getHostAPI());
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			//Try to Save Content Type
@@ -1438,7 +1444,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		contentletDataGen.nextPersisted();
 		final ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
 				FactoryLocator.getFieldFactory(), APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(),
-				APILocator.getLocalSystemEventsAPI(), APILocator.getHostAPI());
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			contentTypeAPI.delete(newType);

@@ -40,7 +40,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
@@ -99,13 +98,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   private final Boolean respectFrontendRoles;
   private final FieldAPI fieldAPI;
   private final LocalSystemEventsAPI localSystemEventsAPI;
-  private final HostAPI siteAPI;
 
   public static final String TYPES_AND_FIELDS_VALID_VARIABLE_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
-      PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI,
-                            final HostAPI siteAPI) {
+      PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI) {
     super();
     this.contentTypeFactory = fac;
     this.fieldFactory = ffac;
@@ -114,13 +111,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     this.respectFrontendRoles = respectFrontendRoles;
     this.fieldAPI = fAPI;
     this.localSystemEventsAPI = localSystemEventsAPI;
-    this.siteAPI = siteAPI;
   }
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
-        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI(),
-            APILocator.getHostAPI());
+        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
   /**
