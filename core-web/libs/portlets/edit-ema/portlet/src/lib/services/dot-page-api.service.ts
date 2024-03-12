@@ -16,8 +16,9 @@ import {
     DotTemplate
 } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PERSONA } from '../shared/consts';
+import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
 import { SavePagePayload } from '../shared/models';
+import { buildQueryParams } from '../utils';
 
 export interface DotPageApiResponse {
     page: {
@@ -85,12 +86,12 @@ export class DotPageApiService {
 
         const pageType = params.clientHost ? 'json' : 'render';
 
-        const newQueryParams = this.buildQueryParams({
+        const newQueryParams = buildQueryParams({
             language_id: params.language_id ?? '1',
             'com.dotmarketing.persona.id':
                 params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
             variantName: params.variantName ?? DEFAULT_VARIANT_ID,
-            mode: 'EDIT_MODE',
+            mode: EDIT_MODE,
             experimentId: params.experimentId
         });
 
@@ -176,16 +177,5 @@ export class DotPageApiService {
         }
 
         return apiUrl + queryParams.toString();
-    }
-
-    private buildQueryParams(params: Record<string, string>): string {
-        // Filter out undefined values
-        Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
-
-        const queryParams = new URLSearchParams({
-            ...params
-        });
-
-        return queryParams.toString();
     }
 }

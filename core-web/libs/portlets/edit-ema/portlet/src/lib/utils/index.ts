@@ -1,3 +1,4 @@
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
 
 /**
@@ -175,3 +176,21 @@ export const getPersonalization = (persona: Record<string, string>) => {
 
     return `dot:${persona.contentType}:${persona.keyTag}`;
 };
+
+/**
+ * Build the query params for the page API
+ *
+ * @export
+ * @param {Record<string, string>} params
+ * @return {*}  {string}
+ */
+export function buildQueryParams(params: Record<string, string> | DotPageApiParams): string {
+    // Filter out undefined values
+    Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
+
+    const queryParams = new URLSearchParams({
+        ...params
+    });
+
+    return queryParams.toString();
+}

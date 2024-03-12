@@ -9,19 +9,14 @@ import { MessageService } from 'primeng/api';
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import {
-    DEFAULT_VARIANT_ID,
-    DotContainerMap,
-    DotLayout,
-    DotPageContainerStructure
-} from '@dotcms/dotcms-models';
+import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import {
     DotPageApiParams,
     DotPageApiResponse,
     DotPageApiService
 } from '../../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../../shared/consts';
+import { DEFAULT_PERSONA, EDIT_MODE } from '../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
 import {
     ActionPayload,
@@ -30,7 +25,12 @@ import {
     ReloadPagePayload,
     SavePagePayload
 } from '../../shared/models';
-import { insertContentletInContainer, sanitizeURL, getPersonalization } from '../../utils';
+import {
+    insertContentletInContainer,
+    sanitizeURL,
+    getPersonalization,
+    buildQueryParams
+} from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
     payload: ActionPayload;
@@ -83,7 +83,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id':
                 state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier,
-            variantName: DEFAULT_VARIANT_ID // Do we have this in the page api?
+            variantName: state.variantName,
+            mode: EDIT_MODE
         });
 
         const favoritePageURL = this.createFavoritePagesURL({
@@ -168,7 +169,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     editorState: EDITOR_STATE.LOADED,
                                     previewState: {
                                         editorMode: EDITOR_MODE.EDIT
-                                    }
+                                    },
+                                    variantName: params.variantName
                                 });
                             },
                             error: ({ status }: HttpErrorResponse) => {
@@ -312,7 +314,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private createPageURL(params: DotPageApiParams): string {
         const url = sanitizeURL(params.url);
 
-        return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}&mode=EDIT_MODE`;
+        return `${url}?${buildQueryParams(params)}`;
     }
 
     /*******************

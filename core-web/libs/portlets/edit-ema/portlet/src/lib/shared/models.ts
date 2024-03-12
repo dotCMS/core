@@ -83,4 +83,5 @@ export interface EditEmaState {
     isEnterpriseLicense: boolean;
     editorState: EDITOR_STATE;
     previewState: PreviewState;
+    variantName?: string;
 }
