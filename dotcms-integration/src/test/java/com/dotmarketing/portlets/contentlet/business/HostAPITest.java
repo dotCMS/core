@@ -1427,6 +1427,10 @@ public class HostAPITest extends IntegrationTestBase  {
         assertTrue("The Site by Key was NOT found!", siteByKey.isPresent());
         assertEquals("Site by ID and Site by Key must point to the Default Site",
                 siteById.get().getIdentifier(), siteByKey.get().getIdentifier());
+        assertEquals("Site by ID must point to the Default Site",
+                siteById.get().getIdentifier(), defaultSite.getIdentifier());
+        assertEquals("Site by Key must point to the Default Site",
+                siteByKey.get().getIdentifier(), defaultSite.getIdentifier());
     }
 
 }
