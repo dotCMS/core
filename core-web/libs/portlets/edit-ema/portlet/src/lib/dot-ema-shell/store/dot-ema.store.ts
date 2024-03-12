@@ -77,6 +77,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly code$ = this.select((state) => state.editor.page.rendered);
 
+    readonly stateLoad$ = this.select((state) => state.editorState);
+
+    readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
+        return {
+            state,
+            code
+        };
+    });
+
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
             url: state.editor.page.pageURI,
@@ -190,8 +199,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             switchMap(({ params, whenReloaded }) => {
                 return this.dotPageApiService.get(params).pipe(
                     tapResponse({
-                        next: (editor) =>
-                            this.patchState({ editor, editorState: EDITOR_STATE.LOADED }),
+                        next: (editor) => {
+                            this.patchState({ editor, editorState: EDITOR_STATE.LOADED });
+                        },
                         error: ({ status }: HttpErrorResponse) =>
                             this.createEmptyState({ canEdit: false, canRead: false }, status),
                         finalize: () => whenReloaded?.()

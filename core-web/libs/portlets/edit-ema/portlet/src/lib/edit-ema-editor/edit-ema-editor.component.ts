@@ -253,28 +253,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
     }
 
+    isVTLPage = toSignal(this.store.clientHost$.pipe(map((clientHost) => !clientHost)));
+
     ngOnInit(): void {
-        this.store.code$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((code) => !!code)
-            )
-            .subscribe((code) => {
-                requestAnimationFrame(() => {
-                    const doc = this.iframe?.nativeElement.contentDocument;
-
-                    if (doc) {
-                        doc.open();
-                        doc.write(this.addEditorPageScript(code));
-                        doc.close();
-
-                        this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-                        this.ogTagsResults$ = this.dotSeoMetaTagsService
-                            .getMetaTagsResults(doc)
-                            .pipe(take(1));
-                    }
-                });
-            });
+        this.handleReloadContent();
 
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
@@ -284,6 +266,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
         // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
         // this.store.updateEditorState(EDITOR_STATE.LOADING);
+    }
+
+    /**
+     * Handles the reload of content in the editor.
+     * If the editor state is LOADED and the content is not VTL, it reloads the iframe.
+     * If the content is VTL, it loads the VTL iframe content.
+     * @memberof EditEmaEditorComponent
+     */
+    handleReloadContent() {
+        this.store.contentState$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter(({ state }) => state === EDITOR_STATE.LOADED)
+            )
+            .subscribe(({ code }) => {
+                if (!this.isVTLPage()) {
+                    // Only reload if is Headless.
+                    // If is VTL, the content is updated by store.code$
+                    this.reloadIframe();
+
+                    return;
+                }
+
+                this.setIframeContent(code);
+            });
     }
 
     /**
@@ -572,9 +579,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 pageId: payload.pageId,
                 params: this.queryParams,
                 whenSaved: () => {
-                    this.reloadIframe();
                     this.resetDragProperties();
-                    this.cd.detectChanges();
                 }
             });
 
@@ -609,9 +614,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
-                        this.reloadIframe();
                     }
                 }); // Save when selected
+            }
+        });
+    }
+
+    /**
+     *
+     * Sets the content of the iframe with the provided code.
+     * @param code - The code to be added to the iframe.
+     * @memberof EditEmaEditorComponent
+     */
+    setIframeContent(code) {
+        requestAnimationFrame(() => {
+            const doc = this.iframe?.nativeElement.contentDocument;
+
+            if (doc) {
+                doc.open();
+                doc.write(this.addEditorPageScript(code));
+                doc.close();
+
+                this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+                this.ogTagsResults$ = this.dotSeoMetaTagsService
+                    .getMetaTagsResults(doc)
+                    .pipe(take(1));
             }
         });
     }
@@ -642,7 +669,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
-                        this.reloadIframe();
                     }
                 });
             },
@@ -655,7 +681,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 if (!payload) {
-                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+                    this.store.reload({
+                        params: this.queryParams
+                    });
 
                     return;
                 }
@@ -671,14 +699,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                // Save when created
                 this.store.savePage({
                     pageContainers,
                     pageId: payload.pageId,
                     params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
-                        this.reloadIframe();
                     }
                 });
             },
@@ -698,7 +724,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     params: this.queryParams,
                     whenSaved: () => {
                         this.dialog.resetDialog();
-                        this.reloadIframe();
                     }
                 });
             }
@@ -914,7 +939,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return this.handleCopyContent();
                 })
             )
-            .subscribe((contentlet) => this.dialog.editContentlet(contentlet));
+            .subscribe((contentlet) => {
+                this.dialog.editContentlet(contentlet);
+            });
     }
 
     /**
@@ -943,8 +970,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     map(() => null)
                 )
             ),
-            filter((contentlet: DotCMSContentlet) => !!contentlet?.inode),
-            tap(() => this.reloadIframe()) // If the contentlet is copied, we reload the iframe
+            filter((contentlet: DotCMSContentlet) => !!contentlet?.inode)
         );
     }
 
@@ -1017,8 +1043,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 // If the URL is the same, we need to fetch the new page data
                 this.store.reload({
-                    params: this.queryParams,
-                    whenReloaded: () => this.reloadIframe()
+                    params: this.queryParams
                 });
             });
     }

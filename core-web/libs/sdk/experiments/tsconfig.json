@@ -4,13 +4,14 @@
         "module": "commonjs",
         "forceConsistentCasingInFileNames": true,
         "strict": true,
-        "noImplicitOverride": true,
         "noPropertyAccessFromIndexSignature": true,
         "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true
+        "noFallthroughCasesInSwitch": true,
+        "types": ["vite/client"],
+        "noUnusedParameters": true
     },
     "files": [],
-    "include": [],
+    "include": ["src"],
     "references": [
         {
             "path": "./tsconfig.lib.json"
