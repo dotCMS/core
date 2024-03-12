@@ -1,0 +1,124 @@
+name: 'Deploy Docker Artifact'
+description: 'Build and push a docker image to a registry from a Docker context passed from a run'
+inputs:
+  docker_platforms:
+    description: 'Docker platforms to build the image on'
+    required: false
+    default: 'linux/amd64'
+  docker_registry:
+    description: 'Docker registry to push the image to (DOCKER.IO, GHCR.IO, BOTH)'
+    required: false
+    default: 'DOCKER.IO'
+  build_run_id:
+    description: 'The run id of the build to pull the artifact from'
+    required: true
+  commit_id:
+    description: 'The commit id that triggered the build'
+    required: true
+  variant:
+    description: 'The branch or type of build to tag the image with'
+    required: true
+  docker_tag:
+    description: 'The docker tag to use for the image'
+    required: true
+  do_deploy:
+    description: 'Actually do the final deploy, set to false for testing'
+    required: true
+    default: 'true'
+  docker_io_username:
+    description: 'Docker.io username'
+    required: false
+  docker_io_token:
+    description: 'Docker.io token'
+    required: false
+  ghcr_io_username:
+    description: 'GHCR.io username'
+    required: false
+  ghcr_io_token:
+    description: 'GHCR.io token'
+    required: false
+  github_token:
+    description: 'github token'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - run: echo 'GitHub context'
+      shell: bash
+    - name: Download Docker Build Context
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-build-context
+        path: ${{ github.workspace }}
+        run-id: ${{ inputs.build_run_id }}
+        github-token: ${{ inputs.github_token }}
+
+    - name: Extract short SHA
+      id: vars
+      shell: bash
+      run: echo "SHORT_SHA=$(echo ${GITHUB_SHA:0:7})" >> $GITHUB_ENV
+
+    - name: Docker.io login
+      uses: docker/login-action@v3.0.0
+      with:
+        username: ${{ inputs.docker_io_username }}
+        password: ${{ inputs.docker_io_token }}
+      if: (inputs.docker_registry == 'DOCKER.IO' || inputs.docker_registry == 'BOTH') && !inputs.do_deploy
+
+    - name: GHCR.io login
+      uses: docker/login-action@v3.0.0
+      with:
+        registry: ghcr.io
+        username: ${{ inputs.ghcr_io_username }}
+        password: ${{ inputs.ghcr_io_token }}
+      if: (inputs.docker_registry == 'GHCR.IO' || inputs.docker_registry == 'BOTH') && !inputs.do_deploy
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3.0.0
+      with:
+        image: tonistiigi/binfmt:latest
+        platforms: ${{ inputs.docker_platforms }}
+
+    - name: Docker Metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          dotcms/dotcms
+        tags: |
+          type=raw,value=${{ inputs.variant }}_${{ env.SHORT_SHA }},enable=true
+          type=raw,value=${{ inputs.docker_tag }}
+      if: success()
+
+    - name: Debug Docker Metadata
+      shell: bash
+      run: |
+        echo "${{ fromJSON(steps.meta.outputs.json) }}"
+        echo "tags=$(echo ${{ steps.meta.outputs.tags }} | tr '\n' ' ')" >> $GITHUB_OUTPUT
+        echo "version=${{ steps.meta.outputs.version }}" >> $GITHUB_OUTPUT
+      if: success()
+
+    - name: Docker Setup Buildx
+      uses: docker/setup-buildx-action@v3.0.0
+      with:
+        version: latest
+        platforms: ${{ inputs.docker_platforms }}
+        driver-opts: |
+          image=moby/buildkit:v0.12.2
+
+    - name: Setup Context
+      run: |
+        mkdir -p docker-context
+        tar -xvf docker-build.tar -C docker-context
+      shell: bash
+
+    - name: Build/Push Docker Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./docker-context
+        tags: ${{ inputs.docker_tag }}
+        platforms: ${{ inputs.docker_platforms }}
+        pull: true
+        push: ${{ inputs.do_deploy }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
