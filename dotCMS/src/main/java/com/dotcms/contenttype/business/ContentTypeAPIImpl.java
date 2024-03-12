@@ -28,7 +28,6 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LowerKeyMap;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -49,6 +48,7 @@ import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -61,12 +61,9 @@ import org.elasticsearch.action.search.SearchResponse;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -487,9 +484,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException {
     try {
-      return perms.filterCollection(this.contentTypeFactory.search(this.resolveSiteIds(siteIds),
+      final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(siteIds, this.user, this.respectFrontendRoles);
+      return this.perms.filterCollection(this.contentTypeFactory.search(resolvedSiteIds,
               condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0),
-              PermissionAPI.PERMISSION_READ, respectFrontendRoles, user).size();
+              PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user).size();
     } catch (final DotSecurityException e) {
       Logger.error(this, String.format("An error occurred when getting the Content Type count for Sites " +
               "[ %s ] with condition [ %s ]: %s", siteIds, condition, ExceptionUtil.getErrorMessage(e)), e);
@@ -762,13 +760,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     int rollingOffset = offset;
     try {
       while ((limit<0)||(returnTypes.size() < limit)) {
-        final List<String> resolvedSiteIds = this.resolveSiteIds(sites);
+        final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(sites, this.user, this.respectFrontendRoles);
         final List<ContentType> rawContentTypes = this.contentTypeFactory.search(resolvedSiteIds,
                 condition, base.getType(), orderBy, limit, rollingOffset);
         if (rawContentTypes.isEmpty()) {
           break;
         }
-        returnTypes.addAll(perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+        returnTypes.addAll(this.perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user));
         if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
           break;
         }
@@ -782,29 +780,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
               "%s", ExceptionUtil.getErrorMessage(e)));
       throw new DotStateException(e);
     }
-  }
-
-  /**
-   * Utility method that takes a list of Site IDs and/or Site Keys, and resolves them to a list of
-   * Site IDs only. This allows developers/users to pass down a Site Key when they don't have
-   * access to its ID, or just don't want to use it.
-   *
-   * @param sites The list of Site IDs and/or Site Keys to resolve.
-   *
-   * @return A list of Site IDs only.
-   */
-  private List<String> resolveSiteIds(final List<String> sites) {
-    if (UtilMethods.isNotSet(sites)) {
-      return List.of();
-    }
-    final Set<String> uniqueIds = new HashSet<>(sites);
-    return uniqueIds.stream().map(siteIdOrKey -> {
-
-      final Optional<Host> siteOpt =
-              Try.of(() -> this.siteAPI.findByIdOrKey(siteIdOrKey, user, false)).getOrElse(Optional.empty());
-      return siteOpt.map(Host::getIdentifier).orElse(siteIdOrKey);
-
-    }).filter(Objects::nonNull).collect(Collectors.toList());
   }
 
   @CloseDBIfOpened

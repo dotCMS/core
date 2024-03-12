@@ -10,7 +10,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
-import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
@@ -239,19 +238,16 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                                         final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         checkNotEmpty(siteIdOrKey, IllegalArgumentException.class, "'siteIdOrKey' parameter cannot be null or empty");
         checkNotNull(user, IllegalArgumentException.class, "'user' parameter cannot be null");
-        final Optional<Host> site;
         final String trimmedSiteIdOrKey = siteIdOrKey.trim();
-        if (UUIDUtil.isUUID(trimmedSiteIdOrKey) || Host.SYSTEM_HOST.equals(trimmedSiteIdOrKey)) {
-            site = Optional.ofNullable(find(trimmedSiteIdOrKey, user, respectFrontendRoles));
+        final Optional<Host> siteOpt = UUIDUtil.isUUID(trimmedSiteIdOrKey) || Host.SYSTEM_HOST.equals(trimmedSiteIdOrKey)
+                ? Optional.ofNullable(find(trimmedSiteIdOrKey, user, respectFrontendRoles))
+                : resolveHostNameWithoutDefault(trimmedSiteIdOrKey, APILocator.systemUser(), respectFrontendRoles);
+        if (siteOpt.isPresent()) {
+            this.checkSitePermission(user, respectFrontendRoles, siteOpt.get());
         } else {
-            site = resolveHostNameWithoutDefault(trimmedSiteIdOrKey, APILocator.systemUser(), respectFrontendRoles);
+            Logger.debug(this, () -> String.format("Site ID/Key '%s' was not found", siteIdOrKey));
         }
-        if (site.isPresent()) {
-            this.checkSitePermission(user, respectFrontendRoles, site.get());
-        } else {
-            Logger.debug(this, String.format("Site ID/Key '%s' was not found", siteIdOrKey));
-        }
-        return site;
+        return siteOpt;
     }
 
     @Override
