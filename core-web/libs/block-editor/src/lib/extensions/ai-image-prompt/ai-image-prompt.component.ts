@@ -62,7 +62,7 @@ export class AIImagePromptComponent {
     }
 
     insetImage(imageInfo: DotGeneratedAIImage): void {
-        this.store.patchState({ selectedImage: imageInfo });
+        this.store.setSelectedImage(imageInfo);
     }
 
     /**

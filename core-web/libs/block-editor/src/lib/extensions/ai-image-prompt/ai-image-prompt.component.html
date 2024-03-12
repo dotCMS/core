@@ -4,11 +4,11 @@
         [dismissableMask]="true"
         [draggable]="false"
         [resizable]="false"
-        [style]="{ width: '880px' }"
+        [style]="{ width: '1040px' }"
         (onHide)="hideDialog()"
         appendTo="body"
         header="{{ 'block-editor.extension.ai-image.dialog-title' | dm }}">
-        <div class="dialog-prompt__wrapper flex">
+        <div class="dialog-prompt__wrapper">
             <dot-ai-image-prompt-form
                 *ngIf="vm.showDialog"
                 [generatedValue]="vm.images[vm.galleryActiveIndex]"

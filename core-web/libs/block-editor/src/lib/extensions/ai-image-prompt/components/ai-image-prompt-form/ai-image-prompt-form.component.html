@@ -28,12 +28,13 @@
                 <span>{{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}</span>
             </div>
             <div class="field ai-image-prompt__orientation">
-                <label dotFieldRequired>{{
+                <label dotFieldRequired for="orientation">{{
                     'block-editor.extension.ai-image.orientation' | dm
                 }}</label>
                 <p-dropdown
                     [options]="orientationOptions"
                     formControlName="size"
+                    inputId="orientation"
                     styleClass="w-full"></p-dropdown>
             </div>
         </p-accordionTab>
@@ -45,7 +46,7 @@
                 class="ai-image-prompt__text"
                 [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading">
                 <div class="field">
-                    <label [checkIsRequiredControl]="'size'" dotFieldRequired>{{
+                    <label [checkIsRequiredControl]="'size'" dotFieldRequired for="prompt">{{
                         (form.get('type').value === 'input'
                             ? 'block-editor.extension.ai-image.prompt'
                             : 'block-editor.extension.ai-image.custom.props'
@@ -62,18 +63,22 @@
                         rows="11"
                         cols="30"
                         pInputTextarea
-                        formControlName="text">
+                        formControlName="text"
+                        id="prompt"
+                        >
                     </textarea>
                 </div>
                 <div class="field" *ngIf="aiProcessedPrompt && !isLoading">
-                    <label>{{ 'block-editor.extension.ai-image.rewritten' | dm }}</label>
+                    <label for="prompt-rewritten">{{ 'block-editor.extension.ai-image.rewritten' | dm }}</label>
                     <textarea
                         class="w-full ai-image-prompt__rewritten-textarea"
                         [value]="aiProcessedPrompt"
                         rows="11"
                         cols="30"
                         pInputTextarea
-                        readonly>
+                        readonly
+                        id="prompt-rewritten"
+                        >
                     </textarea>
                 </div>
             </div>

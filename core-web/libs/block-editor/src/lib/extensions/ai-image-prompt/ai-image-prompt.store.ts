@@ -75,6 +75,12 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         error: ''
     }));
 
+    readonly setSelectedImage = this.updater(
+        (state: DotAiImagePromptComponentState, selectedImage: DotGeneratedAIImage) => {
+            return { ...state, selectedImage };
+        }
+    );
+
     readonly hideDialog = this.updater(() => ({
         ...initialState
     }));

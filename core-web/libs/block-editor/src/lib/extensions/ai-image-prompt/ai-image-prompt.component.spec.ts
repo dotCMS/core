@@ -57,8 +57,6 @@ describe('AIImagePromptComponent', () => {
 
         promptForm.value.emit(formMock);
 
-        promptForm.value.emit(formMock);
-
         expect(store.generateImage).toHaveBeenCalledWith(formMock);
     });
 
@@ -72,7 +70,8 @@ describe('AIImagePromptComponent', () => {
     });
 
     it('should clear error on hide confirm', () => {
-        spectator.component.onHideConfirm();
+        const dialog = spectator.query(Dialog);
+        dialog.onHide.emit('true');
         expect(store.cleanError).toHaveBeenCalled();
     });
 });
