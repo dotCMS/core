@@ -1,0 +1,74 @@
+# Trunk Deployment Workflow
+# This workflow is triggered when the 'Maven CICD Pipeline' workflow run is completed on the 'master' branch.
+# It deploys the application if the 'Maven CICD Pipeline' workflow run was successful.
+name: Trunk Deployment
+
+# The workflow run name is 'Trunk Deployment' appended with the name of the workflow run that triggered this workflow.
+run-name: Trunk Deployment - ${{ github.event.workflow_run.name }}
+
+# The concurrency group is 'trunk-deployment'. This ensures that only one run of this workflow can be in progress at a time.
+concurrency: trunk-deployment
+
+on:
+  workflow_run:
+    workflows: ['Maven CICD Pipeline']
+    types:
+      - completed
+    branches:
+      - master
+
+# The workflow has read access to the repository contents and actions.
+permissions:
+  contents: read
+  actions: read # allow access to other job artifacts with GITHUB_TOKEN
+jobs:
+  deployment:
+    # The job runs if the 'Maven CICD Pipeline' workflow run was successful.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: trunk
+    steps:
+      # The repository is checked out using the 'actions/checkout' action.
+      - name: Checkout core
+        uses: actions/checkout@v4
+
+      # The latest commit SHA from the 'master' branch is retrieved.
+      # If the workflow was not triggered by the latest commit, the job fails.
+      - name: Get the latest commit SHA from master
+        id: latest_commit
+        run: |
+          echo "TRIGGER_SHA=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
+          echo "LATEST_SHA=$(git rev-parse origin/master)" >> $GITHUB_ENV
+          if [ $TRIGGER_SHA != $LATEST_SHA ]; then
+            echo "Triggered by an old commit. Latest: $LATEST_SHA, Trigger: $TRIGGER_SHA"
+            exit 1
+          fi
+
+      # A Docker image is built and pushed using the 'deploy-artifact-docker' action.
+      - name: Build/Push Docker Image
+        id: docker_build
+        uses: ./.github/actions/deploy-artifact-docker
+        with:
+          docker_platforms: linux/amd64,linux/arm64
+          build_run_id: ${{ github.event.workflow_run.id }}
+          commit_id: ${{ github.event.workflow_run.head_sha }}"
+          variant: dotcms/dotcms:master
+          docker_tag: dotcms/dotcms:master_latest_SNAPSHOT
+          do_deploy: false
+          docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      # A Slack notification is sent using the 'action-slack-notify' action if the repository is 'dotcms/core'.
+      - name: Slack Notification
+        if: github.repository == 'dotcms/core'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_TITLE: "Attention dotters: Docker image built!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
+          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *master* with tags: [${{ steps.docker_build.outputs.tags }}] :docker:"
