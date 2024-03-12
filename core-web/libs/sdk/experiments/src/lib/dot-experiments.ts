@@ -54,12 +54,6 @@ export class DotExperiments {
             `DotExperiments instanced with ${JSON.stringify(config)} configuration`,
             this.getIsDebugActive()
         );
-
-        // TODO: Steps. Delete when we finish
-        // - 1. Fetching and storing data ✅
-        // - 2. Parsing data for backend use and register in it in the JitsuClient ✅
-        // - 3. Detecting and navigate to the appropriate variant
-        // - 4. Sending events to Analytics Cloud (Set PageView)
     }
 
     /**
