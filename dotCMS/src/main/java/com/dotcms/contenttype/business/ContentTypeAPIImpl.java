@@ -28,6 +28,7 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LowerKeyMap;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -40,6 +41,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
@@ -59,9 +61,12 @@ import org.elasticsearch.action.search.SearchResponse;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -97,11 +102,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   private final Boolean respectFrontendRoles;
   private final FieldAPI fieldAPI;
   private final LocalSystemEventsAPI localSystemEventsAPI;
+  private final HostAPI siteAPI;
 
   public static final String TYPES_AND_FIELDS_VALID_VARIABLE_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
-      PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI) {
+      PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI,
+                            final HostAPI siteAPI) {
     super();
     this.contentTypeFactory = fac;
     this.fieldFactory = ffac;
@@ -110,11 +117,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     this.respectFrontendRoles = respectFrontendRoles;
     this.fieldAPI = fAPI;
     this.localSystemEventsAPI = localSystemEventsAPI;
+    this.siteAPI = siteAPI;
   }
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
-        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
+        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI(),
+            APILocator.getHostAPI());
   }
 
   /**
@@ -478,8 +487,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException {
     try {
-      return perms.filterCollection(this.contentTypeFactory.search(siteIds, condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0), PermissionAPI.PERMISSION_READ,
-              respectFrontendRoles, user).size();
+      return perms.filterCollection(this.contentTypeFactory.search(this.resolveSiteIds(siteIds),
+              condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0),
+              PermissionAPI.PERMISSION_READ, respectFrontendRoles, user).size();
     } catch (final DotSecurityException e) {
       Logger.error(this, String.format("An error occurred when getting the Content Type count for Sites " +
               "[ %s ] with condition [ %s ]: %s", siteIds, condition, ExceptionUtil.getErrorMessage(e)), e);
@@ -752,7 +762,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     int rollingOffset = offset;
     try {
       while ((limit<0)||(returnTypes.size() < limit)) {
-        final List<ContentType> rawContentTypes = this.contentTypeFactory.search(sites, condition, base.getType(), orderBy, limit, rollingOffset);
+        final List<String> resolvedSiteIds = this.resolveSiteIds(sites);
+        final List<ContentType> rawContentTypes = this.contentTypeFactory.search(resolvedSiteIds,
+                condition, base.getType(), orderBy, limit, rollingOffset);
         if (rawContentTypes.isEmpty()) {
           break;
         }
@@ -772,7 +784,30 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
-    @CloseDBIfOpened
+  /**
+   * Utility method that takes a list of Site IDs and/or Site Keys, and resolves them to a list of
+   * Site IDs only. This allows developers/users to pass down a Site Key when they don't have
+   * access to its ID, or just don't want to use it.
+   *
+   * @param sites The list of Site IDs and/or Site Keys to resolve.
+   *
+   * @return A list of Site IDs only.
+   */
+  private List<String> resolveSiteIds(final List<String> sites) {
+    if (UtilMethods.isNotSet(sites)) {
+      return List.of();
+    }
+    final Set<String> uniqueIds = new HashSet<>(sites);
+    return uniqueIds.stream().map(siteIdOrKey -> {
+
+      final Optional<Host> siteOpt =
+              Try.of(() -> this.siteAPI.findByIdOrKey(siteIdOrKey, user, false)).getOrElse(Optional.empty());
+      return siteOpt.map(Host::getIdentifier).orElse(siteIdOrKey);
+
+    }).filter(Objects::nonNull).collect(Collectors.toList());
+  }
+
+  @CloseDBIfOpened
     @Override
     public List<ContentType> search(final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset, final String siteId)
             throws DotDataException {

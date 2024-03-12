@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
@@ -34,19 +35,23 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 /**
  * This API allows developers to access information related to Sites objects in your dotCMS content repository.
@@ -165,7 +170,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     /**
-     * Verifies that the specified User has READ permission on a given Site.
+     * Verifies that the specified User has READ permission on a given Site. If it doesn't, a
+     * {@link DotSecurityException} will be thrown
      *
      * @param user                 The {@link User} whose READ permission needs to be checked.
      * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
@@ -178,8 +184,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      */
     private void checkSitePermission(final User user, final boolean respectFrontendRoles, final Host site) throws DotDataException, DotSecurityException {
         if (!APILocator.getPermissionAPI().doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-            String userId = (user != null) ? user.getUserId() : null;
-            String siteName = (site != null) ? site.getHostname() : null;
+            final String userId = Try.of(user::getUserId).getOrElse("- null -");
+            final String siteName = Try.of (site::getHostname).getOrElse("- null -");
             throw new DotSecurityException(String.format("User '%s' does not have read permissions on '%s'", userId,
                     siteName));
         }
@@ -226,6 +232,26 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
         }
         return null;
+    }
+
+    @Override
+    public Optional<Host> findByIdOrKey(final String siteIdOrKey, final User user,
+                                        final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        checkNotEmpty(siteIdOrKey, IllegalArgumentException.class, "'siteIdOrKey' parameter cannot be null or empty");
+        checkNotNull(user, IllegalArgumentException.class, "'user' parameter cannot be null");
+        final Optional<Host> site;
+        final String trimmedSiteIdOrKey = siteIdOrKey.trim();
+        if (UUIDUtil.isUUID(trimmedSiteIdOrKey) || Host.SYSTEM_HOST.equals(trimmedSiteIdOrKey)) {
+            site = Optional.ofNullable(find(trimmedSiteIdOrKey, user, respectFrontendRoles));
+        } else {
+            site = resolveHostNameWithoutDefault(trimmedSiteIdOrKey, APILocator.systemUser(), respectFrontendRoles);
+        }
+        if (site.isPresent()) {
+            this.checkSitePermission(user, respectFrontendRoles, site.get());
+        } else {
+            Logger.debug(this, String.format("Site ID/Key '%s' was not found", siteIdOrKey));
+        }
+        return site;
     }
 
     @Override
