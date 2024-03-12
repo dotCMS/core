@@ -19,6 +19,7 @@ import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
@@ -211,7 +212,7 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
             logger.error(errorMessage, e);
             Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | CompletionException e) {
             var cause = e.getCause();
             throw errorHandlerUtil.mapPullException(cause);
         }

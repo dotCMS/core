@@ -9,6 +9,7 @@ import com.dotcms.model.pull.PullOptions;
 import io.quarkus.arc.DefaultBean;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -145,7 +146,7 @@ public class PullServiceImpl implements PullService {
             logger.error(errorMessage, e);
             Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | CompletionException e) {
             var cause = e.getCause();
             throw errorHandlerUtil.mapPullException(cause);
         }
@@ -261,7 +262,7 @@ public class PullServiceImpl implements PullService {
             logger.error(errorMessage, e);
             Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
-        } catch (ExecutionException e) {// Fail fast
+        } catch (ExecutionException | CompletionException e) {// Fail fast
 
             var cause = e.getCause();
             var toThrow = errorHandlerUtil.handlePullFailFastException(

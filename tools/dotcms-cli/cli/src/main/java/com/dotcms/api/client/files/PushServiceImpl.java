@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -348,7 +349,7 @@ public class PushServiceImpl implements PushService {
             logger.error(errorMessage, e);
             Thread.currentThread().interrupt();
             throw new PushException(errorMessage, e);
-        } catch (ExecutionException e) {// Fail fast
+        } catch (ExecutionException | CompletionException e) {// Fail fast
 
             var cause = e.getCause();
             var toThrow = errorHandlerUtil.handlePushFailFastException(

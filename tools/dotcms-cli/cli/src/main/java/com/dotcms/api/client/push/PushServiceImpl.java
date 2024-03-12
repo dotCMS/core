@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -203,7 +204,7 @@ public class PushServiceImpl implements PushService {
             logger.error(errorMessage, e);
             Thread.currentThread().interrupt();
             throw new PushException(errorMessage, e);
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | CompletionException e) {
             var cause = e.getCause();
             throw errorHandlerUtil.mapPushException(cause);
         }
@@ -346,7 +347,7 @@ public class PushServiceImpl implements PushService {
             logger.error(errorMessage, e);
             Thread.currentThread().interrupt();
             throw new PushException(errorMessage, e);
-        } catch (ExecutionException e) {// Fail fast
+        } catch (ExecutionException | CompletionException e) {// Fail fast
 
             var cause = e.getCause();
             var toThrow = errorHandlerUtil.handlePushFailFastException(

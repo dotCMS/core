@@ -11,6 +11,7 @@ import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.pull.ContentFetcher;
+import com.dotcms.api.client.pull.exception.PullException;
 import com.dotcms.api.client.util.SiteIterator;
 import com.dotcms.common.LocationUtils;
 import com.dotcms.model.asset.AssetVersionsView;
@@ -27,6 +28,7 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
+import org.jboss.logging.Logger;
 
 @Dependent
 public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializable {
@@ -38,6 +40,9 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
 
     @Inject
     RemoteTraversalService remoteTraversalService;
+
+    @Inject
+    Logger logger;
 
     @ActivateRequestContext
     @Override
@@ -130,13 +135,25 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
      */
     AssetVersionsView retrieveAssetInformation(final String source) {
 
-        // Requesting the file info
-        final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
+        try {
+            // Requesting the file info
+            final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
-        // Execute the REST call to retrieve asset information
-        String encodedURL = encodePath(source);
-        var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(encodedURL).build());
-        return response.entity();
+            // Execute the REST call to retrieve asset information
+            String encodedURL = encodePath(source);
+            var response = assetAPI.assetByPath(
+                    ByPathRequest.builder().assetPath(encodedURL).build()
+            );
+            return response.entity();
+        } catch (Exception e) {
+            var message = String.format(
+                    "Error pulling content [%s]",
+                    source
+            );
+
+            logger.error(message, e);
+            throw new PullException(message, e);
+        }
     }
 
     /**

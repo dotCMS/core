@@ -73,25 +73,12 @@ public class ErrorHandlingUtilImpl implements ErrorHandlingUtil {
 
                 var exception = iterator.next();
 
-                var useMessage = exception instanceof PullException
-                        || exception instanceof PushException
-                        || exception instanceof TraversalTaskException;
-
                 var isLast = !iterator.hasNext();
 
-                final int errorCode;
-                if (useMessage) {
-                    errorCode = output.handleCommandException(
-                            exception,
-                            String.format("%s %n", exception.getMessage()),
-                            isLast
-                    );
-                } else {
-                    errorCode = output.handleCommandException(
-                            exception,
-                            isLast
-                    );
-                }
+                final var errorCode = output.handleCommandException(
+                        exception,
+                        isLast
+                );
 
                 if (!firstErrorCodeSet) {
                     firstErrorCodeSet = true;
