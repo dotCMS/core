@@ -37,8 +37,10 @@ public interface PortletAPI {
 
   void deletePortlet(final String portletId);
 
+  //todo: remove this method
   Portlet savePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException;
 
+  // In this method we are encapsulating the logic to create or update a portlet
   Portlet createOrUpdatePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException;
 
   Portlet updatePortlet(final Portlet portlet) throws DotDataException;

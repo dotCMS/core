@@ -108,6 +108,7 @@ public class PortletAPIImpl implements PortletAPI {
         }
     }
 
+    //todo: remove this method
     @Override
     @WrapInTransaction
     public Portlet savePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException {
@@ -174,10 +175,14 @@ public class PortletAPIImpl implements PortletAPI {
         return newPortlet;
     }
 
+    private boolean containPrefix(String portletId) {
+        return portletId.startsWith(CONTENT_PORTLET_PREFIX);
+    }
 
     @Override
     public Portlet createOrUpdatePortlet(Portlet portlet, User user) throws DotDataException, LanguageException {
 
+        //todo: validate if contains ther prefix or not
         final String portletId = CONTENT_PORTLET_PREFIX + portlet.getPortletId();
         // if true means that we are creating a new portlet
         final boolean isNewPortlet = !UtilMethods.isSet(findPortlet(portletId));
