@@ -1,5 +1,6 @@
+import { pingEditor } from './listeners/listeners';
 import { postMessageToEditor, CUSTOMER_ACTIONS } from './models/client.model';
-import { initEditor, isInsideEditor, pingEditor, updateNavigation } from './sdk-editor';
+import { initEditor, isInsideEditor, updateNavigation } from './sdk-editor';
 
 jest.mock('./models/client.model', () => ({
     postMessageToEditor: jest.fn(),

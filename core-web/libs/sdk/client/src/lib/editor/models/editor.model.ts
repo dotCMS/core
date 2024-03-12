@@ -1,39 +1,17 @@
 /**
- * Actions received from the dotcms editor
  *
+ * Represents the configuration options for the DotCMS page editor.
  * @export
- * @enum {number}
+ * @interface DotCMSPageEditorConfig
  */
-export enum NOTIFY_CUSTOMER {
-    /**
-     * Request to page to reload
-     */
-    EMA_RELOAD_PAGE = 'ema-reload-page',
-    /**
-     * Request the bounds for the elements
-     */
-    EMA_REQUEST_BOUNDS = 'ema-request-bounds',
-    /**
-     * Received pong from the editor
-     */
-    EMA_EDITOR_PONG = 'ema-editor-pong'
-}
-
 export interface DotCMSPageEditorConfig {
+    /**
+     * A callback function that will be called when the page editor needs to be reloaded.
+     */
     onReload: () => void;
+
+    /**
+     * The pathname of the page being edited. Optional.
+     */
     pathname?: string;
 }
-
-interface DotCMSPageEditorListener {
-    type: 'listener';
-    event: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    callback: (ev: any) => void;
-}
-
-interface DotCMSPageEditorObserver {
-    type: 'observer';
-    observer: MutationObserver;
-}
-
-export type DotCMSPageEditorSubscription = DotCMSPageEditorListener | DotCMSPageEditorObserver;

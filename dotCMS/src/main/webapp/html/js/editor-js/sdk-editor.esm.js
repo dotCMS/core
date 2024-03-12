@@ -262,19 +262,6 @@ function _unsupported_iterable_to_array(o, minLen) {
     document.addEventListener("pointermove", pointerMoveCallback);
 }
 /**
- *
- *
- * @private
- * @memberof DotCMSPageEditor
- */ function scrollHandler() {
-    var scrollCallback = function() {
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.IFRAME_SCROLL
-        });
-    };
-    window.addEventListener("scroll", scrollCallback);
-}
-/**
  * Listens for changes in the content and triggers a custom action when the content changes.
  *
  * @private
@@ -325,6 +312,7 @@ function _unsupported_iterable_to_array(o, minLen) {
         action: CUSTOMER_ACTIONS.PING_EDITOR
     });
 }
+
 /**
  * Checks if the code is running inside an editor.
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
@@ -337,26 +325,19 @@ function _unsupported_iterable_to_array(o, minLen) {
     }
     return true;
 }
+
 /**
- * Initializes the DotCMS page editor.
+ * This is the main entry point for the SDK VTL.
+ * This is added to VTL Script in the EditPage
  *
- * @param conf - Optional configuration for the editor.
- */ function initEditor(config) {
-    if (config) {
-        pageEditorConfig = config;
-    }
+ * @remarks
+ * This module sets up the necessary listeners and functionality for the SDK VTL.
+ * It checks if the script is running inside the editor and then initializes the client by pinging the editor,
+ * listening for editor messages, hovered contentlet changes, and content changes.
+ *
+ */ if (isInsideEditor()) {
     pingEditor();
     listenEditorMessages();
     listenHoveredContentlet();
-    scrollHandler();
     listenContentChange();
-}
-
-/**
- * This is the main entry point for the SDK VTL. It initializes the client and returns it.
- * This is added to VTL Script in the EditPage
- *
- * @type {*}
- */ if (isInsideEditor()) {
-    initEditor();
 }
