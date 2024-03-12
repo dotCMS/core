@@ -1,6 +1,9 @@
 <p-table [value]="products" dataKey="code">
     <ng-template pTemplate="header">
         <tr>
+            <th style="width: 4rem">
+                <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+            </th>
             <th>Code</th>
             <th>Name</th>
             <th>Price</th>
@@ -8,9 +11,12 @@
     </ng-template>
     <ng-template pTemplate="body" let-product>
         <tr>
-            <td>{{product.code}}</td>
-            <td>{{product.name}}</td>
-            <td>{{product.price}}</td>
+            <td>
+                <p-tableCheckbox [value]="product"></p-tableCheckbox>
+            </td>
+            <td>{{ product.code }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.price }}</td>
         </tr>
     </ng-template>
 </p-table>
