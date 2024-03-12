@@ -1397,7 +1397,8 @@ public class HostAPITest extends IntegrationTestBase  {
     /**
      * <ul>
      *     <li><b>Method to test: </b>{@link HostAPI#findByIdOrKey(String, User, boolean)}</li>
-     *     <li><b>Given Scenario: </b>Find a Site using either its Identifier or its Key.</li>
+     *     <li><b>Given Scenario: </b>Find the Default Site using either its Identifier or its
+     *     Key.</li>
      *     <li><b>Expected Result: </b>The Site API must be able to find the specified Site using
      *     either the Identifier or the Site Key.</li>
      * </ul>
@@ -1409,8 +1410,9 @@ public class HostAPITest extends IntegrationTestBase  {
         // ╚══════════════════╝
         final HostAPI siteAPI = APILocator.getHostAPI();
         final User systemUser = APILocator.systemUser();
-        final String defaultSiteId = "48190c8c-42c4-46af-8d1a-0cd5db894797";
-        final String defaultSiteKey = "default";
+        final Host defaultSite = siteAPI.findDefaultHost(systemUser, false);
+        final String defaultSiteId = defaultSite.getIdentifier();
+        final String defaultSiteKey = defaultSite.getHostname();
 
         // ╔════════════════════════╗
         // ║  Generating Test data  ║
