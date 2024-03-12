@@ -54,6 +54,7 @@
             </a>
         </ng-container>
         <ng-container right>
+            <dot-ema-running-experiment [pageId]="es.editor.page.identifier" />
             <dot-edit-ema-language-selector
                 [language]="es.editor.viewAs.language"
                 (selected)="onLanguageSelected($event)"

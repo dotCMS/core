@@ -1,0 +1,23 @@
+<ng-container *ngIf="runningExperiment$ | async as runningExperiment">
+    <p-tag
+        class="p-tag-success"
+        *ngIf="runningExperiment"
+        [routerLink]="[
+            '/edit-page/experiments/',
+            runningExperiment.pageId,
+            runningExperiment.id,
+            'reports'
+        ]"
+        [value]="
+            ('running' | dm | titlecase) +
+            ' ' +
+            ('dot.common.until' | dm) +
+            ' ' +
+            (runningExperiment.scheduling.endDate | date : runningUntilDateFormat)
+        "
+        data-testId="runningExperimentTag"
+        queryParamsHandling="preserve"
+        role="button">
+        <i class="material-icons">science</i>
+    </p-tag>
+</ng-container>

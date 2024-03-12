@@ -60,6 +60,7 @@ import {
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -158,7 +159,8 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         DotEmaBookmarksComponent,
         DotEditEmaWorkflowActionsComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
+        DotEmaRunningExperimentComponent
     ],
     providers: [
         DotCopyContentModalService,
