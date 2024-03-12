@@ -37,8 +37,9 @@ jobs:
       - name: Get the latest commit SHA from master
         id: latest_commit
         run: |
-          echo "TRIGGER_SHA=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
-          echo "LATEST_SHA=$(git rev-parse origin/master)" >> $GITHUB_ENV
+          TRIGGER_SHA=${{ github.event.workflow_run.head_sha }}
+          LATEST_SHA=$(git rev-parse origin/master)
+          echo "Latest SHA: $LATEST_SHA, Trigger SHA: $TRIGGER_SHA"
           if [ $TRIGGER_SHA != $LATEST_SHA ]; then
             echo "Triggered by an old commit. Latest: $LATEST_SHA, Trigger: $TRIGGER_SHA"
             exit 1
