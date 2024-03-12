@@ -5,6 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,7 +113,7 @@ public interface CacheableEagerFactory<K, V> {
      */
     default Map<K, V> findAll() throws DotDataException {
 
-        final Map<K, V> records = new LinkedHashMap<>();
+        final Map<K, V> records = new HashMap<>();
 
         final List<Map<String, Object>> result = new DotConnect()
                 .setSQL(this.getSelectAllSQL())

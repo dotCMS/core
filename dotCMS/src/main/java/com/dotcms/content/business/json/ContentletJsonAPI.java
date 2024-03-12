@@ -58,7 +58,7 @@ public interface ContentletJsonAPI {
      * @return
      */
     default boolean isPersistContentAsJson(){
-        return isJsonSupportedDatabase();
+        return true; // now we run only postgres this should be always true
     }
 
     /**
