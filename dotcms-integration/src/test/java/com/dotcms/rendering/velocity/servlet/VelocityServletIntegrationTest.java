@@ -44,6 +44,8 @@ import com.liferay.portal.model.User;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -65,7 +67,7 @@ import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;

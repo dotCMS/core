@@ -9,7 +9,6 @@ import static com.dotcms.api.client.pull.file.OptionConstants.NON_RECURSIVE;
 import static com.dotcms.api.client.pull.file.OptionConstants.PRESERVE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 

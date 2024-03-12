@@ -51,7 +51,7 @@ site-copy - *Use this command to copy an existing site.*
   Site name or Id.
 
 *-tk, --token*=_<token>_::
-  A dot CMS token to use for authentication. 
+  A dotCMS token to use for authentication. 
 
 == 
 *Individual Copy Options. *

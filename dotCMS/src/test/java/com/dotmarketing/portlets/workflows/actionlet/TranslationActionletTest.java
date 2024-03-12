@@ -32,7 +32,7 @@ import java.util.*;
 
 import static com.dotcms.translate.TranslateTestUtil.*;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class TranslationActionletTest extends UnitTestBase {
@@ -221,7 +221,7 @@ public class TranslationActionletTest extends UnitTestBase {
         saveAction.setId(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID);
 
         when(
-                workflowAPI.findActionMappedBySystemActionContentlet(anyObject(), anyObject(), anyObject()))
+                workflowAPI.findActionMappedBySystemActionContentlet(any(), any(), any()))
                 .thenReturn(Optional.empty());
 
         return workflowAPI;
