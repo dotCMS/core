@@ -2,8 +2,6 @@
     "name": "@dotcms/experiments",
     "version": "0.0.1-alpha",
     "description": "Official JavaScript library to use Experiments with DotCMS.",
-    "dependencies": {},
-    "main": "./dot-experiments.iife.js",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/dotCMS/core.git#master"
@@ -20,5 +18,8 @@
     "bugs": {
         "url": "https://github.com/dotCMS/core/issues"
     },
-    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/experiments/README.md"
+    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/experiments/README.md",
+    "dependencies": {
+        "@jitsu/sdk-js": "^3.1.5"
+    }
 }
