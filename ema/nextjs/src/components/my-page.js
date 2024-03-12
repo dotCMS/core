@@ -37,7 +37,7 @@ export function MyPage({ data, nav }) {
             },
             ...data,
           }}
-          options={{ onReload: refresh, pathname }}
+          config={{ onReload: refresh, pathname }}
         />
       </main>
       {data.layout.footer && <Footer />}

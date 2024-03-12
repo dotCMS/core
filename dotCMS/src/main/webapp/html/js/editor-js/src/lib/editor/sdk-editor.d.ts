@@ -7,15 +7,10 @@ import { DotCMSPageEditorConfig } from './models/editor.model';
  */
 export declare function updateNavigation(pathname: string): void;
 /**
- * Sends a ping message to the editor.
- *
- */
-export declare function pingEditor(): void;
-/**
  * Checks if the code is running inside an editor.
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
  */
-export declare function isInsideEditor(): boolean;
+export declare function isInsideEditor(): boolean | undefined;
 /**
  * Initializes the DotCMS page editor.
  *
