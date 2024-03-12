@@ -1451,12 +1451,26 @@
             </dependency>
 
 
-
             <!-- Test Dependencies -->
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.13.2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.10.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>5.10.2</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -1474,18 +1488,6 @@
                 <artifactId>mockito-core</artifactId>
                 <version>3.12.4</version>
             </dependency>
-            <dependency>
-                <!-- Deprecated need to remove replace with core mockito-->
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>2.0.9</version>
-            </dependency>
-            <dependency>
-                <!-- Deprecated need to remove replace with core mockito-->
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>2.0.9</version>
-            </dependency>
 
             <dependency>
                 <!-- Hamcrest is a framework for writing matcher objects allowing 'match' rules to be defined declaratively. -->
@@ -1495,6 +1497,8 @@
                 <!-- often just used for testing we have in production code
                 Note, scope does not pass down to child, must declare scope explicitly-->
             </dependency>
+
+
 
             <dependency>
                 <groupId>com.tngtech.junit.dataprovider</groupId>

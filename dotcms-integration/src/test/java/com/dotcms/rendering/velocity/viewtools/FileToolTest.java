@@ -53,8 +53,8 @@ public class FileToolTest {
      * Method to test: {@link FileTool#getFile(String, boolean, long)
      * When: try to get a {@link com.dotmarketing.portlets.fileassets.business.FileAsset}
      * and the Current Variant is not the Default one,  and the FileAsset has a version inside the currentVariant
-     * Should: return the specific version of the FileAsset
-     *
+     * Should return the specific version of the FileAsset
+     * <p>
      * @throws DotDataException
      * @throws DotSecurityException
      */

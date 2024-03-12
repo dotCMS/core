@@ -38,19 +38,15 @@ import javax.servlet.http.HttpSession;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+
 
 /**
  * The goal of this unit test is to try some scenarios for the json web token interceptor.
  * @author jsanca
  */
-@PowerMockIgnore({"javax.management.*", "javax.crypto.*", "jdk.internal.reflect.*"})
-@PrepareForTest({ClusterFactory.class})
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class JsonWebTokenInterceptorTest extends UnitTestBase {
 
     final String clusterId = "CLUSTER-123";
