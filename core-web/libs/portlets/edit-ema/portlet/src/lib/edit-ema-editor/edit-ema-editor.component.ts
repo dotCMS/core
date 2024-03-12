@@ -273,13 +273,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     handleReloadContent() {
-        this.store.stateLoad$
+        this.store.contentState$
             .pipe(
                 takeUntil(this.destroy$),
-                filter((editorState) => editorState === EDITOR_STATE.LOADED),
-                switchMap(() => this.store.code$)
+                filter(({ state }) => state === EDITOR_STATE.LOADED)
             )
-            .subscribe((code) => {
+            .subscribe(({ code }) => {
                 if (!this.isVTLPage()) {
                     // Only reload if is Headless.
                     // If is VTL, the content is updated by store.code$
@@ -962,8 +961,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaDialogComponent
      */
     private handleCopyContent(): Observable<DotCMSContentlet> {
-        // console.log('we should reload store');
-
         return this.dotCopyContentService.copyInPage(this.currentTreeNode()).pipe(
             catchError((error) =>
                 this.dotHttpErrorManagerService.handle(error).pipe(
