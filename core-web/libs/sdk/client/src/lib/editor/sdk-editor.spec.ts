@@ -1,4 +1,10 @@
-import { pingEditor } from './listeners/listeners';
+import {
+    listenContentChange,
+    listenEditorMessages,
+    listenHoveredContentlet,
+    pingEditor,
+    scrollHandler
+} from './listeners/listeners';
 import { postMessageToEditor, CUSTOMER_ACTIONS } from './models/client.model';
 import { initEditor, isInsideEditor, updateNavigation } from './sdk-editor';
 
@@ -13,6 +19,14 @@ jest.mock('./models/client.model', () => ({
         CONTENT_CHANGE: 'content-change',
         NOOP: 'noop'
     }
+}));
+
+jest.mock('./listeners/listeners', () => ({
+    pingEditor: jest.fn(),
+    listenEditorMessages: jest.fn(),
+    listenHoveredContentlet: jest.fn(),
+    scrollHandler: jest.fn(),
+    listenContentChange: jest.fn()
 }));
 
 describe('DotCMSPageEditor', () => {
@@ -59,6 +73,7 @@ describe('DotCMSPageEditor', () => {
         });
 
         it('should update navigation', () => {
+            listenContentChange();
             updateNavigation('/');
             expect(postMessageToEditor).toHaveBeenCalledWith({
                 action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
@@ -68,43 +83,13 @@ describe('DotCMSPageEditor', () => {
             });
         });
 
-        it('should listen to editor messages', () => {
-            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+        it('should init editor calling listeners', () => {
             initEditor();
-            expect(addEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
-        });
-
-        it('should listen to hovered contentlet', () => {
-            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
-            initEditor();
-            expect(addEventListenerSpy).toHaveBeenCalledWith('pointermove', expect.any(Function));
-        });
-
-        it('should handle scroll', () => {
-            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-            initEditor();
-            expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
-        });
-
-        it('should send ping to editor', () => {
-            pingEditor();
-            expect(postMessageToEditor).toHaveBeenCalledWith({
-                action: CUSTOMER_ACTIONS.PING_EDITOR
-            });
-        });
-
-        it('should listen to content change', () => {
-            const observeSpy = jest.spyOn(MutationObserver.prototype, 'observe');
-            initEditor();
-
-            expect(observeSpy).toHaveBeenCalledWith(document, { childList: true, subtree: true });
-        });
-
-        it('should listen to editor messages', () => {
-            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-            initEditor();
-
-            expect(addEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
+            expect(pingEditor).toHaveBeenCalled();
+            expect(listenEditorMessages).toHaveBeenCalled();
+            expect(listenHoveredContentlet).toHaveBeenCalled();
+            expect(scrollHandler).toHaveBeenCalled();
+            expect(listenContentChange).toHaveBeenCalled();
         });
     });
 });
