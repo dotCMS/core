@@ -19,8 +19,8 @@ site-find - *Use this command to Search / Find Sites.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site find* [*-h*] [*--non-interactive*] [[*-n*=_<name>_] [*-ar*] [*-l*] [*-p*=_<page>_]
-          [*-s*=_<pageSize>_]]
+*site find* [*-h*] [*--non-interactive*] [*-tk*=_<token>_] [[*-n*=_<name>_] [*-ar*] [*-l*]
+          [*-p*=_<page>_] [*-s*=_<pageSize>_]]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -43,6 +43,9 @@ Use --name in conjunction with *Filter/Search* Options.
   When specified, user confirmation is bypassed, allowing the command to run without asking for confirmation.
 +
 By default, this is false.
+
+*-tk, --token*=_<token>_::
+  A dot CMS token to use for authentication. 
 
 == 
 *Filter/Search Options. *

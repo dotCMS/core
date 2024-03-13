@@ -20,7 +20,7 @@ pull - *dotCMS global pull*
 == Synopsis
 
 *pull* [*-h*] [*-ff*] [*-fmt*=_<inputOutputFormat>_] [*--retry-attempts*=_<retryAttempts>_]
-     [*--token*=_<token>_] [*--workspace*=_<file>_]
+     [*-tk*=_<token>_] [*--workspace*=_<file>_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -49,7 +49,7 @@ Supported values: JSON, YAML, YML
 *--retry-attempts*=_<retryAttempts>_::
   Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
 
-*--token*=_<token>_::
+*-tk, --token*=_<token>_::
   A dot CMS token to use for authentication. 
 
 *--workspace*=_<file>_::

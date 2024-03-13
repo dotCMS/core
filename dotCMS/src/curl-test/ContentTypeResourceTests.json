@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "da18d7b4-3906-4765-8621-f8cf40de2482",
+		"_postman_id": "ba1bbb66-aa32-430b-b483-6f6e3e47fa2c",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -1006,6 +1006,146 @@
 								}
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get existing Base Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are at least 1 Content Type of Base Type 'dotAsset'\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.gte(1, \"There MUST be at least one Content Type of Base Type 'dotAsset'\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?type=DOTASSET&orderby=name",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "DOTASSET"
+								},
+								{
+									"key": "orderby",
+									"value": "name"
+								}
+							]
+						},
+						"description": "Returns all Content Types whose Base Type is 'dotAsset'. **There must be AT LEAST one Content Type of such a Base Type.**"
+					},
+					"response": []
+				},
+				{
+					"name": "Get non-existing Base Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Checking that the error message is present\", function () {",
+									"    const message = pm.response.json().message;",
+									"    pm.expect(message).to.contain(\"FORM2\", \"The returned error message may not be\")",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?filter=filter&page=3&per_page=4&type=FORM2&orderby=name",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "filter"
+								},
+								{
+									"key": "page",
+									"value": "3"
+								},
+								{
+									"key": "per_page",
+									"value": "4"
+								},
+								{
+									"key": "type",
+									"value": "FORM2"
+								},
+								{
+									"key": "orderby",
+									"value": "name"
+								}
+							]
+						},
+						"description": "Requesting an invalid Base Content Type will return an error message and an HTTP Status 400."
 					},
 					"response": []
 				}
@@ -2823,22 +2963,12 @@
 			]
 		},
 		{
-			"name": "New metadata column",
+			"name": "Get Types from one or more Sites",
 			"item": [
-		{
-					"name": "Create a test Content Type",
+				{
+					"name": "Types from Default Site only",
 					"event": [
-		{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"const typeName = \"test-type-\" + Math.floor(Math.random() * 100);",
-									"pm.collectionVariables.set(\"typeNameWithMetadata\", typeName);"
-								],
-								"type": "text/javascript"
-							}
-		},
-		{
+						{
 							"listen": "test",
 							"script": {
 								"exec": [
@@ -2846,12 +2976,15 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Test Content Type created successfully\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.errors.length).to.eql(0, \"No errors should have been generated\");",
-									"    pm.expect(jsonData.entity[0].metadata).to.not.eql(undefined, \"The 'metadata' field is missing\");",
-									"    pm.expect(jsonData.entity[0].metadata.edit_mode).to.be.eql(true, \"The value of the 'edit_mode' attribute doesn't match the expected one\");",
-									"    pm.collectionVariables.set(\"testContentTypeId\", jsonData.entity[0].id);",
+									"pm.test(\"Checking that there at least 15 Content Types living under System Host\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.gte(15, \"There MUST be at least 15 Content Types living in System Host -- unless some were added/removed\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).to.eql(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.gte(15, \"The 'totalEntries' parameter must be at least 15\");",
 									"});",
 									""
 								],
@@ -2863,31 +2996,22 @@
 						"auth": {
 							"type": "basic",
 							"basic": [
-		{
+								{
 									"key": "username",
 									"value": "admin@dotcms.com",
 									"type": "string"
-		},
-		{
+								},
+								{
 									"key": "password",
 									"value": "admin",
 									"type": "string"
 								}
 							]
-		},
-						"method": "POST",
+						},
+						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"defaultType\": false,\n    \"icon\": null,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"This is a test Content Type with a metadata field.\",\n    \"host\": \"default\",\n    \"name\": \"{{typeNameWithMetadata}}\",\n    \"metadata\": {\n        \"edit_mode\": true\n    },\n    \"systemActionMappings\": {\n        \"NEW\": \"\"\n    },\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-		},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype",
+							"raw": "{{serverURL}}/api/v1/contenttype?host=SYSTEM_HOST&per_page=40",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2895,28 +3019,41 @@
 								"api",
 								"v1",
 								"contenttype"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "SYSTEM_HOST"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								}
 							]
 						}
-		},
+					},
 					"response": []
-		},
-		{
-					"name": "Update the test Content Type",
+				},
+				{
+					"name": "Types from System Host only",
 					"event": [
-		{
+						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('HTTP Status code must be 200', function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
-									"})",
+									"});",
 									"",
-									"pm.test(\"Metadata value in test Content Type was updated successfully\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.errors.length).to.eql(0, \"No errors should have been generated\");",
-									"    pm.expect(jsonData.entity.metadata).to.not.eql(undefined, \"The 'metadata' field is missing\");",
-									"    pm.expect(jsonData.entity.metadata.edit_mode).to.be.eql(true, \"The value of the 'edit_mode' attribute doesn't match the expected one\");",
-									"    pm.expect(jsonData.entity.metadata.my_new_prop).to.be.eql(123, \"The value of the new 'my_new_prop' attribute doesn't match the expected one\");",
+									"pm.test(\"Checking that there at least 6 Content Types living under the Default Site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.gte(6, \"There MUST be at least 6 Content Types living in the Default Site\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).to.eql(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.gte(6, \"The 'totalEntries' parameter must be at least 6\");",
 									"});",
 									""
 								],
@@ -2928,47 +3065,198 @@
 						"auth": {
 							"type": "basic",
 							"basic": [
-		{
+								{
 									"key": "username",
 									"value": "admin@dotcms.com",
 									"type": "string"
-		},
-		{
+								},
+								{
 									"key": "password",
 									"value": "admin",
 									"type": "string"
 								}
 							]
-		},
-						"method": "PUT",
+						},
+						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"defaultType\": false,\n    \"icon\": \"event_note\",\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"This is a test Content Type with a metadata field v2.\",\n    \"host\": \"default\",\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"{{typeNameWithMetadata}}\",\n    \"metadata\": {\n        \"edit_mode\": true,\n        \"my_new_prop\": 123\n    },\n    \"systemActionMappings\": {\n        \"NEW\": \"\"\n    },\n    \"detailPage\": \"\",\n    \"urlMapPattern\": \"\",\n    \"id\": \"{{testContentTypeId}}\",\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-		},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype/id/{{testContentTypeId}}",
+							"raw": "{{serverURL}}/api/v1/contenttype?host=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&per_page=40",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"contenttype",
-								"id",
-								"{{testContentTypeId}}"
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								}
 							]
 						}
-		},
+					},
+					"response": []
+				},
+				{
+					"name": "Get Types from Default Site (ID) and System Host",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are at least 20 Content Types living under System Host\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.gte(20, \"There MUST be at least 15 Content Types living in System Host -- unless some were added/removed\");",
+									"});",
+									"",
+									"pm.test(\"Checking that there is at least 1 Content Type from the Default Site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    const typeFromDefaultSite = entity.find(type => type.host === '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+									"    pm.expect(typeFromDefaultSite).to.not.eql(undefined, \"There MUST be at least one Content Type from the Default Site\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).to.eql(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.gte(20, \"The 'totalEntries' parameter must be at least 20\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?sites=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d,SYSTEM_HOST&per_page=40",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "sites",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d,SYSTEM_HOST"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								}
+							]
+						},
+						"description": "Calling this REST Endpoint using the Site ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Types from Default Site (Site Key) and System Host Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are at least 20 Content Types living under System Host\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.gte(20, \"There MUST be at least 15 Content Types living in System Host -- unless some were added/removed\");",
+									"});",
+									"",
+									"pm.test(\"Checking that there is at least 1 Content Type from the Default Site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    const typeFromDefaultSite = entity.find(type => type.host === '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+									"    pm.expect(typeFromDefaultSite).to.not.eql(undefined, \"There MUST be at least one Content Type from the Default Site\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).to.eql(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.gte(20, \"The 'totalEntries' parameter must be at least 20\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?sites=default,SYSTEM_HOST&per_page=40",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "sites",
+									"value": "default,SYSTEM_HOST"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								}
+							]
+						},
+						"description": "Calling this REST Endpoint using the Site Key."
+					},
 					"response": []
 				}
 			],
-			"description": "This test case verifies that dotCMS is properly handling the new `metadata` column that has been added to the `structure` table. Such a new column is meant to store different configuration properties and/or temporary information without the need to create a brand new column again."
+			"description": "These requests allow you to verify that dotCMS can retrieve a specific list of Content Types from a specific list of Sites, and not form the whole repository. You can use both the Site's Identifier, or its Key -- aka, Site Name.\n\nWe're testing both the existing per-Site Endpoint, and the new multi-site Endpoint."
 		}
 	],
 	"event": [

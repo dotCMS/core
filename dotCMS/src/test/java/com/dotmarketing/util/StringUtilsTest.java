@@ -1,10 +1,12 @@
 package com.dotmarketing.util;
 
-
 import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.liferay.util.StringPool;
@@ -48,11 +50,8 @@ public class StringUtilsTest {
 
     @Test
     public void testCheckNullInterpolate() {
-
-
         final Map<String, Object> params = createParams();
-        final String expression = null;
-        final String expected = StringUtils.interpolate(expression, params);
+        final String expected = StringUtils.interpolate(null, params);
 
         assertNotNull(expected);
         assertEquals(expected, StringPool.BLANK);
@@ -60,11 +59,8 @@ public class StringUtilsTest {
 
     @Test
     public void testCheckNull2Interpolate() {
-
-
-        final Map<String, Object> params = null;
         final String expression = "nothing";
-        final String expected = StringUtils.interpolate(expression, params);
+        final String expected = StringUtils.interpolate(expression, null);
 
         assertNotNull(expected);
         assertEquals(expression, expected);
@@ -72,11 +68,7 @@ public class StringUtilsTest {
 
     @Test
     public void testCheckNull3Interpolate() {
-
-
-        final Map<String, Object> params = null;
-        final String expression = null;
-        final String expected = StringUtils.interpolate(expression, params);
+        final String expected = StringUtils.interpolate(null, null);
 
         assertNotNull(expected);
         assertEquals(expected, StringPool.BLANK);
@@ -96,11 +88,8 @@ public class StringUtilsTest {
 
     @Test
     public void testDoInterpolateParamsNull() {
-
-
-        final Map<String, Object> params = null;
         final String expression = "{hostId}-mycustomname";
-        final String expected = StringUtils.interpolate(expression, params);
+        final String expected = StringUtils.interpolate(expression, null);
 
         assertNotNull(expected);
         assertEquals("{hostId}-mycustomname", expected);
@@ -192,9 +181,8 @@ public class StringUtilsTest {
 
     @Test
     public void test_Null_Sequence() {
-
         assertEquals("", StringUtils.builder().toString());
-        assertEquals("", StringUtils.builder(null).toString());
+        assertEquals("", StringUtils.builder((CharSequence) null).toString());
         assertEquals("", StringUtils.builder(null, null, null, null).toString());
     }
 
@@ -399,4 +387,39 @@ public class StringUtilsTest {
         final String output =  StringUtils.convertCamelToSnake("input_string");
         assertEquals("input_string", output);
     }
+
+    @Test
+    public void testToCharArray() {
+        // Test when input string is not null
+        final String input = "Hello";
+        final char[] expected = {'H', 'e', 'l', 'l', 'o'};
+        assertArrayEquals(expected, StringUtils.toCharArray(input));
+
+        // Test when input string is null
+        assertNull(StringUtils.toCharArray(null));
+    }
+
+    @Test
+    public void testToCharArraySafe() {
+        // Test when input string is not null
+        final String input = "Hello";
+        final char[] expected = {'H', 'e', 'l', 'l', 'o'};
+        assertArrayEquals(expected, StringUtils.toCharArraySafe(input));
+
+        // Test when input string is null
+        assertArrayEquals(StringUtils.BLANK_CHARS, StringUtils.toCharArraySafe(null));
+    }
+
+    @Test
+    public void testDefensiveCopy() {
+        // Test when input array is not null
+        final char[] input = {'a', 'b', 'c'};
+        final char[] result = StringUtils.defensiveCopy(input);
+        assertArrayEquals(input, result); // Check if the content is equal
+        assertNotSame(input, result); // Check if it's a different instance
+
+        // Test when input array is null
+        assertArrayEquals(StringUtils.BLANK_CHARS, StringUtils.defensiveCopy(null)); // Check if the content is equal
+    }
+
 }

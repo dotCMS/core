@@ -1342,25 +1342,30 @@
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
-                        <configuration/>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
                         <executions>
                             <execution>
-                                <id>docker-pre-stop</id>
+                                <id>docker-pre-stop-runner</id>
                                 <goals>
                                     <goal>stop</goal>
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <skip>false</skip>
                                     <allContainers>true</allContainers>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>docker-start</id>
+                                <id>docker-start-runner</id>
                                 <goals>
                                     <goal>start</goal>
                                 </goals>
                                 <phase>validate</phase>
-                                <configuration/>
+                                <configuration>
+                                    <skip>false</skip>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -1390,66 +1395,7 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>docker-run</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <properties>
-                <docker.follow>true</docker.follow>
-            </properties>
-            <build>
-                <defaultGoal>validate</defaultGoal>
-                <plugins>
-                    <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <configuration/>
-                        <executions>
-                            <execution>
-                                <id>docker-pre-stop</id>
-                                <goals>
-                                    <goal>stop</goal>
-                                </goals>
-                                <phase>validate</phase>
-                                <configuration/>
-                            </execution>
-                            <execution>
-                                <id>docker-start</id>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <phase>validate</phase>
-                                <configuration/>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <phase>validate</phase>
-                                <configuration>
-                                    <target>
-                                        <!-- Here is where you define your Ant tasks -->
-                                        <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="DotCMS starting on    : http://localhost:${tomcat.port}/dotAdmin"/>
-                                        <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="Postgres starting on   : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
-                                        <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="Opensearch starting on : http://localhost:${es.port}"/>
-                                    </target>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
+
         <profile>
             <id>docker-stop</id>
             <activation>
@@ -1480,7 +1426,9 @@
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
-                        <configuration/>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>docker-stop</id>
@@ -1510,7 +1458,7 @@
                         <configuration/>
                         <executions>
                             <execution>
-                                <id>docker-stop</id>
+                                <id>docker-stop-runner</id>
                                 <goals>
                                     <goal>stop</goal>
                                 </goals>

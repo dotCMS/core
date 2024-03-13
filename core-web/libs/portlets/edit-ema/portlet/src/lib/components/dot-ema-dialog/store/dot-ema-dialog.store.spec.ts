@@ -80,6 +80,23 @@ describe('DotEmaDialogStoreService', () => {
         });
     });
 
+    it('should initialize with edit iframe properties', (done) => {
+        spectator.service.editUrlContentMapContentlet({
+            inode: '123',
+            title: 'test'
+        });
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state).toEqual({
+                url: EDIT_CONTENTLET_URL + '123&isURLMap=true',
+                status: DialogStatus.LOADING,
+                header: 'test',
+                type: 'content'
+            });
+            done();
+        });
+    });
+
     it('should initialize with addA iframe properties', (done) => {
         spectator.service.addContentlet({
             containerId: '1234',

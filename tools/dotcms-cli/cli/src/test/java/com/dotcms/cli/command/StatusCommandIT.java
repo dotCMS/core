@@ -52,7 +52,7 @@ class StatusCommandIT extends CommandTest {
             final int status = commandLine.execute(StatusCommand.NAME);
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
             Assertions.assertTrue(writer.toString()
-                    .contains("No dotCMS configured instances were found. Please run 'init' to initialize the CLI"));
+                    .contains("No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup an instance to use CLI."));
         }
     }
 

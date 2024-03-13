@@ -137,7 +137,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public boolean isImage() {
-		return Try.of(()-> getMetadata().isImage()).getOrElse(false);
+		return Try.of(()-> getMetadata().isImage()).getOrElse(UtilMethods.isImage(getUnderlyingFileName()));
 	}
 
   /**

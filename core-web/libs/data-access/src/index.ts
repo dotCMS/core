@@ -51,3 +51,5 @@ export * from './lib/dot-temp-file-upload/dot-temp-file-upload.service';
 export * from './lib/dot-favorite-page/dot-favorite-page.service';
 export * from './lib/ema-app-configuration/ema-app-configuration.service';
 export * from './lib/push-publish/push-publish.service';
+export * from './lib/dot-seo-meta-tags/dot-seo-meta-tags.service';
+export * from './lib/dot-seo-meta-tags-utils/dot-seo-meta-tags-util.service';
