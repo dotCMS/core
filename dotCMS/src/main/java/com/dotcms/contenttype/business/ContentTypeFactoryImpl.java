@@ -20,7 +20,6 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DeterministicIdentifierAPI;
@@ -335,32 +334,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     return type;
-  }
-
-    /**
-     * Allows developers to be able to use either Site Identifiers or Site Keys when querying for
-     * data that lives in them. So, when querying for  Site using its Key, we can internally search
-     * for its Identifier and use it in the SQL query.
-     *
-     * @param siteIds The list of Site Identifiers or Site Keys to search for.
-     *
-     * @return A SQL-ready string to be used in a WHERE clause composed of Site IDs.
-     */
-    private String processSiteIds(final List<String> siteIds) {
-      if (UtilMethods.isNotSet(siteIds)) {
-        return BLANK;
-      }
-      final Set<String> processedSiteIds = siteIds.stream().map(siteId -> {
-        final String trimmedSiteId = siteId.trim();
-        if (UUIDUtil.isUUID(trimmedSiteId) || Host.SYSTEM_HOST.equals(trimmedSiteId)) {
-          return trimmedSiteId;
-        }
-        return Try.of(() -> APILocator.getHostAPI().findByName(trimmedSiteId,
-              APILocator.systemUser(), false).getIdentifier()).getOrNull();
-      }).filter(UtilMethods::isSet).collect(Collectors.toSet());
-
-      return processedSiteIds.isEmpty() ? BLANK : processedSiteIds.stream()
-            .map(site -> "'" + PERCENT + site + PERCENT +"'").collect(Collectors.joining(" OR host LIKE "));
   }
 
   private ContentType dbSelectDefaultType() throws DotDataException {
@@ -763,7 +736,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	orderBy = ContentTypeFactory.MOD_DATE_COLUMN;
     }
 
-    String siteIdsParam = this.processSiteIds(siteIds);
+    String siteIdsParam = this.formatSiteIdsToSqlQuery(siteIds);
     siteIdsParam = UtilMethods.isSet(siteIdsParam) ? siteIdsParam : "'" + PERCENT + "'";
     final DotConnect dc = new DotConnect();
 
@@ -807,6 +780,20 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
     }
   }
+
+    /**
+     * Appends the list of Site Identifiers to a SQL query that will allow to look for more than one
+     * Site.
+     *
+     * @param siteIds The list of Site Identifiers to search for.
+     *
+     * @return A SQL-ready string that can be used in a WHERE clause to lok for data in more than
+     * one Site.
+     */
+    private String formatSiteIdsToSqlQuery(final List<String> siteIds) {
+        return UtilMethods.isNotSet(siteIds) ? BLANK : siteIds.stream()
+                .map(site -> "'" + PERCENT + site + PERCENT +"'").collect(Collectors.joining(" OR host LIKE "));
+    }
 
   private int dbCount(String search, int baseType) throws DotDataException {
     int bottom = (baseType == 0) ? 0 : baseType;
