@@ -110,10 +110,10 @@
  */ function getContainerData(container) {
     var _container_dataset, _container_dataset1, _container_dataset2, _container_dataset3;
     return {
-        acceptTypes: (_container_dataset = container.dataset) === null || _container_dataset === void 0 ? void 0 : _container_dataset["dotAcceptTypes"],
-        identifier: (_container_dataset1 = container.dataset) === null || _container_dataset1 === void 0 ? void 0 : _container_dataset1["dotIdentifier"],
-        maxContentlets: (_container_dataset2 = container.dataset) === null || _container_dataset2 === void 0 ? void 0 : _container_dataset2["maxContentlets"],
-        uuid: (_container_dataset3 = container.dataset) === null || _container_dataset3 === void 0 ? void 0 : _container_dataset3["dotUuid"]
+        acceptTypes: ((_container_dataset = container.dataset) === null || _container_dataset === void 0 ? void 0 : _container_dataset["dotAcceptTypes"]) || "",
+        identifier: ((_container_dataset1 = container.dataset) === null || _container_dataset1 === void 0 ? void 0 : _container_dataset1["dotIdentifier"]) || "",
+        maxContentlets: ((_container_dataset2 = container.dataset) === null || _container_dataset2 === void 0 ? void 0 : _container_dataset2["maxContentlets"]) || "",
+        uuid: ((_container_dataset3 = container.dataset) === null || _container_dataset3 === void 0 ? void 0 : _container_dataset3["dotUuid"]) || ""
     };
 }
 /**

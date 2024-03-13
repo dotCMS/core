@@ -1,3 +1,27 @@
+interface ContentletBound {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    payload: string;
+}
+
+interface ContenainerBound {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    payload: {
+        container: {
+            acceptTypes: string;
+            identifier: string;
+            maxContentlets: string;
+            uuid: string;
+        };
+    };
+    contentlets: ContentletBound[];
+}
+
 /**
  * Calculates the bounding information for each page element within the given containers.
  *
@@ -5,7 +29,7 @@
  * @param {HTMLDivElement[]} containers
  * @return {*} An array of objects containing the bounding information for each page element.
  */
-export function getPageElementBound(containers: HTMLDivElement[]) {
+export function getPageElementBound(containers: HTMLDivElement[]): ContenainerBound[] {
     return containers.map((container) => {
         const containerRect = container.getBoundingClientRect();
         const contentlets = Array.from(
@@ -33,7 +57,10 @@ export function getPageElementBound(containers: HTMLDivElement[]) {
  * @param {HTMLDivElement[]} contentlets
  * @return {*}
  */
-export function getContentletsBound(containerRect: DOMRect, contentlets: HTMLDivElement[]) {
+export function getContentletsBound(
+    containerRect: DOMRect,
+    contentlets: HTMLDivElement[]
+): ContentletBound[] {
     return contentlets.map((contentlet) => {
         const contentletRect = contentlet.getBoundingClientRect();
 
@@ -66,10 +93,10 @@ export function getContentletsBound(containerRect: DOMRect, contentlets: HTMLDiv
  */
 export function getContainerData(container: HTMLElement) {
     return {
-        acceptTypes: container.dataset?.['dotAcceptTypes'],
-        identifier: container.dataset?.['dotIdentifier'],
-        maxContentlets: container.dataset?.['maxContentlets'],
-        uuid: container.dataset?.['dotUuid']
+        acceptTypes: container.dataset?.['dotAcceptTypes'] || '',
+        identifier: container.dataset?.['dotIdentifier'] || '',
+        maxContentlets: container.dataset?.['maxContentlets'] || '',
+        uuid: container.dataset?.['dotUuid'] || ''
     };
 }
 
@@ -103,7 +130,7 @@ export function getClosestContainerData(element: Element) {
  * @param {(HTMLElement | null)} element
  * @return {*}
  */
-export function findContentletElement(element: HTMLElement | null) {
+export function findContentletElement(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
     if (element.dataset && element.dataset?.['dotObject'] === 'contentlet') {
