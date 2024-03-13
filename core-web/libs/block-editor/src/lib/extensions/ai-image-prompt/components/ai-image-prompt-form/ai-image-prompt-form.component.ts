@@ -9,6 +9,7 @@ import {
     Output,
     SimpleChanges
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormControl,
     FormGroup,
@@ -27,9 +28,9 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { AIImageSize } from '../../../../shared';
 import {
     AIImagePrompt,
+    DotAIImageOrientation,
     DotGeneratedAIImage
 } from '../../../../shared/services/dot-ai/dot-ai.models';
 
@@ -62,25 +63,25 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     value = new EventEmitter<AIImagePrompt>();
 
     @Output()
-    orientation = new EventEmitter<AIImageSize>();
+    orientation = new EventEmitter<DotAIImageOrientation>();
 
     form: FormGroup;
     aiProcessedPrompt: string;
     dotMessageService = inject(DotMessageService);
 
-    orientationOptions: SelectItem<AIImageSize>[] = [
+    orientationOptions: SelectItem<DotAIImageOrientation>[] = [
         {
-            value: '1792x1024',
+            value: DotAIImageOrientation.HORIZONTAL,
             label: this.dotMessageService.get(
                 'block-editor.extension.ai-image.orientation.horizontal'
             )
         },
         {
-            value: '1024x1024',
+            value: DotAIImageOrientation.SQUARE,
             label: this.dotMessageService.get('block-editor.extension.ai-image.orientation.square')
         },
         {
-            value: '1024x1792',
+            value: DotAIImageOrientation.VERTICAL,
             label: this.dotMessageService.get(
                 'block-editor.extension.ai-image.orientation.vertical'
             )
@@ -130,11 +131,11 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         const sizeControl = this.form.get('size');
         const typeControl = this.form.get('type');
 
-        sizeControl.valueChanges.subscribe((size) => {
+        sizeControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((size) => {
             this.orientation.emit(size);
         });
 
-        typeControl.valueChanges.subscribe((type) => {
+        typeControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((type) => {
             const promptControl = this.form.get('text');
             type === 'auto'
                 ? promptControl.clearValidators()

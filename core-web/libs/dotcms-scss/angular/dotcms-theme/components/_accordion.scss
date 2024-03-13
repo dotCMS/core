@@ -54,28 +54,35 @@
 
 //Custom
 .p-accordion {
-    .p-accordion-header .p-accordion-header-link .p-accordion-toggle-icon-end {
-        &.pi {
-            border: 1px solid;
-            border-radius: 100px;
-            height: $spacing-5;
-            width: $spacing-5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: $color-palette-primary;
-        }
-
-        &.pi:before {
-            font-size: $spacing-2;
-        }
-    }
-
-    p-accordiontab[disabled="true"] {
-        .p-accordion-header .p-accordion-header-link .p-accordion-toggle-icon-end {
+    .p-accordion-header {
+        .p-accordion-header-link .p-accordion-toggle-icon-end {
             &.pi {
+                border: 1px solid;
+                border-radius: 100px;
+                height: $spacing-5;
+                width: $spacing-5;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: $color-palette-primary;
+            }
+
+            &.pi:before {
+                font-size: $spacing-2;
+            }
+
+        }
+
+        &.p-disabled {
+            .p-accordion-header-link {
                 color: $color-palette-gray-400;
+
+                .p-accordion-toggle-icon-end.pi {
+                    color: $color-palette-gray-400;
+                }
             }
         }
     }
+
+
 }

@@ -9,8 +9,12 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { PromptType } from './ai-image-prompt.models';
 
-import { AIImageSize, DotAiService } from '../../shared';
-import { AIImagePrompt, DotGeneratedAIImage } from '../../shared/services/dot-ai/dot-ai.models';
+import { DotAiService } from '../../shared';
+import {
+    AIImagePrompt,
+    DotAIImageOrientation,
+    DotGeneratedAIImage
+} from '../../shared/services/dot-ai/dot-ai.models';
 
 const DEFAULT_INPUT_PROMPT: PromptType = 'input';
 
@@ -23,7 +27,7 @@ export interface DotAiImagePromptComponentState {
     error: string;
     selectedImage: DotGeneratedAIImage | null;
     galleryActiveIndex: number;
-    orientation: AIImageSize;
+    orientation: DotAIImageOrientation;
 }
 
 export interface VmAiImagePrompt {
@@ -31,7 +35,7 @@ export interface VmAiImagePrompt {
     status: ComponentStatus;
     images: DotGeneratedAIImage[];
     galleryActiveIndex: number;
-    orientation: AIImageSize;
+    orientation: DotAIImageOrientation;
     isLoading: boolean;
 }
 
@@ -44,7 +48,7 @@ const initialState: DotAiImagePromptComponentState = {
     error: '',
     selectedImage: null,
     galleryActiveIndex: 0,
-    orientation: '1792x1024'
+    orientation: DotAIImageOrientation.HORIZONTAL
 };
 
 @Injectable({ providedIn: 'root' })

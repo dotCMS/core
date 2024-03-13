@@ -9,8 +9,10 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { AIImageSize } from '../../../../shared';
-import { DotGeneratedAIImage } from '../../../../shared/services/dot-ai/dot-ai.models';
+import {
+    DotAIImageOrientation,
+    DotGeneratedAIImage
+} from '../../../../shared/services/dot-ai/dot-ai.models';
 
 @Component({
     selector: 'dot-ai-image-prompt-gallery',
@@ -30,7 +32,7 @@ export class AiImagePromptGalleryComponent {
     index = 0;
 
     @Input()
-    orientation: AIImageSize;
+    orientation: DotAIImageOrientation;
 
     @Output()
     activeIndexChange = new EventEmitter<number>();

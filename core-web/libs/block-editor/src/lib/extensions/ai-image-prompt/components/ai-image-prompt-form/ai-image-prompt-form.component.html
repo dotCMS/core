@@ -1,4 +1,4 @@
-<form [formGroup]="form">
+<form [formGroup]="form" (ngSubmit)="submitForm()">
     <p-accordion [activeIndex]="0" expandIcon="pi pi-angle-down" collapseIcon="pi pi-angle-up">
         <p-accordionTab
             [disabled]="isLoading"
@@ -95,7 +95,6 @@
                 : 'block-editor.extension.ai-image.generate'
             ) | dm
         "
-        (click)="submitForm()"
         pButton
         type="submit">
         <svg

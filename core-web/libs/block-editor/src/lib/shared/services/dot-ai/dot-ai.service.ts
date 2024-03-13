@@ -11,6 +11,7 @@ import {
     AiPluginResponse,
     DotAICompletionsConfig,
     DotAIImageContent,
+    DotAIImageOrientation,
     DotAIImageResponse
 } from './dot-ai.models';
 
@@ -21,8 +22,6 @@ const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH'
 const headers = new HttpHeaders({
     'Content-Type': 'application/json'
 });
-
-export type AIImageSize = '1024x1024' | '1024x1792' | '1792x1024';
 
 @Injectable()
 export class DotAiService {
@@ -74,7 +73,7 @@ export class DotAiService {
      */
     public generateAndPublishImage(
         prompt: string,
-        size: AIImageSize = '1024x1024'
+        size = DotAIImageOrientation.HORIZONTAL
     ): Observable<DotAIImageContent> {
         return this.http
             .post<DotAIImageResponse>(
