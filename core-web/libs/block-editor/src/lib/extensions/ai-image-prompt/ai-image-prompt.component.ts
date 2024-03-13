@@ -41,29 +41,7 @@ export class AIImagePromptComponent {
     protected readonly ComponentStatus = ComponentStatus;
     private confirmationService = inject(ConfirmationService);
     private dotMessageService = inject(DotMessageService);
-    private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
-
-    /**
-     * Hides the dialog.
-     * @return {void}
-     */
-    hideDialog(): void {
-        this.store.hideDialog();
-    }
-
-    /**
-     * Generates an image based on the provided prompt.
-     *
-     * @param {AIImagePrompt} formValue - The object prompt used to generate the image.
-     * @return {void} - This method does not return any value.
-     */
-    generateImage(formValue: AIImagePrompt): void {
-        this.store.generateImage(formValue);
-    }
-
-    insetImage(imageInfo: DotGeneratedAIImage): void {
-        this.store.setSelectedImage(imageInfo);
-    }
+    store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
     /**
      * Clears the error at the store on hiding the confirmation dialog.

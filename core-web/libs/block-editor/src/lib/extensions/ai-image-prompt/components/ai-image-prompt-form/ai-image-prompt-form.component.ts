@@ -1,12 +1,14 @@
 import { NgIf } from '@angular/common';
 import {
     Component,
+    DestroyRef,
     EventEmitter,
     inject,
     Input,
     OnChanges,
     OnInit,
     Output,
+    SimpleChange,
     SimpleChanges
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -33,6 +35,7 @@ import {
     DotAIImageOrientation,
     DotGeneratedAIImage
 } from '../../../../shared/services/dot-ai/dot-ai.models';
+import { PromptType } from '../../ai-image-prompt.models';
 
 @Component({
     selector: 'dot-ai-image-prompt-form',
@@ -68,6 +71,11 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     form: FormGroup;
     aiProcessedPrompt: string;
     dotMessageService = inject(DotMessageService);
+    destroyRef = inject(DestroyRef);
+    promptTextAreaPlaceholder = 'block-editor.extension.ai-image.custom.placeholder';
+    promptLabel = 'block-editor.extension.ai-image.prompt';
+    submitButtonLabel = 'block-editor.extension.ai-image.generate';
+    requiredPrompt = true;
 
     orientationOptions: SelectItem<DotAIImageOrientation>[] = [
         {
@@ -92,22 +100,67 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         this.initForm();
     }
 
-    /**
-     * Submits the form and emits the form value.
-     * @return {void}
-     * @memberof AiImagePromptFormComponent
-     */
-    submitForm(): void {
-        this.value.emit(this.form.value);
-    }
-
     ngOnChanges(changes: SimpleChanges): void {
         const { generatedValue, isLoading } = changes;
-        if (
-            generatedValue?.currentValue &&
-            !generatedValue.firstChange &&
-            !isLoading?.currentValue
-        ) {
+
+        this.updatedFormValues(generatedValue, isLoading?.currentValue);
+
+        this.setSubmitButtonLabel(isLoading?.currentValue);
+
+        this.toggleFormState(isLoading?.currentValue && !isLoading.firstChange);
+    }
+
+    private initForm(): void {
+        this.form = new FormGroup({
+            text: new FormControl('', Validators.required),
+            type: new FormControl(PromptType.INPUT, Validators.required),
+            size: new FormControl(DotAIImageOrientation.HORIZONTAL, Validators.required)
+        });
+
+        const sizeControl = this.form.get('size');
+        const typeControl = this.form.get('type');
+
+        sizeControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((size) => {
+            this.orientation.emit(size);
+        });
+
+        typeControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((type) => {
+            const promptControl = this.form.get('text');
+            type === PromptType.AUTO
+                ? promptControl.clearValidators()
+                : promptControl.setValidators(Validators.required);
+
+            promptControl.updateValueAndValidity();
+
+            this.setTypeLabels(type);
+            this.requiredPrompt = type === PromptType.INPUT;
+        });
+    }
+
+    private setTypeLabels(type: PromptType): void {
+        if (type === PromptType.INPUT) {
+            this.promptLabel = 'block-editor.extension.ai-image.prompt';
+            this.promptTextAreaPlaceholder = 'block-editor.extension.ai-image.custom.placeholder';
+        } else {
+            this.promptLabel = 'block-editor.extension.ai-image.custom.props';
+            this.promptTextAreaPlaceholder = 'block-editor.extension.ai-image.placeholder';
+        }
+    }
+
+    private toggleFormState(isLoading: boolean): void {
+        isLoading ? this.form?.disable() : this.form?.enable();
+    }
+
+    /**
+     * Updates the form values based on the generated content that comes from
+     * the endpoint.
+     *
+     * @param {SimpleChange} generatedValue - The generated value.
+     * @param {boolean} isLoading - The loading status.
+     * @return {void}
+     */
+    private updatedFormValues(generatedValue: SimpleChange, isLoading: boolean): void {
+        if (generatedValue?.currentValue && !generatedValue.firstChange && !isLoading) {
             const updatedValue: DotGeneratedAIImage = generatedValue.currentValue;
             this.form.patchValue(updatedValue.request);
             this.form.clearValidators();
@@ -115,33 +168,13 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
             this.aiProcessedPrompt = updatedValue.response.revised_prompt;
         }
-
-        if (isLoading && !isLoading.firstChange) {
-            isLoading.currentValue ? this.form.disable() : this.form.enable();
-        }
     }
 
-    private initForm(): void {
-        this.form = new FormGroup({
-            text: new FormControl('', Validators.required),
-            type: new FormControl('input', Validators.required),
-            size: new FormControl('1792x1024', Validators.required)
-        });
-
-        const sizeControl = this.form.get('size');
-        const typeControl = this.form.get('type');
-
-        sizeControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((size) => {
-            this.orientation.emit(size);
-        });
-
-        typeControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((type) => {
-            const promptControl = this.form.get('text');
-            type === 'auto'
-                ? promptControl.clearValidators()
-                : promptControl.setValidators(Validators.required);
-
-            promptControl.updateValueAndValidity();
-        });
+    private setSubmitButtonLabel(isLoading: boolean): void {
+        this.submitButtonLabel = isLoading
+            ? 'block-editor.extension.ai-image.generating'
+            : this.aiProcessedPrompt
+            ? 'block-editor.extension.ai-image.regenerate'
+            : 'block-editor.extension.ai-image.generate';
     }
 }

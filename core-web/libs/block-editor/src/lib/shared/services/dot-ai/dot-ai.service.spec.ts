@@ -4,8 +4,8 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotAIImageContent, DotAIImageResponse } from './dot-ai.models';
-import { AIImageSize, DotAiService } from './dot-ai.service';
+import { DotAIImageContent, DotAIImageOrientation, DotAIImageResponse } from './dot-ai.models';
+import { DotAiService } from './dot-ai.service';
 
 describe('DotAiService', () => {
     let spectator: SpectatorService<DotAiService>;
@@ -68,7 +68,7 @@ describe('DotAiService', () => {
                 indexPolicy: 'WAIT_FOR'
             }
         ];
-        const size: AIImageSize = '1024x1024';
+        const size = DotAIImageOrientation.SQUARE;
 
         spectator.service.generateAndPublishImage(mockPrompt, size).subscribe((response) => {
             expect(response).toEqual({

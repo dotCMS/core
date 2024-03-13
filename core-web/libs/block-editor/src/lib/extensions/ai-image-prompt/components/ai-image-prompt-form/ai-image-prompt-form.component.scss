@@ -30,16 +30,16 @@ form {
     }
 
     .ai-image-prompt__textarea {
-        height: 365px;
+        height: 23rem;
     }
 
     &.ai-image-prompt__text--generated {
         .ai-image-prompt__textarea {
-            height: 90px;
+            height: 6rem;
         }
 
         .ai-image-prompt__rewritten-textarea {
-            height: 230px;
+            height: 14rem;
         }
     }
 }
@@ -49,5 +49,5 @@ form {
 }
 
 p-accordion {
-    min-height: 590px;
+    min-height: 37rem;
 }

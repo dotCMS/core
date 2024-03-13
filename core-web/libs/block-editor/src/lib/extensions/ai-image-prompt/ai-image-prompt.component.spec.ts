@@ -7,7 +7,11 @@ import { AIImagePromptComponent } from './ai-image-prompt.component';
 import { DotAiImagePromptStore } from './ai-image-prompt.store';
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 
-import { AIImagePrompt, DotGeneratedAIImage } from '../../shared/services/dot-ai/dot-ai.models';
+import {
+    AIImagePrompt,
+    DotAIImageOrientation,
+    DotGeneratedAIImage
+} from '../../shared/services/dot-ai/dot-ai.models';
 
 describe('AIImagePromptComponent', () => {
     let spectator: Spectator<AIImagePromptComponent>;
@@ -29,7 +33,7 @@ describe('AIImagePromptComponent', () => {
                         isLoading: false,
                         images: imagesMock,
                         galleryActiveIndex: 0,
-                        orientation: '1792x1024'
+                        orientation: DotAIImageOrientation.VERTICAL
                     }),
                     generateImage: jasmine.createSpy('generateImage'),
                     hideDialog: jasmine.createSpy('hideDialog'),
@@ -53,7 +57,11 @@ describe('AIImagePromptComponent', () => {
 
     it('should generate image', () => {
         const promptForm = spectator.query(AiImagePromptFormComponent);
-        const formMock: AIImagePrompt = { text: 'Test', type: 'input', size: '1792x1024' };
+        const formMock: AIImagePrompt = {
+            text: 'Test',
+            type: 'input',
+            size: DotAIImageOrientation.VERTICAL
+        };
 
         promptForm.value.emit(formMock);
 

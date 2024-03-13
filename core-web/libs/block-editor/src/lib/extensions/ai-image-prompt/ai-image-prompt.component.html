@@ -5,7 +5,7 @@
         [draggable]="false"
         [resizable]="false"
         [style]="{ width: '1040px' }"
-        (onHide)="hideDialog()"
+        (onHide)="store.hideDialog()"
         appendTo="body"
         header="{{ 'block-editor.extension.ai-image.dialog-title' | dm }}">
         <div class="dialog-prompt__wrapper">
@@ -13,7 +13,7 @@
                 *ngIf="vm.showDialog"
                 [generatedValue]="vm.images[vm.galleryActiveIndex]"
                 [isLoading]="vm.isLoading"
-                (value)="generateImage($event)"
+                (value)="store.generateImage($event)"
                 (orientation)="vm.orientation = $event" />
             <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading">
                 <dot-ai-image-prompt-gallery
@@ -27,7 +27,7 @@
                     *ngIf="vm.images.length || vm.isLoading"
                     [disabled]="vm.isLoading"
                     [label]="'block-editor.extension.ai-image.insert' | dm"
-                    (click)="insetImage(vm.images[vm.galleryActiveIndex])"
+                    (click)="store.setSelectedImage(vm.images[vm.galleryActiveIndex])"
                     data-testid="submit-btn"
                     pButton
                     type="submit"

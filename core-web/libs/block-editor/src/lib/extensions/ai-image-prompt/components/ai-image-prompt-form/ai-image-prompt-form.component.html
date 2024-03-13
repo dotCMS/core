@@ -1,4 +1,4 @@
-<form [formGroup]="form" (ngSubmit)="submitForm()">
+<form [formGroup]="form" (ngSubmit)="value.emit(form.value)">
     <p-accordion [activeIndex]="0" expandIcon="pi pi-angle-down" collapseIcon="pi pi-angle-up">
         <p-accordionTab
             [disabled]="isLoading"
@@ -46,21 +46,13 @@
                 class="ai-image-prompt__text"
                 [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading">
                 <div class="field">
-                    <label [checkIsRequiredControl]="'size'" dotFieldRequired for="prompt">{{
-                        (form.get('type').value === 'input'
-                            ? 'block-editor.extension.ai-image.prompt'
-                            : 'block-editor.extension.ai-image.custom.props'
-                        ) | dm
-                    }}</label>
+                    <label [checkIsRequiredControl]="'type'" dotFieldRequired for="prompt">
+                        {{promptLabel | dm }}
+                    </label>
                     <textarea
                         class="w-full ai-image-prompt__textarea"
                         id="prompt"
-                        [placeholder]="
-                            (form.get('type').value === 'input'
-                                ? 'block-editor.extension.ai-image.custom.placeholder'
-                                : 'block-editor.extension.ai-image.placeholder'
-                            ) | dm
-                        "
+                        [placeholder]="promptTextAreaPlaceholder | dm"
                         rows="11"
                         cols="30"
                         pInputTextarea
@@ -87,14 +79,7 @@
     <button
         class="align-self-end p-button-outlined"
         [disabled]="form.invalid || isLoading"
-        [label]="
-            (isLoading
-                ? 'block-editor.extension.ai-image.generating'
-                : aiProcessedPrompt
-                ? 'block-editor.extension.ai-image.regenerate'
-                : 'block-editor.extension.ai-image.generate'
-            ) | dm
-        "
+        [label]="submitButtonLabel | dm"
         pButton
         type="submit">
         <svg

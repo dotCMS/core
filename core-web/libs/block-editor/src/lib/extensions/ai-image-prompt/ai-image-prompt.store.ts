@@ -16,7 +16,7 @@ import {
     DotGeneratedAIImage
 } from '../../shared/services/dot-ai/dot-ai.models';
 
-const DEFAULT_INPUT_PROMPT: PromptType = 'input';
+const DEFAULT_INPUT_PROMPT = PromptType.INPUT;
 
 export interface DotAiImagePromptComponentState {
     showDialog: boolean;
