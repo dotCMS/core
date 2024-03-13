@@ -1,4 +1,3 @@
-
 import { useContext } from 'react';
 
 import styles from './column.module.css';
@@ -14,7 +13,7 @@ export interface ColumnProps {
 
 export function Column({ column }: ColumnProps) {
     const { isInsideEditor } = useContext(PageContext) as PageProviderContext;
-    
+
     const { startClass, endClass } = getPositionStyleClasses(
         column.leftOffset,
         column.width + column.leftOffset
@@ -25,7 +24,6 @@ export function Column({ column }: ColumnProps) {
         styles[startClass],
         column.styleClass
     ]);
-
 
     const columnProps = isInsideEditor
         ? {

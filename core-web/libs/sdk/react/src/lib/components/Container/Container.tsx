@@ -54,7 +54,8 @@ export function Container({ containerRef }: ContainerProps) {
         containerRef
     );
 
-    const updatedContentlets = contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
+    const updatedContentlets =
+        contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
 
     const container = {
         acceptTypes,
