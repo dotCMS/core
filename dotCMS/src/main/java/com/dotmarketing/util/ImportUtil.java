@@ -921,19 +921,7 @@ public class ImportUtil {
                         throw new DotRuntimeException("Line #" + lineNumber + " key field " + field.getVelocityVarName() + " is required since it was defined as a key\n");
                     }else{
                         if(field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                            if (siteAndFolder != null) {
-                                if (siteAndFolder.getLeft() != null) {
-                                    final Host host = siteAndFolder.getLeft();
-                                    buffy.append(" +conhost:").append(host.getIdentifier());
-                                }
-                                if (siteAndFolder.getRight() != null) {
-                                    final Folder folder = siteAndFolder.getRight();
-                                    buffy.append(" +conFolder:").append(folder.getInode());
-                                }
-                            } else {
-                                buffy.append(" +(conhost:").append(text).append(" conFolder:")
-                                        .append(text).append(")");
-                            }
+                            buffy.append(addSiteAndFolderToESQuery(siteAndFolder, text));
                         } else {
                             buffy.append(" +").append(contentType.getVelocityVarName()).append(StringPool.PERIOD)
                                     .append(field.getVelocityVarName()).append(field.isUnique()? ESUtils.SHA_256: "_dotraw")
@@ -1171,23 +1159,7 @@ public class ImportUtil {
                 }
 
                 //Set the site and folder
-                if (siteAndFolder != null) {
-                    final Host host = siteAndFolder.getLeft();
-                    final Folder folder = siteAndFolder.getRight();
-                    if (UtilMethods.isSet(folder) && !folder.isSystemFolder()) {
-                        if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                            throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
-                        }
-                    } else if (UtilMethods.isSet(host)) {
-                        if (!permissionAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                            throw new DotSecurityException("User has no Add Children Permissions on selected host");
-                        }
-                    }
-                    if (UtilMethods.isSet(host) && UtilMethods.isSet(folder)) {
-                        cont.setHost(host.getIdentifier());
-                        cont.setFolder(folder.getInode());
-                    }
-                }
+                setSiteAndFolder(user, cont, siteAndFolder);
 
                 //Fill the new contentlet with the data
                 for (Integer column : headers.keySet()) {
@@ -1489,61 +1461,135 @@ public class ImportUtil {
      * @param user current user
      * @return a pair with the host and folder
      */
-    private static Pair<Host, Folder> getSiteAndFolderFromIdOrName(String idOrName, User user)
+    private static Pair<Host, Folder> getSiteAndFolderFromIdOrName(
+            final String idOrName, final User user)
             throws DotDataException, DotSecurityException {
 
-        if (UtilMethods.isSet(idOrName)) {
+        if (!UtilMethods.isSet(idOrName)) {
+            return null;
+        }
 
-            // Verify if the value belongs to a host identifier
-            Folder folder = null;
-            Host host = hostAPI.find(idOrName, user, false);
+        // Verify if the value belongs to a site identifier
+        Host site = hostAPI.find(idOrName, user, false);
 
-            // If a host was not found using the given value (identifier) it can be a folder
-            if (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier())) {
-                folder = folderAPI.find(idOrName, user, false);
-            }
+        if (!isSiteSet(site)) {
+            // If a site was not found using the given value (identifier) it can be a folder
+            Folder folder = folderAPI.find(idOrName, user, false);
 
-            // If a host or folder was not found using the given value (identifier)
-            // it can be a path to a folder or a host name
-            if ((!UtilMethods.isSet(folder) || !InodeUtils.isSet(folder.getInode()))
-                    && (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier()))) {
-                if (idOrName.contains("//")) {
-                    // double slash is used to include the host name followed by the path
-                    String hostName = null;
-                    final String[] arr = idOrName.split("/");
-                    final StringBuilder path = new StringBuilder().append("/");
-                    for (String pathPart : arr) {
-                        if (UtilMethods.isSet(pathPart) && hostName == null) {
-                            hostName = pathPart;
-                        } else if (UtilMethods.isSet(pathPart)) {
-                            path.append(pathPart);
-                            path.append("/");
-                        }
-                    }
-                    if (UtilMethods.isSet(hostName)) {
-                        host = APILocator.getHostAPI().findByName(
-                                hostName, user, false);
-                        if (UtilMethods.isSet(host) && UtilMethods.isSet(host.getIdentifier())) {
-                            folder = APILocator.getFolderAPI().findFolderByPath(
-                                    path.toString(), host, user, false);
-                        }
-                    }
-                } else {
-                    // no host + path, so we only check if the value is a host name
-                    host = APILocator.getHostAPI().findByName(
-                            idOrName, user, false);
+            if (!isFolderSet(folder)) {
+                // If a site or folder was not found using the given value (identifier)
+                // it can be a path to a folder or a site name
+                Pair<String, String> hostNameAndPath = getHostNameAndPath(idOrName);
+                final String hostName = hostNameAndPath.getLeft();
+                final String path = hostNameAndPath.getRight();
+                site = hostAPI.findByName(hostName, user, false);
+                if (isSiteSet(site) && UtilMethods.isSet(path)) {
+                    folder = folderAPI.findFolderByPath(path, site, user, false);
                 }
             }
 
-            if (UtilMethods.isSet(folder) && InodeUtils.isSet(folder.getInode())) {
+            if (isFolderSet(folder)) {
                 return ImmutablePair.of(folder.getHost(), folder);
-            } else if (UtilMethods.isSet(host) && UtilMethods.isSet(host.getIdentifier())) {
-                return ImmutablePair.of(host, APILocator.getFolderAPI().findSystemFolder());
             }
+        }
+
+        if (isSiteSet(site)) {
+            return ImmutablePair.of(site, APILocator.getFolderAPI().findSystemFolder());
         }
 
         return null;
 
+    }
+
+    private static boolean isFolderSet(Folder folder) {
+        return UtilMethods.isSet(folder) && InodeUtils.isSet(folder.getInode());
+    }
+
+    private static boolean isSiteSet(final Host site) {
+        return UtilMethods.isSet(site) && UtilMethods.isSet(site.getIdentifier());
+    }
+
+    /**
+     * Get the host name and the path from the given string
+     * If the string contains a double slash, it is used to include the site name followed by the path
+     * Otherwise, the value is considered a site name
+     * @param hostNameOrPath the host name or host name and path
+     * @return a pair with the host name and the path (if any)
+     */
+    private static Pair<String, String> getHostNameAndPath(final String hostNameOrPath) {
+        if (hostNameOrPath.contains(StringPool.DOUBLE_SLASH)) {
+            // double slash is used to include the site name followed by the path
+            final String[] arr = hostNameOrPath.split(StringPool.FORWARD_SLASH);
+            final StringBuilder path = new StringBuilder().append(StringPool.FORWARD_SLASH);
+            String hostName = null;
+            // first path part is the site name, the rest is the path
+            for (String pathPart : arr) {
+                if (UtilMethods.isSet(pathPart) && hostName == null) {
+                    hostName = pathPart;
+                } else if (UtilMethods.isSet(pathPart)) {
+                    path.append(pathPart);
+                    path.append(StringPool.FORWARD_SLASH);
+                }
+            }
+            return ImmutablePair.of(hostName, path.toString());
+        }
+        // no double slash present, so return the given string as the site name
+        return ImmutablePair.left(hostNameOrPath);
+    }
+
+    /**
+     * Add the site and folder to the ES query to check unique fields
+     * @param siteAndFolder the site and folder pair
+     * @param fieldValue the field value from the CSV line
+     * @return the ES query to check unique fields by site and folder
+     */
+    private static String addSiteAndFolderToESQuery(
+            final Pair<Host, Folder> siteAndFolder, final String fieldValue) {
+        final StringBuilder siteAndFolderQuery = new StringBuilder();
+        if (siteAndFolder != null) {
+            if (siteAndFolder.getLeft() != null) {
+                final Host host = siteAndFolder.getLeft();
+                siteAndFolderQuery.append(" +conhost:").append(host.getIdentifier());
+            }
+            if (siteAndFolder.getRight() != null) {
+                final Folder folder = siteAndFolder.getRight();
+                siteAndFolderQuery.append(" +conFolder:").append(folder.getInode());
+            }
+        } else {
+            siteAndFolderQuery.append(" +(conhost:").append(fieldValue).append(" conFolder:")
+                    .append(fieldValue).append(")");
+        }
+        return siteAndFolderQuery.toString();
+    }
+
+    /**
+     * Set the site and folder for the given contentlet
+     * @param user current user
+     * @param cont the contentlet
+     * @param siteAndFolder the site and folder pair
+     * @throws DotDataException if an dotCMS data error occurs
+     * @throws DotSecurityException if a security error occurs
+     */
+    private static void setSiteAndFolder(final User user,
+            final Contentlet cont, final Pair<Host, Folder> siteAndFolder)
+            throws DotDataException, DotSecurityException {
+        if (siteAndFolder != null) {
+            final Host host = siteAndFolder.getLeft();
+            final Folder folder = siteAndFolder.getRight();
+            if (UtilMethods.isSet(folder) && !folder.isSystemFolder()) {
+                if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)) {
+                    throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
+                }
+            } else if (UtilMethods.isSet(host) && (!permissionAPI.doesUserHavePermission(
+                    host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user))) {
+                throw new DotSecurityException("User has no Add Children Permissions on selected host");
+
+            }
+            if (UtilMethods.isSet(host) && UtilMethods.isSet(folder)) {
+                cont.setHost(host.getIdentifier());
+                cont.setFolder(folder.getInode());
+            }
+        }
     }
 
     private static Contentlet runWorkflowIfCould(final User user, final List<Permission> contentTypePermissions,
