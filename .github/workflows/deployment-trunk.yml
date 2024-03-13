@@ -55,7 +55,7 @@ jobs:
           commit_id: ${{ github.event.workflow_run.head_sha }}"
           variant: dotcms/dotcms:master
           docker_tag: dotcms/dotcms:master_latest_SNAPSHOT
-          do_deploy: false
+          do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }} # default to true, set to disable in fork
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
