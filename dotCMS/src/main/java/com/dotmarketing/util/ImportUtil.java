@@ -1479,7 +1479,7 @@ public class ImportUtil {
             if (!isFolderSet(folder)) {
                 // If a site or folder was not found using the given value (identifier)
                 // it can be a path to a folder or a site name
-                Pair<String, String> hostNameAndPath = getHostNameAndPath(idOrName);
+                final Pair<String, String> hostNameAndPath = getHostNameAndPath(idOrName);
                 final String hostName = hostNameAndPath.getLeft();
                 final String path = hostNameAndPath.getRight();
                 site = hostAPI.findByName(hostName, user, false);
@@ -1576,10 +1576,10 @@ public class ImportUtil {
         if (siteAndFolder != null) {
             final Host host = siteAndFolder.getLeft();
             final Folder folder = siteAndFolder.getRight();
-            if (UtilMethods.isSet(folder) && !folder.isSystemFolder()) {
-                if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)) {
-                    throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
-                }
+            if (UtilMethods.isSet(folder) && !folder.isSystemFolder() &&
+                    !permissionAPI.doesUserHavePermission(folder,
+                            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)) {
+                throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
             } else if (UtilMethods.isSet(host) && (!permissionAPI.doesUserHavePermission(
                     host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user))) {
                 throw new DotSecurityException("User has no Add Children Permissions on selected host");

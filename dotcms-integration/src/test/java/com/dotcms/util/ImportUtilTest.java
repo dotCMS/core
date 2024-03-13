@@ -1961,6 +1961,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile}
+     * Case: Import file with legacy folder inode in the line (folder inode is different from the
+     * folder identifier)
+     * @throws DotSecurityException when there is a security exception
+     * @throws DotDataException when there is a dotCMS data exception
+     * @throws IOException when there is an IO exception
+     */
     @Test
     public void importFile_success_when_lineContainsLegacyFolderInode()
             throws DotSecurityException, DotDataException, IOException {
