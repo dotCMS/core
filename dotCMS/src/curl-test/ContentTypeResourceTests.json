@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "ba1bbb66-aa32-430b-b483-6f6e3e47fa2c",
+		"_postman_id": "a1715c84-3757-40e0-a055-029a204a70ae",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -2966,7 +2966,7 @@
 			"name": "Get Types from one or more Sites",
 			"item": [
 				{
-					"name": "Types from Default Site only",
+					"name": "(Legacy) Types from System Host",
 					"event": [
 						{
 							"listen": "test",
@@ -2976,15 +2976,15 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Checking that there at least 15 Content Types living under System Host\", function () {",
+									"pm.test(\"Checking that there at least 10 Content Types living under System Host\", function () {",
 									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity.length).to.gte(15, \"There MUST be at least 15 Content Types living in System Host -- unless some were added/removed\");",
+									"    pm.expect(entity.length).to.be.gte(10, \"There MUST be at least 10 Content Types living in System Host -- unless some were added/removed\");",
 									"});",
 									"",
 									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
 									"    const pagination = pm.response.json().pagination;",
-									"    pm.expect(pagination.perPage).to.eql(40, \"The 'perPage' parameter must be 40\");",
-									"    pm.expect(pagination.totalEntries).to.gte(15, \"The 'totalEntries' parameter must be at least 15\");",
+									"    pm.expect(pagination.perPage).equals(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(10, \"The 'totalEntries' parameter must be at least 10\");",
 									"});",
 									""
 								],
@@ -3030,12 +3030,13 @@
 									"value": "40"
 								}
 							]
-						}
+						},
+						"description": "Returns the Content Types living in System Host."
 					},
 					"response": []
 				},
 				{
-					"name": "Types from System Host only",
+					"name": "(Legacy) Types from Default site",
 					"event": [
 						{
 							"listen": "test",
@@ -3045,15 +3046,15 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Checking that there at least 6 Content Types living under the Default Site\", function () {",
+									"pm.test(\"Checking that there at least 2 Content Types living under the Default Site\", function () {",
 									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity.length).to.gte(6, \"There MUST be at least 6 Content Types living in the Default Site\");",
+									"    pm.expect(entity.length).to.be.gte(2, \"There MUST be at least 2 Content Types living in the Default Site\");",
 									"});",
 									"",
 									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
 									"    const pagination = pm.response.json().pagination;",
-									"    pm.expect(pagination.perPage).to.eql(40, \"The 'perPage' parameter must be 40\");",
-									"    pm.expect(pagination.totalEntries).to.gte(6, \"The 'totalEntries' parameter must be at least 6\");",
+									"    pm.expect(pagination.perPage).equals(10, \"The 'perPage' parameter must be 10\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(2, \"The 'totalEntries' parameter must be at least 2\");",
 									"});",
 									""
 								],
@@ -3080,7 +3081,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype?host=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&per_page=40",
+							"raw": "{{serverURL}}/api/v1/contenttype?host=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -3093,13 +3094,162 @@
 								{
 									"key": "host",
 									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								}
+							]
+						},
+						"description": "Returns all the Content Types living in the Default site."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Types from System Host",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are at least 10 Content Types living under the System Host\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.be.gte(10, \"There MUST be at least 10 Content Types living in System Host -- unless some were added/removed\");",
+									"});",
+									"",
+									"pm.test(\"Checking that there is no Content Type from another Site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    const typeFromDefaultSite = entity.find(type => type.host !== 'SYSTEM_HOST');",
+									"    pm.expect(typeFromDefaultSite).equals(undefined, \"There must be no Content Types from sites other than System Host\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(10, \"The 'totalEntries' parameter must be at least 10\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?sites=SYSTEM_HOST&per_page=40",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "sites",
+									"value": "SYSTEM_HOST"
 								},
 								{
 									"key": "per_page",
 									"value": "40"
 								}
 							]
+						},
+						"description": "Returns all the Content Types living in the Default site, using the new query string parameter."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Types from Default site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are at least 2 Content Types living under the Default site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.be.gte(2, \"There MUST be at least 2 Content Types living in the Default site\");",
+									"});",
+									"",
+									"pm.test(\"Checking that there is no Content Type from another Site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    const typeFromDefaultSite = entity.find(type => type.host !== '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+									"    pm.expect(typeFromDefaultSite).equals(undefined, \"There must be no Content Types from sites other than Default\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(2, \"The 'totalEntries' parameter must be at least 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
 						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?sites=default&per_page=40",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "sites",
+									"value": "default"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								}
+							]
+						},
+						"description": "Returns all the Content Types living in the Default site, using the new query string parameter, and passing down the Site Key."
 					},
 					"response": []
 				},
@@ -3114,21 +3264,21 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Checking that there are at least 20 Content Types living under System Host\", function () {",
+									"pm.test(\"Checking that there are at least 12 Content Types living under the Default and System Host sites\", function () {",
 									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity.length).to.gte(20, \"There MUST be at least 15 Content Types living in System Host -- unless some were added/removed\");",
+									"    pm.expect(entity.length).to.be.gte(12, \"There MUST be at least 12 Content Types living in the Default and System Host sites -- unless some were added/removed\");",
 									"});",
 									"",
 									"pm.test(\"Checking that there is at least 1 Content Type from the Default Site\", function () {",
 									"    const entity = pm.response.json().entity;",
 									"    const typeFromDefaultSite = entity.find(type => type.host === '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
-									"    pm.expect(typeFromDefaultSite).to.not.eql(undefined, \"There MUST be at least one Content Type from the Default Site\");",
+									"    pm.expect(typeFromDefaultSite).to.not.equal(undefined, \"There MUST be at least one Content Type from the Default Site\");",
 									"});",
 									"",
 									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
 									"    const pagination = pm.response.json().pagination;",
-									"    pm.expect(pagination.perPage).to.eql(40, \"The 'perPage' parameter must be 40\");",
-									"    pm.expect(pagination.totalEntries).to.gte(20, \"The 'totalEntries' parameter must be at least 20\");",
+									"    pm.expect(pagination.perPage).equals(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(12, \"The 'totalEntries' parameter must be at least 12\");",
 									"});",
 									""
 								],
@@ -3175,7 +3325,7 @@
 								}
 							]
 						},
-						"description": "Calling this REST Endpoint using the Site ID."
+						"description": "Returns all the Content Types living in both the Default and System Host sites, using the IDs."
 					},
 					"response": []
 				},
@@ -3190,21 +3340,21 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Checking that there are at least 20 Content Types living under System Host\", function () {",
+									"pm.test(\"Checking that there are at least 12 Content Types living under the Default and System Host sites\", function () {",
 									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity.length).to.gte(20, \"There MUST be at least 15 Content Types living in System Host -- unless some were added/removed\");",
+									"    pm.expect(entity.length).to.be.gte(12, \"There MUST be at least 12 Content Types living in the Default and System Host sites -- unless some were added/removed\");",
 									"});",
 									"",
 									"pm.test(\"Checking that there is at least 1 Content Type from the Default Site\", function () {",
 									"    const entity = pm.response.json().entity;",
 									"    const typeFromDefaultSite = entity.find(type => type.host === '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
-									"    pm.expect(typeFromDefaultSite).to.not.eql(undefined, \"There MUST be at least one Content Type from the Default Site\");",
+									"    pm.expect(typeFromDefaultSite).to.not.equal(undefined, \"There MUST be at least one Content Type from the Default Site\");",
 									"});",
 									"",
 									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
 									"    const pagination = pm.response.json().pagination;",
-									"    pm.expect(pagination.perPage).to.eql(40, \"The 'perPage' parameter must be 40\");",
-									"    pm.expect(pagination.totalEntries).to.gte(20, \"The 'totalEntries' parameter must be at least 20\");",
+									"    pm.expect(pagination.perPage).equals(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(12, \"The 'totalEntries' parameter must be at least 12\");",
 									"});",
 									""
 								],
@@ -3251,12 +3401,234 @@
 								}
 							]
 						},
-						"description": "Calling this REST Endpoint using the Site Key."
+						"description": "Returns all the Content Types living in both the Default and System Host sites, using the Site Key."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Types from non-existing Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that no Content Types are returned\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).equals(0, \"There must be no Content Types in the results\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).equals(0, \"The 'totalEntries' parameter must be zero\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?sites=non-existing-site&per_page=40",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "sites",
+									"value": "non-existing-site"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								}
+							]
+						},
+						"description": "Returns all the Content Types living in the non-existing site, which must return an empty list."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Types from non-existing Site (ID) and System Host",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are at least 10 Content Types living under the Default and System Host sites\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.be.gte(10, \"There MUST be at least 10 Content Types living in System Host -- unless some were added/removed\");",
+									"});",
+									"",
+									"pm.test(\"Checking that all Content Types come from System Host only\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    const typeFromDefaultSite = entity.find(type => type.host === '12312312-abcd-1234-dcba-456456456456');",
+									"    pm.expect(typeFromDefaultSite).equals(undefined, \"All Content Types must come from System Host only\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(10, \"The 'totalEntries' parameter must be at least 10\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?sites=12312312-abcd-1234-dcba-456456456456,SYSTEM_HOST&per_page=40",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "sites",
+									"value": "12312312-abcd-1234-dcba-456456456456,SYSTEM_HOST"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								}
+							]
+						},
+						"description": "Returns all the Content Types living in a non-existing site and System Host, which must return only the types living in System Host."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Types from non-existing Site (ID) and Default site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are at least 2 Content Types living under the Default site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.be.gte(2, \"There MUST be at least 2 Content Types living in the Default site\");",
+									"});",
+									"",
+									"pm.test(\"Checking that all Content Types come from the Default site only\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    const typeFromDefaultSite = entity.find(type => type.host === '12312312-abcd-1234-dcba-456456456456');",
+									"    pm.expect(typeFromDefaultSite).equals(undefined, \"All Content Types must come from the Default site only\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(40, \"The 'perPage' parameter must be 40\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(2, \"The 'totalEntries' parameter must be at least 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?sites=invalid-site,default&per_page=40",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "sites",
+									"value": "invalid-site,default"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								}
+							]
+						},
+						"description": "Returns all the Content Types living in a non-existing site and the Defaut site, which must return only the types living in the Default site."
 					},
 					"response": []
 				}
 			],
-			"description": "These requests allow you to verify that dotCMS can retrieve a specific list of Content Types from a specific list of Sites, and not form the whole repository. You can use both the Site's Identifier, or its Key -- aka, Site Name.\n\nWe're testing both the existing per-Site Endpoint, and the new multi-site Endpoint."
+			"description": "These requests allow you to verify that dotCMS can retrieve a filtered paginated list of Content Types from a specific list of Sites only, and not from the whole repository. You can use both the Site's Identifier, or its Key -- aka, Site Name.\n\nThis suite is testing both the existing per-Site Endpoint -- flagged with **`(Legacy)`** -- and the new multi-site parameter."
 		}
 	],
 	"event": [
