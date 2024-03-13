@@ -35,7 +35,7 @@
 
 <p-galleria
     *ngIf="!isLoading && images?.length"
-    [(activeIndex)]="index"
+    [(activeIndex)]="activeImageIndex"
     [circular]="true"
     [showItemNavigators]="true"
     [showThumbnails]="false"
@@ -51,5 +51,5 @@
     </ng-template>
 </p-galleria>
 <span class="ai-image-gallery__count align-self-center" *ngIf="!isLoading && images?.length">
-    {{ index + 1 }} {{ 'of' | dm }} {{ images.length }}
+    {{ activeImageIndex + 1 }} {{ 'of' | dm }} {{ images.length }}
 </span>

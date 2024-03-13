@@ -29,7 +29,7 @@ export class AiImagePromptGalleryComponent {
     images: DotGeneratedAIImage[] = [];
 
     @Input()
-    index = 0;
+    activeImageIndex = 0;
 
     @Input()
     orientation: DotAIImageOrientation;

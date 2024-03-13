@@ -19,7 +19,7 @@
                 <dot-ai-image-prompt-gallery
                     [isLoading]="vm.isLoading"
                     [images]="vm.images"
-                    [index]="vm.galleryActiveIndex"
+                    [activeImageIndex]="vm.galleryActiveIndex"
                     [orientation]="vm.orientation"
                     (activeIndexChange)="vm.galleryActiveIndex = $event" />
                 <button
