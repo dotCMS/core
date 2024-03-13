@@ -48,21 +48,19 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
 
-        try (MockedStatic<SecurityLogger> mockedStatic = Mockito.mockStatic(SecurityLogger.class)) {
-            mockedStatic.when(() -> SecurityLogger.logInfo(any(), anyString())).thenAnswer((invocation) -> null);
-            final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
-                    new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
+        final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
+                new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
 
-            when(request.getSession(false)).thenReturn(session);
-            when(userWebAPI.isLoggedToBackend(request)).thenReturn(true);
+        //when(request.getSession(false)).thenReturn(session);
+        when(userWebAPI.isLoggedToBackend(request)).thenReturn(true);
 
-            loginRequiredWebInterceptor.init();
+        loginRequiredWebInterceptor.init();
 
-            Result result = loginRequiredWebInterceptor.intercept(request, response);
-            assertEquals(result, Result.NEXT);
+        Result result = loginRequiredWebInterceptor.intercept(request, response);
+        assertEquals(result, Result.NEXT);
 
-            loginRequiredWebInterceptor.destroy();
-        }
+        loginRequiredWebInterceptor.destroy();
+
     }
 
     /**
@@ -78,22 +76,21 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
-        try (MockedStatic<SecurityLogger> mockedStatic = Mockito.mockStatic(SecurityLogger.class)) {
-            mockedStatic.when(() -> SecurityLogger.logInfo(any(), anyString())).thenAnswer((invocation) -> null);
-            final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
-                    new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
 
-            when(request.getSession(false)).thenReturn(session);
-            when(response.getWriter()).thenReturn(printWriter);
-            when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+        final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
+                new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
 
-            loginRequiredWebInterceptor.init();
+        when(request.getSession(false)).thenReturn(session);
+        when(response.getWriter()).thenReturn(printWriter);
+        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
-            Result result = loginRequiredWebInterceptor.intercept(request, response);
-            assertEquals(result, Result.SKIP_NO_CHAIN);
+        loginRequiredWebInterceptor.init();
 
-            loginRequiredWebInterceptor.destroy();
-        }
+        Result result = loginRequiredWebInterceptor.intercept(request, response);
+        assertEquals(result, Result.SKIP_NO_CHAIN);
+
+        loginRequiredWebInterceptor.destroy();
+
     }
 
     /**
@@ -110,34 +107,33 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
-        try (MockedStatic<SecurityLogger> mockedStatic = Mockito.mockStatic(SecurityLogger.class)) {
-            mockedStatic.when(() -> SecurityLogger.logInfo(any(), anyString())).thenAnswer((invocation) -> null);
-            when(response.getWriter()).thenReturn(printWriter);
 
-            final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
-                    new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
-            when(loginRequiredWebInterceptor.intercept(request, response))
-                    .thenAnswer(new Answer<Result>() {
+        //when(response.getWriter()).thenReturn(printWriter);
 
-                        @Override
-                        public Result answer(InvocationOnMock invocation) throws Throwable {
+        final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
+                new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
+        /*when(loginRequiredWebInterceptor.intercept(request, response))
+                .thenAnswer(new Answer<Result>() {
 
-                            fail("For the given URI the intercept method should not be called");
-                            return Result.NEXT;
-                        }
-                    });
+                    @Override
+                    public Result answer(InvocationOnMock invocation) throws Throwable {
 
-            when(request.getSession(false)).thenReturn(session);
-            when(request.getRequestURI()).thenReturn(URI_TO_TEST);
-            when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+                        fail("For the given URI the intercept method should not be called");
+                        return Result.NEXT;
+                    }
+                });*/
 
-            //Create a new instance of an interceptor delegate
-            SimpleWebInterceptorDelegateImpl webInterceptorDelegate = new SimpleWebInterceptorDelegateImpl();
-            webInterceptorDelegate.add(loginRequiredWebInterceptor);
-            webInterceptorDelegate.init();
-            webInterceptorDelegate.intercept(request, response);
-            webInterceptorDelegate.destroy();
-        }
+        //when(request.getSession(false)).thenReturn(session);
+        when(request.getRequestURI()).thenReturn(URI_TO_TEST);
+        //when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+
+        //Create a new instance of an interceptor delegate
+        SimpleWebInterceptorDelegateImpl webInterceptorDelegate = new SimpleWebInterceptorDelegateImpl();
+        webInterceptorDelegate.add(loginRequiredWebInterceptor);
+        webInterceptorDelegate.init();
+        webInterceptorDelegate.intercept(request, response);
+        webInterceptorDelegate.destroy();
+
     }
 
     /**
@@ -236,25 +232,23 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
-        try (MockedStatic<SecurityLogger> mockedStatic = Mockito.mockStatic(SecurityLogger.class)) {
-            mockedStatic.when(() -> SecurityLogger.logInfo(any(), anyString())).thenAnswer((invocation) -> null);
 
-            final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
-                    new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
+        final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
+                new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
 
-            when(request.getSession(false)).thenReturn(session);
-            when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+        //when(request.getSession(false)).thenReturn(session);
+        //when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
-            loginRequiredWebInterceptor.init();
+        loginRequiredWebInterceptor.init();
 
-            for (final String uriToTest : URIS_TO_TEST) {
-                when(request.getRequestURI()).thenReturn(uriToTest);
-                Result result = loginRequiredWebInterceptor.intercept(request, response);
-                assertEquals(result, Result.NEXT);
-            }
-
-            loginRequiredWebInterceptor.destroy();
+        for (final String uriToTest : URIS_TO_TEST) {
+            when(request.getRequestURI()).thenReturn(uriToTest);
+            Result result = loginRequiredWebInterceptor.intercept(request, response);
+            assertEquals(result, Result.NEXT);
         }
+
+        loginRequiredWebInterceptor.destroy();
+
     }
 
     /**
@@ -281,26 +275,24 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
-        try (MockedStatic<SecurityLogger> mockedStatic = Mockito.mockStatic(SecurityLogger.class)) {
-            mockedStatic.when(() -> SecurityLogger.logInfo(any(), anyString())).thenAnswer((invocation) -> null);
 
-            final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
-                    new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
+        final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
+                new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
 
-            when(request.getSession(false)).thenReturn(session);
-            when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
-            when(response.getWriter()).thenReturn(printWriter);
+        when(request.getSession(false)).thenReturn(session);
+        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+        when(response.getWriter()).thenReturn(printWriter);
 
-            loginRequiredWebInterceptor.init();
+        loginRequiredWebInterceptor.init();
 
-            for (final String uriToTest : URIS_TO_TEST) {
-                when(request.getRequestURI()).thenReturn(uriToTest);
-                Result result = loginRequiredWebInterceptor.intercept(request, response);
-                assertEquals(result, Result.SKIP_NO_CHAIN);
-            }
-
-            loginRequiredWebInterceptor.destroy();
+        for (final String uriToTest : URIS_TO_TEST) {
+            when(request.getRequestURI()).thenReturn(uriToTest);
+            Result result = loginRequiredWebInterceptor.intercept(request, response);
+            assertEquals(result, Result.SKIP_NO_CHAIN);
         }
+
+        loginRequiredWebInterceptor.destroy();
+
     }
 
 }

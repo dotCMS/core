@@ -15,6 +15,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Optional;
 import java.util.Set;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -80,7 +81,9 @@ abstract class OSGIBaseAJAX extends AjaxAction {
 		} catch (Exception e) {
 			Logger.error(this, "Trying to run method:" + cmd);
 			Logger.error(this, e.getMessage(), e.getCause());
-			writeError(response, e.getCause().getMessage());
+			var causeMessage = Optional.ofNullable(e.getCause()).map(Throwable::getMessage).orElse(e.getMessage());
+			Logger.error(this, causeMessage, e);
+			writeError(response, causeMessage);
 		}
 
 	}
