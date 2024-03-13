@@ -12,8 +12,8 @@ on:
         required: false
   push:
     branches:
-        - master
-        - release-*
+      - master
+      - release-*
   pull_request:
   merge_group:
 concurrency:
@@ -35,6 +35,7 @@ jobs:
   changes:
     name: Check Changed Files
     runs-on: ubuntu-latest
+
     permissions:
       pull-requests: read
     outputs:
@@ -52,40 +53,35 @@ jobs:
           list-files: 'escape'
       - name: Rewrite Filter
         id: filter-rewrite
+        env:
+          CICD_SKIP_TESTS: ${{ vars.CICD_SKIP_TESTS }}
         run: |
-          # Run all steps on master branch to catch any issues that got through
+          # Default action outcomes based on paths-filter action outputs
+          frontend=${{ steps.filter.outputs.frontend }}
+          cli=${{ steps.filter.outputs.cli }}
+          backend=${{ steps.filter.outputs.backend }}
+          build=${{ steps.filter.outputs.build }}
+          jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
+          
+          # Check if the commit is to the master branch and if tests should be skipped
           is_master=$(echo ${{ github.ref }} | sed -n 's/refs\/heads\/master/&/p')
+          skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
           
-          if [ "$is_master" == "refs/heads/master" ]; then
-            echo "Build is on master branch. Setting all outputs to true."
-            frontend=true
-            cli=true
-            backend=true
-            build=true
-            jvm_unit_test=true
-          else
-            frontend=${{ steps.filter.outputs.frontend }}
-            cli=${{ steps.filter.outputs.cli }}
-            backend=${{ steps.filter.outputs.backend }}
-            build=${{ steps.filter.outputs.build }}
-            jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }} 
-          
-            is_backend=false
-            backend_files=( ${{ steps.filter.outputs.backend_files }} )
-            for backend_file in "${backend_files[@]}"
-            do
-              echo "Evaluating ${backend_file}"
-              if [[ ! ${backend_file} =~ ^dotCMS/src/main/webapp/html/.*\.(js|css)$ ]]; then
-                echo "Backend file ${backend_file} is not a frontend file... aborting search"
-                is_backend=true
-                break
-              fi
-            done
-          
-            backend=${is_backend}
-            [[ "${backend}" == 'true' ]] && build=true && jvm_unit_test=true
+          # Adjust outputs based on conditions
+          if [ "$is_master" == "refs/heads/master" ] || [ "$skip_tests" == "true" ]; then
+            # Apply skip logic: if it's the master branch and skipping is not demanded, run all tests; 
+            # otherwise, if skipping is requested, turn off all but build.
+            if [ "$skip_tests" == "true" ]; then
+              echo "Skipping tests as CICD_SKIP_TESTS is set to true."
+              frontend=false
+              cli=false
+              backend=false  # Consider keeping this true if you want to ensure backend integrity
+              jvm_unit_test=false
+            fi
+            # Note: No else branch here; if we're on master and skip_tests isn't true, we keep the defaults from the paths-filter
           fi
           
+          # Export the outcomes as GitHub Actions outputs
           echo "frontend=${frontend}" >> $GITHUB_OUTPUT
           echo "cli=${cli}" >> $GITHUB_OUTPUT
           echo "backend=${backend}" >> $GITHUB_OUTPUT
@@ -633,9 +629,9 @@ jobs:
           while IFS=" " read -r key result; do
             key=$(echo $key | tr -d ' {')
             result=$(echo $result | tr -d ',')
-            
+          
             echo "Job: $key, Result: $result"
-            
+          
             if [[ $result == "cancelled" ]]; then
               AGGREGATE_STATUS="CANCELLED"
               break
@@ -643,7 +639,7 @@ jobs:
               AGGREGATE_STATUS="FAILURE"
             fi
           done < <(echo "$jobs_status" | awk -F': ' '/result:/ {print $1,$2}')
-                                          
+          
           FIRST_FAIL_STEP=""
           FIRST_FAIL_MODULE=""
           
@@ -657,12 +653,12 @@ jobs:
           else
               PR_TITLE="N/A"
               BRANCH="${{ github.ref }}"
-             
+          
               echo "Creating workflow data for branch ${BRANCH}"
           fi
           
           BRANCH="${BRANCH##*/}"
-        
+          
           PR_TITLE_JQ=$(jq --arg title "$PR_TITLE" -n '$title')
           
           echo '"branch": "'$BRANCH'",' >> workflow-data.json
@@ -712,14 +708,14 @@ jobs:
                 fi
                 done
               fi
-              
+          
               # If not the last file, append a comma
               if (( report_index != total_reports )); then
                 echo ',' >> workflow-data.json
               fi
             done
           fi
-      
+          
           echo '],' >> workflow-data.json
           echo '"aggregate_status": "'$AGGREGATE_STATUS'"' >> workflow-data.json
           if [[ "$AGGREGATE_STATUS" != "SUCCESS" ]]; then
