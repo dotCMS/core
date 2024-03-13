@@ -30,10 +30,6 @@ export function updateNavigation(pathname: string) {
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
  */
 export function isInsideEditor() {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
     if (window.parent === window) {
         return false;
     }

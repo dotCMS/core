@@ -317,9 +317,6 @@ function _unsupported_iterable_to_array(o, minLen) {
  * Checks if the code is running inside an editor.
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
  */ function isInsideEditor() {
-    if (typeof window === "undefined") {
-        return;
-    }
     if (window.parent === window) {
         return false;
     }

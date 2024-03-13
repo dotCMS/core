@@ -21,10 +21,13 @@
                 "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
                 "outputFileName": "sdk-editor",
                 "format": ["esm"],
+                "tsConfig": "libs/sdk/client/tsconfig.lib.json",
                 "project": "libs/sdk/client/package.json",
                 "entryFile": "libs/sdk/client/src/lib/editor/sdk-editor-vtl.ts",
-                "tsConfig": "libs/sdk/client/tsconfig.lib.json",
-                "compiler": "swc"
+                "external": ["react/jsx-runtime"],
+                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+                "compiler": "swc",
+                "extractCss": false
             }
         },
         "publish": {
