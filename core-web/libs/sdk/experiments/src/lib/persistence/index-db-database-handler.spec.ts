@@ -3,7 +3,7 @@ import fakeIndexedDB from 'fake-indexeddb';
 import { IndexDBDatabaseHandler } from './index-db-database-handler';
 
 import { EXPERIMENT_DB_KEY_PATH, EXPERIMENT_DB_STORE_NAME } from '../constants';
-import { IsUserIncludedResponse } from '../mocks/is-user-included.mock';
+import { IsUserIncludedResponse } from '../mocks/mock';
 
 if (!globalThis.structuredClone) {
     globalThis.structuredClone = function (obj) {

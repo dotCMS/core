@@ -13,6 +13,8 @@ ARG USER_GID="65001"
 ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
 
+ARG PG_VERSION=16
+ENV PG_VERSION=${PG_VERSION}
 RUN groupadd -f -g $USER_GID $USER_GROUP
 # Creating default non-user
 # the useradd
@@ -22,7 +24,6 @@ COPY --from=dotcms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_RELEASE=jammy
-ARG PG_VERSION=15
 ARG PGDATA=/data/postgres
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBCONF_NONINTERACTIVE_SEEN=true
@@ -34,15 +35,13 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends bash zip unzip wget libtcnative-1\
     tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg\
-    vim libarchive-tools
+    vim libarchive-tools postgresql-common
 
 
-RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $UBUNTU_RELEASE-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
-RUN wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null \
-  && apt-get update -y \
-  && apt-get upgrade -y \
-  && apt-get install -y postgresql-$PG_VERSION
+RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+RUN apt install -y postgresql-$PG_VERSION-pgvector
+
 
 
 # Cleanup
@@ -51,7 +50,7 @@ RUN apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
 
-COPY --from=opensearchproject/opensearch:1.3.11 --chown=$USER_NAME:$USER_GROUP /usr/share/opensearch /usr/share/opensearch
+COPY --from=opensearchproject/opensearch:1 --chown=$USER_NAME:$USER_GROUP /usr/share/opensearch /usr/share/opensearch
 
 RUN echo "discovery.type: single-node\nbootstrap.memory_lock: true\ncluster.routing.allocation.disk.threshold_enabled: true\ncluster.routing.allocation.disk.watermark.low: 1g\ncluster.routing.allocation.disk.watermark.high: 500m\ncluster.routing.allocation.disk.watermark.flood_stage: 400m\ncluster.info.update.interval: 5m" >> /usr/share/opensearch/config/opensearch.yml
 

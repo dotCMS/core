@@ -1,5 +1,18 @@
-import { API_EXPERIMENTS_URL, EXPERIMENT_DB_KEY_PATH, EXPERIMENT_DB_STORE_NAME } from './constants';
-import { AssignedExperiments, DotExperimentConfig, IsUserIncludedApiResponse } from './models';
+import { jitsuClient, JitsuClient } from '@jitsu/sdk-js';
+
+import {
+    API_EXPERIMENTS_URL,
+    DEBUG_LEVELS,
+    EXPERIMENT_DB_KEY_PATH,
+    EXPERIMENT_DB_STORE_NAME
+} from './constants';
+import {
+    AssignedExperiments,
+    DotExperimentConfig,
+    ExperimentParsed,
+    IsUserIncludedApiResponse
+} from './models';
+import { parseDataForAnalytics } from './parser/parser';
 import { IndexDBDatabaseHandler } from './persistence/index-db-database-handler';
 import { dotLogger } from './utils/utils';
 
@@ -24,8 +37,9 @@ import { dotLogger } from './utils/utils';
  *
  */
 export class DotExperiments {
-    // TODO: make this class the entrypoint of the library
     private static instance: DotExperiments;
+    private databaseHandler!: IndexDBDatabaseHandler;
+    private analytics!: JitsuClient;
 
     private constructor(private config: DotExperimentConfig) {
         if (!this.config['server']) {
@@ -40,12 +54,6 @@ export class DotExperiments {
             `DotExperiments instanced with ${JSON.stringify(config)} configuration`,
             this.getIsDebugActive()
         );
-
-        // TODO: Steps
-        // - 1. Fetching and storing data ✅
-        // - 2. Parsing data for backend use
-        // - 3. Detecting and navigate to the appropriate variant
-        // - 4. Sending events to Analytics Cloud
     }
 
     /**
@@ -63,7 +71,10 @@ export class DotExperiments {
 
             DotExperiments.instance = new DotExperiments(config);
 
+            // Steps
+            this.instance.initializeDatabaseHandler();
             this.instance.setExperimentData();
+            this.instance.initAnalyticsClient();
         }
 
         return DotExperiments.instance;
@@ -132,18 +143,11 @@ export class DotExperiments {
      * @private
      */
     private persistExperiments(entity: AssignedExperiments) {
-        const indexDBDatabaseHandler = new IndexDBDatabaseHandler({
-            db_store: EXPERIMENT_DB_STORE_NAME,
-            db_name: EXPERIMENT_DB_STORE_NAME,
-            db_key_path: EXPERIMENT_DB_KEY_PATH
-        });
-
         if (!entity.experiments.length) {
             return;
         }
 
-        // TODO: Final parsed data will be stored
-        indexDBDatabaseHandler
+        this.databaseHandler
             .persistData(entity)
             .then(() => {
                 dotLogger('Experiment data stored successfully', this.getIsDebugActive());
@@ -151,5 +155,62 @@ export class DotExperiments {
             .catch((onerror) => {
                 dotLogger(`Error storing data. ${onerror}`, this.getIsDebugActive());
             });
+    }
+
+    /**
+     * Initializes the database handler.
+     *
+     * This private method instantiates the class handling the IndexDB database
+     * and assigns this instance to 'databaseHandler'.
+     *
+     * @private
+     */
+    private initializeDatabaseHandler() {
+        this.databaseHandler = new IndexDBDatabaseHandler({
+            db_store: EXPERIMENT_DB_STORE_NAME,
+            db_name: EXPERIMENT_DB_STORE_NAME,
+            db_key_path: EXPERIMENT_DB_KEY_PATH
+        });
+    }
+
+    /**
+     * Retrieves and parses data from the database for analytics.
+     *
+     * This private method fetches data from the IndexDB database and
+     * parses it into the format needed for analytics when saving events.
+     *
+     * @private
+     * @returns {Promise<ExperimentParsed>} A Promise that resolves to the data parsed for analytics.
+     */
+    private async getDataForAnalytics(): Promise<ExperimentParsed> {
+        const data = await this.databaseHandler.getData<AssignedExperiments>();
+
+        return parseDataForAnalytics(data, location);
+    }
+
+    /**
+     * Initializes the Jitsu analytics client.
+     *
+     * This private method sets up the Jitsu client responsible for sending events
+     * to the server with the provided configuration. It also uses the parsed data
+     * and registers it as global within Jitsu.
+     *
+     * @private
+     */
+    private async initAnalyticsClient() {
+        try {
+            this.analytics = jitsuClient({
+                key: this.config['api-key'],
+                tracking_host: this.config['server'],
+                log_level: this.config['debug'] ? DEBUG_LEVELS.DEBUG : DEBUG_LEVELS.WARN
+            });
+
+            const { experiments } = await this.getDataForAnalytics();
+            this.analytics.set({ experiments });
+
+            dotLogger(`Analytics client created successfully.`, this.getIsDebugActive());
+        } catch (error) {
+            throw Error(`Error creating analytics client, ${error}`);
+        }
     }
 }
