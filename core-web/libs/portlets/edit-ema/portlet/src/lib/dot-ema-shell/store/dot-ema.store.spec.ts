@@ -147,6 +147,16 @@ describe('EditEmaStore', () => {
                     done();
                 });
             });
+
+            it('should return contentState', (done) => {
+                spectator.service.contentState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        state: EDITOR_STATE.LOADING,
+                        code: undefined
+                    });
+                    done();
+                });
+            });
         });
 
         describe('updaters', () => {
@@ -535,10 +545,20 @@ describe('EditEmaStore', () => {
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.LOADING,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
+                    });
+                    done();
+                });
+            });
+
+            it('should return contentState', (done) => {
+                spectator.service.contentState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        state: EDITOR_STATE.LOADING,
+                        code: '<html><body><h1>Hello, World!</h1></body></html>'
                     });
                     done();
                 });
@@ -584,7 +604,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED,
+                        editorState: EDITOR_STATE.LOADING,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }

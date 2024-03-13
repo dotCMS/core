@@ -1,3 +1,6 @@
+# DEPRECATED
+Moved to java-base/Dockerfile
+
 # BUILD dotCMS pg_dump
 
 This Dockerfile builds postgres so we can extract a valid pg_dump binary.  pg_dump is backwards compatible so any version greater than our cloud db version should work future forward.

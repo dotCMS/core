@@ -697,6 +697,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         when(fileAsset.getUnderlyingFileName()).thenReturn(underlyingFileName);
         when(fileAsset.getWidth()).thenReturn(width);
         when(fileAsset.getHeight()).thenReturn(height);
+        when(fileAsset.isImage()).thenReturn(true);
 
         when(fileAssetAPI.fromContentlet(any(Contentlet.class))).thenReturn(fileAsset);
 

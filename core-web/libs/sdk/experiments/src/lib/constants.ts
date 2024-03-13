@@ -10,7 +10,7 @@ export const EXPERIMENT_WINDOWS_KEY = 'dotExperiment';
  *
  * @constant {string}
  */
-export const EXPERIMENT_SCRIPT_FILE_NAME = 'standalone.cjs.js';
+export const EXPERIMENT_SCRIPT_FILE_NAME = 'dot-experiments.min.iife.js';
 
 /**
  * The prefix used for the experiment script data attributes.
@@ -71,3 +71,14 @@ export const EXPERIMENT_DB_KEY_PATH = 'running_experiment';
  * @const
  */
 export const EXPERIMENT_DB_DEFAULT_VERSION = 1;
+
+/**
+ * Enumeration of debug levels.
+ *
+ * @enum {string}
+ * @readonly
+ */
+export enum DEBUG_LEVELS {
+    DEBUG = 'DEBUG',
+    WARN = 'WARN'
+}

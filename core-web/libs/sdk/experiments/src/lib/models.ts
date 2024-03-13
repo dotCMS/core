@@ -67,7 +67,7 @@ interface Variant {
  * @property {string} runningId - The running identifier of the experiment.
  * @property {Variant} variant - The Variant assigned to the user making the request.
  */
-interface Experiment {
+export interface Experiment {
     id: string;
     lookBackWindow: LookBackWindow;
     name: string;
@@ -108,4 +108,19 @@ export interface IsUserIncludedApiResponse {
     i18nMessagesMap: Record<string, string>;
     errors: string[];
     messages: string[];
+}
+
+// Interface of the data send to Analytics of the experiments
+export interface ExperimentParsed {
+    href: string;
+    experiments: ExperimentEvent[];
+}
+
+export interface ExperimentEvent {
+    experiment: string;
+    runningId: string;
+    isExperimentPage: boolean;
+    isTargetPage: boolean;
+    lookBackWindow: string;
+    variant: string;
 }

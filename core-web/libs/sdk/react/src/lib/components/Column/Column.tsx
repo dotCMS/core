@@ -1,8 +1,7 @@
-import { useContext } from 'react';
+import { isInsideEditor } from '@dotcms/client';
 
 import styles from './column.module.css';
 
-import { PageContext } from '../../contexts/PageContext';
 import { combineClasses, getPositionStyleClasses } from '../../utils/utils';
 import { Container } from '../Container/Container';
 import { PageProviderContext } from '../PageProvider/PageProvider';
@@ -12,9 +11,6 @@ export interface ColumnProps {
 }
 
 export function Column({ column }: ColumnProps) {
-    const { isInsideEditor } = useContext<PageProviderContext | null>(
-        PageContext
-    ) as PageProviderContext;
     const { startClass, endClass } = getPositionStyleClasses(
         column.leftOffset,
         column.width + column.leftOffset
@@ -26,7 +22,7 @@ export function Column({ column }: ColumnProps) {
         column.styleClass
     ]);
 
-    const columnProps = isInsideEditor
+    const columnProps = isInsideEditor()
         ? {
               'data-dot': 'column',
               'data-testid': 'column'
