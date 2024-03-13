@@ -1,4 +1,6 @@
 :host::ng-deep {
+    // Hide the promotion button 
+    // This button redirect to the tinyMCE premium page
     .tox-promotion {
         display: none;
     }
