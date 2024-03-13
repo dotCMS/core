@@ -3,6 +3,7 @@ package com.dotcms.api.client.pull;
 import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.pull.task.PullTask;
 import com.dotcms.api.client.pull.task.PullTaskParams;
+import com.dotcms.api.client.util.ErrorHandlingUtil;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -30,6 +31,9 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
 
     @Inject
     Logger logger;
+
+    @Inject
+    ErrorHandlingUtil errorHandlerUtil;
 
     @Inject
     ManagedExecutor executor;
@@ -97,8 +101,7 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
         CompletableFuture.allOf(pullFuture, animationFuture).join();
 
         var errors = pullFuture.get();
-
-        return handleExceptions(errors, output);
+        return errorHandlerUtil.handlePullExceptions(errors, output);
     }
 
 }
