@@ -1639,7 +1639,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return this.variantId;
 	}
 
-	@VisibleForTesting
     public class ContentletHashMap extends ConcurrentHashMap<String, Object> {
 		 /**
 		 *

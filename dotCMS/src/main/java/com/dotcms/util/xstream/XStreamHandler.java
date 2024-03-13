@@ -13,6 +13,7 @@ public class XStreamHandler {
 
     public static XStream newXStreamInstance(final String encoding) {
         final XStream xstream = new XStream(new DomDriver(encoding)) {
+
             //This is here to prevent unmapped properties from old versions from breaking thr conversion
             //https://stackoverflow.com/questions/5377380/how-to-make-xstream-skip-unmapped-tags-when-parsing-xml
             @Override
@@ -32,7 +33,7 @@ public class XStreamHandler {
                 };
             }
         };
-
+        xstream.registerConverter(new com.dotcms.util.xstream.ContentletHashMapConverter(xstream.getMapper()));
         xstream.allowTypesByWildcard(new String[] {
                 "com.dotcms.**", "com.dotmarketing.**", "com.google.common.collect.**", "java.lang.**",
                 "java.util.**", "java.sql.**", "com.thoughtworks.xstream.mapper.**"
