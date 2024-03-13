@@ -1,5 +1,7 @@
 import { moduleMetadata } from '@storybook/angular';
 
+import { CommonModule } from '@angular/common';
+
 import { TableModule } from 'primeng/table';
 
 import { DotTableComponent } from './dot-table.component';
@@ -9,7 +11,7 @@ export default {
     component: DotTableComponent,
     decorators: [
         moduleMetadata({
-            imports: [TableModule]
+            imports: [TableModule, CommonModule]
         })
     ]
 };
