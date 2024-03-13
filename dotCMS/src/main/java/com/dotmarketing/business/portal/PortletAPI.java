@@ -40,9 +40,23 @@ public interface PortletAPI {
   //todo: remove this method
   Portlet savePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException;
 
-  // In this method we are encapsulating the logic to create or update a portlet
+    /**
+     * This method is encapsulating the logic to create or update a portlet
+     *
+     * @param portlet the portlet to be created or updated
+     * @param user the user that is creating or updating the portlet
+     */
   Portlet createOrUpdatePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException;
 
   Portlet updatePortlet(final Portlet portlet) throws DotDataException;
+
+    /**
+     * This method is used to remove the prefix from the portletId.
+     * We are avoiding to add double prefix to the portletId,
+     * and also to avoid to have a portletId with a prefix that is not the expected one.
+     *
+     * @param	portletId the portlet id to be cleaned
+     */
+    String portletIdPrefixCleaner(final String portletId);
 
 }

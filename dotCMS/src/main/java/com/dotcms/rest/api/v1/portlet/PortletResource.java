@@ -98,11 +98,8 @@ public class PortletResource implements Serializable {
         Response response = null;
 
         try {
-            //todo: validate id prefix
-
-            // post method only create new portlet
-            final boolean existPortlet = !UtilMethods.isSet(portletApi.findPortlet(formData.portletId));
-            if (existPortlet) {
+            final String portletId = portletApi.portletIdPrefixCleaner(formData.portletId);
+            if (UtilMethods.isSet(portletApi.findPortlet(portletId))) {
                 throw new DoesNotExistException("Portlet with Id: " + formData.portletId + " already exist");
             }
 
@@ -115,7 +112,7 @@ public class PortletResource implements Serializable {
             initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
 
             final Portlet newPortlet = APILocator.getPortletAPI()
-                    .savePortlet(new DotPortlet(formData.portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
+                    .createOrUpdatePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
             return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
 
@@ -125,9 +122,6 @@ public class PortletResource implements Serializable {
 
         return response;
     }
-
-    //todo: add tests
-    //todo: test them in postman manuallly
 
     /**
      * Saves a new working version of an existing Portlet.
@@ -154,11 +148,8 @@ public class PortletResource implements Serializable {
         Response response = null;
 
         try {
-            //todo: validate id prefix
-
-            // put method only update existing portlet
-            final boolean existPortlet = !UtilMethods.isSet(portletApi.findPortlet(formData.portletId));
-            if (!existPortlet) {
+            final String portletId = portletApi.portletIdPrefixCleaner(formData.portletId);
+            if (!UtilMethods.isSet(portletApi.findPortlet(portletId))) {
                 throw new DoesNotExistException("Portlet with Id: " + formData.portletId + " does not exist");
             }
             final Portlet contentPortlet = portletApi.findPortlet("content");
@@ -170,7 +161,7 @@ public class PortletResource implements Serializable {
             initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
 
             final Portlet newPortlet = APILocator.getPortletAPI()
-                    .createOrUpdatePortlet(new DotPortlet(formData.portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
+                    .createOrUpdatePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
             return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
 

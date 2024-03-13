@@ -181,9 +181,7 @@ public class PortletAPIImpl implements PortletAPI {
 
     @Override
     public Portlet createOrUpdatePortlet(Portlet portlet, User user) throws DotDataException, LanguageException {
-
-        //todo: validate if contains ther prefix or not
-        final String portletId = CONTENT_PORTLET_PREFIX + portlet.getPortletId();
+        final String portletId = portletIdPrefixCleaner(portlet.getPortletId());
         // if true means that we are creating a new portlet
         final boolean isNewPortlet = !UtilMethods.isSet(findPortlet(portletId));
 
@@ -249,6 +247,19 @@ public class PortletAPIImpl implements PortletAPI {
         if(contentTypes.stream().anyMatch(Host.HOST_VELOCITY_VAR_NAME::equalsIgnoreCase)){
             throw new DotDataValidationException("Invalid attempt to "+ action +" Portlet for restricted Content Type Host. ");
         }
+    }
+
+    @Override
+    public String portletIdPrefixCleaner(String portletId) {
+
+        if (portletId.startsWith(CONTENT_PORTLET_PREFIX.toUpperCase())){
+            portletId = portletId.substring(CONTENT_PORTLET_PREFIX.length());
+        }
+        if (!portletId.startsWith(CONTENT_PORTLET_PREFIX)){
+            portletId = CONTENT_PORTLET_PREFIX + portletId;
+        }
+
+        return portletId;
     }
 
     @CloseDBIfOpened
