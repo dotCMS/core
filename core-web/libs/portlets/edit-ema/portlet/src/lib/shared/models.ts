@@ -1,4 +1,4 @@
-import { DotDevice } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperiment } from '@dotcms/dotcms-models';
 
 import { EDITOR_MODE, EDITOR_STATE } from './enums';
 
@@ -84,4 +84,5 @@ export interface EditEmaState {
     editorState: EDITOR_STATE;
     previewState: PreviewState;
     variantName?: string;
+    runningExperiment?: DotExperiment;
 }

@@ -39,6 +39,7 @@ import {
     DotContentletService
 } from '@dotcms/data-access';
 import {
+    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotDevice,
     DotPersona,
@@ -191,13 +192,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
 
-    readonly editorState$ = this.store.editorState$;
+    readonly editorState$ = this.store.editorState$.pipe(
+        tap((state) => {
+            // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+            this.canEditVariant.set(
+                !this.queryParams.variantName ||
+                    this.queryParams.variantName === DEFAULT_VARIANT_ID ||
+                    !state.runningExperiment
+            );
+        })
+    );
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
     readonly pageData = toSignal(this.store.pageData$);
 
     readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
+
+    readonly canEditVariant: WritableSignal<boolean> = signal(true);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 

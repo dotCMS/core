@@ -9,7 +9,13 @@ import { MessageService } from 'primeng/api';
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
+import {
+    DotContainerMap,
+    DotExperimentStatus,
+    DotLayout,
+    DotPageContainerStructure
+} from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 
 import {
     DotPageApiParams,
@@ -66,7 +72,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         private readonly dotPageApiService: DotPageApiService,
         private readonly dotLicenseService: DotLicenseService,
         private readonly messageService: MessageService,
-        private readonly dotMessageService: DotMessageService
+        private readonly dotMessageService: DotMessageService,
+        private readonly dotExperimentsService: DotExperimentsService
     ) {
         super();
     }
@@ -118,7 +125,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             },
             isEnterpriseLicense: state.isEnterpriseLicense,
             state: state.editorState ?? EDITOR_STATE.LOADING,
-            previewState: state.previewState
+            previewState: state.previewState,
+            runningExperiment: state.runningExperiment
         };
     });
 
@@ -170,23 +178,37 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             .pipe(take(1), shareReplay())
                     }).pipe(
                         tap({
-                            next: ({ pageData, licenseData }) => {
-                                this.setState({
-                                    clientHost: params.clientHost,
-                                    editor: pageData,
-                                    isEnterpriseLicense: licenseData,
-                                    editorState: EDITOR_STATE.LOADED,
-                                    previewState: {
-                                        editorMode: EDITOR_MODE.EDIT
-                                    },
-                                    variantName: params.variantName
-                                });
-                            },
                             error: ({ status }: HttpErrorResponse) => {
                                 this.createEmptyState({ canEdit: false, canRead: false }, status);
                             }
                         }),
-                        catchError(() => EMPTY)
+                        switchMap(({ pageData, licenseData }) =>
+                            this.dotExperimentsService
+                                .getByStatus(pageData.page.identifier, DotExperimentStatus.RUNNING)
+                                .pipe(
+                                    tap({
+                                        next: (experiment) => {
+                                            return this.setState({
+                                                clientHost: params.clientHost,
+                                                editor: pageData,
+                                                isEnterpriseLicense: licenseData,
+                                                editorState: EDITOR_STATE.LOADED,
+                                                previewState: {
+                                                    editorMode: EDITOR_MODE.EDIT
+                                                },
+                                                variantName: params.variantName,
+                                                runningExperiment: experiment[0]
+                                            });
+                                        },
+                                        error: ({ status }: HttpErrorResponse) => {
+                                            this.createEmptyState(
+                                                { canEdit: false, canRead: false },
+                                                status
+                                            );
+                                        }
+                                    })
+                                )
+                        )
                     );
                 })
             );
