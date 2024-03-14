@@ -499,7 +499,7 @@ class DeployWarTomcatTask extends DefaultTask{
 
 abstract class NpmArtifactExtractTask extends DefaultTask {
     @Input
-    String url = 'https://registry.npmjs.org'
+    String url = 'https://registry.npmjs.org/@dotcms'
     @Input
     String artifactFolder = './tmp'
     @Input
