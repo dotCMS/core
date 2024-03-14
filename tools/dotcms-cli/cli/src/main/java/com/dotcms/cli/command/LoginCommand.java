@@ -120,7 +120,7 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
         if (isTokenSet()) {
             output.info("Logging in with token");
             authenticationContext.login(loginOptions.tokenOptions.token);
-            output.info("Successfully logged-in with token");
+            output.info("@|bold,green Successfully logged-in with token|@");
         } else {
 
             String userName;
