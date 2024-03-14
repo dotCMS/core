@@ -16,7 +16,7 @@ public class AuthenticationMixin {
 
     @CommandLine.Option(names = {"--token","-tk"},
             description = {
-                    "A dot CMS token to use for authentication. "}, parameterConsumer = TokenConsumer.class)
+                    "A dotCMS token to use for authentication. "}, parameterConsumer = TokenConsumer.class)
     String token;
 
     /**

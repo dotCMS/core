@@ -737,34 +737,36 @@ public class ContentTypeResource implements Serializable {
 		return response;
 	} // getTypes.
 
-
-
 	/**
-	 * Return a list of {@link ContentType}, entity response syntax:.
+	 * Returns a list of {@link ContentType} objects based on the filtering criteria. This is how
+	 * you can call this endpoint:
+	 * <pre>{@code
+	 * GET http://localhost:8080/api/v1/contenttype?sites=48190c8c-42c4-46af-8d1a-0cd5db894797,SYSTEM_HOST,&per_page=40&&orderby=variabledirection=DESC
+	 * }</pre>
+	 * <p>If you want results composed of 10 items per page, and you want the third page, call this
+	 * URL:</p>
+	 * <pre>{@code
+	 * GET http://localhost:8080/api/v1/contenttype?sites=48190c8c-42c4-46af-8d1a-0cd5db894797,&page=3&per_page=10
+	 * }</pre>
 	 *
-	 * <code>
-	 *  {
-	 *      contentTypes: array of ContentType
-	 *      total: total number of content types
-	 *  }
-	 * <code/>
+	 * @param httpRequest  The current instance of the {@link HttpServletRequest}.
+	 * @param httpResponse The current instance of the {@link HttpServletResponse}.
+	 * @param filter       Filtering parameter used to pass down the Content Types name, Velocity
+	 *                     Variable Name, or Inode. You can pass down part of the characters.
+	 * @param page         The selected results page, for pagination purposes.
+	 * @param perPage      The number of results to return per page, for pagination purposes.
+	 * @param orderByParam The column name that will be used to sort the paginated results. For
+	 *                     reference, please check
+	 *                     {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}.
+	 * @param direction    The direction of the sorting. It can be either "ASC" or "DESC".
+	 * @param type         The Velocity variable name of the Content Type  to retrieve.
+	 * @param siteId       The identifier of the Site to filter the Content Types by.
+	 * @param sites        A comma-separated list of Site identifiers to filter the Content Types
+	 *                     by.
 	 *
-	 * Url sintax: contenttype?query=query-string&limit=n-limit&offset=n-offset&orderby=fieldname-order_direction
+	 * @return A JSON response with the paginated list of Content Types.
 	 *
-	 * where:
-	 *
-	 * <ul>
-	 *     <li>filter: just return ContentTypes who content this pattern</li>
-	 *     <li>n-limit: limit of items to return</li>
-	 *     <li>n-offset: offset</li>
-	 *     <li>fieldname: field to order by</li>
-	 *     <li>order_direction: asc for upward order and desc for downward order</li>
-	 * </ul>
-	 *
-	 * Url example: v1/contenttype?query=New%20L&limit=4&offset=5&orderby=name-asc
-	 *
-	 * @param httpRequest
-	 * @return
+	 * @throws DotDataException An error occurred when retrieving information from the database.
 	 */
 	@GET
 	@JSONP
@@ -773,47 +775,46 @@ public class ContentTypeResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getContentTypes(@Context final HttpServletRequest httpRequest,
 										  @Context final HttpServletResponse httpResponse,
-										  @QueryParam(PaginationUtil.FILTER)   final String filter,
+										  @QueryParam(PaginationUtil.FILTER) final String filter,
 										  @QueryParam(PaginationUtil.PAGE) final int page,
 										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
+										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderByParam,
 										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-										  @QueryParam("type") String types,
-										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) final String hostId) throws DotDataException {
+										  @QueryParam("type") String type,
+										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) final String siteId,
+										  @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) final String sites) throws DotDataException {
 
-		final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
-		Response response;
-		final String orderBy = getOrderByRealName(orderbyParam);
-		final User user = initData.getUser();
-
+		final User user = new WebResource.InitBuilder(this.webResource)
+				.requestAndResponse(httpRequest, httpResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+		final String orderBy = this.getOrderByRealName(orderByParam);
 		try {
-
 			final Map<String, Object> extraParams = new HashMap<>();
-			if(null!=types) {
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME,
-						Arrays.asList(types.split(",")));
+			if (null != type) {
+				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, type);
 			}
-
-			if(null!=hostId){
-				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,hostId);
+			if (null != siteId) {
+				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
 			}
-
-
+			if (UtilMethods.isSet(sites)) {
+				extraParams.put(ContentTypesPaginator.SITES_PARAMETER_NAME,
+						Arrays.asList(sites.split(COMMA)));
+			}
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-
-			response = paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+			return paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
 					OrderDirection.valueOf(direction), extraParams);
-		} catch (IllegalArgumentException e) {
-			throw new DotDataException(e.getMessage());
-		} catch (Exception e) {
+		} catch (final IllegalArgumentException e) {
+			throw new DotDataException(String.format("An error occurred when listing Content Types: " +
+					"%s", ExceptionUtil.getErrorMessage(e)));
+		} catch (final Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
 				throw new ForbiddenException(e);
 			}
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-			Logger.error(this, e.getMessage(), e);
+			Logger.error(this, String.format("An error occurred when listing Content Types: " +
+					"%s", ExceptionUtil.getErrorMessage(e)), e);
+			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-
-		return response;
 	}
 
 	private String getOrderByRealName(final String orderbyParam) {
@@ -836,6 +837,7 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * @return The form parameter or the specified default value.
 	 */
+	@SuppressWarnings("unchecked")
 	private <T> T getFilterValue(final FilteredContentTypesForm form, final String param, T defaultValue) {
 		if (null == form || null == form.getFilter() || form.getFilter().isEmpty()) {
 			return defaultValue;

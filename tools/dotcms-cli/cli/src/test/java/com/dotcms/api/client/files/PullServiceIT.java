@@ -836,6 +836,17 @@ class PullServiceIT {
         final var testSiteName = String.format("non-existent-site-%s", UUID.randomUUID());
         final var folderPath = String.format("//%s", testSiteName);
         OutputOptionMixin outputOptions = new MockOutputOptionMixin();
+        FileFetcher mockedProvider = Mockito.mock(FileFetcher.class);
+        //But here is where the real test lies. We are going to return a List of FileTraverseResult with multiple exceptions
+        //They all should be logged and the first one should be the one that triggers the exit code
+        when(mockedProvider.fetchByKey(anyString(), anyBoolean(),any())).thenReturn(
+                        FileTraverseResult.builder().tree(new TreeNode(FolderView.builder().host(testSiteName).path("/test").name("name").build())).exceptions(
+                                List.of(
+                                        new UnauthorizedException(),
+                                        new TraversalTaskException("Unexpected Error Traversing folders ")
+                                )).build()
+                );
+
         var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
         try {
@@ -849,7 +860,7 @@ class PullServiceIT {
                             maxRetryAttempts(0).
                             build(),
                     outputOptions,
-                    fileProvider,
+                    mockedProvider,
                     filePullHandler
             );
         } catch (Exception e) {
@@ -879,17 +890,15 @@ class PullServiceIT {
 
         MockOutputOptionMixin outputOptions = new MockOutputOptionMixin();
         FileFetcher mockedProvider = Mockito.mock(FileFetcher.class);
-
-
         //But here is where the real test lies. We are going to return a List of FileTraverseResult with multiple exceptions
         //They all should be logged and the first one should be the one that triggers the exit code
         when(mockedProvider.fetch(anyBoolean(), any())).thenReturn(
                 List.of(
-                     FileTraverseResult.builder().tree(Optional.empty()).exceptions(List.of(new UnauthorizedException())).build(),
-                     FileTraverseResult.builder().tree(Optional.empty()).exceptions(List.of(new TraversalTaskException("Unexpected Error Traversing folders "))).build(),
-                     FileTraverseResult.builder().tree(
-                             new TreeNode(FolderView.builder().host(testSiteName).path("/test").name("name").build())
-                     ).exceptions(List.of()).build()
+                     FileTraverseResult.builder().tree(new TreeNode(FolderView.builder().host(testSiteName).path("/test").name("name").build())).exceptions(
+                     List.of(
+                             new UnauthorizedException(),
+                             new TraversalTaskException("Unexpected Error Traversing folders ")
+                     )).build()
                 ));
 
        //We're going to use PullHandler but this time we do not specify the contentKey so the fetch method gets called

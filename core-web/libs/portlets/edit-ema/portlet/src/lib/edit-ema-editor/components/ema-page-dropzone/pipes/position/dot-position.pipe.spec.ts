@@ -28,4 +28,23 @@ describe('DotPositionPipe', () => {
         });
         expect(pipe).toBeTruthy();
     });
+
+    it('should return the position styles when isError is true', () => {
+        const item: ContentletArea = {
+            x: 10,
+            y: 10,
+            width: 10,
+            height: 10,
+            payload: PAYLOAD_MOCK
+        };
+
+        expect(pipe.transform(item, true)).toEqual({
+            position: 'absolute',
+            left: '0px',
+            top: '0px',
+            width: '10px',
+            height: '10px'
+        });
+        expect(pipe).toBeTruthy();
+    });
 });

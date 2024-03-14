@@ -125,22 +125,19 @@ jobs:
             echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
           
           fi
-          
-      - name: Post to a Slack channel
-        if: steps.workflow-data.outputs.has-json == 'true' && steps.workflow-data.outputs.report_type == 'PR'
-        id: slack-pr
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
-          payload: |
-            {
-              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number }}",
+
+      - name: Prepare Slack Message Payload
+        id: prepare-slack-message
+        run: |
+          payload=$(cat <<EOF
+          {
+              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }}",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number }}",
+                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }}",
                     "emoji": true
                   }
                 },
@@ -165,7 +162,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*${{ steps.workflow-data.outputs.report_type }} Details:* \nAuthor: ${{ steps.workflow-data.outputs.pr_author }} \nName: <${{ steps.workflow-data.outputs.pr_number_url }} | ${{ steps.workflow-data.outputs.pr_title }}> \nNumber: #${{ steps.workflow-data.outputs.pr_number }} \nBranch: <${{ steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.branch }}>"
+                    "text": "*${{ steps.workflow-data.outputs.report_type }} Details:* \nAuthor: ${{ steps.workflow-data.outputs.pr_author }} \nName: <${{ steps.workflow-data.outputs.pr_number_url || steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.pr_title || steps.workflow-data.outputs.branch }}> \nNumber: #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }} \nBranch: <${{ steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.branch }}>"
                   }
                 },
                 {
@@ -204,67 +201,16 @@ jobs:
                   }
                 }
               ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      - name: Post to a Slack channel non PR
-        if: steps.workflow-data.outputs.has-json == 'true' && steps.workflow-data.outputs.report_type != 'PR'
-        id: slack-non-pr
+          }
+          EOF
+          )
+          echo "payload=$(echo $payload | jq -c .)" >> $GITHUB_OUTPUT
+          echo "payload=$payload"
+      - name: Post to Slack
+        if: steps.workflow-data.outputs.has-json == 'true' && github.repository == 'dotcms/core'
         uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
-          payload: |
-            {
-              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.branch }}",
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.branch }}",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Action Run ID:* <${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}> \n*Failure Step:* ${{ steps.workflow-data.outputs.first_fail_step }} \n*Failure Module:* ${{ steps.workflow-data.outputs.first_fail_module }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Failure Message:* ${{ steps.workflow-data.outputs.first_fail_error }}"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "🧪 Test Results = ${{ steps.workflow-data.outputs.test_conclusion }}",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Passed:* ${{ steps.workflow-data.outputs.test_passed }} \n*Failed:* ${{ steps.workflow-data.outputs.test_failed }} \n*Skipped:* ${{ steps.workflow-data.outputs.test_skipped }} \n*Elapsed Time:* ${{ steps.workflow-data.outputs.test_elapsed }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🔍 <${{ steps.workflow-data.outputs.test_results_url }} | View Test Results>"
-                  }
-                }
-              ]
-            }
+          payload: ${{ steps.prepare-slack-message.outputs.payload }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

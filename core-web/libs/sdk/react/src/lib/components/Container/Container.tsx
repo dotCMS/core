@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
+import { isInsideEditor } from '@dotcms/client';
 
 import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
@@ -45,7 +45,7 @@ export function Container({ containerRef }: ContainerProps) {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, components, isInsideEditor } = useContext<PageProviderContext | null>(
+    const { containers, components } = useContext<PageProviderContext | null>(
         PageContext
     ) as PageProviderContext;
 
@@ -55,7 +55,7 @@ export function Container({ containerRef }: ContainerProps) {
     );
 
     const updatedContentlets =
-        contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
+        contentlets.length === 0 && isInsideEditor() ? [FAKE_CONTENLET] : contentlets;
 
     const container = {
         acceptTypes,
@@ -65,35 +65,6 @@ export function Container({ containerRef }: ContainerProps) {
         uuid
     };
 
-    const containerPayload = {
-        container
-    };
-
-    function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
-        let target = e.target as HTMLElement;
-
-        if (target.dataset.dot !== 'contentlet') {
-            target = target.closest('[data-dot="contentlet"]') as HTMLElement;
-        }
-
-        if (!target) {
-            return;
-        }
-
-        const { x, y, width, height } = target.getBoundingClientRect();
-        const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-            payload: {
-                x,
-                y,
-                width,
-                height,
-                payload: contentletPayload
-            }
-        });
-    }
-
     const renderContentlets = updatedContentlets.map((contentlet) => {
         const ContentTypeComponent = components[contentlet.contentType] || NoContent;
 
@@ -102,22 +73,14 @@ export function Container({ containerRef }: ContainerProps) {
                 ? EmptyContainer
                 : ContentTypeComponent;
 
-        const contentletPayload = {
-            container,
-            contentlet: {
-                identifier: contentlet.identifier,
-                title: contentlet.widgetTitle || contentlet.title,
-                inode: contentlet.inode,
-                onNumberOfPages: contentlet.onNumberOfPages,
-                contentType: contentlet.contentType
-            }
-        };
-
-        return isInsideEditor ? (
+        return isInsideEditor() ? (
             <div
-                onPointerEnter={onPointerEnterHandler}
-                data-dot="contentlet"
-                data-content={JSON.stringify(contentletPayload)}
+                data-dot-object="contentlet"
+                data-dot-identifier={contentlet.identifier}
+                data-dot-title={contentlet.widgetTitle || contentlet.title}
+                data-dot-inode={contentlet.inode}
+                data-dot-type={contentlet.contentType}
+                data-dot-container={JSON.stringify(container)}
                 key={contentlet.identifier}>
                 <Component {...contentlet} />
             </div>
@@ -126,8 +89,13 @@ export function Container({ containerRef }: ContainerProps) {
         );
     });
 
-    return isInsideEditor ? (
-        <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
+    return isInsideEditor() ? (
+        <div
+            data-dot-object="container"
+            data-dot-accept-types={acceptTypes}
+            data-dot-identifier={path ?? identifier}
+            data-max-contentlets={maxContentlets}
+            data-uuid={uuid}>
             {renderContentlets}
         </div>
     ) : (
