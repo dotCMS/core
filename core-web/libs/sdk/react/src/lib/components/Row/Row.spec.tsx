@@ -8,7 +8,6 @@ import { PageProviderContext } from '../PageProvider/PageProvider';
 
 import '@testing-library/jest-dom';
 
-
 jest.mock('../Column/Column', () => {
     return {
         Column: ({ column }: ColumnProps) => (
