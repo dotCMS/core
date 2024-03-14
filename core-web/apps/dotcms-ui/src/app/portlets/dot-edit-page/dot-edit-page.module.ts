@@ -5,6 +5,7 @@ import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.servi
 import {
     DotContentletLockerService,
     DotESContentService,
+    DotExperimentsService,
     DotFavoritePageService,
     DotPageLayoutService,
     DotPageRenderService,
@@ -12,8 +13,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
-    DotExperimentsConfigResolver,
-    DotExperimentsService
+    DotExperimentsConfigResolver
 } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     DotPushPublishEnvironmentsResolver,

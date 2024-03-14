@@ -10,6 +10,7 @@ import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotContentletLockerService,
     DotESContentService,
+    DotExperimentsService,
     DotFavoritePageService,
     DotLicenseService,
     DotMessageDisplayService,
@@ -18,7 +19,6 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     DotMessageDisplayServiceMock,
     LoginServiceMock,

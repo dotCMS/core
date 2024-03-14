@@ -4,7 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotExperimentsService } from '@dotcms/data-access';
 
 import { DotExperimentsStore } from './store/dot-experiments.store';
 

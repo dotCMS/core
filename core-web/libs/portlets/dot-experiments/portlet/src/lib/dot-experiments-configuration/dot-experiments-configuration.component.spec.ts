@@ -20,12 +20,12 @@ import { Menu } from 'primeng/menu';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
 import {
+    DotExperimentsService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { getExperimentMock, PARENT_RESOLVERS_ACTIVE_ROUTE_DATA } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 

@@ -16,7 +16,8 @@ import {
     DotPageRenderService,
     DotRouterService,
     DotSessionStorageService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotExperimentsService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
@@ -28,7 +29,6 @@ import {
     DotPersona,
     PageModelChangeEventType
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,

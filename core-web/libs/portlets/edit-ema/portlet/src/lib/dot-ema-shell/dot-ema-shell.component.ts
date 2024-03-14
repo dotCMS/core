@@ -13,6 +13,7 @@ import { map, skip, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
+    DotExperimentsService,
     DotFavoritePageService,
     DotLanguagesService,
     DotPageLayoutService,
@@ -24,7 +25,6 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotInfoPageComponent, DotNotLicenseComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';

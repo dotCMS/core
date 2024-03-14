@@ -20,11 +20,11 @@ import {
     DotPageRenderService,
     DotRouterService,
     DotSessionStorageService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotExperimentsService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     CoreWebServiceMock,
     DotMessageDisplayServiceMock,

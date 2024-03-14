@@ -13,6 +13,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
 import {
+    DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
@@ -22,6 +23,7 @@ import { SiteService, mockSites } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import {
+    DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     DotPersonalizeServiceMock,
     SiteServiceMock
@@ -56,6 +58,10 @@ describe('DotEmaShellComponent', () => {
             DotActionUrlService,
             DotMessageService,
             DialogService,
+            {
+                provide: DotExperimentsService,
+                useValue: DotExperimentsServiceMock
+            },
             {
                 provide: DotLanguagesService,
                 useValue: new DotLanguagesServiceMock()
@@ -174,7 +180,7 @@ describe('DotEmaShellComponent', () => {
                     {
                         iconURL: 'experiments',
                         label: 'editema.editor.navbar.experiments',
-                        href: 'experiments'
+                        href: 'experiments/123'
                     },
                     {
                         icon: 'pi-th-large',

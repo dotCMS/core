@@ -18,10 +18,10 @@ import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/d
 import {
     DotHttpErrorManagerService,
     DotMessageService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotExperimentsService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotEmptyContainerComponent } from '@dotcms/ui';
 import {
     ActivatedRouteListStoreMock,

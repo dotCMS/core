@@ -9,7 +9,11 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
@@ -21,7 +25,6 @@ import {
     GroupedExperimentByStatus,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 
 import { DotExperimentsStore } from '../../dot-experiments-shell/store/dot-experiments.store';

@@ -6,13 +6,13 @@ import {
     CanDeactivateGuardService,
     DotContentletLockerService,
     DotESContentService,
+    DotExperimentsService,
     DotFavoritePageService,
     DotPageRenderService
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
-    DotExperimentsConfigResolver,
-    DotExperimentsService
+    DotExperimentsConfigResolver
 } from '@dotcms/portlets/dot-experiments/data-access';
 import { portletHaveLicenseResolver } from '@dotcms/ui';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';

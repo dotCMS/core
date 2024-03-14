@@ -8,14 +8,13 @@ import { MessageService } from 'primeng/api';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotContainerMap,
     DotExperimentStatus,
     DotLayout,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 
 import {
     DotPageApiParams,

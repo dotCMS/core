@@ -44,6 +44,12 @@ export const getExperimentMock = (index: number): DotExperiment => {
     return { ...ExperimentMocks[index] };
 };
 
+export const getRunningExperimentMock = (): DotExperiment => {
+    return ExperimentMocks.filter(
+        (experiment) => experiment.status === DotExperimentStatus.RUNNING
+    )[0];
+};
+
 export const getExperimentAllMocks = (): Array<DotExperiment> => {
     return [{ ...getExperimentMock(0) }, { ...getExperimentMock(1) }, { ...getExperimentMock(2) }];
 };
@@ -737,7 +743,8 @@ export const DotExperimentsServiceMock = {
     archive: () => of({}),
     getById: () => of({}),
     removeVariant: () => of({}),
-    addVariant: () => of({})
+    addVariant: () => of({}),
+    getByStatus: () => of({})
 };
 
 export class ActivatedRouteMock {

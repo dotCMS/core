@@ -50,7 +50,8 @@ import {
     DotGlobalMessageService,
     DotIframeService,
     DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
+    DotSeoMetaTagsUtilService,
+    DotExperimentsService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -76,7 +77,6 @@ import {
     DotPageRenderState,
     PageModelChangeEventType
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotCopyContentModalService } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {

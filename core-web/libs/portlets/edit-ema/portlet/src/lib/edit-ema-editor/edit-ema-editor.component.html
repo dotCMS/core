@@ -54,7 +54,9 @@
             </a>
         </ng-container>
         <ng-container right>
-            <dot-ema-running-experiment [runningExperiment]="es.runningExperiment" />
+            <dot-ema-running-experiment
+                [runningExperiment]="es.runningExperiment"
+                data-testId="ema-running-experiment" />
             <dot-edit-ema-language-selector
                 [language]="es.editor.viewAs.language"
                 (selected)="onLanguageSelected($event)"
@@ -172,7 +174,7 @@
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
-    @if(es.previewState.editorMode === editorMode.EDIT && canEditVariant()) {
+    @if( canEditVariant() && es.previewState.editorMode === editorMode.EDIT) {
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"

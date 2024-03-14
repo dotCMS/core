@@ -177,6 +177,8 @@ export const getPersonalization = (persona: Record<string, string>) => {
     return `dot:${persona.contentType}:${persona.keyTag}`;
 };
 
+// TEST MISSING
+
 /**
  * Build the query params for the page API
  *
@@ -186,7 +188,9 @@ export const getPersonalization = (persona: Record<string, string>) => {
  */
 export function buildQueryParams(params: Record<string, string> | DotPageApiParams): string {
     // Filter out undefined values
-    Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
+    Object.keys(params).forEach(
+        (key) => (params[key] === undefined || key === 'url') && delete params[key]
+    );
 
     const queryParams = new URLSearchParams({
         ...params
