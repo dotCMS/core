@@ -212,3 +212,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.14**
 
 169. https://github.com/dotCMS/core/issues/22698 : Limited user without Search Portlet can't Edit Content From Edit Page Portlet #22698
+170. https://github.com/dotCMS/core/issues/25729 : Order of comments in Task details modal. #25729
