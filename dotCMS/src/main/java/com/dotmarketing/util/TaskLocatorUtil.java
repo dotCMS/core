@@ -345,7 +345,6 @@ public class TaskLocatorUtil {
 		.add(Task240111AddInodeAndIdentifierLeftIndexes.class)
 		.add(Task240131UpdateLanguageVariableContentType.class)
 		.add(Task240112AddMetadataColumnToStructureTable.class)
-		.add(Task240131UpdateLanguageVariableContentType.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
