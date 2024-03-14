@@ -101,9 +101,4 @@ jobs:
           cd core-web
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_ORG_TOKEN }}
           cd dist/libs/dotcms-webcomponents
-          if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
-            npm publish --tag rc --public
-          fi
-          if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
-            npm publish --tag next
-          fi
+          npm publish --access public

@@ -38,7 +38,7 @@ xdescribe('DotAssetService', () => {
     const assetService = new DotAssetService();
 
     const mockSuccessResponse = {};
-    const mockJsonPromise = Promise.resolve(mockSuccessResponse); // 2
+    const mockJsonPromise = Promise.resolve(mockSuccessResponse);
     const mockFetchPromise = Promise.resolve({
         // 3
         json: () => mockJsonPromise,
