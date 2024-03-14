@@ -36,7 +36,7 @@ Use --name in conjunction with *Filter/Search* Options.
 == Options
 
 *-tk, --token*=_<token>_::
-  A dot CMS token to use for authentication. 
+  A dotCMS token to use for authentication. 
 
 *-h*, *--help*::
   Display this help message.
