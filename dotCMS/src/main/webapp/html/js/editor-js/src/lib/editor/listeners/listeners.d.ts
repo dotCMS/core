@@ -21,14 +21,15 @@ export declare function listenEditorMessages(): void;
  */
 export declare function listenHoveredContentlet(): void;
 /**
- *
+ * Attaches a scroll event listener to the window
+ * and sends a message to the editor when the window is scrolled.
  *
  * @private
  * @memberof DotCMSPageEditor
  */
 export declare function scrollHandler(): void;
 /**
- * Listens for changes in the content and triggers a custom action when the content changes.
+ * Listens for changes in the content and triggers a customer action when the content changes.
  *
  * @private
  * @memberof DotCMSPageEditor
