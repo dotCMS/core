@@ -1,5 +1,5 @@
 {
-    "name": "dotcms-webcomponents",
+    "name": "@dotcms/dotcms-webcomponents",
     "version": "23.1.0-rc.11",
     "main": "./dist/index.cjs.js",
     "module": "./dist/index.js",
