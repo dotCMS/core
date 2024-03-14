@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { pluck, take } from 'rxjs/operators';
-import { CoreWebService } from '@dotcms/dotcms-js';
 
 @Injectable()
 export class DotContentletService {
-    constructor(private coreWebService: CoreWebService) {}
+    constructor(private http: HttpClient) {}
 
     /**
      * Get the Contentlet versions by language.
@@ -17,10 +17,19 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     getContentletVersions(identifier: string, language: string): Observable<DotCMSContentlet[]> {
-        return this.coreWebService
-            .requestView({
-                url: `/api/v1/content/versions?identifier=${identifier}&groupByLang=1`
-            })
+        return this.http
+            .get(`/api/v1/content/versions?identifier=${identifier}&groupByLang=1`)
             .pipe(take(1), pluck('entity', 'versions', language));
+    }
+
+    /**
+     * Get the Contentlet versions by the inode.
+     *
+     * @param string inode
+     * @returns Observable<DotCMSContentlet>
+     * @memberof DotContentletService
+     */
+    getContentletByInode(inode: string): Observable<DotCMSContentlet> {
+        return this.http.get(`/api/v1/content/${inode}`).pipe(take(1), pluck('entity'));
     }
 }
