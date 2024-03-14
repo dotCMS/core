@@ -73,6 +73,7 @@
         "@nx/angular": "18.0.4",
         "@swc/helpers": "~0.5.2",
         "@tarekraafat/autocomplete.js": "^10.2.6",
+        "@tinymce/tinymce-angular": "^7.0.0",
         "@tiptap/core": "^2.0.0-beta.218",
         "@tiptap/extension-bubble-menu": "^2.0.0-beta.218",
         "@tiptap/extension-character-count": "^2.0.0-beta.218",
@@ -126,6 +127,7 @@
         "superstruct": "^1.0.3",
         "terser": "^5.28.1",
         "test": "^0.6.0",
+        "tinymce": "^6.8.3",
         "tslib": "^2.3.0",
         "uuid": "^9.0.0",
         "zone.js": "0.14.2"
