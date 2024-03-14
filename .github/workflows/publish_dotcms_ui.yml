@@ -111,7 +111,6 @@ jobs:
           mkdir dist/apps/core-web
           cp prepare.js ./dist/apps/core-web/prepare.js
 
-          npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_ORG_TOKEN }}
           cd dist/apps/dotcms-ui
           
           npm publish --public
