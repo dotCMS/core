@@ -1,5 +1,5 @@
 {
-    "name": "dotcms-ui",
+    "name": "@dotcms/dotcms-ui",
     "version": "23.1.0-rc.51",
     "license": "MIT",
     "engines": {
