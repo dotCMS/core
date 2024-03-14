@@ -7981,8 +7981,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      *
      * @throws Exception
      */
-    @Ignore // this test is not longer valid since the contentlet is always saved as json
-    @Test()
+    @Test
     public void Test_Key_Value_As_Map_Test() throws DotDataException, DotSecurityException {
 
         final Host nextSite = new SiteDataGen().nextPersisted();
@@ -8074,8 +8073,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             throws DotDataException, DotSecurityException {
         //Test when contet is saved as json
         testLoadFieldWontReturnNull(true);
-        //Test when contet is saved as columns, this test is not longer needed bc at this time all contentlets should be json
-        // we have removed the property
+        //Test when contet is saved as columns
+        testLoadFieldWontReturnNull(false);
     }
 
     private void testLoadFieldWontReturnNull(final boolean saveAsJson)

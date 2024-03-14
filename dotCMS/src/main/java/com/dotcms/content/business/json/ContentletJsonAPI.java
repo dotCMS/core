@@ -58,7 +58,8 @@ public interface ContentletJsonAPI {
      * @return
      */
     default boolean isPersistContentAsJson(){
-        return true; // now we run only postgres this should be always true
+        return isJsonSupportedDatabase()
+                && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
     }
 
     /**
