@@ -109,8 +109,7 @@ public interface ContentTypeFactory {
 	 * Returns a list of Content Types based on the specified list of search criteria. In
 	 * particular, this method allows you to search for Content Types in a specific list of Sites.
 	 *
-	 * @param sites   The list of one or more Sites to search for Content Types. You can pass down
-	 *                their Identifiers or Site Keys.
+	 * @param sites   The list of one or more Site IDs to search for Content Types.
 	 * @param search  Allows you to add more conditions to the query via SQL code. It's internally
 	 *                sanitized by this Factory.
 	 * @param type    The Base Content Type to search for.
