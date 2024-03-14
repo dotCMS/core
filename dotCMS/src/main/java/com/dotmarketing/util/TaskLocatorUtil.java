@@ -402,6 +402,8 @@ public class TaskLocatorUtil {
 	public static List<Class<?>> getStartupRunOnceDataTaskClasses() {
 		final List<Class<?>> ret = ImmutableList.<Class<?>>builder()
 				.add(Task230320FixMissingContentletAsJSON.class)
+				//TODO: Uncomment next line once we have the changes in portlet to stop saving LanguageVariables in the old way
+				//.add(Task240306MigrateLegacyLanguageVariables.class)
 				.build();
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}

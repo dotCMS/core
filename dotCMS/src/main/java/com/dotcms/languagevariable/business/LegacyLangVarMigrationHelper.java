@@ -41,7 +41,7 @@ public class LegacyLangVarMigrationHelper {
     }
 
     public static Path messagesDir() {
-        return Paths.get(ConfigUtils.getDynamicContentPath(),"messages");
+        return Paths.get(ConfigUtils.getAssetPath(),"messages");
     }
 
     public ImmutableMigrationSummary migrateLegacyLanguageVariables(final Path messagesDir) throws IOException {
