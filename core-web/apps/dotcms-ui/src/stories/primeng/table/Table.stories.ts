@@ -2,7 +2,9 @@ import { Meta, Story, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
+import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 // Get the current date
 const currentDate = new Date();
@@ -27,7 +29,7 @@ const files = [
     {
         assignee: 'Floyd Miles',
         name: 'saudi_riyal.flo',
-        status: 'Published',
+        status: 'New',
         step: 'Published',
         date: addDays(currentDate, 1).toISOString().split('T')[0]
     },
@@ -48,7 +50,7 @@ const files = [
     {
         assignee: 'Evelyn Mendoza',
         name: 'product_catalog.xls',
-        status: 'Published',
+        status: 'New',
         step: 'Final Review',
         date: addDays(currentDate, 4).toISOString().split('T')[0]
     },
@@ -76,7 +78,7 @@ const files = [
     {
         assignee: 'Naomi Allen',
         name: 'marketing_strategy.ppt',
-        status: 'Published',
+        status: 'New',
         step: 'Pending Approval',
         date: addDays(currentDate, 8).toISOString().split('T')[0]
     },
@@ -90,7 +92,7 @@ const files = [
     {
         assignee: 'Beverly Lane',
         name: 'budget_plan.xls',
-        status: 'Published',
+        status: 'Archived',
         step: 'Final Review',
         date: addDays(currentDate, 10).toISOString().split('T')[0]
     }
@@ -100,7 +102,7 @@ export default {
     title: 'PrimeNG/Tables/Basic Table',
     decorators: [
         moduleMetadata({
-            imports: [TableModule, CommonModule]
+            imports: [TableModule, CommonModule, TagModule, ButtonModule]
         })
     ],
     parameters: {
@@ -118,7 +120,12 @@ export const Default: Story = () => ({
         files
     },
     template: `
-        <p-table [value]="files" [tableStyle]="{ 'min-width': '50rem' }">
+    <div class="mb-3">
+        <p-button type="button" icon="pi pi-chevron-left" (click)="prev()" [disabled]="isFirstPage()" styleClass="p-button-text"></p-button>
+        <p-button type="button" icon="pi pi-refresh" (click)="reset()" styleClass="p-button-text"></p-button>
+        <p-button type="button" icon="pi pi-chevron-right" (click)="next()" [disabled]="isLastPage()" styleClass="p-button-text"></p-button>
+    </div>
+        <p-table [value]="files" styleClass="p-datatable-striped">
         <ng-template pTemplate="header">
             <tr>
                 <th>
@@ -129,6 +136,7 @@ export const Default: Story = () => ({
                 <th pSortableColumn="assignee">Assignee <p-sortIcon field="assignee"></p-sortIcon></th>
                 <th pSortableColumn="step">Step <p-sortIcon field="step"></p-sortIcon></th>
                 <th pSortableColumn="date">Last Updated <p-sortIcon field="date"></p-sortIcon></th>
+                <th>Menu</th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-file>
@@ -137,10 +145,13 @@ export const Default: Story = () => ({
                     <p-tableCheckbox [value]="file"></p-tableCheckbox>
                 </td>
                 <td>{{ file.name }}</td>
-                <td>{{ file.status }}</td>
+                <td><p-tag  class="sm p-tag-success">{{ file.status }}</p-tag></td>
                 <td>{{ file.assignee }}</td>
                 <td>{{ file.step }}</td>
                 <td>{{ file.date | date }}</td>
+                <td>
+                    <i class="pi pi-ellipsis-v"></i>
+                </td>
             </tr>
         </ng-template>
         </p-table>

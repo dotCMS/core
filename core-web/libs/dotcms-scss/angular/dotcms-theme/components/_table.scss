@@ -15,10 +15,14 @@ p-table {
     }
 
     .p-datatable .p-datatable-tbody > tr:hover {
-        background-color: $colo;
+        background-color: #ecf0fd;
     }
 
     .p-checkbox {
         border: 2px solid $color-palette-gray-400;
+    }
+
+    .p-datatable .p-datatable-tbody td i.pi.pi-ellipsis-v {
+        color: $color-palette-primary-500;
     }
 }
