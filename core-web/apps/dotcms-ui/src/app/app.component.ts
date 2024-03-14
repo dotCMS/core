@@ -24,6 +24,8 @@ export class AppComponent implements OnInit {
     ) {}
 
     ngOnInit() {
+        debugger;
+        console.log('dotCmsConfigService');
         this.dotCmsConfigService
             .getConfig()
             .pipe(

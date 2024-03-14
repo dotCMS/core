@@ -35,6 +35,8 @@ let pageEditorConfig: DotCMSPageEditorConfig = {
  * @memberof DotCMSPageEditor
  */
 export function updateNavigation(pathname: string) {
+    debugger;
+    console.log('updateNavigation', pathname);
     postMessageToEditor({
         action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
         payload: {
