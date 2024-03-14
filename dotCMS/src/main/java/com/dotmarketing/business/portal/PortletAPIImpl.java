@@ -136,7 +136,7 @@ public class PortletAPIImpl implements PortletAPI {
         newMap.put("baseTypes", String.join(",", baseTypes));
 
         //we create or update the portlet
-        final Portlet newPortlet =  portletFac.insertPortlet(new Portlet(portletId, portlet.getPortletClass(),newMap));
+        final Portlet newPortlet =  portletFac.insertPortlet(new Portlet(portletId, "SHARED_KEY" ,portlet.getPortletClass(),newMap));
         //Add Languague Variable
         Map<String, String> keys = ImmutableMap
                 .of(com.dotcms.repackage.javax.portlet.Portlet.class.getPackage().getName()

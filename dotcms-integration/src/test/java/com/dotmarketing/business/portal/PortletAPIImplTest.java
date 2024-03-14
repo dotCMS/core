@@ -1,6 +1,7 @@
 package com.dotmarketing.business.portal;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
@@ -141,6 +142,8 @@ public class PortletAPIImplTest {
             assertTrue("Expected: "+updatedPortlet.getPortletId()+ " provided:"+ testCase.portletId,
                     updatedPortlet.getPortletId().startsWith(PortletAPI.CONTENT_PORTLET_PREFIX)
                     && updatedPortlet.getPortletId().contains(PORTLET_ID));
+            //group id should not be updated
+            assertEquals(updatedPortlet.getGroupId(), initialPortlet.getGroupId());
 
 
             if (testCase.baseTypes != null) {
