@@ -4,6 +4,7 @@ package com.dotcms.cli.command;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.Prompt;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -16,12 +17,28 @@ import picocli.CommandLine.ExitCode;
         name = LoginCommand.NAME,
         header = "@|bold,blue Use this command to login to a dotCMS instance.|@",
         description = {
-                " Once an instance is selected. Use this command to open a session",
-                " Expects a user in @|yellow --user -u|@ and a password @|yellow --password -p|@",
-                " @|bold Both parameters are mandatory.|@",
-                " If the password is not provided, the command will prompt for it.",
-                " if you're not sure which instance is active, use the @|yellow status|@ command.",
+                "This command is used to either login with a user/password combination",
+                "or directly using a token. These options are mutually exclusive and",
+                "only one should be provided. If none is provided, interactive mode will be used.",
+                "Note: For security reasons, it's recommended to use interactive mode",
+                "for entering passwords. Input through command line may be stored in console history.",
                 "" // empty line left here on purpose to make room at the end
+        },
+        usageHelpAutoWidth = true,
+        customSynopsis = {
+                "",
+                "login",
+                "login [-u <user> -p <password>]",
+                "login [-tk <token>]"
+        },
+        footer = {
+                "",
+                "Examples:",
+                "  login                           # Interactive mode",
+                "  login -tk=token                 # Login using token",
+                "  login -u=username -p=password   # Login using user/password",
+                "  login -u=username               # Login using username, interactive password",
+                "  login -u -p                     # Interactive username and password"
         }
 )
 public class LoginCommand implements Callable<Integer>, DotCommand {
@@ -38,22 +55,27 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
      * Here we encapsulate the password options
      */
     static class PasswordOptions {
-        @CommandLine.Option(names = {"-u",
-                "--user"}, arity = "1", description = "User name", required = true)
+
+        @CommandLine.Option(names = {"-u", "--user"}, arity = "0..1", description = {
+                "User name",
+                "If not provided in command line, interactive mode will prompt for it."
+        }, interactive = true, echo = true, prompt = "User name: ")
         String user;
 
         @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = {
                 "Passphrase",
-                "The following is the recommended way to use this param ",
-                "as the password will be promoted securely",
-                "@|yellow login -u=admin@dotCMS.com -p |@",
-                "Both options, user and password are mandatory",
-                "and they can also be provided inline as follows:",
-                "@|yellow login -u=admin@dotCMS.com -p=admin |@",
-                "However, this opens a possibility for @|cyan password theft|@",
-                "as the password will be visible in the command history."
-        }, required = true, interactive = true, echo = false)
+                "If not provided in command line, interactive mode will prompt for it."
+        }, interactive = true, echo = false, prompt = "Password: ")
         char[] password;
+    }
+
+    static class TokenOptions {
+
+        @CommandLine.Option(names = {"-tk", "--token"}, arity = "0..1", description = {
+                "dotCMS Token",
+                "A token can be used directly to authenticate with the dotCMS instance",
+        }, interactive = true, echo = false, prompt = "Token: ")
+        char[] token;
     }
 
     /**
@@ -61,17 +83,14 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
      */
     static class LoginOptions {
 
-        @CommandLine.ArgGroup(exclusive = false, heading = "\n@|bold,blue Password Login Options. |@\n")
+        @CommandLine.ArgGroup(heading = "\n@|bold,blue Password Login Options. |@\n")
         PasswordOptions passwordOptions;
 
-        @CommandLine.Option(names = {"-tk", "--token"}, arity = "0..1", description = {
-                "dotCMS Token",
-                "A token can be used directly to authenticate with the dotCMS instance",
-        }, required = true, interactive = true, echo = false)
-        char[] token;
+        @CommandLine.ArgGroup(heading = "\n@|bold,blue Token login Options. |@\n")
+        TokenOptions tokenOptions;
     }
 
-    @CommandLine.ArgGroup(exclusive = true, heading = "\n@|bold,blue Token login Options. |@\n")
+    @CommandLine.ArgGroup(exclusive = true)
     LoginOptions loginOptions;
 
     @Inject
@@ -80,27 +99,68 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @Inject
+    Prompt prompt;
+
     @Override
     public Integer call() throws IOException {
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
-        if(loginOptions == null){
-            output.error("Missing required options: ");
-            output.error("Once an instance is selected. Use this command to open a session");
-            return ExitCode.USAGE;
+
+        // Login with token if provided
+        if (loginOptions != null &&
+                loginOptions.tokenOptions != null &&
+                loginOptions.tokenOptions.token != null &&
+                loginOptions.tokenOptions.token.length > 0) {
+            output.info("Logging in with token");
+            authenticationContext.login(loginOptions.tokenOptions.token);
+            output.info("Successfully logged-in with token");
+        } else {
+
+            String userName;
+            char[] password;
+
+            // Request the username
+            if (loginOptions == null ||
+                    loginOptions.passwordOptions == null ||
+                    loginOptions.passwordOptions.user == null ||
+                    loginOptions.passwordOptions.user.trim().isEmpty()) {
+                userName = prompt.readInput(null, "User name: ");
+            } else {
+                userName = loginOptions.passwordOptions.user;
+            }
+
+            // Request the password
+            if (loginOptions == null ||
+                    loginOptions.passwordOptions == null ||
+                    loginOptions.passwordOptions.password == null ||
+                    loginOptions.passwordOptions.password.length == 0) {
+                password = prompt.readPassword("Password: ");
+            } else {
+                password = loginOptions.passwordOptions.password;
+            }
+
+            // Validating the username and password
+            if (userName == null || userName.trim().isEmpty() ||
+                    password == null || password.length == 0) {
+                output.error(
+                        "Missing required options. Please provide a valid username and password"
+                                + "or token."
+                );
+                return ExitCode.USAGE;
+            }
+
+            output.info(String.format("Logging in as [@|bold,cyan %s|@]. ", userName));
+            authenticationContext.login(
+                    userName,
+                    password
+            );
+            output.info(String.format(
+                    "@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]", userName
+            ));
         }
 
-        if(null != loginOptions.passwordOptions) {
-            output.info(String.format("Logging in as [@|bold,cyan %s|@]. ", loginOptions.passwordOptions.user));
-            authenticationContext.login(loginOptions.passwordOptions.user, loginOptions.passwordOptions.password);
-            output.info(String.format("@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]",
-                    loginOptions.passwordOptions.user));
-        } else {
-            output.info("Logging in with token");
-            authenticationContext.login(loginOptions.token);
-            output.info("Successfully logged-in with token");
-        }
         return ExitCode.OK;
     }
 
