@@ -112,18 +112,14 @@ describe('DotToolbarAnnouncementsComponent', () => {
         expect(announcementLink.getAttribute('target')).toBe('_blank');
     });
 
-    it('should call markAnnouncementsAsRead on ng on init', () => {
-        const refreshUtmParametersSpy = spyOn(
+    it('should call markAnnouncementsAsRead on ngOnInit', () => {
+        const markAnnouncementsAsReadSpy = spyOn(
             spectator.component.announcementsStore,
-            'refreshUtmParameters'
+            'markAnnouncementsAsRead'
         );
-        spectator.component.ngOnInit();
-        expect(refreshUtmParametersSpy).toHaveBeenCalled();
 
-        // Checking that is not called again in the ngOnChanges
-        refreshUtmParametersSpy.calls.reset();
         spectator.component.ngOnChanges({ showUnreadAnnouncement: { currentValue: false } });
-        expect(refreshUtmParametersSpy).not.toHaveBeenCalled();
+        expect(markAnnouncementsAsReadSpy).toHaveBeenCalled();
     });
 
     it('should close the overlaypanel when clicking on the links', () => {

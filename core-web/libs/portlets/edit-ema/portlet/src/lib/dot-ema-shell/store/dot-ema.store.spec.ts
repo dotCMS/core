@@ -147,6 +147,16 @@ describe('EditEmaStore', () => {
                     done();
                 });
             });
+
+            it('should return contentState', (done) => {
+                spectator.service.contentState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        state: EDITOR_STATE.LOADING,
+                        code: undefined
+                    });
+                    done();
+                });
+            });
         });
 
         describe('updaters', () => {
@@ -539,6 +549,16 @@ describe('EditEmaStore', () => {
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
+                    });
+                    done();
+                });
+            });
+
+            it('should return contentState', (done) => {
+                spectator.service.contentState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        state: EDITOR_STATE.LOADING,
+                        code: '<html><body><h1>Hello, World!</h1></body></html>'
                     });
                     done();
                 });

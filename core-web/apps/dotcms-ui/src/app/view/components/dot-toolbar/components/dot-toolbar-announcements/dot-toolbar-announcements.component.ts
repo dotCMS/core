@@ -49,11 +49,10 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
     linkToDotCms: Signal<string> = this.announcementsStore.selectLinkToDotCms;
     showMask = signal<boolean>(false);
 
-    aboutLinks: { title: string; items: AnnouncementLink[] }[] = [];
+    aboutLinks: { title: string; items: Signal<AnnouncementLink[]> }[] = [];
 
     constructor() {
         this.siteService.switchSite$.pipe(takeUntilDestroyed()).subscribe(() => {
-            this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.load();
             this.aboutLinks = this.getAboutLinks();
         });
@@ -61,7 +60,6 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
 
     ngOnInit(): void {
         this.announcementsStore.load();
-        this.announcementsStore.refreshUtmParameters();
         this.aboutLinks = this.getAboutLinks();
     }
 
@@ -75,10 +73,10 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
      * Get the about links
      * @returns About links
      */
-    getAboutLinks(): { title: string; items: AnnouncementLink[] }[] {
+    getAboutLinks(): { title: string; items: Signal<AnnouncementLink[]> }[] {
         return [
-            { title: 'announcements.knowledge.center', items: this.knowledgeCenterLinks() },
-            { title: 'announcements.knowledge.contact.us', items: this.contactLinks() }
+            { title: 'announcements.knowledge.center', items: this.knowledgeCenterLinks },
+            { title: 'announcements.knowledge.contact.us', items: this.contactLinks }
         ];
     }
 
