@@ -111,9 +111,6 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             return;
         }
 
-        final boolean saveFieldsAsJson = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
-        Config.setProperty(SAVE_CONTENTLET_AS_JSON, testCase.isJsonFields);
-
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         final User systemUser = APILocator.getUserAPI().getSystemUser();
 
@@ -166,24 +163,8 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             if (testCase.isJsonFields) {
                 // For jsonField We're testing that the field was removed from the contentlet
                 assertNull(fieldValue);
-            } else {
-                // For the regular field-column implementation We test that the field was set to their default state before anything was saved on it
-                if (fieldValue instanceof Date) {
-
-                    Calendar cal1 = Calendar.getInstance();
-                    Calendar cal2 = Calendar.getInstance();
-                    cal1.setTime((Date) fieldValue);
-                    cal2.setTime((Date) testCase.fieldValue);
-
-                    assertNotEquals(cal1.get(Calendar.DAY_OF_YEAR), cal2.get(Calendar.DAY_OF_YEAR));
-                } else {
-                    assertEquals(DbConnectionFactory.isOracle() ? null : "", fieldValue);
-                }
             }
-
         } finally {
-
-            Config.setProperty(SAVE_CONTENTLET_AS_JSON, saveFieldsAsJson);
 
             if (contentType != null) {
                 contentTypeAPI.delete(contentType);

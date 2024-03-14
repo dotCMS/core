@@ -50,6 +50,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -933,6 +934,7 @@ public class VanityUrlAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    @Ignore  // this test is not valid anymore since now all contents are saved as json
     @Test
     public void Test_Vanity_URI_Missing_URI_Expect_Validation_Exception()
             throws DotSecurityException, DotDataException {
