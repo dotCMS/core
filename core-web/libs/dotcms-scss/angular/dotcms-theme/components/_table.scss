@@ -1,0 +1,15 @@
+@use "variables" as *;
+p-table {
+    .p-datatable {
+        border: 1px solid $color-palette-gray-400;
+    }
+
+    .p-datatable .p-datatable-thead > tr > th {
+        background-color: $color-palette-gray-200;
+        color: black;
+    }
+
+    .p-checkbox {
+        border: 2px solid $color-palette-gray-400;
+    }
+}
