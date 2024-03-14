@@ -85,7 +85,7 @@ public class PortletResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response createContentPortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
+    public final Response saveNew(@Context final HttpServletRequest request, final CustomPortletForm formData) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
