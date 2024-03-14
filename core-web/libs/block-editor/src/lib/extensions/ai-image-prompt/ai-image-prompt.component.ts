@@ -16,8 +16,6 @@ import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store'
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gallery/ai-image-prompt-gallery.component';
 
-import { AIImagePrompt, DotGeneratedAIImage } from '../../shared/services/dot-ai/dot-ai.models';
-
 @Component({
     selector: 'dot-ai-image-prompt',
     standalone: true,
