@@ -1,6 +1,7 @@
 package com.dotmarketing.business.portal;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.liferay.portal.language.LanguageException;
 import java.util.Collection;
 
@@ -37,9 +38,6 @@ public interface PortletAPI {
 
   void deletePortlet(final String portletId);
 
-  //todo: remove this method
-  Portlet savePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException;
-
     /**
      * This method is encapsulating the logic to create or update a portlet
      *
@@ -57,6 +55,6 @@ public interface PortletAPI {
      *
      * @param	portletId the portlet id to be cleaned
      */
-    String portletIdPrefixCleaner(final String portletId);
+    String portletIdPrefixCleaner(final String portletId) throws DotDataValidationException;
 
 }
