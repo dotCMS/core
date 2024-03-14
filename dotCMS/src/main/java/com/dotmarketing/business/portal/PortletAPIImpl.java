@@ -108,78 +108,12 @@ public class PortletAPIImpl implements PortletAPI {
         }
     }
 
-    //todo: remove this method
-    @Override
-    @WrapInTransaction
-    public Portlet savePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException {
-
-        //todo: we have to refactor this method to be able to update or create a portlet
-
-
-        //todo: keep required fields validation
-        if(!UtilMethods.isSet(portlet.getPortletId())) {
-            throw new DotDataValidationException("Portlet Id is Required");
-        }
-
-        if(!UtilMethods.isSet(portlet.getInitParams().get("name"))) {
-            throw new DotDataValidationException("Portlet Name is Required");
-        }
-        //todo: if al ready exists that means that we are updating
-        final String portletId = CONTENT_PORTLET_PREFIX + portlet.getPortletId();
-        if (UtilMethods.isSet(findPortlet(portletId))) {
-            throw new DotDataValidationException("Portlet Id already Exists");
-        }
-
-        if(!UtilMethods.isSet(portlet.getPortletClass())) {
-            throw new DotDataValidationException("You cannot save a portlet without an implementing portletClass");
-        }
-
-        final List<String> contentTypes = checkContentTypes(portlet.getInitParams().get("contentTypes")).stream().map(ct -> ct.variable())
-                .collect(Collectors.toList());
-        final List<String> baseTypes = checkBaseTypes(portlet.getInitParams().get("baseTypes")).stream().map(bt -> bt.name())
-                .collect(Collectors.toList());
-
-        if (contentTypes.size() + baseTypes.size() == 0) {
-            throw new DotDataValidationException("You must specify at least one baseType or Content Type");
-        }
-
-        if(contentTypes.stream().anyMatch(Host.HOST_VELOCITY_VAR_NAME::equalsIgnoreCase)){
-            throw new DotDataValidationException("Invalid attempt to save Portlet for restricted Content Type Host. ");
-        }
-
-        final HashMap<String, String> newMap = new HashMap<>(portlet.getInitParams());
-        newMap.put("portletSource", "db");
-
-        //cleaning up whitespaces from content types and base types
-        newMap.put("contentTypes", String.join(",", contentTypes));
-        newMap.put("baseTypes", String.join(",", baseTypes));
-
-        final Portlet newPortlet =  portletFac.insertPortlet(new Portlet(portletId, portlet.getPortletClass(),newMap));
-        //Add Languague Variable
-        Map<String, String> keys = ImmutableMap
-                .of(com.dotcms.repackage.javax.portlet.Portlet.class.getPackage().getName()
-                        + ".title." + portletId, newPortlet.getInitParams().get("name"));
-        try {
-            for (Language lang : APILocator.getLanguageAPI().getLanguages()) {
-                APILocator.getLanguageAPI()
-                        .saveLanguageKeys(lang, keys, new HashMap<>(), ImmutableSet.of());
-            }
-        } catch (DotDataException e) {
-            Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
-        }
-
-        SystemMessageEventUtil.getInstance().pushMessage(portletId + user.getUserId(), new SystemMessageBuilder()
-                .setMessage(Try.of(() -> LanguageUtil.get(user.getLocale(), "custom.content.portlet.created"))
-                        .getOrElse("Custom Content Created")).create(),list(user.getUserId()));
-
-        return newPortlet;
-    }
-
     private boolean containPrefix(String portletId) {
         return portletId.startsWith(CONTENT_PORTLET_PREFIX);
     }
 
     @Override
+    @WrapInTransaction
     public Portlet createOrUpdatePortlet(Portlet portlet, User user) throws DotDataException, LanguageException {
         final String portletId = portletIdPrefixCleaner(portlet.getPortletId());
         // if true means that we are creating a new portlet
@@ -225,7 +159,8 @@ public class PortletAPIImpl implements PortletAPI {
         return newPortlet;
     }
 
-    private void portletFieldsValidations(boolean isNewPortlet, Portlet portletToValidate, List<String> contentTypes, List<String> baseTypes ) throws DotDataValidationException {
+    private void portletFieldsValidations(final boolean isNewPortlet,final Portlet portletToValidate,final List<String> contentTypes, final List<String> baseTypes)
+            throws DotDataValidationException {
 
         final String action = isNewPortlet ? "create" : "update";
 
@@ -235,6 +170,10 @@ public class PortletAPIImpl implements PortletAPI {
 
         if(!UtilMethods.isSet(portletToValidate.getInitParams().get("name"))) {
             throw new DotDataValidationException("Portlet Name is Required");
+        }
+
+        if(!UtilMethods.isSet(portletToValidate.getInitParams().get(Portlet.DATA_VIEW_MODE_KEY))) {
+            throw new DotDataValidationException("Portlet Data View Mode is Required");
         }
 
         if(!UtilMethods.isSet(portletToValidate.getPortletClass())) {
@@ -250,8 +189,11 @@ public class PortletAPIImpl implements PortletAPI {
     }
 
     @Override
-    public String portletIdPrefixCleaner(String portletId) {
+    public String portletIdPrefixCleaner(String portletId) throws DotDataValidationException {
 
+        if(!UtilMethods.isSet(portletId)) {
+            throw new DotDataValidationException("Portlet Id is Required");
+        }
         if (portletId.startsWith(CONTENT_PORTLET_PREFIX.toUpperCase())){
             portletId = portletId.substring(CONTENT_PORTLET_PREFIX.length());
         }
