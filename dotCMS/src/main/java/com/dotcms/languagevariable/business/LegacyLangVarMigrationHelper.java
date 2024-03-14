@@ -35,15 +35,29 @@ public class LegacyLangVarMigrationHelper {
 
     final String langVarContentTypeInode;
 
+    /**
+     * Constructor
+     * @param langVarContentTypeInode the language variable content type inode
+     */
     public LegacyLangVarMigrationHelper(final String langVarContentTypeInode) {
         this.langVarContentTypeInode = langVarContentTypeInode;
         this.contentletAPI = APILocator.getContentletAPI();
     }
 
+    /**
+     * Returns the messages directory
+     * @return the messages directory
+     */
     public static Path messagesDir() {
         return Paths.get(ConfigUtils.getAssetPath(),"messages");
     }
 
+    /**
+     * Migrates the legacy language variables to the new language variable content type
+     * @param messagesDir the messages directory
+     * @return the migration summary
+     * @throws IOException if an error occurs reading the files
+     */
     public ImmutableMigrationSummary migrateLegacyLanguageVariables(final Path messagesDir) throws IOException {
         final ImmutableMigrationSummary.Builder summary = ImmutableMigrationSummary.builder();
         if (!Files.exists(messagesDir)) {
@@ -146,6 +160,10 @@ public class LegacyLangVarMigrationHelper {
         });
     }
 
+    /**
+     * Maps the languages by language code
+     * @return a map with the languages grouped by language code
+     */
     private  Map<String, List<Language>> mapLanguageVariants() {
         final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
         return mapLanguagesByCode(languages);
@@ -161,6 +179,12 @@ public class LegacyLangVarMigrationHelper {
                 Collectors.groupingBy(lang -> lang.getLanguageCode().toLowerCase(), Collectors.toList()));
     }
 
+    /**
+     * Matches the given locale with the existing languages
+     * @param locale the locale
+     * @param languagesByLocale the languages grouped by language code
+     * @return an Optional with the matching language if found, empty otherwise
+     */
     Optional<Language> matchWithExistingLanguage(final Locale locale, final Map<String, List<Language>> languagesByLocale){
         final String langCode = locale.getLanguage().toLowerCase();
         final List<Language> languages = languagesByLocale.get(langCode);
@@ -182,6 +206,13 @@ public class LegacyLangVarMigrationHelper {
                         .equalsIgnoreCase(countryCode)).findFirst();
     }
 
+    /**
+     * Saves a language variable content
+     * @param key the key
+     * @param value the value
+     * @param languageId the language id
+     * @return the saved contentlet
+     */
     public Contentlet saveLanguageVariableContent(final String key, final String value, final long languageId) {
         final Contentlet langVar = new Contentlet();
         langVar.setContentTypeId(langVarContentTypeInode);
