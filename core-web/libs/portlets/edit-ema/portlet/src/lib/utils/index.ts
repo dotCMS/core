@@ -177,8 +177,6 @@ export const getPersonalization = (persona: Record<string, string>) => {
     return `dot:${persona.contentType}:${persona.keyTag}`;
 };
 
-// TEST MISSING
-
 /**
  * Build the query params for the page API
  *
