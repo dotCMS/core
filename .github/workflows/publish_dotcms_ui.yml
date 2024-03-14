@@ -114,7 +114,7 @@ jobs:
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_ORG_TOKEN }}
           cd dist/apps/dotcms-ui
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
-            npm publish --tag rc
+            npm publish --tag rc --public
           fi
           if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
             npm publish --tag next
