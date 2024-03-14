@@ -167,7 +167,7 @@ public class LegacyLangVarMigrationHelper {
         if (languages == null || languages.isEmpty()) {
             return Optional.empty();
         }
-        //All this languages share the same Root Language but not necessarily the same country
+        //All these languages share the same Root Language but not necessarily the same country
         //e.k. en_US, en_GB, en_AU, en_NZ, en_CA all share the same root language en
         //So now we need to find the best match for the given locale
         final String countryCode = locale.getCountry().toLowerCase();
