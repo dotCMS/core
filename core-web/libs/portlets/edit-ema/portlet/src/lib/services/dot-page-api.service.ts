@@ -46,7 +46,7 @@ export interface DotPageApiParams {
     url: string;
     language_id: string;
     'com.dotmarketing.persona.id': string;
-    variantName: string;
+    variantName?: string;
     experimentId?: string;
     mode?: string;
 }
