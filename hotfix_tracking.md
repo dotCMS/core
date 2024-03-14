@@ -213,3 +213,4 @@ This maintenance release includes the following code fixes:
 
 169. https://github.com/dotCMS/core/issues/22698 : Limited user without Search Portlet can't Edit Content From Edit Page Portlet #22698
 170. https://github.com/dotCMS/core/issues/25729 : Order of comments in Task details modal. #25729
+171. https://github.com/dotCMS/core/issues/25653 : Importing Category lists via CSV - import button is disabled #25653
