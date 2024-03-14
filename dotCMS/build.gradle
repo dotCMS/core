@@ -573,7 +573,7 @@ task deleteDotCmsUi(type: Delete) {
 
 
 task extractDotCmsUi(type: NpmArtifactExtractTask) {
-    artifact = '@dotcms/dotcms-ui'
+    artifact = 'dotcms-ui'
     version = coreWebReleaseVersion
     outputDir = file("$buildDir/packages")
 }
