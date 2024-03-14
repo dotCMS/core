@@ -47,6 +47,7 @@ import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -478,8 +479,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException {
     try {
-      return perms.filterCollection(this.contentTypeFactory.search(siteIds, condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0), PermissionAPI.PERMISSION_READ,
-              respectFrontendRoles, user).size();
+      final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(siteIds, this.user, this.respectFrontendRoles);
+      return this.perms.filterCollection(this.contentTypeFactory.search(resolvedSiteIds,
+              condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0),
+              PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user).size();
     } catch (final DotSecurityException e) {
       Logger.error(this, String.format("An error occurred when getting the Content Type count for Sites " +
               "[ %s ] with condition [ %s ]: %s", siteIds, condition, ExceptionUtil.getErrorMessage(e)), e);
@@ -752,11 +755,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     int rollingOffset = offset;
     try {
       while ((limit<0)||(returnTypes.size() < limit)) {
-        final List<ContentType> rawContentTypes = this.contentTypeFactory.search(sites, condition, base.getType(), orderBy, limit, rollingOffset);
+        final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(sites, this.user, this.respectFrontendRoles);
+        final List<ContentType> rawContentTypes = this.contentTypeFactory.search(resolvedSiteIds,
+                condition, base.getType(), orderBy, limit, rollingOffset);
         if (rawContentTypes.isEmpty()) {
           break;
         }
-        returnTypes.addAll(perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+        returnTypes.addAll(this.perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user));
         if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
           break;
         }
@@ -772,7 +777,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
-    @CloseDBIfOpened
+  @CloseDBIfOpened
     @Override
     public List<ContentType> search(final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset, final String siteId)
             throws DotDataException {
