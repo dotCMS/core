@@ -99,7 +99,7 @@ jobs:
       - name: "Publish to npm"
         run: |
           cd core-web
-          npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
+          npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_ORG_TOKEN }}
           cd dist/libs/dotcms-webcomponents
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
             npm publish --tag rc
