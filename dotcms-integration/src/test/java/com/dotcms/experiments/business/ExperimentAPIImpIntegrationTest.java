@@ -4227,5 +4227,51 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         assertEquals(Type.SPLIT_EVENLY, experimentAfterDelete.trafficProportion().type());
     }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#end(String, User)}
+     * WHen: End An Experiment
+     * Should: Archive the Variants
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void archiveVariantAfterStopExperiment() throws DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+
+        Experiment experiment = new ExperimentDataGen()
+                .page(pageA).nextPersisted();
+
+        experiment = APILocator.getExperimentsAPI()
+                .addVariant(experiment.id().orElseThrow(), "v1", APILocator.systemUser());
+
+
+        experiment = APILocator.getExperimentsAPI()
+                .addVariant(experiment.id().orElseThrow(), "v2", APILocator.systemUser());
+
+        final ExperimentVariant v1 = experiment.trafficProportion().variants().stream()
+                .filter((variant)->variant.description().equals("v1"))
+                .collect(Collectors.toList()).get(0);
+
+        final ExperimentVariant v2 = experiment.trafficProportion().variants().stream()
+                .filter((variant)->variant.description().equals("v2"))
+                .collect(Collectors.toList()).get(0);
+
+        APILocator.getExperimentsAPI().start(experiment.id().get(), APILocator.systemUser());
+        APILocator.getExperimentsAPI().end(experiment.id().get(), APILocator.systemUser());
+
+        final Variant variant1FromDataBase = APILocator.getVariantAPI().get(v1.id()).orElseThrow();
+        assertTrue("The Variant must be archived", variant1FromDataBase.archived());
+
+
+        final Variant variant2FromDataBase = APILocator.getVariantAPI().get(v2.id()).orElseThrow();
+        assertTrue("The Variant must be archived", variant2FromDataBase.archived());
+
+    }
 }
 

@@ -1,6 +1,7 @@
 package com.dotcms.api.client.pull;
 
 import com.dotcms.api.client.pull.exception.PullException;
+import com.dotcms.api.client.util.ErrorHandlingUtil;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.exception.ForceSilentExitException;
@@ -8,6 +9,7 @@ import com.dotcms.model.pull.PullOptions;
 import io.quarkus.arc.DefaultBean;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -26,6 +28,9 @@ public class PullServiceImpl implements PullService {
 
     @Inject
     Logger logger;
+
+    @Inject
+    ErrorHandlingUtil errorHandlerUtil;
 
     @Inject
     ManagedExecutor executor;
@@ -133,12 +138,17 @@ public class PullServiceImpl implements PullService {
             // (fetcherServiceFuture and animationFuture) have completed.
             CompletableFuture.allOf(fetcherServiceFuture, animationFuture).join();
             contents = fetcherServiceFuture.get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
             var errorMessage = String.format(
                     "Error occurred while fetching [%s]: [%s].",
-                    pullHandler.title(), e.getMessage());
+                    pullHandler.title(), e.getMessage()
+            );
             logger.error(errorMessage, e);
+            Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
+        } catch (ExecutionException | CompletionException e) {
+            var cause = e.getCause();
+            throw errorHandlerUtil.mapPullException(cause);
         }
 
         return contents;
@@ -188,6 +198,7 @@ public class PullServiceImpl implements PullService {
         var failed = false;
         var retryAttempts = 0;
         var errorCode = ExitCode.OK;
+
         do {
 
             if (retryAttempts > 0) {
@@ -243,19 +254,25 @@ public class PullServiceImpl implements PullService {
                     pullOptions,
                     output
             );
-        } catch (InterruptedException | ExecutionException e) {
-            var errorMessage = String.format("Error occurred while pulling contents: [%s].", e.getMessage());
+        } catch (InterruptedException e) {
+
+            var errorMessage = String.format(
+                    "Error occurred while pulling contents: [%s].", e.getMessage()
+            );
             logger.error(errorMessage, e);
             Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
-        } catch (Exception e) { // Fail fast
-            if (retryAttempts + 1 <= maxRetryAttempts) {
-                output.info("\n\nFound errors during the pull process:");
-                output.error(e.getMessage());
-                return ExitCode.SOFTWARE;
-            } else {
-                throw e;
+        } catch (ExecutionException | CompletionException e) {// Fail fast
+
+            var cause = e.getCause();
+            var toThrow = errorHandlerUtil.handlePullFailFastException(
+                    retryAttempts, maxRetryAttempts, output, cause
+            );
+            if (toThrow.isPresent()) {
+                throw toThrow.get();
             }
+
+            return ExitCode.SOFTWARE;
         }
     }
 

@@ -1,7 +1,8 @@
-import { usePageEditor } from '../../hooks/usePageEditor';
+import { DotCMSPageEditorConfig } from '@dotcms/client';
+
+import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
 import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
-
 /**
  * `DotcmsPageProps` is a type that defines the properties for the `DotcmsLayout` component.
  * It includes a readonly `entity` property that represents the context for a DotCMS page.
@@ -22,6 +23,8 @@ export type DotcmsPageProps = {
      * @readonly
      */
     readonly entity: PageProviderContext;
+
+    readonly options?: DotCMSPageEditorConfig;
 };
 
 /**
@@ -32,23 +35,13 @@ export type DotcmsPageProps = {
  * @param {DotcmsPageProps} props - The properties for the DotCMS page.
  * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
  */
-export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
-    const { entity } = props;
-
-    const { rowsRef, isInsideEditor } = usePageEditor({});
-
-    const addRowRef = (el: HTMLDivElement) => {
-        if (el && !rowsRef.current.includes(el)) {
-            rowsRef.current.push(el);
-        }
-    };
-
-    entity.isInsideEditor = isInsideEditor;
+export function DotcmsLayout({ entity, options }: DotcmsPageProps): JSX.Element {
+    useDotcmsEditor(options);
 
     return (
         <PageProvider entity={entity}>
             {entity.layout.body.rows.map((row, index) => (
-                <Row ref={addRowRef} key={index} row={row} />
+                <Row key={index} row={row} />
             ))}
         </PageProvider>
     );
