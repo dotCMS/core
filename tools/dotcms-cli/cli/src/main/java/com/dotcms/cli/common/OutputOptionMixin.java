@@ -4,6 +4,9 @@ import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
 import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
 import static org.apache.commons.lang3.StringUtils.abbreviate;
 
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.api.client.pull.exception.PullException;
+import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.cli.exception.ExceptionHandler;
 import com.dotcms.cli.exception.ForceSilentExitException;
 import io.quarkus.arc.Arc;
@@ -180,23 +183,36 @@ public class OutputOptionMixin implements MessageWriter {
         return exceptionHandler;
     }
 
-/**
+    /**
      * This method is used to handle exceptions that occur during command execution
+     *
      * @param ex The exception that was thrown
      * @return The exit code
      */
-    public int handleCommandException(Exception ex){
-        return handleCommandException(ex, null, isShowErrors());
+    public int handleCommandException(Exception ex) {
+        return handleCommandException(ex, null, isShowErrors(), true);
     }
 
     /**
      * This method is used to handle exceptions that occur during command execution
-     * @param ex The exception that was thrown
+     *
+     * @param ex            The exception that was thrown
+     * @param showStackHelp Flag to show command help for error display
+     * @return The exit code
+     */
+    public int handleCommandException(Exception ex, final boolean showStackHelp) {
+        return handleCommandException(ex, null, isShowErrors(), showStackHelp);
+    }
+
+    /**
+     * This method is used to handle exceptions that occur during command execution
+     *
+     * @param ex      The exception that was thrown
      * @param message A custom message to display
      * @return The exit code
      */
-    public int handleCommandException(Exception ex, String message){
-        return handleCommandException(ex, message, isShowErrors());
+    public int handleCommandException(Exception ex, String message) {
+        return handleCommandException(ex, message, isShowErrors(), true);
     }
 
     /**
@@ -207,9 +223,11 @@ public class OutputOptionMixin implements MessageWriter {
      * @param ex The exception that was thrown
      * @param message Custom message to display
      * @param showStack The flag to show errors
+     * @param showStackHelp Flag to show command help for error display
      * @return The exit code
      */
-    public int handleCommandException(final Exception ex, final String message, final boolean showStack) {
+    public int handleCommandException(final Exception ex, final String message,
+            final boolean showStack, final boolean showStackHelp) {
 
         final ExceptionHandler exHandler = getExceptionHandler();
         // Handle ParameterException
@@ -219,7 +237,6 @@ public class OutputOptionMixin implements MessageWriter {
         }
 
         //Handle ExecutionException
-
         final Exception unwrappedEx = exHandler.unwrap(ex);
 
         if (unwrappedEx instanceof ForceSilentExitException) {
@@ -230,16 +247,16 @@ public class OutputOptionMixin implements MessageWriter {
         //Extract the proper exception and remove all server side noise
         final Exception handledEx = exHandler.handle(unwrappedEx);
         //Short error message
-         final String errorMessage =  (message != null && !message.isEmpty() ?  message + " " : "" ) + (handledEx.getMessage() != null ? abbreviate(handledEx.getMessage(), "...", 200)
-                :  "An exception " + handledEx.getClass().getSimpleName() + " Occurred With no error message provided.");
+        final String errorMessage = (message != null && !message.isEmpty() ? message + " " : "")
+                + getMessage(ex, handledEx);
 
         error(errorMessage);
         Log.error(errorMessage, ex);
         //Won't print unless the "showStack" flag is on
         //We show the show message notice only if we're not already showing errors
-        if(!showStack) {
+        if (!showStack && showStackHelp) {
             info("@|bold,yellow run with -e or --errors for full details on the exception.|@");
-        } else {
+        } else if (showStack) {
             err().println(colorScheme().stackTraceText(unwrappedEx));
         }
 
@@ -250,6 +267,37 @@ public class OutputOptionMixin implements MessageWriter {
         return cmd.getExitCodeExceptionMapper() != null ? cmd.getExitCodeExceptionMapper()
                 .getExitCode(unwrappedEx)
                 : mixee.exitCodeOnInvalidInput();
+    }
+
+    /**
+     * Retrieves the error message for an exception.
+     *
+     * @param originalException the original exception that was thrown
+     * @param handledEx         the exception that was handled
+     * @return the error message for the exception, or a default message if no error message is
+     * available
+     */
+    private String getMessage(final Exception originalException, final Exception handledEx) {
+
+        var message = abbreviate(handledEx.getMessage(), "...", 200);
+        
+        if (originalException instanceof PushException ||
+                originalException instanceof PullException ||
+                originalException instanceof TraversalTaskException) {
+
+            if (message != null) {
+                message = String.format(
+                        "%s %n %s",
+                        abbreviate(originalException.getMessage(), "...", 200),
+                        abbreviate(message, "...", 200)
+                );
+            } else {
+                message = abbreviate(originalException.getMessage(), "...", 200);
+            }
+        }
+
+        return message != null ? message : "An exception " + handledEx.getClass().getSimpleName()
+                + " Occurred With no error message provided.";
     }
 
     @Override
