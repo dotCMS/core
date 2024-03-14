@@ -4,9 +4,8 @@ import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angu
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { HintPropertyComponent } from './index';
 
@@ -20,7 +19,7 @@ describe('HintPropertyComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [HintPropertyComponent],
-            imports: [ReactiveFormsModule, DotPipesModule, DotMessagePipe],
+            imports: [ReactiveFormsModule, DotSafeHtmlPipe, DotMessagePipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
 

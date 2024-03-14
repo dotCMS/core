@@ -43,3 +43,4 @@ export * from './lib/dot-http-error-manager.service.mock';
 export * from './lib/dot-temp-file.mock';
 export * from './lib/dot-current-user.mock';
 export * from './lib/split-button.mock';
+export * from './lib/seo-mock';

@@ -22,6 +22,7 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotDevice, DotLanguage, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
+import { DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
@@ -35,7 +36,6 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageViewAsControllerSeoComponent } from './dot-edit-page-view-as-controller-seo.component';
 
@@ -120,7 +120,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                 DotEditPageViewAsControllerSeoComponent,
                 BrowserAnimationsModule,
                 TooltipModule,
-                DotPipesModule
+                DotSafeHtmlPipe
             ],
             providers: [
                 DotSessionStorageService,

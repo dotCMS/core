@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
     SpectatorRouting,
     createRoutingFactory,
@@ -15,11 +15,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotContentTypeService,
+    DotContentletService,
     DotCopyContentService,
     DotCurrentUserService,
     DotDevicesService,
@@ -29,7 +31,9 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import {
@@ -37,6 +41,7 @@ import {
     CONTAINER_SOURCE,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
+import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
@@ -46,7 +51,9 @@ import {
     mockDotDevices,
     LoginServiceMock,
     DotCurrentUserServiceMock,
-    dotcmsContentletMock
+    dotcmsContentletMock,
+    seoOGTagsResultMock,
+    URL_MAP_CONTENTLET
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
@@ -62,9 +69,9 @@ import { EditEmaEditorComponent } from './edit-ema-editor.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST, PAYLOAD_MOCK } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
 
 global.URL.createObjectURL = jest.fn(
@@ -267,13 +274,21 @@ const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
     position: 'before'
 };
 
+const URL_CONTENT_MAP_MOCK = {
+    contentType: 'Blog',
+    identifier: '123',
+    inode: '1234',
+    title: 'hello world'
+};
+
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe],
+        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ButtonModule],
         declarations: [
             MockComponent(DotEditEmaWorkflowActionsComponent),
-            MockComponent(DotEmaDialogComponent)
+            MockComponent(DotEmaDialogComponent),
+            MockComponent(DotResultsSeoToolComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -282,6 +297,12 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             ConfirmationService,
             DotFavoritePageService,
             DotESContentService,
+            {
+                provide: DotContentletService,
+                useValue: {
+                    getContentletByInode: () => of(URL_MAP_CONTENTLET)
+                }
+            },
             {
                 provide: DotHttpErrorManagerService,
                 useValue: {
@@ -323,6 +344,11 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ],
         providers: [
+            {
+                provide: DotSeoMetaTagsService,
+                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
+            },
+            DotSeoMetaTagsUtilService,
             DialogService,
             DotCopyContentService,
             DotCopyContentModalService,
@@ -332,6 +358,32 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 useValue: {
                     get({ language_id }) {
                         return {
+                            4: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    rendered: '<div>New Content - Hello World</div>',
+                                    canEdit: true
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 4,
+                                        language: 'German',
+                                        countryCode: 'DE',
+                                        languageCode: 'de',
+                                        country: 'Germany'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
+                                containers: dotPageContainerStructureMock
+                            }),
                             3: of({
                                 page: {
                                     title: 'hello world',
@@ -355,6 +407,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     },
                                     persona: DEFAULT_PERSONA
                                 },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
                                 containers: dotPageContainerStructureMock
                             }),
                             2: of({
@@ -402,6 +455,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     },
                                     persona: DEFAULT_PERSONA
                                 },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
                                 containers: dotPageContainerStructureMock
                             })
                         }[language_id];
@@ -457,6 +511,7 @@ describe('EditEmaEditorComponent', () => {
         let addMessageSpy: jest.SpyInstance;
         let dotCopyContentModalService: DotCopyContentModalService;
         let dotCopyContentService: DotCopyContentService;
+        let dotContentletService: DotContentletService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
         const createComponent = createRouting({ canEdit: true, canRead: true });
@@ -485,6 +540,7 @@ describe('EditEmaEditorComponent', () => {
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
+            dotContentletService = spectator.inject(DotContentletService, true);
 
             addMessageSpy = jest.spyOn(messageService, 'add');
 
@@ -568,8 +624,18 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('Preview mode', () => {
-            it('should reset the selection on click on the x button', () => {
+            beforeEach(() => {
+                jest.useFakeTimers(); // Mock the timers
+            });
+
+            afterEach(() => {
+                jest.useRealTimers(); // Restore the real timers after each test
+            });
+
+            it('should reset the selection on click on the go to edit button', () => {
                 spectator.detectChanges();
+
+                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
 
                 const deviceSelector = spectator.debugElement.query(
                     By.css('[data-testId="dot-device-selector"]')
@@ -580,15 +646,19 @@ describe('EditEmaEditorComponent', () => {
                 spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
                 spectator.detectChanges();
 
-                const deviceDisplay = spectator.debugElement.query(
-                    By.css('[data-testId="device-display"]')
+                const backToEditButton = spectator.debugElement.query(
+                    By.css('[data-testId="ema-back-to-edit"]')
                 );
 
-                spectator.triggerEventHandler(deviceDisplay, 'resetDevice', {});
+                spectator.triggerEventHandler(backToEditButton, 'onClick', {});
 
                 const selectedDevice = spectator.query(byTestId('selected-device'));
 
                 expect(selectedDevice).toBeNull();
+
+                expect(updatePreviewStateMock).toHaveBeenNthCalledWith(2, {
+                    editorMode: EDITOR_MODE.EDIT
+                });
             });
 
             it('should hide the components that are not needed for preview mode', () => {
@@ -632,6 +702,52 @@ describe('EditEmaEditorComponent', () => {
 
                 componentsToShow.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).not.toBeNull();
+                });
+            });
+
+            it('should call updatePreviewState from the store', () => {
+                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
+
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                expect(updatePreviewStateMock).toHaveBeenCalledWith({
+                    editorMode: EDITOR_MODE.PREVIEW,
+                    device: iphone
+                });
+            });
+
+            // REMOVED THE `SKIP` WHEN THIS PR [https://github.com/dotCMS/core/pull/27866] IS MERGED
+            it('should open seo results when clicking on a social media tile', () => {
+                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
+
+                store.load({
+                    url: 'index',
+                    language_id: '3',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+
+                jest.runOnlyPendingTimers();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'Facebook');
+
+                expect(spectator.query(byTestId('results-seo-tool'))).not.toBeNull(); // This components share the same logic as the preview by device
+
+                expect(updatePreviewStateMock).toHaveBeenCalledWith({
+                    editorMode: EDITOR_MODE.PREVIEW,
+                    socialMedia: 'Facebook'
                 });
             });
         });
@@ -909,6 +1025,14 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('edit', () => {
+                const baseContentletPayload = {
+                    x: 100,
+                    y: 100,
+                    width: 500,
+                    height: 500,
+                    payload: EDIT_ACTION_PAYLOAD_MOCK
+                };
+
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
 
@@ -916,13 +1040,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    spectator.setInput('contentlet', {
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
+                    spectator.setInput('contentlet', baseContentletPayload);
 
                     spectator.detectComponentChanges();
 
@@ -956,6 +1074,110 @@ describe('EditEmaEditorComponent', () => {
                             done();
                         }
                     );
+                });
+
+                describe('reload', () => {
+                    let spyContentlet: jest.SpyInstance;
+                    let spyDialog: jest.SpyInstance;
+                    let spyReloadIframe: jest.SpyInstance;
+                    let spyStoreReload: jest.SpyInstance;
+                    let spyUpdateQueryParams: jest.SpyInstance;
+
+                    const emulateEditURLMapContent = () => {
+                        const editURLContentButton = spectator.debugElement.query(
+                            By.css('[data-testId="edit-url-content-map"] .p-button')
+                        );
+                        const dialog = spectator.debugElement.query(
+                            By.css('[data-testId="ema-dialog"]')
+                        );
+
+                        spectator.setInput('contentlet', baseContentletPayload);
+                        editURLContentButton.triggerEventHandler('click', {});
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                                    payload: {
+                                        shouldReloadPage: true,
+                                        contentletIdentifier: URL_MAP_CONTENTLET.identifier,
+                                        htmlPageReferer: '/my-awesome-page'
+                                    }
+                                }
+                            })
+                        });
+                    };
+
+                    beforeEach(() => {
+                        const router = spectator.inject(Router, true);
+                        const dialog = spectator.component.dialog;
+                        spyContentlet = jest.spyOn(dotContentletService, 'getContentletByInode');
+                        spyDialog = jest.spyOn(dialog, 'editUrlContentMapContentlet');
+                        spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
+                        spyUpdateQueryParams = jest.spyOn(router, 'navigate');
+                        spyStoreReload = jest.spyOn(store, 'reload');
+                        spectator.detectChanges();
+                    });
+
+                    it('should reload the page after editing a urlContentMap if the url do not change', () => {
+                        const storeReloadPayload = {
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        };
+
+                        spyContentlet.mockReturnValue(
+                            of({
+                                ...URL_MAP_CONTENTLET,
+                                URL_MAP_FOR_CONTENT: 'page-one'
+                            })
+                        );
+
+                        emulateEditURLMapContent();
+                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(spyReloadIframe).toHaveBeenCalled();
+                        expect(spyStoreReload).toHaveBeenCalledWith(storeReloadPayload);
+                        expect(spyUpdateQueryParams).not.toHaveBeenCalled();
+                    });
+
+                    it('should update the query params after editing a urlContentMap if the url changed', () => {
+                        const SpyEditorState = jest.spyOn(store, 'updateEditorState');
+                        const queryParams = {
+                            queryParams: {
+                                url: URL_MAP_CONTENTLET.URL_MAP_FOR_CONTENT
+                            },
+                            queryParamsHandling: 'merge'
+                        };
+
+                        spyContentlet.mockReturnValue(of(URL_MAP_CONTENTLET));
+
+                        emulateEditURLMapContent();
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyUpdateQueryParams).toHaveBeenCalledWith([], queryParams);
+                        expect(spyStoreReload).not.toHaveBeenCalled();
+                        expect(spyReloadIframe).toHaveBeenCalled();
+                    });
+
+                    it('should handler error ', () => {
+                        const SpyEditorState = jest.spyOn(store, 'updateEditorState');
+                        const SpyHandlerError = jest
+                            .spyOn(dotHttpErrorManagerService, 'handle')
+                            .mockReturnValue(of(null));
+
+                        spyContentlet.mockReturnValue(throwError({}));
+
+                        emulateEditURLMapContent();
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(SpyHandlerError).toHaveBeenCalledWith({});
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.ERROR);
+                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyUpdateQueryParams).not.toHaveBeenCalled();
+                        expect(spyStoreReload).not.toHaveBeenCalled();
+                        expect(spyReloadIframe).not.toHaveBeenCalled();
+                    });
                 });
 
                 describe('Copy content', () => {
@@ -1024,12 +1246,8 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(copySpy).toHaveBeenCalledWith(TREE_NODE_MOCK); // It's not being called
                         expect(dialogLoadingSpy).toHaveBeenCalledWith('Hello World');
-                        expect(editContentletSpy).toHaveBeenCalledWith({
-                            ...EDIT_ACTION_PAYLOAD_MOCK,
-                            contentlet: newContentlet
-                        });
+                        expect(editContentletSpy).toHaveBeenCalledWith(newContentlet);
                         expect(modalSpy).toHaveBeenCalled();
-                        expect(reloadIframeSpy).toHaveBeenCalledWith('ema-reload-page', '*');
                     });
 
                     it('should show an error if the copy content fails', () => {
@@ -1084,7 +1302,7 @@ describe('EditEmaEditorComponent', () => {
                         expect(copySpy).not.toHaveBeenCalled();
                         expect(dialogLoadingSpy).not.toHaveBeenCalled();
                         expect(editContentletSpy).toHaveBeenCalledWith(
-                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
+                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES.contentlet
                         );
                         expect(modalSpy).toHaveBeenCalled();
                         expect(reloadIframeSpy).not.toHaveBeenCalledWith();
@@ -1611,25 +1829,54 @@ describe('EditEmaEditorComponent', () => {
                 );
             });
 
-            it('iframe should have the correct content when is VTL', () => {
-                store.load({
-                    url: 'index',
-                    language_id: '3',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+            describe('VTL Page', () => {
+                beforeEach(() => {
+                    jest.useFakeTimers(); // Mock the timers
+                    store.load({
+                        url: 'index',
+                        language_id: '3',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+                    spectator.detectChanges();
                 });
-                spectator.detectChanges();
 
-                spectator.component.onIframePageLoad({
-                    clientHost: '',
-                    editor: { page: { rendered: '<div>hello world</div>' } }
-                } as { clientHost: string; editor: DotPageApiResponse }); // I didn't find another way to mock the iframe loading
+                afterEach(() => {
+                    jest.useRealTimers(); // Restore the real timers after each test
+                });
 
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                it('iframe should have the correct content when is VTL', () => {
+                    jest.runOnlyPendingTimers();
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                        '<div>hello world</div>'
+                    );
+                });
 
-                expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
-                    '<div>hello world</div>'
-                );
+                it('iframe should have reload the page and add the new content', () => {
+                    const params = {
+                        language_id: '4',
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    };
+
+                    store.reload({
+                        params,
+                        whenReloaded: () => {
+                            /* */
+                        }
+                    });
+                    spectator.detectChanges();
+
+                    jest.runOnlyPendingTimers();
+
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                        '<div>New Content - Hello World</div>'
+                    );
+                });
             });
 
             it('should navigate to new url and change persona when postMessage SET_URL', () => {
@@ -1842,7 +2089,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
                 spectator.detectComponentChanges();
@@ -2125,7 +2372,7 @@ describe('EditEmaEditorComponent', () => {
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
                 expect(dropZone.item).toEqual({
                     contentType: 'File',
                     baseType: 'CONTENT'
@@ -2155,7 +2402,7 @@ describe('EditEmaEditorComponent', () => {
                     contentType: 'File',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
@@ -2178,13 +2425,13 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(BOUNDS_MOCK.length);
+                expect(spectator.component.containers.length).toBe(BOUNDS_MOCK.length);
 
                 spectator.component.onLanguageSelected(2); // triggers a query param change
 
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(0);
+                expect(spectator.component.containers.length).toBe(0);
             });
         });
 
@@ -2253,26 +2500,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(routerSpy).not.toHaveBeenCalled();
             });
         });
-
-        // describe('reaload iframe', () => {
-        //     let spy: jest.SpyInstance;
-        //     let dialog: DebugElement;
-
-        //     beforeEach(() => {
-        //         spy = jest.spyOn(
-        //             spectator.component.iframe.nativeElement.contentWindow,
-        //             'postMessage'
-        //         );
-        //         spectator.detectChanges();
-        //         dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
-        //     });
-
-        //     it('should update to Loading state', () => {
-        //         triggerCustomEvent(dialog, 'reloadIframe', true);
-        //         spectator.detectChanges();
-        //         expect(spy).toHaveBeenCalledWith('ema-reload-page', '*');
-        //     });
-        // });
     });
 
     describe('without edit permission', () => {

@@ -169,4 +169,28 @@ public class UtilMethodsTest extends UnitTestBase {
 		assertFalse(UtilMethods.isEmpty(()->contentlet.getMap()));
 
 	}
+
+
+	static String[] goodImageNames = {"default-persona.png", "default.PnG", "testing-avif.avif",
+			"here is a tiff.tiff", "here is another tiff.tif", "another-Gif.Gif", "look a jpeg.jpeg",
+			"Guess this is a jpg.jpg", "My bigSVG.SvG"};
+
+	static String[] badImageNames = {"default-personapng", "default-PnG", "testing.pdf", "testing..pdf", "testing_pdf", "testing..pdff", "testing-avif-avf",
+			"here is a tiff", "another-Gif", "look a jpeg!", "Guess this is a jpg*", "here is a.vtl"};
+
+
+	@Test
+	public void test_isImage_method(){
+		for(String imageName:goodImageNames){
+			assertTrue(UtilMethods.isImage(imageName));
+		}
+		for(String imageName:badImageNames){
+			assertFalse(UtilMethods.isImage(imageName));
+		}
+	}
+
+
+
+
+
 }
