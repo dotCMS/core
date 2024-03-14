@@ -31,9 +31,11 @@ export interface RowProps {
  * @return {*}
  */
 export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) => {
-    const { row } = props;
+    const { isInsideEditor } = useContext<PageProviderContext | null>(
+        PageContext
+    ) as PageProviderContext;
 
-    const { isInsideEditor } = useContext(PageContext) as PageProviderContext;
+    const { row } = props;
 
     const combinedClasses = combineClasses([styles.row, row.styleClass]);
 
