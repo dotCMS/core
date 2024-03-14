@@ -117,7 +117,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                 const cleanPrompt = prompt.text?.trim() ?? '';
 
                 const finalPrompt =
-                    prompt.type === 'auto' && editorContent
+                    prompt.type === PromptType.AUTO && editorContent
                         ? `${cleanPrompt} to illustrate the following content: ${editorContent}`
                         : cleanPrompt;
 
@@ -137,7 +137,14 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                             }));
                         },
                         (error: string) => {
-                            this.patchState({ status: ComponentStatus.IDLE, error });
+                            this.patchState((state) => ({
+                                status: ComponentStatus.IDLE,
+                                images: [
+                                    ...state.images,
+                                    { request: prompt, response: null, error: error }
+                                ],
+                                galleryActiveIndex: state.images.length
+                            }));
 
                             return of(null);
                         }

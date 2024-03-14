@@ -3,7 +3,7 @@
 .dialog-prompt__wrapper {
     gap: $spacing-5;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, max-content) minmax(50%, 1fr);
 
     > * {
         display: flex;

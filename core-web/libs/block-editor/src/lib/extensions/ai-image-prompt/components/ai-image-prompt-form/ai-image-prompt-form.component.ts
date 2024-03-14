@@ -166,7 +166,7 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
             this.form.clearValidators();
             this.form.updateValueAndValidity();
 
-            this.aiProcessedPrompt = updatedValue.response.revised_prompt;
+            this.aiProcessedPrompt = updatedValue.response?.revised_prompt;
         }
     }
 
