@@ -25,17 +25,20 @@ import picocli.CommandLine.ExitCode;
                 "" // empty line left here on purpose to make room at the end
         },
         usageHelpAutoWidth = true,
+        synopsisHeading = "",
         customSynopsis = {
                 "",
-                "login",
-                "login [-u <user> -p <password>]",
-                "login [-tk <token>]"
+                "Usage: login",
+                "       login [-u <user> -p <password>]",
+                "       login [-tk <token>]",
+                ""
         },
         footer = {
                 "",
                 "Examples:",
                 "  login                           # Interactive mode",
                 "  login -tk=token                 # Login using token",
+                "  login -tk                       # Interactive token",
                 "  login -u=username -p=password   # Login using user/password",
                 "  login -u=username               # Login using username, interactive password",
                 "  login -u -p                     # Interactive username and password"
@@ -87,7 +90,8 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
      */
     static class LoginOptions {
 
-        @CommandLine.ArgGroup(heading = "\n@|bold,blue Password Login Options. |@\n")
+        @CommandLine.ArgGroup(heading = "\n@|bold,blue Password Login Options. |@\n",
+                exclusive = false)
         PasswordOptions passwordOptions;
 
         @CommandLine.ArgGroup(heading = "\n@|bold,blue Token login Options. |@\n")

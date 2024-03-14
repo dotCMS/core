@@ -20,9 +20,10 @@ login - *Use this command to login to a dotCMS instance.*
 == Synopsis
 
 
-login
-login [-u <user> -p <password>]
-login [-tk <token>]
+Usage: login
+       login [-u <user> -p <password>]
+       login [-tk <token>]
+
 
 // end::picocli-generated-man-section-synopsis[]
 
