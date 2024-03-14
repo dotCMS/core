@@ -51,21 +51,25 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
     @CommandLine.Mixin
     HelpOptionMixin helpOption;
 
+    private static final String PROMPT_USERNAME = "Username: ";
+    private static final String PROMPT_PASSWORD = "Password: ";
+    private static final String PROMPT_TOKEN = "Token: ";
+
     /**
      * Here we encapsulate the password options
      */
     static class PasswordOptions {
 
         @CommandLine.Option(names = {"-u", "--user"}, arity = "0..1", description = {
-                "User name",
+                "Username",
                 "If not provided in command line, interactive mode will prompt for it."
-        }, interactive = true, echo = true, prompt = "User name: ")
+        }, interactive = true, echo = true, prompt = PROMPT_USERNAME)
         String user;
 
         @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = {
                 "Passphrase",
                 "If not provided in command line, interactive mode will prompt for it."
-        }, interactive = true, echo = false, prompt = "Password: ")
+        }, interactive = true, echo = false, prompt = PROMPT_PASSWORD)
         char[] password;
     }
 
@@ -74,7 +78,7 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
         @CommandLine.Option(names = {"-tk", "--token"}, arity = "0..1", description = {
                 "dotCMS Token",
                 "A token can be used directly to authenticate with the dotCMS instance",
-        }, interactive = true, echo = false, prompt = "Token: ")
+        }, interactive = true, echo = false, prompt = PROMPT_TOKEN)
         char[] token;
     }
 
@@ -109,10 +113,7 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
         output.throwIfUnmatchedArguments(spec.commandLine());
 
         // Login with token if provided
-        if (loginOptions != null &&
-                loginOptions.tokenOptions != null &&
-                loginOptions.tokenOptions.token != null &&
-                loginOptions.tokenOptions.token.length > 0) {
+        if (isTokenSet()) {
             output.info("Logging in with token");
             authenticationContext.login(loginOptions.tokenOptions.token);
             output.info("Successfully logged-in with token");
@@ -122,28 +123,21 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
             char[] password;
 
             // Request the username
-            if (loginOptions == null ||
-                    loginOptions.passwordOptions == null ||
-                    loginOptions.passwordOptions.user == null ||
-                    loginOptions.passwordOptions.user.trim().isEmpty()) {
-                userName = prompt.readInput(null, "User name: ");
+            if (isUserNameSet()) {
+                userName = prompt.readInput(null, PROMPT_USERNAME);
             } else {
                 userName = loginOptions.passwordOptions.user;
             }
 
             // Request the password
-            if (loginOptions == null ||
-                    loginOptions.passwordOptions == null ||
-                    loginOptions.passwordOptions.password == null ||
-                    loginOptions.passwordOptions.password.length == 0) {
-                password = prompt.readPassword("Password: ");
+            if (isPasswordSet()) {
+                password = prompt.readPassword(PROMPT_PASSWORD);
             } else {
                 password = loginOptions.passwordOptions.password;
             }
 
             // Validating the username and password
-            if (userName == null || userName.trim().isEmpty() ||
-                    password == null || password.length == 0) {
+            if (areCredentialsInvalid(userName, password)) {
                 output.error(
                         "Missing required options. Please provide a valid username and password"
                                 + "or token."
@@ -162,6 +156,54 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
         }
 
         return ExitCode.OK;
+    }
+
+    /**
+     * Checks if a token is set for logging in.
+     *
+     * @return true if a token is set, false otherwise.
+     */
+    private boolean isTokenSet() {
+        return loginOptions != null &&
+                loginOptions.tokenOptions != null &&
+                loginOptions.tokenOptions.token != null &&
+                loginOptions.tokenOptions.token.length > 0;
+    }
+
+    /**
+     * Checks if a password is set for login.
+     *
+     * @return true if a password is set, false otherwise.
+     */
+    private boolean isPasswordSet() {
+        return loginOptions == null ||
+                loginOptions.passwordOptions == null ||
+                loginOptions.passwordOptions.password == null ||
+                loginOptions.passwordOptions.password.length == 0;
+    }
+
+    /**
+     * Checks if the username is set for login.
+     *
+     * @return true if the username is set, false otherwise.
+     */
+    private boolean isUserNameSet() {
+        return loginOptions == null ||
+                loginOptions.passwordOptions == null ||
+                loginOptions.passwordOptions.user == null ||
+                loginOptions.passwordOptions.user.trim().isEmpty();
+    }
+
+    /**
+     * Checks whether the provided credentials are invalid.
+     *
+     * @param userName the username
+     * @param password the password
+     * @return true if the credentials are invalid, false otherwise
+     */
+    private boolean areCredentialsInvalid(String userName, char[] password) {
+        return userName == null || userName.trim().isEmpty() ||
+                password == null || password.length == 0;
     }
 
     @Override
