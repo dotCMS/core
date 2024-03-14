@@ -98,12 +98,19 @@ const files = [
 
 export default {
     title: 'PrimeNG/Tables/Basic Table',
-    argTypes: {},
     decorators: [
         moduleMetadata({
             imports: [TableModule, CommonModule]
         })
-    ]
+    ],
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Table is a container component to display data in tabular format.: https://primeng.org/table'
+            }
+        }
+    }
 } as Meta;
 
 export const Default: Story = () => ({
@@ -111,31 +118,31 @@ export const Default: Story = () => ({
         files
     },
     template: `
-    <p-table [value]="files" [tableStyle]="{ 'min-width': '50rem' }">
-      <ng-template pTemplate="header">
-        <tr>
-        <th>
-                <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-            </th>
-          <th pSortableColumn="name">Title <p-sortIcon field="name"></p-sortIcon></th>
-          <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
-          <th pSortableColumn="assignee">Assignee <p-sortIcon field="assignee"></p-sortIcon></th>
-          <th pSortableColumn="step">Step <p-sortIcon field="step"></p-sortIcon></th>
-          <th pSortableColumn="date">Last Updated <p-sortIcon field="date"></p-sortIcon></th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-file>
-        <tr>
-        <td>
-                <p-tableCheckbox [value]="file"></p-tableCheckbox>
-            </td>
-          <td pSortableColumn="name">{{ file.name }}</td>
-          <td>{{ file.status }}</td>
-          <td>{{ file.assignee }}</td>
-          <td>{{ file.step }}</td>
-          <td>{{ file.date | date }}</td>
-        </tr>
-      </ng-template>
-    </p-table>
+        <p-table [value]="files" [tableStyle]="{ 'min-width': '50rem' }">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>
+                    <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                </th>
+                <th pSortableColumn="name">Title <p-sortIcon field="name"></p-sortIcon></th>
+                <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
+                <th pSortableColumn="assignee">Assignee <p-sortIcon field="assignee"></p-sortIcon></th>
+                <th pSortableColumn="step">Step <p-sortIcon field="step"></p-sortIcon></th>
+                <th pSortableColumn="date">Last Updated <p-sortIcon field="date"></p-sortIcon></th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-file>
+            <tr>
+                <td>
+                    <p-tableCheckbox [value]="file"></p-tableCheckbox>
+                </td>
+                <td>{{ file.name }}</td>
+                <td>{{ file.status }}</td>
+                <td>{{ file.assignee }}</td>
+                <td>{{ file.step }}</td>
+                <td>{{ file.date | date }}</td>
+            </tr>
+        </ng-template>
+        </p-table>
   `
 });
