@@ -210,3 +210,5 @@ This maintenance release includes the following code fixes:
 168. https://github.com/dotCMS/core/issues/26542 : Hide the download button for bundles pushed to static environments #26542
 
 **Release-23.01.14**
+
+169. https://github.com/dotCMS/core/issues/22698 : Limited user without Search Portlet can't Edit Content From Edit Page Portlet #22698

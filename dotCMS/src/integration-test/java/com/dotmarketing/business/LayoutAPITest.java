@@ -7,10 +7,15 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.ajax.RoleAjax;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 import static org.junit.Assert.assertEquals;
@@ -18,7 +23,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
@@ -142,6 +149,52 @@ public class LayoutAPITest extends IntegrationTestBase {
     assertTrue("systemUser has all layouts returns true" , !layoutAPI.doesUserHaveAccessToPortlet("content", anonUser));
     
   }
+
+    /**
+     * Method to test: {@link LayoutAPI#doesUserHaveAccessToPortlet(String, User)}
+     * Given Scenario:  You should be able to edit content within the Edit Page, regardless of the portlets you have assigned.
+     * ExpectedResult: If the user has. edit permissions, they should be given access to the portlet.
+     *
+     */
+    @Test
+    public void test_doesUserHaveAccessToPortlet_editPagePortletShouldBeAccessedIfValidPermission() throws DotDataException, DotSecurityException, SystemException, PortalException {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        //limited user
+        final User newUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final User systemUser = APILocator.systemUser();
+
+        //create a host
+        Host host = new Host();
+        host.setHostname("testHost"+System.currentTimeMillis());
+        host = APILocator.getHostAPI().save(host, systemUser, false);
+
+        //create a role
+        final String roleName = "testRole"+System.currentTimeMillis();
+        Role nrole = new Role();
+        nrole.setName(roleName);
+        nrole.setRoleKey(roleName);
+        nrole.setEditUsers(true);
+        nrole.setEditPermissions(true);
+        nrole.setEditLayouts(true);
+        nrole.setDescription(roleName);
+        nrole = APILocator.getRoleAPI().save(nrole);
+
+        //validate that user does not have access to the portlet until the permissions are assigned
+        assertFalse("The user should not have access to the portlet" , layoutAPI.doesUserHaveAccessToPortlet("edit-page", newUser));
+
+        //assign the role to the user
+        roleAPI.addRoleToUser(nrole, newUser);
+
+        //assign the permissions to the role
+        Map<String,String> permList=new HashMap<>();
+        permList.put("pages", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT));
+        permList.put("content", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT));
+        RoleAjax roleAjax = new RoleAjax();
+        roleAjax.saveRolePermission(nrole.getId(), host.getIdentifier(), permList, false);
+
+        //validate that user does have access to the portlet
+        assertTrue("The user should have access to the portlet", layoutAPI.doesUserHaveAccessToPortlet("edit-page", newUser));
+    }
 
     /**
      * Method to test: {@link LayoutAPI#findGettingStartedLayout()}
