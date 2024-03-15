@@ -66,27 +66,32 @@ runs:
     - name: Set Common Vars
       shell: bash
       id: set-common-vars
+      env:
+        SNAPSHOT: ${{ inputs.snapshot }}
+        LATEST: ${{ inputs.latest }}
+        REF: ${{ inputs.ref }}
       run: |
-        if [ "${{ inputs.ref }}" = "release" ]; then
-          echo "tag_prefix=" >> $GITHUB_ENV
+        if [ "$REF" = "release" ]; then
+          tag_prefix=""
         else
-          echo "tag_prefix=${{ inputs.ref }}_" >> $GITHUB_ENV
+          tag_prefix="${REF}_"
         fi
         
         # Initialize a bash variable to hold the full tags
         full_tags=""
         
-        if [ "${{ inputs.snapshot }}" = "true" ] && [ "${{ inputs.latest }}" = "true" ]; then
-          latest_snapshot = "true"
+        # Now use environment variables instead of GitHub Actions expressions
+        if [ "$SNAPSHOT" = "true" ] && [ "$LATEST" = "true" ]; then
+          latest_snapshot="true"
         else
-          latest_snapshot = "false"
+          latest_snapshot="false"
         fi
-  
-        # Conditionally add tags
+        
+        # Continue with conditional tag additions
         full_tags+="type=raw,value=${tag_prefix}{{sha}},enable=true\n"
-        full_tags+="type=raw,value=${tag_prefix}latest,enable=${{ inputs.latest }}\n"
-        full_tags+="type=raw,value=${tag_prefix}_SNAPSHOT,enable=${{ inputs.snapshot }}\n"
-        full_tags+="type=raw,value=${tag_prefix}latest_SNAPSHOT,enable=${latest_snapshot}\n"
+        full_tags+="type=raw,value=${tag_prefix}latest,enable=$LATEST\n"
+        full_tags+="type=raw,value=${tag_prefix}_SNAPSHOT,enable=$SNAPSHOT\n"
+        full_tags+="type=raw,value=${tag_prefix}latest_SNAPSHOT,enable=$latest_snapshot\n"
         
         echo "full_tags=$full_tags"
         
