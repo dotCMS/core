@@ -1,5 +1,20 @@
 @use "variables" as *;
 
-.dialog-prompts__wrapper {
+.dialog-prompt__wrapper {
     gap: $spacing-5;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    > * {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+.dialog-prompt_gallery {
+    > * {
+        margin-top: auto;
+    }
 }

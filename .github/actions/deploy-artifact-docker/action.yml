@@ -40,6 +40,10 @@ inputs:
   github_token:
     description: 'github token'
     required: true
+outputs:
+  tags:
+    description: "The tags that were used to build the image"
+    value: ${{ steps.meta.outputs.tags }}
 runs:
   using: "composite"
   steps:
