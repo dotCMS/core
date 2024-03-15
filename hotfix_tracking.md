@@ -220,3 +220,4 @@ This maintenance release includes the following code fixes:
 175. https://github.com/dotCMS/core/issues/26170 : Unable to view more than 20 items in a publishing queue bundle #26170
 176. https://github.com/dotCMS/core/issues/27775 : Page API Returning Content Related to Page Asset #27775
 177. https://github.com/dotCMS/core/issues/27187 : remove unneeded DB hit from edit content screen #27187
+178. https://github.com/dotCMS/core/issues/26004 : Image field doesn't export as a header in CSV #26004
