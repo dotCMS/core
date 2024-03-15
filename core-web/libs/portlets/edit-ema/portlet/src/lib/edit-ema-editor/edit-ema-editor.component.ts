@@ -4,6 +4,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -167,7 +168,7 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         DotContentletService
     ]
 })
-export class EditEmaEditorComponent implements OnInit, OnDestroy {
+export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('personaSelector')
@@ -242,6 +243,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorMode = EDITOR_MODE;
 
     private draggedPayload: DraggedPalettePayload;
+    private vtlIframePosition = signal(0);
 
     containers: Container[] = [];
     contentlet!: ContentletArea;
@@ -264,6 +266,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
         // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
         // this.store.updateEditorState(EDITOR_STATE.LOADING);
+    }
+
+    ngAfterViewInit(): void {
+        if (!this.iframe) {
+            return;
+        }
+
+        this.iframe.nativeElement.addEventListener('load', () =>
+            this.iframe.nativeElement.contentWindow?.scrollTo(0, this.vtlIframePosition())
+        );
     }
 
     /**
@@ -629,6 +641,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const doc = this.iframe?.nativeElement.contentDocument;
 
             if (doc) {
+                this.vtlIframePosition.set(this.iframe.nativeElement.contentWindow.scrollY);
+
                 doc.open();
                 doc.write(this.addEditorPageScript(code));
                 doc.close();
