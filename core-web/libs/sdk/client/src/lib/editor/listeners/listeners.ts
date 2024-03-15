@@ -38,7 +38,7 @@ export const subscriptions: DotCMSPageEditorSubscription[] = [];
 function setBounds() {
     const containers = Array.from(
         document.querySelectorAll('[data-dot-object="container"]')
-    ) as unknown as HTMLDivElement[];
+    ) as HTMLDivElement[];
     const positionData = getPageElementBound(containers);
 
     postMessageToEditor({
