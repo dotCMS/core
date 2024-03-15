@@ -15,9 +15,15 @@ inputs:
   commit_id:
     description: 'The commit id that triggered the build'
     required: true
-  variant:
+  ref:
     description: 'The branch or type of build to tag the image with'
     required: true
+  snapshot:
+    description: 'tag the image as a snapshot'
+    default: 'false'
+  latest:
+    description: 'Tag the image as latest'
+    default: 'false'
   docker_tag:
     description: 'The docker tag to use for the image'
     required: true
@@ -40,6 +46,10 @@ inputs:
   github_token:
     description: 'github token'
     required: true
+outputs:
+  tags:
+    description: "The tags that were used to build the image"
+    value: ${{ steps.meta.outputs.tags }}
 runs:
   using: "composite"
   steps:
@@ -53,10 +63,35 @@ runs:
         run-id: ${{ inputs.build_run_id }}
         github-token: ${{ inputs.github_token }}
 
-    - name: Extract short SHA
-      id: vars
+    - name: Set Common Vars
       shell: bash
-      run: echo "SHORT_SHA=$(echo ${GITHUB_SHA:0:7})" >> $GITHUB_ENV
+      id: set-common-vars
+      run: |
+        if [ "${{ inputs.ref }}" = "release" ]; then
+          echo "tag_prefix=" >> $GITHUB_ENV
+        else
+          echo "tag_prefix=${{ inputs.ref }}_" >> $GITHUB_ENV
+        fi
+        
+        # Initialize a bash variable to hold the full tags
+        full_tags=""
+        
+        if [ "${{ inputs.snapshot }}" = "true" ] && [ "${{ inputs.latest }}" = "true" ]; then
+          latest_snapshot = "true"
+        fi
+  
+        # Conditionally add tags
+        full_tags+="type=raw,value=${tag_prefix}{{sha}},enable=true\n"
+        full_tags+="type=raw,value=${tag_prefix}latest,enable=${{ inputs.latest }}\n"
+        full_tags+="type=raw,value=${tag_prefix}_SNAPSHOT,enable=${{ inputs.snapshot }}\n"
+        full_tags+="type=raw,value=${tag_prefix}latest_SNAPSHOT,enable=${latest_snapshot}\n"
+        
+        echo "full_tags=$full_tags"
+        
+        # Set the full_tags environment variable (optional, if needed elsewhere)
+        echo "full_tags=$full_tags" >> $GITHUB_ENV
+        # Output the full tags for the next steps, properly escaped for GitHub Actions
+        echo "full_tags_output=$(echo "$full_tags" | sed 's/$/%0A/g')" >> $GITHUB_OUTPUT
 
     - name: Docker.io login
       uses: docker/login-action@v3.0.0
@@ -85,9 +120,7 @@ runs:
       with:
         images: |
           dotcms/dotcms
-        tags: |
-          type=raw,value=${{ inputs.variant }}_${{ env.SHORT_SHA }},enable=true
-          type=raw,value=${{ inputs.docker_tag }}
+        tags: ${{ steps.set-common-vars.outputs.full_tags_output }}
       if: success()
 
     - name: Debug Docker Metadata

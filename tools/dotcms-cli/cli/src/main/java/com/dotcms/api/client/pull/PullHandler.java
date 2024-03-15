@@ -3,9 +3,7 @@ package com.dotcms.api.client.pull;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.concurrent.ExecutionException;
-import picocli.CommandLine.ExitCode;
 
 /**
  * This abstract class represents a PullHandler, which is responsible for pulling elements of type T.
@@ -43,34 +41,5 @@ public abstract class PullHandler<T> {
     public abstract int pull(List<T> contents,
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException;
-
-    /**
-     * Handles the exceptions that occurred during the pull process.
-     *
-     * @param errors The list of exceptions that occurred during any process.
-     * @param output The output option mixin for providing output messages.
-     * @return The exit code for the pull process.
-     */
-    protected int handleExceptions(final List<Exception> errors, final OutputOptionMixin output) {
-        int exitCode = ExitCode.OK;
-        if (!errors.isEmpty()) {
-            output.info(
-                    String.format(
-                            "%n%nFound [@|bold,red %s|@] errors during the pull process:",
-                            errors.size()
-                    )
-            );
-            final ListIterator<Exception> iterator = errors.listIterator();
-            //Lets save the first error for the exit code we assume it is the most relevant one
-            while (iterator.hasNext()) {
-                if(!iterator.hasPrevious()){
-                      exitCode = output.handleCommandException(iterator.next());
-                } else {
-                    output.handleCommandException(iterator.next());
-                }
-            }
-        }
-        return exitCode;
-    }
 
 }
