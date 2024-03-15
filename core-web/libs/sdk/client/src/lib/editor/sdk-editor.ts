@@ -5,7 +5,7 @@ import {
     pingEditor,
     scrollHandler,
     subscriptions,
-    updatePageEditorConfig
+    setPageEditorConfig
 } from './listeners/listeners';
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
@@ -44,7 +44,7 @@ export function isInsideEditor() {
  */
 export function initEditor(config?: DotCMSPageEditorConfig) {
     if (config) {
-        updatePageEditorConfig(config);
+        setPageEditorConfig(config);
     }
 
     pingEditor();

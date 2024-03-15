@@ -19,7 +19,7 @@ let pageEditorConfig: DotCMSPageEditorConfig = {
     onReload: defaultReloadFn
 };
 
-export function updatePageEditorConfig(config: DotCMSPageEditorConfig) {
+export function setPageEditorConfig(config: DotCMSPageEditorConfig) {
     pageEditorConfig = config;
 }
 
