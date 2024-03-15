@@ -19,13 +19,25 @@ export enum NOTIFY_CUSTOMER {
     EMA_EDITOR_PONG = 'ema-editor-pong'
 }
 
+type ListenerCallbackMessage = (event: MessageEvent) => void;
+type ListenerCallbackPointer = (event: PointerEvent) => void;
+
+/**
+ * Listener for the dotcms editor
+ *
+ * @interface DotCMSPageEditorListener
+ */
 interface DotCMSPageEditorListener {
     type: 'listener';
     event: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    callback: (ev: any) => void;
+    callback: ListenerCallbackMessage | ListenerCallbackPointer;
 }
 
+/**
+ * Observer for the dotcms editor
+ *
+ * @interface DotCMSPageEditorObserver
+ */
 interface DotCMSPageEditorObserver {
     type: 'observer';
     observer: MutationObserver;

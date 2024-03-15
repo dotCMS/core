@@ -60,7 +60,7 @@ export function initEditor(config?: DotCMSPageEditorConfig) {
 export function destroyEditor() {
     subscriptions.forEach((subscription) => {
         if (subscription.type === 'listener') {
-            window?.removeEventListener(subscription.event, subscription.callback);
+            window?.removeEventListener(subscription.event, subscription.callback as EventListener);
         }
 
         if (subscription.type === 'observer') {
