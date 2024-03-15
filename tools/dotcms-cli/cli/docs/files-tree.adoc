@@ -58,7 +58,7 @@ files-tree - *dotCMS Files Tree*
   Include directories matching the given glob patterns. Multiple patterns can be specified, separated by commas.
 
 *-tk, --token*=_<token>_::
-  A dot CMS token to use for authentication. 
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 
