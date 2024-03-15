@@ -25,9 +25,11 @@ import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -36,10 +38,7 @@ import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.templates.model.Template;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -1060,5 +1059,96 @@ public class ExperimentWebAPIImplIntegrationTest {
                 ExperimentDataGen.end(experiment_2);
             }
         }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * when: You have two sites let call them A y B, both with an index page, but just //A/index have an Experiment Running
+     * should: when call the method with the A as currentSite should take include the Experiment but when it is called
+     * with B as current Site then the Experiment should not be take account
+     */
+    @Test
+    public void runningExperimentOnOneSite() throws DotDataException, DotSecurityException {
+        final Host siteA = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(siteA, template).nextPersisted();
+
+
+        final Host siteB = new SiteDataGen().nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(siteB, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().page(pageA).nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().get(), APILocator.systemUser());
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter("host_id")).thenReturn(siteB.getIdentifier());
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        final SelectedExperiments userIncluded = WebAPILocator.getExperimentWebAPI().isUserIncluded(request, response,
+                Collections.EMPTY_LIST);
+
+        assertTrue(userIncluded.getIncludedExperimentIds().isEmpty());
+        assertTrue(userIncluded.getExperiments().isEmpty());
+        assertTrue(userIncluded.getExcludedExperimentIds().isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * when: You have two sites let call them A y B, both with an index page and an Experiment Running
+     * should: when call the method with the A as currentSite should take include the Experiment on //A/index
+     * and when the method is called with B as current Site should take account the Experiment in //B/index
+     */
+    @Test
+    public void runningExperimentOnDifferentSite() throws DotDataException, DotSecurityException {
+        final Host siteA = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(siteA, template).nextPersisted();
+
+        final Experiment experimentA = new ExperimentDataGen().page(pageA).nextPersisted();
+        APILocator.getExperimentsAPI().start(experimentA.id().get(), APILocator.systemUser());
+
+        final Host siteB = new SiteDataGen().nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(siteB, template).nextPersisted();
+
+        final Experiment experimentB = new ExperimentDataGen().page(pageB).nextPersisted();
+        APILocator.getExperimentsAPI().start(experimentB.id().get(), APILocator.systemUser());
+
+        try {
+            final HttpServletRequest requestA = mock(HttpServletRequest.class);
+            when(requestA.getParameter("host_id")).thenReturn(siteA.getIdentifier());
+
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+
+            final SelectedExperiments userIncludedA = WebAPILocator.getExperimentWebAPI().isUserIncluded(requestA, response,
+                    Collections.EMPTY_LIST);
+
+            assertEquals(1, userIncludedA.getIncludedExperimentIds().size());
+            assertEquals(experimentA.id().get(), userIncludedA.getIncludedExperimentIds().get(0));
+
+            assertEquals(1, userIncludedA.getExperiments().size());
+            assertEquals(experimentA.id().get(), userIncludedA.getIncludedExperimentIds().get(0));
+
+            assertTrue(userIncludedA.getExcludedExperimentIds().isEmpty());
+
+            final HttpServletRequest requestB = mock(HttpServletRequest.class);
+            when(requestB.getParameter("host_id")).thenReturn(siteB.getIdentifier());
+
+            final SelectedExperiments userIncludedB = WebAPILocator.getExperimentWebAPI().isUserIncluded(requestB, response,
+                    Collections.EMPTY_LIST);
+
+            assertEquals(1, userIncludedB.getIncludedExperimentIds().size());
+            assertEquals(experimentB.id().get(), userIncludedB.getIncludedExperimentIds().get(0));
+
+            assertEquals(1, userIncludedB.getExperiments().size());
+            assertEquals(experimentB.id().get(), userIncludedB.getIncludedExperimentIds().get(0));
+
+            assertTrue(userIncludedB.getExcludedExperimentIds().isEmpty());
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentA.id().get(), APILocator.systemUser());
+            APILocator.getExperimentsAPI().end(experimentB.id().get(), APILocator.systemUser());
+        }
+
     }
 }
