@@ -150,6 +150,7 @@ public class ContentReportParams implements Serializable {
          * Allows you to create an instance of the {@link ContentReportParams} class.
          */
         public Builder() {
+            // Default Builder constructor
         }
 
         /**

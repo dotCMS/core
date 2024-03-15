@@ -13,13 +13,13 @@ import java.util.Map;
  * @author Jose Castro
  * @since Mar 7th, 2024
  */
-public abstract class ContentReportPaginator<ContentReportView> implements PaginatorOrdered<ContentReportView> {
+public abstract class ContentReportPaginator<T> implements PaginatorOrdered<T> {
 
     public static final String FOLDER_PARAM = "folder";
     public static final String SITE_PARAM = "site";
 
     @Override
-    public PaginatedArrayList<ContentReportView> getItems(final User user, final String filter,
+    public PaginatedArrayList<T> getItems(final User user, final String filter,
                                                           final int limit, final int offset,
                                                           final String orderBy,
                                                           final OrderDirection direction,
@@ -48,6 +48,6 @@ public abstract class ContentReportPaginator<ContentReportView> implements Pagin
      *
      * @throws PaginationException An error occurred when generating the Content Report.
      */
-    public abstract PaginatedArrayList<ContentReportView> getItems(final ContentReportParams params) throws PaginationException;
+    public abstract PaginatedArrayList<T> getItems(final ContentReportParams params) throws PaginationException;
 
 }

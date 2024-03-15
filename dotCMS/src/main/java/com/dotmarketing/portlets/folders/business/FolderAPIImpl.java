@@ -1268,15 +1268,15 @@ public class FolderAPIImpl implements FolderAPI  {
 						SQLUtil.sanitizeParameter(orderBy), SQLUtil.sanitizeCondition(orderDirection),
 						limit, offset);
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-		return contentReport.stream().map(record -> {
+		return contentReport.stream().map(entry -> {
 
 			final String contentTypeVarName =
-					record.get(IdentifierFactory.ASSET_SUBTYPE).toString();
+					entry.get(IdentifierFactory.ASSET_SUBTYPE).toString();
 			final String contentTypeName =
 					Try.of(() -> contentTypeAPI.find(contentTypeVarName).name()).getOrElse(contentTypeVarName);
 			final Map<String, Object> map = new HashMap<>();
 			map.put("contentTypeName", contentTypeName);
-			map.put("entries", record.get("total"));
+			map.put("entries", entry.get("total"));
 			return map;
 
 		}).collect(Collectors.toList());

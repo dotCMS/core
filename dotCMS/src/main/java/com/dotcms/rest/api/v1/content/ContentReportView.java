@@ -54,6 +54,7 @@ public class ContentReportView implements Serializable {
         long entries;
 
         public Builder() {
+            // Default Builder constructor
         }
 
         /**
