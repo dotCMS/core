@@ -218,3 +218,4 @@ This maintenance release includes the following code fixes:
 173. https://github.com/dotCMS/core/issues/26224 : Need to add the user who create the bundle when you have bundles from other users #26224
 174. https://github.com/dotCMS/core/issues/26201 : Deletion of Unpublished Bundles through API #26201
 175. https://github.com/dotCMS/core/issues/26170 : Unable to view more than 20 items in a publishing queue bundle #26170
+176. https://github.com/dotCMS/core/issues/27775 : Page API Returning Content Related to Page Asset #27775

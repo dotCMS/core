@@ -110,6 +110,9 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
     }
 
     private Map<Object, Object> asPageMap(final PageView pageView)  {
+
+        addRelationships(pageView.getPage());
+
         final Map<Object, Object> pageMap = this.asMap(pageView.getPage());
 
         final String pageUrlMapper = pageView.getPageUrlMapper();
