@@ -6,13 +6,13 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.content.ContentReportHelper;
 import com.dotcms.rest.api.v1.content.ContentReportParams;
 import com.dotcms.rest.api.v1.content.ContentReportView;
+import com.dotcms.rest.api.v1.content.SiteContentReportHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import java.util.List;
 
@@ -30,8 +30,13 @@ public class SiteContentReportPaginator extends ContentReportPaginator<ContentRe
     private final ContentReportHelper contentReportHelper;
     final ContentTypeAPI contentTypeAPI;
 
+    /**
+     * Creates a new instance of this Paginator.
+     *
+     * @param user The {@link User} that will access the data provided by this Paginator.
+     */
     public SiteContentReportPaginator(final User user) {
-        this.contentReportHelper = new ContentReportHelper(user);
+        this.contentReportHelper = new SiteContentReportHelper(user);
         this.contentTypeAPI = APILocator.getContentTypeAPI(user, false);
     }
 
@@ -41,7 +46,7 @@ public class SiteContentReportPaginator extends ContentReportPaginator<ContentRe
         final String siteId = params.extraParam(ContentReportPaginator.SITE_PARAM, BLANK);
         final BaseContentType type = BaseContentType.ANY;
         try {
-            final List<ContentReportView> report = contentReportHelper.generateSiteContentReport(params);
+            final List<ContentReportView> report = contentReportHelper.generateContentReport(params);
             result.addAll(report);
             result.setTotalResults(this.getTotalRecords(params.filter(), type, List.of(siteId)));
         } catch (final DotDataException | DotSecurityException e) {
@@ -52,7 +57,6 @@ public class SiteContentReportPaginator extends ContentReportPaginator<ContentRe
         }
         return result;
     }
-
 
     /**
      * Returns the total amount of the specified Base Content Types living in a list of Site.
@@ -66,7 +70,13 @@ public class SiteContentReportPaginator extends ContentReportPaginator<ContentRe
      */
     private long getTotalRecords(final String condition, final BaseContentType type,
                                  final List<String> siteIds) {
-        return Sneaky.sneak(() -> this.contentTypeAPI.countForSites(condition, type, siteIds));
+        try {
+            this.contentTypeAPI.countForSites(condition, type, siteIds);
+        } catch (final DotDataException e) {
+            Logger.debug(this, () -> String.format("Total Content Type count for Sites [ %s ] " +
+                    "could not be determined: %s", siteIds, ExceptionUtil.getErrorMessage(e)));
+        }
+        return -1;
     }
 
 }

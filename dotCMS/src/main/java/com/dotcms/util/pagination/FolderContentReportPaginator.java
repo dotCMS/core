@@ -4,6 +4,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.content.ContentReportHelper;
 import com.dotcms.rest.api.v1.content.ContentReportParams;
 import com.dotcms.rest.api.v1.content.ContentReportView;
+import com.dotcms.rest.api.v1.content.FolderContentReportHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -28,8 +29,13 @@ public class FolderContentReportPaginator extends ContentReportPaginator<Content
 
     private final ContentReportHelper contentReportHelper;
 
+    /**
+     * Creates a new instance of this Paginator.
+     *
+     * @param user The {@link User} that will access the data provided by this Paginator.
+     */
     public FolderContentReportPaginator(final User user) {
-        this.contentReportHelper = new ContentReportHelper(user);
+        this.contentReportHelper = new FolderContentReportHelper(user);
     }
 
     @Override
@@ -38,7 +44,8 @@ public class FolderContentReportPaginator extends ContentReportPaginator<Content
         final String folder = params.extraParam(ContentReportPaginator.FOLDER_PARAM);
         final String site = params.extraParam(ContentReportPaginator.SITE_PARAM);
         try {
-            final List<ContentReportView> report = contentReportHelper.generateFolderContentReport(params);
+            final List<ContentReportView> report =
+                    contentReportHelper.generateContentReport(params);
             result.addAll(report);
             result.setTotalResults(this.getTotalRecords(folder, site, params.user()));
             return result;
@@ -61,16 +68,17 @@ public class FolderContentReportPaginator extends ContentReportPaginator<Content
      *
      * @return The total amount of Content Types living under a Folder.
      */
-    private long getTotalRecords(final String folder, final String site, User user) {
+    private long getTotalRecords(final String folder, final String site, final User user) {
         try {
-            final Optional<Folder> folderOpt = contentReportHelper.resolveFolder(folder, site,
-                    user);
+            final Optional<Folder> folderOpt =
+                    ((FolderContentReportHelper) contentReportHelper).resolveFolder(folder, site,
+                            user);
             if (folderOpt.isPresent()) {
                 return Sneaky.sneak(() -> APILocator.getFolderAPI().getContentTypeCount(folderOpt.get(), user, false));
             }
         } catch (final DotDataException | DotSecurityException e) {
             Logger.debug(this, () -> String.format("Total Content Tpe count for folder '%s' in Site '%s' " +
-                            "could not be determined: %s", folder, site, ExceptionUtil.getErrorMessage(e)));
+                    "could not be determined: %s", folder, site, ExceptionUtil.getErrorMessage(e)));
         }
         return -1;
     }

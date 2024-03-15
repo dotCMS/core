@@ -7,6 +7,8 @@ import java.io.Serializable;
  * most basic form, this report indicates the User what Content Types live under a given dotCMS
  * object -- i.e., a Site, a Folder, etc. -- and how many entries of each Content Type live under it
  * or associated to it.
+ * <p>This report can be modified by new functionality, as long as all the implementations of
+ * Content Reports can work with it.</p>
  *
  * @author Jose Castro
  * @since Mar 7th, 2024

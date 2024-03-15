@@ -38,12 +38,13 @@ public abstract class ContentReportPaginator<ContentReportView> implements Pagin
 
     /**
      * Returns a list of Content Report Views based on the specified parameters, and living under a
-     * specific dotCMS object.
+     * specific dotCMS object. The criteria to define how deep the report should go and what
+     * additional information is required must be addressed by every implementation.
      *
      * @param params The {@link ContentReportParams} object with the filtering criteria used to
      *               generate the Content Report.
      *
-     * @return A paginated list of the {@link ContentReportView} objects for all Content Types.
+     * @return A paginated list of the {@link ContentReportView} objects.
      *
      * @throws PaginationException An error occurred when generating the Content Report.
      */
