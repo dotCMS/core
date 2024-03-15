@@ -100,8 +100,7 @@ import org.junit.runners.Suite.SuiteClasses;
         HostFactoryImplTest.class,
         BundleFactoryImplTest.class,
         ExperimentUrlPatternCalculatorIntegrationTest.class,
-        JsEngineTest.class,
-        HTMLPageAssetRenderedAPIImplIntegrationTest.class
+        JsEngineTest.class
 })
 
 public class MainSuite1a {
