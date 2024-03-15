@@ -306,6 +306,28 @@
                 <quarkus.native.additional-build-args>-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
             </properties>
         </profile>
+        <profile>
+            <id>snapshot</id>
+            <activation>
+                <property>
+                    <name>project.version</name>
+                    <value>.*-SNAPSHOT</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>${quarkus.platform.group-id}</groupId>
+                        <artifactId>quarkus-maven-plugin</artifactId>
+                        <version>${quarkus.platform.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <finalName>${project.artifactId}-${buildNumber}-${timestamp}</finalName>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>
