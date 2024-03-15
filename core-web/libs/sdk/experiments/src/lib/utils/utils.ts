@@ -108,16 +108,6 @@ export const dotLogger = (msg: string, isDebug?: boolean): void => {
 };
 
 /**
- * Sets the flag indicating that the experiment has already been checked.
- *
- * @function setFlagExperimentAlreadyChecked
- * @returns {void}
- */
-export const setFlagExperimentAlreadyChecked = (): void => {
-    sessionStorage.setItem(EXPERIMENT_ALREADY_CHECKED_KEY, 'true');
-};
-
-/**
  * Checks the flag indicating whether the experiment has already been checked.
  *
  * @function checkFlagExperimentAlreadyChecked

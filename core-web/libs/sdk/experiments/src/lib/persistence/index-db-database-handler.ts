@@ -1,3 +1,5 @@
+import { EXPERIMENT_ALREADY_CHECKED_KEY } from '../constants';
+
 /**
  * Represents the configuration for a database connection.
  * @interface
@@ -116,6 +118,16 @@ export class IndexDBDatabaseHandler {
             request.onsuccess = () => resolve();
             request.onerror = () => reject(request.error);
         });
+    }
+
+    /**
+     * Sets the flag indicating that the experiment has already been checked.
+     *
+     * @function setFlagExperimentAlreadyChecked
+     * @returns {void}
+     */
+    setFlagExperimentAlreadyChecked(): void {
+        sessionStorage.setItem(EXPERIMENT_ALREADY_CHECKED_KEY, 'true');
     }
 
     /**

@@ -65,7 +65,7 @@ const verifyRegex = (regexToCheck: string | null, href: string): boolean => {
 };
 
 /**
- * This function parses the fetched and stored experiment data and prepares it for storage.
+ * This function merges newly fetched data with the data stored from IndexedDB, preparing it for re-storage in IndexedDB.
  *
  * @param { AssignedExperiments | null } fetchExperiments - The experiment data fetched from the API.
  * @param { AssignedExperiments | null } storedExperiments - The experiment data currently stored in IndexedDB.
@@ -140,7 +140,7 @@ export const parseData = (
 };
 
 /**
- * Retrieves the array of experiment IDs from the given dataToStorage object.
+ * Retrieves the array of experiment IDs from the given AssignedExperiments..
  *
  * @param {AssignedExperiments} dataToStorage - The object containing assigned experiments.
  * @returns {string[]} Returns an array of experiment IDs if available, otherwise an empty array.

@@ -1,12 +1,10 @@
 import {
-    checkFlagExperimentAlreadyChecked,
     getDataExperimentAttributes,
     getExperimentScriptTag,
-    getScriptDataAttributes,
-    setFlagExperimentAlreadyChecked
+    getScriptDataAttributes
 } from './utils';
 
-import { EXPERIMENT_ALREADY_CHECKED_KEY, EXPERIMENT_SCRIPT_FILE_NAME } from '../constants';
+import { EXPERIMENT_SCRIPT_FILE_NAME } from '../constants';
 
 describe('Utility ', () => {
     describe('getExperimentScriptTag', () => {
@@ -60,48 +58,6 @@ describe('Utility ', () => {
                 'api-key': 'testKey',
                 server: 'http://localhost',
                 debug: false
-            });
-        });
-    });
-
-    describe('SessionStorage EXPERIMENT_ALREADY_CHECKED_KEY handle', () => {
-        Object.defineProperty(window, 'sessionStorage', {
-            value: {
-                setItem: jest.fn(),
-                getItem: jest.fn()
-            },
-            writable: true
-        });
-
-        it('should set true to sessionStorage key `EXPERIMENT_ALREADY_CHECKED_KEY` ', () => {
-            const value = 'true';
-
-            setFlagExperimentAlreadyChecked();
-
-            expect(window.sessionStorage.setItem).toHaveBeenLastCalledWith(
-                EXPERIMENT_ALREADY_CHECKED_KEY,
-                value
-            );
-        });
-
-        describe('checkFlagExperimentAlreadyChecked', () => {
-            const getItemMock = window.sessionStorage.getItem as jest.MockedFunction<
-                typeof window.sessionStorage.getItem
-            >;
-
-            const testCases = [
-                { value: '', expected: false, description: 'sessionStorage value is ""' },
-                { value: 'true', expected: true, description: 'sessionStorage value is "true"' },
-                { value: null, expected: false, description: 'sessionStorage value is null' }
-            ];
-
-            testCases.forEach(({ description, value, expected }) => {
-                it(`returns ${expected} when ${description}`, () => {
-                    getItemMock.mockReturnValue(value);
-
-                    expect(checkFlagExperimentAlreadyChecked()).toBe(expected);
-                    expect(getItemMock).toHaveBeenCalledWith(EXPERIMENT_ALREADY_CHECKED_KEY);
-                });
             });
         });
     });

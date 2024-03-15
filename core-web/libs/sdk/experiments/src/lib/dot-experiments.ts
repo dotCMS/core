@@ -17,8 +17,7 @@ import { IndexDBDatabaseHandler } from './persistence/index-db-database-handler'
 import {
     checkFlagExperimentAlreadyChecked,
     checkInvalidateDataChecked,
-    dotLogger,
-    setFlagExperimentAlreadyChecked
+    dotLogger
 } from './utils/utils';
 
 /**
@@ -47,7 +46,7 @@ export class DotExperiments {
      * Represents the analytics client for Analytics.
      */
     private analytics!: JitsuClient;
-    private databaseHandler!: IndexDBDatabaseHandler;
+    private persistenceHandler!: IndexDBDatabaseHandler;
     private indexDBData!: IndexDbStoredData;
 
     private constructor(private config: DotExperimentConfig) {
@@ -121,7 +120,6 @@ export class DotExperiments {
             const body = {
                 exclude: this.indexDBData?.experiments.includedExperimentIds || []
             };
-            console.warn(this.indexDBData);
             const response: Response = await fetch(`${this.config.server}${API_EXPERIMENTS_URL}`, {
                 method: 'POST',
                 headers: {
@@ -139,7 +137,7 @@ export class DotExperiments {
 
             dotLogger(`Experiment data get successfully `, this.getIsDebugActive());
 
-            setFlagExperimentAlreadyChecked();
+            this.persistenceHandler.setFlagExperimentAlreadyChecked();
 
             return responseJson.entity;
         } catch (error) {
@@ -223,8 +221,8 @@ export class DotExperiments {
 
         this.indexDBData = dataToStore;
 
-        this.databaseHandler.clearData().then(() => {
-            this.databaseHandler
+        this.persistenceHandler.clearData().then(() => {
+            this.persistenceHandler
                 .persistData(dataToStore)
                 .then(() => {
                     dotLogger('Experiment data stored successfully', this.getIsDebugActive());
@@ -239,12 +237,12 @@ export class DotExperiments {
      * Initializes the database handler.
      *
      * This private method instantiates the class handling the IndexDB database
-     * and assigns this instance to 'databaseHandler'.
+     * and assigns this instance to 'persistenceHandler'.
      *
      * @private
      */
     private initializeDatabaseHandler() {
-        this.databaseHandler = new IndexDBDatabaseHandler({
+        this.persistenceHandler = new IndexDBDatabaseHandler({
             db_store: EXPERIMENT_DB_STORE_NAME,
             db_name: EXPERIMENT_DB_STORE_NAME,
             db_key_path: EXPERIMENT_DB_KEY_PATH
@@ -286,7 +284,7 @@ export class DotExperiments {
     private shouldCheckAnalytics(): boolean {
         // If the user close the tab, reload the data
         if (!checkFlagExperimentAlreadyChecked()) {
-            this.databaseHandler.clearData();
+            this.persistenceHandler.clearData();
 
             return true;
         }
@@ -311,7 +309,7 @@ export class DotExperiments {
      * @returns {Promise<void>} A promise that resolves with no value.
      */
     private async getPersistedData(): Promise<void> {
-        const storedData = await this.databaseHandler.getData<IndexDbStoredData>();
+        const storedData = await this.persistenceHandler.getData<IndexDbStoredData>();
         if (storedData) {
             this.indexDBData = storedData;
         }
