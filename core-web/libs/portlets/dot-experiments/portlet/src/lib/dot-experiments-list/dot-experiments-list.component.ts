@@ -20,8 +20,12 @@ import {
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import {
+    DotDynamicDirective,
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
 import { DotExperimentsCreateComponent } from './components/dot-experiments-create/dot-experiments-create.component';
 import { DotExperimentsListSkeletonComponent } from './components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';

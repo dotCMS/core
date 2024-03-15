@@ -15,8 +15,7 @@ import {
     StepStatus,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotDynamicDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 import {
     ConfigurationTrafficStepViewModel,

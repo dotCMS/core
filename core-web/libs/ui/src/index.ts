@@ -1,3 +1,4 @@
+// Modules
 export * from './lib/dot-icon/dot-icon.module';
 export * from './lib/dot-spinner/dot-spinner.module';
 
@@ -19,6 +20,7 @@ export * from './lib/components/dot-form-dialog/dot-form-dialog.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
 export * from './lib/components/dot-key-value-ng/dot-key-value-ng.component';
+export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
 
 // Directives
 export * from './lib/dot-field-required/dot-field-required.directive';
@@ -29,6 +31,9 @@ export * from './lib/directives/dot-trim-input/dot-trim-input.directive';
 export * from './lib/dot-container-options/dot-container-options.directive';
 export * from './lib/directives/dot-select-item/dot-select-item.directive';
 export * from './lib/directives/dot-avatar/dot-avatar.directive';
+export * from './lib/directives/dot-dropdown.directive';
+export * from './lib/directives/dot-sidebar.directive';
+export * from './lib/directives/dot-dynamic.directive';
 
 // Services
 export * from './lib/services/clipboard/ClipboardUtil';
@@ -43,5 +48,8 @@ export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
 export * from './lib/pipes/safe-url/safe-url.pipe';
 export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 
-//Resolvers
+// Resolvers
 export * from './lib/resolvers/dot-portlet-have-license.resolver';
+
+// Validators
+export * from './lib/validators/dotValidators';
