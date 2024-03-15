@@ -108,10 +108,6 @@ public class PortletAPIImpl implements PortletAPI {
         }
     }
 
-    private boolean containPrefix(String portletId) {
-        return portletId.startsWith(CONTENT_PORTLET_PREFIX);
-    }
-
     @Override
     @WrapInTransaction
     public Portlet createOrUpdatePortlet(Portlet portlet, User user) throws DotDataException, LanguageException {
