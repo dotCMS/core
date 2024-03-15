@@ -83,7 +83,7 @@ runs:
         
         echo "FULL_TAGS_OUTPUT<<EOF" >> $GITHUB_ENV
           echo "type=raw,value=${tag_prefix}{{sha}},enable=true" >> $GITHUB_ENV
-          echo ""type=raw,value=${tag_prefix}latest,enable=$LATEST" >> $GITHUB_ENV
+          echo "type=raw,value=${tag_prefix}latest,enable=$LATEST" >> $GITHUB_ENV
           echo "type=raw,value=${tag_prefix}SNAPSHOT,enable=$SNAPSHOT" >> $GITHUB_ENV
           echo "type=raw,value=${tag_prefix}latest_SNAPSHOT,enable=${latest_snapshot}" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
