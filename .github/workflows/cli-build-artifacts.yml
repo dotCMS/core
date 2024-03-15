@@ -256,7 +256,7 @@ jobs:
 
       - name: 'List artifacts'
         run: |
-          ls -R          
+          ls -R
 
       - name: 'Cache Maven Repository'
         id: cache-maven
@@ -274,12 +274,7 @@ jobs:
           JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.artifactory-repo-password }}
         working-directory: ${{ github.workspace }}
         run: |
-          if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
-            DOTCMS_CLI_NATIVE_ACTIVE=ALWAYS
-          else
-            DOTCMS_CLI_NATIVE_ACTIVE=NEVER
-          fi
-          tools/dotcms-cli/mvnw -B -Prelease jreleaser:upload -DartifactsDir=artifacts -Djreleaser.distributions.dotcms.cli.native.active=$DOTCMS_CLI_NATIVE_ACTIVE -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+          tools/dotcms-cli/mvnw -B -Prelease jreleaser:upload -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
 
       - name: 'Cleanup'
         run: |

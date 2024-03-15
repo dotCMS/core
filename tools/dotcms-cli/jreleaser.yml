@@ -40,24 +40,23 @@ release:
         contributors:
           - GitHub
           - dependabot
+files:
+  artifacts:
+    - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-aarch_64.zip'
+      platform: 'osx-aarch_64'
+      extraProperties:
+        optional: 'true'
+    - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-x86_64.zip'
+      platform: 'osx-x86_64'
+      extraProperties:
+        optional: 'true'
+    - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-linux-x86_64.zip'
+      platform: 'linux-x86_64'
+      extraProperties:
+        optional: 'true'
 
-distributions:
-  dotcms-cli-tool-provider:
-    type: SINGLE_JAR
-    active: ALWAYS
-    stereotype: CLI
-    artifacts:
-      - path: '{{artifactsDir}}/dotcms-cli-{{projectVersion}}-runner.jar'
-        transform: '{{artifactsDir}}/dotcms-cli-{{projectVersion}}.jar'
-  dotcms-cli-native:
-    type: BINARY
-    artifacts:
-      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-aarch_64.zip'
-        platform: 'osx-aarch_64'
-      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-x86_64.zip'
-        platform: 'osx-x86_64'
-      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-linux-x86_64.zip'
-        platform: 'linux-x86_64'
+  globs:
+    - pattern: '{{artifactsDir}}/*-runner.jar'
 
 upload:
   artifactory:
