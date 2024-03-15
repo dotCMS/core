@@ -48,15 +48,13 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "login";
 
-    @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOption;
-
-    private static final String PROMPT_USERNAME = "Username: ";
-    private static final String PROMPT_PASSWORD = "Password: ";
-    private static final String PROMPT_TOKEN = "Token: ";
+    public static final String PROMPT_USERNAME = "Username: ";
+    public static final String PROMPT_PASSWORD = "Password: ";
+    public static final String PROMPT_TOKEN = "Token: ";
+    public static final String FORMAT_TOKEN_LOGGED_IN =
+            "@|bold,green Successfully logged-in with token|@";
+    public static final String FORMAT_USER_LOGGED_IN =
+            "@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]";
 
     /**
      * Here we encapsulate the password options
@@ -98,6 +96,12 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
         TokenOptions tokenOptions;
     }
 
+    @CommandLine.Mixin(name = "output")
+    OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
+
     @CommandLine.ArgGroup(exclusive = true)
     LoginOptions loginOptions;
 
@@ -120,7 +124,7 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
         if (isTokenSet()) {
             output.info("Logging in with token");
             authenticationContext.login(loginOptions.tokenOptions.token);
-            output.info("@|bold,green Successfully logged-in with token|@");
+            output.info(FORMAT_TOKEN_LOGGED_IN);
         } else {
 
             String userName;
@@ -128,35 +132,33 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
 
             // Request the username
             if (isUserNameSet()) {
-                userName = prompt.readInput(null, PROMPT_USERNAME);
-            } else {
                 userName = loginOptions.passwordOptions.user;
+            } else {
+                userName = prompt.readInput(null, PROMPT_USERNAME);
             }
 
             // Request the password
             if (isPasswordSet()) {
-                password = prompt.readPassword(PROMPT_PASSWORD);
-            } else {
                 password = loginOptions.passwordOptions.password;
+            } else {
+                password = prompt.readPassword(PROMPT_PASSWORD);
             }
 
             // Validating the username and password
             if (areCredentialsInvalid(userName, password)) {
                 output.error(
                         "Missing required options. Please provide a valid username and password"
-                                + "or token."
+                                + " or token."
                 );
                 return ExitCode.USAGE;
             }
 
-            output.info(String.format("Logging in as [@|bold,cyan %s|@]. ", userName));
+            output.info(String.format("Logging in as [@|bold,cyan %s|@]", userName));
             authenticationContext.login(
                     userName,
                     password
             );
-            output.info(String.format(
-                    "@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]", userName
-            ));
+            output.info(String.format(FORMAT_USER_LOGGED_IN, userName));
         }
 
         return ExitCode.OK;
@@ -180,10 +182,10 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
      * @return true if a password is set, false otherwise.
      */
     private boolean isPasswordSet() {
-        return loginOptions == null ||
-                loginOptions.passwordOptions == null ||
-                loginOptions.passwordOptions.password == null ||
-                loginOptions.passwordOptions.password.length == 0;
+        return loginOptions != null &&
+                loginOptions.passwordOptions != null &&
+                loginOptions.passwordOptions.password != null &&
+                loginOptions.passwordOptions.password.length > 0;
     }
 
     /**
@@ -192,10 +194,10 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
      * @return true if the username is set, false otherwise.
      */
     private boolean isUserNameSet() {
-        return loginOptions == null ||
-                loginOptions.passwordOptions == null ||
-                loginOptions.passwordOptions.user == null ||
-                loginOptions.passwordOptions.user.trim().isEmpty();
+        return loginOptions != null &&
+                loginOptions.passwordOptions != null &&
+                loginOptions.passwordOptions.user != null &&
+                !loginOptions.passwordOptions.user.trim().isEmpty();
     }
 
     /**
