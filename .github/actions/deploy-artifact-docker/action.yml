@@ -94,11 +94,11 @@ runs:
         full_tags+="type=raw,value=${tag_prefix}latest_SNAPSHOT,enable=$latest_snapshot\n"
         
         echo "full_tags=$full_tags"
-        
-        # Set the full_tags environment variable (optional, if needed elsewhere)
-        echo "full_tags=$full_tags" >> $GITHUB_ENV
-        # Output the full tags for the next steps, properly escaped for GitHub Actions
-        echo "full_tags_output=$(echo "$full_tags" | sed 's/$/%0A/g')" >> $GITHUB_OUTPUT
+    
+
+        echo "full_tags_output<<EOF" >> $GITHUB_OUTPUT
+        echo $full_tags >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
     - name: Docker.io login
       uses: docker/login-action@v3.0.0
