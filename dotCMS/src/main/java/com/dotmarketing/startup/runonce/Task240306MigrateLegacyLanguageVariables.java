@@ -12,6 +12,9 @@ import com.dotmarketing.util.Logger;
 import java.nio.file.Path;
 import java.util.Optional;
 
+/**
+ * Migrates legacy language variables to the new language variable content type
+ */
 public class Task240306MigrateLegacyLanguageVariables implements StartupTask {
 
     private ImmutableMigrationSummary migrationSummary = null;
@@ -71,6 +74,10 @@ public class Task240306MigrateLegacyLanguageVariables implements StartupTask {
         }
     }
 
+    /**
+     * Returns the migration summary
+     * @return the migration summary
+     */
     public Optional<ImmutableMigrationSummary> getMigrationSummary() {
         return Optional.ofNullable(migrationSummary);
     }
