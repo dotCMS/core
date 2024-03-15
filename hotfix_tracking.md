@@ -216,3 +216,4 @@ This maintenance release includes the following code fixes:
 171. https://github.com/dotCMS/core/issues/25653 : Importing Category lists via CSV - import button is disabled #25653
 172. https://github.com/dotCMS/core/issues/26815 : Unable to compare history of older versions (Older than latest 20) #26815
 173. https://github.com/dotCMS/core/issues/26224 : Need to add the user who create the bundle when you have bundles from other users #26224
+174. https://github.com/dotCMS/core/issues/26201 : Deletion of Unpublished Bundles through API #26201
