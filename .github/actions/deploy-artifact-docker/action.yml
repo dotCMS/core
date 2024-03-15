@@ -73,10 +73,7 @@ runs:
         else
           tag_prefix="${REF}_"
         fi
-        
-        # Initialize a bash variable to hold the full tags
-        full_tags=""
-        
+    
         # Now use environment variables instead of GitHub Actions expressions
         if [ "$SNAPSHOT" = "true" ] && [ "$LATEST" = "true" ]; then
           latest_snapshot="true"
@@ -84,18 +81,12 @@ runs:
           latest_snapshot="false"
         fi
         
-        # Continue with conditional tag additions
-        full_tags+="type=raw,value=${tag_prefix}{{sha}},enable=true\n"
-        full_tags+="type=raw,value=${tag_prefix}latest,enable=$LATEST\n"
-        full_tags+="type=raw,value=${tag_prefix}_SNAPSHOT,enable=$SNAPSHOT\n"
-        full_tags+="type=raw,value=${tag_prefix}latest_SNAPSHOT,enable=$latest_snapshot\n"
-        
-        echo "full_tags=$full_tags"
-    
-
-        echo "full_tags_output<<EOF" >> $GITHUB_OUTPUT
-        echo $full_tags >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+        echo "FULL_TAGS_OUTPUT<<EOF" >> $GITHUB_ENV
+          echo "type=raw,value=${tag_prefix}{{sha}},enable=true" >> $GITHUB_ENV
+          echo ""type=raw,value=${tag_prefix}latest,enable=$LATEST" >> $GITHUB_ENV
+          echo "type=raw,value=${tag_prefix}SNAPSHOT,enable=$SNAPSHOT" >> $GITHUB_ENV
+          echo "type=raw,value=${tag_prefix}latest_SNAPSHOT,enable=${latest_snapshot}" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Docker.io login
       uses: docker/login-action@v3.0.0
@@ -124,7 +115,7 @@ runs:
       with:
         images: |
           dotcms/dotcms
-        tags: ${{ steps.set-common-vars.outputs.full_tags_output }}
+        tags: ${{ env.FULL_TAGS_OUTPUT }}
       if: success()
 
     - name: Debug Docker Metadata
