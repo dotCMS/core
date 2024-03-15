@@ -24,9 +24,6 @@ inputs:
   latest:
     description: 'Tag the image as latest'
     default: 'false'
-  docker_tag:
-    description: 'The docker tag to use for the image'
-    required: true
   do_deploy:
     description: 'Actually do the final deploy, set to false for testing'
     required: true
@@ -156,7 +153,8 @@ runs:
       uses: docker/build-push-action@v5
       with:
         context: ./docker-context
-        tags: ${{ inputs.docker_tag }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ inputs.docker_platforms }}
         pull: true
         push: ${{ inputs.do_deploy }}
