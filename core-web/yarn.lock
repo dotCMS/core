@@ -6122,6 +6122,14 @@
   resolved "https://registry.npmjs.org/@thednp/shorty/-/shorty-2.0.0.tgz#e05e6754032c091f599ac0c4ed7efde6558bdedb"
   integrity sha512-kwtLivCxYIoFfGIVU4NlZtfdA/zxZ6X8UcWaJrb7XqU3WQ4Q1p5IaZlLBfOVAO06WH5oWE87QUdK/dS56Wnfjg==
 
+"@tinymce/tinymce-angular@^7.0.0":
+  version "7.0.0"
+  resolved "https://registry.npmjs.org/@tinymce/tinymce-angular/-/tinymce-angular-7.0.0.tgz#010de497d5774a8bdc5d5936bf4fb976adf05f56"
+  integrity sha512-IKNaG/ihlxE1XCfq6lzULbnsqZO9KNJtlpu5jo6JDJDL9zcFzj/N2A16Kk7rTj1yfmDoB1IXAk/BpMOvgDY8cg==
+  dependencies:
+    tinymce "^6.0.0 || ^5.5.0"
+    tslib "^2.3.0"
+
 "@tiptap/core@^2.0.0-beta.218", "@tiptap/core@^2.2.2":
   version "2.2.2"
   resolved "https://registry.npmjs.org/@tiptap/core/-/core-2.2.2.tgz#7664197dafee890a5f42ba03b50c202bdf1da761"
@@ -21993,6 +22001,11 @@ tiny-relative-date@^1.3.0:
   version "1.3.0"
   resolved "https://registry.npmjs.org/tiny-relative-date/-/tiny-relative-date-1.3.0.tgz#fa08aad501ed730f31cc043181d995c39a935e07"
   integrity sha512-MOQHpzllWxDCHHaDno30hhLfbouoYlOI8YlMNtvKe1zXbjEVhbcEovQxvZrPvtiYW630GQDoMMarCnjfyfHA+A==
+
+"tinymce@^6.0.0 || ^5.5.0", tinymce@^6.8.3:
+  version "6.8.3"
+  resolved "https://registry.npmjs.org/tinymce/-/tinymce-6.8.3.tgz#0025a4aaa4c24dc2a3e32e83dfda705d196fd802"
+  integrity sha512-3fCHKAeqT+xNwBVESf6iDbDV0VNwZNmfrkx9c/6Gz5iB8piMfaO6s7FvoiTrj1hf1gVbfyLTnz1DooI6DhgINQ==
 
 tippy.js@^6.3.7:
   version "6.3.7"
