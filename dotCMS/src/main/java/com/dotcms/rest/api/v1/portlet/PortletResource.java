@@ -112,7 +112,7 @@ public class PortletResource implements Serializable {
             initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
 
             final Portlet newPortlet = APILocator.getPortletAPI()
-                    .createOrUpdatePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
+                    .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
             return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
 
@@ -136,7 +136,7 @@ public class PortletResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response save(@Context final HttpServletRequest request, final CustomPortletForm formData) {
+    public final Response updatePortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -161,7 +161,7 @@ public class PortletResource implements Serializable {
             initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
 
             final Portlet newPortlet = APILocator.getPortletAPI()
-                    .createOrUpdatePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
+                    .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
             return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
 

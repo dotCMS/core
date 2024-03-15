@@ -110,7 +110,7 @@ public class PortletAPIImpl implements PortletAPI {
 
     @Override
     @WrapInTransaction
-    public Portlet createOrUpdatePortlet(Portlet portlet, User user) throws DotDataException, LanguageException {
+    public Portlet savePortlet(Portlet portlet, User user) throws DotDataException, LanguageException {
         final String portletId = portletIdPrefixCleaner(portlet.getPortletId());
         // if true means that we are creating a new portlet
         final boolean isNewPortlet = !UtilMethods.isSet(findPortlet(portletId));

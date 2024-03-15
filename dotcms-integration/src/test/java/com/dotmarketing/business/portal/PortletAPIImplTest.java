@@ -70,13 +70,13 @@ public class PortletAPIImplTest {
         initValues.put("contentTypes", contentTypes);
         initValues.put("dataViewMode", dataViewMode);
 
-        final Portlet newPortlet = portletApi.createOrUpdatePortlet(new DotPortlet(portletId, StrutsPortlet.class.getName(), initValues),systemUser);
+        final Portlet newPortlet = portletApi.savePortlet(new DotPortlet(portletId, StrutsPortlet.class.getName(), initValues),systemUser);
 
         return newPortlet;
     }
 
     /**
-     * Method to test: Use following method to create a custom portlet {@link PortletAPI#createOrUpdatePortlet(Portlet portlet,User user)}
+     * Method to test: Use following method to create a custom portlet {@link PortletAPI#savePortlet(Portlet portlet,User user)}
      * Given Scenario: The user should be able to create a custom portlet.
      * Some of the fields are mandatory and some are optional.
      * ExpectedResult: Must create the new custom portlet
@@ -118,7 +118,7 @@ public class PortletAPIImplTest {
     }
 
     /**
-     * Method to test: Use following method to update an existing custom portlet {@link PortletAPI#createOrUpdatePortlet(Portlet portlet,User user)}
+     * Method to test: Use following method to update an existing custom portlet {@link PortletAPI#savePortlet(Portlet portlet,User user)}
      * Given Scenario:
      * 1. id should not be editable
      * 2. User can edit all the resting fields:

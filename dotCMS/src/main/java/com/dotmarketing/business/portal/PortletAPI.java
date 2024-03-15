@@ -44,7 +44,7 @@ public interface PortletAPI {
      * @param portlet the portlet to be created or updated
      * @param user the user that is creating or updating the portlet
      */
-  Portlet createOrUpdatePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException;
+  Portlet savePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException;
 
   Portlet updatePortlet(final Portlet portlet) throws DotDataException;
 
