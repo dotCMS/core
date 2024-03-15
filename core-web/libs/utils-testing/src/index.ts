@@ -44,3 +44,4 @@ export * from './lib/dot-temp-file.mock';
 export * from './lib/dot-current-user.mock';
 export * from './lib/split-button.mock';
 export * from './lib/seo-mock';
+export * from './lib/dot-message-mock.pipe';
