@@ -78,6 +78,8 @@ runs:
         
         if [ "${{ inputs.snapshot }}" = "true" ] && [ "${{ inputs.latest }}" = "true" ]; then
           latest_snapshot = "true"
+        else
+          latest_snapshot = "false"
         fi
   
         # Conditionally add tags

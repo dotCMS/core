@@ -22,28 +22,40 @@ permissions:
   contents: read
   actions: read # allow access to other job artifacts with GITHUB_TOKEN
 jobs:
+  deploy_check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check.outputs.should_deploy }}
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v4
+
+      - name: Get the latest commit SHA from master and compare
+        id: check
+        run: |
+         TRIGGER_SHA=${{ github.event.workflow_run.head_sha }}
+         LATEST_SHA=$(git rev-parse origin/master)
+         WORKFLOW_SUCCESS=${{ github.event.workflow_run.conclusion == 'success' }}
+        
+         echo "Latest SHA: $LATEST_SHA, Trigger SHA: $TRIGGER_SHA, Workflow success: $WORKFLOW_SUCCESS"
+        
+         # Only proceed if the workflow was successful and the SHAs match
+         if [[ "$TRIGGER_SHA" == "$LATEST_SHA" && "$WORKFLOW_SUCCESS" == "true" ]]; then
+           echo "should_deploy=true" >> $GITHUB_OUTPUT
+         else
+           echo "Conditions for deployment not met. Latest: $LATEST_SHA, Trigger: $TRIGGER_SHA, Workflow success: $WORKFLOW_SUCCESS"
+           echo "should_deploy=false" >> $GITHUB_OUTPUT
+         fi
+
   deployment:
-    # The job runs if the 'Maven CICD Pipeline' workflow run was successful.
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: needs.deploy_check.outputs.should_deploy == 'true'
+    needs: [deploy_check]
     runs-on: ubuntu-latest
     environment: trunk
     steps:
       # The repository is checked out using the 'actions/checkout' action.
       - name: Checkout core
         uses: actions/checkout@v4
-
-      # The latest commit SHA from the 'master' branch is retrieved.
-      # If the workflow was not triggered by the latest commit, the job fails.
-      - name: Get the latest commit SHA from master
-        id: latest_commit
-        run: |
-          TRIGGER_SHA=${{ github.event.workflow_run.head_sha }}
-          LATEST_SHA=$(git rev-parse origin/master)
-          echo "Latest SHA: $LATEST_SHA, Trigger SHA: $TRIGGER_SHA"
-          if [ $TRIGGER_SHA != $LATEST_SHA ]; then
-            echo "Triggered by an old commit. Latest: $LATEST_SHA, Trigger: $TRIGGER_SHA"
-            exit 1
-          fi
 
       # A Docker image is built and pushed using the 'deploy-artifact-docker' action.
       - name: Build/Push Docker Image
@@ -59,6 +71,7 @@ jobs:
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
 
       # A Slack notification is sent using the 'action-slack-notify' action if the repository is 'dotcms/core'.
       - name: Slack Notification
