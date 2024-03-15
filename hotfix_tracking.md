@@ -217,3 +217,4 @@ This maintenance release includes the following code fixes:
 172. https://github.com/dotCMS/core/issues/26815 : Unable to compare history of older versions (Older than latest 20) #26815
 173. https://github.com/dotCMS/core/issues/26224 : Need to add the user who create the bundle when you have bundles from other users #26224
 174. https://github.com/dotCMS/core/issues/26201 : Deletion of Unpublished Bundles through API #26201
+175. https://github.com/dotCMS/core/issues/26170 : Unable to view more than 20 items in a publishing queue bundle #26170
