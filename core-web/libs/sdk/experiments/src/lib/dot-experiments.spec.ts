@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import fakeIndexedDB from 'fake-indexeddb';
 import fetchMock from 'fetch-mock';
 
@@ -35,6 +36,7 @@ describe('DotExperiments', () => {
     describe('DotExperiments Instance and Initialization', () => {
         beforeEach(() => {
             // destroy the instance of the singleton
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (DotExperiments as any).instance = null;
         });
         it('should throw an error if config is not provided', () => {
@@ -64,11 +66,12 @@ describe('DotExperiments', () => {
 
         it('should call all the necessary at initialize()', async () => {
             const instance = DotExperiments.getInstance(configMock);
-
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const spyGetPersistedData = jest.spyOn(instance as any, 'getPersistedData');
-
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const spySetExperimentData = jest.spyOn(instance as any, 'setExperimentData');
             const spySetinitializeDatabaseHandler = jest.spyOn(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 instance as any,
                 'initializeDatabaseHandler'
             );
