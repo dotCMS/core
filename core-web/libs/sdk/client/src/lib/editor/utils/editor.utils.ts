@@ -1,3 +1,8 @@
+/**
+ * Bound information for a contentlet.
+ *
+ * @interface ContentletBound
+ */
 interface ContentletBound {
     x: number;
     y: number;
@@ -6,6 +11,11 @@ interface ContentletBound {
     payload: string;
 }
 
+/**
+ * Bound information for a container.
+ *
+ * @interface ContenainerBound
+ */
 interface ContenainerBound {
     x: number;
     y: number;

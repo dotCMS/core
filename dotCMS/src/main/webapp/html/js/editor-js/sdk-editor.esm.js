@@ -52,6 +52,10 @@
 })(NOTIFY_CUSTOMER || (NOTIFY_CUSTOMER = {}));
 
 /**
+ * Bound information for a contentlet.
+ *
+ * @interface ContentletBound
+ */ /**
  * Calculates the bounding information for each page element within the given containers.
  *
  * @export
