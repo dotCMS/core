@@ -39,7 +39,7 @@ site-unarchive - *Use this command to unarchive a site.*
   Display this help message.
 
 *-tk, --token*=_<token>_::
-  A dot CMS token to use for authentication. 
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 
