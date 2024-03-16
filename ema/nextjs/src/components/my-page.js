@@ -1,6 +1,5 @@
 "use client";
 
-import { DotcmsLayout } from "@dotcms/react";
 
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
@@ -12,6 +11,7 @@ import Header from "./layout/header";
 import Footer from "./layout/footer";
 import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
+import { DotcmsLayout } from "@dotcms/react";
 
 export function MyPage({ data, nav }) {
   const { refresh } = useRouter();
@@ -37,7 +37,7 @@ export function MyPage({ data, nav }) {
             },
             ...data,
           }}
-          options={{ onReload: refresh, pathname }}
+          config={{ onReload: refresh, pathname }}
         />
       </main>
       {data.layout.footer && <Footer />}

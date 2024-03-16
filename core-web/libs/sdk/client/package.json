@@ -7,6 +7,9 @@
         "type": "git",
         "url": "git+https://github.com/dotCMS/core.git#master"
     },
+    "scripts": {
+        "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
+    },
     "keywords": [
         "dotCMS",
         "CMS",
