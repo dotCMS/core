@@ -53,6 +53,7 @@ export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 
 // Resolvers
 export * from './lib/resolvers/dot-portlet-have-license.resolver';
+export * from './lib/resolvers/dot-enterprise-license-resolver.service';
 
 // Validators
 export * from './lib/validators/dotValidators';
