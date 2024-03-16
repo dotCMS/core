@@ -29,7 +29,6 @@ import { IFrameModule } from '@components/_common/iframe';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
@@ -41,6 +40,7 @@ import {
     DotApiLinkComponent,
     DotAutofocusDirective,
     DotCopyButtonComponent,
+    DotDialogModule,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotIconModule,

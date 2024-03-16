@@ -5,9 +5,13 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { AddToBundleService, DotCurrentUserService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotDialogModule,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
 

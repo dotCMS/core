@@ -1,6 +1,7 @@
 // Modules
 export * from './lib/dot-icon/dot-icon.module';
 export * from './lib/dot-spinner/dot-spinner.module';
+export * from './lib/modules/dot-dialog/dot-dialog.module';
 
 // Components
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
@@ -21,6 +22,7 @@ export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
 export * from './lib/components/dot-key-value-ng/dot-key-value-ng.component';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
+export * from './lib/modules/dot-dialog/dot-dialog.component';
 
 // Directives
 export * from './lib/dot-field-required/dot-field-required.directive';
