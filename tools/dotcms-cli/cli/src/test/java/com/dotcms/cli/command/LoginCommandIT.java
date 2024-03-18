@@ -172,7 +172,7 @@ class LoginCommandIT extends CommandTest {
 
     /**
      * Scenario: Pass valid token
-     * Expect: Should login successfully and exit code 0 finally we validate the token is stored
+     * Expect: Should log in successfully and exit code 0 finally we validate the token is stored
      */
     @Test
     @Order(5)
@@ -193,10 +193,16 @@ class LoginCommandIT extends CommandTest {
         Assertions.assertTrue(selected.isPresent());
         final ServiceBean serviceBean = selected.get();
         Assertions.assertNotNull(serviceBean.credentials());
-        final Optional<char[]> optional = serviceBean.credentials().token();
-        Assertions.assertNotNull(optional);
-        Assertions.assertTrue(optional.isPresent());
-        Assertions.assertEquals(token, new String(optional.get()));
+
+        final Optional<char[]> optionalLoadedToken = serviceBean.credentials().loadToken();
+        Assertions.assertNotNull(optionalLoadedToken);
+        Assertions.assertTrue(optionalLoadedToken.isPresent());
+        Assertions.assertEquals(token, new String(optionalLoadedToken.get()));
+
+        final Optional<char[]> optionalSavedToken = serviceBean.credentials().token();
+        Assertions.assertNotNull(optionalSavedToken);
+        Assertions.assertTrue(optionalSavedToken.isPresent());
+        Assertions.assertEquals(token, new String(optionalSavedToken.get()));
     }
 
     /**

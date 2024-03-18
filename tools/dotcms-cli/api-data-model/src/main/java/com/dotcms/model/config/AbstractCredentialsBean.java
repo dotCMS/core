@@ -21,23 +21,31 @@ public interface AbstractCredentialsBean {
       */
      @Nullable
      @Transient
+     @Value.Auxiliary
      Supplier <char[]> tokenSupplier();
 
-     @Value.Derived
-     default Optional<char[]> token() {
+     /**
+      * This method is used to retrieve the token from a secure store or a plain text store on demand
+      * @return the token if present
+      */
+     @Transient
+     @Value.Lazy
+     default Optional<char[]> loadToken() {
           final Supplier<char[]> supplier = tokenSupplier();
-          if (null != supplier){
-               try {
-                    final char[] chars = supplier.get();
-                    if (chars != null && chars.length > 0) {
-                         return Optional.of(chars);
-                    }
-               } catch (Exception e) {
-                    //ignore
-                    e.printStackTrace();
+          if (null != supplier) {
+               final char[] chars = supplier.get();
+               if (chars != null && chars.length > 0) {
+                  return Optional.of(chars);
                }
           }
-          return Optional.empty();
+          return token();
      }
+
+     /**
+      * This is the token loaded in plain text from the configuration file
+      * here's where the mapped will inject the value from the configuration file
+      * @return the token if present
+      */
+     Optional<char[]> token();
 
 }

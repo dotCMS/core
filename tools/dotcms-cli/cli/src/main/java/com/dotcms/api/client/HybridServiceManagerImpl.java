@@ -40,8 +40,8 @@ public class HybridServiceManagerImpl implements ServiceManager {
     @CanIgnoreReturnValue
     public ServiceManager persist(ServiceBean service) throws IOException {
         CredentialsBean credentialsBean = service.credentials();
-        if (null != credentialsBean && null != credentialsBean.user() && credentialsBean.token().isPresent()) {
-            final Optional<char[]> token = credentialsBean.token();
+        if (null != credentialsBean && null != credentialsBean.user() && credentialsBean.loadToken().isPresent()) {
+            final Optional<char[]> token = credentialsBean.loadToken();
             //We need to split the info and save in the KeyChain the authentication token
             if (token.isPresent()){
                 try {

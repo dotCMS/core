@@ -66,7 +66,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
                 final CredentialsBean credentials = serviceBean.credentials();
                 if (null != credentials) {
                     this.user = credentials.user();
-                    final Optional<char[]> chars = credentials.token();
+                    final Optional<char[]> chars = credentials.loadToken();
                     if(chars.isPresent()){
                       this.token = chars.get();
                     } else {
@@ -136,7 +136,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
             }
             final ServiceBean serviceBean = ServiceBean.builder().active(true)
                     .name(selected.get().name()).url(selected.get().url())
-                    .credentials(CredentialsBean.builder().user(user).tokenSupplier(()->token).build()).build();
+                    .credentials(CredentialsBean.builder().user(user).token(token).build()).build();
             serviceManager.persist(serviceBean);
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -153,7 +153,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
         if (optional.isPresent()) {
             final ServiceBean bean = optional.get();
             if (bean.credentials() != null  && user.equals(bean.credentials().user()) ) {
-                return bean.credentials().token();
+                return bean.credentials().loadToken();
             }
         }
         return Optional.empty();
