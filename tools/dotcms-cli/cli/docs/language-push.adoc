@@ -57,7 +57,7 @@ This command enables the pushing of languages to the server. It accommodates the
   When this option is enabled, the push process allows the deletion of languages in the remote server. By default, this option is disabled, and languages will not be removed on the remote server.
 
 *-tk, --token*=_<token>_::
-  A dot CMS token to use for authentication. 
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

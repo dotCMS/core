@@ -107,7 +107,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         this(CompressionCodec.valueCompressor(new DotObjectCodec(),
                 CompressionCodec.CompressionType.GZIP),
-                APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId()));
+                ClusterFactory.getClusterId());
     }
 
     public MasterReplicaLettuceClient(final RedisCodec<String, V> codec, final String clusterId) {

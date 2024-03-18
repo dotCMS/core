@@ -42,7 +42,7 @@ site-current - *Use this command to get the current Site.*
   Display this help message.
 
 *-tk, --token*=_<token>_::
-  A dot CMS token to use for authentication. 
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

@@ -1,8 +1,17 @@
 package com.dotcms.cli.command;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.DotCMSITProfile;
+import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
+import com.dotcms.cli.command.LoginCommand.LoginOptions;
+import com.dotcms.cli.command.LoginCommand.PasswordOptions;
+import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -15,13 +24,24 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
+import picocli.CommandLine.Model.CommandSpec;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
 class LoginCommandIT extends CommandTest {
+
+    @BeforeEach
+    public void setupTest() throws IOException {
+        resetServiceProfiles();
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Inject
     RestClientFactory clientFactory;
@@ -29,27 +49,46 @@ class LoginCommandIT extends CommandTest {
     @Inject
     ServiceManager serviceManager;
 
-    @BeforeEach
-    public void setupTest() throws IOException {
-        resetServiceProfiles();
-    }
+    @Mock
+    Prompt prompt;
+
+    @Spy
+    @InjectMocks
+    LoginCommand loginCommand;
+
+    @Mock
+    OutputOptionMixin output;
+
+    @Mock
+    CommandSpec spec;
+
+    @Mock
+    AuthenticationContext authenticationContext;
 
     /**
-     * Scenario: If we do not pass the required params we should get exit code 2
+     * Scenario: No parameters passed, interactive mode should be used
      */
     @Test
     @Order(1)
-    void Test_Command_Login_No_Params()  {
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try(PrintWriter out = new PrintWriter(writer)){
-            commandLine.setErr(out);
-            final int status = commandLine.execute(LoginCommand.NAME);
-            Assertions.assertEquals(ExitCode.USAGE, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.contains("Missing required options:"));
-            Assertions.assertTrue(output.contains("Once an instance is selected. Use this command to open a session"));
-        }
+    void Test_Command_Login_No_Params() throws Exception {
+
+        final String user = "admin@dotCMS.com";
+        final String password = "admin";
+
+        // When username is asked in interactive mode, return the username
+        when(prompt.readInput(null, LoginCommand.PROMPT_USERNAME)).
+                thenReturn(user);
+        // When password is asked in interactive mode, return the password
+        when(prompt.readPassword(LoginCommand.PROMPT_PASSWORD)).
+                thenReturn(password.toCharArray());
+
+        final Integer status = loginCommand.call();
+        Assertions.assertEquals(ExitCode.OK, status);
+
+        verify(loginCommand, times(1)).call();
+        verify(prompt, times(1)).readInput(null, LoginCommand.PROMPT_USERNAME);
+        verify(prompt, times(1)).readPassword(LoginCommand.PROMPT_PASSWORD);
+        verify(output).info(String.format(LoginCommand.FORMAT_USER_LOGGED_IN, user));
     }
 
     /**
@@ -156,7 +195,36 @@ class LoginCommandIT extends CommandTest {
         Assertions.assertNotNull(serviceBean.credentials());
         Assertions.assertNotNull(serviceBean.credentials().token());
         Assertions.assertEquals(token, new String(serviceBean.credentials().token()));
+    }
 
+    /**
+     * Scenario: No password passed, interactive mode should be used
+     */
+    @Test
+    @Order(6)
+    void Test_Command_Login_User_No_Password() throws Exception {
+
+        final String user = "admin@dotCMS.com";
+        final String password = "admin";
+
+        // Set login options to your command
+        PasswordOptions passwordOptions = new PasswordOptions();
+        passwordOptions.user = user;
+        LoginOptions loginOptions = new LoginOptions();
+        loginOptions.passwordOptions = passwordOptions;
+        loginCommand.loginOptions = loginOptions;
+
+        // When password is asked in interactive mode, return password
+        when(prompt.readPassword(LoginCommand.PROMPT_PASSWORD)).
+                thenReturn(password.toCharArray());
+
+        final Integer status = loginCommand.call();
+        Assertions.assertEquals(ExitCode.OK, status);
+
+        verify(loginCommand, times(1)).call();
+        verify(prompt, times(0)).readInput(null, LoginCommand.PROMPT_USERNAME);
+        verify(prompt, times(1)).readPassword(LoginCommand.PROMPT_PASSWORD);
+        verify(output).info(String.format(LoginCommand.FORMAT_USER_LOGGED_IN, user));
     }
 
 }
