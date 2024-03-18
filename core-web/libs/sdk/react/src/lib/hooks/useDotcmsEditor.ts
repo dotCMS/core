@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
     DotCMSPageEditorConfig,
@@ -7,20 +7,23 @@ import {
     isInsideEditor,
     updateNavigation
 } from '@dotcms/client';
-
-export const useDotcmsEditor = (options?: DotCMSPageEditorConfig) => {
-    const isInsideEditorPage = isInsideEditor();
-
+export const useDotcmsEditor = (config?: DotCMSPageEditorConfig) => {
+    const [isInsideEditorPage, setIsInsideEditorPage] = useState(false);
     useEffect(() => {
-        if (isInsideEditorPage) {
-            initEditor(options);
-            updateNavigation(options?.pathname || '/');
+        const insideEditor = isInsideEditor();
+        if (insideEditor) {
+            initEditor(config);
+            updateNavigation(config?.pathname || '/');
         }
 
+        setIsInsideEditorPage(insideEditor);
+
         return () => {
-            if (isInsideEditorPage) {
+            if (insideEditor) {
                 destroyEditor();
             }
         };
-    }, [isInsideEditorPage, options]);
+    }, [config]);
+
+    return isInsideEditorPage;
 };

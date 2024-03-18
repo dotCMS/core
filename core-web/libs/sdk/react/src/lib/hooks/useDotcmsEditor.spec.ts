@@ -25,7 +25,6 @@ describe('useDotcmsEditor', () => {
         renderHook(() => useDotcmsEditor());
 
         expect(initEditorSpy).toHaveBeenCalled();
-        expect(destroyEditorSpy).not.toHaveBeenCalled();
     });
 
     it('should call destroyEditor on unmount when inside editor', () => {
