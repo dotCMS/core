@@ -9,6 +9,8 @@ import {
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
+import { ScrollerModule } from 'primeng/scroller';
+
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotAssetCardComponent } from '../dot-asset-card/dot-asset-card.component';
@@ -22,7 +24,7 @@ const squarePlus =
     templateUrl: './dot-asset-card-list.component.html',
     styleUrls: ['./dot-asset-card-list.component.scss'],
     standalone: true,
-    imports: [CommonModule, DotAssetCardComponent, DotAssetCardSkeletonComponent],
+    imports: [CommonModule, ScrollerModule, DotAssetCardComponent, DotAssetCardSkeletonComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetCardListComponent {

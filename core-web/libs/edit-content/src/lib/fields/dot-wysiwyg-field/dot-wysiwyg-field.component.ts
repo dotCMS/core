@@ -1,21 +1,16 @@
 import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { Editor, TinyMCE } from 'tinymce';
 
-import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    Input,
-    inject,
-    signal,
-    NgZone
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, inject, signal, NgZone } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
+import { filter, take } from 'rxjs/operators';
+
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotAssetSearchComponent } from '@dotcms/ui';
+
+import { DotAssetSearchDialogComponent } from './dot-asset-search-dialog/dot-asset-search-dialog.component';
 
 declare global {
     interface Window {
@@ -47,7 +42,6 @@ export class DotWYSIWYGFieldComponent {
     };
     private readonly dialogService: DialogService = inject(DialogService);
     private readonly ngZone: NgZone = inject(NgZone);
-    private readonly cd: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     protected readonly plugins = signal(
         'dotAddImage advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template'
@@ -63,12 +57,25 @@ export class DotWYSIWYGFieldComponent {
                 text: 'Add Image',
                 onAction: () => {
                     this.ngZone.run(() => {
-                        this.dialogService.open(DotAssetSearchComponent, {
+                        const ref = this.dialogService.open(DotAssetSearchDialogComponent, {
                             header: 'Add Image',
-                            width: '70%',
-                            height: '70%'
+                            width: '800px',
+                            height: '500px',
+                            contentStyle: { padding: 0 }
                         });
-                        this.cd.detectChanges();
+
+                        ref.onClose
+                            .pipe(
+                                take(1),
+                                filter((asset) => !!asset)
+                            )
+                            .subscribe((asset) =>
+                                editor.insertContent(
+                                    `<img src="${asset.assetVersion || asset.asset}" alt="${
+                                        asset.title
+                                    }" />`
+                                )
+                            );
                     });
                 }
             });

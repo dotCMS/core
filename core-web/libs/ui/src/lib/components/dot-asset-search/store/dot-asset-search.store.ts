@@ -6,9 +6,13 @@ import { Observable } from 'rxjs/internal/Observable';
 import { map, mergeMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
-import { ESOrderDirection, EsQueryParams, DotContentSearchService } from '@dotcms/ui';
-
-import { DotLanguageService, Languages } from '../../../services/dot-language/dot-language.service';
+import {
+    ESOrderDirection,
+    EsQueryParams,
+    DotContentSearchService,
+    DotLanguageService,
+    Languages
+} from '@dotcms/ui';
 
 const DEFAULT_LANG_ID = 1;
 
