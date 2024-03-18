@@ -17,7 +17,6 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
@@ -37,6 +36,7 @@ import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.modu
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
 import {
+    DotAddToBundleComponent,
     DotApiLinkComponent,
     DotAutofocusDirective,
     DotCopyButtonComponent,
@@ -119,7 +119,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         CommonModule,
         ContentTypeFieldsAddRowModule,
         DialogModule,
-        DotAddToBundleModule,
+        DotAddToBundleComponent,
         DotApiLinkComponent,
         DotAutofocusDirective,
         DotBaseTypeSelectorModule,

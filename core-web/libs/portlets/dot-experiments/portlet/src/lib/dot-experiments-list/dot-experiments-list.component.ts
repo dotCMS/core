@@ -10,7 +10,6 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { tap } from 'rxjs/operators';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -21,6 +20,7 @@ import {
     SidebarStatus
 } from '@dotcms/dotcms-models';
 import {
+    DotAddToBundleComponent,
     DotDynamicDirective,
     DotEmptyContainerComponent,
     DotMessagePipe,
@@ -49,7 +49,7 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotMessagePipe,
         ButtonModule,
         ConfirmDialogModule,
-        DotAddToBundleModule,
+        DotAddToBundleComponent,
         DotEmptyContainerComponent
     ],
     templateUrl: './dot-experiments-list.component.html',

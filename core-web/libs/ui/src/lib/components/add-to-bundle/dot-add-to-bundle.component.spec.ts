@@ -5,11 +5,7 @@ import { Observable, of as observableOf } from 'rxjs';
 import { Component, DebugElement } from '@angular/core';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { AddToBundleService, DotMessageService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
@@ -51,16 +47,18 @@ xdescribe('DotAddToBundleComponent', () => {
     beforeEach(() => {
         addToBundleServiceMock = new AddToBundleServiceMock();
 
-        DOTTestBed.configureTestingModule({
-            declarations: [DotAddToBundleComponent, TestHostComponent],
-            imports: [BrowserAnimationsModule, DotFieldValidationMessageComponent],
-            providers: [
-                { provide: AddToBundleService, useValue: addToBundleServiceMock },
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
-        });
+        // DOTTestBed omitted by circular dependency
 
-        fixture = DOTTestBed.createComponent(TestHostComponent);
+        // DOTTestBed.configureTestingModule({
+        //     declarations: [DotAddToBundleComponent, TestHostComponent],
+        //     imports: [BrowserAnimationsModule, DotFieldValidationMessageComponent],
+        //     providers: [
+        //         { provide: AddToBundleService, useValue: addToBundleServiceMock },
+        //         { provide: DotMessageService, useValue: messageServiceMock }
+        //     ]
+        // });
+
+        // fixture = DOTTestBed.createComponent(TestHostComponent);
         de = fixture.debugElement.query(By.css('dot-add-to-bundle'));
         comp = de.componentInstance;
 

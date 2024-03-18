@@ -19,8 +19,6 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
@@ -28,12 +26,12 @@ import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
-    DotSiteBrowserService,
-    DotFormatDateService
+    DotSiteBrowserService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -53,7 +51,7 @@ import {
     DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotAddToBundleComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -471,7 +469,7 @@ describe('DotTemplateListComponent', () => {
                 ButtonModule,
                 DotActionButtonModule,
                 DotActionMenuButtonModule,
-                DotAddToBundleModule,
+                DotAddToBundleComponent,
                 HttpClientTestingModule,
                 DynamicDialogModule,
                 BrowserAnimationsModule
