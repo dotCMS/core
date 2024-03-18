@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -154,8 +155,10 @@ class LoginCommandIT extends CommandTest {
         Assertions.assertTrue(selected.isPresent());
         final ServiceBean serviceBean = selected.get();
         Assertions.assertNotNull(serviceBean.credentials());
-        Assertions.assertNotNull(serviceBean.credentials().token());
-        Assertions.assertEquals(token, new String(serviceBean.credentials().token()));
+        final Optional<char[]> optional = serviceBean.credentials().token();
+        Assertions.assertNotNull(optional);
+        Assertions.assertTrue(optional.isPresent());
+        Assertions.assertEquals(token, new String(optional.get()));
 
     }
 
