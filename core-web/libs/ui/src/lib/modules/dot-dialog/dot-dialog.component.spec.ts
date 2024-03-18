@@ -5,7 +5,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotDialogActions, DotDialogComponent } from './dot-dialog.component';
+import { DotDialogActions } from '@dotcms/dotcms-models';
+import { DotDialogComponent } from '@dotcms/ui';
 
 const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
     const event = new KeyboardEvent('keydown', {
@@ -34,8 +35,7 @@ const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
             [bindEvents]="bindEvents"
             [isSaving]="isSaving"
             width="100px"
-            height="100px"
-        >
+            height="100px">
             <b>Dialog content</b>
         </dot-dialog>
     `
