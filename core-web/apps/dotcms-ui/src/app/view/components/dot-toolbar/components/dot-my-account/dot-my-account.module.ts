@@ -6,9 +6,13 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotDialogModule,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
 

@@ -20,12 +20,12 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { DotExperimentStatus, ExperimentSteps } from '@dotcms/dotcms-models';
+import { DotDynamicDirective } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsConfigurationSchedulingComponent } from './dot-experiments-configuration-scheduling.component';
 

@@ -8,14 +8,14 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 
 import { DotExperimentsService, DotMessageService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent } from '@dotcms/ui';
-import { DotExperimentsListStoreMock, MockDotMessageService } from '@dotcms/utils-testing';
 import {
+    DotFieldValidationMessageComponent,
     DotSidebarDirective,
+    DotSidebarHeaderComponent,
     SIDEBAR_PLACEMENT,
     SIDEBAR_SIZES
-} from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+} from '@dotcms/ui';
+import { DotExperimentsListStoreMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsCreateComponent } from './dot-experiments-create.component';
 
