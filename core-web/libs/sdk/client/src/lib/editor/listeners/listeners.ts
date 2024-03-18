@@ -7,6 +7,12 @@ import {
     getPageElementBound
 } from '../utils/editor.utils';
 
+declare global {
+    interface Window {
+        lastScrollYPosition: number;
+    }
+}
+
 /**
  * Default reload function that reloads the current window.
  */
@@ -144,6 +150,7 @@ export function scrollHandler() {
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.IFRAME_SCROLL
         });
+        window.lastScrollYPosition = window.scrollY;
     };
 
     window.addEventListener('scroll', scrollCallback);
@@ -152,6 +159,24 @@ export function scrollHandler() {
         type: 'listener',
         event: 'scroll',
         callback: scrollCallback
+    });
+}
+
+/**
+ * Restores the scroll position of the window when an iframe is loaded.
+ * Only used in VTL Pages.
+ * @export
+ */
+export function preserveScrollOnIframe() {
+    const preserveScrollCallback = () => {
+        window.scrollTo(0, window.lastScrollYPosition);
+    };
+
+    window.addEventListener('load', preserveScrollCallback);
+    subscriptions.push({
+        type: 'listener',
+        event: 'scroll',
+        callback: preserveScrollCallback
     });
 }
 

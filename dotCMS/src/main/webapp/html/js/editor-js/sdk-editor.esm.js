@@ -266,6 +266,31 @@ function _unsupported_iterable_to_array(o, minLen) {
     document.addEventListener("pointermove", pointerMoveCallback);
 }
 /**
+ * Attaches a scroll event listener to the window
+ * and sends a message to the editor when the window is scrolled.
+ *
+ * @private
+ * @memberof DotCMSPageEditor
+ */ function scrollHandler() {
+    var scrollCallback = function() {
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.IFRAME_SCROLL
+        });
+        window.lastScrollYPosition = window.scrollY;
+    };
+    window.addEventListener("scroll", scrollCallback);
+}
+/**
+ * Restores the scroll position of the window when an iframe is loaded.
+ * Only used in VTL Pages.
+ * @export
+ */ function preserveScrollOnIframe() {
+    var preserveScrollCallback = function() {
+        window.scrollTo(0, window.lastScrollYPosition);
+    };
+    window.addEventListener("load", preserveScrollCallback);
+}
+/**
  * Listens for changes in the content and triggers a customer action when the content changes.
  *
  * @private
@@ -339,6 +364,8 @@ function _unsupported_iterable_to_array(o, minLen) {
  */ if (isInsideEditor()) {
     pingEditor();
     listenEditorMessages();
+    scrollHandler();
+    preserveScrollOnIframe();
     listenHoveredContentlet();
     listenContentChange();
 }
