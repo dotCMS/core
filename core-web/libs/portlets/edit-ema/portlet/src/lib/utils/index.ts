@@ -184,7 +184,10 @@ export const getPersonalization = (persona: Record<string, string>) => {
  * @param {Record<string, string>} params
  * @return {*}  {string}
  */
-export function buildQueryParams(params: Record<string, string> | DotPageApiParams): string {
+export function createUrlWithQueryParams(
+    url: string,
+    params: Record<string, string> | DotPageApiParams
+): string {
     // Filter out undefined values
     Object.keys(params).forEach(
         (key) => (params[key] === undefined || key === 'url') && delete params[key]
@@ -192,7 +195,7 @@ export function buildQueryParams(params: Record<string, string> | DotPageApiPara
 
     const queryParams = new URLSearchParams({
         ...params
-    });
+    }).toString();
 
-    return queryParams.toString();
+    return queryParams.length ? `${url}?${queryParams}` : url;
 }

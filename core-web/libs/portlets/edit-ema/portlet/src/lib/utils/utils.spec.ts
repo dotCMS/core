@@ -3,7 +3,7 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    buildQueryParams
+    createUrlWithQueryParams
 } from '.';
 
 describe('utils functions', () => {
@@ -303,20 +303,20 @@ describe('utils functions', () => {
         });
     });
 
-    describe('buildQueryParams', () => {
+    describe('createUrlWithQueryParams', () => {
         it('should return the correct query params', () => {
             const queryParams = {
                 name: 'test',
                 age: '20'
             };
-            const result = buildQueryParams(queryParams);
-            expect(result).toBe('name=test&age=20');
+            const result = createUrlWithQueryParams('test', queryParams);
+            expect(result).toBe('test?name=test&age=20');
         });
 
-        it('should return empty string if no query params', () => {
+        it('should return url with no query params if no query params', () => {
             const queryParams = {};
-            const result = buildQueryParams(queryParams);
-            expect(result).toBe('');
+            const result = createUrlWithQueryParams('test', queryParams);
+            expect(result).toBe('test');
         });
 
         it('should ignore the undefined queryParams', () => {
@@ -324,8 +324,8 @@ describe('utils functions', () => {
                 name: 'test',
                 age: undefined
             };
-            const result = buildQueryParams(queryParams);
-            expect(result).toBe('name=test');
+            const result = createUrlWithQueryParams('test', queryParams);
+            expect(result).toBe('test?name=test');
         });
     });
 });

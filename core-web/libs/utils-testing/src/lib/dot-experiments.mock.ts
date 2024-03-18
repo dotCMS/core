@@ -44,10 +44,8 @@ export const getExperimentMock = (index: number): DotExperiment => {
     return { ...ExperimentMocks[index] };
 };
 
-export const getRunningExperimentMock = (): DotExperiment => {
-    return ExperimentMocks.filter(
-        (experiment) => experiment.status === DotExperimentStatus.RUNNING
-    )[0];
+export const getRunningExperimentMock = (): DotExperiment | undefined => {
+    return ExperimentMocks.find((experiment) => experiment.status === DotExperimentStatus.RUNNING);
 };
 
 export const getExperimentAllMocks = (): Array<DotExperiment> => {

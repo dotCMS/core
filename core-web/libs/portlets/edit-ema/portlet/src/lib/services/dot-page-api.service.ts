@@ -18,7 +18,7 @@ import {
 
 import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
 import { SavePagePayload } from '../shared/models';
-import { buildQueryParams } from '../utils';
+import { createUrlWithQueryParams } from '../utils';
 
 export interface DotPageApiResponse {
     page: {
@@ -86,7 +86,7 @@ export class DotPageApiService {
 
         const pageType = params.clientHost ? 'json' : 'render';
 
-        const newQueryParams = buildQueryParams({
+        const pageApiUrl = createUrlWithQueryParams(url, {
             language_id: params.language_id ?? '1',
             'com.dotmarketing.persona.id':
                 params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
@@ -96,7 +96,7 @@ export class DotPageApiService {
         });
 
         // Refactor this. It's a mess
-        const apiUrl = `/api/v1/page/${pageType}/${url}?${newQueryParams}`;
+        const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;
 
         return this.http
             .get<{

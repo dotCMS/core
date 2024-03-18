@@ -34,7 +34,7 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    buildQueryParams
+    createUrlWithQueryParams
 } from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
@@ -345,7 +345,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private createPageURL(params: DotPageApiParams): string {
         const url = sanitizeURL(params.url);
 
-        return `${url}?${buildQueryParams(params)}`;
+        return createUrlWithQueryParams(url, params);
     }
 
     /*******************
