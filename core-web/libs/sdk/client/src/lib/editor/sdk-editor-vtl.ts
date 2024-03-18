@@ -6,7 +6,7 @@ import {
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
-import { initEditor, isInsideEditor } from './sdk-editor';
+import { isInsideEditor } from './sdk-editor';
 
 declare global {
     interface Window {

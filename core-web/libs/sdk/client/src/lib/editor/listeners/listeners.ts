@@ -168,8 +168,15 @@ export function scrollHandler() {
  * @export
  */
 export function preserveScrollOnIframe() {
-    window.addEventListener('load', () => {
+    const preserveScrollCallback = () => {
         window.scrollTo(0, window.lastScrollYPosition);
+    };
+
+    window.addEventListener('load', preserveScrollCallback);
+    subscriptions.push({
+        type: 'listener',
+        event: 'scroll',
+        callback: preserveScrollCallback
     });
 }
 

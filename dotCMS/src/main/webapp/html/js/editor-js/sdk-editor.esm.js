@@ -285,9 +285,10 @@ function _unsupported_iterable_to_array(o, minLen) {
  * Only used in VTL Pages.
  * @export
  */ function preserveScrollOnIframe() {
-    window.addEventListener("load", function() {
+    var preserveScrollCallback = function() {
         window.scrollTo(0, window.lastScrollYPosition);
-    });
+    };
+    window.addEventListener("load", preserveScrollCallback);
 }
 /**
  * Listens for changes in the content and triggers a customer action when the content changes.
