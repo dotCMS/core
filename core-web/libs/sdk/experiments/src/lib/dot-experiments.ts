@@ -293,7 +293,7 @@ export class DotExperiments {
             return true;
         }
 
-        if (this.indexDBData && checkInvalidateDataChecked(this.indexDBData.created)) {
+        if (checkInvalidateDataChecked(this.indexDBData)) {
             return true;
         }
 

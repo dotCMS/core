@@ -4,7 +4,7 @@ import {
     EXPERIMENT_SCRIPT_FILE_NAME,
     LOCAL_STORAGE_TIME_DURATION_MILLISECONDS
 } from '../constants';
-import { DotExperimentConfig } from '../models';
+import { DotExperimentConfig, IndexDbStoredData } from '../models';
 
 /**
  * Returns the first script element that includes the experiment script identifier.
@@ -122,10 +122,15 @@ export const checkFlagExperimentAlreadyChecked = (): boolean => {
 /**
  * Checks if the data needs to be invalidated based on the creation date.
  *
- * @param {number} created - The creation date of the data in milliseconds.
  * @returns {boolean} - True if the data needs to be invalidated, false otherwise.
+ * @param dbData
  */
-export const checkInvalidateDataChecked = (created: number): boolean => {
+export const checkInvalidateDataChecked = (dbData: IndexDbStoredData): boolean => {
+    if (!dbData) {
+        return false;
+    }
+
+    const { created } = dbData;
     const now = Date.now();
 
     return now - created > LOCAL_STORAGE_TIME_DURATION_MILLISECONDS;
