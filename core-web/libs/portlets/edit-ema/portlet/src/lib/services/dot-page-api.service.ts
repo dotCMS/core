@@ -95,7 +95,6 @@ export class DotPageApiService {
             experimentId: params.experimentId
         });
 
-        // Refactor this. It's a mess
         const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;
 
         return this.http
