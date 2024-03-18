@@ -5,7 +5,8 @@ import { MultiSelect } from 'primeng/multiselect';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotDropdownSelectOption } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotMessagePipe } from '../dot-message/dot-message.pipe';
 
 const DEFAULT_LABEL_NAME_INDEX = 'label';
 const DEFAULT_VALUE_NAME_INDEX = 'value';

@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotLicenseService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { DotEnterpriseLicenseResolver } from '@portlets/shared/resolvers/dot-enterprise-license-resolver.service';
+import { DotEnterpriseLicenseResolver } from '@dotcms/ui';
 
 describe('DotEnterpriseLicenseResolver', () => {
     let service: DotEnterpriseLicenseResolver;

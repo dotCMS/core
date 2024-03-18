@@ -14,6 +14,8 @@ import {
 
 import { filter } from 'rxjs/operators';
 
+import { DialogButton, DotDialogActions } from '@dotcms/dotcms-models';
+
 @Component({
     selector: 'dot-dialog',
     templateUrl: './dot-dialog.component.html',
@@ -196,15 +198,4 @@ export class DotDialogComponent implements OnChanges {
     private isVisible(changes: SimpleChanges): boolean {
         return changes.visible && changes.visible.currentValue;
     }
-}
-
-export interface DialogButton {
-    action?: (dialog?: unknown) => void;
-    disabled?: boolean;
-    label: string;
-}
-
-export interface DotDialogActions {
-    accept?: DialogButton;
-    cancel?: DialogButton;
 }

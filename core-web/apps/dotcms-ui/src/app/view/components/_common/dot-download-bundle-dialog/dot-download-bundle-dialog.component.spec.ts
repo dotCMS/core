@@ -9,8 +9,6 @@ import { By } from '@angular/platform-browser';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
@@ -18,7 +16,7 @@ import {
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotDialogComponent, DotDialogModule, DotMessagePipe } from '@dotcms/ui';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 

@@ -22,12 +22,12 @@ import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotCopyContentTypeDialogFormFields,
+    DotEnvironment,
     StructureTypeView
 } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions } from '@models/action-header';
 import { ButtonModel } from '@models/action-header/button.model';
 import { DataTableColumn } from '@models/data-table';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 import { DotContentTypeStore } from './dot-content-type.store';
