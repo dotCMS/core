@@ -1861,7 +1861,10 @@ describe('EditEmaEditorComponent', () => {
                     };
 
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-                    const scrollSpy = jest.spyOn(iframe.nativeElement.contentWindow, 'scrollTo');
+                    const scrollSpy = jest
+                        .spyOn(spectator.component.iframe.nativeElement.contentWindow, 'scrollTo')
+                        .mockImplementation(() => jest.fn);
+
                     iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
                     store.reload({
