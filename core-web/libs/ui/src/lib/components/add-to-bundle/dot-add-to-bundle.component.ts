@@ -1,5 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
+import { AsyncPipe } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -10,22 +11,39 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 
-import { Dropdown } from 'primeng/dropdown';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
 import { map, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { AddToBundleService, DotMessageService } from '@dotcms/data-access';
+import { AddToBundleService, DotCurrentUserService, DotMessageService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { DotAjaxActionResponseView, DotBundle } from '@dotcms/dotcms-models';
+import { DotAjaxActionResponseView, DotBundle, DotDialogActions } from '@dotcms/dotcms-models';
+import { DotDialogModule, DotFieldValidationMessageComponent } from '@dotcms/ui';
+
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
 
 @Component({
+    standalone: true,
     selector: 'dot-add-to-bundle',
     templateUrl: 'dot-add-to-bundle.component.html',
+    imports: [
+        DotDialogModule,
+        DotMessagePipe,
+        ReactiveFormsModule,
+        DropdownModule,
+        AsyncPipe,
+        DotFieldValidationMessageComponent
+    ],
+    providers: [DotMessageService, AddToBundleService, DotCurrentUserService],
     styleUrls: ['dot-add-to-bundle.component.scss']
 })
 export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -42,7 +60,6 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
     @ViewChild('formEl', { static: true }) formEl: HTMLFormElement;
 
     @ViewChild('addBundleDropdown', { static: true }) addBundleDropdown: Dropdown;
-
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(

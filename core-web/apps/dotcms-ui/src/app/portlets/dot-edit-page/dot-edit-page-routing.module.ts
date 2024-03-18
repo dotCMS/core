@@ -51,15 +51,9 @@ const dotEditPage: Routes = [
                 path: 'rules/:pageId',
                 loadChildren: () => import('@dotcms/dot-rules').then((m) => m.DotRulesModule)
             },
-            // TODO: create a guard global of isEnterprise
             {
                 path: 'experiments',
                 loadChildren: async () =>
-                    //TODO: move all the core-web/apps/dotcms-ui/src/app/view/components/_common
-                    // folder with components reused in experiments to a Library to
-                    // avoid this circular dependency
-
-                    // eslint-disable-next-line @nx/enforce-module-boundaries
                     (await import('@dotcms/portlets/dot-experiments/portlet'))
                         .DotExperimentsPortletRoutes
             }

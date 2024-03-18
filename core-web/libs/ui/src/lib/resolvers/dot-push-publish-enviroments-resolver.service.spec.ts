@@ -4,8 +4,9 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { PushPublishService } from '@dotcms/data-access';
-import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
-import { DotPushPublishEnvironmentsResolver } from '@portlets/shared/resolvers/dot-push-publish-enviroments-resolver.service';
+import { MockPushPublishService } from '@dotcms/utils-testing';
+
+import { DotPushPublishEnvironmentsResolver } from './dot-push-publish-enviroments-resolver.service';
 
 describe('DotPushPublishEnvironmentsResolver', () => {
     let service: DotPushPublishEnvironmentsResolver;

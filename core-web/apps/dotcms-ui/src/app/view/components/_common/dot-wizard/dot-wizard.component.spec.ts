@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, Input, Output, EventEmitter } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -13,8 +13,6 @@ import { By } from '@angular/platform-browser';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
@@ -35,6 +33,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
+import { DotDialogComponent, DotDialogModule } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotWizardComponent } from './dot-wizard.component';

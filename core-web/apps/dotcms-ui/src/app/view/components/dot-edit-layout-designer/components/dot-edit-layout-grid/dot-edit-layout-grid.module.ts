@@ -8,10 +8,10 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { NgGridModule } from '@dotcms/dot-layout-grid';
 import {
     DotAutofocusDirective,
+    DotDialogModule,
     DotFieldRequiredDirective,
     DotMessagePipe,
     DotSafeHtmlPipe
