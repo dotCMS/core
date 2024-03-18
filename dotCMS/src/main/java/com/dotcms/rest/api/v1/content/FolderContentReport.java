@@ -48,7 +48,6 @@ public class FolderContentReport implements ContentReport {
 
     @Override
     public List<ContentReportView> generateContentReport(final ContentReportParams params) throws DotDataException, DotSecurityException {
-        final User user = params.user();
         final String folder = params.extraParam(ContentReportPaginator.FOLDER_PARAM);
         final String site = params.extraParam(ContentReportPaginator.SITE_PARAM);
         final Optional<Folder> folderOpt = this.resolveFolder(folder, site, user);
