@@ -234,6 +234,7 @@ public class ExperimentWebAPIImplIntegrationTest {
             final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(htmlPageAsset.getHost());
 
             final DotCMSMockResponse response = new DotCMSMockResponse();
 
@@ -312,6 +313,7 @@ public class ExperimentWebAPIImplIntegrationTest {
             final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(htmlPageAsset.getHost());
 
             for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
@@ -371,6 +373,7 @@ public class ExperimentWebAPIImplIntegrationTest {
             final Experiment experimentStarted = ExperimentDataGen.start(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
 
             for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
@@ -428,6 +431,7 @@ public class ExperimentWebAPIImplIntegrationTest {
             final Experiment experimentStarted = ExperimentDataGen.start(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
 
             for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
@@ -490,6 +494,7 @@ public class ExperimentWebAPIImplIntegrationTest {
             final Experiment experimentStarted = ExperimentDataGen.start(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
 
             for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
@@ -559,6 +564,7 @@ public class ExperimentWebAPIImplIntegrationTest {
             final Experiment experimentStarted = ExperimentDataGen.start(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
 
             for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
@@ -692,11 +698,13 @@ public class ExperimentWebAPIImplIntegrationTest {
     @Test
     public void trafficLocation50() throws DotDataException, DotSecurityException {
         final Experiment experiment = new ExperimentDataGen().trafficAllocation(50).nextPersisted();
+        final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
 
         try {
             ExperimentDataGen.start(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(htmlPageAsset.getHost());
             final List<SelectedExperiment> experimentsSelected = new ArrayList<>();
 
             for (int i = 0; i < 100; i++) {
@@ -818,7 +826,10 @@ public class ExperimentWebAPIImplIntegrationTest {
         try{
             experiment = ExperimentDataGen.start(experiment);
 
+            final HTMLPageAsset experimentPage = getHtmlPageAsset(experiment);
+
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(experimentPage.getHost());
 
             for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
@@ -890,7 +901,7 @@ public class ExperimentWebAPIImplIntegrationTest {
     /**
      * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have 2 experiments with a rules and the rules conditions is TRUE for both of them
-     * Should: Return {@link ExperimentWebAPIImpl#NONE_EXPERIMENT} all the times
+     * Should: Return both Experiments all the times
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -904,19 +915,24 @@ public class ExperimentWebAPIImplIntegrationTest {
                 .operator(LogicalOperator.AND)
                 .build();
 
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset page_1 = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset page_2 = new HTMLPageDataGen(host, template).nextPersisted();
+
         Experiment experiment_1 = new ExperimentDataGen()
                 .trafficAllocation(100)
                 .addTargetingConditions(targetingCondition)
+                .page(page_1)
                 .nextPersisted();
 
 
         Experiment experiment_2 = new ExperimentDataGen()
                 .trafficAllocation(100)
                 .addTargetingConditions(targetingCondition)
+                .page(page_2)
                 .nextPersisted();
-
-        final HTMLPageAsset htmlPageAsset_1 = getExperimentPage(experiment_1);
-        final HTMLPageAsset htmlPageAsset_2 = getExperimentPage(experiment_2);
 
         try{
             experiment_1 = ExperimentDataGen.start(experiment_1);
@@ -924,6 +940,7 @@ public class ExperimentWebAPIImplIntegrationTest {
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             when(request.getAttribute("testing-attribute")).thenReturn("testing");
+            when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
 
             for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
@@ -935,9 +952,9 @@ public class ExperimentWebAPIImplIntegrationTest {
                 for (final SelectedExperiment selectedExperiment : selectedExperiments.getExperiments()) {
 
                     if (selectedExperiment.id().equals(experiment_1.id())) {
-                        assertEquals(htmlPageAsset_1.getPageUrl(), selectedExperiment.pageUrl());
+                        assertEquals(page_1.getPageUrl(), selectedExperiment.pageUrl());
                     } else if (selectedExperiment.id().equals(experiment_2.id())) {
-                        assertEquals(htmlPageAsset_2.getPageUrl(), selectedExperiment.pageUrl());
+                        assertEquals(page_2.getPageUrl(), selectedExperiment.pageUrl());
                     }
                 }
 
@@ -976,6 +993,7 @@ public class ExperimentWebAPIImplIntegrationTest {
             final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(htmlPageAsset.getHost());
 
             final List<SelectedExperiment> experiments = new ArrayList<>();
 
@@ -1021,15 +1039,22 @@ public class ExperimentWebAPIImplIntegrationTest {
      */
     @Test
     public void excludeExperiments() throws DotDataException, DotSecurityException {
-        final Experiment experiment_1 = new ExperimentDataGen().trafficAllocation(100).nextPersisted();
-        final Experiment experiment_2 = new ExperimentDataGen().trafficAllocation(100).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset page_1 = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset page_2 = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment_1 = new ExperimentDataGen().trafficAllocation(100).page(page_1).nextPersisted();
+        final Experiment experiment_2 = new ExperimentDataGen().trafficAllocation(100).page(page_2).nextPersisted();
 
         try {
             ExperimentDataGen.start(experiment_1);
 
-            final HttpServletRequest request = mock(HttpServletRequest.class);
-
             final DotCMSMockResponse response = new DotCMSMockResponse();
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
 
             final SelectedExperiments selectedExperiments_1 = WebAPILocator.getExperimentWebAPI()
                     .isUserIncluded(request, response, null);
@@ -1058,6 +1083,19 @@ public class ExperimentWebAPIImplIntegrationTest {
             if (experiment.isPresent() && experiment.get().status() == Status.RUNNING) {
                 ExperimentDataGen.end(experiment_2);
             }
+        }
+    }
+
+    private HTMLPageAsset getHtmlPageAsset(final Experiment experiment) {
+
+        try {
+            final Contentlet contentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+            final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(contentlet);
+            return htmlPageAsset;
+        } catch (DotDataException e) {
+            throw new DotRuntimeException(e);
         }
     }
 
