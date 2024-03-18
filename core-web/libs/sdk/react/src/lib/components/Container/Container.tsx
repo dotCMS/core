@@ -1,7 +1,5 @@
 import { useContext } from 'react';
 
-import { isInsideEditor } from '@dotcms/client';
-
 import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
@@ -42,6 +40,8 @@ export interface ContainerProps {
 }
 
 export function Container({ containerRef }: ContainerProps) {
+    const { isInsideEditor } = useContext(PageContext) as PageProviderContext;
+
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
@@ -55,7 +55,7 @@ export function Container({ containerRef }: ContainerProps) {
     );
 
     const updatedContentlets =
-        contentlets.length === 0 && isInsideEditor() ? [FAKE_CONTENLET] : contentlets;
+        contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
 
     const container = {
         acceptTypes,
@@ -73,7 +73,7 @@ export function Container({ containerRef }: ContainerProps) {
                 ? EmptyContainer
                 : ContentTypeComponent;
 
-        return isInsideEditor() ? (
+        return isInsideEditor ? (
             <div
                 data-dot-object="contentlet"
                 data-dot-identifier={contentlet.identifier}
@@ -89,7 +89,7 @@ export function Container({ containerRef }: ContainerProps) {
         );
     });
 
-    return isInsideEditor() ? (
+    return isInsideEditor ? (
         <div
             data-dot-object="container"
             data-dot-accept-types={acceptTypes}

@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplInt
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
+import com.dotmarketing.startup.runonce.Task240306MigrateLegacyLanguageVariablesTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -99,7 +100,8 @@ import org.junit.runners.Suite.SuiteClasses;
         HostFactoryImplTest.class,
         BundleFactoryImplTest.class,
         ExperimentUrlPatternCalculatorIntegrationTest.class,
-        JsEngineTest.class
+        JsEngineTest.class,
+        Task240306MigrateLegacyLanguageVariablesTest.class
 })
 
 public class MainSuite1a {

@@ -621,7 +621,8 @@ import org.junit.runners.Suite.SuiteClasses;
         RemoteAnnouncementsLoaderIntegrationTest.class,
         JsEngineTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
-        Task240112AddMetadataColumnToStructureTableTest.class
+        Task240112AddMetadataColumnToStructureTableTest.class,
+        Task240306MigrateLegacyLanguageVariablesTest.class
 })
 
 public class MainSuite {
