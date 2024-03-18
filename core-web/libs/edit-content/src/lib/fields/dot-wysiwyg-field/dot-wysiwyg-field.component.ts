@@ -1,10 +1,21 @@
 import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { Editor, TinyMCE } from 'tinymce';
 
-import { ChangeDetectionStrategy, Component, Input, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    Input,
+    inject,
+    signal,
+    NgZone
+} from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotAssetSearchComponent } from '@dotcms/ui';
 
 declare global {
     interface Window {
@@ -19,7 +30,7 @@ declare global {
     templateUrl: './dot-wysiwyg-field.component.html',
     styleUrl: './dot-wysiwyg-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [{ provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }],
+    providers: [DialogService, { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }],
     viewProviders: [
         {
             provide: ControlContainer,
@@ -29,6 +40,14 @@ declare global {
 })
 export class DotWYSIWYGFieldComponent {
     @Input() field!: DotCMSContentTypeField;
+    public init = {
+        setup: (editor) => {
+            this.setup(editor);
+        }
+    };
+    private readonly dialogService: DialogService = inject(DialogService);
+    private readonly ngZone: NgZone = inject(NgZone);
+    private readonly cd: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     protected readonly plugins = signal(
         'dotAddImage advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template'
@@ -39,11 +58,18 @@ export class DotWYSIWYGFieldComponent {
     );
 
     setup(_editor: Editor) {
-        window.tinymce.PluginManager.add('dotAddImage', function (editor: Editor) {
+        window.tinymce.PluginManager.add('dotAddImage', (editor: Editor) => {
             editor.ui.registry.addButton('buttondotAddImage', {
                 text: 'Add Image',
-                onAction: function () {
-                    /* */
+                onAction: () => {
+                    this.ngZone.run(() => {
+                        this.dialogService.open(DotAssetSearchComponent, {
+                            header: 'Add Image',
+                            width: '70%',
+                            height: '70%'
+                        });
+                        this.cd.detectChanges();
+                    });
                 }
             });
         });

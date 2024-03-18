@@ -11,6 +11,7 @@ import { OrderListModule } from 'primeng/orderlist';
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
 import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotContentSearchService, DotLanguageService } from '@dotcms/ui';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
@@ -26,10 +27,8 @@ import {
     ASSET_MOCK,
     CONTENTLETS_MOCK,
     DotAiService,
-    DotLanguageService,
     DotUploadFileService,
     FileStatus,
-    SearchService,
     SuggestionsComponent,
     SuggestionsService
 } from '../../shared';
@@ -170,7 +169,7 @@ export const Primary = () => ({
                     }
                 },
                 {
-                    provide: SearchService,
+                    provide: DotContentSearchService,
                     useValue: {
                         get(params) {
                             const query = params.query.match(new RegExp(/(?<=:)(.*?)(?=\*)/))[0];

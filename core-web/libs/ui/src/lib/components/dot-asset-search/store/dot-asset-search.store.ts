@@ -6,14 +6,9 @@ import { Observable } from 'rxjs/internal/Observable';
 import { map, mergeMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
+import { ESOrderDirection, EsQueryParams, DotContentSearchService } from '@dotcms/ui';
 
-import {
-    SearchService,
-    Languages,
-    DotLanguageService,
-    EsQueryParams,
-    ESOrderDirection
-} from '../../../../../shared';
+import { DotLanguageService, Languages } from '../../../services/dot-language/dot-language.service';
 
 const DEFAULT_LANG_ID = 1;
 
@@ -32,7 +27,7 @@ const defaultState: DotImageSearchState = {
     contentlets: [],
     languageId: DEFAULT_LANG_ID,
     search: '',
-    assetType: null
+    assetType: 'image'
 };
 
 @Injectable()
@@ -113,7 +108,7 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
     private languages: Languages;
 
     constructor(
-        private searchService: SearchService,
+        private DotContentSearchService: DotContentSearchService,
         private dotLanguageService: DotLanguageService
     ) {
         super(defaultState);
@@ -124,7 +119,7 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
     }
 
     private searchContentletsRequest(params, prev: DotCMSContentlet[]) {
-        return this.searchService.get(params).pipe(
+        return this.DotContentSearchService.get(params).pipe(
             map(({ jsonObjectView: { contentlets } }) => {
                 const items = this.setContentletLanguage(contentlets);
                 this.updateLoading(false);

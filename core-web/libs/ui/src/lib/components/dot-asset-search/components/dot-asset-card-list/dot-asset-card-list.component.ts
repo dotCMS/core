@@ -1,13 +1,28 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    inject
+} from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { sanitizeUrl, squarePlus } from '../../../../../../shared';
+import { DotAssetCardComponent } from '../dot-asset-card/dot-asset-card.component';
+import { DotAssetCardSkeletonComponent } from '../dot-asset-card-skeleton/dot-asset-card-skeleton.component';
+
+const squarePlus =
+    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDEiIHZpZXdCb3g9IjAgMCA0MCA0MSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuMDc2MTcgOC41NTcxMkgwLjA5NTIxNDhWMzYuNDIzOEMwLjA5NTIxNDggMzguNjEzMyAxLjg4NjY0IDQwLjQwNDcgNC4wNzYxNyA0MC40MDQ3SDMxLjk0MjhWMzYuNDIzOEg0LjA3NjE3VjguNTU3MTJaTTM1LjkyMzggMC41OTUyMTVIMTIuMDM4MUM5Ljg0ODU1IDAuNTk1MjE1IDguMDU3MTIgMi4zODY2NCA4LjA1NzEyIDQuNTc2MTdWMjguNDYxOUM4LjA1NzEyIDMwLjY1MTQgOS44NDg1NSAzMi40NDI4IDEyLjAzODEgMzIuNDQyOEgzNS45MjM4QzM4LjExMzMgMzIuNDQyOCAzOS45MDQ3IDMwLjY1MTQgMzkuOTA0NyAyOC40NjE5VjQuNTc2MTdDMzkuOTA0NyAyLjM4NjY0IDM4LjExMzMgMC41OTUyMTUgMzUuOTIzOCAwLjU5NTIxNVpNMzUuOTIzOCAyOC40NjE5SDEyLjAzODFWNC41NzYxN0gzNS45MjM4VjI4LjQ2MTlaTTIxLjk5MDUgMjQuNDgwOUgyNS45NzE0VjE4LjUwOTVIMzEuOTQyOFYxNC41Mjg1SDI1Ljk3MTRWOC41NTcxMkgyMS45OTA1VjE0LjUyODVIMTYuMDE5VjE4LjUwOTVIMjEuOTkwNVYyNC40ODA5WiIgZmlsbD0iIzU3NkJFOCIvPgo8L3N2Zz4K';
 
 @Component({
     selector: 'dot-asset-card-list',
     templateUrl: './dot-asset-card-list.component.html',
     styleUrls: ['./dot-asset-card-list.component.scss'],
+    standalone: true,
+    imports: [CommonModule, DotAssetCardComponent, DotAssetCardSkeletonComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetCardListComponent {
@@ -21,8 +36,9 @@ export class DotAssetCardListComponent {
         this._itemRows = this.createRowItem(value);
     }
 
+    private domSanitizer: DomSanitizer = inject(DomSanitizer);
     public loadingItems = [null, null, null];
-    public icon = sanitizeUrl(squarePlus);
+    public icon = this.domSanitizer.bypassSecurityTrustHtml(squarePlus);
     private _itemRows: DotCMSContentlet[][] = [];
     private _offset = 0;
 

@@ -13,11 +13,12 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { debounceTime, take } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotLanguageService, Languages } from '@dotcms/ui';
 
 import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
 
-import { Languages, SuggestionsCommandProps } from '../../shared';
-import { DotLanguageService, SuggestionsService } from '../../shared/services';
+import { SuggestionsCommandProps } from '../../shared';
+import { SuggestionsService } from '../../shared/services';
 import { DEFAULT_LANG_ID } from '../bubble-menu/models';
 import { isValidURL } from '../bubble-menu/utils';
 

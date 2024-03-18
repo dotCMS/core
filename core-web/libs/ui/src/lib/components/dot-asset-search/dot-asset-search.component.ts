@@ -1,5 +1,6 @@
 import { BehaviorSubject, fromEvent, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -13,11 +14,16 @@ import {
     ViewChild
 } from '@angular/core';
 
+import { InputTextModule } from 'primeng/inputtext';
+
 import { debounceTime, skip, takeUntil, throttleTime } from 'rxjs/operators';
 
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 // services
+import { DotAssetCardComponent } from './components/dot-asset-card/dot-asset-card.component';
+import { DotAssetCardListComponent } from './components/dot-asset-card-list/dot-asset-card-list.component';
+import { DotAssetCardSkeletonComponent } from './components/dot-asset-card-skeleton/dot-asset-card-skeleton.component';
 import { DotAssetSearchStore } from './store/dot-asset-search.store';
 
 @Component({
@@ -25,6 +31,15 @@ import { DotAssetSearchStore } from './store/dot-asset-search.store';
     templateUrl: './dot-asset-search.component.html',
     styleUrls: ['./dot-asset-search.component.scss'],
     providers: [DotAssetSearchStore],
+    standalone: true,
+    imports: [
+        DotAssetCardComponent,
+        DotAssetCardListComponent,
+        DotAssetCardSkeletonComponent,
+        DotAssetCardListComponent,
+        InputTextModule,
+        CommonModule
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit {

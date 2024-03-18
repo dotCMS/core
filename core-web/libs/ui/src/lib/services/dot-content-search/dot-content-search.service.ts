@@ -24,7 +24,7 @@ export interface EsQueryParams {
 @Injectable({
     providedIn: 'root'
 })
-export class SearchService {
+export class DotContentSearchService {
     constructor(private http: HttpClient) {}
 
     /**

@@ -14,9 +14,10 @@ import { MenuItem } from 'primeng/api';
 import { map, take } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotLanguageService, Languages } from '@dotcms/ui';
 
 import { DEFAULT_LANG_ID } from '../../../extensions';
-import { DotLanguageService, Languages, SuggestionsService } from '../../services';
+import { SuggestionsService } from '../../services';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;

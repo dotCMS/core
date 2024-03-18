@@ -1,27 +1,19 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { DotCMSContentlet, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
+import { CardModule } from 'primeng/card';
 
-import { DotMarketingConfigService } from '../../../../../../shared';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-asset-card',
     templateUrl: './dot-asset-card.component.html',
     styleUrls: ['./dot-asset-card.component.scss'],
+    standalone: true,
+    imports: [CardModule],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotAssetCardComponent implements OnInit {
-    showVideoThumbnail = true;
-
+export class DotAssetCardComponent {
     @Input() contentlet: DotCMSContentlet;
-
-    constructor(private dotMarketingConfigService: DotMarketingConfigService) {}
-
-    ngOnInit() {
-        this.showVideoThumbnail = this.dotMarketingConfigService.getProperty(
-            EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL
-        );
-    }
 
     /**
      * Return the contentlet Thumbanil based in the inode
