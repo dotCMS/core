@@ -71,7 +71,7 @@ public class SiteContentReportPaginator extends ContentReportPaginator<ContentRe
     private long getTotalRecords(final String condition, final BaseContentType type,
                                  final List<String> siteIds) {
         try {
-            this.contentTypeAPI.countForSites(condition, type, siteIds);
+            return this.contentTypeAPI.countForSites(condition, type, siteIds);
         } catch (final DotDataException e) {
             Logger.debug(this, () -> String.format("Total Content Type count for Sites [ %s ] " +
                     "could not be determined: %s", siteIds, ExceptionUtil.getErrorMessage(e)));

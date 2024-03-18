@@ -1,17 +1,21 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.pagination.ContentReportPaginator;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 
 import java.util.List;
 import java.util.Map;
@@ -25,7 +29,11 @@ import java.util.stream.Collectors;
  * @author Jose Castro
  * @since Mar 15th, 2024
  */
-public class SiteContentReportHelper extends ContentReportHelper {
+public class SiteContentReportHelper implements ContentReportHelper {
+
+    final User user;
+    final ContentTypeAPI contentTypeAPI;
+    final Lazy<HostAPI> siteAPI = Lazy.of(APILocator::getHostAPI);
 
     /**
      * Creates a new instance of this Helper.
@@ -33,7 +41,8 @@ public class SiteContentReportHelper extends ContentReportHelper {
      * @param user The {@link User} that will access the data provided by this Helper.
      */
     public SiteContentReportHelper(final User user) {
-        super(user);
+        this.user = user;
+        this.contentTypeAPI = APILocator.getContentTypeAPI(user, false);
     }
 
     @Override

@@ -1,13 +1,7 @@
 package com.dotcms.rest.api.v1.content;
 
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.liferay.portal.model.User;
-import io.vavr.Lazy;
 
 import java.util.List;
 
@@ -23,23 +17,7 @@ import java.util.List;
  * @author Jose Castro
  * @since Mar 7th, 2024
  */
-public abstract class ContentReportHelper {
-
-    final User user;
-    final ContentTypeAPI contentTypeAPI;
-    final Lazy<HostAPI> siteAPI = Lazy.of(APILocator::getHostAPI);
-    final Lazy<FolderAPI> folderAPI = Lazy.of(APILocator::getFolderAPI);
-
-    /**
-     * Default class constructor. Specifying a User is required in order to access the Content Type
-     * API.
-     *
-     * @param user The {@link User} accessing this Helper.
-     */
-    public ContentReportHelper(final User user) {
-        this.user = user;
-        this.contentTypeAPI = APILocator.getContentTypeAPI(user, false);
-    }
+public interface ContentReportHelper {
 
     /**
      * Generates the Content Report for a specific dotCMS object. Every implementation must define
@@ -55,6 +33,6 @@ public abstract class ContentReportHelper {
      * @throws DotSecurityException The specified User does not have the necessary permissions to
      *                              perform this action.
      */
-    public abstract List<ContentReportView> generateContentReport(final ContentReportParams params) throws DotDataException, DotSecurityException;
+    List<ContentReportView> generateContentReport(final ContentReportParams params) throws DotDataException, DotSecurityException;
 
 }

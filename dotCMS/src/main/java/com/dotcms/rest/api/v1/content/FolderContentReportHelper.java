@@ -1,14 +1,19 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.util.pagination.ContentReportPaginator;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.List;
@@ -24,7 +29,12 @@ import java.util.stream.Collectors;
  * @author Jose Castro
  * @since Mar 15th, 2024
  */
-public class FolderContentReportHelper extends ContentReportHelper {
+public class FolderContentReportHelper implements ContentReportHelper {
+
+    final User user;
+    final ContentTypeAPI contentTypeAPI;
+    final Lazy<HostAPI> siteAPI = Lazy.of(APILocator::getHostAPI);
+    final Lazy<FolderAPI> folderAPI = Lazy.of(APILocator::getFolderAPI);
 
     /**
      * Creates a new instance of this Helper.
@@ -32,7 +42,8 @@ public class FolderContentReportHelper extends ContentReportHelper {
      * @param user The {@link User} that will access the data provided by this Helper.
      */
     public FolderContentReportHelper(final User user) {
-        super(user);
+        this.user = user;
+        this.contentTypeAPI = APILocator.getContentTypeAPI(user, false);
     }
 
     @Override

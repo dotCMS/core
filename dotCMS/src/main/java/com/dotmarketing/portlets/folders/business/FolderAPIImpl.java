@@ -1258,6 +1258,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		folderFactory.updateUserReferences(userId, replacementUserId);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<Map<String, Object>> getContentReport(final Folder folder, final String orderBy,
 													  final String orderDirection, final int limit,
@@ -1282,6 +1283,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}).collect(Collectors.toList());
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public int getContentTypeCount(final Folder folder, final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		checkNotNull(folder, "'folder' parameter cannot be null");
