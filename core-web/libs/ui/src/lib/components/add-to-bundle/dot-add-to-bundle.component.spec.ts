@@ -6,8 +6,6 @@ import { Component, DebugElement } from '@angular/core';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { MockDotMessageService } from '@dotcms/utils-testing';
-
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
 
 class AddToBundleServiceMock {
@@ -33,16 +31,6 @@ xdescribe('DotAddToBundleComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let addToBundleServiceMock: AddToBundleServiceMock;
-
-    const messageServiceMock = new MockDotMessageService({
-        'contenttypes.content.add_to_bundle': 'Add to bundle',
-        'contenttypes.content.add_to_bundle.select': 'Select or type bundle',
-        'contenttypes.content.add_to_bundle.type': 'Type bundle name',
-        'contenttypes.content.add_to_bundle.errormsg':
-            'Please select a Bundle from the list or type a bundle name',
-        'contenttypes.content.add_to_bundle.form.cancel': 'Cancel',
-        'contenttypes.content.add_to_bundle.form.add': 'Add'
-    });
 
     beforeEach(() => {
         addToBundleServiceMock = new AddToBundleServiceMock();
