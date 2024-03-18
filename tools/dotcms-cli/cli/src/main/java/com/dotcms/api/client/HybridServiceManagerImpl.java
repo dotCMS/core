@@ -48,7 +48,8 @@ public class HybridServiceManagerImpl implements ServiceManager {
                     //First store the sensitive data in the keychain
                     passwordStore.setPassword(service.name(), credentialsBean.user(), new String(token.get()));
                     // then strip any sensitive data from the info that is going to be saved into the yml/text file
-                    CredentialsBean strippedTokenBean = CredentialsBean.builder().from(credentialsBean).tokenSupplier(()->EMPTY_TOKEN).build();
+                    CredentialsBean strippedTokenBean = CredentialsBean.builder().from(credentialsBean)
+                            .token(EMPTY_TOKEN).tokenSupplier(()->EMPTY_TOKEN).build();
                     ServiceBean strippedCredentialsBean = ServiceBean.builder().from(service).credentials(strippedTokenBean).build();
                     defaultManager.persist(strippedCredentialsBean);
                 } catch (StoreSecureException  e) {
