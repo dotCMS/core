@@ -3,10 +3,10 @@ package com.dotcms.util.pagination;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.rest.api.v1.content.ContentReportHelper;
+import com.dotcms.rest.api.v1.content.ContentReport;
 import com.dotcms.rest.api.v1.content.ContentReportParams;
 import com.dotcms.rest.api.v1.content.ContentReportView;
-import com.dotcms.rest.api.v1.content.SiteContentReportHelper;
+import com.dotcms.rest.api.v1.content.SiteContentReport;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,7 +27,7 @@ import static com.liferay.util.StringPool.BLANK;
  */
 public class SiteContentReportPaginator extends ContentReportPaginator<ContentReportView> {
 
-    private final ContentReportHelper contentReportHelper;
+    private final ContentReport contentReportHelper;
     final ContentTypeAPI contentTypeAPI;
 
     /**
@@ -36,7 +36,7 @@ public class SiteContentReportPaginator extends ContentReportPaginator<ContentRe
      * @param user The {@link User} that will access the data provided by this Paginator.
      */
     public SiteContentReportPaginator(final User user) {
-        this.contentReportHelper = new SiteContentReportHelper(user);
+        this.contentReportHelper = new SiteContentReport(user);
         this.contentTypeAPI = APILocator.getContentTypeAPI(user, false);
     }
 

@@ -17,7 +17,7 @@ import java.util.List;
  * @author Jose Castro
  * @since Mar 7th, 2024
  */
-public interface ContentReportHelper {
+public interface ContentReport {
 
     /**
      * Generates the Content Report for a specific dotCMS object. Every implementation must define

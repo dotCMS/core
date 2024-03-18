@@ -23,13 +23,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * This implementation of the {@link ContentReportHelper} class provides the Content Report for one
+ * This implementation of the {@link ContentReport} class provides the Content Report for one
  * or more Sites in the dotCMS repository.
  *
  * @author Jose Castro
  * @since Mar 15th, 2024
  */
-public class SiteContentReportHelper implements ContentReportHelper {
+public class SiteContentReport implements ContentReport {
 
     final User user;
     final ContentTypeAPI contentTypeAPI;
@@ -40,7 +40,7 @@ public class SiteContentReportHelper implements ContentReportHelper {
      *
      * @param user The {@link User} that will access the data provided by this Helper.
      */
-    public SiteContentReportHelper(final User user) {
+    public SiteContentReport(final User user) {
         this.user = user;
         this.contentTypeAPI = APILocator.getContentTypeAPI(user, false);
     }

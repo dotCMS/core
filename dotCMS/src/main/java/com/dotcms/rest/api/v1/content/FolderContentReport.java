@@ -22,14 +22,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * This implementation of the {@link ContentReportHelper} class provides the Content Report for any
+ * This implementation of the {@link ContentReport} class provides the Content Report for any
  * Folder in the dotCMS repository. This Helper has the ability to scan all sub-folders in all
  * levels under the specified "parent" folder.
  *
  * @author Jose Castro
  * @since Mar 15th, 2024
  */
-public class FolderContentReportHelper implements ContentReportHelper {
+public class FolderContentReport implements ContentReport {
 
     final User user;
     final ContentTypeAPI contentTypeAPI;
@@ -41,7 +41,7 @@ public class FolderContentReportHelper implements ContentReportHelper {
      *
      * @param user The {@link User} that will access the data provided by this Helper.
      */
-    public FolderContentReportHelper(final User user) {
+    public FolderContentReport(final User user) {
         this.user = user;
         this.contentTypeAPI = APILocator.getContentTypeAPI(user, false);
     }

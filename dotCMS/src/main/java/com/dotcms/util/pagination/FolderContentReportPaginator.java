@@ -1,10 +1,10 @@
 package com.dotcms.util.pagination;
 
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.rest.api.v1.content.ContentReportHelper;
+import com.dotcms.rest.api.v1.content.ContentReport;
 import com.dotcms.rest.api.v1.content.ContentReportParams;
 import com.dotcms.rest.api.v1.content.ContentReportView;
-import com.dotcms.rest.api.v1.content.FolderContentReportHelper;
+import com.dotcms.rest.api.v1.content.FolderContentReport;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,7 +27,7 @@ import java.util.Optional;
  */
 public class FolderContentReportPaginator extends ContentReportPaginator<ContentReportView> {
 
-    private final ContentReportHelper contentReportHelper;
+    private final ContentReport contentReportHelper;
 
     /**
      * Creates a new instance of this Paginator.
@@ -35,7 +35,7 @@ public class FolderContentReportPaginator extends ContentReportPaginator<Content
      * @param user The {@link User} that will access the data provided by this Paginator.
      */
     public FolderContentReportPaginator(final User user) {
-        this.contentReportHelper = new FolderContentReportHelper(user);
+        this.contentReportHelper = new FolderContentReport(user);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class FolderContentReportPaginator extends ContentReportPaginator<Content
     private long getTotalRecords(final String folder, final String site, final User user) {
         try {
             final Optional<Folder> folderOpt =
-                    ((FolderContentReportHelper) contentReportHelper).resolveFolder(folder, site,
+                    ((FolderContentReport) contentReportHelper).resolveFolder(folder, site,
                             user);
             if (folderOpt.isPresent()) {
                 return Sneaky.sneak(() -> APILocator.getFolderAPI().getContentTypeCount(folderOpt.get(), user, false));
