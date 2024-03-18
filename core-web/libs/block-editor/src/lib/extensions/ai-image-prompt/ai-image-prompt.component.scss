@@ -8,13 +8,14 @@
     > * {
         display: flex;
         flex-direction: column;
-        flex: 1;
         justify-content: center;
     }
 }
 
 .dialog-prompt_gallery {
-    > * {
-        margin-top: auto;
-    }
+    justify-content: normal;
+}
+
+dot-ai-image-prompt-gallery {
+    margin-bottom: $spacing-3;
 }
