@@ -52,6 +52,10 @@
 })(NOTIFY_CUSTOMER || (NOTIFY_CUSTOMER = {}));
 
 /**
+ * Bound information for a contentlet.
+ *
+ * @interface ContentletBound
+ */ /**
  * Calculates the bounding information for each page element within the given containers.
  *
  * @export
@@ -110,10 +114,10 @@
  */ function getContainerData(container) {
     var _container_dataset, _container_dataset1, _container_dataset2, _container_dataset3;
     return {
-        acceptTypes: (_container_dataset = container.dataset) === null || _container_dataset === void 0 ? void 0 : _container_dataset["dotAcceptTypes"],
-        identifier: (_container_dataset1 = container.dataset) === null || _container_dataset1 === void 0 ? void 0 : _container_dataset1["dotIdentifier"],
-        maxContentlets: (_container_dataset2 = container.dataset) === null || _container_dataset2 === void 0 ? void 0 : _container_dataset2["maxContentlets"],
-        uuid: (_container_dataset3 = container.dataset) === null || _container_dataset3 === void 0 ? void 0 : _container_dataset3["dotUuid"]
+        acceptTypes: ((_container_dataset = container.dataset) === null || _container_dataset === void 0 ? void 0 : _container_dataset["dotAcceptTypes"]) || "",
+        identifier: ((_container_dataset1 = container.dataset) === null || _container_dataset1 === void 0 ? void 0 : _container_dataset1["dotIdentifier"]) || "",
+        maxContentlets: ((_container_dataset2 = container.dataset) === null || _container_dataset2 === void 0 ? void 0 : _container_dataset2["maxContentlets"]) || "",
+        uuid: ((_container_dataset3 = container.dataset) === null || _container_dataset3 === void 0 ? void 0 : _container_dataset3["dotUuid"]) || ""
     };
 }
 /**
@@ -262,20 +266,7 @@ function _unsupported_iterable_to_array(o, minLen) {
     document.addEventListener("pointermove", pointerMoveCallback);
 }
 /**
- *
- *
- * @private
- * @memberof DotCMSPageEditor
- */ function scrollHandler() {
-    var scrollCallback = function() {
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.IFRAME_SCROLL
-        });
-    };
-    window.addEventListener("scroll", scrollCallback);
-}
-/**
- * Listens for changes in the content and triggers a custom action when the content changes.
+ * Listens for changes in the content and triggers a customer action when the content changes.
  *
  * @private
  * @memberof DotCMSPageEditor
@@ -325,36 +316,29 @@ function _unsupported_iterable_to_array(o, minLen) {
         action: CUSTOMER_ACTIONS.PING_EDITOR
     });
 }
+
 /**
  * Checks if the code is running inside an editor.
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
  */ function isInsideEditor() {
-    var _window;
-    if (((_window = window) === null || _window === void 0 ? void 0 : _window.parent) === window) {
+    if (window.parent === window) {
         return false;
     }
     return true;
 }
+
 /**
- * Initializes the DotCMS page editor.
+ * This is the main entry point for the SDK VTL.
+ * This is added to VTL Script in the EditPage
  *
- * @param conf - Optional configuration for the editor.
- */ function initEditor(config) {
-    if (config) {
-        pageEditorConfig = config;
-    }
+ * @remarks
+ * This module sets up the necessary listeners and functionality for the SDK VTL.
+ * It checks if the script is running inside the editor and then initializes the client by pinging the editor,
+ * listening for editor messages, hovered contentlet changes, and content changes.
+ *
+ */ if (isInsideEditor()) {
     pingEditor();
     listenEditorMessages();
     listenHoveredContentlet();
-    scrollHandler();
     listenContentChange();
-}
-
-/**
- * This is the main entry point for the SDK VTL. It initializes the client and returns it.
- * This is added to VTL Script in the EditPage
- *
- * @type {*}
- */ if (isInsideEditor()) {
-    initEditor();
 }
