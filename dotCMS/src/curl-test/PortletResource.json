@@ -463,13 +463,13 @@
 							"    pm.response.to.have.status(400);",
 							"",
 							"    var jsonData = pm.response.json();",
-							"    ",
 							"",
-							"    pm.expect(jsonData.message).to.eql(\"Invalid attempt to save Portlet for restricted Content Type Host. \");",
+							"    pm.expect(jsonData.message).to.eql(\"Invalid attempt to create Portlet for restricted Content Type Host. \");",
 							"});",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
