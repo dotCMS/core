@@ -23,7 +23,7 @@
 <p-skeleton
     *ngIf="isLoading"
     width="100%"
-    height="400px"
+    height="34rem"
     styleClass="ai-image-gallery_skeleton"
     data-testid="ai-image-gallery_skeleton" />
 <p-skeleton
@@ -37,7 +37,7 @@
     *ngIf="!isLoading && images?.length"
     [(activeIndex)]="activeImageIndex"
     [circular]="true"
-    [showItemNavigators]="true"
+    [showItemNavigators]="images?.length > 1"
     [showThumbnails]="false"
     [value]="images"
     (activeIndexChange)="activeIndexChange.emit($event)"

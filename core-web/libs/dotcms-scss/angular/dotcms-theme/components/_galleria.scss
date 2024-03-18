@@ -1,1 +1,37 @@
-//TODO: Implement Galleria styles.
+@use "variables" as *;
+@import "mixins";
+
+.p-galleria {
+    & .p-galleria-item-nav {
+        background: rgba(255, 255, 255, 0.65);
+        color: $color-palette-gray-800;
+        width: $spacing-6;
+        height: $spacing-6;
+        transition: background-color $basic-speed, color $basic-speed, box-shadow $basic-speed;
+        border-radius: 50%;
+        margin: -$spacing-3 $spacing-1 0;
+
+        .p-galleria-item-prev-icon,
+        .p-galleria-item-next-icon {
+            font-size: $font-size-default;
+        }
+
+        .p-icon-wrapper .p-icon {
+            width: $font-size-default;
+            height: $font-size-default;
+        }
+
+        &:not(.p-disabled):hover {
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        &.p-disabled {
+            background: rgba(255, 255, 255, 0.65);
+            color: $color-palette-gray-500;
+        }
+
+        &:focus {
+            @include field-focus;
+        }
+    }
+}
