@@ -1,3 +1,5 @@
+// WE NEED TO DELETE THIS WHEN ARCADIO FNISHES THE WORK ON THE CIRCULAR DEPENDECIES, REMIND ME OF THIS IF YOU READ THIS.
+/* eslint-disable @nx/enforce-module-boundaries */
 import { Route } from '@angular/router';
 
 import {
@@ -72,6 +74,11 @@ export const DotEmaRoutes: Route[] = [
                     DotExperimentsConfigResolver
                 ],
                 loadChildren: async () =>
+                    //TODO: move all the core-web/apps/dotcms-ui/src/app/view/components/_common
+                    // folder with components reused in experiments to a Library to
+                    // avoid this circular dependency
+
+                    // eslint-disable-next-line @nx/enforce-module-boundaries
                     (await import('@dotcms/portlets/dot-experiments/portlet'))
                         .DotExperimentsPortletRoutes
             },

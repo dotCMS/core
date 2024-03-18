@@ -1,7 +1,9 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DEFAULT_PERSONA } from 'libs/portlets/edit-ema/portlet/src/lib/shared/consts';
+
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Params, Router } from '@angular/router';
 
-import { DEFAULT_PERSONA } from '../../shared/consts';
 import { sanitizeURL } from '../../utils';
 
 type EmaQueryParams = {
