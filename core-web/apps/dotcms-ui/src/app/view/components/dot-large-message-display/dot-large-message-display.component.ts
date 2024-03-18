@@ -11,9 +11,9 @@ import {
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotDialogComponent } from '@dotcms/ui';
 
 interface DotLargeMessageDisplayParams {
     title: string;

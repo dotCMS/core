@@ -9,9 +9,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotThemesService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotDialogModule, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 

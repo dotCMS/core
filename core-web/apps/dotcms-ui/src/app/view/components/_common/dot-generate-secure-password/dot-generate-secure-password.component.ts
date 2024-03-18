@@ -5,9 +5,8 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
+import { DotDialogActions } from '@dotcms/dotcms-models';
 import { DotClipboardUtil } from '@dotcms/ui';
-
-import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
 
 @Component({
     selector: 'dot-generate-secure-password',
