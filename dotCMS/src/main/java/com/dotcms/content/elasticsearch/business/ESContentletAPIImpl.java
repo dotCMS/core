@@ -7360,9 +7360,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             // In order to get the related content we should use method getRelatedContent
                             // that has -boolean pullByParent- as parameter so we can pass -false-
                             // to get related content where we are parents.
-                            final List<Contentlet> relatedContents = getRelatedContentFromIndex(
+                            final List<Contentlet> relatedContents = getRelatedContent(
                                     contentInRelationship, relationship, false, APILocator.getUserAPI()
-                                            .getSystemUser(), true);
+                                            .getSystemUser(), true,1,0,null);
                             // If there's a 1-N relationship and the parent
                             // content is relating to a child that already has
                             // a parent...
@@ -7387,7 +7387,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         relationship.getRelationTypeValue() + "]");
                                 cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                             }
-                        } catch (final DotSecurityException | DotDataException e) {
+                        } catch (final DotDataException e) {
                             Logger.error(this, "An error occurred when retrieving information from related Contentlet" +
                                     " [" + contentInRelationship.getIdentifier() + "]", e);
                         }
@@ -7471,7 +7471,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Contentlet> relatedContents = getRelatedContent(
                     contentsInRelationship.get(0), relationship, null,
                     APILocator.getUserAPI()
-                            .getSystemUser(), true);
+                            .getSystemUser(), true,1,0,null);
             if (relatedContents.size() > 0 && !relatedContents.get(0).getIdentifier()
                     .equals(contentlet.getIdentifier())) {
                 Logger.error(this,
@@ -7483,7 +7483,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
                 return false;
             }
-        } catch (final DotSecurityException | DotDataException e) {
+        } catch (final DotDataException e) {
             Logger.error(this, "An error occurred when retrieving information from related Contentlet" +
                     " [" + contentsInRelationship.get(0).getIdentifier() + "]", e);
             cve.addInvalidContentRelationship(relationship, contentsInRelationship);
