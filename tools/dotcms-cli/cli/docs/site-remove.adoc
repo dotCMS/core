@@ -49,7 +49,7 @@ site-remove - *Use this command to remove a site.*
 By default, this is false.
 
 *-tk, --token*=_<token>_::
-  A dot CMS token to use for authentication. 
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

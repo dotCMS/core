@@ -4,12 +4,39 @@
 
 . "$(dirname "$0")/_/husky.sh"  # Source the husky.sh script
 
+error_occurred=false
+
 # Perform fix operations on the staged files
 perform_fixes() {
-    local files=$1
-    echo "${files}" | xargs -I {} npx nx format:write -- "${root_dir}/{}"  # Format the files
-    echo "${files}" | tr '\n' ',' | sed 's/,$//' | xargs -I {} npx nx affected:lint --files="{}" --fix  # Lint the files and fix any issues
+    local -a files=($1)         # Convert string to array
+    local add_to_index=$2       # Should be 'true' or 'false'
+    local file                  # Declare file variable for use in loop
+
+    if ! npx nx format:write; then
+        error_occurred=true
+    fi
+
+    if ! npx nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
+            error_occurred=true
+    fi
+
+
+
+   if [ "$add_to_index" = "true" ]; then
+       # Get a list of modified files in the working tree (excluding untracked/new files)
+       local modified_files=$(git diff --name-only)
+
+       # Loop through the list of files that were originally considered
+       for file in "${files[@]}"; do
+           if echo "$modified_files" | grep -Fxq "$file"; then
+               if ! git add -- "${root_dir}/${file}"; then
+                   error_occurred=true  # Record that an error occurred
+               fi
+           fi
+       done
+   fi
 }
+
 
 # Backup current working directory
 original_pwd=${PWD}
@@ -56,14 +83,19 @@ for file in ${untracked_files}; do
     fi
 done
 
-# Perform operations on staged files
+echo "Backed up workspace to ${temp_dir}"
+git status
+
+
+# Perform operations on staged files and capture the error count
 if [ -n "${staged_files}" ]; then
-    perform_fixes "${staged_files}"
-    echo "${staged_files}" | xargs -I {} git add -- "${root_dir}/{}"  # Add the staged files back to the Git index
+    perform_fixes "${staged_files}" true
+    errors=$?  # Capture the return value from perform_fixes
 fi
 
 # Check if the temporary directory is not empty
 if [ -n "${untracked_files}" ] && [ "$(ls -A "${temp_dir}")" ]; then
+    echo "Restoring untracked files..."
     # Copy each file back from the temporary directory while maintaining the directory structure
     find "${temp_dir}" -type f -exec sh -c '
         for file; do
@@ -79,11 +111,11 @@ if [ -n "${untracked_files}" ] && [ "$(ls -A "${temp_dir}")" ]; then
 
     # After restoring, perform actions like formatting on the originally staged files
     if [ -n "${staged_files}" ]; then
-      perform_fixes "${untracked_files}"
+      perform_fixes "${untracked_files}" false
     fi
 fi
 
-# Clean up the temporary directory if it was created
+# After restoring files and before exiting, check if there were any errors
 if [ -n "${untracked_files}" ]; then
     rm -r "${temp_dir}"
 fi
@@ -91,4 +123,9 @@ fi
 # Restore original working directory
 cd "${original_pwd}" || exit  # Exit if the directory does not exist
 
-exit 0  # Assuming successful execution
+# Final check before exiting
+if [ "$error_occurred" = true ]; then
+    exit 1  # Change the exit code to reflect that an error occurred
+else
+    exit 0  # No errors, exit normally
+fi
