@@ -44,7 +44,7 @@ export class DotUploadFileService {
         return this.setTempResource({ data, maxSize, signal }).pipe(
             switchMap((response: DotCMSTempFile | DotCMSTempFile[]) => {
                 const files = Array.isArray(response) ? response : [response];
-                const contentlets = [];
+                const contentlets: Record<string, string>[] = [];
                 files.forEach((file: DotCMSTempFile) => {
                     contentlets.push({
                         baseType: 'dotAsset',

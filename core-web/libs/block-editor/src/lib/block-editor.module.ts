@@ -6,7 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotUploadFileService } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
@@ -29,7 +29,7 @@ import {
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
-import { DotAiService, DotUploadFileService, EditorDirective } from './shared';
+import { DotAiService, EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
 

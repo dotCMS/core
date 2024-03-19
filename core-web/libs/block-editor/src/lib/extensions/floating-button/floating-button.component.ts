@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
-import { FileStatus } from '../../shared/services/dot-upload-file/dot-upload-file.service';
+import { FileStatus } from '../../../../../data-access/src/lib/dot-upload-file/dot-upload-file.service';
 
 @Component({
     selector: 'dot-floating-button',

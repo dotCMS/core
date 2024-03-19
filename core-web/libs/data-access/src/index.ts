@@ -34,6 +34,7 @@ export * from './lib/dot-site-browser/dot-site-browser.service';
 export * from './lib/dot-tags/dot-tags.service';
 export * from './lib/dot-themes/dot-themes.service';
 export * from './lib/dot-upload/dot-upload.service';
+export * from './lib/dot-upload-file/dot-upload-file.service';
 export * from './lib/dot-versionable/dot-versionable.service';
 export * from './lib/dot-wizard/dot-wizard.service';
 export * from './lib/dot-workflow-actions-fire/dot-workflow-actions-fire.service';

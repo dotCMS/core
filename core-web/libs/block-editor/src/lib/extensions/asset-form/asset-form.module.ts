@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import { DotAssetSearchComponent, DotSpinnerModule } from '@dotcms/ui';
 
 import { AssetFormComponent } from './asset-form.component';
@@ -9,7 +10,6 @@ import { DotExternalAssetComponent } from './components/dot-external-asset/dot-e
 import { DotAssetPreviewComponent } from './components/dot-upload-asset/components/dot-asset-preview/dot-asset-preview.component';
 import { DotUploadAssetComponent } from './components/dot-upload-asset/dot-upload-asset.component';
 
-import { DotUploadFileService } from '../../shared';
 import { PrimengModule } from '../../shared/primeng.module';
 
 @NgModule({

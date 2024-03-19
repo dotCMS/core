@@ -10,7 +10,7 @@ import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
-import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotMessageService, DotPropertiesService, DotUploadFileService } from '@dotcms/data-access';
 import { DotContentSearchService, DotLanguageService } from '@dotcms/ui';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
@@ -27,7 +27,6 @@ import {
     ASSET_MOCK,
     CONTENTLETS_MOCK,
     DotAiService,
-    DotUploadFileService,
     FileStatus,
     SuggestionsComponent,
     SuggestionsService
