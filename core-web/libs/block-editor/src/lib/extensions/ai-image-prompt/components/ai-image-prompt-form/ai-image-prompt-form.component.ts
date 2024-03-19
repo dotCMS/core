@@ -30,7 +30,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe, DotValidators } from '@dotcms/ui';
 
 import {
     AIImagePrompt,
@@ -69,9 +69,6 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
     @Output()
     generate = new EventEmitter<void>();
-
-    @Output()
-    orientation = new EventEmitter<DotAIImageOrientation>();
 
     form: FormGroup;
     aiProcessedPrompt: string;
@@ -119,7 +116,7 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
     private initForm(): void {
         this.form = new FormGroup({
-            text: new FormControl('', Validators.required),
+            text: new FormControl('', [Validators.required, DotValidators.noWhitespace]),
             type: new FormControl(PromptType.INPUT, Validators.required),
             size: new FormControl(DotAIImageOrientation.HORIZONTAL, Validators.required)
         });

@@ -4,6 +4,8 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { Galleria, GalleriaModule } from 'primeng/galleria';
 
+import { DotEmptyContainerComponent } from '@dotcms/ui';
+
 import { AiImagePromptGalleryComponent } from './ai-image-prompt-gallery.component';
 
 import { DotGeneratedAIImage } from '../../../../shared/services/dot-ai/dot-ai.models';
@@ -24,6 +26,13 @@ describe('AiImagePromptGalleryComponent', () => {
         } as unknown as DotGeneratedAIImage,
         {
             response: { assetVersion: 'image_url_2' }
+        } as unknown as DotGeneratedAIImage
+    ];
+
+    const errorImagesMock: DotGeneratedAIImage[] = [
+        {
+            response: null,
+            error: 'error'
         } as unknown as DotGeneratedAIImage
     ];
 
@@ -78,5 +87,20 @@ describe('AiImagePromptGalleryComponent', () => {
         galleria.activeIndexChange.emit(1);
 
         expect(emitterSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('should emit regenerate event when regenerate button is clicked', () => {
+        const emitterSpy = jest.spyOn(spectator.component.regenerate, 'emit');
+
+        spectator.setInput({
+            isLoading: false,
+            images: errorImagesMock
+        });
+        spectator.detectChanges();
+        const emptyContainer = spectator.query(DotEmptyContainerComponent);
+
+        emptyContainer.buttonAction.emit();
+
+        expect(emitterSpy).toHaveBeenCalled();
     });
 });
