@@ -66,7 +66,12 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
                 final CredentialsBean credentials = serviceBean.credentials();
                 if (null != credentials) {
                     this.user = credentials.user();
-                    this.token = credentials.token();
+                    final Optional<char[]> chars = credentials.loadToken();
+                    if(chars.isPresent()){
+                      this.token = chars.get();
+                    } else {
+                        logger.warn("No token found for user " + user);
+                    }
                 }
             });
         }catch (IOException e){
@@ -119,8 +124,8 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     public void login(char[] token) throws IOException {
         authenticationParam.setToken(token);
         final UserAPI userAPI = clientFactory.getClient(UserAPI.class);
-        final User user = userAPI.getCurrent();
-        saveCredentials(user.userId(), token);
+        final User current = userAPI.getCurrent();
+        saveCredentials(current.userId(), token);
     }
 
     private void saveCredentials(final String user, final char[] token) {
@@ -147,8 +152,8 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
                 .filter(serviceBean -> serviceKey.equals(serviceBean.name())).findFirst();
         if (optional.isPresent()) {
             final ServiceBean bean = optional.get();
-            if (bean.credentials() != null  && user.equals(bean.credentials().user())  && null != bean.credentials().token()) {
-                return Optional.of(bean.credentials().token());
+            if (bean.credentials() != null  && user.equals(bean.credentials().user()) ) {
+                return bean.credentials().loadToken();
             }
         }
         return Optional.empty();

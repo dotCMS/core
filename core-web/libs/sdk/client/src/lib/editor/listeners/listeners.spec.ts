@@ -3,6 +3,7 @@ import {
     listenEditorMessages,
     listenHoveredContentlet,
     pingEditor,
+    preserveScrollOnIframe,
     scrollHandler
 } from './listeners';
 
@@ -38,6 +39,12 @@ describe('listeners', () => {
         const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
         scrollHandler();
         expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+    });
+
+    it('should preserve scroll on iframe', () => {
+        const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+        preserveScrollOnIframe();
+        expect(addEventListenerSpy).toHaveBeenCalledWith('load', expect.any(Function));
     });
 
     it('should listen to content change', () => {
