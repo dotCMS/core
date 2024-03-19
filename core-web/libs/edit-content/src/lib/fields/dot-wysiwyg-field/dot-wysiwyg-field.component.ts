@@ -25,8 +25,8 @@ declare global {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         DialogService,
-        { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' },
-        DotWysiwygPluginService
+        DotWysiwygPluginService,
+        { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }
     ],
     viewProviders: [
         {
