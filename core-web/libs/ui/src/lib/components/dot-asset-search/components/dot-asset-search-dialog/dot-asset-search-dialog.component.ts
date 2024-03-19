@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 import { DotAssetSearchComponent } from '@dotcms/ui';
 
 @Component({
@@ -15,8 +15,13 @@ import { DotAssetSearchComponent } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetSearchDialogComponent {
-    private readonly config = inject(DynamicDialogConfig);
     private readonly ref = inject(DynamicDialogRef);
+
+    protected editorAssetType: EditorAssetTypes;
+
+    constructor(private readonly config: DynamicDialogConfig) {
+        this.editorAssetType = this.config.data?.assetType;
+    }
 
     onSelectAsset(asset: DotCMSContentlet): void {
         this.ref.close(asset);

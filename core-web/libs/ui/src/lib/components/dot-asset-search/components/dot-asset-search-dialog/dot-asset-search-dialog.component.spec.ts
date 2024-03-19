@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { DotAssetSearchDialogComponent } from './dot-asset-search-dialog.component';
 
 describe('DotAssetSearchDialogComponent', () => {

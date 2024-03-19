@@ -10,6 +10,8 @@ import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotAssetSearchDialogComponent } from '@dotcms/ui';
 
+import { formatFotImageNode } from './utils/editor.utils';
+
 @Injectable()
 export class DotWysiwygPluginService {
     private readonly dialogService: DialogService = inject(DialogService);
@@ -30,7 +32,10 @@ export class DotWysiwygPluginService {
                         header: 'Add Image',
                         width: '800px',
                         height: '500px',
-                        contentStyle: { padding: 0 }
+                        contentStyle: { padding: 0 },
+                        data: {
+                            assetType: 'image'
+                        }
                     });
 
                     ref.onClose
@@ -39,11 +44,7 @@ export class DotWysiwygPluginService {
                             filter((asset) => !!asset)
                         )
                         .subscribe((asset: DotCMSContentlet) =>
-                            editor.insertContent(
-                                `<img src="${asset.assetVersion || asset.asset}" alt="${
-                                    asset.title
-                                }" />`
-                            )
+                            editor.insertContent(formatFotImageNode(asset))
                         );
                 });
             }
@@ -72,13 +73,8 @@ export class DotWysiwygPluginService {
                 })
                 .subscribe((contentlets: DotCMSContentlet[]) => {
                     const data = contentlets[0];
-                    const contentlet = data[Object.keys(data)[0]];
-
-                    editor.insertContent(
-                        `<img src="${contentlet.assetVersion || contentlet.asset}" alt="${
-                            contentlet.title
-                        }" />`
-                    );
+                    const asset = data[Object.keys(data)[0]];
+                    editor.insertContent(formatFotImageNode(asset));
                 });
         });
     }
