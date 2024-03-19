@@ -25,7 +25,25 @@
 									"",
 									"pm.collectionVariables.set(\"page_id\", jsonData.entity.identifier);",
 									"",
+									"",
+									"pm.test(\"Verify response includes expected security fields\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData).to.include.all.keys('entity', 'errors', 'i18nMessagesMap', 'messages', 'permissions');",
+									"    pm.expect(responseData.entity).to.include.all.keys('canEdit', 'canLock', 'canRead', 'locked');",
+									"});",
+									"",
+									"",
+									"pm.test(\"ModUser and ModUserName fields should not be empty\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData.entity.modUser).to.not.be.empty;",
+									"    pm.expect(responseData.entity.modUserName).to.not.be.empty;",
+									"});",
+									"",
 									""
+
 								],
 								"type": "text/javascript"
 							}

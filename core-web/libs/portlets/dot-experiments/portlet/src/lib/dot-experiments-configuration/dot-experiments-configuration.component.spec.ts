@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';
@@ -17,8 +17,6 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Menu } from 'primeng/menu';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -26,8 +24,12 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { getExperimentMock, PARENT_RESOLVERS_ACTIVE_ROUTE_DATA } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
+import { DotAddToBundleComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    getExperimentMock,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
+} from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -97,7 +99,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationComponent,
         componentProviders: [DotExperimentsConfigurationStore],
-        imports: [MockModule(DotAddToBundleModule), DotMessagePipe],
+        imports: [MockComponent(DotAddToBundleComponent), DotMessagePipe],
 
         providers: [
             ConfirmationService,

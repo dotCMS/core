@@ -1,9 +1,8 @@
-import { forwardRef } from 'react';
-
-import { isInsideEditor } from '@dotcms/client';
+import { forwardRef, useContext } from 'react';
 
 import styles from './row.module.css';
 
+import { PageContext } from '../../contexts/PageContext';
 import { combineClasses } from '../../utils/utils';
 import { Column } from '../Column/Column';
 import { PageProviderContext } from '../PageProvider/PageProvider';
@@ -32,11 +31,15 @@ export interface RowProps {
  * @return {*}
  */
 export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) => {
+    const { isInsideEditor } = useContext<PageProviderContext | null>(
+        PageContext
+    ) as PageProviderContext;
+
     const { row } = props;
 
     const combinedClasses = combineClasses([styles.row, row.styleClass]);
 
-    const rowProps = isInsideEditor() ? { 'data-dot': 'row', 'data-testid': 'row', ref } : {};
+    const rowProps = isInsideEditor ? { 'data-dot': 'row', 'data-testid': 'row', ref } : {};
 
     return (
         <div {...rowProps} className={combinedClasses}>
