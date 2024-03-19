@@ -51,6 +51,6 @@ export class DotWYSIWYGFieldComponent {
     );
 
     protected readonly toolbar = signal(
-        'dotAddImage paste print textpattern | insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image hr | preview | validation media | forecolor backcolor emoticons'
+        'paste print textpattern | insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link dotAddImage hr | preview | validation media | forecolor backcolor emoticons'
     );
 }
