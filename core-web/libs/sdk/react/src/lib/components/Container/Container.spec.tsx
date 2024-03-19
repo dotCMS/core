@@ -45,7 +45,8 @@ describe('Container', () => {
             it('renders EmptyContainer component in editor mode', () => {
                 const updatedContext = {
                     ...mockPageContext,
-                    components: {}
+                    components: {},
+                    isInsideEditor: true
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>
@@ -63,7 +64,8 @@ describe('Container', () => {
 
                 const updatedContext = {
                     ...mockPageContext,
-                    components: {}
+                    components: {},
+                    isInsideEditor: false
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>

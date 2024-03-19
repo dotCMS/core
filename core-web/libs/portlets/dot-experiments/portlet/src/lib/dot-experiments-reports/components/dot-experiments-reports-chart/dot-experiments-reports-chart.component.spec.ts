@@ -7,9 +7,9 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     CHARTJS_DATA_MOCK_EMPTY,
     DAILY_CHARTJS_DATA_MOCK_WITH_DATA,
+    DotMessagePipe,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsReportsChartComponent } from './dot-experiments-reports-chart.component';
 
