@@ -35,7 +35,7 @@
 
 <p-galleria
     *ngIf="!isLoading && images?.length"
-    [(activeIndex)]="activeImageIndex"
+    [activeIndex]="activeImageIndex"
     [circular]="true"
     [showItemNavigators]="images?.length > 1"
     [showThumbnails]="false"

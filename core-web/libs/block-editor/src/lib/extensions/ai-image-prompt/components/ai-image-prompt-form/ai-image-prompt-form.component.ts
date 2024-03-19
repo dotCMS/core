@@ -76,13 +76,13 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     form: FormGroup;
     aiProcessedPrompt: string;
     dotMessageService = inject(DotMessageService);
-    destroyRef = inject(DestroyRef);
     promptTextAreaPlaceholder = 'block-editor.extension.ai-image.custom.placeholder';
     promptLabel = 'block-editor.extension.ai-image.prompt';
     submitButtonLabel = 'block-editor.extension.ai-image.generate';
     requiredPrompt = true;
 
     private isUpdatingValidators = false;
+    private destroyRef = inject(DestroyRef);
 
     orientationOptions: SelectItem<DotAIImageOrientation>[] = [
         {

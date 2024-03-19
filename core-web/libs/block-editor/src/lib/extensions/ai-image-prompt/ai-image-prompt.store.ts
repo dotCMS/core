@@ -1,9 +1,9 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { EMPTY, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { switchMap, withLatestFrom } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
