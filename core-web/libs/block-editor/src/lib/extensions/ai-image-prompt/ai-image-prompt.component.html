@@ -11,17 +11,18 @@
         <div class="dialog-prompt__wrapper">
             <dot-ai-image-prompt-form
                 *ngIf="vm.showDialog"
-                [generatedValue]="vm.images[vm.galleryActiveIndex]"
+                [value]="vm.images[vm.galleryActiveIndex]"
                 [isLoading]="vm.isLoading"
-                (value)="store.generateImage($event)"
-                (orientation)="vm.orientation = $event" />
+                (valueChange)="store.setFormValue($event)"
+                (generate)="store.generateImage()" />
             <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading">
                 <dot-ai-image-prompt-gallery
                     [isLoading]="vm.isLoading"
                     [images]="vm.images"
                     [activeImageIndex]="vm.galleryActiveIndex"
-                    [orientation]="vm.orientation"
-                    (activeIndexChange)="vm.galleryActiveIndex = $event" />
+                    [orientation]="vm.formValue?.size"
+                    (activeIndexChange)="store.setGalleryActiveIndex($event)"
+                    (regenerate)="store.generateImage()" />
                 <button
                     class="align-self-end"
                     *ngIf="vm.images.length || vm.isLoading"

@@ -7,7 +7,7 @@ import { ImageModule } from 'primeng/image';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import {
     DotAIImageOrientation,
@@ -18,7 +18,15 @@ import {
     selector: 'dot-ai-image-prompt-gallery',
     standalone: true,
     templateUrl: './ai-image-prompt-gallery.component.html',
-    imports: [GalleriaModule, ImageModule, NgIf, SharedModule, SkeletonModule, DotMessagePipe],
+    imports: [
+        GalleriaModule,
+        ImageModule,
+        NgIf,
+        SharedModule,
+        SkeletonModule,
+        DotMessagePipe,
+        DotEmptyContainerComponent
+    ],
     styleUrls: ['./ai-image-prompt-gallery.component.scss']
 })
 export class AiImagePromptGalleryComponent {
@@ -32,10 +40,18 @@ export class AiImagePromptGalleryComponent {
     activeImageIndex = 0;
 
     @Input()
-    orientation: DotAIImageOrientation;
+    orientation = DotAIImageOrientation.HORIZONTAL;
 
     @Output()
     activeIndexChange = new EventEmitter<number>();
 
+    @Output()
+    regenerate = new EventEmitter<void>();
+
     dotMessageService = inject(DotMessageService);
+
+    emptyConfiguration: PrincipalConfiguration = {
+        title: this.dotMessageService.get('block-editor.extension.ai-image.error'),
+        icon: 'pi-exclamation-triangle'
+    };
 }

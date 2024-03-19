@@ -1,3 +1,4 @@
+import { useStoryPrepared } from '@storybook/manager-api';
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
@@ -49,4 +50,6 @@ export class AIImagePromptComponent {
     onHideConfirm(): void {
         this.store.cleanError();
     }
+
+    protected readonly useStoryPrepared = useStoryPrepared;
 }

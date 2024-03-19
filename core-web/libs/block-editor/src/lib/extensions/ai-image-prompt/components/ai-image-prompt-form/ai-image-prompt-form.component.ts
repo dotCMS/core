@@ -27,6 +27,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
+import { filter } from 'rxjs/operators';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
@@ -57,13 +59,16 @@ import { PromptType } from '../../ai-image-prompt.models';
 })
 export class AiImagePromptFormComponent implements OnChanges, OnInit {
     @Input()
-    generatedValue: DotGeneratedAIImage;
+    value: DotGeneratedAIImage;
 
     @Input()
     isLoading = false;
 
     @Output()
-    value = new EventEmitter<AIImagePrompt>();
+    valueChange = new EventEmitter<AIImagePrompt>();
+
+    @Output()
+    generate = new EventEmitter<void>();
 
     @Output()
     orientation = new EventEmitter<DotAIImageOrientation>();
@@ -76,6 +81,8 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     promptLabel = 'block-editor.extension.ai-image.prompt';
     submitButtonLabel = 'block-editor.extension.ai-image.generate';
     requiredPrompt = true;
+
+    private isUpdatingValidators = false;
 
     orientationOptions: SelectItem<DotAIImageOrientation>[] = [
         {
@@ -101,9 +108,9 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        const { generatedValue, isLoading } = changes;
+        const { value, isLoading } = changes;
 
-        this.updatedFormValues(generatedValue, isLoading?.currentValue);
+        this.updatedFormValues(value, isLoading?.currentValue);
 
         this.setSubmitButtonLabel(isLoading?.currentValue);
 
@@ -117,28 +124,33 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
             size: new FormControl(DotAIImageOrientation.HORIZONTAL, Validators.required)
         });
 
-        const sizeControl = this.form.get('size');
         const typeControl = this.form.get('type');
 
-        sizeControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((size) => {
-            this.orientation.emit(size);
-        });
+        this.form.valueChanges
+            .pipe(
+                takeUntilDestroyed(this.destroyRef),
+                filter(() => !this.isUpdatingValidators)
+            )
+            .subscribe((value: AIImagePrompt) => this.valueChange.emit(value));
 
-        typeControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((type) => {
-            const promptControl = this.form.get('text');
-            type === PromptType.AUTO
-                ? promptControl.clearValidators()
-                : promptControl.setValidators(Validators.required);
-
-            promptControl.updateValueAndValidity();
-
-            this.setTypeLabels(type);
-            this.requiredPrompt = type === PromptType.INPUT;
-        });
+        typeControl.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((type) => this.updatePromptControl(type));
     }
 
-    private setTypeLabels(type: PromptType): void {
-        if (type === PromptType.INPUT) {
+    private updatePromptControl(type: PromptType): void {
+        this.isUpdatingValidators = true;
+        const promptControl = this.form.get('text');
+        const isInputType = type === PromptType.INPUT;
+        promptControl.setValidators(isInputType ? Validators.required : null);
+        promptControl.updateValueAndValidity();
+        this.setPromptLabels(isInputType);
+        this.isUpdatingValidators = false;
+        this.requiredPrompt = isInputType;
+    }
+
+    private setPromptLabels(isInputType: boolean): void {
+        if (isInputType) {
             this.promptLabel = 'block-editor.extension.ai-image.prompt';
             this.promptTextAreaPlaceholder = 'block-editor.extension.ai-image.custom.placeholder';
         } else {
@@ -155,25 +167,25 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
      * Updates the form values based on the generated content that comes from
      * the endpoint.
      *
-     * @param {SimpleChange} generatedValue - The generated value.
+     * @param {SimpleChange} value - value that includes the request and response.
      * @param {boolean} isLoading - The loading status.
      * @return {void}
      */
-    private updatedFormValues(generatedValue: SimpleChange, isLoading: boolean): void {
-        if (generatedValue?.currentValue && !generatedValue.firstChange && !isLoading) {
-            const updatedValue: DotGeneratedAIImage = generatedValue.currentValue;
+    private updatedFormValues(value: SimpleChange, isLoading: boolean): void {
+        if (value?.currentValue && !value.firstChange && !isLoading) {
+            const updatedValue: DotGeneratedAIImage = value.currentValue;
             this.form.patchValue(updatedValue.request);
             this.form.clearValidators();
             this.form.updateValueAndValidity();
 
-            this.aiProcessedPrompt = updatedValue.response.revised_prompt;
+            this.aiProcessedPrompt = updatedValue.response?.revised_prompt;
         }
     }
 
     private setSubmitButtonLabel(isLoading: boolean): void {
         this.submitButtonLabel = isLoading
             ? 'block-editor.extension.ai-image.generating'
-            : this.aiProcessedPrompt
+            : this.aiProcessedPrompt || this.value?.error
             ? 'block-editor.extension.ai-image.regenerate'
             : 'block-editor.extension.ai-image.generate';
     }

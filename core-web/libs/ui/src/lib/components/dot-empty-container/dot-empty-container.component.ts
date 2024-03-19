@@ -37,6 +37,9 @@ export class DotEmptyContainerComponent {
     @Input()
     buttonLabel: string;
 
+    @Input()
+    secondaryButton = false;
+
     /**
      * Hide the contact us link
      */
