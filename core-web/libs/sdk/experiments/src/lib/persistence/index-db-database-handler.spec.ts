@@ -2,8 +2,13 @@ import fakeIndexedDB from 'fake-indexeddb';
 
 import { IndexDBDatabaseHandler } from './index-db-database-handler';
 
-import { EXPERIMENT_DB_KEY_PATH, EXPERIMENT_DB_STORE_NAME } from '../constants';
+import {
+    EXPERIMENT_ALREADY_CHECKED_KEY,
+    EXPERIMENT_DB_KEY_PATH,
+    EXPERIMENT_DB_STORE_NAME
+} from '../constants';
 import { IsUserIncludedResponse } from '../mocks/mock';
+import { checkFlagExperimentAlreadyChecked } from '../utils/utils';
 
 if (!globalThis.structuredClone) {
     globalThis.structuredClone = function (obj) {
@@ -36,5 +41,46 @@ describe('IndexedDB tests', () => {
         await persistDatabaseHandler.persistData(IsUserIncludedResponse.entity);
         const data = await persistDatabaseHandler.getData();
         expect(data).toEqual(IsUserIncludedResponse.entity);
+    });
+});
+
+describe('SessionStorage EXPERIMENT_ALREADY_CHECKED_KEY handle', () => {
+    Object.defineProperty(window, 'sessionStorage', {
+        value: {
+            setItem: jest.fn(),
+            getItem: jest.fn()
+        },
+        writable: true
+    });
+    it('should set true to sessionStorage key `EXPERIMENT_ALREADY_CHECKED_KEY` ', () => {
+        const value = 'true';
+
+        persistDatabaseHandler.setFlagExperimentAlreadyChecked();
+
+        expect(window.sessionStorage.setItem).toHaveBeenLastCalledWith(
+            EXPERIMENT_ALREADY_CHECKED_KEY,
+            value
+        );
+    });
+
+    describe('checkFlagExperimentAlreadyChecked', () => {
+        const getItemMock = window.sessionStorage.getItem as jest.MockedFunction<
+            typeof window.sessionStorage.getItem
+        >;
+
+        const testCases = [
+            { value: '', expected: false, description: 'sessionStorage value is ""' },
+            { value: 'true', expected: true, description: 'sessionStorage value is "true"' },
+            { value: null, expected: false, description: 'sessionStorage value is null' }
+        ];
+
+        testCases.forEach(({ description, value, expected }) => {
+            it(`returns ${expected} when ${description}`, () => {
+                getItemMock.mockReturnValue(value);
+
+                expect(checkFlagExperimentAlreadyChecked()).toBe(expected);
+                expect(getItemMock).toHaveBeenCalledWith(EXPERIMENT_ALREADY_CHECKED_KEY);
+            });
+        });
     });
 });

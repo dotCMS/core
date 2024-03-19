@@ -1,5 +1,10 @@
-import { EXPERIMENT_ALLOWED_DATA_ATTRIBUTES, EXPERIMENT_SCRIPT_FILE_NAME } from '../constants';
-import { DotExperimentConfig } from '../models';
+import {
+    EXPERIMENT_ALLOWED_DATA_ATTRIBUTES,
+    EXPERIMENT_ALREADY_CHECKED_KEY,
+    EXPERIMENT_SCRIPT_FILE_NAME,
+    LOCAL_STORAGE_TIME_DURATION_MILLISECONDS
+} from '../constants';
+import { DotExperimentConfig, IndexDbStoredData } from '../models';
 
 /**
  * Returns the first script element that includes the experiment script identifier.
@@ -100,4 +105,33 @@ export const dotLogger = (msg: string, isDebug?: boolean): void => {
     if (isDebug !== false) {
         console.warn(`[dotCMS Experiments] ${msg}`);
     }
+};
+
+/**
+ * Checks the flag indicating whether the experiment has already been checked.
+ *
+ * @function checkFlagExperimentAlreadyChecked
+ * @returns {boolean} - returns true if experiment has already been checked, otherwise false.
+ */
+export const checkFlagExperimentAlreadyChecked = (): boolean => {
+    const flag = sessionStorage.getItem(EXPERIMENT_ALREADY_CHECKED_KEY);
+
+    return flag === 'true';
+};
+
+/**
+ * Checks if the data needs to be invalidated based on the creation date.
+ *
+ * @returns {boolean} - True if the data needs to be invalidated, false otherwise.
+ * @param dbData
+ */
+export const checkInvalidateDataChecked = (dbData: IndexDbStoredData): boolean => {
+    if (!dbData) {
+        return false;
+    }
+
+    const { created } = dbData;
+    const now = Date.now();
+
+    return now - created > LOCAL_STORAGE_TIME_DURATION_MILLISECONDS;
 };
