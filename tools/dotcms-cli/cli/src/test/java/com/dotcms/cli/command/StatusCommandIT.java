@@ -91,7 +91,7 @@ class StatusCommandIT extends CommandTest {
         serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true)
                 .url(new URL("http://localhost:8080"))
                 .credentials(
-                        CredentialsBean.builder().user(user).token(token.toCharArray()).build())
+                        CredentialsBean.builder().user(user).tokenSupplier(token::toCharArray).build())
                 .build());
 
         final CommandLine commandLine = createCommand();
