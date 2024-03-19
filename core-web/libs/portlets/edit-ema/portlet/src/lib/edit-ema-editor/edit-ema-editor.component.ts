@@ -199,6 +199,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
+    readonly isDragging = signal(false);
+
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const clientData = this.clientData();
         const { containers, languageId, id, personaTag } = this.pageData();
@@ -241,7 +243,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorState = EDITOR_STATE;
     readonly editorMode = EDITOR_MODE;
 
-    private draggedPayload: DraggedPalettePayload;
+    protected draggedPayload: DraggedPalettePayload;
 
     containers: Container[] = [];
     contentlet!: ContentletArea;
@@ -423,8 +425,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             device
         });
 
-        this.containers = []; // We need to reset the rows when we change the device
-        this.contentlet = null; // We need to reset the contentlet when we change the device
+        this.resetDragProperties();
     }
 
     goToEditMode() {
@@ -432,8 +433,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             editorMode: EDITOR_MODE.EDIT
         });
 
-        this.containers = []; // We need to reset the rows when we change the device
-        this.contentlet = null; // We need to reset the contentlet when we change the device
+        this.resetDragProperties();
     }
 
     /**
@@ -860,9 +860,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             queryParamsHandling: 'merge'
         });
 
-        // Reset this on queryParams update
-        this.containers = [];
-        this.contentlet = null;
+        this.resetDragProperties();
     }
 
     private handleDuplicatedContentlet() {

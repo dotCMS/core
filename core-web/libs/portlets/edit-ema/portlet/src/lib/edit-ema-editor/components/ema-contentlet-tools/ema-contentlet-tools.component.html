@@ -17,6 +17,7 @@
     [ngStyle]="getActionPosition()"
     data-testId="actions">
     <p-button
+        (mousedown)="moveWillStartHandler()"
         (dragstart)="dragStart($event, contentlet.payload)"
         (dragend)="dragEnd()"
         draggable="true"

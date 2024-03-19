@@ -46,6 +46,7 @@ export class EmaContentletToolsComponent {
     @Output() addWidget = new EventEmitter<ActionPayload>();
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() delete = new EventEmitter<ActionPayload>();
+    @Output() moveWillStart = new EventEmitter<void>();
     @Output() moveStart = new EventEmitter<ActionPayload>();
     @Output() moveStop = new EventEmitter<void>();
 
@@ -180,5 +181,9 @@ export class EmaContentletToolsComponent {
      */
     get isContainerEmpty(): boolean {
         return this.contentlet.payload.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET';
+    }
+
+    moveWillStartHandler(): void {
+        this.moveWillStart.emit();
     }
 }

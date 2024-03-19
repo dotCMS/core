@@ -111,7 +111,7 @@
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
-                    pointerEvents: this.containers.length ? 'none' : 'auto',
+                    pointerEvents: this.isDragging() ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
                 (load)="onIframePageLoad()"
@@ -140,7 +140,8 @@
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
                 (moveStart)="moveContentlet($event)"
-                (moveStop)="resetDragProperties()"
+                (moveWillStart)="this.isDragging.set(true)"
+                (moveStop)="this.isDragging.set(false); resetDragProperties()"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
@@ -151,7 +152,7 @@
                 "
                 [containers]="containers"
                 [item]="dragItem"
-                (place)="onPlaceItem($event)"
+                (place)="this.isDragging.set(false); onPlaceItem($event)"
                 data-testId="dropzone" />
         </div>
     </div>
@@ -164,8 +165,8 @@
         "
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
-        (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)"
+        (dragStart)="this.isDragging.set(true); onDragStart($event)"
+        (dragEnd)="this.isDragging.set(false); onDragEnd($event)"
         data-testId="palette" />
 
     @if(es.previewState.editorMode === editorMode.EDIT) {
