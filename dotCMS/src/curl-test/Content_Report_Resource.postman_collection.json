@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "5ce88163-1e98-44f7-a2e3-9df915bebdb9",
+		"_postman_id": "169362a4-fc34-492a-8c82-dc5e17fde1e4",
 		"name": "Content Report Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-169362a4-fc34-492a-8c82-dc5e17fde1e4?action=share&source=collection_link&creator=5403727"
 	},
 	"item": [
 		{
@@ -164,7 +165,7 @@
 					"description": "Creates two test Content Types under the Default Site in order to generate data for the Content Report of the Default Site."
 				},
 				{
-					"name": "Generate Report - Default Site",
+					"name": "Generate Report - Default Site With Key",
 					"event": [
 						{
 							"listen": "test",
@@ -221,7 +222,71 @@
 								"site",
 								"default"
 							]
+						},
+						"description": "Generates a report using the Site Key."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Report - Default Site With ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there at least 2 Content Types living under the Default Site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.be.gte(2, \"There must be at least 2 Content Types living under the Default Site\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(10, \"The 'perPage' parameter must be 10\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(2, \"The 'totalEntries' parameter must be at least 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/site/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"site",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+							]
+						},
+						"description": "Generates a report using the Site ID."
 					},
 					"response": []
 				},
@@ -379,7 +444,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Generates a Content Report for the Default Site and System Host."
 		},
 		{
 			"name": "Folder Report",
@@ -395,7 +461,7 @@
 									"script": {
 										"exec": [
 											"const randomNumber = Math.floor(Math.random() * 100) + 1;",
-											"pm.collectionVariables.set(\"testFolderName\", \"test-folder-\" + randomNumber);"
+											"pm.collectionVariables.set(\"testFolderPath\", \"folder-report/middle-folder/test-folder-\" + randomNumber);"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -445,7 +511,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "[\"/{{testFolderName}}\"]",
+									"raw": "[\"/{{testFolderPath}}\"]",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -641,7 +707,7 @@
 					]
 				},
 				{
-					"name": "Generate Report",
+					"name": "Generate Report With Folder ID",
 					"event": [
 						{
 							"listen": "test",
@@ -700,11 +766,84 @@
 								"folder",
 								"{{testFolderId}}"
 							]
+						},
+						"description": "Generates a report using the Folder ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Report With Folder Path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are only 2 Content Types living under the Test Folder\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).equals(2, \"There must be only 2 Content Types living under the Test Folder\");",
+									"    pm.expect(entity[0].entries).equals(1, \"There must be only 1 contentlet of Type \" + entity[0].contentTypeName);",
+									"    pm.expect(entity[1].entries).equals(1, \"There must be only 1 contentlet of Type \" + entity[1].contentTypeName);",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(10, \"The 'perPage' parameter must be 10\");",
+									"    pm.expect(pagination.totalEntries).equals(2, \"The 'totalEntries' parameter must be 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/folder/{{testFolderPath}}?site=default",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"folder",
+								"{{testFolderPath}}"
+							],
+							"query": [
+								{
+									"key": "site",
+									"value": "default"
+								}
+							]
+						},
+						"description": "Generates a report using the Folder path, which requires specifying the Site ID/Key as well."
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Genrates a Content Report for a test Folder, containing a few Content Types."
 		}
 	],
 	"event": [
