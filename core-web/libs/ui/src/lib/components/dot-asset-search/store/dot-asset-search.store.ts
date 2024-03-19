@@ -3,7 +3,7 @@ import { ComponentStore } from '@ngrx/component-store';
 import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { map, mergeMap, tap, withLatestFrom } from 'rxjs/operators';
+import { map, mergeMap, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 import {
@@ -14,13 +14,11 @@ import {
     Languages
 } from '@dotcms/ui';
 
-const DEFAULT_LANG_ID = 1;
-
 export interface DotImageSearchState {
     loading: boolean;
     preventScroll: boolean;
     contentlets: DotCMSContentlet[];
-    languageId: number;
+    languageId?: number;
     search: string;
     assetType: EditorAssetTypes;
 }
@@ -29,7 +27,6 @@ const defaultState: DotImageSearchState = {
     loading: true,
     preventScroll: false,
     contentlets: [],
-    languageId: DEFAULT_LANG_ID,
     search: '',
     assetType: 'image'
 };
@@ -82,20 +79,29 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
     readonly updateSearch = this.updater<string>((state, search) => {
         return {
             ...state,
+            loading: true,
             search
         };
     });
 
     // Effects
+    readonly init = this.effect((origin$: Observable<EditorAssetTypes>) => {
+        return origin$.pipe(
+            tap((assetType) => this.updateAssetType(assetType)),
+            switchMap(() => this.dotLanguageService.getLanguages()),
+            tap((languages) => (this.languages = languages)),
+            withLatestFrom(this.state$),
+            switchMap(([_, state]) => this.searchContentletsRequest(this.params(state), []))
+        );
+    });
+
     readonly searchContentlet = this.effect((origin$: Observable<string>) => {
         return origin$.pipe(
-            tap((search) => {
-                this.updateLoading(true);
-                this.updateSearch(search);
-            }),
+            tap((search) => this.updateSearch(search)),
             withLatestFrom(this.state$),
-            map(([search, state]) => ({ ...state, search })),
-            mergeMap((data) => this.searchContentletsRequest(this.params({ ...data }), []))
+            mergeMap(([search, state]) =>
+                this.searchContentletsRequest(this.params({ ...state, search }), [])
+            )
         );
     });
 
@@ -116,10 +122,6 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
         private dotLanguageService: DotLanguageService
     ) {
         super(defaultState);
-
-        this.dotLanguageService.getLanguages().subscribe((languages) => {
-            this.languages = languages;
-        });
     }
 
     private searchContentletsRequest(params, prev: DotCMSContentlet[]) {
@@ -134,11 +136,13 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
         );
     }
 
-    private params({ search, assetType, offset = 0, languageId }): EsQueryParams {
+    private params(data): EsQueryParams {
+        const { search, assetType, offset = 0, languageId = '' } = data;
         const filter = search.includes('-') ? search : `${search}*`;
+        const languageQuery = languageId ? `+languageId:${languageId}` : '';
 
         return {
-            query: `+catchall:${filter} title:'${search}'^15 +languageId:${languageId} +baseType:(4 OR 9) +metadata.contenttype:${
+            query: `+catchall:${filter} title:'${search}'^15 ${languageQuery} +baseType:(4 OR 9) +metadata.contenttype:${
                 assetType || ''
             }/* +deleted:false +working:true`,
             sortOrder: ESOrderDirection.ASC,

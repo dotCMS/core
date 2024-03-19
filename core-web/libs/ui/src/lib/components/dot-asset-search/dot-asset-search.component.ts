@@ -50,7 +50,9 @@ export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit
         this.store.updatelanguageId(id);
     }
 
+    private _assetType: EditorAssetTypes;
     @Input() set type(type: EditorAssetTypes) {
+        this._assetType = type;
         this.store.updateAssetType(type);
     }
 
@@ -62,7 +64,7 @@ export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit
     constructor(private store: DotAssetSearchStore) {}
 
     ngOnInit(): void {
-        this.store.searchContentlet('');
+        this.store.init(this._assetType);
 
         this.offset$
             .pipe(takeUntil(this.destroy$), skip(1), throttleTime(450))
