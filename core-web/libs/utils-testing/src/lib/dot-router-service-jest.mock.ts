@@ -1,10 +1,7 @@
+import { jest } from '@jest/globals';
 import { of, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
-
-const noop = () => {
-    /* */
-};
 
 @Injectable()
 export class MockDotRouterJestService {
@@ -45,31 +42,31 @@ export class MockDotRouterJestService {
     _currentSavedURL = '';
     pageLeaveRequest$ = new Subject<boolean>();
     canDeactivateRoute$ = of(true);
-    replaceQueryParams = noop;
-    goToEditContentType = noop;
-    goToEditContentlet = noop;
-    goToEditPage = noop;
-    goToEditTask = noop;
-    goToForgotPassword = noop;
-    goToLogin = noop;
-    goToContent = noop;
-    goToCreateContent = noop;
-    goToPreviousUrl = noop;
-    goToStarter = noop;
-    doLogOut = noop;
-    goToMain = noop;
-    goToURL = noop;
-    gotoPortlet = noop;
-    goToAppsConfiguration = noop;
-    goToUpdateAppsConfiguration = noop;
-    goToSiteBrowser = noop;
-    isCurrentPortletCustom = noop;
-    isJSPPortlet = noop;
-    reloadCurrentPortlet = noop;
-    goToEditTemplate = noop;
-    allowRouteDeactivation = noop;
-    forbidRouteDeactivation = noop;
-    isEditPage = noop;
+    replaceQueryParams = jest.fn();
+    goToEditContentType = jest.fn();
+    goToEditContentlet = jest.fn();
+    goToEditPage = jest.fn();
+    goToEditTask = jest.fn();
+    goToForgotPassword = jest.fn();
+    goToLogin = jest.fn();
+    goToContent = jest.fn();
+    goToCreateContent = jest.fn();
+    goToPreviousUrl = jest.fn();
+    goToStarter = jest.fn();
+    doLogOut = jest.fn();
+    goToMain = jest.fn();
+    goToURL = jest.fn();
+    gotoPortlet = jest.fn();
+    goToAppsConfiguration = jest.fn();
+    goToUpdateAppsConfiguration = jest.fn();
+    goToSiteBrowser = jest.fn();
+    isCurrentPortletCustom = jest.fn();
+    isJSPPortlet = jest.fn();
+    reloadCurrentPortlet = jest.fn();
+    goToEditTemplate = jest.fn();
+    allowRouteDeactivation = jest.fn();
+    forbidRouteDeactivation = jest.fn();
+    isEditPage = jest.fn();
 
     requestPageLeave = () => {
         this.pageLeaveRequest$.next(true);

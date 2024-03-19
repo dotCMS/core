@@ -33,7 +33,7 @@ import {
     LoginServiceMock,
     MockDotHttpErrorManagerService,
     mockDotRenderedPage,
-    MockDotRouterService,
+    MockDotRouterJestService,
     mockResponseView,
     mockUser,
     SiteServiceMock
@@ -41,16 +41,14 @@ import {
 
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 
-const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-    'toString'
-]);
+const route: any = jest.spyOn(ActivatedRouteSnapshot, 'toString');
 
 route.queryParams = {};
 
 describe('DotEditPageResolver', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotPageStateService: DotPageStateService;
-    let dotPageStateServiceRequestPageSpy: jasmine.Spy;
+    let dotPageStateServiceRequestPageSpy: jest.SpyInstance;
     let dotRouterService: DotRouterService;
     let dotSessionStorageService: DotSessionStorageService;
 
@@ -78,7 +76,7 @@ describe('DotEditPageResolver', () => {
                 DotFormatDateService,
                 DotESContentService,
                 DotFavoritePageService,
-                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotRouterService, useClass: MockDotRouterJestService },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
@@ -99,15 +97,15 @@ describe('DotEditPageResolver', () => {
             ]
         });
         injector = getTestBed();
-        dotEditPageResolver = injector.get(DotEditPageResolver);
-        dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
-        dotPageStateService = injector.get(DotPageStateService);
-        dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
-        dotRouterService = injector.get(DotRouterService);
-        siteService = injector.get(SiteService);
-        dotSessionStorageService = injector.get(DotSessionStorageService);
+        dotEditPageResolver = injector.inject(DotEditPageResolver);
+        dotHttpErrorManagerService = injector.inject(DotHttpErrorManagerService);
+        dotPageStateService = injector.inject(DotPageStateService);
+        dotPageStateServiceRequestPageSpy = jest.spyOn(dotPageStateService, 'requestPage');
+        dotRouterService = injector.inject(DotRouterService);
+        siteService = injector.inject(SiteService);
+        dotSessionStorageService = injector.inject(DotSessionStorageService);
 
-        spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(of());
+        jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
     });
 
     beforeEach(() => {
@@ -127,7 +125,7 @@ describe('DotEditPageResolver', () => {
 
     it('should return a DotRenderedPageState', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
-        dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+        dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
         dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
             expect(state).toEqual(mock);
@@ -145,7 +143,7 @@ describe('DotEditPageResolver', () => {
     it('should redirect to site-browser when request fail', () => {
         const fake403Response = mockResponseView(403);
 
-        dotPageStateServiceRequestPageSpy.and.returnValue(throwError(fake403Response));
+        dotPageStateServiceRequestPageSpy.mockReturnValue(throwError(fake403Response));
 
         dotEditPageResolver.resolve(route).subscribe();
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
@@ -165,36 +163,36 @@ describe('DotEditPageResolver', () => {
     describe('Switch Site', () => {
         it('should switch site when host_id is present in queryparams', () => {
             route.queryParams.host_id = '123';
-            spyOn(siteService, 'switchSiteById').and.returnValue(of(null));
+            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of(null));
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
             dotEditPageResolver.resolve(route).subscribe();
             expect(siteService.switchSiteById).toHaveBeenCalledWith('123');
         });
 
         it('should not switch site when host_id is not present in queryparams', () => {
             route.queryParams = {};
-            spyOn(siteService, 'switchSiteById').and.returnValue(of(null));
+            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of(null));
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
             dotEditPageResolver.resolve(route).subscribe();
             expect(siteService.switchSiteById).not.toHaveBeenCalled();
         });
 
         it('should not switch site when host_id is equal to current site id', () => {
             route.queryParams.host_id = siteService.currentSite.identifier;
-            spyOn(siteService, 'switchSiteById').and.returnValue(of(null));
+            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of(null));
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
             dotEditPageResolver.resolve(route).subscribe();
             expect(siteService.switchSiteById).not.toHaveBeenCalled();
         });
@@ -218,7 +216,7 @@ describe('DotEditPageResolver', () => {
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
             dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(mock);
@@ -237,7 +235,7 @@ describe('DotEditPageResolver', () => {
                     }
                 })
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
             dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toBeNull();
@@ -256,7 +254,7 @@ describe('DotEditPageResolver', () => {
         });
 
         it('should call to `removeVariantId` when handle error and redirect to site-browser ', () => {
-            spyOn(dotSessionStorageService, 'removeVariantId');
+            jest.spyOn(dotSessionStorageService, 'removeVariantId');
 
             const mock = new DotPageRenderState(
                 mockUser(),
@@ -268,7 +266,7 @@ describe('DotEditPageResolver', () => {
                     }
                 })
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
             dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toBeNull();
@@ -295,7 +293,7 @@ describe('DotEditPageResolver', () => {
                     layout: null
                 })
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
             dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toBeNull();

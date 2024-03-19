@@ -15,6 +15,7 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotPageRenderService,
+    DotPageStateService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -25,7 +26,6 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
 
