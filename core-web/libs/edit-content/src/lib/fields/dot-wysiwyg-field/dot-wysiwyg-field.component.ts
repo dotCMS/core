@@ -32,6 +32,6 @@ export class DotWYSIWYGFieldComponent {
         'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template'
     );
     protected readonly toolbar = signal(
-        ' insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr'
+        'insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr'
     );
 }
