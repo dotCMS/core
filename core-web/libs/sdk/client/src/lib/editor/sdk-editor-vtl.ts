@@ -2,9 +2,17 @@ import {
     listenContentChange,
     listenEditorMessages,
     listenHoveredContentlet,
-    pingEditor
+    pingEditor,
+    preserveScrollOnIframe,
+    scrollHandler
 } from './listeners/listeners';
 import { isInsideEditor } from './sdk-editor';
+
+declare global {
+    interface Window {
+        lastScrollYPosition: number;
+    }
+}
 
 /**
  * This is the main entry point for the SDK VTL.
@@ -19,6 +27,8 @@ import { isInsideEditor } from './sdk-editor';
 if (isInsideEditor()) {
     pingEditor();
     listenEditorMessages();
+    scrollHandler();
+    preserveScrollOnIframe();
     listenHoveredContentlet();
     listenContentChange();
 }
