@@ -1,6 +1,5 @@
 package com.dotcms.api.client.model;
 
-import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
@@ -30,13 +29,12 @@ class ServiceManagerTest {
     @Test
     void Test_Persist_Then_Recover() throws IOException {
 
-
         final ServiceBean serviceBeanDefault = ServiceBean.builder().name("default")
                 .active(false)
                 .url(new URL("http://localhost:8080"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token(FAKE_TOKEN_1.toCharArray()).build())
+                                .tokenSupplier(FAKE_TOKEN_1::toCharArray).build())
                 .build();
         serviceManager.persist(serviceBeanDefault);
 
@@ -45,7 +43,7 @@ class ServiceManagerTest {
                 .url(new URL("https://demo.dotcms.com"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token(FAKE_TOKEN_2.toCharArray()).build())
+                                .tokenSupplier(FAKE_TOKEN_2::toCharArray).build())
                 .build();
         serviceManager.persist(serviceBeanDemo1);
 
@@ -54,7 +52,7 @@ class ServiceManagerTest {
                 .url(new URL("https://demo.dotcms.com"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token(FAKE_TOKEN_3.toCharArray()).build())
+                                .tokenSupplier(FAKE_TOKEN_3::toCharArray).build())
                 .build();
         serviceManager.persist(serviceBeanDemo2);
 
@@ -77,7 +75,7 @@ class ServiceManagerTest {
                 .url(new URL("https://demo.dotcms.com"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token(FAKE_TOKEN_3.toCharArray()).build())
+                                .tokenSupplier(FAKE_TOKEN_3::toCharArray).build())
                 .build();
         serviceManager.persist(serviceBeanDemoDupe);
         final List<ServiceBean> serviceBeansAfterDupeWasAdded = serviceManager.services();
@@ -91,7 +89,7 @@ class ServiceManagerTest {
                 .url(new URL("https://demo.dotcms.com"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token(FAKE_TOKEN_3.toCharArray()).build())
+                                .tokenSupplier(FAKE_TOKEN_3::toCharArray).build())
                 .build();
 
         serviceManager.persist(activeBean);
