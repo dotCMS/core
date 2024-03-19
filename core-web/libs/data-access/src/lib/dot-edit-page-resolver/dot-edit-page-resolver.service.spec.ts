@@ -21,12 +21,14 @@ import {
     DotRouterService,
     DotSessionStorageService,
     DotFormatDateService,
-    DotExperimentsService
+    DotExperimentsService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
+    DotLicenseServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotHttpErrorManagerService,
@@ -36,11 +38,8 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotLicenseServiceMock } from '@portlets/dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
-
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'

@@ -1,26 +1,24 @@
-// WE NEED TO DELETE THIS WHEN ARCADIO FNISHES THE WORK ON THE CIRCULAR DEPENDECIES, REMIND ME OF THIS IF YOU READ THIS.
-/* eslint-disable @nx/enforce-module-boundaries */
 import { Route } from '@angular/router';
 
 import {
     CanDeactivateGuardService,
     DotContentletLockerService,
     DotESContentService,
+    DotEditPageResolver,
     DotExperimentsService,
     DotFavoritePageService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
     DotExperimentsConfigResolver
 } from '@dotcms/portlets/dot-experiments/data-access';
-import { portletHaveLicenseResolver } from '@dotcms/ui';
-import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
-import { DotEditPageResolver } from '@portlets/dot-edit-page/shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 import {
     DotEnterpriseLicenseResolver,
-    DotPushPublishEnvironmentsResolver
-} from '@portlets/shared/resolvers';
+    DotPushPublishEnvironmentsResolver,
+    portletHaveLicenseResolver
+} from '@dotcms/ui';
 
 import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
 import { editEmaGuard } from './services/guards/edit-ema.guard';
@@ -74,11 +72,6 @@ export const DotEmaRoutes: Route[] = [
                     DotExperimentsConfigResolver
                 ],
                 loadChildren: async () =>
-                    //TODO: move all the core-web/apps/dotcms-ui/src/app/view/components/_common
-                    // folder with components reused in experiments to a Library to
-                    // avoid this circular dependency
-
-                    // eslint-disable-next-line @nx/enforce-module-boundaries
                     (await import('@dotcms/portlets/dot-experiments/portlet'))
                         .DotExperimentsPortletRoutes
             },

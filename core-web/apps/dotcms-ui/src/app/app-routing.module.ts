@@ -103,8 +103,6 @@ const PORTLETS_ANGULAR: Route[] = [
                 return inject(EmaAppConfigurationService).get(route.queryParams.url);
             }
         },
-        // WE NEED TO DELETE THIS WHEN ARCADIO FNISHES THE WORK ON THE CIRCULAR DEPENDECIES, REMIND ME OF THIS IF YOU READ THIS.
-        // eslint-disable-next-line @nx/enforce-module-boundaries
         loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.DotEmaRoutes)
     },
     {

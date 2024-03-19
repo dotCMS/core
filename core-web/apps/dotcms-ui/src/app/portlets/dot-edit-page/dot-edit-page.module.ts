@@ -5,10 +5,12 @@ import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.servi
 import {
     DotContentletLockerService,
     DotESContentService,
+    DotEditPageResolver,
     DotExperimentsService,
     DotFavoritePageService,
     DotPageLayoutService,
     DotPageRenderService,
+    DotPageStateService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import {
@@ -19,11 +21,9 @@ import { DotEnterpriseLicenseResolver, DotPushPublishEnvironmentsResolver } from
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
-import { DotPageStateService } from './content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageRoutingModule } from './dot-edit-page-routing.module';
 import { DotEditLayoutModule } from './layout/dot-edit-layout.module';
 import { DotEditPageMainModule } from './main/dot-edit-page-main/dot-edit-page-main.module';
-import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 
 @NgModule({
     imports: [
