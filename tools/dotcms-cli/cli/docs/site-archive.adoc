@@ -41,7 +41,7 @@ site-archive - *Use this command to archive a site.*
   Display this help message.
 
 *-tk, --token*=_<token>_::
-  A dot CMS token to use for authentication. 
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 
