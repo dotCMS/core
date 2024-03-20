@@ -47,7 +47,6 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
     protected Map<String, Object> getObjectMap(final PageView pageView) {
         final Template template = pageView.getTemplate();
-
         final Map<String, Object> pageViewMap = new TreeMap<>();
         pageViewMap.put("page", this.asPageMap(pageView));
         pageViewMap.put("containers", pageView.getContainersMap());
@@ -103,6 +102,9 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
 
     private Map<Object, Object> asPageMap(final PageView pageView)  {
+
+        addRelationships(pageView.getPage());
+
         final Map<Object, Object> pageMap = this.asMap(pageView.getPage());
 
         final String pageUrlMapper = pageView.getPageUrlMapper();

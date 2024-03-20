@@ -20,6 +20,7 @@
 <%@page import="com.dotcms.publisher.business.DotPublisherException"%>
 <%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
 <%@ page import="java.util.stream.Collectors" %>
+<%@ page import="com.liferay.portal.model.User" %>
 
 
 <%
@@ -92,10 +93,6 @@
 							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b> 
                             (<span> <%=bundle.getId() %> </span>)
 
-							<%if(bundle.getOwner() != null && bundleOwner != null ){%>
-								(<%=bundleOwner.getFullName()%>)
-							<%}%>
-
                             <%if(bundle.bundleTgzExists()){%>
                                 - <%=LanguageUtil.get(pageContext, "Already Generated") %> / Filter:
                                 <%if(bundle.getOperation()==null || bundle.getOperation()==0){%>
@@ -107,6 +104,14 @@
 
                             <%} %>
 
+						</th>
+						<th align="right" nowrap="nowrap">
+							<p>
+								<strong>Created by: </strong>
+								<%if(bundle.getOwner() != null && bundleOwner != null ){%>
+								<%=bundleOwner.getFullName()%>
+								<%}%>
+							</p>
 						</th>
 						<th align="right" nowrap="nowrap">
 							

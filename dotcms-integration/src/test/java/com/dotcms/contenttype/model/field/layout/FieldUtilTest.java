@@ -10,6 +10,7 @@ import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalizat
 import com.dotcms.datagen.*;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -26,6 +27,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -41,11 +44,10 @@ public class FieldUtilTest {
 
         final User systemUser = APILocator.systemUser();
         final ContentType languageVariableContentType = ContentTypeDataGen.createLanguageVariableContentType();
-        ContentType formContentType = null;
 
         final String fieldName = String.format("test%d", new Date().getTime());
 
-        formContentType = new ContentTypeDataGen()
+        final ContentType formContentType = new ContentTypeDataGen()
                 .baseContentType(BaseContentType.FORM)
                 .fields(
                         CollectionsUtils.list(
@@ -76,9 +78,13 @@ public class FieldUtilTest {
                 new ContentTypeInternationalization(languageId, live, systemUser);
 
         Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
-        fieldMap  = APILocator.getContentTypeFieldAPI().getFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
 
-        assertEquals(languageVariableValue, fieldMap.get("name"));
+        Awaitility.await().atMost(20, TimeUnit.SECONDS)
+                .pollInterval(5, TimeUnit.SECONDS)
+                .until( () -> APILocator.getContentTypeFieldAPI()
+                        .getFieldInternationalization(formContentType, contentTypeInternationalization,
+                                fieldMap).get("name"), is(languageVariableValue));
+
     }
 
     @Test

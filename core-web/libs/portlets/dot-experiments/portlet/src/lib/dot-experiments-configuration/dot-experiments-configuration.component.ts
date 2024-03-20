@@ -12,14 +12,13 @@ import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus
 } from '@dotcms/dotcms-models';
-import { DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
+import { DotAddToBundleComponent, DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -46,7 +45,7 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         DotExperimentsConfigurationSchedulingComponent,
         DotExperimentsConfigurationSkeletonComponent,
         DotExperimentsInlineEditTextComponent,
-        DotAddToBundleModule,
+        DotAddToBundleComponent,
         DotRemoveConfirmPopupWithEscapeDirective,
         CardModule,
         ButtonModule,

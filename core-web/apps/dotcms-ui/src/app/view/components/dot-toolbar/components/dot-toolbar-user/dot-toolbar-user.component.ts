@@ -5,7 +5,7 @@ import { AvatarModule } from 'primeng/avatar';
 import { Menu, MenuModule } from 'primeng/menu';
 
 import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
@@ -24,7 +24,7 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
         AvatarModule,
         DotLoginAsModule,
         DotMyAccountModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         MenuModule,
         AsyncPipe,
         NgIf

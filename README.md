@@ -10,7 +10,7 @@ dotCMS is an open source headless/hybrid content management system (CMS) that ha
 - **Visual Editing** - Full featured page editing that works headlessly, in your SPA or for traditional page delivery
 -  **Search Built in** - dotCMS indexes all content and assets in Elasticsearch for real time search-abiliity.
 - **Personalization, Rules & A/B Testing** - Empower your marketing teams with targeting and content optimizations.
-- **Cloud, Cloud Anywhere or On-Prem** - Flexiable deployment works with your IT/cloud strategies. 
+- **Cloud, Cloud Anywhere or Self-Hosted** - Flexiable deployment works with your IT/cloud strategies. 
 - **Feature Rich** - Custom content workflows, scriptable APIs, push and static publishing, custom roles and permissions, osgi based plugin architecture.  Do more with more.
 
 dotCMS can can serve as a content hub and also as a platform for sites, mobile apps, mini-sites, portals, intranets. dotCMS is used everywhere, from running small sites to powering multi-node installations for governments, Fortune 100 companies, Universities and Global Brands. dotCMS can scale to support hundreds of editors managing thousands of sites with millions of content objects.

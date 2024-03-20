@@ -8,8 +8,7 @@ import { DotCustomTimeModule } from '@components/_common/dot-custom-time.compone
 import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
 import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import {
     DotNotificationsItemComponent,
@@ -25,7 +24,7 @@ import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/d
         DotDropdownModule,
         ButtonModule,
         DotCustomTimeModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe,
         DividerModule,
         DotToolbarAnnouncementsComponent,

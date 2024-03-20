@@ -16,6 +16,7 @@ import {
     AllowedConditionOperatorsByTypeOfGoal,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DotEnvironment,
     DotExperiment,
     DotExperimentStatus,
     DotPageRenderState,
@@ -32,7 +33,6 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
 
 import {
     checkIfExperimentDescriptionIsSaving,

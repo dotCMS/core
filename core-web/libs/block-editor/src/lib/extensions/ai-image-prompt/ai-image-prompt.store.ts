@@ -5,38 +5,50 @@ import { Injectable } from '@angular/core';
 
 import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { PromptType } from './ai-image-prompt.models';
 
 import { DotAiService } from '../../shared';
+import {
+    AIImagePrompt,
+    DotAIImageOrientation,
+    DotGeneratedAIImage
+} from '../../shared/services/dot-ai/dot-ai.models';
 
-const DEFAULT_INPUT_PROMPT: PromptType = 'input';
+const DEFAULT_INPUT_PROMPT = PromptType.INPUT;
 
 export interface DotAiImagePromptComponentState {
     showDialog: boolean;
-    selectedPromptType: PromptType | null;
     prompt: string | null; // we always have the final prompt here
     editorContent: string | null;
-    contentlets: DotCMSContentlet[] | [];
+    images: DotGeneratedAIImage[];
     status: ComponentStatus;
     error: string;
+    selectedImage: DotGeneratedAIImage | null;
+    galleryActiveIndex: number;
+    orientation: DotAIImageOrientation;
 }
 
 export interface VmAiImagePrompt {
-    selectedPromptType: PromptType | null;
     showDialog: boolean;
     status: ComponentStatus;
+    images: DotGeneratedAIImage[];
+    galleryActiveIndex: number;
+    orientation: DotAIImageOrientation;
+    isLoading: boolean;
 }
 
 const initialState: DotAiImagePromptComponentState = {
-    selectedPromptType: null,
     showDialog: false,
     status: ComponentStatus.INIT,
-    contentlets: [],
+    images: [],
     prompt: null,
     editorContent: null,
-    error: ''
+    error: '',
+    selectedImage: null,
+    galleryActiveIndex: 0,
+    orientation: DotAIImageOrientation.HORIZONTAL
 };
 
 @Injectable({ providedIn: 'root' })
@@ -47,14 +59,13 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         this.state$,
         ({ status }) => status === ComponentStatus.LOADING
     );
+
+    readonly selectedImage$ = this.select(this.state$, ({ selectedImage }) => selectedImage);
+
     readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
-    readonly getContentlets$ = this.select(this.state$, ({ contentlets }) => contentlets);
+    readonly getImages$ = this.select(this.state$, ({ images }) => images);
 
     //Updaters
-    readonly setPromptType = this.updater((state, selectedPromptType: PromptType) => ({
-        ...state,
-        selectedPromptType
-    }));
 
     readonly showDialog = this.updater((state, editorContent: string) => ({
         ...state,
@@ -68,18 +79,26 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         error: ''
     }));
 
-    readonly hideDialog = this.updater((state) => ({
-        ...state,
-        showDialog: false,
-        selectedPromptType: null
+    readonly setSelectedImage = this.updater(
+        (state: DotAiImagePromptComponentState, selectedImage: DotGeneratedAIImage) => {
+            return { ...state, selectedImage };
+        }
+    );
+
+    readonly hideDialog = this.updater(() => ({
+        ...initialState
     }));
 
     readonly vm$: Observable<VmAiImagePrompt> = this.select(
         this.state$,
-        ({ selectedPromptType, showDialog, status }) => ({
-            selectedPromptType,
+        this.isLoading$,
+        ({ showDialog, status, images, galleryActiveIndex, orientation }, isLoading) => ({
             showDialog,
-            status
+            status,
+            images,
+            galleryActiveIndex,
+            orientation,
+            isLoading
         })
     );
 
@@ -91,14 +110,14 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
      * @param {Observable<string>} prompt$ - An observable representing the prompt.
      * @returns {Observable} - An observable that emits the generated image.
      */
-    readonly generateImage = this.effect((prompt$: Observable<string>) => {
+    readonly generateImage = this.effect((prompt$: Observable<AIImagePrompt>) => {
         return prompt$.pipe(
             withLatestFrom(this.state$),
-            switchMap(([prompt, { selectedPromptType, editorContent }]) => {
-                const cleanPrompt = prompt?.trim() ?? '';
+            switchMap(([prompt, { editorContent }]) => {
+                const cleanPrompt = prompt.text?.trim() ?? '';
 
                 const finalPrompt =
-                    selectedPromptType === 'auto' && editorContent
+                    prompt.type === 'auto' && editorContent
                         ? `${cleanPrompt} to illustrate the following content: ${editorContent}`
                         : cleanPrompt;
 
@@ -108,13 +127,14 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                     error: ''
                 });
 
-                return this.dotAiService.generateAndPublishImage(finalPrompt).pipe(
+                return this.dotAiService.generateAndPublishImage(finalPrompt, prompt.size).pipe(
                     tapResponse(
-                        (contentLets) => {
-                            this.patchState({
+                        (response) => {
+                            this.patchState((state) => ({
                                 status: ComponentStatus.IDLE,
-                                contentlets: contentLets
-                            });
+                                images: [...state.images, { request: prompt, response: response }],
+                                galleryActiveIndex: state.images.length
+                            }));
                         },
                         (error: string) => {
                             this.patchState({ status: ComponentStatus.IDLE, error });

@@ -9,6 +9,8 @@ import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.nio.file.StandardCopyOption;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -415,6 +417,33 @@ public class FileUtil {
 	 */
 	public static boolean isFileEditableAsText(final String mimeType) {
 		return UtilMethods.isSet(mimeType) && (mimeType.startsWith("text/") || EDITABLE_AS_TEXT_FILE_TYPES.get().contains(mimeType));
+	}
+
+	/**
+	 * NIO based method to copy a directory from one location to another
+	 * @param src source directory
+	 * @param dest destination directory
+	 */
+	public static void copyDir(Path src, Path dest)  {
+		try (Stream<Path> stream = Files.walk(src)) {
+			// Iterate over each Path object in the stream
+			stream.forEach(source -> {
+				// Get the relative path from the source directory
+				Path relativePath = src.relativize(source);
+
+				// Get the corresponding path in the destination directory
+				Path destination = dest.resolve(relativePath);
+
+				try {
+					// Copy each Path object from source to destination
+					Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+				} catch (IOException e) {
+					Logger.debug(FileUtil.class, e.getMessage(), e);
+				}
+			});
+		} catch (IOException e) {
+			Logger.debug(FileUtil.class, e.getMessage(), e);
+		}
 	}
 
 }
