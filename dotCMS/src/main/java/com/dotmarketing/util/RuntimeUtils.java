@@ -29,7 +29,9 @@ public class RuntimeUtils {
 
 
 
-    private static final Lazy<Boolean> ENABLE_LOGGING = Lazy.of(() -> Boolean.parseBoolean(System.getProperty("dotcms.runtimeutils.enablelogging", "false")));
+    private static final Lazy<Boolean> ENABLE_LOGGING = Lazy.of(() -> {
+        return Try.of(()->Boolean.parseBoolean(System.getenv("DOT_RUNTIME_ENABLE_LOGGING"))).getOrElse(false);
+    });
 
 
     private static void logInfo(String message) {
