@@ -37,6 +37,7 @@ import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
+import com.dotcms.rest.api.v1.content.ContentReportResource;
 import com.dotcms.rest.api.v1.content.ContentResource;
 import com.dotcms.rest.api.v1.content.ContentVersionResource;
 import com.dotcms.rest.api.v1.content.ResourceLinkResource;
@@ -154,7 +155,8 @@ import java.util.concurrent.ConcurrentHashMap;
 				@Tag(name = "Content Delivery"),
 				@Tag(name = "Bundle"),
 				@Tag(name = "Navigation"),
-				@Tag(name = "Experiment")
+				@Tag(name = "Experiment"),
+				@Tag(name = "Content Report")
 		}
 )
 public class DotRestApplication extends Application {
@@ -262,6 +264,7 @@ public class DotRestApplication extends Application {
 			.add(StorageResource.class)
 			.add(com.dotcms.rest.api.v2.tags.TagResource.class)
 			.add(AnnouncementsResource.class)
+			.add(ContentReportResource.class)
 			.build();
 
 	private static final Set<Class<?>> PROVIDER_CLASSES = ImmutableSet.<Class<?>>builder()

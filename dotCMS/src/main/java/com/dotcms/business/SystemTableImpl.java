@@ -8,7 +8,9 @@ import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Default implementation for the SystemTable
@@ -28,18 +30,29 @@ class SystemTableImpl implements SystemTable {
     @CloseDBIfOpened
     public Optional<String> get(final String key) {
 
-        Logger.debug(this, ()-> "Finding the key: " + key);
-        return Try.of(()->this.systemTableFactory.find(key))
-                .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
+        try {
+
+            Logger.debug(this, ()-> "Finding by key: " + key);
+            final Optional<Object> objOpt = this.systemTableFactory.find(key);
+            return objOpt.isPresent()? Optional.ofNullable(objOpt.get().toString()): Optional.empty();
+        }catch (Exception e) {
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
     }
 
     @Override
     @CloseDBIfOpened
     public Map<String, String> all() {
 
-        Logger.debug(this, ()-> "Returning all table contents");
-        return Try.of(()->this.systemTableFactory.findAll())
-                .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
+        try {
+
+            final Map<String, Object> results = this.systemTableFactory.findAll();
+            return Objects.nonNull(results)?
+                    results.entrySet().stream().map(entry-> Map.entry(entry.getKey(), entry.getValue().toString()))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)): Map.of();
+        } catch (Exception e) {
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
     }
 
     @Override

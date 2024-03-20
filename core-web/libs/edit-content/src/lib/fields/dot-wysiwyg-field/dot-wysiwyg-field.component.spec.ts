@@ -16,7 +16,7 @@ import { WYSIWYG_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 const ALL_PLUGINS =
     'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template';
 const ALL_TOOLBAR_ITEMS =
-    'paste print textpattern | insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image hr | preview | validation media | forecolor dotimageclipboard backcolor emoticons';
+    'insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr';
 
 describe('DotWYSIWYGFieldComponent', () => {
     let spectator: Spectator<DotWYSIWYGFieldComponent>;
