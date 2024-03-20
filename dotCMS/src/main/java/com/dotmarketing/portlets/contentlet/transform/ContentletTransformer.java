@@ -90,7 +90,7 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
         if(hasJsonFields){
           try {
               String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
-              json = json.replaceAll("&#58;",":").replaceAll("&#44;",",");//Escape HTML chars from JSON
+              json = UtilMethods.escapeHTMLCodeFromJSON(json);//Escape HTML chars from JSON
               contentlet = contentletJsonAPI.mapContentletFieldsFromJson(json);
           }catch (Exception e){
               final String errorMsg = String.format("Unable to populate contentlet from json for ID='%s', Inode='%s', Content-Type '%s': %s", contentletId, inode, contentTypeId, e.getMessage());
