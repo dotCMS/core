@@ -2,15 +2,33 @@
 import fakeIndexedDB from 'fake-indexeddb';
 import fetchMock from 'fetch-mock';
 
+import { API_EXPERIMENTS_URL } from './constants';
 import { DotExperiments } from './dot-experiments';
+import {
+    IsUserIncludedResponse,
+    LocationMock,
+    MOCK_CURRENT_TIMESTAMP,
+    MockDataStoredIndexDB,
+    MockDataStoredIndexDBWithNew,
+    MockDataStoredIndexDBWithNew15DaysLater,
+    NewIsUserIncludedResponse,
+    sessionStorageMock,
+    TIME_15_DAYS_MILLISECONDS,
+    TIME_5_DAYS_MILLISECONDS
+} from './mocks/mock';
 import { DotExperimentConfig } from './models';
 
+// Jitsu library Mock
 jest.mock('@jitsu/sdk-js', () => ({
     jitsuClient: jest.fn().mockImplementation(() => ({
         set: jest.fn()
     }))
 }));
 
+// SessionStorage mock
+global.sessionStorage = sessionStorageMock;
+
+// IndexDB Mock
 Object.defineProperty(window, 'indexedDB', {
     writable: true,
     value: fakeIndexedDB
@@ -22,16 +40,20 @@ if (!globalThis.structuredClone) {
     };
 }
 
+// Windows Mock
+global.window = Object.create(window);
+Object.defineProperty(window, 'location', {
+    value: {
+        href: 'http://localhost:8080/'
+    }
+});
+
 describe('DotExperiments', () => {
     const configMock: DotExperimentConfig = {
         'api-key': 'yourApiKey',
-        server: 'yourServerUrl',
+        server: 'http://localhost:8080/',
         debug: false
     };
-
-    afterEach(() => {
-        fetchMock.restore();
-    });
 
     describe('DotExperiments Instance and Initialization', () => {
         beforeEach(() => {
@@ -46,8 +68,8 @@ describe('DotExperiments', () => {
         });
 
         it('should instantiate the class when getInstance is called with config', () => {
-            const instance = DotExperiments.getInstance(configMock);
-            expect(instance).toBeInstanceOf(DotExperiments);
+            const dotExperimentsInstance = DotExperiments.getInstance(configMock);
+            expect(dotExperimentsInstance).toBeInstanceOf(DotExperiments);
         });
 
         it('should throw an error if server is not provided in config', () => {
@@ -64,33 +86,87 @@ describe('DotExperiments', () => {
             ).toThrow('`api-key` must be provided and should not be empty!');
         });
 
-        it('should call all the necessary at initialize()', async () => {
-            const instance = DotExperiments.getInstance(configMock);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const spyGetPersistedData = jest.spyOn(instance as any, 'getPersistedData');
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const spySetExperimentData = jest.spyOn(instance as any, 'setExperimentData');
-            const spySetinitializeDatabaseHandler = jest.spyOn(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                instance as any,
-                'initializeDatabaseHandler'
-            );
-
-            spyGetPersistedData.mockResolvedValueOnce(undefined);
-
-            spySetExperimentData.mockResolvedValueOnce(undefined);
-            spySetinitializeDatabaseHandler.mockResolvedValueOnce(undefined);
-
-            await instance.initialize();
-
-            expect(spyGetPersistedData).toHaveBeenCalled();
-            expect(spySetExperimentData).toHaveBeenCalled();
-            expect(spySetinitializeDatabaseHandler).toHaveBeenCalled();
-        });
-
         it('should return false if the debug inactive', async () => {
             const instance = DotExperiments.getInstance(configMock);
             expect(instance.getIsDebugActive()).toBe(false);
+        });
+    });
+
+    describe('Class interactions', () => {
+        beforeEach(() => {
+            fetchMock.restore();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (DotExperiments as any).instance = null;
+            jest.restoreAllMocks();
+            jest.clearAllMocks();
+        });
+
+        it('should simulate the changes of the data in first run, after 5 days and 15 days.', async () => {
+            // First time the user enter to the page
+
+            const mockNow = jest.spyOn(Date, 'now');
+            mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
+
+            fetchMock.post(`${configMock.server}${API_EXPERIMENTS_URL}`, {
+                status: 200,
+                body: IsUserIncludedResponse,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const instance = DotExperiments.getInstance(configMock);
+            await instance.ready().then(() => {
+                const experiments = instance.experiments;
+                expect(experiments.length).toBe(1);
+                expect(experiments).toEqual(MockDataStoredIndexDB);
+            });
+
+            // Second time the user enter to the page
+            // change the time 5 days later
+            mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP + TIME_5_DAYS_MILLISECONDS);
+
+            fetchMock.post(
+                `${configMock.server}${API_EXPERIMENTS_URL}`,
+                {
+                    status: 200,
+                    body: NewIsUserIncludedResponse,
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                },
+                { overwriteRoutes: true }
+            );
+
+            await instance.locationChanged(LocationMock).then(() => {
+                const experiments = instance.experiments;
+                expect(experiments.length).toBe(2);
+                expect(experiments).toEqual(MockDataStoredIndexDBWithNew);
+            });
+
+            fetchMock.post(
+                `${configMock.server}${API_EXPERIMENTS_URL}`,
+                {
+                    status: 200,
+                    body: [],
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                },
+                { overwriteRoutes: true }
+            );
+
+            // Third try, after 15 days
+            const location = { ...LocationMock, href: 'http://localhost/destinations' };
+            mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP + TIME_15_DAYS_MILLISECONDS);
+            await instance.locationChanged(location).then(() => {
+                const experiments = instance.experiments;
+                expect(experiments.length).toBe(1);
+                expect(experiments).toEqual(MockDataStoredIndexDBWithNew15DaysLater);
+            });
         });
     });
 });
