@@ -18,6 +18,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, skip, takeUntil, throttleTime } from 'rxjs/operators';
 
+import { DotContentSearchService, DotLanguagesService } from '@dotcms/data-access';
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 // services
@@ -30,7 +31,7 @@ import { DotAssetSearchStore } from './store/dot-asset-search.store';
     selector: 'dot-asset-search',
     templateUrl: './dot-asset-search.component.html',
     styleUrls: ['./dot-asset-search.component.scss'],
-    providers: [DotAssetSearchStore],
+    providers: [DotAssetSearchStore, DotContentSearchService, DotLanguagesService],
     standalone: true,
     imports: [
         DotAssetCardComponent,

@@ -1,19 +1,21 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator';
+
+import { CardModule } from 'primeng/card';
 
 import { DotAssetCardComponent } from './dot-asset-card.component';
 
 describe('DotAssetCardComponent', () => {
+    let spectator: Spectator<DotAssetCardComponent>;
     let component: DotAssetCardComponent;
-    let fixture: ComponentFixture<DotAssetCardComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [DotAssetCardComponent]
-        }).compileComponents();
+    const createComponent = createComponentFactory({
+        component: DotAssetCardComponent,
+        imports: [CardModule]
+    });
 
-        fixture = TestBed.createComponent(DotAssetCardComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    beforeEach(() => {
+        spectator = createComponent();
+        component = spectator.component;
     });
 
     it('should create', () => {

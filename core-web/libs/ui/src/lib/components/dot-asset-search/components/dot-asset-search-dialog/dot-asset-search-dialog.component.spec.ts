@@ -1,19 +1,25 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { MockComponent } from 'ng-mocks';
+
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotAssetSearchDialogComponent } from './dot-asset-search-dialog.component';
 
+import { DotAssetSearchComponent } from '../../dot-asset-search.component';
+
 describe('DotAssetSearchDialogComponent', () => {
+    let spectator: Spectator<DotAssetSearchDialogComponent>;
     let component: DotAssetSearchDialogComponent;
-    let fixture: ComponentFixture<DotAssetSearchDialogComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotAssetSearchDialogComponent]
-        }).compileComponents();
+    const createComponent = createComponentFactory({
+        component: DotAssetSearchDialogComponent,
+        declarations: [MockComponent(DotAssetSearchComponent)],
+        providers: [DynamicDialogRef, DynamicDialogConfig]
+    });
 
-        fixture = TestBed.createComponent(DotAssetSearchDialogComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    beforeEach(() => {
+        spectator = createComponent();
+        component = spectator.component;
     });
 
     it('should create', () => {

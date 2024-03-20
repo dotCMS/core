@@ -5,12 +5,12 @@ import { Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-export enum ESOrderDirection {
+export enum ESOrderDirectionSearch {
     ASC = 'ASC',
     DESC = 'DESC'
 }
 
-export interface EsQueryParams {
+export interface EsQueryParamsSearch {
     itemsPerPage?: number;
     filter?: string;
     lang?: string;
@@ -18,7 +18,7 @@ export interface EsQueryParams {
     query: string;
     sortField?: string;
     limit?: number;
-    sortOrder?: ESOrderDirection;
+    sortOrder?: ESOrderDirectionSearch;
 }
 
 @Injectable({
@@ -33,7 +33,7 @@ export class DotContentSearchService {
      * @returns Observable<ESContent>
      * @memberof DotESContentService
      */
-    public get<T>({ query, limit = 0, offset = 0 }: EsQueryParams): Observable<T> {
+    public get<T>({ query, limit = 0, offset = 0 }: EsQueryParamsSearch): Observable<T> {
         return this.http
             .post('/api/content/_search', {
                 query,

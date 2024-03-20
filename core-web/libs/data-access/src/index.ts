@@ -11,6 +11,7 @@ export * from './lib/dot-current-user/dot-current-user.service';
 export * from './lib/dot-devices/dot-devices.service';
 export * from './lib/dot-edit-page/dot-edit-page.service';
 export * from './lib/dot-es-content/dot-es-content.service';
+export * from './lib/dot-content-search/dot-content-search.service';
 export * from './lib/dot-events/dot-events.service';
 export * from './lib/dot-format-date/dot-format-date.service';
 export * from './lib/dot-generate-secure-password/dot-generate-secure-password.service';

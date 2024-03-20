@@ -5,20 +5,19 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map, mergeMap, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
-import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 import {
-    ESOrderDirection,
-    EsQueryParams,
     DotContentSearchService,
-    DotLanguageService,
-    Languages
-} from '@dotcms/ui';
+    ESOrderDirectionSearch,
+    EsQueryParamsSearch,
+    DotLanguagesService
+} from '@dotcms/data-access';
+import { DotCMSContentlet, DotLanguage, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 export interface DotImageSearchState {
     loading: boolean;
     preventScroll: boolean;
     contentlets: DotCMSContentlet[];
-    languageId?: number;
+    languageId: number | string;
     search: string;
     assetType: EditorAssetTypes;
 }
@@ -27,6 +26,7 @@ const defaultState: DotImageSearchState = {
     loading: true,
     preventScroll: false,
     contentlets: [],
+    languageId: '*',
     search: '',
     assetType: 'image'
 };
@@ -88,8 +88,15 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
     readonly init = this.effect((origin$: Observable<EditorAssetTypes>) => {
         return origin$.pipe(
             tap((assetType) => this.updateAssetType(assetType)),
-            switchMap(() => this.dotLanguageService.getLanguages()),
-            tap((languages) => (this.languages = languages)),
+            switchMap(() =>
+                this.dotLanguagesService.get().pipe(
+                    tap((languages) => {
+                        languages.forEach((lang) => {
+                            this.languages[lang.id] = lang;
+                        });
+                    })
+                )
+            ),
             withLatestFrom(this.state$),
             switchMap(([_, state]) => this.searchContentletsRequest(this.params(state), []))
         );
@@ -115,11 +122,11 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
         );
     });
 
-    private languages: Languages;
+    private languages: { [key: string]: DotLanguage } = {};
 
     constructor(
         private DotContentSearchService: DotContentSearchService,
-        private dotLanguageService: DotLanguageService
+        private dotLanguagesService: DotLanguagesService
     ) {
         super(defaultState);
     }
@@ -136,16 +143,16 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
         );
     }
 
-    private params(data): EsQueryParams {
+    private params(data): EsQueryParamsSearch {
         const { search, assetType, offset = 0, languageId = '' } = data;
         const filter = search.includes('-') ? search : `${search}*`;
         const languageQuery = languageId ? `+languageId:${languageId}` : '';
 
         return {
-            query: `+catchall:${filter} title:'${search}'^15 ${languageQuery} +baseType:(4 OR 9) +metadata.contenttype:${
+            query: `+catchall:${filter} +title:'${search}'^15 ${languageQuery} +baseType:(4 OR 9) +metadata.contenttype:${
                 assetType || ''
             }/* +deleted:false +working:true`,
-            sortOrder: ESOrderDirection.ASC,
+            sortOrder: ESOrderDirectionSearch.ASC,
             limit: 20,
             offset
         };

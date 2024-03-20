@@ -1,19 +1,22 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator';
 
-import { DotAssetSkeletonComponent } from './dot-asset-card-skeleton.component';
+import { CardModule } from 'primeng/card';
+import { SkeletonModule } from 'primeng/skeleton';
 
-describe('DotAssetSkeletonComponent', () => {
-    let component: DotAssetSkeletonComponent;
-    let fixture: ComponentFixture<DotAssetSkeletonComponent>;
+import { DotAssetCardSkeletonComponent } from './dot-asset-card-skeleton.component';
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [DotAssetSkeletonComponent]
-        }).compileComponents();
+describe('DotAssetCardSkeletonComponent', () => {
+    let spectator: Spectator<DotAssetCardSkeletonComponent>;
+    let component: DotAssetCardSkeletonComponent;
 
-        fixture = TestBed.createComponent(DotAssetSkeletonComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: DotAssetCardSkeletonComponent,
+        imports: [CardModule, SkeletonModule]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+        component = spectator.component;
     });
 
     it('should create', () => {

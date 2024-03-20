@@ -11,7 +11,7 @@
     <h2 class="title" *pTemplate="'title'">{{ contentlet?.fileName || contentlet?.title }}</h2>
     <ng-template pTemplate="footer">
         <div class="state">
-            <span class="badge">{{ contentlet.language }}</span>
+            <span class="badge">{{ contentlet?.language }}</span>
             <dot-state-icon [state]="contentlet" size="16px"> </dot-state-icon>
         </div>
     </ng-template>
