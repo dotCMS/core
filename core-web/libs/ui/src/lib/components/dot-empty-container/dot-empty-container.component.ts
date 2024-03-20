@@ -37,6 +37,9 @@ export class DotEmptyContainerComponent {
     @Input()
     buttonLabel: string;
 
+    /**
+     * Change the button type to secondary
+     */
     @Input()
     secondaryButton = false;
 

@@ -82,9 +82,8 @@ describe('AiImagePromptGalleryComponent', () => {
             images: imagesMock
         });
         spectator.detectChanges();
-        const galleria = spectator.query(Galleria);
 
-        galleria.activeIndexChange.emit(1);
+        spectator.triggerEventHandler(Galleria, 'activeIndexChange', 1);
 
         expect(emitterSpy).toHaveBeenCalledWith(1);
     });
@@ -97,9 +96,8 @@ describe('AiImagePromptGalleryComponent', () => {
             images: errorImagesMock
         });
         spectator.detectChanges();
-        const emptyContainer = spectator.query(DotEmptyContainerComponent);
 
-        emptyContainer.buttonAction.emit();
+        spectator.triggerEventHandler(DotEmptyContainerComponent, 'buttonAction', null);
 
         expect(emitterSpy).toHaveBeenCalled();
     });

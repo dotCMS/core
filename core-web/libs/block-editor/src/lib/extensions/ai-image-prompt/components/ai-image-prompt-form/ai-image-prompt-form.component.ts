@@ -58,15 +58,24 @@ import { PromptType } from '../../ai-image-prompt.models';
     styleUrls: ['./ai-image-prompt-form.component.scss']
 })
 export class AiImagePromptFormComponent implements OnChanges, OnInit {
+    /**
+     * The value of the generated AI image.
+     */
     @Input()
     value: DotGeneratedAIImage;
 
     @Input()
     isLoading = false;
 
+    /**
+     * An event that is emitted when the value of form change.
+     */
     @Output()
     valueChange = new EventEmitter<AIImagePrompt>();
 
+    /**
+     * An event that is emitted when the generate action to create a new image is triggered.
+     */
     @Output()
     generate = new EventEmitter<void>();
 

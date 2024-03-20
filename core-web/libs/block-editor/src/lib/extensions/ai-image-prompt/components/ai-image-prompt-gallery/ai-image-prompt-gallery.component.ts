@@ -33,18 +33,33 @@ export class AiImagePromptGalleryComponent {
     @Input()
     isLoading = false;
 
+    /**
+     * An event that is emitted when the generate action is triggered.
+     */
     @Input()
     images: DotGeneratedAIImage[] = [];
 
+    /**
+     * The index of the currently active image.
+     */
     @Input()
     activeImageIndex = 0;
 
+    /**
+     * The orientation of the images. helps to define the initial placeholder
+     */
     @Input()
     orientation = DotAIImageOrientation.HORIZONTAL;
 
+    /**
+     * An event that is emitted when the active image index changes.
+     */
     @Output()
     activeIndexChange = new EventEmitter<number>();
 
+    /**
+     * An event that is emitted when the generate action to create a new image is triggered.
+     */
     @Output()
     regenerate = new EventEmitter<void>();
 
