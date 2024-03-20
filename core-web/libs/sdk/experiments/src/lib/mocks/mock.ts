@@ -1,4 +1,4 @@
-import { ExperimentEvent, IsUserIncludedApiResponse } from '../models';
+import { AssignedExperiments, ExperimentEvent, IsUserIncludedApiResponse } from '../models';
 
 /**
  * Represents the response object for the IsUserIncluded API.
@@ -13,7 +13,7 @@ export const IsUserIncludedResponse: IsUserIncludedApiResponse = {
         excludedExperimentIds: [],
         experiments: [
             {
-                id: 'd5f1eb69-a03a-479a-af4c-8da3b9eaacf8',
+                id: '11111-11111-11111-11111-11111',
                 lookBackWindow: {
                     expireMillis: 1209600000,
                     value: 'Q5KtspItPxWJYKVniq6A'
@@ -32,11 +32,28 @@ export const IsUserIncludedResponse: IsUserIncludedApiResponse = {
                 }
             }
         ],
-        includedExperimentIds: ['d5f1eb69-a03a-479a-af4c-8da3b9eaacf8']
+        includedExperimentIds: ['11111-11111-11111-11111-11111']
     },
     errors: [],
     i18nMessagesMap: {},
     messages: []
+};
+
+export const CURRENT_TIMESTAMP = 1630629253956;
+
+export const TIME_15_DAYS_MILLISECONDS = 15 * 24 * 60 * 60 * 1000;
+
+let storedExperiment = IsUserIncludedResponse.entity.experiments[0];
+storedExperiment = {
+    ...storedExperiment,
+    lookBackWindow: {
+        ...storedExperiment.lookBackWindow,
+        expireTime: CURRENT_TIMESTAMP + storedExperiment.lookBackWindow.expireMillis - 86400000
+    }
+};
+export const IsUserIncludedResponseStored: AssignedExperiments = {
+    ...IsUserIncludedResponse.entity,
+    experiments: [storedExperiment]
 };
 
 /**
