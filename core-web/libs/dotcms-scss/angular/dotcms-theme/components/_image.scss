@@ -9,7 +9,7 @@
     color: $white;
 
     .pi-window-maximize {
-        font-size: 2rem;
+        font-size: $font-size-xxl;
     }
 }
 
@@ -26,9 +26,9 @@
     background-color: transparent;
     width: 3rem;
     height: 3rem;
-    border-radius: 50%;
+    border-radius: $border-radius-circular;
     transition: background-color $basic-speed, color $basic-speed, box-shadow $basic-speed;
-    margin-right: 0.5rem;
+    margin-right: $spacing-1;
 
     &:last-child {
         margin-right: 0;
@@ -40,7 +40,7 @@
     }
 
     i {
-        font-size: $spacing-4;
+        font-size: $font-size-xl;
     }
 
     .p-icon {
