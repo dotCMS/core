@@ -16,7 +16,6 @@
 
         <antcall target="create-test-folder" inheritAll="true" inheritRefs="true">
         </antcall>
-
     </target>
 
     <target name="create-test-folder">
@@ -46,13 +45,16 @@
                 <echo file="${context.path}/${test.dynamic.folder}/license/license.dat" append="false" message="${env.DOT_DOTCMS_LICENSE}"/>
             </then>
             <else>
-                <echo>Copying license from ${user.home}/.dotcms/license</echo>
-                <copy todir="${context.path}/${test.assets.folder}">
-                    <fileset dir="${user.home}/.dotcms/license" includes="license.zip" />
-                </copy>
+                <ac:if>
+                    <available file="${user.home}/.dotcms/license/license.zip"/>
+                    <then>
+                        <copy todir="${context.path}/${test.assets.folder}">
+                            <fileset dir="${user.home}/.dotcms/license" includes="license.zip" />
+                        </copy>
+                    </then>
+                </ac:if>
             </else>
         </ac:if>
-
     </target>
 
     <target name="cleanup-test-folders">

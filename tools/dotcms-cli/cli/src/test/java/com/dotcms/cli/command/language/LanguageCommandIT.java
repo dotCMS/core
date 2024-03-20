@@ -5,11 +5,13 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,6 +23,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -1111,6 +1114,26 @@ class LanguageCommandIT extends CommandTest {
             } catch (Exception e) {
                 // Ignoring
             }
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language pull <br>
+     * <b>Given Scenario:</b> Test the language find command using a token. <br>
+     * <b>Expected Result:</b> We should be able to get all the languages in the system passing the token
+     * files.
+     */
+    @Test
+    void Test_Command_Language_Find_Authenticate_With_Token() throws IOException{
+        final String token = requestToken();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguageFind.NAME, "--token", token);
+            Assertions.assertEquals(ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.contains("English"));
         }
     }
 

@@ -2,6 +2,7 @@ package com.dotcms.common;
 
 import static com.dotcms.common.LocationUtils.encodePath;
 import static com.dotcms.model.config.Workspace.FILES_NAMESPACE;
+
 import com.dotcms.model.asset.AbstractAssetSync.PushType;
 import com.dotcms.model.asset.AssetSync;
 import com.dotcms.model.asset.AssetView;
@@ -93,7 +94,7 @@ public class AssetsUtils {
         if (!emptyFolderPath) {
             remoteFolderPath = String.format("//%s/%s", site, cleanedFolderPath);
         } else {
-            remoteFolderPath = String.format("//%s/", site);
+            remoteFolderPath = String.format("//%s", site);
         }
 
         if (assetName != null && !assetName.isEmpty()) {

@@ -5,10 +5,14 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import {
+    DotAutofocusDirective,
+    DotDialogModule,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
@@ -20,7 +24,7 @@ import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dia
         DotDialogModule,
         DotAutofocusDirective,
         ReactiveFormsModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],

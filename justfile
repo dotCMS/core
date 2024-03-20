@@ -30,7 +30,7 @@ build:
 
 # Builds the project without running tests, skip using docker or creating image
 build-no-docker:
-    ./mvnw -DskipTests clean install -Dskip.docker=true
+    ./mvnw -DskipTests clean install -Dxd=true
 
 # Builds the project and runs the default test suite
 build-test:
@@ -60,15 +60,15 @@ build-select-module-deps module=":dotcms-core":
 
 # Starts the dotCMS application in a Docker container on a dynamic port, running in the foreground
 dev-run:
-    ./mvnw -pl :dotcms-core -Pdocker-run
+    ./mvnw -pl :dotcms-core -Pdocker-start
 
 # Maps paths in the docker container to local paths, useful for development
 dev-run-map-dev-paths:
-    ./mvnw -pl :dotcms-core -Pdocker-run -Pmap-dev-paths
+    ./mvnw -pl :dotcms-core -Pocker-start -Pmap-dev-paths
 
 # Starts the dotCMS application in debug mode with suspension, useful for troubleshooting
 dev-run-debug-suspend:
-    ./mvnw -pl :dotcms-core -Pdocker-run,debug-suspend
+    ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend
 
 # Starts the dotCMS Docker container in the background
 dev-start:
@@ -92,12 +92,12 @@ dev-tomcat-stop:
 # Testing Commands
 
 # Executes a specified set of Postman tests
-test-postman collections='':
+test-postman collections='page':
     ./mvnw -pl :dotcms-postman verify -Dpostman.test.skip=false -Pdebug -Dpostman.collections={{ collections }}
 
 # Stops Postman-related Docker containers
 postman-stop:
-    ./mvnw -pl :dotcms-postman -Pdocker-stop
+    ./mvnw -pl :dotcms-postman -Pdocker-stop -Dpostman.test.skip=false
 
 # Runs all integration tests
 test-integration:
@@ -109,11 +109,11 @@ test-integration-debug-suspend:
 
 # Prepares the environment for running integration tests in an IDE
 test-integration-ide:
-    ./mvnw -pl :dotcms-integration -Pdocker-start
+    ./mvnw -pl :dotcms-integration -Pdocker-start -Dcoreit.test.skip=false
 
 # Stops integration test services
 test-integration-stop:
-    ./mvnw -pl :dotcms-integration -Pdocker-stop
+    ./mvnw -pl :dotcms-integration -Pdocker-stop -Dcoreit.test.skip=false
 # Docker Commands
 
 # Runs a published dotCMS Docker image on a dynamic port

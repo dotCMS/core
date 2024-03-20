@@ -4,7 +4,7 @@ import { EditorView } from 'prosemirror-view';
 
 import { Editor } from '@tiptap/core';
 
-import { AI_IMAGE_PLACEHOLDER_PROPERTY, CustomNodeTypes, NodeTypes } from '../../extensions';
+import { CustomNodeTypes, NodeTypes } from '../../extensions';
 
 const aTagRex = new RegExp(/<a(|\s+[^>]*)>(\s|\n|<img[^>]*src="[^"]*"[^>]*>)*?<\/a>/gm);
 const imgTagRex = new RegExp(/<img[^>]*src="[^"]*"[^>]*>/gm);
@@ -272,21 +272,6 @@ export const findNodeByType = (
     });
 
     return nodes.length ? nodes : null;
-};
-
-/**
- * Get the information about the first occurrence of an AI placeholder image node in the TipTap editor.
- *
- * @param {Editor} editor - The TipTap editor instance.
- * @returns {DotTiptapNodeInformation | null}
- */
-export const getAIPlaceholderImage = (editor: Editor): DotTiptapNodeInformation => {
-    const nodes = findNodeByType(editor, NodeTypes.DOT_IMAGE);
-    const aIPlaceholderImages = nodes
-        ? nodes.filter((nodeInfo) => nodeInfo.node.attrs.data[AI_IMAGE_PLACEHOLDER_PROPERTY])
-        : null;
-
-    return aIPlaceholderImages?.[0];
 };
 
 /**

@@ -1,20 +1,16 @@
 /** @type {import('next').NextConfig} */
+
+const url = new URL(process.env.NEXT_PUBLIC_DOTCMS_HOST);
+
 const nextConfig = {
     images: {
         remotePatterns: [
             {
-                protocol: 'http',
-                hostname: 'localhost',
-                port: '8080'
+                protocol: url.protocol.replace(':', ''),
+                hostname: url.hostname,
+                port: url.port || ''
             }
         ]
-        // remotePatterns: [
-        //     {
-        //         protocol: 'https',
-        //         hostname: '*.dotcms.site',
-        //         port: ''
-        //     }
-        // ]
     }
 };
 

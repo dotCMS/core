@@ -32,13 +32,13 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { NGFACES_MODULES } from '../modules';
-import { DotPipesModule } from '../view/pipes/dot-pipes.module';
 
 export class MockDotUiColorsService {
     setColors() {
@@ -64,7 +64,7 @@ export class DOTTestBed {
             CommonModule,
             FormsModule,
             ReactiveFormsModule,
-            DotPipesModule,
+            DotSafeHtmlPipe,
             HttpClientTestingModule
         ],
         providers: [
