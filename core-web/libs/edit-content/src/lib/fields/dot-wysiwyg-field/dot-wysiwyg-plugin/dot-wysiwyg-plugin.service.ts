@@ -10,7 +10,7 @@ import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotAssetSearchDialogComponent } from '@dotcms/ui';
 
-import { formatFotImageNode } from './utils/editor.utils';
+import { formatDotImageNode } from './utils/editor.utils';
 
 @Injectable()
 export class DotWysiwygPluginService {
@@ -44,7 +44,7 @@ export class DotWysiwygPluginService {
                             filter((asset) => !!asset)
                         )
                         .subscribe((asset: DotCMSContentlet) =>
-                            editor.insertContent(formatFotImageNode(asset))
+                            editor.insertContent(formatDotImageNode(asset))
                         );
                 });
             }
@@ -55,7 +55,6 @@ export class DotWysiwygPluginService {
 
     private dotFilePlugin(editor: Editor) {
         editor.on('drop', async (event) => {
-            // get image
             const file = event.dataTransfer.files[0];
 
             // Check if the file is an image
@@ -74,7 +73,7 @@ export class DotWysiwygPluginService {
                 .subscribe((contentlets) => {
                     const data = contentlets[0];
                     const asset = data[Object.keys(data)[0]];
-                    editor.insertContent(formatFotImageNode(asset));
+                    editor.insertContent(formatDotImageNode(asset));
                 });
         });
     }

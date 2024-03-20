@@ -11,7 +11,7 @@ import { DotAssetSearchDialogComponent } from '@dotcms/ui';
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin.service';
-import { formatFotImageNode } from './utils/editor.utils';
+import { formatDotImageNode } from './utils/editor.utils';
 
 /**
  * This Mock is used to check we are sending the correct configuration to the editor
@@ -120,7 +120,7 @@ describe('DotWysiwygPluginService', () => {
 
             expect(spyDialog).toHaveBeenCalledWith(DotAssetSearchDialogComponent, dialogConfig);
             expect(spyEditorInserContent).toHaveBeenCalledWith(
-                formatFotImageNode(EMPTY_CONTENTLET)
+                formatDotImageNode(EMPTY_CONTENTLET)
             );
         });
 
@@ -152,7 +152,7 @@ describe('DotWysiwygPluginService', () => {
                 data: dropEvent.dataTransfer.files[0]
             });
             expect(spyEditorInserContent).toHaveBeenCalledWith(
-                formatFotImageNode(EMPTY_CONTENTLET)
+                formatDotImageNode(EMPTY_CONTENTLET)
             );
 
             expect(dropEvent.preventDefault).toHaveBeenCalled();
@@ -188,7 +188,7 @@ describe('DotWysiwygPluginService', () => {
                 data: dropEvent.dataTransfer.files[0]
             });
             expect(spyEditorInserContent).not.toHaveBeenCalledWith(
-                formatFotImageNode(EMPTY_CONTENTLET)
+                formatDotImageNode(EMPTY_CONTENTLET)
             );
         });
     });
