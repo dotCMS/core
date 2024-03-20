@@ -65,7 +65,6 @@ export const DotEmaRoutes: Route[] = [
             {
                 path: 'experiments',
                 providers: [
-                    DotExperimentsService,
                     DotEnterpriseLicenseResolver,
                     DotExperimentExperimentResolver,
                     DotPushPublishEnvironmentsResolver,
