@@ -1,23 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script type="application/javascript" src="/html/portlet/ext/dotai/dotai.js"></script>
+<link rel="stylesheet" type="text/css" href="/html/portlet/ext/dotai/dotai.css">
 
-    <title>dotAI</title>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-
-    <script type="application/javascript">
-        <%@include file = "dotai.js" %>
-    </script>
-    <style>
-        <%@include file = "dotai.css" %>
-    </style>
-</head>
-
-
-<body>
 <div id="openAIKeyWarn"
      style="display: none;padding:20px; border-radius: 10px;color:indianred;border:1px solid indianred;margin:20px auto;max-width: 800px;text-align: center">
     Your OpenAI API key is not set. Please add a valid API key in your <a
@@ -113,7 +96,7 @@
                     </table>
 
                     <button  class="button dijit dijitReset dijitInline dijitButton"
-                           onclick="toggleAdvancedSearchOptionsTable()">Advanced
+                             onclick="toggleAdvancedSearchOptionsTable()">Advanced
                         &nbsp; <i id="showAdvancedArrow" class="pi pi-chevron-right aiChevron"></i>
                     </button>
                     <div style="margin:-20px 0px 25px 0px;border-top:1px solid #eeeeee;"></div>
@@ -261,166 +244,161 @@
                         <tr>
                             <td colspan="2" style="text-align: center">
                                 <div class="loader" style="display:none;height:40px;padding:10px;"id="loaderIndex"></div>
-                                     <button id="submitBuildIndexBtn" class="button dijit dijitReset dijitInline dijitButton"
-                                             onclick="doBuildIndexWithDebounceBtn()">
-                                             Build Index&nbsp; &nbsp <i>&rarr;</i>
-                                     </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-
-
-                    <button  class="button dijit dijitReset dijitInline dijitButton"
-                             onclick="toggleWhatToEmbedTable()">Advanced
-                        &nbsp; <i id="showOptionalEmbeddingsArrow" class="pi pi-chevron-right aiChevron"></i>
-                    </button>
-                    <div style="margin:-20px 0px 25px 0px;border-top:1px solid #eeeeee;"></div>
-
-                        <table style="display: none" id="whatToEmbedTable">
-                            <tr>
-                                <td colspan="2" style="text-align:justify ">
-                                    <b>What To Embed (Optional)</b><br>
-                                    Three options. 1) You can specify what field or fields of your content you want to
-                                    include in the embeddings or 2) you can also use velocity to render your content for
-                                    embedding or 3) leave these blank and dotCMS will try to guess what fields to use
-                                    when generating embedddings. Without prompting, dotCMS will generate embeddings for
-                                    any WYSIWYG, StoryBlock, Textarea, File or Binary fields.
-                                </td>
-                            </tr>
-                            <tr>
-                                <th style="width:30%">
-                                    Velocity Template to embed:
-                                </th>
-                                <td><span class="clearPromptX" id="velocityTemplateX"
-                                          onclick="clearPrompt('velocityTemplate')"
-                                          style="visibility:hidden">&#10006;</span>
-                                    <textarea class="prompt" name="velocityTemplate" id="velocityTemplate"
-                                              onkeyup="showClearPrompt('velocityTemplate')"
-                                              onchange="showClearPrompt('velocityTemplate')"
-                                              placeholder="e.g.&#10;$contentlet.shortDescription&#10;$contentlet.body.toHtml()"></textarea>
-                                    <br>
-                                    Use velocity to build exactly how you want to embed your content.
-                                </td>
-                            </tr>
-                            <tr>
-                                <th style="width:30%">
-                                    Or Field Variable(s)
-                                </th>
-                                <td>
-                                    <input type="text" value="" name="fields">
-                                    <br>
-                                    If you just specify a comma separated list of fields variables, dotCMS will use
-                                    their values when generating the embedding.
-                                </td>
-                            </tr>
-                        </table>
-
-                </form>
-                <div id="buildResponse"></div>
+                                <button id="submitBuildIndexBtn" class="button dijit dijitReset dijitInline dijitButton"
+                                        onclick="doBuildIndexWithDebounceBtn()">
+                                    Build Index&nbsp; &nbsp <i>&rarr;</i>
+                                </button>
             </div>
+            </td>
+            </tr>
+            </table>
 
-            <div>
-                <h3>Indexes &nbsp;</h3>
-                <table id="indexManageTable" style="width:80%">
 
+            <button  class="button dijit dijitReset dijitInline dijitButton"
+                     onclick="toggleWhatToEmbedTable()">Advanced
+                &nbsp; <i id="showOptionalEmbeddingsArrow" class="pi pi-chevron-right aiChevron"></i>
+            </button>
+            <div style="margin:-20px 0px 25px 0px;border-top:1px solid #eeeeee;"></div>
+
+            <table style="display: none" id="whatToEmbedTable">
+                <tr>
+                    <td colspan="2" style="text-align:justify ">
+                        <b>What To Embed (Optional)</b><br>
+                        Three options. 1) You can specify what field or fields of your content you want to
+                        include in the embeddings or 2) you can also use velocity to render your content for
+                        embedding or 3) leave these blank and dotCMS will try to guess what fields to use
+                        when generating embedddings. Without prompting, dotCMS will generate embeddings for
+                        any WYSIWYG, StoryBlock, Textarea, File or Binary fields.
+                    </td>
+                </tr>
+                <tr>
+                    <th style="width:30%">
+                        Velocity Template to embed:
+                    </th>
+                    <td><span class="clearPromptX" id="velocityTemplateX"
+                              onclick="clearPrompt('velocityTemplate')"
+                              style="visibility:hidden">&#10006;</span>
+                        <textarea class="prompt" name="velocityTemplate" id="velocityTemplate"
+                                  onkeyup="showClearPrompt('velocityTemplate')"
+                                  onchange="showClearPrompt('velocityTemplate')"
+                                  placeholder="e.g.&#10;$contentlet.shortDescription&#10;$contentlet.body.toHtml()"></textarea>
+                        <br>
+                        Use velocity to build exactly how you want to embed your content.
+                    </td>
+                </tr>
+                <tr>
+                    <th style="width:30%">
+                        Or Field Variable(s)
+                    </th>
+                    <td>
+                        <input type="text" value="" name="fields">
+                        <br>
+                        If you just specify a comma separated list of fields variables, dotCMS will use
+                        their values when generating the embedding.
+                    </td>
+                </tr>
+            </table>
+
+            </form>
+            <div id="buildResponse"></div>
+        </div>
+
+        <div>
+            <h3>Indexes &nbsp;</h3>
+            <table id="indexManageTable" style="width:80%">
+
+            </table>
+
+
+        </div>
+    </div>
+</div>
+
+<div id="content-2">
+    <h2>Image Playground</h2>
+
+    <div style="display: grid;grid-template-columns: 45% 55%;">
+        <div style="border-right:1px solid #eeeeee;margin-right:40px;padding-right: 40px">
+            <form action="POST" id="imageForm" onsubmit="return false;">
+                <table class="aiSearchResultsTable">
+                    <tr>
+                        <th style="width:30%">
+                            <b>Prompt:</b>
+                        </th>
+                        <td><span class="clearPromptX" id="imagePromptX" onclick="clearPrompt('imagePrompt')"
+                                  style="visibility: hidden">&#10006;</span>
+                            <textarea class="prompt" name="prompt" id="imagePrompt"
+                                      onkeyup="showClearPrompt('imagePrompt')"
+                                      onchange="showClearPrompt('imagePrompt')"
+                                      placeholder="Image prompt"></textarea>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>
+                            Size:
+                        </th>
+                        <td>
+                            <select name="size" style="min-width:400px;">
+                                <option value="1024x1024">1024x1024 (Square)</option>
+                                <option value="1024x1792">1024x1792 (Vertical)</option>
+                                <option value="1792x1024" selected>1792x1024 (Horizontal)</option>
+
+
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="text-align: center">
+                            <div style="padding:10px;height:75px; text-align: center">
+                                <div class="loader" style="display:none;height:40px;padding:10px;" id="loaderImage"></div>
+                                <button id="submitImage" class="button dijit dijitReset dijitInline dijitButton"
+                                        onclick="doImageJson()">
+                                    Submit &nbsp; &nbsp; <i>&rarr;</i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <div>
+                                <h4>Recent Prompts</h4>
+                                <ol id="image-prompts">
+
+
+                                </ol>
+
+
+                            </div>
+
+
+                        </td>
+                    </tr>
                 </table>
 
 
+            </form>
+        </div>
+        <div>
+            <div id="imageRequest">
+
             </div>
         </div>
     </div>
-
-    <div id="content-2">
-        <h2>Image Playground</h2>
-
-        <div style="display: grid;grid-template-columns: 45% 55%;">
-            <div style="border-right:1px solid #eeeeee;margin-right:40px;padding-right: 40px">
-                <form action="POST" id="imageForm" onsubmit="return false;">
-                    <table class="aiSearchResultsTable">
-                        <tr>
-                            <th style="width:30%">
-                                <b>Prompt:</b>
-                            </th>
-                            <td><span class="clearPromptX" id="imagePromptX" onclick="clearPrompt('imagePrompt')"
-                                      style="visibility: hidden">&#10006;</span>
-                                <textarea class="prompt" name="prompt" id="imagePrompt"
-                                          onkeyup="showClearPrompt('imagePrompt')"
-                                          onchange="showClearPrompt('imagePrompt')"
-                                          placeholder="Image prompt"></textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>
-                                Size:
-                            </th>
-                            <td>
-                                <select name="size" style="min-width:400px;">
-                                    <option value="1024x1024">1024x1024 (Square)</option>
-                                    <option value="1024x1792">1024x1792 (Vertical)</option>
-                                    <option value="1792x1024" selected>1792x1024 (Horizontal)</option>
-
-
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" style="text-align: center">
-                                <div style="padding:10px;height:75px; text-align: center">
-                                    <div class="loader" style="display:none;height:40px;padding:10px;" id="loaderImage"></div>
-                                    <button id="submitImage" class="button dijit dijitReset dijitInline dijitButton"
-                                            onclick="doImageJson()">
-                                        Submit &nbsp; &nbsp; <i>&rarr;</i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2">
-                                <div>
-                                    <h4>Recent Prompts</h4>
-                                    <ol id="image-prompts">
-
-
-                                    </ol>
-
-
-                                </div>
-
-
-                            </td>
-                        </tr>
-                    </table>
-
-
-                </form>
-            </div>
-            <div>
-                <div id="imageRequest">
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="content-4">
-        <h2>AI/Embeddings Config</h2>
-
-        <div style="padding:20px;border:1px solid darkgray;max-width:800px;margin:30px;">
-            These values can be changed by adding/editing them in the <a
-                href="/dotAdmin/#/apps/dotAI/edit/SYSTEM_HOST"
-                target="_top">App screen</a> either as a
-            setting or
-            as a custom property.
-        </div>
-
-        <div id="configTable" style="max-width: 800px">
-
-
-        </div>
-    </div>
-
 </div>
 
-</body>
-</html>
+<div id="content-4">
+    <h2>AI/Embeddings Config</h2>
+
+    <div style="padding:20px;border:1px solid darkgray;max-width:800px;margin:30px;">
+        These values can be changed by adding/editing them in the <a
+            href="/dotAdmin/#/apps/dotAI/edit/SYSTEM_HOST"
+            target="_top">App screen</a> either as a
+        setting or
+        as a custom property.
+    </div>
+
+    <div id="configTable" style="max-width: 800px">
+
+
+    </div>
+</div>
