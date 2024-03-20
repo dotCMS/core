@@ -3,7 +3,7 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createUrlWithQueryParams
+    createPageApiUrlWithQueryParams
 } from '.';
 
 describe('utils functions', () => {
@@ -303,29 +303,38 @@ describe('utils functions', () => {
         });
     });
 
-    describe('createUrlWithQueryParams', () => {
+    describe('createPageApiUrlWithQueryParams', () => {
         it('should return the correct query params', () => {
             const queryParams = {
-                name: 'test',
-                age: '20'
+                variantName: 'test',
+                language_id: '20',
+                'com.dotmarketing.persona.id': 'the-chosen-one',
+                experimentId: '123',
+                mode: 'PREVIEW_MODE'
             };
-            const result = createUrlWithQueryParams('test', queryParams);
-            expect(result).toBe('test?name=test&age=20');
+            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            expect(result).toBe(
+                'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=PREVIEW_MODE'
+            );
         });
 
-        it('should return url with no query params if no query params', () => {
+        it('should return url with default query params if no query params', () => {
             const queryParams = {};
-            const result = createUrlWithQueryParams('test', queryParams);
-            expect(result).toBe('test');
+            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            expect(result).toBe(
+                'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
+            );
         });
 
         it('should ignore the undefined queryParams', () => {
             const queryParams = {
-                name: 'test',
-                age: undefined
+                variantName: 'test',
+                experimentId: undefined
             };
-            const result = createUrlWithQueryParams('test', queryParams);
-            expect(result).toBe('test?name=test');
+            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            expect(result).toBe(
+                'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
+            );
         });
     });
 });

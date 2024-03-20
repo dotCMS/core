@@ -1,4 +1,7 @@
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+
 import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
 import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
 
 /**
@@ -184,17 +187,28 @@ export const getPersonalization = (persona: Record<string, string>) => {
  * @param {Record<string, string>} params
  * @return {*}  {string}
  */
-export function createUrlWithQueryParams(
+export function createPageApiUrlWithQueryParams(
     url: string,
-    params: Record<string, string> | DotPageApiParams
+    params: Partial<DotPageApiParams>
 ): string {
-    // Filter out undefined values
-    Object.keys(params).forEach(
-        (key) => (params[key] === undefined || key === 'url') && delete params[key]
+    // Set default values
+    const completedParams = {
+        ...params,
+        language_id: params.language_id ?? '1',
+        'com.dotmarketing.persona.id':
+            params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
+        variantName: params.variantName ?? DEFAULT_VARIANT_ID,
+        mode: params.mode ?? EDIT_MODE
+    };
+
+    // Filter out undefined values and url
+    Object.keys(completedParams).forEach(
+        (key) =>
+            (completedParams[key] === undefined || key === 'url') && delete completedParams[key]
     );
 
     const queryParams = new URLSearchParams({
-        ...params
+        ...completedParams
     }).toString();
 
     return queryParams.length ? `${url}?${queryParams}` : url;

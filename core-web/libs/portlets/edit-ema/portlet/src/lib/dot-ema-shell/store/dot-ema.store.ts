@@ -21,7 +21,7 @@ import {
     DotPageApiResponse,
     DotPageApiService
 } from '../../services/dot-page-api.service';
-import { DEFAULT_PERSONA, EDIT_MODE } from '../../shared/consts';
+import { DEFAULT_PERSONA } from '../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
 import {
     ActionPayload,
@@ -34,7 +34,7 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createUrlWithQueryParams
+    createPageApiUrlWithQueryParams
 } from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
@@ -96,10 +96,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         const pageURL = this.createPageURL({
             url: state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
-            'com.dotmarketing.persona.id':
-                state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier,
-            variantName: state.variantName,
-            mode: EDIT_MODE
+            'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
+            variantName: state.variantName
         });
 
         const favoritePageURL = this.createFavoritePagesURL({
@@ -345,7 +343,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private createPageURL(params: DotPageApiParams): string {
         const url = sanitizeURL(params.url);
 
-        return createUrlWithQueryParams(url, params);
+        return createPageApiUrlWithQueryParams(url, params);
     }
 
     /*******************

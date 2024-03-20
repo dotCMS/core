@@ -16,9 +16,8 @@ import {
     DotTemplate
 } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
 import { SavePagePayload } from '../shared/models';
-import { createUrlWithQueryParams } from '../utils';
+import { createPageApiUrlWithQueryParams } from '../utils';
 
 export interface DotPageApiResponse {
     page: {
@@ -86,12 +85,10 @@ export class DotPageApiService {
 
         const pageType = params.clientHost ? 'json' : 'render';
 
-        const pageApiUrl = createUrlWithQueryParams(url, {
-            language_id: params.language_id ?? '1',
-            'com.dotmarketing.persona.id':
-                params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
-            variantName: params.variantName ?? DEFAULT_VARIANT_ID,
-            mode: EDIT_MODE,
+        const pageApiUrl = createPageApiUrlWithQueryParams(url, {
+            language_id: params.language_id,
+            'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id'],
+            variantName: params.variantName,
             experimentId: params.experimentId
         });
 
