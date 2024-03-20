@@ -10,6 +10,7 @@
         transition: background-color $basic-speed, color $basic-speed, box-shadow $basic-speed;
         border-radius: 50%;
         margin: -$spacing-3 $spacing-1 0;
+        z-index: 1;
 
         .p-galleria-item-prev-icon,
         .p-galleria-item-next-icon {

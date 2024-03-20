@@ -45,9 +45,13 @@
     <ng-template pTemplate="item" let-item>
         <p-image
             [src]="item.response.contentlet.assetVersion"
-            [preview]="false"
+            [preview]="true"
             imageClass="ai-image-gallery__img"
-            alt="image"></p-image>
+            alt="image">
+            <ng-template pTemplate="indicator">
+                <i class="pi pi-window-maximize"></i>
+            </ng-template>
+        </p-image>
     </ng-template>
 </p-galleria>
 <span class="ai-image-gallery__count align-self-center" *ngIf="!isLoading && images?.length">
