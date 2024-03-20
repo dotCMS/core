@@ -89,6 +89,18 @@
 									"    pm.expect(jsonData.entity.key).to.eql('onevar');",
 									"    pm.collectionVariables.set(\"sitevariableId\", jsonData.entity.id);",
 									"});",
+									"",
+									"",
+									"pm.test(\"Entity object has all the required fields\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData.entity).to.be.an('object');",
+									"",
+									"    const requiredFields = ['hostId', 'id', 'key', 'lastModDate', 'lastModifierId', 'map', 'name', 'value'];",
+									"    requiredFields.forEach(field => {",
+									"        pm.expect(responseData.entity).to.have.property(field);",
+									"    });",
+									"});",
 									""
 								],
 								"type": "text/javascript"
@@ -1001,7 +1013,14 @@
 							"",
 							"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							"});",
-							""
+							"",
+							"",
+							"const siteThumbnail = pm.response.json().entity.siteThumbnail;",
+							"const isImage = /\\.(jpg|jpeg|png|gif|bmp)$/i.test(siteThumbnail);",
+							"",
+							"pm.test('Site Thumbnail is an image', () => {",
+							"    pm.expect(isImage).to.be.true;",
+							"});"
 						],
 						"type": "text/javascript"
 					}

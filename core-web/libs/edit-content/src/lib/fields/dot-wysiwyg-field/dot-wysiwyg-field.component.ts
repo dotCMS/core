@@ -1,5 +1,5 @@
 import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
-import { TinyMCE } from 'tinymce';
+import { RawEditorOptions, TinyMCE } from 'tinymce';
 
 import { ChangeDetectionStrategy, Component, Input, inject, signal } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -40,7 +40,8 @@ export class DotWYSIWYGFieldComponent {
 
     private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
 
-    protected readonly init = {
+    protected readonly init: RawEditorOptions = {
+        menubar: false,
         setup: (editor) => {
             this.dotWysiwygPluginService.initializePlugins(editor);
         }
@@ -51,6 +52,6 @@ export class DotWYSIWYGFieldComponent {
     );
 
     protected readonly toolbar = signal(
-        'paste print textpattern | insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | dotAddImage | link hr | preview | validation media | forecolor backcolor emoticons'
+        'insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr | dotAddImage'
     );
 }

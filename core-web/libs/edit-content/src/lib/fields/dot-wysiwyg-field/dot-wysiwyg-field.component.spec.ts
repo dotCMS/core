@@ -23,7 +23,7 @@ import { WYSIWYG_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 const ALL_PLUGINS =
     'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template';
 const ALL_TOOLBAR_ITEMS =
-    'paste print textpattern | insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | dotAddImage | link hr | preview | validation media | forecolor backcolor emoticons';
+    'insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr | dotAddImage';
 
 describe('DotWYSIWYGFieldComponent', () => {
     let spectator: Spectator<DotWYSIWYGFieldComponent>;
@@ -71,6 +71,7 @@ describe('DotWYSIWYGFieldComponent', () => {
         expect(editor.plugins).toEqual(ALL_PLUGINS);
         expect(editor.toolbar).toEqual(ALL_TOOLBAR_ITEMS);
         expect(editor.init).toEqual({
+            menubar: false,
             setup: expect.any(Function)
         });
     });
