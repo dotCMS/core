@@ -71,7 +71,7 @@ export class DotWysiwygPluginService {
                 .publishContent({
                     data: file
                 })
-                .subscribe((contentlets: DotCMSContentlet[]) => {
+                .subscribe((contentlets) => {
                     const data = contentlets[0];
                     const asset = data[Object.keys(data)[0]];
                     editor.insertContent(formatFotImageNode(asset));
