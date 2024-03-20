@@ -1,13 +1,18 @@
 package com.dotcms.browser;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonAPI;
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -37,14 +42,18 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Try;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 /**
  * Default implementation for the {@link BrowserAPI} class.
@@ -76,8 +85,6 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Returns a collection of contentlets based on specific filtering criteria specified via the
      * {@link BrowserQuery} class, such as: Parent folder, Site, archived/non-archived status, base Content Types,
      * language, among many others. After that, the resulting list is filtered based on {@code READ} permissions.
-     * <p>It's worth nothing this approach uses both a SQL query and a Lucene query to fetch results. Their results are
-     * combined in order to get a final result set.</p>
      *
      * @param browserQuery The {@link BrowserQuery} object specifying the filtering criteria.
      *
@@ -86,16 +93,14 @@ public class BrowserAPIImpl implements BrowserAPI {
     @Override
     @CloseDBIfOpened
     public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
-        final Tuple3<String, String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
+        final Tuple2<String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
         final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
-        sqlQuery._3.forEach(dc::addParam);
+        sqlQuery._2.forEach(dc::addParam);
         try {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
-            final List<Contentlet> contentletList = contentletAPI.search(sqlQuery._2, -1, 0, null, browserQuery.user,
-                    false);
             final Set<String> inodes =
                     inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toSet());
-            contentletList.forEach(contentlet -> inodes.add(contentlet.getInode()));
+
             final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(new ArrayList<>(inodes));
             return permissionAPI.filterCollection(contentlets,
                     PermissionAPI.PERMISSION_READ, true, browserQuery.user);
@@ -265,15 +270,15 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Generates both the SQL query and the Lucene query that will be used to search for contents under a given folder
+     * Generates the SQL query that will be used to search for contents under a given folder
      * path and filtered by the criteria specified via the {@link BrowserQuery} parameter.
      *
      * @param browserQuery The filtering criteria set via the {@link BrowserQuery}.
      *
-     * @return The {@link Tuple3} object containing (1) the SQL query, (2) the Lucene query, and (3) the parameters that
+     * @return The {@link Tuple3} object containing (1) the SQL query, and (2) the parameters that
      * must be provided for the queries.
      */
-    private Tuple3<String,String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
+    private Tuple2<String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ? "working_inode" : "live_inode";
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
         final List<Object> parameters = new ArrayList<>();
@@ -282,45 +287,28 @@ public class BrowserAPIImpl implements BrowserAPI {
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"+DEFAULT_VARIANT.name()+"' ");
 
-        final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery)
-                                                  ? new StringBuilder("+title:*" + browserQuery.luceneQuery.trim() + "* ")
-                                                  : new StringBuilder();
-
-        luceneQuery.append("+" + ESMappingConstants.VARIANT +  ":DEFAULT ");
-        luceneQuery.append(browserQuery.showWorking ? "+working:true " : "+live:true ");
-        luceneQuery.append(browserQuery.showArchived ? "+deleted:true " : "+deleted:false ");
         if (!showAllBaseTypes) {
             final List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
-            final List<String> baseTypesNames =
-                    browserQuery.baseTypes.stream().map(Enum::name).collect(Collectors.toList());
             sqlQuery.append(" and struc.structuretype in (").append(String.join(" , ", baseTypes)).append(") ");
-            luceneQuery.append("+contentType:(").append(String.join(" OR ", baseTypesNames)).append(") ");
         }
         if (browserQuery.languageId > 0) {
             sqlQuery.append(" and cvi.lang in (").append(browserQuery.languageId);
-            luceneQuery.append("+languageId:(").append(browserQuery.languageId);
 
             final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             if(browserQuery.showDefaultLangItems && browserQuery.languageId != defaultLang){
                 sqlQuery.append(",").append(defaultLang);
-                luceneQuery.append(" OR ").append(defaultLang).append(" ");
             }
 
             sqlQuery.append(")");
-            luceneQuery.append(") ");
-
-
         }
         if (browserQuery.site != null) {
             sqlQuery.append(" and (id.host_inode = ?) ");
             parameters.add(browserQuery.site.getIdentifier());
-            luceneQuery.append("+conHost:(").append(Host.SYSTEM_HOST).append(" OR ").append(browserQuery.site.getIdentifier()).append(") ");
         }
         if (browserQuery.folder != null) {
             sqlQuery.append(" and id.parent_path=? ");
             parameters.add(browserQuery.folder.getPath());
-            luceneQuery.append("+parentPath:").append(browserQuery.folder.getPath()).append(" ");
         }
         if (UtilMethods.isSet(browserQuery.filter)) {
             final String filterText = browserQuery.filter.toLowerCase().trim();
@@ -357,12 +345,12 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         if (browserQuery.showMenuItemsOnly) {
             sqlQuery.append(" and c.show_on_menu = ").append(DbConnectionFactory.getDBTrue());
-            luceneQuery.append(" +showOnMenu:true ");
         }
         if (!browserQuery.showArchived) {
             sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
         }
-        return Tuple.of(sqlQuery.toString(),luceneQuery.toString(), parameters);
+
+        return Tuple.of(sqlQuery.toString(), parameters);
     }
 
     /**
