@@ -1,6 +1,6 @@
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-export const formatFotImageNode = (asset: DotCMSContentlet) => {
+export const formatDotImageNode = (asset: DotCMSContentlet) => {
     return `<img src="${asset.assetVersion || asset.asset}"
     alt="${asset.title}"
     data-field-name="${asset.titleImage}"
