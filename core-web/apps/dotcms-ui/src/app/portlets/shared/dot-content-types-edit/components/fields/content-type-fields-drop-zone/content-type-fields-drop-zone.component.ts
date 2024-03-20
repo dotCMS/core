@@ -19,13 +19,13 @@ import {
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotDialogActions
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { FieldUtil } from '@dotcms/utils-testing';
@@ -428,15 +428,15 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.dialogActions = controls;
     }
 
-    private setDroppedField(droppedField: DotCMSContentTypeField): void {
-        this.currentField = droppedField;
-        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
-    }
-
     protected toggleDialog(): void {
         this.dialogActions = this.defaultDialogActions;
         this.activeTab = this.OVERVIEW_TAB_INDEX;
         this.displayDialog = !this.displayDialog;
+    }
+
+    private setDroppedField(droppedField: DotCMSContentTypeField): void {
+        this.currentField = droppedField;
+        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
     }
 
     private emitSaveFields(layout: DotCMSContentTypeLayoutRow[]): void {

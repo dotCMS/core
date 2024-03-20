@@ -1853,12 +1853,19 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
-                it('iframe should have reload the page and add the new content', () => {
+                it('iframe should have reload the page and add the new content, maintaining scroll', () => {
                     const params = {
                         language_id: '4',
                         url: 'index',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                     };
+
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                    const scrollSpy = jest
+                        .spyOn(spectator.component.iframe.nativeElement.contentWindow, 'scrollTo')
+                        .mockImplementation(() => jest.fn);
+
+                    iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
                     store.reload({
                         params,
@@ -1870,12 +1877,11 @@ describe('EditEmaEditorComponent', () => {
 
                     jest.runOnlyPendingTimers();
 
-                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
                     expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
                     expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
                         '<div>New Content - Hello World</div>'
                     );
+                    expect(scrollSpy).toHaveBeenCalledWith(0, 100);
                 });
             });
 

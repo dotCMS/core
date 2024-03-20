@@ -1,0 +1,21 @@
+@use "variables" as *;
+
+:host::ng-deep {
+    // Hide the promotion button
+    // This button redirect to the tinyMCE premium page
+    .tox-promotion {
+        display: none;
+    }
+
+    .tox-statusbar__branding {
+        display: none;
+    }
+
+    .tox .tox-statusbar {
+        border-top: 1px solid $color-palette-gray-400;
+    }
+
+    .tox-tinymce {
+        border: $field-border-size solid $color-palette-gray-400;
+    }
+}

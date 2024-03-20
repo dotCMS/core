@@ -15,10 +15,7 @@ import {
     DotExperimentsConfigResolver,
     DotExperimentsService
 } from '@dotcms/portlets/dot-experiments/data-access';
-import {
-    DotPushPublishEnvironmentsResolver,
-    DotEnterpriseLicenseResolver
-} from '@portlets/shared/resolvers';
+import { DotEnterpriseLicenseResolver, DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 

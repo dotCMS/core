@@ -15,6 +15,7 @@ import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DotEnvironment,
     DotExperiment,
     DotExperimentStatus,
     DotExperimentsWithActions,
@@ -22,7 +23,6 @@ import {
     SidebarStatus
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
 
 import { DotExperimentsStore } from '../../dot-experiments-shell/store/dot-experiments.store';
 

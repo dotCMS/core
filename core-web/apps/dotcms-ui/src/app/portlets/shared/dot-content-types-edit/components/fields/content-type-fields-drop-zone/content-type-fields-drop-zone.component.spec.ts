@@ -27,23 +27,28 @@ import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import {
     DotEventsService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotMessageService,
-    DotFormatDateService
+    DotMessageService
 } from '@dotcms/data-access';
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotDialogActions,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotDialogComponent,
+    DotDialogModule,
+    DotFieldValidationMessageComponent,
+    DotIconModule,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
