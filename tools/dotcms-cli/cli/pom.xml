@@ -146,6 +146,21 @@
                             <systemProperties>
                                 <testcontainers.docker.image>${testcontainers.docker.image}</testcontainers.docker.image>
                             </systemProperties>
+                            <manifestEntries>
+                                <Implementation-URL>${project.url}</Implementation-URL>
+                                <Java-Vendor>${java.vendor}</Java-Vendor>
+                                <Java-Version>${java.version}</Java-Version>
+                                <Os-Arch>${os.arch}</Os-Arch>
+                                <Os-Name>${os.name}</Os-Name>
+                                <Os-Version>${os.version}</Os-Version>
+                                <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                                <Scm-Url>${project.scm.url}</Scm-Url>
+                                <Scm-Revision>${buildNumber}</Scm-Revision>
+                                <!--suppress UnresolvedMavenProperty -->
+                                <SCM-Build>${scmBranch}</SCM-Build>
+                                <Implementation-Build>${buildNumber}</Implementation-Build>
+                                <Implementation-Timestamp>${timestamp}</Implementation-Timestamp>
+                            </manifestEntries>
                         </configuration>
                     </execution>
                 </executions>
@@ -305,28 +320,6 @@
                 <quarkus.package.type>native</quarkus.package.type>
                 <quarkus.native.additional-build-args>-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
             </properties>
-        </profile>
-        <profile>
-            <id>snapshot</id>
-            <activation>
-                <property>
-                    <name>project.version</name>
-                    <value>.*-SNAPSHOT</value>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>${quarkus.platform.group-id}</groupId>
-                        <artifactId>quarkus-maven-plugin</artifactId>
-                        <version>${quarkus.platform.version}</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <finalName>${project.artifactId}-${buildNumber}-${timestamp}</finalName>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 

@@ -186,13 +186,8 @@ jobs:
       - name: 'Build uber-jar'
         if: ${{ matrix.label == 'Linux' }}
         working-directory: ${{ github.workspace }}
-        run: |
-          VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout -pl :dotcms-cli)
-          
-          if [[ $VERSION == *-SNAPSHOT ]]; then
-            MAVEN_OPTS="-Psnapshot"
-          fi              
-          ./mvnw package -Dquarkus.package.type="uber-jar" -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli $MAVEN_OPTS
+        run: |             
+          ./mvnw package -Dquarkus.package.type="uber-jar" -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
 
       # Builds a native image of the CLI using GRAALVM (Linux/macOS)
       # Runs on a matrix for different operating systems

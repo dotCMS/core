@@ -54,9 +54,17 @@ files:
       platform: 'linux-x86_64'
       extraProperties:
         optional: 'true'
+    - path: '{{artifactsDir}}/dotcms-cli-{{projectVersion}}-runner.jar'
+      transform: '{{artifactsDir}}/dotcms-cli-{{projectVersion}}-{{commitShortHash}}.jar'
+      active: SNAPSHOT
+      extraProperties:
+        optional: 'true'
 
   globs:
-    - pattern: '{{artifactsDir}}/*-runner.jar'
+    - pattern: '{{artifactsDir}}/dotcms-cli-{{projectVersion}}-runner.jar'
+      active: RELEASE
+      extraProperties:
+        optional: 'true'
 
 upload:
   artifactory:
