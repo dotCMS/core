@@ -76,7 +76,7 @@ describe('DotEditPageResolver', () => {
                 DotFormatDateService,
                 DotESContentService,
                 DotFavoritePageService,
-                { provide: DotRouterService, useClass: MockDotRouterJestService },
+                { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock

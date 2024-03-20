@@ -52,7 +52,7 @@ describe('EditEmaLayoutComponent', () => {
                 provide: DotExperimentsService,
                 useValue: DotExperimentsServiceMock
             },
-            { provide: DotRouterService, useClass: MockDotRouterJestService },
+            { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
             {
                 provide: DotLicenseService,
                 useValue: {

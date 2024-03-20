@@ -90,7 +90,7 @@ describe('DotPageStateService', () => {
                     useClass: DotMessageDisplayServiceMock
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterJestService },
+                { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock

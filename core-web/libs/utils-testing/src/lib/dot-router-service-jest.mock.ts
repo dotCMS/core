@@ -1,10 +1,12 @@
-import { jest } from '@jest/globals';
 import { of, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
-
-@Injectable()
 export class MockDotRouterJestService {
+    jest = undefined;
+
+    constructor(jest: any) {
+        this.jest = jest;
+    }
+
     get currentPortlet() {
         return {
             url: 'this/is/an/url/jest',
@@ -42,31 +44,31 @@ export class MockDotRouterJestService {
     _currentSavedURL = '';
     pageLeaveRequest$ = new Subject<boolean>();
     canDeactivateRoute$ = of(true);
-    replaceQueryParams = jest.fn();
-    goToEditContentType = jest.fn();
-    goToEditContentlet = jest.fn();
-    goToEditPage = jest.fn();
-    goToEditTask = jest.fn();
-    goToForgotPassword = jest.fn();
-    goToLogin = jest.fn();
-    goToContent = jest.fn();
-    goToCreateContent = jest.fn();
-    goToPreviousUrl = jest.fn();
-    goToStarter = jest.fn();
-    doLogOut = jest.fn();
-    goToMain = jest.fn();
-    goToURL = jest.fn();
-    gotoPortlet = jest.fn();
-    goToAppsConfiguration = jest.fn();
-    goToUpdateAppsConfiguration = jest.fn();
-    goToSiteBrowser = jest.fn();
-    isCurrentPortletCustom = jest.fn();
-    isJSPPortlet = jest.fn();
-    reloadCurrentPortlet = jest.fn();
-    goToEditTemplate = jest.fn();
-    allowRouteDeactivation = jest.fn();
-    forbidRouteDeactivation = jest.fn();
-    isEditPage = jest.fn();
+    replaceQueryParams = this.jest.fn();
+    goToEditContentType = this.jest.fn();
+    goToEditContentlet = this.jest.fn();
+    goToEditPage = this.jest.fn();
+    goToEditTask = this.jest.fn();
+    goToForgotPassword = this.jest.fn();
+    goToLogin = this.jest.fn();
+    goToContent = this.jest.fn();
+    goToCreateContent = this.jest.fn();
+    goToPreviousUrl = this.jest.fn();
+    goToStarter = this.jest.fn();
+    doLogOut = this.jest.fn();
+    goToMain = this.jest.fn();
+    goToURL = this.jest.fn();
+    gotoPortlet = this.jest.fn();
+    goToAppsConfiguration = this.jest.fn();
+    goToUpdateAppsConfiguration = this.jest.fn();
+    goToSiteBrowser = this.jest.fn();
+    isCurrentPortletCustom = this.jest.fn();
+    isJSPPortlet = this.jest.fn();
+    reloadCurrentPortlet = this.jest.fn();
+    goToEditTemplate = this.jest.fn();
+    allowRouteDeactivation = this.jest.fn();
+    forbidRouteDeactivation = this.jest.fn();
+    isEditPage = this.jest.fn();
 
     requestPageLeave = () => {
         this.pageLeaveRequest$.next(true);
