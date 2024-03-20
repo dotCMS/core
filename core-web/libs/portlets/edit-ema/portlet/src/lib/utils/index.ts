@@ -181,10 +181,11 @@ export const getPersonalization = (persona: Record<string, string>) => {
 };
 
 /**
- * Build the query params for the page API
+ * Create a page api url with query params
  *
  * @export
- * @param {Record<string, string>} params
+ * @param {string} url
+ * @param {Partial<DotPageApiParams>} params
  * @return {*}  {string}
  */
 export function createPageApiUrlWithQueryParams(
