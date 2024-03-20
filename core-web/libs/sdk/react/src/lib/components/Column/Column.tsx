@@ -12,9 +12,8 @@ export interface ColumnProps {
 }
 
 export function Column({ column }: ColumnProps) {
-    const { isInsideEditor } = useContext<PageProviderContext | null>(
-        PageContext
-    ) as PageProviderContext;
+    const { isInsideEditor } = useContext(PageContext) as PageProviderContext;
+
     const { startClass, endClass } = getPositionStyleClasses(
         column.leftOffset,
         column.width + column.leftOffset

@@ -52,7 +52,7 @@ class StatusCommandIT extends CommandTest {
             final int status = commandLine.execute(StatusCommand.NAME);
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
             Assertions.assertTrue(writer.toString()
-                    .contains("No dotCMS configured instances were found. Please run 'init' to initialize the CLI"));
+                    .contains("No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup an instance to use CLI."));
         }
     }
 
@@ -91,7 +91,7 @@ class StatusCommandIT extends CommandTest {
         serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true)
                 .url(new URL("http://localhost:8080"))
                 .credentials(
-                        CredentialsBean.builder().user(user).token(token.toCharArray()).build())
+                        CredentialsBean.builder().user(user).tokenSupplier(token::toCharArray).build())
                 .build());
 
         final CommandLine commandLine = createCommand();

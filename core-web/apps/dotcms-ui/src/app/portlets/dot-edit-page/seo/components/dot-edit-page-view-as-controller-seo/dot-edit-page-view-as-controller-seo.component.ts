@@ -32,8 +32,7 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
@@ -50,7 +49,7 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
         DotPersonaSelectorModule,
         DotLanguageSelectorComponent,
         DotDeviceSelectorModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotIconModule,
         CheckboxModule,
         ConfirmDialogModule,

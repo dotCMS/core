@@ -13,6 +13,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -20,7 +22,10 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import org.apache.commons.io.FileUtils;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -109,6 +114,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static PermissionAPI permissionAPI;
     private static final String TITLE_FIELD_NAME = "testTitle";
     private static final String BODY_FIELD_NAME = "testBody";
+    private static final String SITE_FIELD_NAME = "testHost";
     private static final String STEP_BY_USING_ACTION1 = "StepByUsingAction1";
     private static final String STEP_BY_USING_ACTION2 = "StepByUsingAction2";
     private static final String STEP_BY_USING_ACTION3 = "StepByUsingAction3";
@@ -1951,6 +1957,81 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 }
             }catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile}
+     * Case: Import file with legacy folder inode in the line (folder inode is different from the
+     * folder identifier)
+     * @throws DotSecurityException when there is a security exception
+     * @throws DotDataException when there is a dotCMS data exception
+     * @throws IOException when there is an IO exception
+     */
+    @Test
+    public void importFile_success_when_lineContainsLegacyFolderInode()
+            throws DotSecurityException, DotDataException, IOException {
+
+
+        ContentType contentType = null;
+
+        try {
+            long time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeTestingWithOldFolderInode_" + time;
+            final String contentTypeVarName = "velocityVarNameTestingWithOldFolderInode_" + time;
+
+            // create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            new FieldDataGen().contentTypeId(contentType.id())
+                    .velocityVarName(SITE_FIELD_NAME)
+                    .type(HostFolderField.class).nextPersisted();
+
+            // create test folder with inode different from identifier
+            final Folder folder = new FolderDataGen()
+                    .name("import-folder-inode-test_" + time)
+                    .site(defaultSite).next();
+            final Identifier folderIdentifier = APILocator.getIdentifierAPI()
+                    .createNew(folder, defaultSite);
+            folder.setIdentifier(folderIdentifier.getId());
+            folder.setInode(UUIDGenerator.generateUuid());
+            APILocator.getFolderAPI().save(folder, user, false);
+            final String folderInode = folder.getInode();
+
+            // create test csv
+            final Reader reader = createTempFile(
+                    TITLE_FIELD_NAME + "," + BODY_FIELD_NAME + "," + SITE_FIELD_NAME
+                            + "\r\n" +
+                            "Folder inode test,Testing folder inode," + folderInode);
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+
+            final String[] csvHeaders = csvreader.getHeaders();
+
+            // import content
+            final Map<String, List<String>> results = ImportUtil.importFile(
+                    0L, defaultSite.getIdentifier(), contentType.inode(),
+                            new String[]{contentType.fieldMap().get(TITLE_FIELD_NAME).inode()},
+                    false, false, user, defaultLanguage.getId(),
+                            csvHeaders, csvreader, -1, -1,
+                            reader, null, getHttpRequest());
+            // validations
+            validate(results, false, false, false);
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertEquals(1, savedData.size());
+            final Contentlet contentlet = savedData.get(0);
+            assertEquals(folderInode, contentlet.getFolder());
+
+        } finally {
+            try {
+                if (contentType != null) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
             }
         }
     }

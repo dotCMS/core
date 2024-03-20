@@ -19,3 +19,8 @@ export enum EDITOR_STATE {
     LOADED = 'loaded',
     ERROR = 'error'
 }
+
+export enum EDITOR_MODE {
+    EDIT = 'edit',
+    PREVIEW = 'preview'
+}

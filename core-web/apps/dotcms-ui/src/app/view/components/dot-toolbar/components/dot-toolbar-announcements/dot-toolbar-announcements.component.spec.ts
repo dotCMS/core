@@ -111,4 +111,22 @@ describe('DotToolbarAnnouncementsComponent', () => {
         const announcementLink = spectator.query(byTestId('announcements__about-link'));
         expect(announcementLink.getAttribute('target')).toBe('_blank');
     });
+
+    it('should call markAnnouncementsAsRead on ngOnInit', () => {
+        const markAnnouncementsAsReadSpy = spyOn(
+            spectator.component.announcementsStore,
+            'markAnnouncementsAsRead'
+        );
+
+        spectator.component.ngOnChanges({ showUnreadAnnouncement: { currentValue: false } });
+        expect(markAnnouncementsAsReadSpy).toHaveBeenCalled();
+    });
+
+    it('should close the overlaypanel when clicking on the links', () => {
+        const announcementPanel = spectator.query(byTestId('announcement_link'));
+        const links = spectator.queryAll(byTestId('announcement_link'));
+        links.forEach((link) => link.dispatchEvent(new MouseEvent('click')));
+        spectator.detectChanges();
+        expect(announcementPanel).toBeFalsy();
+    });
 });

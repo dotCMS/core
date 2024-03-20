@@ -52,8 +52,8 @@ public class AppsInterpolationTest {
         );
 
         final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
-                .stringParam("param1", false, true, "lol", "name is `$param1.name`.", "This is `$param2.value`'s hint.")
-                .stringParam("param2", false, true, "none", "name is `$param2.name`.", "This is `$param1.value`'s hint.")
+                .stringParam("param1", false, true, "name is `$param1.name`.", "This is `$param2.value`'s hint.", "lol")
+                .stringParam("param2", false, true, "name is `$param2.name`.", "This is `$param1.value`'s hint.", "none")
                 .selectParam("selectParam", true, list)
                 .buttonParam("buttonParam","https://www.google.com/search?q=$param1.name","Button","button's hint.")
                 .withName("any")
@@ -79,7 +79,14 @@ public class AppsInterpolationTest {
                 new SiteView("48190c8c-42c4-46af-8d1a-0cd5db894797", "demo.dotcms.com",  ImmutableList.of(
                         new SecretView("param1", null, descriptorParams.get("param1"),
                                 ImmutableList.of()),
-                        new SecretView("param2", Secret.newSecret("This is me Param2's Value".toCharArray(), Type.STRING, false), descriptorParams.get("param2"),
+                        new SecretView(
+                                "param2",
+                                 Secret.builder()
+                                         .withValue("This is me Param2's Value")
+                                         .withHidden(false)
+                                         .withType(Type.STRING)
+                                         .build(),
+                                descriptorParams.get("param2"),
                                 ImmutableList.of()),
                         new SecretView("selectParam", null, descriptorParams.get("selectParam"),
                                 ImmutableList.of()),
@@ -92,7 +99,7 @@ public class AppsInterpolationTest {
         final String json = mapper.writeValueAsString(appView);
         assertFalse(json.contains("$"));
         final Map<String, Object> map = mapper
-              .readValue(json, new TypeReference<Map<String, Object>>() {});
+              .readValue(json, new TypeReference<>() {});
         final String name = (String)map.get("name");
         assertTrue(map.get("description").toString().contains(name));
         List<Map<String,Object>> sites = (List<Map<String, Object>>) map.get("sites");
@@ -104,9 +111,6 @@ public class AppsInterpolationTest {
         final Map<String,Object> secrets2 = secrets.get(1);
         assertEquals(secrets2.get("hint").toString(), "This is `lol`'s hint.");
         assertEquals(secrets2.get("label").toString(), "name is `param2`.");
-
     }
-
-
 
 }

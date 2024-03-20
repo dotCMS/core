@@ -1,8 +1,6 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -16,16 +14,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -587,4 +581,46 @@ import java.util.function.Predicate;
 	 */
     void updateUserReferences(String userId, String replacementUserId)
             throws DotDataException;
+
+	/**
+	 * Generates a report of the different Content Types living under a Folder, and the number of
+	 * content items for each type. This implementation analyzes all child folders and their
+	 * respective sub-child folders, not only the specified one.
+	 *
+	 * @param folder         The {@link Folder} that the report will be generated for.
+	 * @param orderBy        The column name to order the report by. Usually set to
+	 *                       {@code "LOWER(name)"}.
+	 * @param orderDirection The direction to order the report by: {@code "ASC"} or {@code "DESC"}.
+	 * @param limit          The maximum number of records to return, for pagination purposes.
+	 * @param offset         The page number of the returned results, for pagination purposes.
+	 * @param user           The {@link User} that is requesting the report.
+	 *
+	 * @return A list of maps with the data for generating the Content Report.
+	 *
+	 * @throws DotDataException An error occurred while retrieving the data from the database.
+	 */
+	List<Map<String, Object>> getContentReport(final Folder folder, final String orderBy,
+											   final String orderDirection, final int limit,
+											   final int offset, final User user) throws DotDataException;
+
+	/**
+	 * Returns the total count of Content Types that live under the specified Folder and all of its
+	 * sub-folders.
+	 *
+	 * @param folder                     The {@link Folder} that the Content Type count will be
+	 *                                   generated for.
+	 * @param user                       The {@link User} that is calling this method.
+	 * @param respectFrontEndPermissions If front-end Roles for the specified User must be
+	 *                                   validated, set this to {@code true}.
+	 *
+	 * @return The total count of Content Types that live under the specified Folder and all of its
+	 * sub-folders.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The specified User does not have the necessary permissions to
+	 *                              access the data.
+	 */
+	int getContentTypeCount(final Folder folder, final User user,
+							final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
+
 }

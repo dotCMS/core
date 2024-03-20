@@ -72,12 +72,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * This class will test operations related with interacting with hosts: Deleting
- * a host, marking a host as default, etc.
+ * This class will test operations related with interacting with Sites: Deleting a site, marking a
+ * Site as default, and any other piece of information exposed by the {@link HostAPI}.
  *
  * @author Jorge Urdaneta
  * @since Sep 5, 2013
- *
  */
 public class HostAPITest extends IntegrationTestBase  {
 
@@ -1393,6 +1392,45 @@ public class HostAPITest extends IntegrationTestBase  {
         // Assertions
         assertEquals("The size difference between both Site lists MUST be 1", 1,
                 siteListWithSystemHost.size() - siteList.size());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link HostAPI#findByIdOrKey(String, User, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Find the Default Site using either its Identifier or its
+     *     Key.</li>
+     *     <li><b>Expected Result: </b>The Site API must be able to find the specified Site using
+     *     either the Identifier or the Site Key.</li>
+     * </ul>
+     */
+    @Test
+    public void findSiteByIdOrKey() throws DotDataException, DotSecurityException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final HostAPI siteAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+        final Host defaultSite = siteAPI.findDefaultHost(systemUser, false);
+        final String defaultSiteId = defaultSite.getIdentifier();
+        final String defaultSiteKey = defaultSite.getHostname();
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Optional<Host> siteById = siteAPI.findByIdOrKey(defaultSiteKey, systemUser, false);
+        final Optional<Host> siteByKey = siteAPI.findByIdOrKey(defaultSiteId, systemUser, false);
+
+        // ╔══════════════╗
+        // ║  Assertions  ║
+        // ╚══════════════╝
+        assertTrue("The Site by ID was NOT found!", siteById.isPresent());
+        assertTrue("The Site by Key was NOT found!", siteByKey.isPresent());
+        assertEquals("Site by ID and Site by Key must point to the Default Site",
+                siteById.get().getIdentifier(), siteByKey.get().getIdentifier());
+        assertEquals("Site by ID must point to the Default Site",
+                siteById.get().getIdentifier(), defaultSiteId);
+        assertEquals("Site by Key must point to the Default Site",
+                siteByKey.get().getIdentifier(), defaultSiteId);
     }
 
 }

@@ -15,7 +15,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { StringFormat } from '@dotcms/app/api/util/stringFormat';
@@ -34,7 +33,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotDialogModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotMessageDisplayServiceMock,
@@ -43,7 +42,6 @@ import {
     MockDotRouterService,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
 
@@ -95,7 +93,7 @@ describe('DotMyAccountComponent', () => {
                 DotDialogModule,
                 CommonModule,
                 CheckboxModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 HttpClientTestingModule
             ],
