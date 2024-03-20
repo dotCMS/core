@@ -743,10 +743,10 @@ public class ContentTypeResource implements Serializable {
 	 * <pre>{@code
 	 * GET http://localhost:8080/api/v1/contenttype?sites=48190c8c-42c4-46af-8d1a-0cd5db894797,SYSTEM_HOST,&per_page=40&&orderby=variabledirection=DESC
 	 * }</pre>
-	 * <p>If you want results composed of 10 items per page, and you want the third page, call this
-	 * URL:</p>
+	 * <p>If you want results composed of 10 items per page and you want the third page, and you
+	 * don't have the Site's Identifier, you can call this URL:</p>
 	 * <pre>{@code
-	 * GET http://localhost:8080/api/v1/contenttype?sites=48190c8c-42c4-46af-8d1a-0cd5db894797,&page=3&per_page=10
+	 * GET http://localhost:8080/api/v1/contenttype?sites=demo.dotcms.com&page=3&per_page=10
 	 * }</pre>
 	 *
 	 * @param httpRequest  The current instance of the {@link HttpServletRequest}.
@@ -760,9 +760,9 @@ public class ContentTypeResource implements Serializable {
 	 *                     {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}.
 	 * @param direction    The direction of the sorting. It can be either "ASC" or "DESC".
 	 * @param type         The Velocity variable name of the Content Type  to retrieve.
-	 * @param siteId       The identifier of the Site to filter the Content Types by.
-	 * @param sites        A comma-separated list of Site identifiers to filter the Content Types
-	 *                     by.
+	 * @param siteId       The identifier of the Site where the requested Content Types live.
+	 * @param sites        A comma-separated list of Site identifiers or Site Keys where the
+	 *                     requested Content Types live.
 	 *
 	 * @return A JSON response with the paginated list of Content Types.
 	 *
