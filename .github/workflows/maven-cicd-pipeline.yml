@@ -62,25 +62,29 @@ jobs:
           backend=${{ steps.filter.outputs.backend }}
           build=${{ steps.filter.outputs.build }}
           jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
-          
-          # Check if the commit is to the master branch and if tests should be skipped
+
+          # Check if the commit is to the master branch
           is_master=$(echo ${{ github.ref }} | sed -n 's/refs\/heads\/master/&/p')
           skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
-          
+
           # Adjust outputs based on conditions
-          if [ "$is_master" == "refs/heads/master" ] || [ "$skip_tests" == "true" ]; then
-            # Apply skip logic: if it's the master branch and skipping is not demanded, run all tests; 
-            # otherwise, if skipping is requested, turn off all but build.
-            if [ "$skip_tests" == "true" ]; then
-              echo "Skipping tests as CICD_SKIP_TESTS is set to true."
-              frontend=false
-              cli=false
-              backend=false  # Consider keeping this true if you want to ensure backend integrity
-              jvm_unit_test=false
-            fi
-            # Note: No else branch here; if we're on master and skip_tests isn't true, we keep the defaults from the paths-filter
+          if [ "$is_master" == "refs/heads/master" ]; then
+            echo "Running build and all tests on the master branch."
+            build=true
+            frontend=true
+            cli=true
+            backend=true
+            jvm_unit_test=true
           fi
-          
+          # The below line ensures that if skip_tests is true, all tests are set to false.
+          if [ "$skip_tests" == "true" ]; then
+            echo "Skipping tests as per CICD_SKIP_TESTS flag."
+            frontend=false
+            cli=false
+            backend=false
+            jvm_unit_test=false
+          fi
+
           # Export the outcomes as GitHub Actions outputs
           echo "frontend=${frontend}" >> $GITHUB_OUTPUT
           echo "cli=${cli}" >> $GITHUB_OUTPUT

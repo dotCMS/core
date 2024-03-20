@@ -1,9 +1,21 @@
+import { EXPERIMENT_ALREADY_CHECKED_KEY } from '../constants';
+
+/**
+ * Represents the configuration for a database connection.
+ * @interface
+ */
 interface DbConfig {
     db_name: string;
     db_store: string;
     db_key_path: string;
 }
 
+/**
+ * The default version of the database.
+ *
+ * @type {number}
+ * @constant
+ */
 const DB_DEFAULT_VERSION = 1;
 
 /**
@@ -57,11 +69,16 @@ export class IndexDBDatabaseHandler {
 
         return await new Promise((resolve, reject) => {
             const transaction = db.transaction([this.config.db_store], 'readwrite');
-            const store = transaction.objectStore(this.config.db_store);
-            const request = store.put(data, this.config.db_key_path);
 
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+            const store = transaction.objectStore(this.config.db_store);
+            const clearRequest = store.clear();
+
+            clearRequest.onerror = () => reject(clearRequest.error);
+            clearRequest.onsuccess = () => {
+                const request = store.put(data, this.config.db_key_path);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            };
         });
     }
 
@@ -82,6 +99,35 @@ export class IndexDBDatabaseHandler {
             request.onsuccess = () => resolve(request.result as T);
             request.onerror = () => reject(request.error);
         });
+    }
+
+    /**
+     * Deletes all the data from the IndexedDB store.
+     *
+     * @async
+     * @returns {Promise<void>} - The result of the delete operation.
+     */
+    public async clearData(): Promise<void> {
+        const db = await this.openDB();
+
+        return await new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.config.db_store], 'readwrite');
+            const store = transaction.objectStore(this.config.db_store);
+            const request = store.clear();
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Sets the flag indicating that the experiment has already been checked.
+     *
+     * @function setFlagExperimentAlreadyChecked
+     * @returns {void}
+     */
+    setFlagExperimentAlreadyChecked(): void {
+        sessionStorage.setItem(EXPERIMENT_ALREADY_CHECKED_KEY, 'true');
     }
 
     /**
