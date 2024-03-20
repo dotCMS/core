@@ -8,7 +8,8 @@ run-name: Trunk Deployment - ${{ github.event.workflow_run.name }}
 
 # The concurrency group is 'trunk-deployment'. This ensures that only one run of this workflow can be in progress at a time.
 concurrency: trunk-deployment
-
+env:
+  DEPLOYMENT_ENV: trunk
 on:
   workflow_run:
     workflows: ['Maven CICD Pipeline']
@@ -16,12 +17,59 @@ on:
       - completed
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      trigger_sha:
+        description: 'SHA for manual trigger (leave empty for HEAD of master)'
+        required: false
+      skip_checks:
+        description: 'Set to true to skip checks'
+        required: false
+        default: 'false'
+      force_latest:
+        description: 'Force upload of latest artifact even if conditions are not met does nothing if skip_checks is false'
+        required: false
+        default: 'false'
 
 # The workflow has read access to the repository contents and actions.
 permissions:
   contents: read
   actions: read # allow access to other job artifacts with GITHUB_TOKEN
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      calculated_run_id: ${{ steps.set_run_id.outputs.calculated_run_id }}
+    steps:
+      - name: Set manual run ID
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_id }}
+        id: set_run_id
+        run: echo "calculated_run_id=${{ github.event.inputs.run_id }}" >> $GITHUB_OUTPUT
+
+      - name: Fetch latest successful Maven CICD Pipeline run ID
+        if: ${{ github.event_name == 'workflow_dispatch' && !github.event.inputs.run_id }}
+        id: get_latest_successful_run
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'maven-cicd-pipeline.yml', // Replace with your Maven CICD Pipeline workflow file name
+              branch: 'master',
+              status: 'success',
+              event: 'push',
+              per_page: 1
+            });
+            return data.total_count > 0 ? data.workflow_runs[0].id : null;
+          result-encoding: string
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set dynamic run ID
+        if: ${{ github.event_name == 'workflow_dispatch' && !github.event.inputs.run_id }}
+        id: set_run_id
+        run: echo "calculated_run_id=${{ steps.get_latest_successful_run.outputs.result }}" >> $GITHUB_OUTPUT
+
   deploy_check:
     runs-on: ubuntu-latest
     outputs:
@@ -30,28 +78,38 @@ jobs:
       - name: Checkout core
         uses: actions/checkout@v4
 
+      - name: Download latest artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: deployment-trunk.yml
+          name: ${{ env.DEPLOYMENT_ENV }}_latest_sha
+          path: .
+
       - name: Get the latest commit SHA from master and compare
         id: check
         run: |
-         TRIGGER_SHA=${{ github.event.workflow_run.head_sha }}
-         LATEST_SHA=$(git rev-parse origin/master)
-         WORKFLOW_SUCCESS=${{ github.event.workflow_run.conclusion == 'success' }}
-        
-         echo "Latest SHA: $LATEST_SHA, Trigger SHA: $TRIGGER_SHA, Workflow success: $WORKFLOW_SUCCESS"
-        
-         # Only proceed if the workflow was successful and the SHAs match
-         if [[ "$TRIGGER_SHA" == "$LATEST_SHA" && "$WORKFLOW_SUCCESS" == "true" ]]; then
-           echo "should_deploy=true" >> $GITHUB_OUTPUT
-         else
-           echo "Conditions for deployment not met. Latest: $LATEST_SHA, Trigger: $TRIGGER_SHA, Workflow success: $WORKFLOW_SUCCESS"
-           echo "should_deploy=false" >> $GITHUB_OUTPUT
-         fi
+          LAST_DEPLOY_SHA=$(cat ${{ env.DEPLOYMENT_ENV }}_latest_sha.txt)
+          TRIGGER_SHA=${{ github.event.inputs.trigger_sha || github.event.workflow_run.head_sha }}
+          WORKFLOW_SUCCESS=${{ github.event.workflow_run.conclusion == 'success' || github.event.inputs.skip_checks == 'true' }}
+          FORCE_LATEST=${{ github.event.inputs.force_latest == 'true' }}
+          echo "Last Deploy SHA: $LAST_DEPLOY_SHA, Trigger SHA: $TRIGGER_SHA, Workflow success: $WORKFLOW_SUCCESS, Force latest: $FORCE_LATEST"
+
+          # Determine if deployment should proceed
+          SKIP_CHECKS=${{ github.event.inputs.skip_checks == 'true' }}
+          if [[ "$SKIP_CHECKS" == "true" ]] || (git merge-base --is-ancestor $LAST_DEPLOY_SHA $TRIGGER_SHA && [ "$WORKFLOW_SUCCESS" == "true" ]); then
+            echo "should_deploy=true" >> $GITHUB_ENV
+          else
+            echo "Conditions for deployment not met. Latest: $LAST_DEPLOY_SHA, Trigger: $TRIGGER_SHA, Workflow success: $WORKFLOW_SUCCESS"
+            echo "should_deploy=false" >> $GITHUB_ENV
+          fi
+        shell: bash
 
   deployment:
     if: needs.deploy_check.outputs.should_deploy == 'true'
-    needs: [deploy_check]
+    needs: [setup,deploy_check]
     runs-on: ubuntu-latest
-    environment: trunk
+    environment: ${{ env.DEPLOYMENT_ENV }}
     steps:
       # The repository is checked out using the 'actions/checkout' action.
       - name: Checkout core
@@ -63,7 +121,7 @@ jobs:
         uses: ./.github/actions/deploy-artifact-docker
         with:
           docker_platforms: linux/amd64,linux/arm64
-          build_run_id: ${{ github.event.workflow_run.id }}
+          build_run_id: ${{ needs.setup.outputs.calculated_run_id }}
           commit_id: ${{ github.event.workflow_run.head_sha }}"
           ref: master
           snapshot: true
@@ -73,6 +131,15 @@ jobs:
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create artifact with commit id
+        run: |
+          echo "${{ github.event.workflow_run.head_sha }}" > ${{ env.DEPLOYMENT_ENV }}_latest_sha.txt
+        shell: bash
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DEPLOYMENT_ENV }}_latest_sha
+          path: ${{ env.DEPLOYMENT_ENV }}_latest_sha.txt
 
       # A Slack notification is sent using the 'action-slack-notify' action if the repository is 'dotcms/core'.
       - name: Slack Notification
