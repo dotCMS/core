@@ -29,13 +29,13 @@ export const DotEmaRoutes: Route[] = [
         canActivate: [editEmaGuard],
         component: DotEmaShellComponent,
         providers: [
-            DotEditPageResolver, // Resolver
-            DotPageStateService, // State of the Page?
-            DotContentletLockerService, // If the content is locked
-            DotPageRenderService, // ?
-            DotFavoritePageService, // Favorite
-            DotESContentService, // Pallet I think
-            DotExperimentsService // Used inside the resolver
+            DotEditPageResolver,
+            DotPageStateService,
+            DotContentletLockerService,
+            DotPageRenderService,
+            DotFavoritePageService,
+            DotESContentService,
+            DotExperimentsService
         ],
         resolve: {
             haveLicense: portletHaveLicenseResolver,
