@@ -289,6 +289,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 this.setIframeContent(code);
+
+                // If we are idle then we are not dragging
                 this.resetDragProperties();
             });
     }
