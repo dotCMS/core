@@ -93,7 +93,7 @@ export const parseData = (
             ? fetchExperiments.filter((experiment) => experiment.id !== 'NONE')
             : [];
 
-        dataToStorage = setExpireTimeNewExperiments(fetchExperimentsNoNoneExperimentID);
+        dataToStorage = addExpireTimeToExperiments(fetchExperimentsNoNoneExperimentID);
     }
 
     if (!fetchExperiments && storedExperiments) {
@@ -108,7 +108,7 @@ export const parseData = (
             : [];
 
         dataToStorage = [
-            ...setExpireTimeNewExperiments(fetchExperimentsNoNoneExperimentID),
+            ...addExpireTimeToExperiments(fetchExperimentsNoNoneExperimentID),
             ...getUnexpiredExperiments(storedExperiments)
         ];
     }
@@ -132,7 +132,7 @@ export const getExperimentsIds = (experiments: Experiment[]): string[] =>
  * @param {Array<Experiment>} experiments - An array of experiments to set the expire time for.
  * @returns {Array<Experiment>} - An updated array of experiments with expire time set.
  */
-const setExpireTimeNewExperiments = (experiments: Experiment[]) => {
+const addExpireTimeToExperiments = (experiments: Experiment[]): Experiment[] => {
     const now = Date.now();
 
     return experiments.map((experiment) => ({

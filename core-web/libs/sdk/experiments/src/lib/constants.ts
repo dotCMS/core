@@ -37,7 +37,6 @@ export const EXPERIMENT_FETCH_EXPIRE_TIME_KEY = 'experimentFetchExpireTime';
  *
  */
 export const LOCAL_STORAGE_TIME_DURATION_MILLISECONDS = 86400 * 1000;
-// export const LOCAL_STORAGE_TIME_DURATION_MILLISECONDS = 50000;
 
 /**
  * The name of the experiment script file.
@@ -88,15 +87,6 @@ export const EXPERIMENT_DB_STORE_NAME = 'dotExperimentStore';
  * @type {string}
  */
 export const EXPERIMENT_DB_KEY_PATH = 'running_experiment';
-
-/**
- * EXPERIMENT_DB_DEFAULT_VERSION is a constant variable that represents
- * the default version of the experiment database in IndexDB.
- *
- * @type {number}
- * @const
- */
-export const EXPERIMENT_DB_DEFAULT_VERSION = 1;
 
 /**
  * Enumeration of debug levels.
