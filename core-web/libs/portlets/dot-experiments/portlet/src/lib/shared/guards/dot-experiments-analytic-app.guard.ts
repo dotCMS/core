@@ -3,8 +3,8 @@ import { Router } from '@angular/router';
 
 import { tap } from 'rxjs/operators';
 
+import { DotExperimentsService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 
 /**
  * Guard for check if all the necessary to track, record and retrieve information

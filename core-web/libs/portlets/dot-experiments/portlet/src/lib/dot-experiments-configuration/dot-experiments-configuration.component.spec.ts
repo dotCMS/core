@@ -18,12 +18,12 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Menu } from 'primeng/menu';
 
 import {
+    DotExperimentsService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 import {
     DotMessagePipe,

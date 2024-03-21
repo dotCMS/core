@@ -1,5 +1,3 @@
-import { mockDotLanguage } from './dot-language.mock';
-import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
 import {
     DotPage,
     DotLayout,
@@ -9,6 +7,9 @@ import {
     DotTemplate,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
+
+import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
+import { mockDotLanguage } from './dot-language.mock';
 
 export const mockDotPage = (): DotPage => {
     return {
