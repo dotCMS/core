@@ -23,7 +23,7 @@
 <p-skeleton
     *ngIf="isLoading"
     width="100%"
-    height="400px"
+    height="34rem"
     styleClass="ai-image-gallery_skeleton"
     data-testid="ai-image-gallery_skeleton" />
 <p-skeleton
@@ -35,19 +35,32 @@
 
 <p-galleria
     *ngIf="!isLoading && images?.length"
-    [(activeIndex)]="activeImageIndex"
+    [activeIndex]="activeImageIndex"
     [circular]="true"
-    [showItemNavigators]="true"
+    [showItemNavigators]="images?.length > 1"
     [showThumbnails]="false"
     [value]="images"
     (activeIndexChange)="activeIndexChange.emit($event)"
     visible="true">
     <ng-template pTemplate="item" let-item>
         <p-image
+            *ngIf="item.response; else errorMessage"
             [src]="item.response.contentlet.assetVersion"
-            [preview]="false"
-            imageClass="ai-image-gallery__img"
-            alt="image"></p-image>
+            [preview]="true"
+            [alt]="item.response.contentlet.assetMetaData.title"
+            imageClass="ai-image-gallery__img">
+            <ng-template pTemplate="indicator">
+                <i class="pi pi-window-maximize"></i>
+            </ng-template>
+        </p-image>
+        <ng-template #errorMessage>
+            <dot-empty-container
+                [hideContactUsLink]="true"
+                [buttonLabel]="'try-again' | dm"
+                [secondaryButton]="true"
+                [configuration]="emptyConfiguration"
+                (buttonAction)="regenerate.emit($event)" />
+        </ng-template>
     </ng-template>
 </p-galleria>
 <span class="ai-image-gallery__count align-self-center" *ngIf="!isLoading && images?.length">

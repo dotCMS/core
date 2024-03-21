@@ -3,6 +3,7 @@ import {
     listenEditorMessages,
     listenHoveredContentlet,
     pingEditor,
+    preserveScrollOnIframe,
     scrollHandler
 } from './listeners';
 
@@ -21,6 +22,9 @@ jest.mock('../models/client.model', () => ({
     }
 }));
 
+/**
+ * Observation: We must test the execution of methods as well.
+ */
 describe('listeners', () => {
     it('should listen editor messages', () => {
         const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
@@ -38,6 +42,12 @@ describe('listeners', () => {
         const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
         scrollHandler();
         expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+    });
+
+    it('should preserve scroll on iframe', () => {
+        const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+        preserveScrollOnIframe();
+        expect(addEventListenerSpy).toHaveBeenCalledWith('load', expect.any(Function));
     });
 
     it('should listen to content change', () => {

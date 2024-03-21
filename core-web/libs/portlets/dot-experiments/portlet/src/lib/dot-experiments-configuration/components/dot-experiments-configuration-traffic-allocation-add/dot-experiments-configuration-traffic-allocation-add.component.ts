@@ -18,9 +18,7 @@ import { SliderModule } from 'primeng/slider';
 import { take } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { DotMessagePipe, DotSidebarDirective, DotSidebarHeaderComponent } from '@dotcms/ui';
 
 import {
     ConfigurationTrafficStepViewModel,

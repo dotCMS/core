@@ -8,8 +8,13 @@ import { MessageService } from 'primeng/api';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
+import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContainerMap,
+    DotExperimentStatus,
+    DotLayout,
+    DotPageContainerStructure
+} from '@dotcms/dotcms-models';
 
 import {
     DotPageApiParams,
@@ -25,7 +30,12 @@ import {
     ReloadPagePayload,
     SavePagePayload
 } from '../../shared/models';
-import { insertContentletInContainer, sanitizeURL, getPersonalization } from '../../utils';
+import {
+    insertContentletInContainer,
+    sanitizeURL,
+    getPersonalization,
+    createPageApiUrlWithQueryParams
+} from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
     payload: ActionPayload;
@@ -61,7 +71,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         private readonly dotPageApiService: DotPageApiService,
         private readonly dotLicenseService: DotLicenseService,
         private readonly messageService: MessageService,
-        private readonly dotMessageService: DotMessageService
+        private readonly dotMessageService: DotMessageService,
+        private readonly dotExperimentsService: DotExperimentsService
     ) {
         super();
     }
@@ -85,8 +96,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         const pageURL = this.createPageURL({
             url: state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
-            'com.dotmarketing.persona.id':
-                state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
+            'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
+            variantName: state.variantName
         });
 
         const favoritePageURL = this.createFavoritePagesURL({
@@ -111,7 +122,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             },
             isEnterpriseLicense: state.isEnterpriseLicense,
             state: state.editorState ?? EDITOR_STATE.LOADING,
-            previewState: state.previewState
+            previewState: state.previewState,
+            runningExperiment: state.runningExperiment
         };
     });
 
@@ -163,22 +175,37 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             .pipe(take(1), shareReplay())
                     }).pipe(
                         tap({
-                            next: ({ pageData, licenseData }) => {
-                                this.setState({
-                                    clientHost: params.clientHost,
-                                    editor: pageData,
-                                    isEnterpriseLicense: licenseData,
-                                    editorState: EDITOR_STATE.LOADING,
-                                    previewState: {
-                                        editorMode: EDITOR_MODE.EDIT
-                                    }
-                                });
-                            },
                             error: ({ status }: HttpErrorResponse) => {
                                 this.createEmptyState({ canEdit: false, canRead: false }, status);
                             }
                         }),
-                        catchError(() => EMPTY)
+                        switchMap(({ pageData, licenseData }) =>
+                            this.dotExperimentsService
+                                .getByStatus(pageData.page.identifier, DotExperimentStatus.RUNNING)
+                                .pipe(
+                                    tap({
+                                        next: (experiment) => {
+                                            return this.setState({
+                                                clientHost: params.clientHost,
+                                                editor: pageData,
+                                                isEnterpriseLicense: licenseData,
+                                                editorState: EDITOR_STATE.LOADED,
+                                                previewState: {
+                                                    editorMode: EDITOR_MODE.EDIT
+                                                },
+                                                variantName: params.variantName,
+                                                runningExperiment: experiment[0]
+                                            });
+                                        },
+                                        error: ({ status }: HttpErrorResponse) => {
+                                            this.createEmptyState(
+                                                { canEdit: false, canRead: false },
+                                                status
+                                            );
+                                        }
+                                    })
+                                )
+                        )
                     );
                 })
             );
@@ -316,7 +343,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private createPageURL(params: DotPageApiParams): string {
         const url = sanitizeURL(params.url);
 
-        return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}&mode=EDIT_MODE`;
+        return createPageApiUrlWithQueryParams(url, params);
     }
 
     /*******************

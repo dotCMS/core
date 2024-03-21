@@ -3,18 +3,22 @@ import { jitsuClient, JitsuClient } from '@jitsu/sdk-js';
 import {
     API_EXPERIMENTS_URL,
     DEBUG_LEVELS,
+    EXPERIMENT_ALREADY_CHECKED_KEY,
     EXPERIMENT_DB_KEY_PATH,
-    EXPERIMENT_DB_STORE_NAME
+    EXPERIMENT_DB_STORE_NAME,
+    EXPERIMENT_QUERY_PARAM_KEY
 } from './constants';
-import {
-    AssignedExperiments,
-    DotExperimentConfig,
-    ExperimentParsed,
-    IsUserIncludedApiResponse
-} from './models';
-import { parseDataForAnalytics } from './parser/parser';
+import { DotExperimentConfig, Experiment, Variant } from './models';
+import { getExperimentsIds, parseData, parseDataForAnalytics, verifyRegex } from './parser/parser';
 import { IndexDBDatabaseHandler } from './persistence/index-db-database-handler';
-import { dotLogger } from './utils/utils';
+import { DotLogger } from './utils/DotLogger';
+import {
+    checkFlagExperimentAlreadyChecked,
+    getFullUrl,
+    isDataCreateValid,
+    objectsAreEqual,
+    updateUrlWithExperimentVariant
+} from './utils/utils';
 
 /**
  * `DotExperiments` is a Typescript class to handles all operations related to fetching, storing, parsing, and navigating
@@ -37,9 +41,44 @@ import { dotLogger } from './utils/utils';
  *
  */
 export class DotExperiments {
+    /**
+     * The instance of the DotExperiments class.
+     * @private
+     */
     private static instance: DotExperiments;
-    private databaseHandler!: IndexDBDatabaseHandler;
+    /**
+     * Represents the promise for the initialization process.
+     * @private
+     */
+    private initializationPromise: Promise<void> | null = null;
+    /**
+     * Represents the analytics client for Analytics.
+     * @private
+     */
     private analytics!: JitsuClient;
+    /**
+     * Class representing a database handler for IndexDB.
+     * @class
+     */
+    private persistenceHandler!: IndexDBDatabaseHandler;
+    /**
+     * Represents the stored data in the IndexedDB.
+     * @private
+     */
+    private experimentsAssigned: Experiment[] = [];
+
+    /**
+     * A logger utility for logging messages.
+     *
+     * @class
+     */
+    private logger!: DotLogger;
+
+    /**
+     * Represents the current location.
+     * @private
+     */
+    private currentLocation: Location = location;
 
     private constructor(private config: DotExperimentConfig) {
         if (!this.config['server']) {
@@ -50,14 +89,15 @@ export class DotExperiments {
             throw new Error('`api-key` must be provided and should not be empty!');
         }
 
-        dotLogger(
-            `DotExperiments instanced with ${JSON.stringify(config)} configuration`,
-            this.getIsDebugActive()
-        );
+        this.logger = new DotLogger(this.config.debug, 'DotExperiment');
+    }
+
+    public get experiments(): Experiment[] {
+        return this.experimentsAssigned;
     }
 
     /**
-     * Retrieves instance of DotExperiments class if doesn't exist create a new one.
+     * Retrieves instance of DotExperiments class if it doesn't exist create a new one.
      * If the instance does not exist, it creates a new instance with the provided configuration and calls the `getExperimentData` method.
      *
      * @param {DotExperimentConfig} config - The configuration object for initializing the DotExperiments instance.
@@ -70,14 +110,69 @@ export class DotExperiments {
             }
 
             DotExperiments.instance = new DotExperiments(config);
-
-            // Steps
-            this.instance.initializeDatabaseHandler();
-            this.instance.setExperimentData();
-            this.instance.initAnalyticsClient();
+            DotExperiments.instance.initialize();
         }
 
+        DotExperiments.instance.logger.log(
+            'Instance created with configuration: ' + JSON.stringify(config)
+        );
+
         return DotExperiments.instance;
+    }
+
+    /**
+     * Waits for the initialization process to be completed.
+     *
+     * @return {Promise<void>} A Promise that resolves when the initialization is ready.
+     */
+    public ready(): Promise<void> {
+        return this.initializationPromise ?? Promise.resolve();
+    }
+
+    /**
+     * This method appends variant parameters to navigation links based on the provided navClass.
+     *
+     * Note: In order for this method's functionality to apply, you need to define a class for the navigation elements (anchors)
+     * to which you would like this functionality applied and pass it as an argument when calling this method.
+     *
+     * @param {string} navClass - The class of the navigation elements to which variant parameters should be appended. Such elements should be anchors (`<a>`).
+     *
+     * @example
+     * <ul class="navbar-nav me-auto mb-2 mb-md-0">
+     *     <li class="nav-item">
+     *         <a class="nav-link " aria-current="page" href="/">Home</a>
+     *      </li>
+     *      <li class="nav-item ">
+     *         <a class="nav-link active" href="/blog">Travel Blog</a>
+     *      </li>
+     *      <li class="nav-item">
+     *         <a class="nav-link" href="/destinations">Destinations</a>
+     *      </li>
+     * </ul>
+     *
+     * dotExperiment.ready().then(() => {
+     *    dotExperiment.appendVariantParams('.navbar-nav .nav-link');
+     * });
+     * appendVariantParams('nav-item-class');
+     *
+     * @returns {void}
+     */
+    public appendVariantParams(navClass: string): void {
+        // Todo: Add a config for the standalone pages
+        // This is only for standalone pages
+        const navItems: NodeListOf<HTMLAnchorElement> = document.querySelectorAll(navClass);
+
+        if (navItems.length > 0) {
+            navItems.forEach((link) => {
+                const href =
+                    getFullUrl(this.currentLocation, link.getAttribute('href') || '') ?? '';
+                const variant = this.getVariant(href);
+
+                if (variant !== null && href !== null) {
+                    link.href = updateUrlWithExperimentVariant(href, variant);
+                }
+            });
+        }
     }
 
     /**
@@ -86,8 +181,99 @@ export class DotExperiments {
      * @private
      * @returns {boolean} - The debug status.
      */
-    getIsDebugActive(): boolean {
+    public getIsDebugActive(): boolean {
         return this.config.debug;
+    }
+
+    /**
+     * Updates the current location and checks if a variant should be applied.
+     * Redirects to the variant URL if necessary.
+     *
+     * @param {Location} location - The new location.
+     * @param redirectFunction
+     */
+    public async locationChanged(
+        location: Location,
+        redirectFunction?: (url: string) => void
+    ): Promise<void> {
+        this.currentLocation = location;
+        this.refreshAnalyticsForCurrentLocation();
+        await this.verifyExperimentData();
+        const variantAssigned = this.getVariant(location.href);
+
+        if (variantAssigned) {
+            const searchParams = new URLSearchParams(location.search);
+            const currentVariant = searchParams.get(EXPERIMENT_QUERY_PARAM_KEY);
+
+            if (currentVariant !== variantAssigned.name) {
+                const variantUrl = updateUrlWithExperimentVariant(location, variantAssigned);
+                this.logger.log(`Redirecting to the variant URL: ${variantUrl}`);
+
+                if (redirectFunction) {
+                    redirectFunction(variantUrl);
+                } else {
+                    this.logger.log(`Page redirected to ${variantUrl}`);
+                    window.location.href = variantUrl;
+                }
+            } else {
+                this.logger.log(`No redirection needed.`);
+            }
+        } else {
+            this.logger.log(`No experiment variant matched for the current location.`);
+        }
+    }
+
+    /**
+     * Initializes the application using lazy initialization. This method performs
+     * necessary setup steps and should be invoked to ensure proper execution of the application.
+     *
+     * Note: This method uses lazy initialization. Make sure to call this method to ensure
+     * the application works correctly.
+     *
+     * @return {Promise<void>} A promise that resolves when the initialization is complete.
+     */
+    private async initialize(): Promise<void> {
+        if (!this.initializationPromise) {
+            this.initializationPromise = (async () => {
+                this.logger.group('Initialization Process');
+                this.logger.time('Total Initialization');
+                //load database handler
+                this.initializeDatabaseHandler();
+                // Init the analytics client
+                this.initAnalyticsClient();
+                // retrieve the data from persistence
+                this.experimentsAssigned = await this.getPersistedData();
+
+                await this.verifyExperimentData();
+
+                this.logger.timeEnd('Total Initialization');
+                this.logger.groupEnd();
+            })();
+        }
+
+        await this.initializationPromise;
+    }
+
+    /**
+     * This method is used to retrieve the variant associated with a given URL.
+     *
+     * It checks if the URL is part of an experiment by verifying it against an experiment's regex. If the URL matches the regex of an experiment,
+     * it returns the variant attached to that experiment; otherwise, it returns null.
+     *
+     * @param {string | null} path - The URL to check for a variant. This should be the path of the URL.
+     *
+     * @returns {Variant | null} The variant associated with the URL if it exists, null otherwise.
+     */
+    private getVariant(path: string | null): Variant | null {
+        if (this.experimentsAssigned && path) {
+            const experiment = this.experimentsAssigned.find((experiment) => {
+                return verifyRegex(experiment.regexs.isExperimentPage, path);
+            });
+
+            return experiment ? experiment.variant : null;
+        }
+
+        return null;
     }
 
     /**
@@ -97,95 +283,147 @@ export class DotExperiments {
      * @returns {Promise<AssignedExperiments>} - The entity object returned from the server.
      * @throws {Error} - If an HTTP error occurs or an error occurs during the fetch request.
      */
-    private async getExperimentsFromServer(): Promise<AssignedExperiments> {
+    private async getExperimentsFromServer(): Promise<Experiment[]> {
+        this.logger.group('Fetch Experiments');
+        this.logger.time('Fetch Time');
+
         try {
+            const body = {
+                exclude: this.experimentsAssigned ? getExperimentsIds(this.experimentsAssigned) : []
+            };
             const response: Response = await fetch(`${this.config.server}${API_EXPERIMENTS_URL}`, {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify(body)
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const responseText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`);
             }
 
-            const responseJson = (await response.json()) as IsUserIncludedApiResponse;
-            dotLogger(`Experiment data get successfully `, this.getIsDebugActive());
+            const responseJson = await response.json();
+            const experiments = responseJson?.entity?.experiments;
+            this.logger.log(`Experiment data get successfully `);
 
-            return responseJson.entity;
+            this.persistenceHandler.setFlagExperimentAlreadyChecked();
+
+            return experiments ?? [];
         } catch (error) {
-            throw new Error(`An error occurred while trying to fetch the experiments: ${error}`);
+            this.logger.error(
+                `An error occurred while trying to fetch the experiments: ${
+                    (error as Error).message
+                }`
+            );
+            throw error;
+        } finally {
+            this.logger.timeEnd('Fetch Time');
+            this.logger.groupEnd();
         }
     }
 
     /**
-     * Retrieves experiment data from the server.
+     * This method is responsible for retrieving and persisting experiment data from the server to the local indexDB database.
+     *
+     * - Checks whether making a request to the server to fetch experiment data is required.
+     * - Sends the request to the server for data if required.
+     * - Parses the fetched data to the form required for storage in the database.
+     * - Persists the data in the indexDB database.
      *
      * @private
+     * @method verifyExperimentData
      * @async
-     * @throws {Error} If an error occurs while loading the experiments.
+     * @throws {Error} Throws an error with details if there is any failure in loading the experiments or during their persistence in indexDB.
+     *
+     * @returns {Promise<void>} An empty promise that fulfills once the experiment data has been successfully loaded and persisted.
      */
-    private async setExperimentData() {
+    private async verifyExperimentData(): Promise<void> {
         try {
-            const experimentAssignedToUser = await this.getExperimentsFromServer();
-            this.persistExperiments(experimentAssignedToUser);
+            let fetchedExperiments: Experiment[] | undefined = undefined;
+            const storedExperiments: Experiment[] = this.experimentsAssigned
+                ? this.experimentsAssigned
+                : [];
+
+            // Checks whether fetching experiment data from the server is necessary.
+            if (this.shouldFetchNewData()) {
+                fetchedExperiments = await this.getExperimentsFromServer();
+                this.persistenceHandler.setFlagExperimentAlreadyChecked();
+                this.persistenceHandler.setFetchExpiredTime();
+            }
+
+            const dataToPersist: Experiment[] = parseData(fetchedExperiments, storedExperiments);
+
+            // If my stored data is equal to my parsed data, I don't need to persist again
+            if (!objectsAreEqual(dataToPersist, storedExperiments)) {
+                this.experimentsAssigned = await this.persistExperiments(dataToPersist);
+            }
+
+            this.refreshAnalyticsForCurrentLocation();
         } catch (e) {
             throw Error(`Error persisting experiments to indexDB, ${e}`);
         }
     }
 
     /**
-     * Persists experiments to the IndexDB.
+     * Persists the parsed experiment data into the indexDB database.
      *
-     * @param {AssignedExperiments} entity - The entity containing experiments to persist.
+     * The method does the following:
+     * - Receives the parsed data.
+     * - Updates the creation date.
+     * - Clears existing data from the indexDB database.
+     * - Stores the new data in the indexDB database.
+     *
+     * If there are no experiments in the received data, the method will not attempt to clear or persist anything and will return immediately.
+     *.
+     *
+     * @note This method utilizes Promises for the asynchronous handling of data persistence. Errors during data persistence are caught and logged, but not re-thrown.
+     *
      * @private
+     * @method persistExperiments
+     * @throws Nothing – Errors are caught and logged, but not re-thrown.
+     *
+     * @param experiments
      */
-    private persistExperiments(entity: AssignedExperiments) {
-        if (!entity.experiments.length) {
-            return;
+    private async persistExperiments(experiments: Experiment[]): Promise<Experiment[]> {
+        if (!experiments.length) {
+            return [];
         }
 
-        this.databaseHandler
-            .persistData(entity)
-            .then(() => {
-                dotLogger('Experiment data stored successfully', this.getIsDebugActive());
-            })
-            .catch((onerror) => {
-                dotLogger(`Error storing data. ${onerror}`, this.getIsDebugActive());
-            });
+        this.logger.group('Persisting Experiments');
+        this.logger.time('Persistence Time');
+
+        try {
+            await this.persistenceHandler.persistData(experiments);
+            this.logger.log('Experiment data stored successfully');
+
+            return experiments;
+        } catch (onerror) {
+            this.logger.log(`Error storing data: ${onerror}`);
+
+            return Promise.reject(`Error storing data: ${onerror}`);
+        } finally {
+            this.logger.timeEnd('Persistence Time');
+            this.logger.groupEnd();
+        }
     }
 
     /**
      * Initializes the database handler.
      *
      * This private method instantiates the class handling the IndexDB database
-     * and assigns this instance to 'databaseHandler'.
+     * and assigns this instance to 'persistenceHandler'.
      *
      * @private
      */
-    private initializeDatabaseHandler() {
-        this.databaseHandler = new IndexDBDatabaseHandler({
+    private initializeDatabaseHandler(): void {
+        this.persistenceHandler = new IndexDBDatabaseHandler({
             db_store: EXPERIMENT_DB_STORE_NAME,
             db_name: EXPERIMENT_DB_STORE_NAME,
             db_key_path: EXPERIMENT_DB_KEY_PATH
         });
-    }
-
-    /**
-     * Retrieves and parses data from the database for analytics.
-     *
-     * This private method fetches data from the IndexDB database and
-     * parses it into the format needed for analytics when saving events.
-     *
-     * @private
-     * @returns {Promise<ExperimentParsed>} A Promise that resolves to the data parsed for analytics.
-     */
-    private async getDataForAnalytics(): Promise<ExperimentParsed> {
-        const data = await this.databaseHandler.getData<AssignedExperiments>();
-
-        return parseDataForAnalytics(data, location);
     }
 
     /**
@@ -197,20 +435,103 @@ export class DotExperiments {
      *
      * @private
      */
-    private async initAnalyticsClient() {
+    private initAnalyticsClient(): void {
         try {
-            this.analytics = jitsuClient({
-                key: this.config['api-key'],
-                tracking_host: this.config['server'],
-                log_level: this.config['debug'] ? DEBUG_LEVELS.DEBUG : DEBUG_LEVELS.WARN
-            });
-
-            const { experiments } = await this.getDataForAnalytics();
-            this.analytics.set({ experiments });
-
-            dotLogger(`Analytics client created successfully.`, this.getIsDebugActive());
+            if (!this.analytics) {
+                this.analytics = jitsuClient({
+                    key: this.config['api-key'],
+                    tracking_host: this.config['server'],
+                    log_level: this.config['debug'] ? DEBUG_LEVELS.WARN : DEBUG_LEVELS.NONE
+                });
+                this.logger.log('Analytics client initialized successfully.');
+            }
         } catch (error) {
-            throw Error(`Error creating analytics client, ${error}`);
+            this.logger.log(`Error creating/updating analytics client: ${error}`);
         }
+    }
+
+    /**
+     * Updates the analytics client's data using the experiments data
+     * currently available in the IndexDB database, based on the current location.
+     *
+     * Retrieves and processes the experiments information according to the
+     * current location into a suitable format for `analytics.set()`.
+     *
+     * @private
+     * @method refreshAnalyticsForCurrentLocation
+     * @returns {void}
+     */
+    private refreshAnalyticsForCurrentLocation(): void {
+        const experimentsData = this.experimentsAssigned ?? [];
+
+        if (experimentsData.length > 0) {
+            const { experiments } = parseDataForAnalytics(experimentsData, this.currentLocation);
+            this.analytics.set({ experiments });
+            this.logger.log('Analytics client updated with experiments data.');
+        } else {
+            this.analytics.set({ experiments: [] });
+            this.logger.log('No experiments data available to update analytics client.');
+        }
+    }
+
+    /**
+     * Determines whether analytics should be checked.
+     *
+     * @private
+     * @returns {Promise<boolean>} A boolean value indicating whether analytics should be checked.
+     */
+    private shouldFetchNewData(): boolean {
+        // If the user close the tab, reload the data
+        if (!checkFlagExperimentAlreadyChecked()) {
+            this.logger.log(
+                `${EXPERIMENT_ALREADY_CHECKED_KEY} not found, fetch data from Analytics`
+            );
+
+            return true;
+        }
+
+        if (!this.experimentsAssigned) {
+            return true;
+        }
+
+        if (!isDataCreateValid()) {
+            this.logger.log(`Persistence not valid, fetch data from Analytics`);
+
+            return true;
+        }
+
+        this.logger.log(`Not should Check Analytics by now...`);
+
+        return false;
+    }
+
+    /**
+     * Retrieves persisted data from the database.
+     *
+     * @private
+     * @returns {Promise<void>} A promise that resolves with no value.
+     */
+    private async getPersistedData(): Promise<Experiment[]> {
+        this.logger.group('Loading Persisted Data');
+        this.logger.time('Loading Time');
+
+        let storedData: Experiment[] = [];
+
+        try {
+            storedData = await this.persistenceHandler.getData<Experiment[]>();
+
+            if (storedData) {
+                this.logger.log(`Data persisted loaded, ${storedData.length} experiments loaded`);
+            } else {
+                this.logger.log(`No persisted data found, let's fetch from the server.`);
+            }
+        } catch (error) {
+            this.logger.warn(`Error loading persisted data: ${error}`);
+        } finally {
+            this.logger.timeEnd('Loading Time');
+            this.logger.groupEnd();
+        }
+
+        return storedData;
     }
 }

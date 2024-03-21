@@ -1,7 +1,6 @@
 package com.dotcms.util.pagination;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -9,6 +8,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.SPACE;
 
 /**
  * This implementation of the {@link PaginatorOrdered} class handles the retrieval of paginated
@@ -82,18 +81,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
         final String typeName = Try.of(() -> extraParams.get(TYPE_PARAMETER_NAME).toString().replace("[",BLANK).replace("]", BLANK))
                 .getOrElse(BaseContentType.ANY.name());
         final BaseContentType type = BaseContentType.getBaseContentType(typeName);
-
-        final String ascOrder = OrderDirection.ASC.name().toLowerCase();
-        final String descOrder = OrderDirection.DESC.name().toLowerCase();
-        String orderByParam = UtilMethods.isSet(orderBy)
-                ? orderBy.trim().toLowerCase()
-                : ContentTypeFactory.MOD_DATE_COLUMN + SPACE + descOrder;
-
-        if (!orderByParam.endsWith(SPACE + ascOrder) && !orderByParam.endsWith(SPACE + descOrder)) {
-            orderByParam = orderByParam + SPACE + (UtilMethods.isSet(direction)
-                    ? direction.toString().toLowerCase()
-                    : ascOrder);
-        }
+        final String orderByParam = SQLUtil.getOrderByAndDirectionSql(orderBy, direction);
         try {
             List<ContentType> contentTypes;
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();

@@ -12,12 +12,12 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
+    DotDropdownDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 

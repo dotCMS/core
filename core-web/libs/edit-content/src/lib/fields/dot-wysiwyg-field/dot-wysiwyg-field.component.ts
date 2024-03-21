@@ -1,4 +1,5 @@
 import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
+import { RawEditorOptions } from 'tinymce';
 
 import { ChangeDetectionStrategy, Component, Input, inject, signal } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -23,10 +24,14 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 export class DotWYSIWYGFieldComponent {
     @Input() field!: DotCMSContentTypeField;
 
+    protected readonly init: RawEditorOptions = {
+        menubar: false
+    };
+
     protected readonly plugins = signal(
         'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template'
     );
     protected readonly toolbar = signal(
-        'paste print textpattern | insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image hr | preview | validation media | forecolor dotimageclipboard backcolor emoticons'
+        'insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr'
     );
 }
