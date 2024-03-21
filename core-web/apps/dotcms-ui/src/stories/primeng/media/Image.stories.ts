@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -19,7 +19,7 @@ export default {
 
 const Template = `<p-image [src]="src" [alt]="alt" [preview]="preview"></p-image>`;
 
-export const Main: Story = (args) => {
+export const Main: StoryFn = (args) => {
     return {
         props: {
             src: args.src,

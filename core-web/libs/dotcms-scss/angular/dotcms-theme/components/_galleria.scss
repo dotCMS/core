@@ -3,7 +3,7 @@
 
 .p-galleria {
     & .p-galleria-item-nav {
-        background: rgba(255, 255, 255, 0.65);
+        background: $color-palette-white-op-60;
         color: $color-palette-gray-800;
         width: $spacing-6;
         height: $spacing-6;
@@ -23,11 +23,11 @@
         }
 
         &:not(.p-disabled):hover {
-            background: rgba(255, 255, 255, 0.85);
+            background: $color-palette-white-op-80;
         }
 
         &.p-disabled {
-            background: rgba(255, 255, 255, 0.65);
+            background: $color-palette-white-op-60;
             color: $color-palette-gray-500;
         }
 

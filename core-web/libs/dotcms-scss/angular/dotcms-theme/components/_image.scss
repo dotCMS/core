@@ -14,7 +14,7 @@
 }
 
 .p-image-preview-container:hover > .p-image-preview-indicator {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: $color-palette-black-op-50;
 }
 
 .p-image-toolbar {
@@ -36,7 +36,7 @@
 
     &:hover {
         color: $white;
-        background: rgba(255, 255, 255, 0.2);
+        background: $color-palette-white-op-20;
     }
 
     i {
