@@ -1,15 +1,19 @@
 import { parseData, parseDataForAnalytics } from './parser';
 
 import {
-    CURRENT_TIMESTAMP,
     IsUserIncludedResponse,
-    IsUserIncludedResponseStored,
     LocationMock,
-    TIME_15_DAYS_MILLISECONDS
+    MOCK_CURRENT_TIMESTAMP,
+    MockDataStoredIndexDB,
+    MockDataStoredIndexDBWithNew,
+    MockDataStoredIndexDBWithNew15DaysLater,
+    NewIsUserIncludedResponse,
+    TIME_15_DAYS_MILLISECONDS,
+    TIME_5_DAYS_MILLISECONDS
 } from '../mocks/mock';
-import { AssignedExperiments, Experiment, ExperimentParsed } from '../models';
+import { Experiment, ExperimentParsed } from '../models';
 
-const assignedExperiments: AssignedExperiments = IsUserIncludedResponse.entity;
+const assignedExperiments: Experiment[] = IsUserIncludedResponse.entity.experiments;
 const experimentMock = IsUserIncludedResponse.entity.experiments[0];
 
 describe('Parsers', () => {
@@ -92,87 +96,65 @@ describe('Parsers', () => {
     });
 
     describe('parseData For Store', () => {
-        const oldDataFromIndexDB: AssignedExperiments = IsUserIncludedResponseStored;
-
-        const newExperimentId = '22222-22222-22222-22222-22222';
-        const primaryExperiment: Experiment = IsUserIncludedResponse.entity.experiments[0];
-
-        const newExperimentData: Experiment = { ...primaryExperiment, id: newExperimentId };
-
-        const newDataFromEndpoint: AssignedExperiments = {
-            excludedExperimentIds: ['11111-11111-11111-11111-11111'],
-            experiments: [newExperimentData],
-            includedExperimentIds: [newExperimentId]
-        };
-
         const mockNow = jest.spyOn(Date, 'now');
-        mockNow.mockImplementation(() => CURRENT_TIMESTAMP);
+        mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
 
         beforeEach(() => {
             jest.clearAllMocks();
         });
 
         it('should handle case where only NEW data is available', () => {
-            let experiment = newDataFromEndpoint.experiments[0];
-            experiment = {
-                ...experiment,
-                lookBackWindow: {
-                    ...experiment.lookBackWindow,
-                    expireTime: CURRENT_TIMESTAMP + experiment.lookBackWindow.expireMillis
-                }
-            };
-            const expectedResult: AssignedExperiments = {
-                ...newDataFromEndpoint,
-                excludedExperimentIds: [],
-                experiments: [experiment]
-            };
-            const result = parseData(newDataFromEndpoint, null);
+            // First request, expire in now + experiment.lookBackWindow.expireMillis
+            const newData: Experiment[] | undefined = IsUserIncludedResponse.entity.experiments;
+            const dataFromIndexDB: Experiment[] | undefined = undefined;
 
-            expect(result).toStrictEqual(expectedResult);
+            const parsedData = parseData(newData, dataFromIndexDB);
+
+            expect(parsedData).toStrictEqual(MockDataStoredIndexDB);
+            expect(newData.length).toBe(parsedData.length);
         });
 
         it('should handle case where only OLD data is available', () => {
-            const expectedResult: AssignedExperiments = {
-                ...oldDataFromIndexDB
-            };
-            const result = parseData(null, oldDataFromIndexDB);
+            //No new request, not touch anything if not expired
 
-            expect(result).toStrictEqual(expectedResult);
+            const newData: Experiment[] | undefined = undefined;
+            const dataFromIndexDB: Experiment[] | undefined = MockDataStoredIndexDB;
+
+            const parsedData = parseData(newData, dataFromIndexDB);
+
+            expect(parsedData).toStrictEqual(MockDataStoredIndexDB);
+            expect(MockDataStoredIndexDB.length).toBe(parsedData.length);
         });
 
         it('should handle case where both OLD and NEW data are available', () => {
-            let newExperiment = newDataFromEndpoint.experiments[0];
-            newExperiment = {
-                ...newExperiment,
-                lookBackWindow: {
-                    ...newExperiment.lookBackWindow,
-                    expireTime: CURRENT_TIMESTAMP + newExperiment.lookBackWindow.expireMillis
-                }
-            };
+            //new request, stored data + new data. No delete anything only 5 days passed, 2 to store
 
-            const oldExperimentData = oldDataFromIndexDB.experiments[0];
-            const expectedResult: AssignedExperiments = {
-                excludedExperimentIds: [],
-                experiments: [newExperiment, oldExperimentData],
-                includedExperimentIds: [newExperimentData.id, oldExperimentData.id]
-            };
-            const result = parseData(newDataFromEndpoint, oldDataFromIndexDB);
+            const nowPlus5Days = MOCK_CURRENT_TIMESTAMP + TIME_5_DAYS_MILLISECONDS;
+            mockNow.mockImplementation(() => nowPlus5Days);
 
-            expect(result).toStrictEqual(expectedResult);
+            const newData: Experiment[] | undefined = NewIsUserIncludedResponse.entity.experiments;
+            const dataFromIndexDB: Experiment[] | undefined = MockDataStoredIndexDB;
+
+            const parsedData = parseData(newData, dataFromIndexDB);
+
+            expect(parsedData).toStrictEqual(MockDataStoredIndexDBWithNew);
+
+            expect(parsedData.length).toBe(MockDataStoredIndexDBWithNew.length);
         });
 
         it('should remove from stored experiment the experiments expired', () => {
-            const now15Days = CURRENT_TIMESTAMP + TIME_15_DAYS_MILLISECONDS;
+            // no new request, 15 days later, so expireTime is 15 days from MOCK_CURRENT_TIMESTAMP
+            // 1st experiment expired, so only 1 to store
+            const now15Days = MOCK_CURRENT_TIMESTAMP + TIME_15_DAYS_MILLISECONDS;
             mockNow.mockImplementation(() => now15Days);
 
-            const expectedResult: AssignedExperiments = {
-                excludedExperimentIds: [],
-                experiments: [],
-                includedExperimentIds: []
-            };
-            const result = parseData(null, oldDataFromIndexDB);
+            const newData: Experiment[] | undefined = undefined;
+            const dataFromIndexDB: Experiment[] | undefined = MockDataStoredIndexDBWithNew;
 
-            expect(result).toStrictEqual(expectedResult);
+            const parsedData = parseData(newData, dataFromIndexDB);
+
+            expect(parsedData.length).toBe(MockDataStoredIndexDBWithNew15DaysLater.length);
+            expect(parsedData).toStrictEqual(MockDataStoredIndexDBWithNew15DaysLater);
         });
     });
 });
