@@ -10,6 +10,7 @@ import com.dotcms.experiments.business.ExperimentUrlPatternCalculator;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.TrafficProportion;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -60,10 +61,15 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .filter(experiment -> !idsToExclude.contains(experiment.id().get()))
                     .collect(Collectors.toList()) : experimentsRunning;
 
-        final List<SelectedExperiment> selectedExperiments = pickExperiments(experimentFiltered, request, response)
-                 .map(experiments -> !experiments.isEmpty() ? getSelectedExperimentsResult(experiments)
-                         : getNoneExperimentListResult())
-                 .orElse(Collections.EMPTY_LIST);
+        if (experimentFiltered == null || experimentFiltered.isEmpty()) {
+            return new SelectedExperiments(Collections.EMPTY_LIST, Collections.EMPTY_LIST,
+                    UtilMethods.isSet(idsToExclude) ? new ArrayList(idsToExclude) : Collections.EMPTY_LIST);
+        }
+
+        final List<Experiment> experimentsSelected = pickExperiments(experimentFiltered, request, response);
+
+        final List<SelectedExperiment> selectedExperiments = !experimentsSelected.isEmpty() ?
+                getSelectedExperimentsResult(experimentsSelected) : getNoneExperimentListResult();
 
         return new SelectedExperiments(selectedExperiments,
                 experimentFiltered.stream().map(experiment -> experiment.id().get()).collect(Collectors.toList()),
@@ -160,14 +166,13 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             throw new DotRuntimeException(e);
         }
     }
-
-    private Optional<List<Experiment>> pickExperiments(final List<Experiment> runningExperiments,
+    
+    private List<Experiment> pickExperiments(final List<Experiment> runningExperiments,
             final HttpServletRequest request, final HttpServletResponse response)
             throws DotDataException, DotSecurityException {
 
-        if (runningExperiments == null || runningExperiments.isEmpty()) {
-            return Optional.empty();
-        }
+        DotPreconditions.isTrue(runningExperiments != null && !runningExperiments.isEmpty(),
+                "Running Experiment can't be empty or null");
 
         final List<Experiment> experiments = new ArrayList<>();
 
@@ -181,7 +186,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             }
         }
 
-        return Optional.of(experiments);
+        return experiments;
     }
 
     private HTMLPageAsset getHtmlPageAsset(final Experiment experiment) {

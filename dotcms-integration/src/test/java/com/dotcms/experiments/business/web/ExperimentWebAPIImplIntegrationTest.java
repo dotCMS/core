@@ -1126,17 +1126,32 @@ public class ExperimentWebAPIImplIntegrationTest {
 
         APILocator.getExperimentsAPI().start(experiment.id().get(), APILocator.systemUser());
 
-        final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getParameter("host_id")).thenReturn(siteB.getIdentifier());
-
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
-        final SelectedExperiments userIncluded = WebAPILocator.getExperimentWebAPI().isUserIncluded(request, response,
+        final HttpServletRequest request_1 = mock(HttpServletRequest.class);
+        when(request_1.getParameter("host_id")).thenReturn(siteA.getIdentifier());
+
+        final SelectedExperiments userIncluded_1 = WebAPILocator.getExperimentWebAPI().isUserIncluded(request_1, response,
                 Collections.EMPTY_LIST);
 
-        assertTrue(userIncluded.getIncludedExperimentIds().isEmpty());
-        assertTrue(userIncluded.getExperiments().isEmpty());
-        assertTrue(userIncluded.getExcludedExperimentIds().isEmpty());
+        assertEquals(1, userIncluded_1.getIncludedExperimentIds().size());
+        assertEquals(experiment.id().get(), userIncluded_1.getIncludedExperimentIds().get(0));
+
+
+        assertEquals(1, userIncluded_1.getExperiments().size());
+        assertEquals(experiment.id().get(), userIncluded_1.getExperiments().get(0).id());
+
+        assertTrue(userIncluded_1.getExcludedExperimentIds().isEmpty());
+
+        final HttpServletRequest request_2 = mock(HttpServletRequest.class);
+        when(request_2.getParameter("host_id")).thenReturn(siteB.getIdentifier());
+
+        final SelectedExperiments userIncluded_2 = WebAPILocator.getExperimentWebAPI().isUserIncluded(request_2, response,
+                Collections.EMPTY_LIST);
+
+        assertTrue(userIncluded_2.getIncludedExperimentIds().isEmpty());
+        assertTrue(userIncluded_2.getExperiments().isEmpty());
+        assertTrue(userIncluded_2.getExcludedExperimentIds().isEmpty());
     }
 
     /**
