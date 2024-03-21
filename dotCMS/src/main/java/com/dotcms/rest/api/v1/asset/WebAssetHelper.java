@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.asset;
 
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
@@ -559,26 +561,39 @@ public class WebAssetHelper {
      * @throws DotDataException any data related exception
      * @throws DotSecurityException any security violation exception
      */
-    Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live) throws DotDataException, DotSecurityException {
+    Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live)
+            throws DotDataException, DotSecurityException {
 
-        if(!permissionAPI.doesUserHavePermission(checkout, PermissionAPI.PERMISSION_PUBLISH, user, false)){
-            Logger.info(this, String.format("User [%s] does not have permission to publish asset [%s]", user.getUserId(), checkout.getIdentifier()));
+        if (!permissionAPI.doesUserHavePermission(checkout, PermissionAPI.PERMISSION_PUBLISH, user,
+                false)) {
+            Logger.info(this,
+                    String.format("User [%s] does not have permission to publish asset [%s]",
+                            user.getUserId(), checkout.getIdentifier()));
             return checkout;
+        }
+
+        var contentletToProcess = checkout;
+        var checkedIn = false;
+
+        if (isNotSet(checkout.getInode())) {
+            contentletToProcess = contentletAPI.checkin(contentletToProcess, user, false);
+            checkedIn = true;
         }
 
         if (live) {
             //Live means publish, so we need to publish the contentlet
-            contentletAPI.publish(checkout, user, false);
+            contentletAPI.publish(contentletToProcess, user, false);
         } else {
-            //if the desired state is working we need to unpublish the contentlet
-            if(checkout.isLive()){
-                contentletAPI.unpublish(checkout, user, false);
-            } else {
-                return contentletAPI.checkin(checkout, user, false);
+
+            if (checkout.isLive()) {
+                //if the desired state is working we need to unpublish the contentlet
+                contentletAPI.unpublish(contentletToProcess, user, false);
+            } else if (!checkedIn) {
+                return contentletAPI.checkin(contentletToProcess, user, false);
             }
         }
 
-        return checkout;
+        return contentletToProcess;
     }
 
     /**
