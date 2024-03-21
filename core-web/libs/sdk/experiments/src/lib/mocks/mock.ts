@@ -1,4 +1,6 @@
-import { AssignedExperiments, ExperimentEvent, IsUserIncludedApiResponse } from '../models';
+import { store } from 'next/dist/build/output/store';
+
+import { Experiment, ExperimentEvent, IsUserIncludedApiResponse } from '../models';
 
 /**
  * Represents the response object for the IsUserIncluded API.
@@ -16,7 +18,7 @@ export const IsUserIncludedResponse: IsUserIncludedApiResponse = {
                 id: '11111-11111-11111-11111-11111',
                 lookBackWindow: {
                     expireMillis: 1209600000,
-                    value: 'Q5KtspItPxWJYKVniq6A'
+                    value: 'AAAAAAAAAA'
                 },
                 name: 'Exp1',
                 pageUrl: '/blog/index',
@@ -25,10 +27,10 @@ export const IsUserIncludedResponse: IsUserIncludedApiResponse = {
                         '^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/blog(\\/index|\\/)?(\\/?\\?.*)?$',
                     isTargetPage: '.*destinations.*'
                 },
-                runningId: '1f467fb0-cb3e-49c3-8b5d-126a86c95462',
+                runningId: '1111111-22222222',
                 variant: {
-                    name: 'dotexperiment-d5f1eb69a0-variant-1',
-                    url: '/blog/index?variantName=dotexperiment-d5f1eb69a0-variant-1'
+                    name: 'variant-1',
+                    url: '/blog/index?variantName=variant-1'
                 }
             }
         ],
@@ -39,22 +41,79 @@ export const IsUserIncludedResponse: IsUserIncludedApiResponse = {
     messages: []
 };
 
-export const CURRENT_TIMESTAMP = 1630629253956;
+export const NewIsUserIncludedResponse: IsUserIncludedApiResponse = {
+    entity: {
+        excludedExperimentIds: ['11111-11111-11111-11111-11111'],
+        experiments: [
+            {
+                id: '222222-222222-222222-222222-222222',
+                lookBackWindow: {
+                    expireMillis: 1209600000,
+                    value: 'BBBBBBBBBBBBBB'
+                },
+                name: 'Exp2',
+                pageUrl: '/destinations/index',
+                regexs: {
+                    isExperimentPage:
+                        '^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/destinations(\\/index|\\/)?(\\/?\\?.*)?$',
+                    isTargetPage: null
+                },
+                runningId: '33333333-3333333333',
+                variant: {
+                    name: 'variant-1',
+                    url: '/blog/index?variantName=variant-1'
+                }
+            }
+        ],
+        includedExperimentIds: ['222222-222222-222222-222222-222222']
+    },
+    errors: [],
+    i18nMessagesMap: {},
+    messages: []
+};
 
-export const TIME_15_DAYS_MILLISECONDS = 15 * 24 * 60 * 60 * 1000;
+export const MOCK_CURRENT_TIMESTAMP = 1710969341000;
 
-let storedExperiment = IsUserIncludedResponse.entity.experiments[0];
-storedExperiment = {
-    ...storedExperiment,
-    lookBackWindow: {
-        ...storedExperiment.lookBackWindow,
-        expireTime: CURRENT_TIMESTAMP + storedExperiment.lookBackWindow.expireMillis - 86400000
+export const TIME_15_DAYS_MILLISECONDS = 1296000 * 1000;
+
+export const TIME_5_DAYS_MILLISECONDS = 432000 * 1000;
+
+export const MockDataStoredIndexDB: Experiment[] = [
+    {
+        ...IsUserIncludedResponse.entity.experiments[0],
+        lookBackWindow: {
+            ...IsUserIncludedResponse.entity.experiments[0].lookBackWindow,
+            // Added expireTime to the lookBackWindow
+            expireTime:
+                MOCK_CURRENT_TIMESTAMP +
+                IsUserIncludedResponse.entity.experiments[0].lookBackWindow.expireMillis
+        }
     }
-};
-export const IsUserIncludedResponseStored: AssignedExperiments = {
-    ...IsUserIncludedResponse.entity,
-    experiments: [storedExperiment]
-};
+];
+
+export const MockDataStoredIndexDBNew: Experiment[] = [
+    {
+        ...NewIsUserIncludedResponse.entity.experiments[0],
+        lookBackWindow: {
+            ...NewIsUserIncludedResponse.entity.experiments[0].lookBackWindow,
+            // Added expireTime to the lookBackWindow
+            expireTime:
+                // 2nd request, 5 days later, so expireTime is 5 days from MOCK_CURRENT_TIMESTAMP
+                MOCK_CURRENT_TIMESTAMP +
+                TIME_5_DAYS_MILLISECONDS +
+                NewIsUserIncludedResponse.entity.experiments[0].lookBackWindow.expireMillis
+        }
+    }
+];
+
+// Final data to be stored in IndexedDB of 1 old experiment and 1 new experiment
+export const MockDataStoredIndexDBWithNew: Experiment[] = [
+    ...MockDataStoredIndexDBNew,
+    ...MockDataStoredIndexDB
+];
+
+// Mock Store after 15 days
+export const MockDataStoredIndexDBWithNew15DaysLater: Experiment[] = [...MockDataStoredIndexDBNew];
 
 /**
  * Represents an event that indicates the expected experiments parsed from a response to send to Analytics.
@@ -103,4 +162,25 @@ export const LocationMock: Location = {
         return '';
     },
     ancestorOrigins: {} as DOMStringList
+};
+
+export const sessionStorageMock = {
+    getItem: function (key: string): string | null {
+        return store[key] || null;
+    },
+    setItem: function (key: string, value: string) {
+        store[key] = value;
+    },
+    removeItem: function (key: string) {
+        delete store[key];
+    },
+    clear: function () {
+        Object.keys(store).forEach((key) => delete store[key]);
+    },
+    key: function (index: number) {
+        return Object.keys(store)[index] || null;
+    },
+    get length() {
+        return Object.keys(store).length;
+    }
 };

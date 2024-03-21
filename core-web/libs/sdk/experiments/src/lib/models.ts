@@ -49,7 +49,7 @@ interface Regexs {
  * @property {string} name - The name of the variant.
  * @property {string} url - The fully qualified URL where the variant is being applied, with query parameters already set.
  */
-interface Variant {
+export interface Variant {
     name: string;
     url: string;
 }
@@ -168,5 +168,5 @@ export interface ExperimentEvent {
  */
 export interface IndexDbStoredData {
     created: number;
-    experiments: AssignedExperiments;
+    experiments: Experiment[];
 }

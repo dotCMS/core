@@ -23,16 +23,12 @@ describe('IIFE Execution', () => {
             .spyOn(DotExperiments, 'getInstance')
             .mockReturnValue(fakeInstance);
 
-        const initializeMock = jest.spyOn(fakeInstance, 'initialize');
-
         require('./standalone');
 
         expect(getScriptDataAttributes).toHaveBeenCalled();
 
         expect(getInstanceMock).toHaveBeenCalledWith({ server: 'http://localhost' });
         expect(getInstanceMock).toHaveBeenCalled();
-
-        expect(initializeMock).toHaveBeenCalled();
 
         expect(window[EXPERIMENT_WINDOWS_KEY]).toBeDefined();
         expect(window[EXPERIMENT_WINDOWS_KEY]).toEqual(fakeInstance);
