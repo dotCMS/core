@@ -6,6 +6,24 @@
 export const EXPERIMENT_WINDOWS_KEY = 'dotExperiment';
 
 /**
+ * The key used to store or retrieve the information in the SessionStore
+ * indicating whether an experiment has already been checked.
+ *
+ * @type {string}
+ */
+export const EXPERIMENT_ALREADY_CHECKED_KEY = 'experimentAlreadyCheck';
+
+/**
+ * The duration in milliseconds for which data should be stored in the local storage.
+ *
+ * @type {number}
+ * @constant
+ * @default 86400000 (A day)
+ *
+ */
+export const LOCAL_STORAGE_TIME_DURATION_MILLISECONDS = 86400000;
+
+/**
  * The name of the experiment script file.
  *
  * @constant {string}
@@ -40,14 +58,6 @@ export const EXPERIMENT_ALLOWED_DATA_ATTRIBUTES = [
  * @constant
  */
 export const API_EXPERIMENTS_URL = 'api/v1/experiments/isUserIncluded';
-
-/**
- * The name of the experiment database in the IndexDB.
- *
- * @type {string}
- * @constant
- */
-export const EXPERIMENT_DB_NAME = 'DotExperimentDB';
 
 /**
  * The name of the experiment database store in indexDB.

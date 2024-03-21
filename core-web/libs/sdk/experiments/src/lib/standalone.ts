@@ -20,6 +20,7 @@ if (window) {
         const dataAttributes = getScriptDataAttributes();
         if (dataAttributes) {
             window[EXPERIMENT_WINDOWS_KEY] = DotExperiments.getInstance({ ...dataAttributes });
+            window[EXPERIMENT_WINDOWS_KEY].initialize();
         }
     } catch (error) {
         throw new Error(`Error instancing DotExperiments: ${error}`);

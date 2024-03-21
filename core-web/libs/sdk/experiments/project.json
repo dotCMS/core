@@ -12,7 +12,7 @@
                 "main": "libs/sdk/experiments/src/lib/standalone.ts",
                 "tsConfig": "libs/sdk/experiments/tsconfig.lib.json",
                 "project": "libs/sdk/experiments/package.json",
-                "assets": ["libs/sdk/experiments/README.md"]
+                "assets": ["libs/sdk/experiments/README.md", "libs/sdk/experiments/package.json"]
             }
         },
         "publish": {

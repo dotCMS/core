@@ -52,6 +52,14 @@ p-galleria {
     p-galleriacontent {
         width: 100%;
     }
+
+    dot-empty-container .message__icon {
+        color: $red;
+    }
+
+    .message__principal-wrapper {
+        padding: 0 4.5rem;
+    }
 }
 
 .ai-image-gallery_skeleton {

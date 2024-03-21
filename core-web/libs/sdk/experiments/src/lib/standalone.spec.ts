@@ -14,15 +14,16 @@ jest.mock('./utils/utils', () => ({
 }));
 
 describe('IIFE Execution', () => {
-    beforeEach(() => {
-        // /delete window[EXPERIMENT_WINDOWS_KEY];
-    });
     it('should call getScriptDataAttributes and set window[EXPERIMENT_WINDOWS_KEY]', () => {
-        const fakeInstance = {} as DotExperiments;
+        const fakeInstance = {
+            initialize: jest.fn()
+        } as unknown as DotExperiments;
 
         const getInstanceMock = jest
             .spyOn(DotExperiments, 'getInstance')
             .mockReturnValue(fakeInstance);
+
+        const initializeMock = jest.spyOn(fakeInstance, 'initialize');
 
         require('./standalone');
 
@@ -30,6 +31,8 @@ describe('IIFE Execution', () => {
 
         expect(getInstanceMock).toHaveBeenCalledWith({ server: 'http://localhost' });
         expect(getInstanceMock).toHaveBeenCalled();
+
+        expect(initializeMock).toHaveBeenCalled();
 
         expect(window[EXPERIMENT_WINDOWS_KEY]).toBeDefined();
         expect(window[EXPERIMENT_WINDOWS_KEY]).toEqual(fakeInstance);
