@@ -336,7 +336,7 @@ class ContentTypeCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                    "--name", "FileAsset", "--page", "0", "--pageSize", "1000");
+                    "--name", "FileAsset", "--page", "0", "--pageSize", "10");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("varName: [FileAsset]"));
