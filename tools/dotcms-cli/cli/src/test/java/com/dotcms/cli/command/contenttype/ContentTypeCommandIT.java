@@ -336,7 +336,7 @@ class ContentTypeCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                    "--name", "FileAsset", "--page", "0", "--pageSize", "10");
+                    "--name", "FileAsset", "--page", "0", "--pageSize", "1000");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("varName: [FileAsset]"));
@@ -348,13 +348,13 @@ class ContentTypeCommandIT extends CommandTest {
      * Expected result: The output should come back ordered by varName and direction ASC
      */
     @Test
-    void Test_Command_Content_Filter_Order_By_Variable_Ascending() {
+    void Test_Command_Content_Order_By_Variable_Ascending() {
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                     "--page", "0", "--pageSize", "10", "--order", "variable", "--direction", "ASC");
+                     "--page", "0", "--pageSize", "1000", "--order", "variable", "--direction", "ASC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("varName",output);
@@ -368,13 +368,13 @@ class ContentTypeCommandIT extends CommandTest {
      * Expected result: The output should come back ordered by varName and direction DESC
      */
     @Test
-    void Test_Command_Content_Filter_Order_By_Variable_Descending() {
+    void Test_Command_Content_Order_By_Variable_Descending() {
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                    "--page", "0", "--pageSize", "10", "--order", "variable", "--direction", "DESC");
+                    "--page", "0", "--pageSize", "1000", "--order", "variable", "--direction", "DESC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("varName",output);
@@ -394,7 +394,7 @@ class ContentTypeCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                    "--page", "0", "--pageSize", "10", "--order", "modDate", "--direction", "DESC");
+                    "--page", "0", "--pageSize", "1000", "--order", "modDate", "--direction", "DESC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("modDate",output);
@@ -415,7 +415,7 @@ class ContentTypeCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                    "--page", "0", "--pageSize", "10", "--order", "modDate", "--direction", "ASC");
+                    "--page", "0", "--pageSize", "1000", "--order", "modDate", "--direction", "ASC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("modDate",output);
