@@ -1,4 +1,24 @@
 <script type="application/javascript" src="/html/portlet/ext/dotai/dotai.js"></script>
+<script>
+    dojo.addOnLoad(function () {
+        setUpValuesFromPreferences();
+        refreshIndexes()
+            .then(() => {
+                writeIndexesToDropdowns();
+                writeIndexManagementTable();
+            });
+
+        refreshConfigs().then(() => {
+            writeConfigTable();
+            writeModelToDropdown();
+            alert
+            if (dotAiState.config["apiKey"] != "*****") {
+                document.getElementById("openAIKeyWarn").style.display = "block";
+            }
+        });
+        showResultTables();
+    });
+</script>
 <link rel="stylesheet" type="text/css" href="/html/portlet/ext/dotai/dotai.css">
 
 <div id="openAIKeyWarn"

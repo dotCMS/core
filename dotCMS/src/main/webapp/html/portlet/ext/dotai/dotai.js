@@ -274,27 +274,6 @@ const writeIndexManagementTable = async () => {
     }
 }
 
-
-window.addEventListener('load', function () {
-    setUpValuesFromPreferences();
-    refreshIndexes()
-        .then(() => {
-            writeIndexesToDropdowns();
-            writeIndexManagementTable();
-        });
-
-    refreshConfigs().then(() => {
-        writeConfigTable();
-        writeModelToDropdown();
-        alert
-        if (dotAiState.config["apiKey"] != "*****") {
-            document.getElementById("openAIKeyWarn").style.display = "block";
-        }
-    });
-    showResultTables();
-});
-
-
 const tab1 = () => {
     refreshIndexes()
         .then(() => {
