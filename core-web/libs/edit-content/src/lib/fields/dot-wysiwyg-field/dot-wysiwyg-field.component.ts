@@ -42,9 +42,10 @@ export class DotWYSIWYGFieldComponent {
 
     protected readonly init: RawEditorOptions = {
         menubar: false,
-        setup: (editor) => {
-            this.dotWysiwygPluginService.initializePlugins(editor);
-        }
+        image_caption: true,
+        image_advtab: true,
+        contextmenu: 'align link image',
+        setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor)
     };
 
     protected readonly plugins = signal(
@@ -52,6 +53,6 @@ export class DotWYSIWYGFieldComponent {
     );
 
     protected readonly toolbar = signal(
-        'insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr | dotAddImage'
+        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr | dotAddImage'
     );
 }

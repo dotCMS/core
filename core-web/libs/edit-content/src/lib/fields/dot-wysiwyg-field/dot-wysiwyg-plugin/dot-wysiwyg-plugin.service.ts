@@ -24,12 +24,11 @@ export class DotWysiwygPluginService {
 
     private dotImagePlugin(editor: Editor): void {
         editor.ui.registry.addButton('dotAddImage', {
-            text: 'Dot Image',
             icon: 'image',
             onAction: () => {
                 this.ngZone.run(() => {
                     const ref = this.dialogService.open(DotAssetSearchDialogComponent, {
-                        header: 'Add Image',
+                        header: 'Insert Image',
                         width: '800px',
                         height: '500px',
                         contentStyle: { padding: 0 },
