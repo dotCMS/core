@@ -8,13 +8,12 @@ import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
+    DotPageStateService,
     DotRouterService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { DotCMSResponse, HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
-
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
 /**
  * With the url return a string of the edit page html

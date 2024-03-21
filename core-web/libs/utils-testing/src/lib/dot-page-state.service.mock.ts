@@ -1,13 +1,15 @@
-import { Injectable } from '@angular/core';
 import { of, Observable, BehaviorSubject } from 'rxjs';
 
-import { mockDotRenderedPageState } from './dot-rendered-page-state.mock';
+import { Injectable } from '@angular/core';
+
 import {
     DotDevice,
     DotPageRenderOptions,
     DotPageRenderState,
     DotPersona
 } from '@dotcms/dotcms-models';
+
+import { mockDotRenderedPageState } from './dot-rendered-page-state.mock';
 
 @Injectable()
 export class DotPageStateServiceMock {

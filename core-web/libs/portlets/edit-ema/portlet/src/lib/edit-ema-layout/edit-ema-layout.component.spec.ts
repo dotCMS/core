@@ -12,6 +12,7 @@ import { MessageService } from 'primeng/api';
 
 import {
     DotContentTypeService,
+    DotExperimentsService,
     DotLicenseService,
     DotMessageService,
     DotPageLayoutService,
@@ -19,7 +20,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
-import { MockDotRouterJestService } from '@dotcms/utils-testing';
+import { DotExperimentsServiceMock, MockDotRouterJestService } from '@dotcms/utils-testing';
 
 import { EditEmaLayoutComponent } from './edit-ema-layout.component';
 
@@ -47,7 +48,11 @@ describe('EditEmaLayoutComponent', () => {
             MessageService,
             DotMessageService,
             DotActionUrlService,
-            { provide: DotRouterService, useClass: MockDotRouterJestService },
+            {
+                provide: DotExperimentsService,
+                useValue: DotExperimentsServiceMock
+            },
+            { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
             {
                 provide: DotLicenseService,
                 useValue: {
