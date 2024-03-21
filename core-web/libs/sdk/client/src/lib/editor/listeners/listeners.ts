@@ -113,7 +113,8 @@ export function listenHoveredContentlet() {
                 identifier: target.dataset?.['dotIdentifier'],
                 title: target.dataset?.['dotTitle'],
                 inode: target.dataset?.['dotInode'],
-                contentType: target.dataset?.['dotType']
+                contentType: target.dataset?.['dotType'],
+                onNumberOfPages: target.dataset?.['dotOnNumberOfPages']
             }
         };
 

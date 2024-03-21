@@ -1,10 +1,11 @@
 import {
     EXPERIMENT_ALLOWED_DATA_ATTRIBUTES,
     EXPERIMENT_ALREADY_CHECKED_KEY,
-    EXPERIMENT_SCRIPT_FILE_NAME,
-    LOCAL_STORAGE_TIME_DURATION_MILLISECONDS
+    EXPERIMENT_FETCH_EXPIRE_TIME_KEY,
+    EXPERIMENT_QUERY_PARAM_KEY,
+    EXPERIMENT_SCRIPT_FILE_NAME
 } from '../constants';
-import { DotExperimentConfig, IndexDbStoredData } from '../models';
+import { DotExperimentConfig, Experiment, Variant } from '../models';
 
 /**
  * Returns the first script element that includes the experiment script identifier.
@@ -29,20 +30,18 @@ export const getExperimentScriptTag = (): HTMLScriptElement => {
  *
  * @return {DotExperimentConfig | null} - The experiment attributes or null if there are no valid attributes present.
  */
-export const getDataExperimentAttributes = (): DotExperimentConfig | null => {
+export const getDataExperimentAttributes = (location: Location): DotExperimentConfig | null => {
     const script = getExperimentScriptTag();
     const defaultExperimentAttributes: DotExperimentConfig = {
         'api-key': '',
-        server: window.location.href,
+        server: location.href,
         debug: false
     };
 
     let experimentAttribute: Partial<DotExperimentConfig> = {};
 
     if (!script.hasAttribute('data-experiment-api-key')) {
-        dotLogger('You need specify the `data-experiment-api-key`');
-
-        return null;
+        throw new Error('You need specify the `data-experiment-api-key`');
     }
 
     Array.from(script.attributes).forEach((attr) => {
@@ -84,8 +83,8 @@ export const getDataExperimentAttributes = (): DotExperimentConfig | null => {
  *
  * @returns {DotExperimentConfig | null} The data attributes of the experiment script tag, or null if no experiment script is found.
  */
-export const getScriptDataAttributes = (): DotExperimentConfig | null => {
-    const dataExperimentAttributes = getDataExperimentAttributes();
+export const getScriptDataAttributes = (location: Location): DotExperimentConfig | null => {
+    const dataExperimentAttributes = getDataExperimentAttributes(location);
 
     if (dataExperimentAttributes) {
         return dataExperimentAttributes;
@@ -123,15 +122,85 @@ export const checkFlagExperimentAlreadyChecked = (): boolean => {
  * Checks if the data needs to be invalidated based on the creation date.
  *
  * @returns {boolean} - True if the data needs to be invalidated, false otherwise.
- * @param dbData
  */
-export const checkInvalidateDataChecked = (dbData: IndexDbStoredData): boolean => {
-    if (!dbData) {
+export const isDataCreateValid = (): boolean => {
+    try {
+        const timeValidUntil = Number(localStorage.getItem(EXPERIMENT_FETCH_EXPIRE_TIME_KEY));
+        if (isNaN(timeValidUntil)) {
+            return false;
+        }
+
+        const now = Date.now();
+
+        return timeValidUntil > now;
+    } catch (error) {
+        console.error('Error checking data validity', error);
+
+        return false;
+    }
+};
+
+/**
+ * Ad to an absolute path the baseUrl depending on the location.
+ *
+ * @param {string | null} absolutePath - The absolute path of the URL.
+ * @param {Location} location - The location object representing the current URL.
+ * @returns {string | null} - The full URL or null if absolutePath is null.
+ */
+export const getFullUrl = (location: Location, absolutePath: string | null): string | null => {
+    if (absolutePath === null) {
+        return null;
+    }
+
+    if (!isFullUrl(absolutePath)) {
+        const baseUrl = location.origin;
+
+        return `${baseUrl}${absolutePath}`;
+    }
+
+    return absolutePath;
+};
+
+const isFullUrl = (url: string): boolean => {
+    const pattern = /^https?:\/\//i;
+
+    return pattern.test(url);
+};
+
+/**
+ * Updates the URL with the queryParam with the experiment variant name.
+ *
+ * @param {Location|string} location - The current location object or the URL string.
+ * @param {Variant} variant - The experiment variant to update the URL with.
+ * @returns {string} The updated URL string.
+ */
+export const updateUrlWithExperimentVariant = (
+    location: Location | string,
+    variant: Variant
+): string => {
+    const href = typeof location === 'string' ? location : location.href;
+    const url = new URL(href);
+
+    if (variant !== null) {
+        const params = url.searchParams;
+        params.set(EXPERIMENT_QUERY_PARAM_KEY, variant.name);
+        url.search = params.toString();
+    }
+
+    return url.toString();
+};
+
+/**
+ * Check if two arrays of Experiment objects are equal.
+ *
+ * @param {Experiment[]} obj1 - The first array of Experiment objects.
+ * @param {Experiment[]} obj2 - The second array of Experiment objects.
+ * @return {boolean} - True if the arrays are equal, false otherwise.
+ */
+export const objectsAreEqual = (obj1: Experiment[], obj2: Experiment[]): boolean => {
+    if (obj1.length === 0 && obj2.length === 0) {
         return false;
     }
 
-    const { created } = dbData;
-    const now = Date.now();
-
-    return now - created > LOCAL_STORAGE_TIME_DURATION_MILLISECONDS;
+    return JSON.stringify(obj1) === JSON.stringify(obj2);
 };

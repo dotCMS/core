@@ -1,4 +1,4 @@
-import { AssignedExperiments, Experiment, ExperimentParsed } from '../models';
+import { Experiment, ExperimentParsed } from '../models';
 
 /**
  * This arrow function parses a given set of assigned experiments for analytics.
@@ -9,9 +9,9 @@ import { AssignedExperiments, Experiment, ExperimentParsed } from '../models';
  *
  * The parsed data is useful for tracking and understanding the user's interaction with the experiment-targeted components during their visit.
  *
- * @param {AssignedExperiments} data - This parameter represents the assigned experiments data received from DotCMS endpoint.
  * Contains an object with experiments information.
  *
+ * @param experiments
  * @param {Location} location - This parameter is the object representing the current location (URL) of the user.
  * Mostly employed for matching the regular expressions to detect whether the current page is an 'ExperimentPage' or a 'TargetPage'.
  *
@@ -20,11 +20,10 @@ import { AssignedExperiments, Experiment, ExperimentParsed } from '../models';
  * look back window value, and booleans that represent whether current URL is 'isExperimentPage' or 'isTargetPage' for the respective experiment.
  */
 export const parseDataForAnalytics = (
-    data: AssignedExperiments,
+    experiments: Experiment[],
     location: Location
 ): ExperimentParsed => {
     const currentHref = location.href;
-    const { experiments } = data;
 
     return {
         href: currentHref,
@@ -46,7 +45,7 @@ export const parseDataForAnalytics = (
  * @param {string} href - This is the target URL, which is aimed to be matched against the provided regular expression.
  * @returns {boolean} -The function returns a Boolean value.
  */
-const verifyRegex = (regexToCheck: string | null, href: string): boolean => {
+export const verifyRegex = (regexToCheck: string | null, href: string): boolean => {
     if (regexToCheck === null) {
         return false;
     }
@@ -82,59 +81,37 @@ const verifyRegex = (regexToCheck: string | null, href: string): boolean => {
  * There could be scenarios where none of these conditions are met, in that case, dataToStorage will be the default empty object.
  */
 export const parseData = (
-    fetchExperiments: AssignedExperiments | null,
-    storedExperiments: AssignedExperiments | null
-): AssignedExperiments => {
-    let dataToStorage: AssignedExperiments = {} as AssignedExperiments;
+    fetchExperiments: Experiment[] | undefined,
+    storedExperiments: Experiment[] | undefined
+): Experiment[] => {
+    let dataToStorage: Experiment[] = {} as Experiment[];
 
     if (fetchExperiments && !storedExperiments) {
         // TODO: Use fetchExperiment instead fetchExperimentsNoNoneExperimentID when the endpoint dont retrieve NONE experiment
         // https://github.com/dotCMS/core/issues/27905
-        const fetchExperimentsNoNoneExperimentID: AssignedExperiments = {
-            ...fetchExperiments,
-            experiments: fetchExperiments?.experiments
-                ? fetchExperiments.experiments.filter((experiment) => experiment.id !== 'NONE')
-                : []
-        };
+        const fetchExperimentsNoNoneExperimentID: Experiment[] = fetchExperiments
+            ? fetchExperiments.filter((experiment) => experiment.id !== 'NONE')
+            : [];
 
-        dataToStorage = {
-            ...fetchExperimentsNoNoneExperimentID,
-            experiments: [
-                ...setExpireTimeNewExperiments(fetchExperimentsNoNoneExperimentID.experiments)
-            ]
-        };
+        dataToStorage = addExpireTimeToExperiments(fetchExperimentsNoNoneExperimentID);
     }
 
     if (!fetchExperiments && storedExperiments) {
-        dataToStorage = {
-            ...storedExperiments,
-            experiments: getUnexpiredExperiments(storedExperiments.experiments)
-        };
+        dataToStorage = getUnexpiredExperiments(storedExperiments);
     }
 
     if (fetchExperiments && storedExperiments) {
         // TODO: Use fetchExperiment instead fetchExperimentsNoNoneExperimentID when the endpoint dont retrieve NONE experiment
         // https://github.com/dotCMS/core/issues/27905
-        const fetchExperimentsNoNoneExperimentID: AssignedExperiments = {
-            ...fetchExperiments,
-            experiments: fetchExperiments?.experiments
-                ? fetchExperiments.experiments.filter((experiment) => experiment.id !== 'NONE')
-                : []
-        };
-        dataToStorage = {
-            ...fetchExperimentsNoNoneExperimentID,
-            experiments: [
-                ...setExpireTimeNewExperiments(fetchExperimentsNoNoneExperimentID.experiments),
-                ...getUnexpiredExperiments(storedExperiments.experiments)
-            ]
-        };
-    }
+        const fetchExperimentsNoNoneExperimentID: Experiment[] = fetchExperiments
+            ? fetchExperiments.filter((experiment) => experiment.id !== 'NONE')
+            : [];
 
-    dataToStorage = {
-        ...dataToStorage,
-        excludedExperimentIds: [],
-        includedExperimentIds: [...getExperimentsIds(dataToStorage)]
-    };
+        dataToStorage = [
+            ...addExpireTimeToExperiments(fetchExperimentsNoNoneExperimentID),
+            ...getUnexpiredExperiments(storedExperiments)
+        ];
+    }
 
     return dataToStorage;
 };
@@ -142,11 +119,11 @@ export const parseData = (
 /**
  * Retrieves the array of experiment IDs from the given AssignedExperiments..
  *
- * @param {AssignedExperiments} dataToStorage - The object containing assigned experiments.
  * @returns {string[]} Returns an array of experiment IDs if available, otherwise an empty array.
+ * @param experiments
  */
-const getExperimentsIds = (dataToStorage: AssignedExperiments): string[] =>
-    dataToStorage.experiments.map((experiment: Experiment) => experiment.id) || [];
+export const getExperimentsIds = (experiments: Experiment[]): string[] =>
+    experiments.map((experiment: Experiment) => experiment.id) || [];
 
 /**
  * Sets the expire time for new experiments based on the current time.
@@ -155,7 +132,7 @@ const getExperimentsIds = (dataToStorage: AssignedExperiments): string[] =>
  * @param {Array<Experiment>} experiments - An array of experiments to set the expire time for.
  * @returns {Array<Experiment>} - An updated array of experiments with expire time set.
  */
-const setExpireTimeNewExperiments = (experiments: Experiment[]) => {
+const addExpireTimeToExperiments = (experiments: Experiment[]): Experiment[] => {
     const now = Date.now();
 
     return experiments.map((experiment) => ({
