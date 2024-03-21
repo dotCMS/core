@@ -200,12 +200,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             map(({ rows }) => parseFromGridStackToDotObject(rows))
         );
 
-        combineLatest([
-            this.rows$,
-            this.store.layoutProperties$,
-            this.themeId$
-            // this.store.templateIdentifier$
-        ])
+        combineLatest([this.rows$, this.store.layoutProperties$, this.themeId$])
             .pipe(
                 filter(([items, layoutProperties]) => {
                     return !!items && !!layoutProperties;

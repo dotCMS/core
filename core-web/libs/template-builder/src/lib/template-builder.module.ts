@@ -1,4 +1,4 @@
-import { AsyncPipe, JsonPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
+import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { DividerModule } from 'primeng/divider';
@@ -18,8 +18,6 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         NgFor,
         AsyncPipe,
         DotMessagePipe,
-        //TODO: Remove later
-        JsonPipe,
         DynamicDialogModule,
         NgStyle,
         NgClass,
