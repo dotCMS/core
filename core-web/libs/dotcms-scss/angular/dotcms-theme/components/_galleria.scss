@@ -17,8 +17,8 @@
         }
 
         .p-icon-wrapper .p-icon {
-            width: $font-size-default;
-            height: $font-size-default;
+            width: $spacing-2;
+            height: $spacing-2;
         }
 
         &:not(.p-disabled):hover {
