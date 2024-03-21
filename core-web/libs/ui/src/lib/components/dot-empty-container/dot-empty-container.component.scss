@@ -15,12 +15,12 @@
 }
 .message__title {
     font-size: $font-size-lg;
-    font-weight: $font-weight-bold;
+    font-weight: $font-weight-semi-bold;
     color: $black;
 }
 .message__subtitle {
     font-size: $font-size-md;
-    font-weight: $font-weight-regular-bold;
+    font-weight: $font-weight-semi-bold;
     color: $color-palette-gray-700;
 }
 
@@ -33,5 +33,8 @@
     color: $black;
     text-align: center;
     font-size: $font-size-md;
-    font-weight: $font-weight-regular-bold;
+    font-weight: $font-weight-semi-bold;
+}
+.message__principal-wrapper {
+    word-break: break-word;
 }
