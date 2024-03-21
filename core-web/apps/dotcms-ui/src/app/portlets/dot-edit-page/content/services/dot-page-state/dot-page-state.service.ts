@@ -74,6 +74,7 @@ export class DotPageStateService {
         }
 
         this.requestPage(options).subscribe((pageState: DotPageRenderState) => {
+            console.log("Se actualizó el state en el StateService", pageState);
             this.setState(pageState);
         });
     }
