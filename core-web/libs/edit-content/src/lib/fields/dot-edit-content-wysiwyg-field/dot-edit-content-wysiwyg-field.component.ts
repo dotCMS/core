@@ -53,6 +53,6 @@ export class DotEditContentWYSIWYGFieldComponent {
     );
 
     protected readonly toolbar = signal(
-        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | dotAddImage bullist numlist outdent indent hr'
+        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent dotAddImage hr'
     );
 }
