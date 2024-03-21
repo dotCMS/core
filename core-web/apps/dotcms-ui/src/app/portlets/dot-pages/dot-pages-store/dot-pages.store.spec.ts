@@ -63,7 +63,8 @@ import {
     mockPublishAction,
     mockLanguageArray,
     DotMessageDisplayServiceMock,
-    MockDotHttpErrorManagerService
+    MockDotHttpErrorManagerService,
+    DotLicenseServiceMock
 } from '@dotcms/utils-testing';
 
 import {
@@ -73,7 +74,6 @@ import {
 } from './dot-pages.store';
 
 import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
-import { DotLicenseServiceMock } from '../../dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 import {
     CurrentUserDataMock,
     DotCurrentUserServiceMock
