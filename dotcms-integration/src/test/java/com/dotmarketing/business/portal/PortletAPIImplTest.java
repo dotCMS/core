@@ -1,6 +1,8 @@
 package com.dotmarketing.business.portal;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -53,7 +55,11 @@ public class PortletAPIImplTest {
 
     }
 
-    private Portlet createCustomPortlet(final String name, final String portletId, final String baseTypes, final String contentTypes)
+    private Portlet createCustomPortlet(final String name, final String portletId, final String baseTypes, final String contentTypes) throws LanguageException, DotDataException {
+        return createCustomPortlet(name, portletId, baseTypes, contentTypes, "list");
+    }
+
+    private Portlet createCustomPortlet(final String name, final String portletId, final String baseTypes, final String contentTypes, final String dataViewMode)
             throws LanguageException, DotDataException {
 
         final Map<String, String> initValues = new HashMap<>();
@@ -62,21 +68,31 @@ public class PortletAPIImplTest {
         initValues.put("name", name);
         initValues.put("baseTypes", baseTypes);
         initValues.put("contentTypes", contentTypes);
-        initValues.put("dataViewMode", "list");
+        initValues.put("dataViewMode", dataViewMode);
 
         final Portlet newPortlet = portletApi.savePortlet(new DotPortlet(portletId, StrutsPortlet.class.getName(), initValues),systemUser);
 
         return newPortlet;
     }
 
+    /**
+     * Method to test: Use following method to create a custom portlet {@link PortletAPI#savePortlet(Portlet portlet,User user)}
+     * Given Scenario: The user should be able to create a custom portlet.
+     * Some of the fields are mandatory and some are optional.
+     * ExpectedResult: Must create the new custom portlet
+     */
     @Test
     @UseDataProvider("testCasesCreateCustomPortlet")
     public void test_createCustomPortlet(final testCaseCreateCustomPortlet testCase)
             throws LanguageException {
         Portlet portlet = null;
         try {
-            portlet = createCustomPortlet(testCase.portletName, testCase.portletId, testCase.baseTypes, testCase.contentTypes);
+            portlet = createCustomPortlet(testCase.portletName, testCase.portletId, testCase.baseTypes, testCase.contentTypes, testCase.dataViewMode);
             assertTrue(testCase.createdSuccessfully);
+            assertTrue("Expected: "+portlet.getPortletId()+ " provided:"+ testCase.portletId,
+                    portlet.getPortletId().startsWith(PortletAPI.CONTENT_PORTLET_PREFIX)
+                            && portlet.getPortletId().contains(PORTLET_ID));
+
             if (testCase.baseTypes != null) {
                 final List<String> returnedBaseTypes = Arrays
                         .asList(portlet.getInitParams().get("baseTypes").toLowerCase().split(","));
@@ -101,19 +117,85 @@ public class PortletAPIImplTest {
 
     }
 
+    /**
+     * Method to test: Use following method to update an existing custom portlet {@link PortletAPI#savePortlet(Portlet portlet,User user)}
+     * Given Scenario:
+     * 1. id should not be editable
+     * 2. User can edit all the resting fields:
+        * Add/Remove Base types or content types
+        * Mode View Type: Card or List
+     * ExpectedResult: Must update the custom portlet
+     */
+    @Test
+    @UseDataProvider("testCasesCreateCustomPortlet")
+    public void test_updateCustomPortlet(final testCaseCreateCustomPortlet testCase)
+            throws LanguageException {
+        Portlet updatedPortlet = null;
+        try {
+            //create
+            final Portlet initialPortlet = createCustomPortlet(PORTLET_ID, PORTLET_ID, "CONTENT", "webPageContent", "card");
+            assertNotNull(initialPortlet);
+            //update
+            updatedPortlet = createCustomPortlet(testCase.portletName, testCase.portletId, testCase.baseTypes, testCase.contentTypes, testCase.dataViewMode);
+            assertTrue(testCase.createdSuccessfully);
+            assertNotNull(updatedPortlet);
+            assertTrue("Expected: "+updatedPortlet.getPortletId()+ " provided:"+ testCase.portletId,
+                    updatedPortlet.getPortletId().startsWith(PortletAPI.CONTENT_PORTLET_PREFIX)
+                    && updatedPortlet.getPortletId().contains(PORTLET_ID));
+            //group id should not be updated
+            assertEquals(updatedPortlet.getGroupId(), initialPortlet.getGroupId());
+
+
+            if (testCase.baseTypes != null) {
+                final List<String> returnedBaseTypes = Arrays
+                        .asList(updatedPortlet.getInitParams().get("baseTypes").toLowerCase().split(","));
+                assertTrue(Arrays.asList(testCase.baseTypes.toLowerCase().split(",")).stream().allMatch(
+                        baseType -> returnedBaseTypes.contains(baseType.trim())));
+            }
+
+            if (testCase.contentTypes != null){
+                final List<String> returnedContentTypes = Arrays
+                        .asList(updatedPortlet.getInitParams().get("contentTypes").toLowerCase().split(","));
+                assertTrue(Arrays.asList(testCase.contentTypes.toLowerCase().split(",")).stream().allMatch(
+                        contentType -> returnedContentTypes.contains(contentType.trim())));
+            }
+
+        }catch (DotDataException | IllegalArgumentException e){
+            Assert.assertFalse(testCase.createdSuccessfully);
+            return;
+        }finally {
+            if(updatedPortlet!=null){
+                portletApi.deletePortlet(updatedPortlet.getPortletId());
+            }
+        }
+
+    }
+
 
     private static class testCaseCreateCustomPortlet{
-        String portletId, portletName, baseTypes, contentTypes;
+        String portletId, portletName, baseTypes, contentTypes, dataViewMode;
         boolean createdSuccessfully;
 
         testCaseCreateCustomPortlet(final String portletId, final String portletName,
                 final String baseTypes, final String contentTypes,
-                final boolean createdSuccessfully) {
+                final boolean createdSuccessfully, final String dataViewMode) {
             this.portletId = portletId;
             this.portletName = portletName;
             this.baseTypes = baseTypes;
             this.contentTypes = contentTypes;
             this.createdSuccessfully = createdSuccessfully;
+            this.dataViewMode = dataViewMode;
+        }
+
+        testCaseCreateCustomPortlet(final String portletId, final String portletName,
+                                    final String baseTypes, final String contentTypes,
+                                    final boolean createdSuccessfully) {
+            this.portletId = portletId;
+            this.portletName = portletName;
+            this.baseTypes = baseTypes;
+            this.contentTypes = contentTypes;
+            this.createdSuccessfully = createdSuccessfully;
+            this.dataViewMode = "list";
         }
     }
 
@@ -127,14 +209,20 @@ public class PortletAPIImplTest {
         final ContentType contentType1 = new ContentTypeDataGen().nextPersisted();
 
         return new Object[]{
+                //working cases
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "Persona",
                         "", true),
+                new testCaseCreateCustomPortlet("c_"+PORTLET_ID, PORTLET_ID, "Persona",
+                        "", true, "card"),
+                new testCaseCreateCustomPortlet("C_"+PORTLET_ID, PORTLET_ID, "Persona",
+                        "", true),
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID,
-                        "Content, Persona", "", true),
+                        "Content, Persona", "", true, "card"),
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "",
-                        contentType.variable(), true),
+                        contentType.variable(), true, "card"),
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "",
                         contentType.variable() + "," + contentType1.variable(), true),
+                //failing cases
                 new testCaseCreateCustomPortlet("", PORTLET_ID, "Persona", "", false),
                 new testCaseCreateCustomPortlet(PORTLET_ID, "", "Persona", "", false),
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "", "",
@@ -143,6 +231,7 @@ public class PortletAPIImplTest {
                         "", false),
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "",
                         "NoExist", false),
+                new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "Persona", "", false,""),
         };
     }
 

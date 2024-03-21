@@ -53,6 +53,14 @@ p-galleria {
         width: 100%;
     }
 
+    dot-empty-container .message__icon {
+        color: $red;
+    }
+
+    .message__principal-wrapper {
+        padding: 0 4.5rem;
+    }
+
     .p-image-preview {
         max-width: 100%;
         max-height: 48rem;
