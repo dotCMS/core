@@ -189,7 +189,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                 clientHost: params.clientHost,
                                                 editor: pageData,
                                                 isEnterpriseLicense: licenseData,
-                                                editorState: EDITOR_STATE.LOADED,
+                                                editorState: EDITOR_STATE.IDLE,
                                                 previewState: {
                                                     editorMode: EDITOR_MODE.EDIT
                                                 },
