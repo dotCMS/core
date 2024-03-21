@@ -4,7 +4,9 @@ import {
     Component,
     EventEmitter,
     Input,
+    OnChanges,
     Output,
+    SimpleChanges,
     inject
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -27,16 +29,13 @@ const squarePlus =
     imports: [CommonModule, ScrollerModule, DotAssetCardComponent, DotAssetCardSkeletonComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotAssetCardListComponent {
+export class DotAssetCardListComponent implements OnChanges {
     @Output() nextBatch: EventEmitter<number> = new EventEmitter();
     @Output() selectedItem: EventEmitter<DotCMSContentlet> = new EventEmitter();
 
     @Input() done = false;
     @Input() loading = true;
-    @Input() set contentlets(value: DotCMSContentlet[]) {
-        this._offset = value?.length || 0;
-        this._itemRows = this.createRowItem(value);
-    }
+    @Input() contentlets: DotCMSContentlet[] = [];
 
     private domSanitizer: DomSanitizer = inject(DomSanitizer);
     public loadingItems = [null, null, null];
@@ -47,6 +46,13 @@ export class DotAssetCardListComponent {
     get rows() {
         // Force Scroll to Update by breaking the object Reference
         return [...this._itemRows];
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.contentlets) {
+            this._offset = this.contentlets?.length || 0;
+            this._itemRows = this.createRowItem(this.contentlets);
+        }
     }
 
     onScrollIndexChange(e: { first: number; last: number }) {

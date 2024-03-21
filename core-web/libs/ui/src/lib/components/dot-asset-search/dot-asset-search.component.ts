@@ -69,7 +69,7 @@ export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit
 
         this.offset$
             .pipe(takeUntil(this.destroy$), skip(1), throttleTime(450))
-            .subscribe(this.store.nextBatch);
+            .subscribe((offset) => this.store.nextBatch(offset));
 
         requestAnimationFrame(() => this.input.nativeElement.focus());
     }

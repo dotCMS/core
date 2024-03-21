@@ -129,6 +129,17 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
         private dotLanguagesService: DotLanguagesService
     ) {
         super(defaultState);
+
+        this.dotLanguagesService
+            .get()
+            .pipe(
+                tap((languages) => {
+                    languages.forEach((lang) => {
+                        this.languages[lang.id] = lang;
+                    });
+                })
+            )
+            .subscribe();
     }
 
     private searchContentletsRequest(params, prev: DotCMSContentlet[]) {
