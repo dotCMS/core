@@ -192,7 +192,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 return this.dotPageApiService.get(params).pipe(
                     tapResponse({
                         next: (editor) => {
-                            this.patchState({ editor, editorState: EDITOR_STATE.LOADED });
+                            this.patchState({ editor, editorState: EDITOR_STATE.IDLE });
                         },
                         error: ({ status }: HttpErrorResponse) =>
                             this.createEmptyState({ canEdit: false, canRead: false }, status),
@@ -217,23 +217,33 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             }),
             switchMap((payload) =>
                 this.dotPageApiService.save(payload).pipe(
-                    switchMap(() => this.syncEditorData(payload.params)),
-                    tapResponse(
-                        (pageData: DotPageApiResponse) => {
-                            this.patchState((state) => ({
-                                ...state,
-                                editor: pageData,
-                                editorState: EDITOR_STATE.LOADED
-                            }));
+                    switchMap(() =>
+                        this.syncEditorData(payload.params).pipe(
+                            tapResponse(
+                                (pageData: DotPageApiResponse) => {
+                                    this.patchState((state) => ({
+                                        ...state,
+                                        editor: pageData,
+                                        editorState: EDITOR_STATE.IDLE
+                                    }));
 
-                            payload.whenSaved?.();
-                        },
-                        (e) => {
-                            console.error(e);
-                            payload.whenSaved?.();
-                            this.updateEditorState(EDITOR_STATE.ERROR);
-                        }
-                    )
+                                    payload.whenSaved?.();
+                                },
+                                (e) => {
+                                    console.error(e);
+                                    payload.whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.ERROR);
+                                }
+                            )
+                        )
+                    ),
+                    catchError((e) => {
+                        console.error(e);
+                        payload.whenSaved?.();
+                        this.updateEditorState(EDITOR_STATE.ERROR);
+
+                        return EMPTY;
+                    })
                 )
             )
         );
@@ -278,7 +288,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             life: 2000
                         });
 
-                        this.updateEditorState(EDITOR_STATE.LOADED);
+                        this.updateEditorState(EDITOR_STATE.IDLE);
 
                         return EMPTY;
                     }
@@ -296,7 +306,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     this.patchState((state) => ({
                                         ...state,
                                         editor: pageData,
-                                        editorState: EDITOR_STATE.LOADED
+                                        editorState: EDITOR_STATE.IDLE
                                     }));
 
                                     response.whenSaved?.();
@@ -352,7 +362,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly updatePreviewState = this.updater((state, previewState: PreviewState) => ({
         ...state,
-        previewState
+        previewState,
+        editorState: EDITOR_STATE.IDLE
     }));
 
     /**
@@ -452,7 +463,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             clientHost: '',
             isEnterpriseLicense: false,
             error,
-            editorState: EDITOR_STATE.LOADED,
+            editorState: EDITOR_STATE.IDLE,
             previewState: {
                 editorMode: EDITOR_MODE.EDIT
             }

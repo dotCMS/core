@@ -17,6 +17,8 @@ import { MenuModule } from 'primeng/menu';
 
 import { DotMessageService } from '@dotcms/data-access';
 
+import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
+import { EDITOR_STATE } from '../../../shared/enums';
 import { ActionPayload } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
@@ -46,9 +48,11 @@ export class EmaContentletToolsComponent {
     @Output() addWidget = new EventEmitter<ActionPayload>();
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() delete = new EventEmitter<ActionPayload>();
-    @Output() moveWillStart = new EventEmitter<void>();
+
     @Output() moveStart = new EventEmitter<ActionPayload>();
-    @Output() moveStop = new EventEmitter<void>();
+    @Output() moveStop = new EventEmitter<DragEvent>();
+
+    store = inject(EditEmaStore);
 
     items: MenuItem[] = [
         {
@@ -80,14 +84,22 @@ export class EmaContentletToolsComponent {
         }
     ];
 
+    moveWillStartHandler(): void {
+        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+    }
+
+    moveCancelledHandler(): void {
+        this.store.updateEditorState(EDITOR_STATE.IDLE);
+    }
+
     dragStart(event: DragEvent, payload: ActionPayload): void {
         event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
 
         this.moveStart.emit(payload);
     }
 
-    dragEnd() {
-        this.moveStop.emit();
+    dragEnd(event: DragEvent): void {
+        this.moveStop.emit(event);
     }
 
     /**
@@ -181,9 +193,5 @@ export class EmaContentletToolsComponent {
      */
     get isContainerEmpty(): boolean {
         return this.contentlet.payload.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET';
-    }
-
-    moveWillStartHandler(): void {
-        this.moveWillStart.emit();
     }
 }

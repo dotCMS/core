@@ -18,8 +18,9 @@
     data-testId="actions">
     <p-button
         (mousedown)="moveWillStartHandler()"
+        (mouseup)="moveCancelledHandler()"
         (dragstart)="dragStart($event, contentlet.payload)"
-        (dragend)="dragEnd()"
+        (dragend)="dragEnd($event)"
         draggable="true"
         data-testId="drag-button"
         styleClass="p-button-rounded p-button-raised"

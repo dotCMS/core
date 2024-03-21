@@ -190,6 +190,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotContentletService = inject(DotContentletService);
 
     readonly editorState$ = this.store.editorState$;
+
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
@@ -198,8 +199,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
-
-    readonly isDragging = signal(false);
 
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const clientData = this.clientData();
@@ -278,7 +277,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.contentState$
             .pipe(
                 takeUntil(this.destroy$),
-                filter(({ state }) => state === EDITOR_STATE.LOADED)
+                filter(({ state }) => state === EDITOR_STATE.IDLE)
             )
             .subscribe(({ code }) => {
                 if (!this.isVTLPage()) {
@@ -290,6 +289,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 this.setIframeContent(code);
+                this.resetDragProperties();
             });
     }
 
@@ -300,7 +300,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onIframePageLoad() {
-        this.store.updateEditorState(EDITOR_STATE.LOADED);
+        this.store.updateEditorState(EDITOR_STATE.IDLE);
     }
 
     /**
@@ -424,16 +424,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             editorMode: EDITOR_MODE.PREVIEW,
             device
         });
-
-        this.resetDragProperties();
     }
 
     goToEditMode() {
         this.store.updatePreviewState({
             editorMode: EDITOR_MODE.EDIT
         });
-
-        this.resetDragProperties();
     }
 
     /**
@@ -456,6 +452,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     moveContentlet(item: ActionPayload) {
+        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+
         this.draggedPayload = {
             type: 'contentlet',
             item: {
@@ -483,6 +481,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onDragStart(event: DragEvent) {
+        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+
         const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
             ContentletDragPayload,
             'type'
@@ -512,11 +512,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     /**
      * Reset rows when user stop dragging
      *
-     * @param {DragEvent} _event
      * @memberof EditEmaEditorComponent
      */
-    onDragEnd(_event: DragEvent) {
-        this.resetDragProperties();
+    onDragEnd(event: DragEvent) {
+        // If the dropEffect is none then the user didn't drop the item in the dropzone
+        if (event.dataTransfer.dropEffect === 'none') {
+            this.store.updateEditorState(EDITOR_STATE.IDLE);
+        }
     }
 
     /**
@@ -567,18 +569,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             if (!didInsert) {
                 this.handleDuplicatedContentlet();
 
-                this.resetDragProperties();
-
                 return;
             }
 
             this.store.savePage({
                 pageContainers,
                 pageId: payload.pageId,
-                params: this.queryParams,
-                whenSaved: () => {
-                    this.resetDragProperties();
-                }
+                params: this.queryParams
             });
 
             return;
@@ -750,7 +747,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.CONTENT_CHANGE]: () => {
                 // This event is sent when the mutation observer detects a change in the content
 
-                this.store.updateEditorState(EDITOR_STATE.LOADED);
+                this.store.updateEditorState(EDITOR_STATE.IDLE);
             },
 
             [CUSTOMER_ACTIONS.NAVIGATION_UPDATE]: () => {
@@ -762,7 +759,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const isSameUrl = this.queryParams.url === payload.url;
 
                 if (isSameUrl) {
-                    this.store.updateEditorState(EDITOR_STATE.LOADED);
+                    this.store.updateEditorState(EDITOR_STATE.IDLE);
                     this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
                 } else {
                     this.store.updateEditorState(EDITOR_STATE.LOADING);
@@ -792,8 +789,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
+                // I need to find a way to reset the drag on scroll.
+
+                this.store.updateEditorState(EDITOR_STATE.IDLE);
                 this.resetDragProperties();
-                this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
                 this.iframe?.nativeElement?.contentWindow.postMessage(
@@ -860,6 +859,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             queryParamsHandling: 'merge'
         });
 
+        // Also eliminated
+
         this.resetDragProperties();
     }
 
@@ -871,7 +872,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             life: 2000
         });
 
-        this.store.updateEditorState(EDITOR_STATE.LOADED);
+        this.store.updateEditorState(EDITOR_STATE.IDLE);
         this.dialog.resetDialog();
     }
 
@@ -1030,7 +1031,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
                 if (URL_MAP_FOR_CONTENT != this.queryParams.url) {
-                    this.store.updateEditorState(EDITOR_STATE.LOADED);
+                    this.store.updateEditorState(EDITOR_STATE.IDLE);
                     // If the URL is different, we need to navigate to the new URL
                     this.updateQueryParams({ url: URL_MAP_FOR_CONTENT });
 
