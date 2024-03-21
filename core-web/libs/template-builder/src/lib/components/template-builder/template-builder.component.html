@@ -1,6 +1,5 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-toolbar>
-        TemplateId: {{templateIdentifier}}
         <div class="p-toolbar-group-start">
             <ng-content select="[toolbar-left]"></ng-content>
         </div>
@@ -41,7 +40,6 @@
             data-testId="template-builder-header"
             >{{ 'dot.template.builder.header' | dm }}</dotcms-template-builder-section
         >
-        <pre><code>{{vm | json}}</code></pre>
         <div
             class="template-builder__container"
             [ngClass]="{

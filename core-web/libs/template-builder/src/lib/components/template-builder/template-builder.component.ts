@@ -25,13 +25,12 @@ import {
     QueryList,
     SimpleChanges,
     ViewChild,
-    ViewChildren,
-    signal
+    ViewChildren
 } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, take, map, takeUntil, skip, tap, distinctUntilChanged } from 'rxjs/operators';
+import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -119,8 +118,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     private dotLayout: DotLayout;
 
-    isSameTemplate = signal(false);
-
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
     public readonly boxWidth = BOX_WIDTH;
@@ -199,26 +196,24 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private cd: ChangeDetectorRef
     ) {
         this.rows$ = this.store.rows$.pipe(
-            tap(({ shouldEmit }) => console.log('shouldEmit', shouldEmit)),
             filter(({ shouldEmit }) => shouldEmit),
             map(({ rows }) => parseFromGridStackToDotObject(rows))
         );
 
-        combineLatest([this.rows$, this.store.layoutProperties$, this.themeId$])
+        combineLatest([
+            this.rows$,
+            this.store.layoutProperties$,
+            this.themeId$
+            // this.store.templateIdentifier$
+        ])
             .pipe(
-                filter(([items, layoutProperties]) => !!items && !!layoutProperties),
+                filter(([items, layoutProperties]) => {
+                    return !!items && !!layoutProperties;
+                }),
                 skip(1),
                 takeUntil(this.destroy$)
             )
             .subscribe(([rows, layoutProperties, themeId]) => {
-                console.log('Se llamó a guardar!!, ',this.lastTemplateId !== this.templateIdentifier);
-
-                if (this.lastTemplateId !== this.templateIdentifier) {
-                    this.lastTemplateId = this.templateIdentifier;
-                    
-                    return;
-                }
-
                 this.dotLayout = {
                     ...this.layout,
                     ...layoutProperties,
@@ -238,13 +233,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngOnInit(): void {
-        this.lastTemplateId = this.templateIdentifier;
         this.store.setState({
             rows: parseFromDotObjectToGridStack(this.layout.body),
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
             containerMap: this.containerMap,
             themeId: this.themeId,
+            templateIdentifier: this.templateIdentifier,
             shouldEmit: true
         });
     }
@@ -253,15 +248,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         if (!changes.layout?.firstChange && changes.layout?.currentValue) {
             const parsedRows = parseFromDotObjectToGridStack(changes.layout.currentValue.body);
 
-            this.isSameTemplate.set(
-                changes.templateIdentifier?.previousValue ===
-                    changes.templateIdentifier?.currentValue
-            );
-
-            console.log('ngOnChanges!, isSameTemplate: ', this.isSameTemplate());
             this.store.updateOldRows({
                 newRows: parsedRows,
-                shouldReplaceRows: !this.isSameTemplate()
+                templateIdentifier:
+                    changes.templateIdentifier?.currentValue || this.templateIdentifier
             });
         }
     }

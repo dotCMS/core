@@ -4,8 +4,6 @@ import { v4 as uuid } from 'uuid';
 
 import { Injectable } from '@angular/core';
 
-import { tap } from 'rxjs/operators';
-
 import { DotContainer } from '@dotcms/dotcms-models';
 
 import {
@@ -36,14 +34,7 @@ import {
  */
 @Injectable()
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
-    private currentRows$ = this.select((state) => state.rows).pipe(tap(() => console.log('Cambiaron los rows!!')))
-    private shouldEmits$ = this.select((state) => state.shouldEmit).pipe(tap(() => console.log('Cambió el shouldEmit!!')))
-
     public rows$ = this.select((state) => ({ rows: state.rows, shouldEmit: state.shouldEmit }));
-    // public rows$ = this.select(this.currentRows$, this.shouldEmits$, (rows, shouldEmit) => ({
-    //     rows,
-    //     shouldEmit
-    // }));
 
     public layoutProperties$ = this.select((state) => state.layoutProperties);
     public themeId$ = this.select((state) => state.themeId);
@@ -406,10 +397,15 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             state,
             {
                 newRows,
-                shouldReplaceRows
-            }: { newRows: DotGridStackWidget[]; shouldReplaceRows: boolean }
+                templateIdentifier
+            }: {
+                newRows: DotGridStackWidget[];
+                templateIdentifier: string;
+            }
         ) => {
             const { rows: oldRows } = state;
+
+            const shouldReplaceRows = state.templateIdentifier !== templateIdentifier;
 
             const newStateRows = shouldReplaceRows
                 ? newRows
@@ -440,6 +436,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 ...state,
                 // rows: newStateRows.length > 0 ? newStateRows : newRows,
                 rows: newStateRows,
+                templateIdentifier,
                 shouldEmit: false
             };
         }

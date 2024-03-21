@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, HostBinding, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, HostBinding, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
@@ -50,7 +50,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
     private pageStateStore = inject(DotPageStateService);
 
-    shouldReplace = true;
+    templateIdentifier = signal('');
 
     constructor(
         private route: ActivatedRoute,
@@ -65,10 +65,6 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        // this.router.routeReuseStrategy.shouldReuseRoute = function () {
-        //     return false;
-        // };
-
         this.route.parent.parent.data
             .pipe(
                 pluck('content'),
@@ -76,7 +72,9 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
                 take(1)
             )
             .subscribe((state: DotPageRenderState) => {
-                this.pageState = state;
+                // this.pageState = state;
+                // this.templateIdentifier.set(state.template.identifier);
+                this.updatePageState(state);
 
                 this.containerMap = this.pageState.containerMap; // containerMap from pageState is a get property, which causes to trigger a function everytime the Angular change detection runs.
 
@@ -84,28 +82,11 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
                 this.templateContainersCacheService.set(mappedContainers);
             });
 
-        this.pageStateStore.state$
-        .pipe(takeUntil(this.destroy$))
-        .subscribe( state => {
-            console.log("Se actualizó el state a ", state);
-            this.pageState = state;
-        })
-
-        // this.store.state$.subscribe((state) => {
-        //     console.log("Updated state, rerenderer the layouts: ")
-        //     console.log({pageRows: this.pageState.layout.body.rows , tbRows: state.rows});
-
-        //     // this.containerMap = this.pageState.containerMap; // containerMap from pageState is a get property, which causes to trigger a function everytime the Angular change detection runs.
-        //     // const mappedContainers = this.getRemappedContainers(state.containers);
-        //     // this.templateContainersCacheService.set(mappedContainers);
-        // });
-
-        // this.store.state$
-        // .pipe(takeUntil(this.destroy$))
-        // .subscribe(() => {
-        //     const currentUrl = this.router.url;
-        //     this.router.navigateByUrl('/', {replaceUrl: true}).then(() => this.router.navigateByUrl(currentUrl));
-        // });
+        this.pageStateStore.state$.pipe(takeUntil(this.destroy$)).subscribe((state) => {
+            // this.pageState = state;
+            // this.templateIdentifier.set(state.template.identifier);
+            this.updatePageState(state);
+        });
 
         this.saveTemplateDebounce();
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
@@ -119,6 +100,11 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    updatePageState(newState: DotPageRenderState) {
+        this.pageState = newState;
+        this.templateIdentifier.set(newState.template.identifier);
     }
 
     /**
@@ -217,7 +203,9 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
         this.dotGlobalMessageService.success(
             this.dotMessageService.get('dot.common.message.saved')
         );
-        this.pageState = updatedPage;
+        //TODO: Comment later
+        // this.pageState = updatedPage;
+        this.templateIdentifier.set(updatedPage.template.identifier);
         this.containerMap = updatedPage.containerMap; // containerMap from pageState is a get property, which causes to trigger a function everytime the Angular change detection runs.
     }
 

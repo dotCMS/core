@@ -609,7 +609,7 @@ describe('DotTemplateBuilderStore', () => {
             }
         });
 
-        service.updateOldRows(updatedRows);
+        service.updateOldRows({ newRows: updatedRows, templateIdentifier: '111' });
 
         rows$.subscribe(({ rows, shouldEmit }) => {
             expect(rows).toEqual(resultAfterMerge);
