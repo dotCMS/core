@@ -10,7 +10,6 @@ import { DotAssetSearchComponent } from '@dotcms/ui';
     selector: 'dot-asset-search-dialog',
     standalone: true,
     imports: [CommonModule, DotAssetSearchComponent],
-    providers: [DynamicDialogRef, DynamicDialogConfig],
     templateUrl: './dot-asset-search-dialog.component.html',
     styleUrl: './dot-asset-search-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

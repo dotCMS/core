@@ -40,7 +40,7 @@ export class DotAssetCardListComponent {
 
     private domSanitizer: DomSanitizer = inject(DomSanitizer);
     public loadingItems = [null, null, null];
-    public icon = this.domSanitizer.bypassSecurityTrustHtml(squarePlus);
+    public icon = this.domSanitizer.bypassSecurityTrustResourceUrl(squarePlus);
     private _itemRows: DotCMSContentlet[][] = [];
     private _offset = 0;
 
