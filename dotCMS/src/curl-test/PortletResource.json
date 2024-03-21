@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "2ad74bba-9cfc-445d-8a3d-c4a9de134169",
+		"_postman_id": "55fd5caa-08b8-474e-82bf-f181bd7df8b1",
 		"name": "PortletResource",
 		"description": "Contains test for portlet resources",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "27636414"
 	},
 	"item": [
 		{
@@ -33,43 +34,15 @@
 					"request": {
 						"auth": {
 							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
+							"basic": {
+								"password": "admin",
+								"username": "admin@dotcms.com",
+								"showPassword": false
+							}
 						},
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/calendarEvent",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"portlet",
-								"_actionurl",
-								"calendarEvent"
-							]
-						},
+						"url": "{{serverURL}}/api/v1/portlet/_actionurl/calendarEvent",
 						"description": "Test get portlet operation for calendar-Event"
 					},
 					"response": []
@@ -98,43 +71,15 @@
 					"request": {
 						"auth": {
 							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
+							"basic": {
+								"password": "admin",
+								"username": "admin@dotcms.com",
+								"showPassword": false
+							}
 						},
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"portlet",
-								"_actionurl",
-								"webpagecontent"
-							]
-						}
+						"url": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent"
 					},
 					"response": []
 				},
@@ -162,43 +107,15 @@
 					"request": {
 						"auth": {
 							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
+							"basic": {
+								"password": "admin",
+								"username": "admin@dotcms.com",
+								"showPassword": false
+							}
 						},
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/WeBpAGecONTEnt",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"portlet",
-								"_actionurl",
-								"WeBpAGecONTEnt"
-							]
-						},
+						"url": "{{serverURL}}/api/v1/portlet/_actionurl/WeBpAGecONTEnt",
 						"description": "get the create content url sending the contentType variable name using mixed case"
 					},
 					"response": []
@@ -221,43 +138,15 @@
 					"request": {
 						"auth": {
 							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
+							"basic": {
+								"password": "admin",
+								"username": "admin@dotcms.com",
+								"showPassword": false
+							}
 						},
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/contentTypeNotExist",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"portlet",
-								"_actionurl",
-								"contentTypeNotExist"
-							]
-						},
+						"url": "{{serverURL}}/api/v1/portlet/_actionurl/contentTypeNotExist",
 						"description": "Test that when we hit a non existing cotnent-type we get the appropriate 404"
 					},
 					"response": []
@@ -280,17 +169,7 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/logout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"logout"
-							]
-						}
+						"url": "{{serverURL}}/api/v1/logout"
 					},
 					"response": []
 				},
@@ -315,24 +194,226 @@
 						},
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"portlet",
-								"_actionurl",
-								"webpagecontent"
-							]
-						}
+						"url": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent"
 					},
 					"response": []
 				}
 			],
 			"description": "Tests for the getCreateContentUrl endpoint"
+		},
+		{
+			"name": "Test Update Custom Content Portlet",
+			"item": [
+				{
+					"name": "Create new custom portlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.collectionVariables.set(\"portletId\", jsonData.entity.portlet);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"password": "admin",
+								"username": "admin@dotcms.com"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"portletId\": \"newTestPorlet{{timeMilis}}\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"contentTypes\": \"webPageContent\",\n    \"dataViewMode\": \"card\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{serverURL}}/api/v1/portlet/custom",
+						"description": "New Site to test find subfolders by path"
+					},
+					"response": []
+				},
+				{
+					"name": "Try to create custom portlet with same id shoud fail",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be 404, the portlet already exist\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"password": "admin",
+								"username": "admin@dotcms.com"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"portletId\": \"{{portletId}}\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"contentTypes\": \"\",\n    \"dataViewMode\": \"card\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{serverURL}}/api/v1/portlet/custom",
+						"description": "New Site to test find subfolders by path"
+					},
+					"response": []
+				},
+				{
+					"name": "Get portlet before update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Portlet exists\", function () {",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    let portletId = pm.collectionVariables.get(\"portletId\");",
+									"",
+									"    pm.expect(jsonData.entity.response.portletId).to.eql(portletId);",
+									"    pm.expect(jsonData.entity.response.initParams.dataViewMode).to.eql(\"card\");",
+									"    pm.expect(jsonData.entity.response.initParams.contentTypes).to.eql(\"webPageContent\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"password": "admin",
+								"username": "admin@dotcms.com"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "{{serverURL}}/api/v1/portlet/{{portletId}}",
+						"description": "Retrieves portlet details given its id"
+					},
+					"response": []
+				},
+				{
+					"name": "Update custom portlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be 200, portlet updated\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"password": "admin",
+								"username": "admin@dotcms.com"
+							}
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"portletId\": \"{{portletId}}\",\n    \"portletName\": \"updated name\",\n    \"baseTypes\": \"CONTENT\",\n    \"contentTypes\": \"\",\n    \"dataViewMode\": \"list\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{serverURL}}/api/v1/portlet/custom",
+						"description": "New Site to test find subfolders by path"
+					},
+					"response": []
+				},
+				{
+					"name": "Get portlet after update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Portlet exists\", function () {",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    let portletId = pm.collectionVariables.get(\"portletId\");",
+									"",
+									"    pm.expect(jsonData.entity.response.portletId).to.eql(portletId);",
+									"    pm.expect(jsonData.entity.response.initParams.dataViewMode).to.eql(\"list\");",
+									"    pm.expect(jsonData.entity.response.initParams.contentTypes).to.eql(\"\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"password": "admin",
+								"username": "admin@dotcms.com"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "{{serverURL}}/api/v1/portlet/{{portletId}}",
+						"description": "Retrieves portlet details given its id"
+					},
+					"response": []
+				}
+			]
 		},
 		{
 			"name": "doesUserHaveAccessToPortlet",
@@ -359,34 +440,14 @@
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "GET",
 				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/permissions/_doesuserhaveaccess",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"portlet",
-						"permissions",
-						"_doesuserhaveaccess"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/portlet/permissions/_doesuserhaveaccess",
 				"description": "Returns boolean indicating if a user has permissions to access a portlet given the portlet id"
 			},
 			"response": []
@@ -402,31 +463,23 @@
 							"    pm.response.to.have.status(400);",
 							"",
 							"    var jsonData = pm.response.json();",
-							"    ",
 							"",
-							"    pm.expect(jsonData.message).to.eql(\"Invalid attempt to save Portlet for restricted Content Type Host. \");",
+							"    pm.expect(jsonData.message).to.eql(\"Invalid attempt to create Portlet for restricted Content Type Host. \");",
 							"});",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "POST",
 				"header": [],
@@ -439,18 +492,7 @@
 						}
 					}
 				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/custom",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"portlet",
-						"custom"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/portlet/custom",
 				"description": "This test  attempts to create a custom content portlet for The Restricted Content type Host"
 			},
 			"response": []
@@ -479,18 +521,10 @@
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "POST",
 				"header": [],
@@ -503,18 +537,7 @@
 						}
 					}
 				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/custom",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"portlet",
-						"custom"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/portlet/custom",
 				"description": "This test creates a custom content portlet for CONTENT base type"
 			},
 			"response": []
@@ -543,33 +566,14 @@
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "GET",
 				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/c_myCustom",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"portlet",
-						"c_myCustom"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/portlet/c_myCustom",
 				"description": "Retrieves portlet details given its id"
 			},
 			"response": []
@@ -593,33 +597,14 @@
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "GET",
 				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/nonExisingPortlet",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"portlet",
-						"nonExisingPortlet"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/portlet/nonExisingPortlet",
 				"description": "expect a 404 out of a non valid portlet identifier"
 			},
 			"response": []
@@ -647,32 +632,14 @@
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "GET",
 				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/menu",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"menu"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/menu",
 				"description": "Retrieves menu structure"
 			},
 			"response": []
@@ -701,18 +668,10 @@
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "PUT",
 				"header": [],
@@ -725,21 +684,7 @@
 						}
 					}
 				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/{{firstReturnedLayout}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"portlet",
-						"custom",
-						"c_myCustom",
-						"_addtolayout",
-						"{{firstReturnedLayout}}"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/{{firstReturnedLayout}}",
 				"description": "This test creates a custom content portlet for CONTENT base type"
 			},
 			"response": []
@@ -763,18 +708,10 @@
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "PUT",
 				"header": [],
@@ -787,21 +724,7 @@
 						}
 					}
 				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/custom/nonValidId/_addtolayout/{{firstReturnedLayout}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"portlet",
-						"custom",
-						"nonValidId",
-						"_addtolayout",
-						"{{firstReturnedLayout}}"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/portlet/custom/nonValidId/_addtolayout/{{firstReturnedLayout}}",
 				"description": "add a Custom Content portlet To a layout Invalid Custom Expect 404. Because of one of the params is inexistent"
 			},
 			"response": []
@@ -825,18 +748,10 @@
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "PUT",
 				"header": [],
@@ -849,21 +764,7 @@
 						}
 					}
 				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/nonValidLayout",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"portlet",
-						"custom",
-						"c_myCustom",
-						"_addtolayout",
-						"nonValidLayout"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/nonValidLayout",
 				"description": "add Custom Content portlet To Layout an Invalid Layout is passed Expect 404"
 			},
 			"response": []
@@ -891,42 +792,52 @@
 			"request": {
 				"auth": {
 					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
+					"basic": {
+						"password": "admin",
+						"username": "admin@dotcms.com"
+					}
 				},
 				"method": "DELETE",
 				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/custom/c_myCustom",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"portlet",
-						"custom",
-						"c_myCustom"
-					]
-				},
+				"url": "{{serverURL}}/api/v1/portlet/custom/c_myCustom",
 				"description": "Deletes a custom content portlet"
 			},
 			"response": []
 		}
 	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"pm.collectionVariables.set(\"timeMilis\", Date.now());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
 	"variable": [
 		{
 			"key": "firstReturnedLayout",
+			"value": ""
+		},
+		{
+			"key": "timeMilis",
+			"value": ""
+		},
+		{
+			"key": "portletId",
 			"value": ""
 		}
 	]
