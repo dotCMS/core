@@ -76,6 +76,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -2633,13 +2634,18 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		// ║  Generating Test data  ║
 		// ╚════════════════════════╝
 		final ContentType testType = createContentType(testTypeName);
-		contentTypeAPI.delete(testType);
-		final ContentType newInstance = contentTypeAPI.find(testType.variable());
+		try {
+			Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, true);
+			contentTypeAPI.delete(testType);
+			final ContentType newInstance = contentTypeAPI.find(testType.variable());
 
-		// ╔══════════════╗
-		// ║  Assertions  ║
-		// ╚══════════════╝
-		assertNotNull("Retrieving the Content Type again MUST NOT be null", newInstance);
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			assertNotNull("Retrieving the Content Type again MUST NOT be null", newInstance);
+		} finally {
+			Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, false);
+		}
 	}
 
 	/**
