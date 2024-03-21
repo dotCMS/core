@@ -35,7 +35,7 @@
 
 <p-galleria
     *ngIf="!isLoading && images?.length"
-    [(activeIndex)]="activeImageIndex"
+    [activeIndex]="activeImageIndex"
     [circular]="true"
     [showItemNavigators]="images?.length > 1"
     [showThumbnails]="false"
@@ -44,10 +44,19 @@
     visible="true">
     <ng-template pTemplate="item" let-item>
         <p-image
+            *ngIf="item.response; else errorMessage"
             [src]="item.response.contentlet.assetVersion"
             [preview]="false"
             imageClass="ai-image-gallery__img"
             alt="image"></p-image>
+        <ng-template #errorMessage>
+            <dot-empty-container
+                [hideContactUsLink]="true"
+                [buttonLabel]="'try-again' | dm"
+                [secondaryButton]="true"
+                [configuration]="emptyConfiguration"
+                (buttonAction)="regenerate.emit($event)" />
+        </ng-template>
     </ng-template>
 </p-galleria>
 <span class="ai-image-gallery__count align-self-center" *ngIf="!isLoading && images?.length">

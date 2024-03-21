@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+
 /**
  * This implementation of the {@link ContentReport} class provides the Content Report for any
  * Folder in the dotCMS repository. This Helper has the ability to scan all sub-folders in all
@@ -86,11 +88,13 @@ public class FolderContentReport implements ContentReport {
                     false);
             if (siteOpt.isPresent()) {
                 final String siteId = siteOpt.get().getIdentifier();
-                folderOpt =
-                        Optional.ofNullable(this.folderAPI.get().findFolderByPath(folderIdOrPath,
+                final String folderPath = '/' == folderIdOrPath.charAt(0) ? folderIdOrPath :
+                        FORWARD_SLASH + folderIdOrPath;
+                folderOpt = Optional.ofNullable(this.folderAPI.get().findFolderByPath(folderPath,
                         siteId, user, false));
             } else {
-                Logger.warn(this, String.format("Site '%s' was not found", siteIdOrKey));
+                Logger.error(this, String.format("Folder '%s' under Site '%s' was not found",
+                        folderIdOrPath, siteIdOrKey));
             }
         }
         return folderOpt;

@@ -44,21 +44,13 @@ describe('AiImagePromptFormComponent', () => {
         );
     });
 
-    it('should emit value on form submission', () => {
-        const emitSpy = jest.spyOn(spectator.component.value, 'emit');
+    it('should emit value when form value change', () => {
+        const emitSpy = jest.spyOn(spectator.component.valueChange, 'emit');
         spectator.component.form.setValue(formValue);
 
         spectator.detectChanges();
 
-        spectator.click(generateButton);
-
         expect(emitSpy).toHaveBeenCalledWith(formValue);
-    });
-
-    it('should emit orientation on size control value change', () => {
-        const emitSpy = jest.spyOn(spectator.component.orientation, 'emit');
-        spectator.component.form.get('size').setValue(DotAIImageOrientation.SQUARE);
-        expect(emitSpy).toHaveBeenCalledWith(DotAIImageOrientation.SQUARE);
     });
 
     it('should clear validators for text control when type is auto', () => {
@@ -72,7 +64,7 @@ describe('AiImagePromptFormComponent', () => {
             response: { revised_prompt: 'New Prompt' }
         } as DotGeneratedAIImage;
 
-        spectator.setInput('generatedValue', newGeneratedValue);
+        spectator.setInput('value', newGeneratedValue);
         spectator.setInput('isLoading', false);
 
         expect(spectator.component.form.value).toEqual(newGeneratedValue.request);
@@ -107,8 +99,8 @@ describe('AiImagePromptFormComponent', () => {
         expect(generateButton.disabled).toEqual(false);
     });
 
-    it('should call submitForm method on button click', () => {
-        const valueSpy = jest.spyOn(spectator.component.value, 'emit');
+    it('should emit generate when the form is submitted', () => {
+        const valueSpy = jest.spyOn(spectator.component.generate, 'emit');
         spectator.setInput({ isLoading: false });
         spectator.component.form.setValue(formValue);
         spectator.detectChanges();
