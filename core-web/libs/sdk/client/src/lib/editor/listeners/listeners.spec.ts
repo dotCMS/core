@@ -22,6 +22,9 @@ jest.mock('../models/client.model', () => ({
     }
 }));
 
+/**
+ * Observation: We must test the execution of methods as well.
+ */
 describe('listeners', () => {
     it('should listen editor messages', () => {
         const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
