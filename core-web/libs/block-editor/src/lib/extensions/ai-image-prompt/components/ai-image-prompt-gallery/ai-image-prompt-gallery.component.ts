@@ -7,7 +7,7 @@ import { ImageModule } from 'primeng/image';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import {
     DotAIImageOrientation,
@@ -18,24 +18,55 @@ import {
     selector: 'dot-ai-image-prompt-gallery',
     standalone: true,
     templateUrl: './ai-image-prompt-gallery.component.html',
-    imports: [GalleriaModule, ImageModule, NgIf, SharedModule, SkeletonModule, DotMessagePipe],
+    imports: [
+        GalleriaModule,
+        ImageModule,
+        NgIf,
+        SharedModule,
+        SkeletonModule,
+        DotMessagePipe,
+        DotEmptyContainerComponent
+    ],
     styleUrls: ['./ai-image-prompt-gallery.component.scss']
 })
 export class AiImagePromptGalleryComponent {
     @Input()
     isLoading = false;
 
+    /**
+     * An event that is emitted when the generate action is triggered.
+     */
     @Input()
     images: DotGeneratedAIImage[] = [];
 
+    /**
+     * The index of the currently active image.
+     */
     @Input()
     activeImageIndex = 0;
 
+    /**
+     * The orientation of the images. helps to define the initial placeholder
+     */
     @Input()
-    orientation: DotAIImageOrientation;
+    orientation = DotAIImageOrientation.HORIZONTAL;
 
+    /**
+     * An event that is emitted when the active image index changes.
+     */
     @Output()
     activeIndexChange = new EventEmitter<number>();
 
+    /**
+     * An event that is emitted when the generate action to create a new image is triggered.
+     */
+    @Output()
+    regenerate = new EventEmitter<void>();
+
     dotMessageService = inject(DotMessageService);
+
+    emptyConfiguration: PrincipalConfiguration = {
+        title: this.dotMessageService.get('block-editor.extension.ai-image.error'),
+        icon: 'pi-exclamation-triangle'
+    };
 }

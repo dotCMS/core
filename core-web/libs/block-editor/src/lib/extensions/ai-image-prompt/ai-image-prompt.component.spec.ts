@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { Dialog } from 'primeng/dialog';
 
 import { AIImagePromptComponent } from './ai-image-prompt.component';
+import { PromptType } from './ai-image-prompt.models';
 import { DotAiImagePromptStore } from './ai-image-prompt.store';
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 
@@ -59,13 +60,13 @@ describe('AIImagePromptComponent', () => {
         const promptForm = spectator.query(AiImagePromptFormComponent);
         const formMock: AIImagePrompt = {
             text: 'Test',
-            type: 'input',
+            type: PromptType.INPUT,
             size: DotAIImageOrientation.VERTICAL
         };
+        promptForm.valueChange.emit(formMock);
+        promptForm.generate.emit();
 
-        promptForm.value.emit(formMock);
-
-        expect(store.generateImage).toHaveBeenCalledWith(formMock);
+        expect(store.generateImage).toHaveBeenCalledWith();
     });
 
     it('should inset image', () => {
