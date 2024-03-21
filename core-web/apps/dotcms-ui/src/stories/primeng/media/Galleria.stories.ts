@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -29,7 +29,7 @@ const Template = `
         </ng-template>
     </p-galleria>`;
 
-export const Main: Story = (args) => {
+export const Main: StoryFn = (args) => {
     return {
         props: {
             images: [

@@ -92,12 +92,12 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'edit-page',
-        canActivate: [editPageGuard],
+        canMatch: [editPageGuard],
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },
     {
-        path: 'edit-ema',
+        path: 'edit-page',
         resolve: {
             data: (route: ActivatedRouteSnapshot) => {
                 return inject(EmaAppConfigurationService).get(route.queryParams.url);

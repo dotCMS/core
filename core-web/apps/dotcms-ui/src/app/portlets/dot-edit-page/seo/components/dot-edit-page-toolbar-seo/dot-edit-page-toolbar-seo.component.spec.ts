@@ -34,7 +34,8 @@ import {
     DotSessionStorageService,
     DotGlobalMessageService,
     DotIframeService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -73,7 +74,6 @@ import {
 } from '@dotcms/utils-testing';
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageStateControllerSeoComponent } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 

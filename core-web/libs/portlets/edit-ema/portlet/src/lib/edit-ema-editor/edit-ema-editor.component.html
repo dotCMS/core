@@ -54,6 +54,9 @@
             </a>
         </ng-container>
         <ng-container right>
+            <dot-ema-running-experiment
+                [runningExperiment]="es.runningExperiment"
+                data-testId="ema-running-experiment" />
             <dot-edit-ema-language-selector
                 [language]="es.editor.viewAs.language"
                 (selected)="onLanguageSelected($event)"
@@ -93,7 +96,7 @@
         class="editor-content"
         [ngClass]="{
             'editor-content--device': !!es.previewState.device,
-            'editor-content--expanded': !es.editor.page.canEdit,
+            'editor-content--expanded': !es.editor.page.canEdit || !canEditVariant(),
             'editor-content--hidden': es.previewState.socialMedia
         }"
         data-testId="editor-content">
@@ -127,6 +130,7 @@
 
             <dot-ema-contentlet-tools
                 *ngIf="
+                    canEditVariant() &&
                     !!contentlet &&
                     !es.previewState.device &&
                     es.editor.page.canEdit &&
@@ -144,6 +148,7 @@
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
+                    canEditVariant() &&
                     !!containers.length &&
                     !!dragItem &&
                     !es.previewState.device &&
@@ -158,6 +163,7 @@
 
     <dot-edit-ema-palette
         *ngIf="
+            canEditVariant() &&
             es.isEnterpriseLicense &&
             es.previewState.editorMode === editorMode.EDIT &&
             es.editor.page.canEdit
@@ -168,7 +174,7 @@
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
-    @if(es.previewState.editorMode === editorMode.EDIT) {
+    @if( canEditVariant() && es.previewState.editorMode === editorMode.EDIT) {
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"
