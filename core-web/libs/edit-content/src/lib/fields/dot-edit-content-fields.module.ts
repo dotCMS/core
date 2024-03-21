@@ -11,7 +11,7 @@ import { DotEditContentSelectFieldComponent } from './dot-edit-content-select-fi
 import { DotEditContentTagFieldComponent } from './dot-edit-content-tag-field/dot-edit-content-tag-field.component';
 import { DotEditContentTextAreaComponent } from './dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field/dot-edit-content-text-field.component';
-import { DotWYSIWYGFieldComponent } from './dot-wysiwyg-field/dot-wysiwyg-field.component';
+import { DotEditContentWYSIWYGFieldComponent } from './dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 
 @NgModule({
     declarations: [],
@@ -27,7 +27,7 @@ import { DotWYSIWYGFieldComponent } from './dot-wysiwyg-field/dot-wysiwyg-field.
         DotEditContentBinaryFieldComponent,
         DotEditContentJsonFieldComponent,
         DotEditContentCustomFieldComponent,
-        DotWYSIWYGFieldComponent
+        DotEditContentWYSIWYGFieldComponent
     ],
     exports: [
         DotEditContentTextAreaComponent,
@@ -41,7 +41,7 @@ import { DotWYSIWYGFieldComponent } from './dot-wysiwyg-field/dot-wysiwyg-field.
         DotEditContentBinaryFieldComponent,
         DotEditContentJsonFieldComponent,
         DotEditContentCustomFieldComponent,
-        DotWYSIWYGFieldComponent
+        DotEditContentWYSIWYGFieldComponent
     ]
 })
 export class DotEditContentFieldsModule {}

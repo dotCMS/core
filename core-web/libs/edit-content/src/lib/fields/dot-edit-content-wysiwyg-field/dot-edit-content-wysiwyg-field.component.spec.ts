@@ -15,7 +15,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotUploadFileService } from '@dotcms/data-access';
 
-import { DotWYSIWYGFieldComponent } from './dot-wysiwyg-field.component';
+import { DotEditContentWYSIWYGFieldComponent } from './dot-edit-content-wysiwyg-field.component';
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 
 import { WYSIWYG_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
@@ -23,14 +23,14 @@ import { WYSIWYG_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 const ALL_PLUGINS =
     'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template';
 const ALL_TOOLBAR_ITEMS =
-    'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr | dotAddImage';
+    'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent dotAddImage hr';
 
-describe('DotWYSIWYGFieldComponent', () => {
-    let spectator: Spectator<DotWYSIWYGFieldComponent>;
+describe('DotEditContentWYSIWYGFieldComponent', () => {
+    let spectator: Spectator<DotEditContentWYSIWYGFieldComponent>;
     let dotWysiwygPluginService: DotWysiwygPluginService;
 
     const createComponent = createComponentFactory({
-        component: DotWYSIWYGFieldComponent,
+        component: DotEditContentWYSIWYGFieldComponent,
         imports: [EditorModule, FormsModule, ReactiveFormsModule],
         declarations: [MockComponent(EditorComponent)],
         componentViewProviders: [

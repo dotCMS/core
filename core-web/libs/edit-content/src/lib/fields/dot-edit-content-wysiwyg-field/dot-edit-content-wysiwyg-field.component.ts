@@ -20,8 +20,8 @@ declare global {
     selector: 'dot-wysiwyg-field',
     standalone: true,
     imports: [EditorModule, FormsModule, ReactiveFormsModule],
-    templateUrl: './dot-wysiwyg-field.component.html',
-    styleUrl: './dot-wysiwyg-field.component.scss',
+    templateUrl: './dot-edit-content-wysiwyg-field.component.html',
+    styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         DialogService,
@@ -35,7 +35,7 @@ declare global {
         }
     ]
 })
-export class DotWYSIWYGFieldComponent {
+export class DotEditContentWYSIWYGFieldComponent {
     @Input() field!: DotCMSContentTypeField;
 
     private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
@@ -53,6 +53,6 @@ export class DotWYSIWYGFieldComponent {
     );
 
     protected readonly toolbar = signal(
-        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent hr | dotAddImage'
+        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | dotAddImage bullist numlist outdent indent hr'
     );
 }
