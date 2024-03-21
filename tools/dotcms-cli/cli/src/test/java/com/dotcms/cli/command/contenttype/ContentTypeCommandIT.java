@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -325,7 +326,8 @@ class ContentTypeCommandIT extends CommandTest {
     }
 
     /**
-     * Test Filter options
+     * Given scenario: We want to filter the content types by name
+     * Expected result: The output should contain only the content types that match the filter
      */
     @Test
     void Test_Command_Content_Filter_Option() {
@@ -337,9 +339,119 @@ class ContentTypeCommandIT extends CommandTest {
                     "--name", "FileAsset", "--page", "0", "--pageSize", "10");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
+            Assertions.assertTrue(output.startsWith("varName: [FileAsset]"));
         }
     }
+
+    /**
+     * Given scenario: We want to filter the content types by var name
+     * Expected result: The output should come back ordered by varName and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_Variable_Ascending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                     "--page", "0", "--pageSize", "10", "--order", "variable", "--direction", "ASC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("varName",output);
+            Assertions.assertEquals( 10, strings.size());
+            Assertions.assertTrue(isSortedAscending(strings));
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name
+     * Expected result: The output should come back ordered by varName and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_Variable_Descending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "10", "--order", "variable", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("varName",output);
+            Assertions.assertEquals( 10, strings.size());
+            Assertions.assertTrue(isSortedDescending(strings));
+        }
+    }
+
+    /**
+     * Given scenario: We want to order the content types by modDate
+     * Expected result: The output should come back ordered by modDate and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_modDate_Descending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "10", "--order", "modDate", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("modDate",output);
+            Assertions.assertEquals( 10, strings.size());
+            Assertions.assertTrue(isSortedDescending(strings));
+        }
+    }
+
+
+    /**
+     * Given scenario: We want to order the content types by modDate
+     * Expected result: The output should come back ordered by modDate and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_modDate_Ascending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "10", "--order", "modDate", "--direction", "ASC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("modDate",output);
+            Assertions.assertEquals( 10, strings.size());
+            Assertions.assertTrue(isSortedAscending(strings));
+        }
+    }
+
+    private static boolean isSortedAscending(List<String> varNames) {
+        for (int i = 0; i < varNames.size() - 1; i++) {
+            if (varNames.get(i).compareTo(varNames.get(i + 1)) > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isSortedDescending(List<String> varNames) {
+        for (int i = 0; i < varNames.size() - 1; i++) {
+            if (varNames.get(i).compareTo(varNames.get(i + 1)) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static List<String> extractRowsByFieldName(String fieldName,String inputText) {
+        List<String> varNames = new ArrayList<>();
+        Pattern pattern = Pattern.compile(String.format("%s:\\s*\\[([^\\]]+)\\]",fieldName));
+        Matcher matcher = pattern.matcher(inputText);
+        while (matcher.find()) {
+            varNames.add(matcher.group(1));
+        }
+        return varNames;
+    }
+
 
     /**
      * Push CT from a file
