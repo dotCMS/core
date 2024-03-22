@@ -81,7 +81,7 @@
 					pepAPI.deleteEndPointById(id);
 				}
 				List<PublishingEndPoint> endpoints = pepAPI.findSendingEndPointsByEnvironment(bundle.getId());
-
+				final User bundleOwner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
 				PublisherAPI publisherAPI = PublisherAPI.getInstance();
 				List<PublishQueueElement> assets = publisherAPI.getQueueElementsByBundleId(bundle.getId());%>
 				<table id="un_publish_table_<%=bundle.getId()%>" class="listingTable" style="margin-bottom: 50px;">
@@ -101,6 +101,14 @@
                   
                             <%} %>
 
+						</th>
+						<th align="right" nowrap="nowrap">
+							<p>
+								<strong>Created by: </strong>
+								<%if(bundle.getOwner() != null && bundleOwner != null ){%>
+								<%=bundleOwner.getFullName()%>
+								<%}%>
+							</p>
 						</th>
 						<th align="right" nowrap="nowrap">
 							
