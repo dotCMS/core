@@ -1,22 +1,24 @@
-import { BehaviorSubject, fromEvent, Subject } from 'rxjs';
+import { BehaviorSubject, fromEvent } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     ElementRef,
     EventEmitter,
     Input,
-    OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, skip, takeUntil, throttleTime } from 'rxjs/operators';
+import { debounceTime, skip, throttleTime } from 'rxjs/operators';
 
 import { DotContentSearchService, DotLanguagesService } from '@dotcms/data-access';
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
@@ -43,46 +45,59 @@ import { DotAssetSearchStore } from './store/dot-asset-search.store';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit {
+export class DotAssetSearchComponent implements OnInit, AfterViewInit {
     @ViewChild('input') input!: ElementRef;
     @Output() addAsset = new EventEmitter<DotCMSContentlet>();
 
-    @Input() set languageId(id) {
-        this.store.updatelanguageId(id);
-    }
+    @Input() languageId = '*';
+    @Input() type: EditorAssetTypes;
 
-    private _assetType: EditorAssetTypes;
-    @Input() set type(type: EditorAssetTypes) {
-        this._assetType = type;
-        this.store.updateAssetType(type);
-    }
+    private currentSearch = '';
+    private readonly store = inject(DotAssetSearchStore);
+    private readonly destroyRef = inject(DestroyRef);
 
-    vm$ = this.store.vm$;
     offset$ = new BehaviorSubject<number>(0);
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(private store: DotAssetSearchStore) {}
+    vm$ = this.store.vm$;
 
     ngOnInit(): void {
-        this.store.init(this._assetType);
+        // Initial load
+        this.store.searchContentlet({
+            ...this.searchParams(),
+            search: '',
+            offset: 0
+        });
 
         this.offset$
-            .pipe(takeUntil(this.destroy$), skip(1), throttleTime(450))
-            .subscribe((offset) => this.store.nextBatch(offset));
+            .pipe(takeUntilDestroyed(this.destroyRef), skip(1), throttleTime(450))
+            .subscribe((offset) =>
+                this.store.nextBatch({
+                    ...this.searchParams(),
+                    offset
+                })
+            );
 
         requestAnimationFrame(() => this.input.nativeElement.focus());
     }
 
     ngAfterViewInit() {
         fromEvent(this.input.nativeElement, 'input')
-            .pipe(takeUntil(this.destroy$), debounceTime(450))
+            .pipe(takeUntilDestroyed(this.destroyRef), debounceTime(450))
             .subscribe(({ target }) => {
-                this.store.searchContentlet(target.value);
+                const value = (target as HTMLInputElement).value;
+                this.currentSearch = value;
+                this.store.searchContentlet({
+                    ...this.searchParams(),
+                    search: value
+                });
             });
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
+    private searchParams() {
+        return {
+            languageId: this.languageId || '',
+            search: this.currentSearch,
+            assetType: this.type,
+            offset: this.offset$.value || 0
+        };
     }
 }

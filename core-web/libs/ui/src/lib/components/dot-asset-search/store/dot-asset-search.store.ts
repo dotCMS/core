@@ -1,9 +1,9 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 
 import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { map, mergeMap, switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
@@ -11,56 +11,43 @@ import {
     EsQueryParamsSearch,
     DotLanguagesService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotLanguage, EditorAssetTypes } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 
-export interface DotImageSearchState {
+export interface DotAssetSearch {
     loading: boolean;
     preventScroll: boolean;
     contentlets: DotCMSContentlet[];
-    languageId: number | string;
-    search: string;
-    assetType: EditorAssetTypes;
 }
 
-const defaultState: DotImageSearchState = {
+interface DotAssetSeachQuery {
+    search: string;
+    assetType: string;
+    offset?: number;
+    languageId?: number | string;
+}
+
+const defaultState: DotAssetSearch = {
     loading: true,
     preventScroll: false,
-    contentlets: [],
-    languageId: '*',
-    search: '',
-    assetType: 'image'
+    contentlets: []
 };
 
 @Injectable()
-export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
+export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
     // Selectors
-    readonly vm$ = this.select(({ contentlets, loading, preventScroll }) => ({
+    readonly vm$ = this.select((state) => state);
+
+    readonly updateContentlets = this.updater<DotCMSContentlet[]>((_state, contentlets) => ({
         contentlets,
-        loading,
-        preventScroll
+        preventScroll: !contentlets?.length,
+        loading: false
     }));
 
-    // Setters
-    readonly updateContentlets = this.updater<DotCMSContentlet[]>((state, contentlets) => {
-        return {
-            ...state,
-            contentlets
-        };
-    });
-
-    readonly updateAssetType = this.updater<EditorAssetTypes>((state, assetType) => {
-        return {
-            ...state,
-            assetType
-        };
-    });
-
-    readonly updatelanguageId = this.updater<number>((state, languageId) => {
-        return {
-            ...state,
-            languageId
-        };
-    });
+    readonly mergeContentlets = this.updater<DotCMSContentlet[]>((state, contentlets) => ({
+        contentlets: [...state.contentlets, ...contentlets],
+        preventScroll: !contentlets?.length,
+        loading: false
+    }));
 
     readonly updateLoading = this.updater<boolean>((state, loading) => {
         return {
@@ -69,92 +56,73 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
         };
     });
 
-    readonly updatePreventScroll = this.updater<boolean>((state, preventScroll) => {
-        return {
-            ...state,
-            preventScroll
-        };
-    });
-
-    readonly updateSearch = this.updater<string>((state, search) => {
-        return {
-            ...state,
-            loading: true,
-            search
-        };
-    });
-
-    // Effects
-    readonly init = this.effect((origin$: Observable<EditorAssetTypes>) => {
-        return origin$.pipe(
-            tap((assetType) => this.updateAssetType(assetType)),
-            switchMap(() =>
-                this.dotLanguagesService.get().pipe(
-                    tap((languages) => {
-                        languages.forEach((lang) => {
-                            this.languages[lang.id] = lang;
-                        });
-                    })
-                )
-            ),
-            withLatestFrom(this.state$),
-            switchMap(([_, state]) => this.searchContentletsRequest(this.params(state), []))
-        );
-    });
-
-    readonly searchContentlet = this.effect((origin$: Observable<string>) => {
-        return origin$.pipe(
-            tap((search) => this.updateSearch(search)),
-            withLatestFrom(this.state$),
-            mergeMap(([search, state]) =>
-                this.searchContentletsRequest(this.params({ ...state, search }), [])
-            )
-        );
-    });
-
-    readonly nextBatch = this.effect((origin$: Observable<number>) => {
-        return origin$.pipe(
-            withLatestFrom(this.state$),
-            map(([offset, state]) => ({ ...state, offset })),
-            mergeMap(({ contentlets, ...data }) =>
-                this.searchContentletsRequest(this.params(data), contentlets)
-            )
-        );
-    });
-
     private languages: { [key: string]: DotLanguage } = {};
 
     constructor(
-        private DotContentSearchService: DotContentSearchService,
+        private dotContentSearchService: DotContentSearchService,
         private dotLanguagesService: DotLanguagesService
     ) {
         super(defaultState);
 
-        this.dotLanguagesService
-            .get()
-            .pipe(
-                tap((languages) => {
-                    languages.forEach((lang) => {
-                        this.languages[lang.id] = lang;
-                    });
-                })
-            )
-            .subscribe();
+        this.dotLanguagesService.get().subscribe((languages) => {
+            languages.forEach((lang) => {
+                this.languages[lang.id] = lang;
+            });
+        });
     }
 
-    private searchContentletsRequest(params, prev: DotCMSContentlet[]) {
-        return this.DotContentSearchService.get(params).pipe(
-            map(({ jsonObjectView: { contentlets } }) => {
-                const items = this.setContentletLanguage(contentlets);
-                this.updateLoading(false);
-                this.updatePreventScroll(!contentlets?.length);
+    /**
+     * Search for contentlets
+     *
+     * @memberof DotAssetSearchStore
+     */
+    readonly searchContentlet = this.effect((params$: Observable<DotAssetSeachQuery>) => {
+        return params$.pipe(
+            tap(() => this.updateLoading(true)),
+            switchMap((params) => {
+                return this.searchContentletsRequest(params).pipe(
+                    tapResponse(
+                        (contentlets) => this.updateContentlets(contentlets),
+                        (_error) => {
+                            /* */
+                        }
+                    )
+                );
+            })
+        );
+    });
 
-                return this.updateContentlets([...prev, ...items]);
+    /**
+     * Load more contentlets
+     *
+     * @memberof DotAssetSearchStore
+     */
+    readonly nextBatch = this.effect((params$: Observable<DotAssetSeachQuery>) => {
+        return params$.pipe(
+            switchMap((params) =>
+                this.searchContentletsRequest(params).pipe(
+                    tapResponse(
+                        (contentlets) => this.mergeContentlets(contentlets),
+                        (_error) => {
+                            /* */
+                        }
+                    )
+                )
+            )
+        );
+    });
+
+    private searchContentletsRequest(params): Observable<DotCMSContentlet[]> {
+        const query = this.queryParams(params);
+
+        return this.dotContentSearchService.get(query).pipe(
+            map(({ jsonObjectView: { contentlets } }) => {
+                return this.setContentletLanguage(contentlets);
             })
         );
     }
 
-    private params(data): EsQueryParamsSearch {
+    private queryParams(data): EsQueryParamsSearch {
         const { search, assetType, offset = 0, languageId = '' } = data;
         const filter = search.includes('-') ? search : `${search}*`;
 
@@ -180,13 +148,13 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
         return contentlets.map((contentlet) => {
             return {
                 ...contentlet,
-                language: this.getLanguage(contentlet.languageId)
+                language: this.getLanguageBadge(contentlet.languageId)
             };
         });
     }
 
-    private getLanguage(languageId: number): string {
-        const { languageCode, countryCode } = this.languages[languageId];
+    private getLanguageBadge(languageId: number): string {
+        const { languageCode, countryCode } = this.languages[languageId] || {};
 
         if (!languageCode || !countryCode) {
             return '';

@@ -56,7 +56,12 @@ describe('DotAssetSearchComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            props: {
+                languageId: '1',
+                type: 'image'
+            }
+        });
         spectator.detectChanges();
         store = spectator.inject(DotAssetSearchStore, true);
         spectator.detectChanges();
@@ -75,7 +80,12 @@ describe('DotAssetSearchComponent', () => {
         const spy = spyOn(store, 'nextBatch');
         spectator.triggerEventHandler(DotAssetCardListComponent, 'nextBatch', 10);
         tick(1000);
-        expect(spy).toHaveBeenCalledWith(10);
+        expect(spy).toHaveBeenCalledWith({
+            languageId: '1',
+            assetType: 'image',
+            offset: 10,
+            search: ''
+        });
     }));
 
     it('should call addAsset Output', fakeAsync(() => {
@@ -90,6 +100,11 @@ describe('DotAssetSearchComponent', () => {
         const inputElement = spectator.query(byTestId('input-search')) as HTMLInputElement;
         spectator.typeInElement('search', inputElement);
         tick(1000);
-        expect(spy).toHaveBeenCalledWith('search');
+        expect(spy).toHaveBeenCalledWith({
+            languageId: '1',
+            assetType: 'image',
+            offset: 0,
+            search: 'search'
+        });
     }));
 });
