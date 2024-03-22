@@ -293,6 +293,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter(({ state }) => state === EDITOR_STATE.IDLE)
             )
             .subscribe(({ code }) => {
+                // If we are idle then we are not dragging
+                this.resetDragProperties();
+
                 if (!this.isVTLPage()) {
                     // Only reload if is Headless.
                     // If is VTL, the content is updated by store.code$
@@ -300,9 +303,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 } else {
                     this.setIframeContent(code);
                 }
-
-                // If we are idle then we are not dragging
-                this.resetDragProperties();
             });
     }
 
