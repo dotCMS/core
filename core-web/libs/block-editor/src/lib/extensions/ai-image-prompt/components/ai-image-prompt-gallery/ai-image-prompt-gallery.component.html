@@ -46,9 +46,13 @@
         <p-image
             *ngIf="item.response; else errorMessage"
             [src]="item.response.contentlet.assetVersion"
-            [preview]="false"
-            imageClass="ai-image-gallery__img"
-            alt="image"></p-image>
+            [preview]="true"
+            [alt]="item.response.contentlet.assetMetaData.title"
+            imageClass="ai-image-gallery__img">
+            <ng-template pTemplate="indicator">
+                <i class="pi pi-window-maximize"></i>
+            </ng-template>
+        </p-image>
         <ng-template #errorMessage>
             <dot-empty-container
                 [hideContactUsLink]="true"

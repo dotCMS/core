@@ -63,6 +63,17 @@ describe('SessionStorage EXPERIMENT_ALREADY_CHECKED_KEY handle', () => {
         );
     });
 
+    it('should set true to sessionStorage key `EXPERIMENT_ALREADY_CHECKED_KEY` ', () => {
+        const value = 'true';
+
+        persistDatabaseHandler.setFlagExperimentAlreadyChecked();
+
+        expect(window.sessionStorage.setItem).toHaveBeenLastCalledWith(
+            EXPERIMENT_ALREADY_CHECKED_KEY,
+            value
+        );
+    });
+
     describe('checkFlagExperimentAlreadyChecked', () => {
         const getItemMock = window.sessionStorage.getItem as jest.MockedFunction<
             typeof window.sessionStorage.getItem
