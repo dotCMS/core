@@ -56,6 +56,11 @@ describe('DotWysiwygPluginService', () => {
     let spectator: SpectatorService<DotWysiwygPluginService>;
     let dialogService: DialogService;
     let dotUploadFileService: DotUploadFileService;
+    /**
+     * `any` is used here because the Editor is a complex object that we don't need to mock all the methods and properties
+     * This mock also contains some custom methods to check the configuration
+     * We are using this mock to check the configuration of the editor
+     */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let editor: any;
 

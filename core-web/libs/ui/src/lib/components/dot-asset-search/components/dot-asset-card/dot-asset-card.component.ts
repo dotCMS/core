@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, NO_ERRORS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 
@@ -11,7 +11,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
     standalone: true,
     imports: [CardModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [NO_ERRORS_SCHEMA] // WebComponent
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotAssetCardComponent {
     @Input() contentlet: DotCMSContentlet;
