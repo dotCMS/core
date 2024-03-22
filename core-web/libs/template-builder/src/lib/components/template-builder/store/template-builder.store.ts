@@ -434,7 +434,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
             return {
                 ...state,
-                // rows: newStateRows.length > 0 ? newStateRows : newRows,
                 rows: newStateRows,
                 templateIdentifier,
                 shouldEmit: false

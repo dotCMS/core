@@ -200,9 +200,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
         combineLatest([this.rows$, this.store.layoutProperties$, this.themeId$])
             .pipe(
-                filter(([items, layoutProperties]) => {
-                    return !!items && !!layoutProperties;
-                }),
+                filter(([items, layoutProperties]) => !!items && !!layoutProperties),
                 skip(1),
                 takeUntil(this.destroy$)
             )
