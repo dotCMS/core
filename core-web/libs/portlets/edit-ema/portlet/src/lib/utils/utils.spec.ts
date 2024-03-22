@@ -2,7 +2,8 @@ import {
     deleteContentletFromContainer,
     insertContentletInContainer,
     sanitizeURL,
-    getPersonalization
+    getPersonalization,
+    createPageApiUrlWithQueryParams
 } from '.';
 
 describe('utils functions', () => {
@@ -299,6 +300,41 @@ describe('utils functions', () => {
         it('should return the correct personalization when persona does not exist', () => {
             const personalization = getPersonalization({});
             expect(personalization).toBe('dot:default');
+        });
+    });
+
+    describe('createPageApiUrlWithQueryParams', () => {
+        it('should return the correct query params', () => {
+            const queryParams = {
+                variantName: 'test',
+                language_id: '20',
+                'com.dotmarketing.persona.id': 'the-chosen-one',
+                experimentId: '123',
+                mode: 'PREVIEW_MODE'
+            };
+            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            expect(result).toBe(
+                'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=PREVIEW_MODE'
+            );
+        });
+
+        it('should return url with default query params if no query params', () => {
+            const queryParams = {};
+            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            expect(result).toBe(
+                'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
+            );
+        });
+
+        it('should ignore the undefined queryParams', () => {
+            const queryParams = {
+                variantName: 'test',
+                experimentId: undefined
+            };
+            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            expect(result).toBe(
+                'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
+            );
         });
     });
 });

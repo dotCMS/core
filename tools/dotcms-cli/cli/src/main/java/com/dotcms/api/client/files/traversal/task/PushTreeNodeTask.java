@@ -10,6 +10,7 @@ import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.command.PushContext;
+import com.dotcms.cli.common.FilesUtils;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.site.SiteView;
@@ -309,6 +310,16 @@ public class PushTreeNodeTask extends
      */
     private void doPushAsset(FolderView folder, AssetView asset, PushContext pushContext) {
         try {
+
+            final String cleaned = FilesUtils.cleanFileName(asset.name());
+            //Invalid characters found in the asset name
+            if (!cleaned.equals(asset.name())) {
+                logger.warn(String.format("Asset [%s%s] has invalid characters in the name. Skipping push on this file for security reasons.",
+                        folder.path(), asset.name()));
+                //We don't want to push assets with invalid characters we report them and move on
+                 throw new TraversalTaskException(String.format("Asset [%s%s] has invalid characters in the name. Skipping push on this file for security reasons.",
+                        folder.path(), asset.name()));
+            }
 
             final String pushAssetKey = generatePushAssetKey(folder, asset);
             final Optional<AssetView> optional = pushContext.execPush(

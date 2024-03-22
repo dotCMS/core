@@ -13,7 +13,11 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { Card } from 'primeng/card';
 import { Tooltip } from 'primeng/tooltip';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     ComponentStatus,
     ExperimentSteps,
@@ -21,7 +25,6 @@ import {
     Goals,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,

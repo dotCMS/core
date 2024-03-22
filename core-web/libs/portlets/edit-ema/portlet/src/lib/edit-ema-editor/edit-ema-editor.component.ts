@@ -39,6 +39,7 @@ import {
     DotContentletService
 } from '@dotcms/data-access';
 import {
+    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotDevice,
     DotPersona,
@@ -60,6 +61,7 @@ import {
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -158,7 +160,8 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         DotEmaBookmarksComponent,
         DotEditEmaWorkflowActionsComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
+        DotEmaRunningExperimentComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -189,13 +192,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
 
-    readonly editorState$ = this.store.editorState$;
+    readonly editorState$ = this.store.editorState$.pipe(
+        tap((state) => {
+            // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+            this.canEditVariant.set(
+                !this.queryParams.variantName ||
+                    this.queryParams.variantName === DEFAULT_VARIANT_ID ||
+                    !state.runningExperiment
+            );
+        })
+    );
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
     readonly pageData = toSignal(this.store.pageData$);
 
     readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
+
+    readonly canEditVariant: WritableSignal<boolean> = signal(true);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
@@ -916,9 +930,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     protected handleEditContentlet(payload: ActionPayload) {
         const { contentlet } = payload;
-        const { onNumberOfPages, title } = contentlet;
+        const { onNumberOfPages = '1', title } = contentlet;
 
-        if (!(onNumberOfPages > 1)) {
+        if (!(Number(onNumberOfPages) > 1)) {
             this.dialog.editContentlet(contentlet);
 
             return;

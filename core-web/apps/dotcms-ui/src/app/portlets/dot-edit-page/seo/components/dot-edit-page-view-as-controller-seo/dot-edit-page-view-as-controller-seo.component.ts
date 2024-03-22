@@ -21,6 +21,7 @@ import {
     DotAlertConfirmService,
     DotLicenseService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
@@ -33,8 +34,6 @@ import {
     DotVariantData
 } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller-seo',

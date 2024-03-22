@@ -4,8 +4,9 @@ import { of } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
+    DotExperimentsServiceMock,
     mockDotContainers,
     mockDotLayout,
     MockDotMessageService,
@@ -102,6 +103,10 @@ describe('EditEmaStore', () => {
                 {
                     provide: DotMessageService,
                     useValue: new MockDotMessageService({})
+                },
+                {
+                    provide: DotExperimentsService,
+                    useValue: DotExperimentsServiceMock
                 }
             ]
         });
@@ -134,12 +139,12 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADING,
+                        state: EDITOR_STATE.LOADED,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -151,7 +156,7 @@ describe('EditEmaStore', () => {
             it('should return contentState', (done) => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
-                        state: EDITOR_STATE.LOADING,
+                        state: EDITOR_STATE.LOADED,
                         code: undefined
                     });
                     done();
@@ -167,9 +172,9 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED,
@@ -200,7 +205,7 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADING,
+                        editorState: EDITOR_STATE.LOADED,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -507,6 +512,10 @@ describe('EditEmaStore', () => {
                 {
                     provide: DotMessageService,
                     useValue: new MockDotMessageService({})
+                },
+                {
+                    provide: DotExperimentsService,
+                    useValue: DotExperimentsServiceMock
                 }
             ]
         });
@@ -541,11 +550,11 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADING,
+                        state: EDITOR_STATE.LOADED,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -557,7 +566,7 @@ describe('EditEmaStore', () => {
             it('should return contentState', (done) => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
-                        state: EDITOR_STATE.LOADING,
+                        state: EDITOR_STATE.LOADED,
                         code: '<html><body><h1>Hello, World!</h1></body></html>'
                     });
                     done();
@@ -573,14 +582,15 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.LOADED,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
-                        }
+                        },
+                        runningExperiment: undefined
                     });
                     done();
                 });
@@ -604,7 +614,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADING,
+                        editorState: EDITOR_STATE.LOADED,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }

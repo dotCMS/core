@@ -7,6 +7,7 @@ import { catchError, map, pluck, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotContentletLockerService,
+    DotExperimentsService,
     DotFavoritePageService,
     DotHttpErrorHandled,
     DotHttpErrorManagerService,
@@ -29,7 +30,6 @@ import {
     PageModelChangeEvent,
     PageModelChangeEventType
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 @Injectable()
