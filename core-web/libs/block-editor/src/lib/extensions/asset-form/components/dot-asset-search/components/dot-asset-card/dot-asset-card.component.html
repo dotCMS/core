@@ -3,10 +3,8 @@
         <div class="thumbnail-container">
             <dot-contentlet-thumbnail
                 [contentlet]="contentlet"
-                [cover]="false"
                 [iconSize]="'72px'"
-                [showVideoThumbnail]="showVideoThumbnail"
-            ></dot-contentlet-thumbnail>
+                [showVideoThumbnail]="showVideoThumbnail"></dot-contentlet-thumbnail>
         </div>
     </ng-template>
     <h2 class="title" *pTemplate="'title'">{{ contentlet?.fileName || contentlet?.title }}</h2>
