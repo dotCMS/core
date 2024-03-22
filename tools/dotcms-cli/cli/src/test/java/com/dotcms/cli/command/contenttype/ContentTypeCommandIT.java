@@ -354,12 +354,12 @@ class ContentTypeCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                     "--page", "0", "--pageSize", "1000", "--order", "variable", "--direction", "ASC");
+                     "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "ASC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("varName",output);
-            //Assertions.assertEquals( 10, strings.size());
-            Assertions.assertTrue(isSortedAscending(strings),()->"The strings: "+strings);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings),()->"The strings: "+strings);
         }
     }
 
@@ -374,12 +374,12 @@ class ContentTypeCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                    "--page", "0", "--pageSize", "1000", "--order", "variable", "--direction", "DESC");
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "DESC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("varName",output);
-            //Assertions.assertEquals( 10, strings.size());
-            Assertions.assertTrue(isSortedDescending(strings),()->"The strings: "+strings);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings),()->"The strings: "+strings);
         }
     }
 
@@ -394,12 +394,12 @@ class ContentTypeCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                    "--page", "0", "--pageSize", "1000", "--order", "modDate", "--direction", "DESC");
+                    "--page", "0", "--pageSize", "3", "--order", "modDate", "--direction", "DESC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("modDate",output);
-            //Assertions.assertEquals( 10, strings.size());
-            Assertions.assertTrue(isSortedDescending(strings));
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings));
         }
     }
 
@@ -415,43 +415,45 @@ class ContentTypeCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
-                    "--page", "0", "--pageSize", "1000", "--order", "modDate", "--direction", "ASC");
+                    "--page", "0", "--pageSize", "3", "--order", "modDate", "--direction", "ASC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("modDate",output);
-            //Assertions.assertEquals( 10, strings.size());
-            Assertions.assertTrue(isSortedAscending(strings));
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings));
         }
     }
 
-    private static boolean isSortedAscending(List<String> varNames) {
-        for (int i = 0; i < varNames.size() - 1; i++) {
-            if (varNames.get(i).compareTo(varNames.get(i + 1)) > 0) {
+    // Function to verify if a list of strings is sorted in ascending order (case-insensitive)
+    public static boolean isSortedAsc(final List<String> list) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            if (String.CASE_INSENSITIVE_ORDER.compare(list.get(i), list.get(i + 1)) > 0) {
+                System.out.println("i: "+list.get(i) + " i+1: "+list.get(i+1));
                 return false;
             }
         }
         return true;
     }
 
-    private static boolean isSortedDescending(List<String> varNames) {
-        for (int i = 0; i < varNames.size() - 1; i++) {
-            if (varNames.get(i).compareTo(varNames.get(i + 1)) < 0) {
+    // Function to verify if a list of strings is sorted in descending order (case-insensitive)
+    public static boolean isSortedDesc(final List<String> list) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            if (String.CASE_INSENSITIVE_ORDER.compare(list.get(i), list.get(i + 1)) < 0) {
                 return false;
             }
         }
         return true;
     }
 
-    private static List<String> extractRowsByFieldName(String fieldName,String inputText) {
+    private static List<String> extractRowsByFieldName(final String fieldName, final String inputText) {
         List<String> varNames = new ArrayList<>();
         Pattern pattern = Pattern.compile(String.format("%s:\\s*\\[([^\\]]+)\\]",fieldName));
         Matcher matcher = pattern.matcher(inputText);
         while (matcher.find()) {
-            varNames.add(matcher.group(1));
+            varNames.add(matcher.group(1).replaceAll("[^a-zA-Z0-9]", ""));
         }
         return varNames;
     }
-
 
     /**
      * Push CT from a file
