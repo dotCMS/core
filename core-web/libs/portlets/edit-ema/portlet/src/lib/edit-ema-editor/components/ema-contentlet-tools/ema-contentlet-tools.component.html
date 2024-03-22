@@ -17,8 +17,6 @@
     [ngStyle]="getActionPosition()"
     data-testId="actions">
     <p-button
-        (mousedown)="moveWillStartHandler()"
-        (mouseup)="moveCancelledHandler()"
         (dragstart)="dragStart($event, contentlet.payload)"
         (dragend)="dragEnd($event)"
         draggable="true"
@@ -38,6 +36,6 @@
 </div>
 
 <div class="bounds" [ngStyle]="getPosition()" data-testId="bounds"></div>
-<div class="drag-image" #dragImage data-testId="drag-image">
+<div class="drag-image" #dragImage *ngIf="contentlet" data-testId="drag-image">
     {{ contentlet.payload.contentlet.contentType }}
 </div>

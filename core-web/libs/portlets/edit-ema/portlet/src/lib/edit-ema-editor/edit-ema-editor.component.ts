@@ -759,12 +759,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
-            [CUSTOMER_ACTIONS.CONTENT_CHANGE]: () => {
-                // This event is sent when the mutation observer detects a change in the content
-
-                this.store.updateEditorState(EDITOR_STATE.IDLE);
-            },
-
             [CUSTOMER_ACTIONS.NAVIGATION_UPDATE]: () => {
                 const payload = <SetUrlPayload>data.payload;
 
@@ -774,18 +768,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const isSameUrl = this.queryParams.url === payload.url;
 
                 if (isSameUrl) {
-                    this.store.updateEditorState(EDITOR_STATE.IDLE);
                     this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
+                    this.store.updateEditorState(EDITOR_STATE.IDLE);
                 } else {
+                    this.updateQueryParams({
+                        url: payload.url,
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+
                     this.store.updateEditorState(EDITOR_STATE.LOADING);
                 }
-
-                this.updateQueryParams({
-                    url: payload.url,
-                    ...(isSameUrl
-                        ? {}
-                        : { 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier })
-                });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
                 this.containers = <Container[]>data.payload;
@@ -805,7 +797,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
                 // I need to find a way to reset the drag on scroll.
-
                 this.store.updateEditorState(EDITOR_STATE.IDLE);
                 this.resetDragProperties();
             },
@@ -873,10 +864,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             queryParams: params,
             queryParamsHandling: 'merge'
         });
-
-        // Also eliminated
-
-        this.resetDragProperties();
     }
 
     private handleDuplicatedContentlet() {

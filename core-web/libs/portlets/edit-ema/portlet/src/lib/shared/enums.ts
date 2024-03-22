@@ -17,7 +17,6 @@ export enum NG_CUSTOM_EVENTS {
 export enum EDITOR_STATE {
     LOADING = 'loading',
     IDLE = 'idle',
-    SCROLLING = 'scrolling',
     DRAGGING = 'dragging',
     ERROR = 'error'
 }

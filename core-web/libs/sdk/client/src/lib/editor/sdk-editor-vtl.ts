@@ -1,5 +1,4 @@
 import {
-    listenContentChange,
     listenEditorMessages,
     listenHoveredContentlet,
     pingEditor,
@@ -30,5 +29,4 @@ if (isInsideEditor()) {
     scrollHandler();
     preserveScrollOnIframe();
     listenHoveredContentlet();
-    listenContentChange();
 }

@@ -182,40 +182,6 @@ export function preserveScrollOnIframe() {
 }
 
 /**
- * Listens for changes in the content and triggers a customer action when the content changes.
- *
- * @private
- * @memberof DotCMSPageEditor
- */
-export function listenContentChange() {
-    const observer = new MutationObserver((mutationsList) => {
-        for (const { addedNodes, removedNodes, type } of mutationsList) {
-            if (type === 'childList') {
-                const didNodesChanged = [
-                    ...Array.from(addedNodes),
-                    ...Array.from(removedNodes)
-                ].filter(
-                    (node) => (node as HTMLDivElement).dataset?.['dotObject'] === 'contentlet'
-                ).length;
-
-                if (didNodesChanged) {
-                    postMessageToEditor({
-                        action: CUSTOMER_ACTIONS.CONTENT_CHANGE
-                    });
-                }
-            }
-        }
-    });
-
-    observer.observe(document, { childList: true, subtree: true });
-
-    subscriptions.push({
-        type: 'observer',
-        observer
-    });
-}
-
-/**
  * Sends a ping message to the editor.
  *
  */
