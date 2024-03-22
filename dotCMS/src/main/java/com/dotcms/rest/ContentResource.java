@@ -2207,7 +2207,7 @@ public class ContentResource {
     protected void processJSON(final Contentlet contentlet, final InputStream input)
             throws JSONException, IOException, DotDataException, DotSecurityException {
 
-        processMap(contentlet, webResource.processJSON(input));
+        processMap(contentlet, WebResource.processJSON(input));
     }
 
     private void setRequestMetadata(Contentlet contentlet, HttpServletRequest request) {
