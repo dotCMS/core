@@ -39,7 +39,8 @@ import {
     DotLayoutBody,
     DotTemplateDesigner,
     DotTheme,
-    DotContainerMap
+    DotContainerMap,
+    DotTemplate
 } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
@@ -81,13 +82,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     layout!: DotLayout;
 
     @Input()
-    themeId!: string; // In the layout we have the themeId we can consider removing this.
+    template!: Partial<DotTemplate>;
 
     @Input()
     containerMap!: DotContainerMap;
-
-    @Input({ required: true })
-    templateIdentifier!: string;
 
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
@@ -229,8 +227,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
             containerMap: this.containerMap,
-            themeId: this.themeId,
-            templateIdentifier: this.templateIdentifier,
+            themeId: this.template.themeId,
+            templateIdentifier: this.template.identifier,
             shouldEmit: true
         });
     }
@@ -238,11 +236,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ngOnChanges(changes: SimpleChanges) {
         if (!changes.layout?.firstChange && changes.layout?.currentValue) {
             const parsedRows = parseFromDotObjectToGridStack(changes.layout.currentValue.body);
-
             this.store.updateOldRows({
                 newRows: parsedRows,
                 templateIdentifier:
-                    changes.templateIdentifier?.currentValue || this.templateIdentifier
+                    changes.template?.currentValue.identifier || this.template.identifier
             });
         }
     }

@@ -74,6 +74,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly stateLoad$ = this.select((state) => state.editorState);
 
+    readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
+
     readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
 
     readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
@@ -134,7 +136,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly layoutProperties$ = this.select(
         this.layoutProps$,
         this.templateIdentifier$,
-        (props, templateIdentifier) => ({ ...props, templateIdentifier })
+        this.templateThemeId$,
+        (props, templateIdentifier, themeId) => ({
+            ...props,
+            template: { identifier: templateIdentifier, themeId }
+        })
     );
 
     readonly shellProperties$ = this.select((state) => ({
