@@ -73,3 +73,4 @@ This maintenance release includes the following code fixes:
 66. https://github.com/dotCMS/core/issues/27832 : Return IDP configuration Id instead of site id as part of the ACS URL in the SAML authentication request #27832
 67. Enable Experiments feature by default
 68. https://github.com/dotCMS/core/issues/27883 : fix(perf) : Prevent UtilMethods.isImage from blocking #27883
+69. https://github.com/dotCMS/core/issues/22698 : Limited user without Search Portlet can't Edit Content From Edit Page Portlet #22698

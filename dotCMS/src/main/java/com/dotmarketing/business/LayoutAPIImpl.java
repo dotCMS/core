@@ -29,6 +29,9 @@ import com.liferay.portal.model.User;
 import io.vavr.API;
 import io.vavr.control.Try;
 
+import static com.dotmarketing.business.PermissionAPI.PermissionableType.CONTENTLETS;
+import static com.dotmarketing.business.PermissionAPI.PermissionableType.HTMLPAGES;
+
 /**
  * @author jasontesser
  *
@@ -171,12 +174,25 @@ public class LayoutAPIImpl implements LayoutAPI {
 		return layouts;
 	}
 
+	/* This method is used to check if the user has access to edit the page portlet.
+	 * All the users should have access to Edit Page, regardless of the assigned portlets.
+	 * To determine if the user has access to edit page, we check if the user can edit HTMLPAGES or CONTENTLETS
+	 */
+	private boolean doesUserHaveAccessEditPagePortlet(User user) throws DotDataException {
+		final PermissionAPI permAPI = APILocator.getPermissionAPI();
+		return permAPI.doesUserHavePermissions(HTMLPAGES, PermissionAPI.PERMISSION_EDIT, user) ||
+				permAPI.doesUserHavePermissions(CONTENTLETS, PermissionAPI.PERMISSION_EDIT, user);
+	}
+
 	@Override
 	public boolean doesUserHaveAccessToPortlet(final String portletId, final User user) throws DotDataException {
           if(portletId==null || user==null || !user.isBackendUser()) {
               return false;
           }
 		if(loadLayoutsForUser(user).stream(). anyMatch(layout -> layout.getPortletIds().contains(portletId))){
+			return true;
+		}
+		if("edit-page".equals(portletId) && doesUserHaveAccessEditPagePortlet(user)){
 			return true;
 		}
 		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
