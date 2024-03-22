@@ -405,7 +405,7 @@
                                 <database>
                                     <run>
                                         <volumes>
-                                            <bind>
+                                            <bind combine.children="append">
                                                 <volume>${project.basedir}/src/docker-compose/it-test/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh</volume>
                                             </bind>
                                         </volumes>
