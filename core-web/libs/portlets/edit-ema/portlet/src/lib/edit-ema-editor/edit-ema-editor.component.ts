@@ -297,11 +297,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     // Only reload if is Headless.
                     // If is VTL, the content is updated by store.code$
                     this.reloadIframe();
-
-                    return;
+                } else {
+                    this.setIframeContent(code);
                 }
-
-                this.setIframeContent(code);
 
                 // If we are idle then we are not dragging
                 this.resetDragProperties();
