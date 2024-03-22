@@ -7,6 +7,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.exception.InvalidLicenseException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,7 +37,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -49,9 +49,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.util.CookieUtil;
 import com.liferay.util.StringPool;
 
 import io.vavr.control.Try;
@@ -128,8 +126,7 @@ public  class WebResource {
     /**
      *
      * <p>
-     *     1) Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenException.
-     *
+     *     1) Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenExceptionz
      *      If no User can be retrieved, and <code>rejectWhenNoUser</code> is <code>true</code>, it will throw an exception,
      *      otherwise returns <code>null</code>.
      * </p>
@@ -146,7 +143,7 @@ public  class WebResource {
      * @param response {@link HttpServletResponse}
      * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
      * @return an initDataObject with the resulting <code>Map</code>
-     * @throws SecurityException
+     * @throws SecurityException if authentication fails
      */
     @Deprecated
     public InitDataObject init(final HttpServletRequest request, final HttpServletResponse response,
@@ -158,11 +155,11 @@ public  class WebResource {
     /**
      * @deprecated
      * @see #init(HttpServletRequest, HttpServletResponse, boolean)
-     * @param authenticate
-     * @param request
-     * @param rejectWhenNoUser
+     * @param authenticate boolean
+     * @param request {@link HttpServletRequest}
+     * @param rejectWhenNoUser boolean
      * @return InitDataObject
-     * @throws SecurityException
+     * @throws SecurityException if authentication fails
      */
     @Deprecated
     public InitDataObject init(final boolean authenticate, final HttpServletRequest request,
@@ -228,8 +225,8 @@ public  class WebResource {
      *
      *
      * @param params a string containing the URL parameters in the /key/value form
-     * @param authenticate
-     * @param request
+     * @param authenticate boolean
+     * @param request {@link HttpServletRequest}
      * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
      * @param requiredPortlet portlet name which the user needs to have access to
      * @return an initDataObject with the resulting <code>Map</code>
@@ -250,14 +247,14 @@ public  class WebResource {
     /**
      * @deprecated
      * @see #init(String, String, HttpServletRequest, HttpServletResponse, boolean, String)
-     * @param userId
-     * @param password
-     * @param authenticate
-     * @param request
-     * @param rejectWhenNoUser
-     * @param requiredPortlet
-     * @return
-     * @throws SecurityException
+     * @param userId {@link String} a string with the userId/email
+     * @param password {@link String} a string with password.
+     * @param authenticate boolean
+     * @param request {@link HttpServletRequest}
+     * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
+     * @param requiredPortlet portlet name which the user needs to have access to
+     * @return an initDataObject with the resulting <code>Map</code>
+     * @throws SecurityException if authentication fails
      */
     @Deprecated
     public InitDataObject init(String userId, String password, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
@@ -329,9 +326,9 @@ public  class WebResource {
     }
 
     /**
-     * @param builder
-     * @return
-     * @throws SecurityException
+     * @param builder {@link InitBuilder}
+     * @return an {@link InitDataObject} with the resulting <code>Map</code>
+     * @throws SecurityException if authentication fails
      */
     public InitDataObject init(final InitBuilder builder) throws SecurityException {
 
@@ -355,8 +352,8 @@ public  class WebResource {
 
     /**
      * make sure we have the right anon permissions
-     * @param builder
-     * @param user
+     * @param builder {@link InitBuilder}
+     * @param user {@link User}
      */
     @VisibleForTesting
     void checkAnonymousPermissions(final InitBuilder builder, @NotNull User user) {
@@ -377,14 +374,14 @@ public  class WebResource {
 
     /**
      * make sure we have the right Admin permissions
-     * @param builder
-     * @param user
+     * @param builder {@link InitBuilder}
+     * @param user {@link User}
      */
     @VisibleForTesting
     void checkAdminPermissions(final InitBuilder builder, User user) {
         if (builder.requiredRolesSet.contains(Role.CMS_ADMINISTRATOR_ROLE) && !user.isAdmin()) {
             throw new SecurityException(
-                    String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
+                    String.format("User " + user.getFullName() + ":" + user.getEmailAddress()
                             + " is not a %s", Role.CMS_ADMINISTRATOR_ROLE),
                     Response.Status.UNAUTHORIZED);
         }
@@ -392,8 +389,8 @@ public  class WebResource {
 
     /**
      * make sure we have the right Portal permissions
-     * @param builder
-     * @param user
+     * @param builder {@link InitBuilder}
+     * @param user {@link User}
      */
     @VisibleForTesting
     void checkPortletPermissions(final InitBuilder builder, User user) {
@@ -405,14 +402,13 @@ public  class WebResource {
                 return;
             }
         }
-        throw new SecurityException("User " + user != null ? user.getFullName() + ":" + user.getEmailAddress()
-                : user + " does not have access to required Portlet", Response.Status.UNAUTHORIZED);
+        throw new SecurityException(user.getFullName() + ":" + user.getEmailAddress(), Response.Status.UNAUTHORIZED);
     }
 
     /**
      * make sure we have the right Role permissions
-     * @param builder
-     * @param user
+     * @param builder {@link InitBuilder}
+     * @param user {@link User}
      */
     @VisibleForTesting
     void checkRolePermissions(final InitBuilder builder, User user) {
@@ -427,7 +423,7 @@ public  class WebResource {
         }
         throw new SecurityException(
                 String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
-                        + " lacks one of the required role %s", builder.requiredRolesSet.toString()),
+                        + " lacks one of the required role %s", builder.requiredRolesSet),
                 Response.Status.UNAUTHORIZED);
     }
 
@@ -458,14 +454,14 @@ public  class WebResource {
 
     /**
      * @deprecated
-     * @see #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, boolean)
+     * @see #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess) 
      *
      * Return the current login user.<br>
      * if exist a user login by login as then return this user not the principal user
      *
-     * @param request
-     * @param paramsMap
-     * @param rejectWhenNoUser
+     * @param request {@link HttpServletRequest}
+     * @param paramsMap {@link Map}
+     * @param rejectWhenNoUser boolean
      *
      * @return the login user or the login as user if exist any
      */
@@ -479,7 +475,7 @@ public  class WebResource {
 
     /**
      * @deprecated
-     * @see #authenticate(HttpServletRequest, HttpServletResponse, Map, boolean)
+     * @see #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess)
      * Returns an authenticated {@link User}. There are five ways to get the User's credentials.
      * They are executed in the specified order. When found, the remaining ways won't be executed.
      * <br>1) Using username and password contained in <code>params</code>.
@@ -507,7 +503,7 @@ public  class WebResource {
     public User authenticate(HttpServletRequest request, final HttpServletResponse response,
                              final Map<String, String> params, final AnonymousAccess access) throws SecurityException {
 
-        request = ServletPreconditions.checkSslIsEnabledIfRequired(request);
+        ServletPreconditions.checkSslIsEnabledIfRequired(request);
 
         User user = null;
 
@@ -529,9 +525,11 @@ public  class WebResource {
             user = this.jsonWebTokenAuthCredentialProcessor.processAuthHeaderFromJWT(request);
         }
 
+        /*
         if(null == user) {
-           // user = this.processCookieJWT(request);
+           user = this.processCookieJWT(request);
         }
+         */
 
 
         if(user == null ) {
@@ -706,21 +704,6 @@ public  class WebResource {
         return user;
     }
 
-    private User processCookieJWT(final HttpServletRequest request) {
-        User user = null;
-
-        if(request != null) {
-            final String jwt=Try.of(()->CookieUtil.get(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN)).getOrNull();
-            user = APILocator.getApiTokenAPI().userFromJwt(jwt, request.getRemoteAddr()).orElse(null);
-        }
-
-        return user;
-    }
-
-
-
-
-
 
     /**
      * This method returns a <code>Map</code> with the keys and values extracted from <code>params</code>
@@ -760,10 +743,10 @@ public  class WebResource {
         }
     }
 
-    public static Map processJSON(final InputStream input) throws JSONException, IOException {
+    public static Map<String,Object> processJSON(final InputStream input) throws JSONException, IOException {
 
         final HashMap<String,Object> map = new HashMap<>();
-        final JSONObject obj        = new JSONObject(IOUtils.toString(input));
+        final JSONObject obj        = new JSONObject(IOUtils.toString(input, StandardCharsets.UTF_8));
         final Iterator<String> keys = obj.keys();
         while(keys.hasNext()) {
 
@@ -789,7 +772,7 @@ public  class WebResource {
 
    public static class InitBuilder {
 
-        private WebResource webResource;
+        private final WebResource webResource;
 
         private String userId = null;
         private String password = null;

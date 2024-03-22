@@ -18,8 +18,10 @@ export class DotContentletThumbnail {
     @Prop({ reflect: true })
     iconSize = '';
 
+    // JSP elements need the image to be rendered as a background image because of the way they are styled
+    // New elements should use the default image tag for accessibility
     @Prop({ reflect: true })
-    cover = true;
+    backgroundImage = false;
 
     @Prop()
     showVideoThumbnail = true;
@@ -49,8 +51,9 @@ export class DotContentletThumbnail {
     }
 
     render() {
-        const image = this.contentlet && this.cover ? `url(${this.getImageURL()})` : '';
-        const imgClass = this.cover ? 'cover' : '';
+        const backgroundImageURL =
+            this.contentlet && this.backgroundImage ? `url(${this.getImageURL()})` : '';
+        const imgClass = this.backgroundImage ? 'background-image' : '';
 
         return (
             <Host>
@@ -58,11 +61,13 @@ export class DotContentletThumbnail {
                     <dot-video-thumbnail
                         contentlet={this.contentlet}
                         variable={this.fieldVariable}
-                        cover={this.cover}
+                        cover={this.backgroundImage}
                         playable={this.playableVideo}
                     />
                 ) : this.renderImage ? (
-                    <div class={`thumbnail ${imgClass}`} style={{ 'background-image': image }}>
+                    <div
+                        class={`thumbnail ${imgClass}`}
+                        style={{ 'background-image': backgroundImageURL }}>
                         <img
                             src={this.getImageURL()}
                             alt={this.alt}
