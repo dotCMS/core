@@ -217,3 +217,25 @@ jobs:
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
           retention-days: 2
           if-no-files-found: ignore
+
+      - name: Prepare reports archive (if maven failed)
+        if: failure()
+        shell: bash
+        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
+      - name: Upload reports Archive (if maven failed)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports-cli-native-${{ matrix.label }}
+          path: 'test-reports.tgz'
+      - name: cli-build
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "build-reports-test-cli - native ${{ matrix.label }}"
+          path: |
+            tools/dotcms-cli/**/target/failsafe-reports/*.xml
+            tools/dotcms-cli/**/target/jacoco-report/*.exec
+            target/build-report.json
+            LICENSE
+          retention-days: 2
