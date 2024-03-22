@@ -100,3 +100,5 @@ export enum DEBUG_LEVELS {
     WARN = 'WARN',
     ERROR = 'ERROR'
 }
+
+export const PAGE_VIEW_EVENT_NAME = 'pageview';

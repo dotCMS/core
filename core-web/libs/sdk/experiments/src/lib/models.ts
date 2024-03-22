@@ -10,6 +10,7 @@ export interface DotExperimentConfig {
     'api-key': string;
     server: string;
     debug: boolean;
+    trackPageView?: boolean;
 }
 
 /**
@@ -153,20 +154,4 @@ export interface ExperimentEvent {
     isTargetPage: boolean;
     lookBackWindow: string;
     variant: string;
-}
-
-/**
- * `IndexDbStoredData` is an interface representing the data structure of the elements stored in IndexedDB.
- *
- * This structure includes details regarding the creation of the experiment and the experiments that have been assigned.
- *
- * @property {number} created - This represents the time when the data is stored. It is expressed in terms of a timestamp.
- * This property is used as a time discriminator to discard the store when necessary.
- *
- * @property {AssignedExperiments} experiments - This property is an instance of `AssignedExperiments`.
- * It represents all the experiments that have been assigned when this data was created.
- */
-export interface IndexDbStoredData {
-    created: number;
-    experiments: Experiment[];
 }
