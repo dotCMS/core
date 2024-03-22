@@ -4,7 +4,7 @@ import { Injectable, NgZone, inject } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, take } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 
 import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -38,10 +38,7 @@ export class DotWysiwygPluginService {
                     });
 
                     ref.onClose
-                        .pipe(
-                            take(1),
-                            filter((asset) => !!asset)
-                        )
+                        .pipe(filter((asset) => !!asset))
                         .subscribe((asset: DotCMSContentlet) =>
                             editor.insertContent(formatDotImageNode(asset))
                         );

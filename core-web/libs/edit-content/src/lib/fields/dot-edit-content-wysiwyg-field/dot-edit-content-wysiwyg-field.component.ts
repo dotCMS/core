@@ -1,5 +1,5 @@
 import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
-import { RawEditorOptions, TinyMCE } from 'tinymce';
+import { RawEditorOptions } from 'tinymce';
 
 import { ChangeDetectionStrategy, Component, Input, inject, signal } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -9,12 +9,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
-
-declare global {
-    interface Window {
-        tinymce: TinyMCE;
-    }
-}
 
 @Component({
     selector: 'dot-wysiwyg-field',
