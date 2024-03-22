@@ -144,7 +144,7 @@ export class IndexDBDatabaseHandler {
      * @return {void}
      */
     setFetchExpiredTime(): void {
-        const expireTime = new Date().getTime() + LOCAL_STORAGE_TIME_DURATION_MILLISECONDS;
+        const expireTime = Date.now() + LOCAL_STORAGE_TIME_DURATION_MILLISECONDS;
         localStorage.setItem(EXPERIMENT_FETCH_EXPIRE_TIME_KEY, expireTime.toString());
     }
 
