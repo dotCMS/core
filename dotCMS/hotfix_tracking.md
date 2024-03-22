@@ -74,3 +74,4 @@ This maintenance release includes the following code fixes:
 67. Enable Experiments feature by default
 68. https://github.com/dotCMS/core/issues/27883 : fix(perf) : Prevent UtilMethods.isImage from blocking #27883
 69. https://github.com/dotCMS/core/issues/22698 : Limited user without Search Portlet can't Edit Content From Edit Page Portlet #22698
+70. https://github.com/dotCMS/core/issues/25729 : Order of comments in Task details modal. #25729
