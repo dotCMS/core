@@ -155,6 +155,10 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-httpclient</artifactId>
         </dependency>
         <dependency>
