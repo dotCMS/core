@@ -394,6 +394,65 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ExperimentsAPI#getRunningExperiments()}
+     * When: You have 2 Experiments running on Site Aand 1 more running on Site B
+     * Should: return the Experiment to the Specific SIte
+     */
+    @Test
+    public void getRunningExperimentByHost() throws DotDataException, DotSecurityException {
+        final Host siteA = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset pageA1 = new HTMLPageDataGen(siteA, template).nextPersisted();
+
+        final HTMLPageAsset pageA2 = new HTMLPageDataGen(siteA, template).nextPersisted();
+
+        final Host siteB = new SiteDataGen().nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(siteB, template).nextPersisted();
+
+        final Experiment experimentA1 = new ExperimentDataGen().page(pageA1).nextPersisted();
+        APILocator.getExperimentsAPI().start(experimentA1.id().get(), APILocator.systemUser());
+
+        final Experiment experimentA2 = new ExperimentDataGen().page(pageA2).nextPersisted();
+        APILocator.getExperimentsAPI().start(experimentA2.id().get(), APILocator.systemUser());
+
+        final Experiment experimentB = new ExperimentDataGen().page(pageB).nextPersisted();
+        APILocator.getExperimentsAPI().start(experimentB.id().get(), APILocator.systemUser());
+
+        try {
+            final List<String> experimentsRunninsAllSites = APILocator.getExperimentsAPI()
+                    .getRunningExperiments().stream()
+                    .map(experiment -> experiment.id().get())
+                    .collect(Collectors.toList());
+
+            assertEquals(3, experimentsRunninsAllSites.size());
+            assertTrue(experimentsRunninsAllSites.containsAll(list(experimentA1.id().get(), experimentA2.id().get(),
+                    experimentB.id().get())));
+
+            final List<String> experimentsRunninsSiteA = APILocator.getExperimentsAPI()
+                    .getRunningExperiments(siteA).stream()
+                    .map(experiment -> experiment.id().get())
+                    .collect(Collectors.toList());
+
+            assertEquals(2, experimentsRunninsSiteA.size());
+            assertTrue(experimentsRunninsSiteA.containsAll(list(experimentA1.id().get(), experimentA2.id().get())));
+
+            final List<String> experimentsRunninsSiteB = APILocator.getExperimentsAPI()
+                    .getRunningExperiments(siteB).stream()
+                    .map(experiment -> experiment.id().get())
+                    .collect(Collectors.toList());
+
+            assertEquals(1, experimentsRunninsSiteB.size());
+            assertEquals(experimentB.id().get(), experimentsRunninsSiteB.get(0));
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentA1.id().get(), APILocator.systemUser());
+            APILocator.getExperimentsAPI().end(experimentA2.id().get(), APILocator.systemUser());
+            APILocator.getExperimentsAPI().end(experimentB.id().get(), APILocator.systemUser());
+        }
+    }
+
+
     private static void assertCachedRunningExperiments(final List<String> experimentIds) {
         CacheLocator.getExperimentsCache()
                 .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY)

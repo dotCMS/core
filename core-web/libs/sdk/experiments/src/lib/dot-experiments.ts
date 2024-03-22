@@ -233,15 +233,20 @@ export class DotExperiments {
      * @return {Promise<void>} A promise that resolves when the initialization is complete.
      */
     private async initialize(): Promise<void> {
-        if (!this.initializationPromise) {
+        if (this.initializationPromise != null) {
+            // The initialization promise already exists, so we don't need to initialize again.
+            // Wait for the current initialization to complete.
+            await this.initializationPromise;
+        } else {
+            // First time initialization or after the promise has been explicitly set to null elsewhere.
             this.initializationPromise = (async () => {
                 this.logger.group('Initialization Process');
                 this.logger.time('Total Initialization');
-                //load database handler
+                // Load the database handler
                 this.initializeDatabaseHandler();
-                // Init the analytics client
+                // Initialize the analytics client
                 this.initAnalyticsClient();
-                // retrieve the data from persistence
+                // Retrieve persisted data
                 this.experimentsAssigned = await this.getPersistedData();
 
                 await this.verifyExperimentData();
@@ -250,8 +255,6 @@ export class DotExperiments {
                 this.logger.groupEnd();
             })();
         }
-
-        await this.initializationPromise;
     }
 
     /**

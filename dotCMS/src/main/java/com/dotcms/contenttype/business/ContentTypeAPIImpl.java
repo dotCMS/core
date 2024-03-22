@@ -118,29 +118,45 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
-  /**
-   * Content-Type Delete Entry point
-   * @param type Content Type that will be deleted
-   * @throws DotSecurityException
-   * @throws DotDataException
-   */
   @Override
-  public void delete(ContentType type) throws DotSecurityException, DotDataException {
-    if (!contentTypeCanBeDeleted(type)) {
-      Logger.warn(this, "Content Type " + type.name()
-              + " cannot be deleted because it is referenced by other content types");
+  public void delete(final ContentType contentType) throws DotSecurityException, DotDataException {
+    this.delete(contentType, true);
+  }
+
+  @Override
+  public void deleteSync(final ContentType contentType) throws DotSecurityException, DotDataException {
+    this.delete(contentType, false);
+  }
+
+  /**
+   * Deletes the specified Content Type, either in the same database transaction or as a separate
+   * process.
+   *
+   * @param contentType The {@link ContentType} being deleted.
+   * @param async       If the deletion process should be executed asynchronously -- i.e.; in a
+   *                    separate process, set this to {@code true}.
+   *
+   * @throws DotSecurityException The specified User does not have edition permissions on this
+   *                              Content Type.
+   * @throws DotDataException     An error occurred when interacting with the database.
+   */
+  private void delete(final ContentType contentType, final boolean async) throws DotSecurityException, DotDataException {
+    if (!contentTypeCanBeDeleted(contentType)) {
+      Logger.warn(this, String.format("Content Type '%s' does not exist", contentType.name()));
       return;
     }
-
-    final boolean asyncDelete = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC, true);;
-    final boolean asyncDeleteWithJob = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC_WITH_JOB, true);
+    boolean asyncDelete = async;
+    boolean asyncDeleteWithJob = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC_WITH_JOB, true);
+    if (async) {
+      asyncDelete = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC, true);
+    }
 
     if (!asyncDelete) {
-      Logger.debug(this, String.format(" Content type (%s) will be deleted sequentially.", type.name()));
-      transactionalDelete(type);
+      Logger.debug(this, () -> String.format("Content Type '%s' will be deleted synchronously", contentType.name()));
+      this.transactionalDelete(contentType);
     } else {
       //We make a copy to hold all the contentlets that will be deleted asynchronously and then dispose the original one
-      triggerAsyncDelete(type, asyncDeleteWithJob);
+      this.triggerAsyncDelete(contentType, asyncDeleteWithJob);
     }
   }
 
@@ -209,8 +225,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
   }
 
-  boolean contentTypeCanBeDeleted(ContentType type) throws DotDataException, DotSecurityException {
-
+  /**
+   * Verifies whether the {@link User} calling this method has the required {@code EDIT}
+   * permissions to delete the specified Content Type or not.
+   *
+   * @param type The {@link ContentType} to be deleted.
+   *
+   * @return If the {@link User} has the required permissions to delete the specified Content
+   * Type, returns {@code true}.
+   *
+   * @throws DotDataException     An error occurred when accessing the database.
+   * @throws DotSecurityException The specified User does not have the necessary permissions to
+   *                              perform this action.
+   */
+  protected boolean contentTypeCanBeDeleted(ContentType type) throws DotDataException, DotSecurityException {
       if (null == type.id()) {
           throw new DotDataException("ContentType must have an id set");
       }
