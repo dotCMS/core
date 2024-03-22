@@ -1,6 +1,7 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable, of } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { catchError, map, switchMap, take } from 'rxjs/operators';
@@ -10,7 +11,6 @@ import { DotContentletService, DotContentTypeService } from '@dotcms/data-access
 import { DotCMSContentlet, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/ui';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { HttpErrorResponse } from '@angular/common/http';
 
 export interface DotContentCompareTableData {
     working: DotCMSContentlet;
