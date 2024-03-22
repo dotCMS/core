@@ -18,11 +18,14 @@ import {
 } from './mocks/mock';
 import { DotExperimentConfig } from './models';
 
+const MockJitsu = {
+    set: jest.fn(),
+    track: jest.fn().mockResolvedValue(true)
+};
+
 // Jitsu library Mock
 jest.mock('@jitsu/sdk-js', () => ({
-    jitsuClient: jest.fn().mockImplementation(() => ({
-        set: jest.fn()
-    }))
+    jitsuClient: jest.fn(() => MockJitsu)
 }));
 
 // SessionStorage mock
@@ -90,6 +93,28 @@ describe('DotExperiments', () => {
             const instance = DotExperiments.getInstance(configMock);
             expect(instance.getIsDebugActive()).toBe(false);
         });
+
+        it('should not call to trackPageView if you send the flag', async () => {
+            const config: DotExperimentConfig = { ...configMock, trackPageView: false };
+
+            fetchMock.post(`${configMock.server}${API_EXPERIMENTS_URL}`, {
+                status: 200,
+                body: IsUserIncludedResponse,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const instance = DotExperiments.getInstance(config);
+            const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
+
+            expect(spyTrackPageView).not.toHaveBeenCalled();
+
+            await instance.locationChanged(LocationMock).then(() => {
+                expect(spyTrackPageView).not.toHaveBeenCalled();
+            });
+        });
     });
 
     describe('Class interactions', () => {
@@ -117,10 +142,14 @@ describe('DotExperiments', () => {
             });
 
             const instance = DotExperiments.getInstance(configMock);
+            const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
+
             await instance.ready().then(() => {
                 const experiments = instance.experiments;
                 expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDB);
+
+                expect(spyTrackPageView).toBeCalledTimes(1);
             });
 
             // Second time the user enter to the page
@@ -141,9 +170,11 @@ describe('DotExperiments', () => {
             );
 
             await instance.locationChanged(LocationMock).then(() => {
+                // get the experiments stored in the indexDB
                 const experiments = instance.experiments;
                 expect(experiments.length).toBe(2);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew);
+                expect(spyTrackPageView).toBeCalledTimes(2);
             });
 
             fetchMock.post(
@@ -163,9 +194,11 @@ describe('DotExperiments', () => {
             const location = { ...LocationMock, href: 'http://localhost/destinations' };
             mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP + TIME_15_DAYS_MILLISECONDS);
             await instance.locationChanged(location).then(() => {
+                // get the experiments stored in the indexDB
                 const experiments = instance.experiments;
                 expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew15DaysLater);
+                expect(spyTrackPageView).toBeCalledTimes(3);
             });
         });
     });
