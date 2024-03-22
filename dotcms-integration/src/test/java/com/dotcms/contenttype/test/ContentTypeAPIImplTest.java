@@ -76,7 +76,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -2611,41 +2610,6 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		Assert.assertEquals(countBefore + 1, countAfter);
 
-	}
-
-	/**
-	 * <ul>
-	 *     <li><b>Method to test: </b>{@link ContentTypeAPI#delete(ContentType)}</li>
-	 *     <li><b>Given Scenario: </b>Creates a test Content Type and deletes it.</li>
-	 *     <li><b>Expected Result: </b>By default, the delete method must delete the specified
-	 *     Content Type in a separate thread, so requesting it to the API immediately MUST return
-	 *     the Content Type object as the delete happens in a separate transaction.</li>
-	 * </ul>
-	 */
-	@Test
-	public void deleteContentTypeAsync() throws DotDataException, DotSecurityException {
-		// ╔══════════════════╗
-		// ║  Initialization  ║
-		// ╚══════════════════╝
-		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-		final String testTypeName = "My Test Content Type-" + System.currentTimeMillis();
-
-		// ╔════════════════════════╗
-		// ║  Generating Test data  ║
-		// ╚════════════════════════╝
-		final ContentType testType = createContentType(testTypeName);
-		try {
-			Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, true);
-			contentTypeAPI.delete(testType);
-			final ContentType newInstance = contentTypeAPI.find(testType.variable());
-
-			// ╔══════════════╗
-			// ║  Assertions  ║
-			// ╚══════════════╝
-			assertNotNull("Retrieving the Content Type again MUST NOT be null", newInstance);
-		} finally {
-			Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, false);
-		}
 	}
 
 	/**

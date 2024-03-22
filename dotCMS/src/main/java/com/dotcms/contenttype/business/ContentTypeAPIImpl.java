@@ -120,12 +120,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public void delete(final ContentType contentType) throws DotSecurityException, DotDataException {
-    deleteSync(contentType, true);
+    this.delete(contentType, true);
   }
 
   @Override
   public void deleteSync(final ContentType contentType) throws DotSecurityException, DotDataException {
-    deleteSync(contentType, false);
+    this.delete(contentType, false);
   }
 
   /**
@@ -140,7 +140,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
    *                              Content Type.
    * @throws DotDataException     An error occurred when interacting with the database.
    */
-  private void deleteSync(final ContentType contentType, final boolean async) throws DotSecurityException, DotDataException {
+  private void delete(final ContentType contentType, final boolean async) throws DotSecurityException, DotDataException {
     if (!contentTypeCanBeDeleted(contentType)) {
       Logger.warn(this, String.format("Content Type '%s' does not exist", contentType.name()));
       return;
