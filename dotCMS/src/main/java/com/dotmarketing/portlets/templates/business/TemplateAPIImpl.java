@@ -8,11 +8,30 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.system.event.local.model.Subscriber;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.SiteCreatedEvent;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.BaseWebAssetAPI;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.Theme;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -27,11 +46,21 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
-import com.dotmarketing.portlets.templates.design.bean.*;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.Sidebar;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -40,12 +69,32 @@ import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+/**
+ * This implementation of the {@link TemplateAPI} class provides the business logic to manage
+ * information related to Templates in dotCMS.
+ * <p>Templates are layouts available to users when building new HTML, xHTML or XML pages. Each
+ * Template includes one or more Containers, which act as server-side includes. The Containers
+ * placed in the Template define the areas on a Page that "permissioned" users will be able to
+ * contribute content to, and how that content will be displayed. Templates provide a page layout,
+ * and link the Containers to the page.</p>
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, DotInitializer {
 
 	private static final String LAYOUT_FILE_NAME     = "com/dotmarketing/portlets/templates/business/layout.json";
@@ -54,10 +103,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	private final  IdentifierAPI    identifierAPI          = APILocator.getIdentifierAPI();
 	private final  TemplateFactory  templateFactory        = FactoryLocator.getTemplateFactory();
 	private final  ContainerAPI     containerAPI           = APILocator.getContainerAPI();
-	private final  Lazy<VersionableAPI> versionableAPI     = Lazy.of(()->APILocator.getVersionableAPI());
-	private final  Lazy<HTMLPageAssetAPI> htmlPageAssetAPI = Lazy.of(()->APILocator.getHTMLPageAssetAPI());
+	private final  Lazy<VersionableAPI> versionableAPI     = Lazy.of(APILocator::getVersionableAPI);
+	private final  Lazy<HTMLPageAssetAPI> htmlPageAssetAPI = Lazy.of(APILocator::getHTMLPageAssetAPI);
 	private final  HostAPI          hostAPI                = APILocator.getHostAPI();
-	private final  Lazy<Template>   systemTemplate         = Lazy.of(() -> new SystemTemplate());
+	private final  Lazy<Template>   systemTemplate         = Lazy.of(SystemTemplate::new);
 
 	@Override
 	public Template systemTemplate() {
@@ -547,25 +596,30 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
 
-		//Check Edit Permissions over Template
-		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
-			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
-			throw new DotSecurityException("User does not have Permissions to Edit the Template");
+		// Check Edit Permissions over Template
+		if (!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)) {
+			final String errorMsg = String.format("User '%s' does not have permission to delete Template " +
+					"'%s' [ %s ]", user.getUserId(), template.getName(), template.getInode());
+			Logger.error(this, errorMsg);
+			throw new DotSecurityException(errorMsg);
 		}
 
-		//Check that the template is archived
-		if(!isArchived(template)) {
-			Logger.error(this,"The template: " + template.getIdentifier() + " must be archived before it can be deleted");
-			throw new DotStateException("Template must be archived before it can be deleted");
+		// Check that the template is archived
+		if (!isArchived(template)) {
+			final String errorMsg = String.format("Template '%s' [ %s ] must be archived before it can be deleted",
+					template.getName(), template.getInode());
+			Logger.error(this, errorMsg);
+			throw new DotStateException(errorMsg);
 		}
 
-		//Check that template do not have dependencies (pages referencing the template),
-		// use system user b/c user executing the delete could no have access to all pages
+		// Check that template does not have pages referencing it
+		// use system user b/c the user executing this method might not have access to all pages
 		final Map<String,String> checkDependencies = checkPageDependencies(template,APILocator.systemUser(),false);
-		if(checkDependencies!= null && !checkDependencies.isEmpty()){
-			Logger.error(this, "The Template: " + template.getName() + " can not be deleted. "
-					+ "Because it has pages referencing to it: " + checkDependencies);
-			throw new DotDataValidationException("Template still has pages referencing to it: " + checkDependencies);
+		if (checkDependencies != null && !checkDependencies.isEmpty()) {
+			final String errorMsg = String.format("Template '%s' [ %s ] cannot be deleted because it still has pages referencing it: " +
+							"%s", template.getName(), template.getInode(), checkDependencies);
+			Logger.error(this, errorMsg);
+			throw new DotDataValidationException(errorMsg);
 		}
 
 		deleteTemplate(template);

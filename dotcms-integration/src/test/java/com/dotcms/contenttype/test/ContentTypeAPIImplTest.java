@@ -1686,7 +1686,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
                 fieldFound = field;
             }
         }
-        Assert.assertNotNull( fieldFound );
+        assertNotNull( fieldFound );
         Assert.assertEquals( FIRST_NAME, fieldFound.name() );
 
         Field fieldToSaveDifferentID = FieldBuilder.builder( TextField.class )
@@ -1710,7 +1710,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
                 fieldFound = field;
             }
         }
-        Assert.assertNotNull( fieldFound );
+        assertNotNull( fieldFound );
         Assert.assertEquals( SECOND_NAME, fieldFound.name() );
 
 		//Deleting content type.
@@ -2612,5 +2612,34 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	}
 
+	/**
+	 * <ul>
+	 *     <li><b>Method to test: </b>{@link ContentTypeAPI#deleteSync(ContentType)} (ContentType)}</li>
+	 *     <li><b>Given Scenario: </b>Creates a test Content Type and deletes it.</li>
+	 *     <li><b>Expected Result: </b>This method will delete the specified Content Type BUT it
+	 *     will be done in the same transaction. So, requesting it to the API immediately will throw
+	 *     a {@link NotFoundInDbException}.</li>
+	 * </ul>
+	 */
+	@Test(expected = NotFoundInDbException.class)
+	public void deleteContentTypeSync() throws DotDataException, DotSecurityException {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		final String testTypeName = "My Test Content Type-" + System.currentTimeMillis();
+
+		// ╔════════════════════════╗
+		// ║  Generating Test data  ║
+		// ╚════════════════════════╝
+		final ContentType testType = createContentType(testTypeName);
+		contentTypeAPI.deleteSync(testType);
+
+		// ╔══════════════╗
+		// ║  Assertions  ║
+		// ╚══════════════╝
+		// This call must throw the expected Exception
+		contentTypeAPI.find(testType.variable());
+	}
 
 }
