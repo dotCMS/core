@@ -134,8 +134,6 @@ export const isDataCreateValid = (): boolean => {
 
         return timeValidUntil > now;
     } catch (error) {
-        console.error('Error checking data validity', error);
-
         return false;
     }
 };

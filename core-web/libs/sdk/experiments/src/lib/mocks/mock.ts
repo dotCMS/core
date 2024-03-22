@@ -72,7 +72,7 @@ export const NewIsUserIncludedResponse: IsUserIncludedApiResponse = {
     messages: []
 };
 
-export const MOCK_CURRENT_TIMESTAMP = 1710969341000;
+export const MOCK_CURRENT_TIMESTAMP = 1704096000000;
 
 export const TIME_15_DAYS_MILLISECONDS = 1296000 * 1000;
 

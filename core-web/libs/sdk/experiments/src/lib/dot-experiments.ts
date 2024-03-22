@@ -511,7 +511,7 @@ export class DotExperiments {
         }
 
         // trigger the page view event
-        if (this.config.trackPageView !== false) {
+        if (this.config.trackPageView) {
             this.trackPageView();
         }
     }

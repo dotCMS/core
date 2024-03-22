@@ -18,14 +18,14 @@ import {
 } from './mocks/mock';
 import { DotExperimentConfig } from './models';
 
-const MockJitsu = {
-    set: jest.fn(),
-    track: jest.fn().mockResolvedValue(true)
-};
+jest.spyOn(Date, 'now').mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
 
-// Jitsu library Mock
+// Jitsu SDK Mock
 jest.mock('@jitsu/sdk-js', () => ({
-    jitsuClient: jest.fn(() => MockJitsu)
+    jitsuClient: jest.fn(() => ({
+        set: jest.fn(),
+        track: jest.fn().mockResolvedValue(true)
+    }))
 }));
 
 // SessionStorage mock
@@ -122,15 +122,10 @@ describe('DotExperiments', () => {
             fetchMock.restore();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (DotExperiments as any).instance = null;
-            jest.restoreAllMocks();
-            jest.clearAllMocks();
         });
 
         it('should simulate the changes of the data in first run, after 5 days and 15 days.', async () => {
             // First time the user enter to the page
-
-            const mockNow = jest.spyOn(Date, 'now');
-            mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
 
             fetchMock.post(`${configMock.server}${API_EXPERIMENTS_URL}`, {
                 status: 200,
@@ -154,7 +149,9 @@ describe('DotExperiments', () => {
 
             // Second time the user enter to the page
             // change the time 5 days later
-            mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP + TIME_5_DAYS_MILLISECONDS);
+            jest.spyOn(Date, 'now').mockImplementation(
+                () => MOCK_CURRENT_TIMESTAMP + TIME_5_DAYS_MILLISECONDS
+            );
 
             fetchMock.post(
                 `${configMock.server}${API_EXPERIMENTS_URL}`,
@@ -192,7 +189,10 @@ describe('DotExperiments', () => {
 
             // Third try, after 15 days
             const location = { ...LocationMock, href: 'http://localhost/destinations' };
-            mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP + TIME_15_DAYS_MILLISECONDS);
+
+            jest.spyOn(Date, 'now').mockImplementation(
+                () => MOCK_CURRENT_TIMESTAMP + TIME_15_DAYS_MILLISECONDS
+            );
             await instance.locationChanged(location).then(() => {
                 // get the experiments stored in the indexDB
                 const experiments = instance.experiments;
