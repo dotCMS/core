@@ -89,7 +89,6 @@ describe('DotWysiwygPluginService', () => {
 
             expect(spyOn).toHaveBeenCalledWith('drop', expect.any(Function));
             expect(spyButton).toHaveBeenCalledWith('dotAddImage', {
-                text: 'Dot Image',
                 icon: 'image',
                 onAction: expect.any(Function)
             });
@@ -106,7 +105,7 @@ describe('DotWysiwygPluginService', () => {
 
             const button = editor.ui.registry.getAll().buttons['dotAddImage'];
             const dialogConfig = {
-                header: 'Add Image',
+                header: 'Insert Image',
                 width: '800px',
                 height: '500px',
                 contentStyle: { padding: 0 },
