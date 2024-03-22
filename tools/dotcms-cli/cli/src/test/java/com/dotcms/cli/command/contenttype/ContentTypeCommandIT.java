@@ -424,7 +424,11 @@ class ContentTypeCommandIT extends CommandTest {
         }
     }
 
-    // Function to verify if a list of strings is sorted in ascending order (case-insensitive)
+    /**
+     * Function to verify if a list of strings is sorted in ascending order (case-insensitive)
+     * @param list  the list of strings
+     * @return true if the list is sorted in ascending order, false otherwise
+     */
     public static boolean isSortedAsc(final List<String> list) {
         for (int i = 0; i < list.size() - 1; i++) {
             if (String.CASE_INSENSITIVE_ORDER.compare(list.get(i), list.get(i + 1)) > 0) {
@@ -435,7 +439,11 @@ class ContentTypeCommandIT extends CommandTest {
         return true;
     }
 
-    // Function to verify if a list of strings is sorted in descending order (case-insensitive)
+    /**
+     * Function to verify if a list of strings is sorted in descending order (case-insensitive)
+     * @param list  the list of strings
+     * @return true if the list is sorted in descending order, false otherwise
+     */
     public static boolean isSortedDesc(final List<String> list) {
         for (int i = 0; i < list.size() - 1; i++) {
             if (String.CASE_INSENSITIVE_ORDER.compare(list.get(i), list.get(i + 1)) < 0) {
@@ -445,6 +453,12 @@ class ContentTypeCommandIT extends CommandTest {
         return true;
     }
 
+    /**
+     * Extracts the rows from the output text by the field name
+     * @param fieldName the field name to extract
+     * @param inputText the input text
+     * @return the list of rows
+     */
     private static List<String> extractRowsByFieldName(final String fieldName, final String inputText) {
         List<String> varNames = new ArrayList<>();
         Pattern pattern = Pattern.compile(String.format("%s:\\s*\\[([^\\]]+)\\]",fieldName));
