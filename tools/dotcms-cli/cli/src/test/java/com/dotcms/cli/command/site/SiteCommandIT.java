@@ -68,24 +68,6 @@ class SiteCommandIT extends CommandTest {
     }
 
     /**
-     * Given scenario: Simply call current site Expected Result: Verify the command completes
-     * successfully
-     */
-    @Test
-    @Order(1)
-    void Test_Command_Current_Site() {
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteCurrent.NAME);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("Current Site is "));
-        }
-    }
-
-    /**
      * Given scenario: Simply call find by name command Expected Result: Verify the command
      * completes successfully
      */

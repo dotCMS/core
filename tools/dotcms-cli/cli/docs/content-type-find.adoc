@@ -20,7 +20,8 @@ content-type-find - *Use this command to find Content-types.*
 == Synopsis
 
 *content-type find* [*-h*] [*--non-interactive*] [*-tk*=_<token>_] [[*-n*=_<typeName>_]
-                  [*-s*=_<site>_] [*-o*=_<orderBy>_] [*-p*=_<page>_] [*-ps*=_<pageSize>_]]
+                  [*-s*=_<site>_] [*-o*=_<orderBy>_] [*-d*=_<direction>_] [*-p*=_<page>_]
+                  [*-ps*=_<pageSize>_]]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -57,7 +58,14 @@ By default, this is false.
   Filter by site
 
 *-o*, *--order*=_<orderBy>_::
-  Set an order by param. (variable is default) 
+  Set an order by param. (variable is used default)
++
+Expected values that can be used are: 
++
+variable, name, description, modDate
+
+*-d*, *--direction*=_<direction>_::
+  Set order direction. (ASC or DESC) 
 
 *-p*, *--page*=_<page>_::
   Page Number.
