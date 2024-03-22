@@ -86,7 +86,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @Input()
     containerMap!: DotContainerMap;
 
-    @Input()
+    @Input({ required: true })
     templateIdentifier!: string;
 
     @Output()
@@ -134,8 +134,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     grid!: GridStack;
 
     addBoxIsDragging = false;
-
-    lastTemplateId = '';
 
     get layoutProperties(): DotTemplateLayoutProperties {
         return {

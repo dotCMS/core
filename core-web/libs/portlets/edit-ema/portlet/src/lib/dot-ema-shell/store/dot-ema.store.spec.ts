@@ -157,6 +157,13 @@ describe('EditEmaStore', () => {
                     done();
                 });
             });
+
+            it('should return templateIdentifier', (done) => {
+                spectator.service.templateIdentifier$.subscribe((state) => {
+                    expect(state).toEqual('111');
+                    done();
+                });
+            });
         });
 
         describe('updaters', () => {
