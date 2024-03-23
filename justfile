@@ -109,7 +109,7 @@ test-integration-debug-suspend:
 
 # Prepares the environment for running integration tests in an IDE
 test-integration-ide:
-    ./mvnw -pl :dotcms-integration -Pdocker-start -Dcoreit.test.skip=false
+    ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false
 
 # Stops integration test services
 test-integration-stop:

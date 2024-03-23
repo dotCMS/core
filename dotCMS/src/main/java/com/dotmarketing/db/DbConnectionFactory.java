@@ -2,6 +2,8 @@
 package com.dotmarketing.db;
 
 import static com.dotmarketing.util.Constants.DATABASE_DEFAULT_DATASOURCE;
+
+import com.dotcms.cmsmaintenance.ajax.ThreadMonitorTool;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -233,6 +235,17 @@ public class DbConnectionFactory {
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
             Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
+
+            /**
+             * PRINT STACK TO SEE WHERE WE ARE LEAKING CONNECTIONS
+             */
+            String[] threads = new ThreadMonitorTool().getThreads();
+            for(String thread : threads){
+                System.err.println(thread);
+            }
+
+
+
             throw new DotRuntimeException(e.getMessage(), e);
         }
     }

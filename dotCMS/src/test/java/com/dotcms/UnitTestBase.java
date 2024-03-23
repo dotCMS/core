@@ -16,6 +16,7 @@ import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 
 import java.util.TimeZone;
+import org.mockito.Mockito;
 
 public abstract class UnitTestBase extends BaseMessageResources {
 
@@ -50,7 +51,8 @@ public abstract class UnitTestBase extends BaseMessageResources {
 		MyAPILocator.destroyAndForceInit();
 
 		final Company company = mock(Company.class);
-		when(company.getTimeZone()).thenReturn(TimeZone.getDefault());
-		when(companyAPI.getDefaultCompany()).thenReturn(company);
+		// Not all tests use this, so we need to make it lenient to prevent UnnecessaryStubbingException
+		Mockito.lenient().when(company.getTimeZone()).thenReturn(TimeZone.getDefault());
+		Mockito.lenient().when(companyAPI.getDefaultCompany()).thenReturn(company);
 	}
 }

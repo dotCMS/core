@@ -1,3 +1,17 @@
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: dotcms.java.Mockito1to3Upgrade
+
+displayName: DotCMS Mockito 1 to 3 upgrade
+description: >
+    General cleanup and static analysis for Mockito code that 
+    should be safe to make on any Mockito branch
+recipeList:
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.mockito.ArgumentMatchers any()
+      newMethodName: any
+
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: dotcms.java.cleanup.Java11BaseCleanup

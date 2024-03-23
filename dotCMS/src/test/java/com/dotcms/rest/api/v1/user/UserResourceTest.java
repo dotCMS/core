@@ -402,7 +402,7 @@ public class UserResourceTest extends UnitTestBase {
                     .build();
 
             Response response = userResource.update(request, httpServletResponse, updateUserForm);
-            assertEquals(response.getStatus(), 400);
+            assertEquals(400, response.getStatus());
         } finally {
             RestUtilTest.cleanupContext();
         }

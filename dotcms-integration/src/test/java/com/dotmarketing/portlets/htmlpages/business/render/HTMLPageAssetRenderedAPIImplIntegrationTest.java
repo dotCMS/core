@@ -172,6 +172,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * 7) publish again the content
      * 8) Get the versions
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -297,6 +298,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
      * When The host_id request's parameter is set, it should take this over session attribute
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -330,6 +332,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The host_id request's parameter is set but it does not exists, it should take hostsession attribute
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -359,6 +362,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When the {@link Host#HOST_VELOCITY_VAR_NAME} request's parameter is set, it should take this over session attribute
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -391,6 +395,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * When the {@link Host#HOST_VELOCITY_VAR_NAME} request's parameter is set but does not exists,
      * it should take the host session attribute
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -421,6 +426,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When Host is not set into request it should use session host,
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -451,6 +457,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * When Host is not set into request neither session
      * it should take the default host
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -481,6 +488,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * When Host is not set into request neither session
      * it should take the request's server name before then the default host
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -510,6 +518,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The host_id request's parameter is set, but the user does not have permission over it
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -531,6 +540,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The {@link Host#HOST_VELOCITY_VAR_NAME} request's parameter is set, but the user does not have permission over it
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -551,6 +561,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The session host is set, but the user does not have permission over it
      * Should throw a {@link DotSecurityException}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -571,6 +582,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The WebKeys.CURRENT_HOST request attribute is set, but the user does not have permission over it
      * Should throw a {@link DotSecurityException}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -592,6 +604,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * When Host is not set into request neither session
      * it should take the request's server name before then the default host
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -1562,6 +1575,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: You have at least one {@link Experiment} RUNNING and try to render a page and the page had a HEAD section
      * Should inject the JS Code need for Experiment to work into the head tag
+     *
      * @throws WebAssetException
      * @throws DotDataException
      * @throws DotSecurityException
@@ -1624,6 +1638,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: You have at least one {@link Experiment} RUNNING and try to render a page and the page does not had a HEAD section
      * Should inject the JS Code need for Experiment to work on the top of the HTML code
+     *
      * @throws WebAssetException
      * @throws DotDataException
      * @throws DotSecurityException

@@ -2,7 +2,7 @@ package com.dotmarketing.filters;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.filters.interceptor.FilterWebInterceptorProvider;

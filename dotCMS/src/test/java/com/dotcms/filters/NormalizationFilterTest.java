@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import com.dotcms.UnitTestBase;
 import com.dotcms.ema.proxy.MockHttpCaptureResponse;
 import com.dotcms.mock.request.FakeHttpRequest;

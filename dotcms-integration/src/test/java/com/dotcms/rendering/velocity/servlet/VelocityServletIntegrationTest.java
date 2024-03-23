@@ -44,6 +44,7 @@ import com.liferay.portal.model.User;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -64,9 +65,9 @@ import java.util.Map;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.anyObject;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -104,7 +105,7 @@ public class VelocityServletIntegrationTest {
                 attributes.put(key, value);
                 return null;
             }
-        }).when(request).setAttribute(anyString(), anyObject());
+        }).when(request).setAttribute(anyString(), any());
 
         // Mock getAttribute
         doAnswer(new Answer<Object>() {
@@ -444,8 +445,8 @@ public class VelocityServletIntegrationTest {
                 .build();
 
         when(pageAssetRenderedAPI.getPageHtml(eq(pageContext),
-                Mockito.any(HttpServletRequest.class),
-                Mockito.any(HttpServletResponse.class)))
+                any(HttpServletRequest.class),
+                any(HttpServletResponse.class)))
                 .thenReturn(htmlContent);
 
         return pageAssetRenderedAPI;

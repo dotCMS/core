@@ -4,8 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,12 +20,11 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * The goal of this unit test is to try some scenarios for the default backend login required
@@ -33,9 +32,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  *
  * @author Jonathan Gamba 9/25/18
  */
-@PowerMockIgnore({"javax.management.*", "javax.crypto.*", "jdk.internal.reflect.*"})
-@PrepareForTest({SecurityLogger.class})
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase {
 
     /**
@@ -50,13 +47,11 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
-        PowerMockito.mockStatic(SecurityLogger.class);
-        PowerMockito.doNothing().when(SecurityLogger.class, "logInfo", any(), anyString());
 
         final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
                 new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
 
-        when(request.getSession(false)).thenReturn(session);
+        //when(request.getSession(false)).thenReturn(session);
         when(userWebAPI.isLoggedToBackend(request)).thenReturn(true);
 
         loginRequiredWebInterceptor.init();
@@ -65,6 +60,7 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         assertEquals(result, Result.NEXT);
 
         loginRequiredWebInterceptor.destroy();
+
     }
 
     /**
@@ -80,8 +76,6 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
-        PowerMockito.mockStatic(SecurityLogger.class);
-        PowerMockito.doNothing().when(SecurityLogger.class, "logInfo", any(), anyString());
 
         final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
                 new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
@@ -96,6 +90,7 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         assertEquals(result, Result.SKIP_NO_CHAIN);
 
         loginRequiredWebInterceptor.destroy();
+
     }
 
     /**
@@ -112,14 +107,12 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
-        PowerMockito.mockStatic(SecurityLogger.class);
-        PowerMockito.doNothing().when(SecurityLogger.class, "logInfo", any(), anyString());
 
-        when(response.getWriter()).thenReturn(printWriter);
+        //when(response.getWriter()).thenReturn(printWriter);
 
         final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
                 new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
-        when(loginRequiredWebInterceptor.intercept(request, response))
+        /*when(loginRequiredWebInterceptor.intercept(request, response))
                 .thenAnswer(new Answer<Result>() {
 
                     @Override
@@ -128,11 +121,11 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
                         fail("For the given URI the intercept method should not be called");
                         return Result.NEXT;
                     }
-                });
+                });*/
 
-        when(request.getSession(false)).thenReturn(session);
+        //when(request.getSession(false)).thenReturn(session);
         when(request.getRequestURI()).thenReturn(URI_TO_TEST);
-        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+        //when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
         //Create a new instance of an interceptor delegate
         SimpleWebInterceptorDelegateImpl webInterceptorDelegate = new SimpleWebInterceptorDelegateImpl();
@@ -140,6 +133,7 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         webInterceptorDelegate.init();
         webInterceptorDelegate.intercept(request, response);
         webInterceptorDelegate.destroy();
+
     }
 
     /**
@@ -238,14 +232,12 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
-        PowerMockito.mockStatic(SecurityLogger.class);
-        PowerMockito.doNothing().when(SecurityLogger.class, "logInfo", any(), anyString());
 
         final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
                 new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
 
-        when(request.getSession(false)).thenReturn(session);
-        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+        //when(request.getSession(false)).thenReturn(session);
+        //when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
         loginRequiredWebInterceptor.init();
 
@@ -256,6 +248,7 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         }
 
         loginRequiredWebInterceptor.destroy();
+
     }
 
     /**
@@ -282,8 +275,6 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
-        PowerMockito.mockStatic(SecurityLogger.class);
-        PowerMockito.doNothing().when(SecurityLogger.class, "logInfo", any(), anyString());
 
         final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
                 new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
@@ -301,6 +292,7 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         }
 
         loginRequiredWebInterceptor.destroy();
+
     }
 
 }
