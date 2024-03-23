@@ -25,6 +25,7 @@
         <jersey.version>2.22.1</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
         <dotcms.tika-api.version>2023.09.8</dotcms.tika-api.version>
+        <tomcat.version>9.0.73</tomcat.version>
     </properties>
     <dependencyManagement>
 
@@ -1438,7 +1439,11 @@
                 <version>${tomcat.version}</version>
             </dependency>
 
-
+            <dependency>
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>tomcat-catalina</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.glowroot</groupId>
