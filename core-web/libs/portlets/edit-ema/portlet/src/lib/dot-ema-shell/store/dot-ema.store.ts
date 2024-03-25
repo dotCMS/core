@@ -245,7 +245,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             switchMap((payload) =>
                 this.dotPageApiService.save(payload).pipe(
                     switchMap(() =>
-                        this.syncEditorData(payload.params).pipe(
+                        this.dotPageApiService.get(payload.params).pipe(
                             tapResponse(
                                 (pageData: DotPageApiResponse) => {
                                     this.patchState((state) => ({
@@ -327,7 +327,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             params: response.params
                         })
                         .pipe(
-                            switchMap(() => this.syncEditorData(response.params)),
+                            switchMap(() => this.dotPageApiService.get(response.params)),
                             tapResponse(
                                 (pageData: DotPageApiResponse) => {
                                     this.patchState((state) => ({
@@ -392,17 +392,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         previewState,
         editorState: EDITOR_STATE.IDLE
     }));
-
-    /**
-     * Update the page containers
-     *
-     * @private
-     * @param {DotPageApiParams} params
-     * @memberof EditEmaStore
-     */
-    private syncEditorData = (params: DotPageApiParams) => {
-        return this.dotPageApiService.get(params);
-    };
 
     /**
      * Create the url to add a page to favorites
