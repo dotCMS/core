@@ -10,7 +10,7 @@ The **dotCMS CLI**, sometimes shortened to **dotCLI**, is a standalone tool for 
 The simplest and most recommended way to get the dotCMS CLI is from its npm package:
 
 ```shell script
-npm install -g @dotcms/cli
+npm install -g @dotcms/dotcli
 ```
 ### Manual JAR Download
 
