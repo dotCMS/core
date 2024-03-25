@@ -114,7 +114,10 @@ describe('TemplateBuilderComponent', () => {
                     width: 'Mobile',
                     title: 'Test Title'
                 },
-                themeId: '123',
+                template: {
+                    identifier: '111',
+                    themeId: '123'
+                },
                 containerMap: CONTAINER_MAP_MOCK
             }
         });

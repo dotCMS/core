@@ -220,7 +220,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
                 this.store.load({
-                    clientHost: data.url,
+                    clientHost: data?.url,
                     ...this.queryParams
                 });
             });

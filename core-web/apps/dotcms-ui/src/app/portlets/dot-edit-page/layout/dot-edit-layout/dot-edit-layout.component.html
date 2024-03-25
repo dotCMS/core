@@ -2,7 +2,7 @@
 <ng-template #enabledComponent>
     <dotcms-template-builder-lib
         [layout]="pageState.layout"
-        [themeId]="pageState.template.theme"
+        [template]="pageState.template"
         [containerMap]="containerMap"
         (templateChange)="nextUpdateTemplate($event)"
         data-testId="new-template-builder">
