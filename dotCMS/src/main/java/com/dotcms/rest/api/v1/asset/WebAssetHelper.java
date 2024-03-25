@@ -561,32 +561,39 @@ public class WebAssetHelper {
      * @throws DotDataException any data related exception
      * @throws DotSecurityException any security violation exception
      */
-    Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live) throws DotDataException, DotSecurityException {
+    Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live)
+            throws DotDataException, DotSecurityException {
 
-        if(!permissionAPI.doesUserHavePermission(checkout, PermissionAPI.PERMISSION_PUBLISH, user, false)){
-            Logger.info(this, String.format("User [%s] does not have permission to publish asset [%s]", user.getUserId(), checkout.getIdentifier()));
+        if (!permissionAPI.doesUserHavePermission(checkout, PermissionAPI.PERMISSION_PUBLISH, user,
+                false)) {
+            Logger.info(this,
+                    String.format("User [%s] does not have permission to publish asset [%s]",
+                            user.getUserId(), checkout.getIdentifier()));
             return checkout;
         }
 
-        if(live){
-            //if the desired state is live, and we need to publish the contentlet
-            //But checkout forces creation of a new version, so we need to check in first
-            if(isNotSet(checkout.getInode())){
-              Contentlet checkin = contentletAPI.checkin(checkout, user, false);
-              contentletAPI.publish(checkin, user, false);
-              return checkin;
-            }
+        var contentletToProcess = checkout;
+        var checkedIn = false;
+
+        if (isNotSet(checkout.getInode())) {
+            contentletToProcess = contentletAPI.checkin(contentletToProcess, user, false);
+            checkedIn = true;
+        }
+
+        if (live) {
             //Live means publish, so we need to publish the contentlet
-            contentletAPI.publish(checkout, user, false);
-            return checkout;
+            contentletAPI.publish(contentletToProcess, user, false);
         } else {
-            //if the desired state is working we need to unpublish the contentlet
-            if(checkout.isLive()){
-                contentletAPI.unpublish(checkout, user, false);
+
+            if (checkout.isLive()) {
+                //if the desired state is working we need to unpublish the contentlet
+                contentletAPI.unpublish(contentletToProcess, user, false);
+            } else if (!checkedIn) {
+                return contentletAPI.checkin(contentletToProcess, user, false);
             }
         }
-        //and finally checkin the contentlet to persist the changes
-        return contentletAPI.checkin(checkout, user, false);
+
+        return contentletToProcess;
     }
 
     /**
@@ -603,8 +610,7 @@ public class WebAssetHelper {
             throws DotDataException, DotSecurityException {
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentTypeAPI.find("FileAsset").id());
-        final Contentlet fileAsset = updateFileAsset(file, host, folder, lang, contentlet);
-        return contentletAPI.checkin(fileAsset, user, false);
+        return updateFileAsset(file, host, folder, lang, contentlet);
     }
 
 
