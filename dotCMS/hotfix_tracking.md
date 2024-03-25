@@ -83,3 +83,4 @@ This maintenance release includes the following code fixes:
 76. https://github.com/dotCMS/core/issues/27775 : Page API Returning Content Related to Page Asset #27775
 77. https://github.com/dotCMS/core/issues/27187 : remove unneeded DB hit from edit content screen #27187
 78. https://github.com/dotCMS/core/issues/27384 : Update local.dotcms.site SSL cert for 2024 #27384
+79. https://github.com/dotCMS/core/issues/26004 : Image field doesn't export as a header in CSV #26004
