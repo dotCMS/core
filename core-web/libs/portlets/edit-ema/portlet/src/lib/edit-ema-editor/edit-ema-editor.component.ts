@@ -773,8 +773,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         url: payload.url,
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                     });
-
-                    this.store.updateEditorState(EDITOR_STATE.LOADING);
                 }
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
@@ -856,6 +854,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private updateQueryParams(params: Params) {
+        this.store.updateEditorState(EDITOR_STATE.LOADING);
         this.router.navigate([], {
             queryParams: params,
             queryParamsHandling: 'merge'
