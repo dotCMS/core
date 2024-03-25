@@ -48,6 +48,16 @@ form {
     margin-bottom: 9rem;
 }
 
+.ai-image-prompt__rewritten-label {
+    display: flex;
+    gap: $spacing-1;
+
+    i {
+        color: $color-palette-primary;
+        cursor: pointer;
+    }
+}
+
 p-accordion {
     min-height: 37rem;
 }
