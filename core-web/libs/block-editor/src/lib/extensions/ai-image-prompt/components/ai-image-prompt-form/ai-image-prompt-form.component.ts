@@ -154,7 +154,6 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         const isInputType = type === PromptType.INPUT;
         promptControl.setValidators(isInputType ? Validators.required : null);
         promptControl.updateValueAndValidity();
-        console.log('updatePromptControl');
         this.setPromptLabels(isInputType);
         this.isUpdatingValidators = false;
         this.requiredPrompt = isInputType;

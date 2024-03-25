@@ -79,12 +79,9 @@ export class AiImagePromptGalleryComponent implements OnChanges {
     };
 
     ngOnChanges(changes: SimpleChanges): void {
-        const { images } = changes;
-
-        if (images?.currentValue?.length && images.currentValue[this.activeImageIndex].error) {
-            this.emptyConfiguration.title = this.dotMessageService.get(
-                images.currentValue[this.activeImageIndex].error
-            );
+        const error = changes.images?.currentValue?.[this.activeImageIndex]?.error;
+        if (error) {
+            this.emptyConfiguration.title = this.dotMessageService.get(error);
         }
     }
 }
