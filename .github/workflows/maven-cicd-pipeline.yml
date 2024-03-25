@@ -529,6 +529,18 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
+
+  #
+  # Run CLI build artifacts
+  #
+  build-cli:
+    name: CLI Build
+    needs: [build-jdk11,linux-jvm-tests,linux-integration-tests,linux-postman-tests]
+    uses: ./.github/workflows/cli-build-artifacts.yml
+    with:
+      buildNativeImage: true
+      branch: ${{ github.ref }}
+
   sonarqube:
     name: SonarQube Scan
     runs-on: ubuntu-latest
@@ -609,7 +621,7 @@ jobs:
   prepare-report-data:
     name: Prepare Report Data
     runs-on: ubuntu-20.04
-    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests,sonarqube ]
+    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests,sonarqube,build-cli ]
     if: always()
     outputs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
