@@ -200,7 +200,10 @@ describe('EditEmaStore', () => {
                         themeId: mockDotTemplate().theme,
                         pageId: '123',
                         containersMap: containersMapMock,
-                        templateIdentifier: '111'
+                        template: {
+                            identifier: '111',
+                            themeId: undefined
+                        }
                     });
                     done();
                 });
