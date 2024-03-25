@@ -794,8 +794,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
-                // I need to find a way to reset the drag on scroll.
-                this.store.updateEditorState(EDITOR_STATE.IDLE);
                 this.resetDragProperties();
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
