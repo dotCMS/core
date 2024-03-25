@@ -184,7 +184,7 @@ public class WebAssetHelper {
                     .build();
         } else {
             Logger.debug(this, String.format("Retrieving a folder by name: [%s] " , folder.getName()));
-            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build(), false);
             //We're requesting a folder and all of its contents
             final List<Folder> subFolders = folderContent.stream().filter(Folder.class::isInstance)
                     .map(f -> (Folder) f).collect(Collectors.toList());
