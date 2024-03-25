@@ -1,4 +1,4 @@
-import { jitsuClient, JitsuClient } from '@jitsu/sdk-js';
+import { EventPayload, jitsuClient, JitsuClient } from '@jitsu/sdk-js';
 
 import {
     API_EXPERIMENTS_URL,
@@ -6,7 +6,8 @@ import {
     EXPERIMENT_ALREADY_CHECKED_KEY,
     EXPERIMENT_DB_KEY_PATH,
     EXPERIMENT_DB_STORE_NAME,
-    EXPERIMENT_QUERY_PARAM_KEY
+    EXPERIMENT_QUERY_PARAM_KEY,
+    PAGE_VIEW_EVENT_NAME
 } from './constants';
 import { DotExperimentConfig, Experiment, Variant } from './models';
 import { getExperimentsIds, parseData, parseDataForAnalytics, verifyRegex } from './parser/parser';
@@ -47,6 +48,16 @@ export class DotExperiments {
      */
     private static instance: DotExperiments;
     /**
+     * Represents the default configuration for the DotExperiment library.
+     * @property {boolean} trackPageView - Specifies whether to track page view or not. Default value is true.
+     */
+    private static readonly defaultConfig: Partial<DotExperimentConfig> = {
+        // By default, we track the page view
+        trackPageView: true,
+        // By default, debug is off
+        debug: false
+    };
+    /**
      * Represents the promise for the initialization process.
      * @private
      */
@@ -66,21 +77,21 @@ export class DotExperiments {
      * @private
      */
     private experimentsAssigned: Experiment[] = [];
-
     /**
      * A logger utility for logging messages.
      *
      * @class
      */
     private logger!: DotLogger;
-
     /**
      * Represents the current location.
      * @private
      */
     private currentLocation: Location = location;
 
-    private constructor(private config: DotExperimentConfig) {
+    private constructor(private readonly config: DotExperimentConfig) {
+        // merge default config and the config to the instance
+        this.config = { ...DotExperiments.defaultConfig, ...config };
         if (!this.config['server']) {
             throw new Error('`server` must be provided and should not be empty!');
         }
@@ -197,7 +208,6 @@ export class DotExperiments {
         redirectFunction?: (url: string) => void
     ): Promise<void> {
         this.currentLocation = location;
-        this.refreshAnalyticsForCurrentLocation();
         await this.verifyExperimentData();
         const variantAssigned = this.getVariant(location.href);
 
@@ -224,6 +234,28 @@ export class DotExperiments {
     }
 
     /**
+     * Tracks a page view event in the analytics system.
+     *
+     * @return {void}
+     */
+    public trackPageView(): void {
+        this.track(PAGE_VIEW_EVENT_NAME);
+    }
+
+    /**
+     * Tracks an event using the analytics service.
+     *
+     * @param {string} typeName - The type of event to track.
+     * @param {EventPayload} [payload] - Optional payload associated with the event.
+     * @return {void}
+     */
+    private track(typeName: string, payload?: EventPayload): void {
+        this.analytics.track(typeName, payload).then(() => {
+            this.logger.log(`${typeName} event sent`);
+        });
+    }
+
+    /**
      * Initializes the application using lazy initialization. This method performs
      * necessary setup steps and should be invoked to ensure proper execution of the application.
      *
@@ -233,15 +265,20 @@ export class DotExperiments {
      * @return {Promise<void>} A promise that resolves when the initialization is complete.
      */
     private async initialize(): Promise<void> {
-        if (!this.initializationPromise) {
+        if (this.initializationPromise != null) {
+            // The initialization promise already exists, so we don't need to initialize again.
+            // Wait for the current initialization to complete.
+            await this.initializationPromise;
+        } else {
+            // First time initialization or after the promise has been explicitly set to null elsewhere.
             this.initializationPromise = (async () => {
                 this.logger.group('Initialization Process');
                 this.logger.time('Total Initialization');
-                //load database handler
+                // Load the database handler
                 this.initializeDatabaseHandler();
-                // Init the analytics client
+                // Initialize the analytics client
                 this.initAnalyticsClient();
-                // retrieve the data from persistence
+                // Retrieve persisted data
                 this.experimentsAssigned = await this.getPersistedData();
 
                 await this.verifyExperimentData();
@@ -250,8 +287,6 @@ export class DotExperiments {
                 this.logger.groupEnd();
             })();
         }
-
-        await this.initializationPromise;
     }
 
     /**
@@ -466,11 +501,18 @@ export class DotExperiments {
 
         if (experimentsData.length > 0) {
             const { experiments } = parseDataForAnalytics(experimentsData, this.currentLocation);
+
             this.analytics.set({ experiments });
+
             this.logger.log('Analytics client updated with experiments data.');
         } else {
             this.analytics.set({ experiments: [] });
             this.logger.log('No experiments data available to update analytics client.');
+        }
+
+        // trigger the page view event
+        if (this.config.trackPageView) {
+            this.trackPageView();
         }
     }
 

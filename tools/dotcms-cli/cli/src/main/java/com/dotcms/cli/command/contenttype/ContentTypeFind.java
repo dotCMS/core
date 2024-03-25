@@ -48,8 +48,17 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
         String site;
 
         @CommandLine.Option(names = {"-o", "--order"},
-                description = "Set an order by param. (variable is default) ", defaultValue = "variable")
+                description = {
+                    "Set an order by param. (variable is used default)",
+                    "Expected values that can be used are: ",
+                    "variable, name, description, modDate"
+                },
+                defaultValue = "variable")
         String orderBy;
+
+        @CommandLine.Option(names = {"-d", "--direction"},
+                description = "Set order direction. (ASC or DESC) ", defaultValue = "ASC")
+        String direction;
 
         @CommandLine.Option(names = {"-p", "--page"},
                 description = "Page Number.", defaultValue = "1")
@@ -119,7 +128,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
         final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
                 filter.typeName, filter.page, filter.pageSize,
-                filter.orderBy, null, null, filter.site);
+                filter.orderBy, filter.direction, null, filter.site);
 
         final List<ContentType> types = responseEntityView.entity();
         if (types.isEmpty()) {
