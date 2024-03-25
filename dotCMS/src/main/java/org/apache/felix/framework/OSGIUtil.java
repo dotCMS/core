@@ -394,8 +394,6 @@ public class OSGIUtil {
             Logger.debug(this, ()-> "***** Checking the upload folder for jars");
             if (this.anyJarOnUploadFolder(uploadFolderFile)) {
 
-
-
                 Logger.debug(this, ()-> "****** Has found jars on upload, folder, acquiring the lock and reloading the OSGI restart *****");
 
                 try {
@@ -412,10 +410,7 @@ public class OSGIUtil {
 
                 Logger.debug(this, ()-> "No jars on upload folder");
                 // if not jars we want to wait for the next read of the upload folder
-
-
             }
-        
     }
 
     private boolean anyJarOnUploadFolder(final File uploadFolderFile) {
@@ -569,10 +564,13 @@ public class OSGIUtil {
                 for (final String pathname : pathnames) {
 
                     final File bundle      = new File(uploadFolderFile, pathname);
-                    File bundleDestination = new File(deployDirectory, bundle.getName());
-                    if (ResourceCollectorUtil.isFragmentJar(bundle)) {
+                    final File bundleDestination = new File(deployDirectory, bundle.getName());
+                    if (ResourceCollectorUtil.isFragmentJar(bundle)) { // now we delete the bundle if it is a fragment since we already have the exported packages covered
 
-                        bundleDestination = new File(undeployDirectory, bundle.getName());
+                        if (bundle.delete()) {
+                            Logger.debug(this, "Deleted the fragment bundle: " + bundle);
+                            continue;
+                        }
                     }
 
                     Logger.debug(this, "Moving the bundle: " + bundle + " to " + deployDirectory);
