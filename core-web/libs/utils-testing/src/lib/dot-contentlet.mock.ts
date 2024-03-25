@@ -49,6 +49,40 @@ export const mockDotContentlet: StructureTypeView[] = [
     }
 ];
 
+export const EMPTY_CONTENTLET: DotCMSContentlet = {
+    inode: '14dd5ad9-55ae-42a8-a5a7-e259b6d0901a',
+    variantId: 'DEFAULT',
+    locked: false,
+    stInode: 'd5ea385d-32ee-4f35-8172-d37f58d9cd7a',
+    contentType: 'Image',
+    height: 4000,
+    identifier: '93ca45e0-06d2-4eef-be1d-79bd6bf0fc99',
+    hasTitleImage: true,
+    sortOrder: 0,
+    hostName: 'demo.dotcms.com',
+    extension: 'jpg',
+    isContent: true,
+    baseType: 'FILEASSETS',
+    archived: false,
+    working: true,
+    live: true,
+    isContentlet: true,
+    languageId: 1,
+    titleImage: 'fileAsset',
+    hasLiveVersion: true,
+    deleted: false,
+    folder: '',
+    host: '',
+    modDate: '',
+    modUser: '',
+    modUserName: '',
+    owner: '',
+    title: '',
+    url: '',
+    contentTypeIcon: 'assessment',
+    __icon__: 'Icon'
+};
+
 export const URL_MAP_CONTENTLET: DotCMSContentlet = {
     URL_MAP_FOR_CONTENT: '/blog/post/french-polynesia-everything-you-need-to-know',
     archived: false,
@@ -111,4 +145,12 @@ export const URL_MAP_CONTENTLET: DotCMSContentlet = {
     urlMap: '/blog/post/french-polynesia-everything-you-need-to-know',
     urlTitle: 'french-polynesia-everything-you-need-to-know',
     working: true
+};
+
+export const EMPTY_IMAGE_CONTENTLET: DotCMSContentlet = {
+    mimeType: 'image/jpeg',
+    type: 'file_asset',
+    fileAssetVersion: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg',
+    fileAsset: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg',
+    ...EMPTY_CONTENTLET
 };

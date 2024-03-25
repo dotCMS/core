@@ -6,9 +6,15 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentSearchService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPropertiesService,
+    DotUploadFileService
+} from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAssetSearchComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
@@ -29,7 +35,7 @@ import {
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
-import { DotAiService, DotUploadFileService, EditorDirective } from './shared';
+import { DotAiService, EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
 
@@ -49,7 +55,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         UploadPlaceholderComponent,
         DotMessagePipe,
         ConfirmDialogModule,
-        AIImagePromptComponent
+        AIImagePromptComponent,
+        DotAssetSearchComponent
     ],
     declarations: [
         EditorDirective,
@@ -73,6 +80,9 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         StringUtils,
         DotAiService,
         ConfirmationService,
+        DotPropertiesService,
+        DotContentSearchService,
+        DotLanguagesService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,
