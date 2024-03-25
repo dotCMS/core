@@ -1,0 +1,12 @@
+version: '3.8'
+networks:
+  default:
+
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye
+    networks:
+      - default
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
