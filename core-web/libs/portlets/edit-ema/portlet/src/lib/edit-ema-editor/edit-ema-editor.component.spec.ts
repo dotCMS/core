@@ -591,7 +591,7 @@ describe('EditEmaEditorComponent', () => {
 
             spectator.detectChanges();
 
-            store.updateEditorState(EDITOR_STATE.LOADED);
+            store.updateEditorState(EDITOR_STATE.IDLE);
         });
 
         describe('toast', () => {
@@ -1243,7 +1243,7 @@ describe('EditEmaEditorComponent', () => {
 
                         emulateEditURLMapContent();
                         expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
                         expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
                         expect(spyUpdateQueryParams).toHaveBeenCalledWith([], queryParams);
                         expect(spyStoreReload).not.toHaveBeenCalled();
@@ -1872,7 +1872,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('misc', () => {
-                    it('should set the editorState to loaded when the iframe sends a postmessage of content changed', () => {
+                    it('should set the editorState to IDLE when the iframe sends a postmessage of content changed', () => {
                         const editorStateSpy = jest.spyOn(store, 'updateEditorState');
 
                         window.dispatchEvent(
@@ -1884,7 +1884,7 @@ describe('EditEmaEditorComponent', () => {
                             })
                         );
 
-                        expect(editorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                        expect(editorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
                     });
                 });
             });
@@ -2061,7 +2061,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
             });
 
-            it('set url to the same route should set the editor state to loaded', () => {
+            it('set url to the same route should set the editor state to IDLE', () => {
                 const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
 
                 const url = "/ultra-cool-url-that-doesn't-exist";
@@ -2084,7 +2084,7 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
             });
 
             it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
