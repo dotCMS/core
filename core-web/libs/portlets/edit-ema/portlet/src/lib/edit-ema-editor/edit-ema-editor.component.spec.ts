@@ -90,7 +90,7 @@ const messagesMock = {
     'editpage.content.add.already.message': 'This content is already added to this container'
 };
 
-const dragEventMock = {
+const dragMoveEventMock = {
     target: {
         dataset: {
             type: 'contentlet',
@@ -98,6 +98,20 @@ const dragEventMock = {
                 identifier: '123',
                 title: 'hello world',
                 contentType: 'File',
+                baseType: 'CONTENT'
+            })
+        }
+    }
+};
+const dragAddEventMock = {
+    target: {
+        dataset: {
+            type: 'contentlet',
+            item: JSON.stringify({
+                contentlet: {
+                    identifier: '322b7cc0-3ab9-4267-97f7-9634e519d5a8'
+                },
+                contentType: 'Banner',
                 baseType: 'CONTENT'
             })
         }
@@ -2436,7 +2450,11 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+                spectator.triggerEventHandler(
+                    EditEmaPaletteComponent,
+                    'dragStart',
+                    dragMoveEventMock
+                );
 
                 spectator.detectComponentChanges();
 
@@ -2462,7 +2480,11 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+                spectator.triggerEventHandler(
+                    EditEmaPaletteComponent,
+                    'dragStart',
+                    dragAddEventMock
+                );
 
                 spectator.detectComponentChanges();
 
@@ -2473,16 +2495,10 @@ describe('EditEmaEditorComponent', () => {
                 );
 
                 expect(dropZone.item).toEqual({
-                    contentType: 'File',
+                    contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
                 expect(dropZone.containers).toBe(BOUNDS_MOCK);
-
-                // spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {
-                //     dataTransfer: {
-                //         dropEffect: 'move'
-                //     }
-                // });w
 
                 spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
                     ...PAYLOAD_MOCK,
