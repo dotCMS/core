@@ -28,6 +28,7 @@
     grid-template-columns: minmax(6rem, 1fr) minmax(6rem, 1fr);
     gap: $spacing-1;
     padding: 0 $spacing-3 $spacing-2;
+    background: $white;
 }
 
 .content-type-card {

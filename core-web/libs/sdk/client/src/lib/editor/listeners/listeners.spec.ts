@@ -1,5 +1,4 @@
 import {
-    listenContentChange,
     listenEditorMessages,
     listenHoveredContentlet,
     pingEditor,
@@ -48,12 +47,6 @@ describe('listeners', () => {
         const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
         preserveScrollOnIframe();
         expect(addEventListenerSpy).toHaveBeenCalledWith('load', expect.any(Function));
-    });
-
-    it('should listen to content change', () => {
-        const observeSpy = jest.spyOn(MutationObserver.prototype, 'observe');
-        listenContentChange();
-        expect(observeSpy).toHaveBeenCalledWith(document, { childList: true, subtree: true });
     });
 
     it('should send ping to editor', () => {

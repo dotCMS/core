@@ -114,7 +114,7 @@
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
-                    pointerEvents: this.containers.length ? 'none' : 'auto',
+                    pointerEvents: es.state === editorState.DRAGGING ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
                 (load)="onIframePageLoad()"
@@ -134,9 +134,9 @@
                     !!contentlet &&
                     !es.previewState.device &&
                     es.editor.page.canEdit &&
-                    es.state === editorState.LOADED
+                    (es.state === editorState.IDLE || es.state === editorState.DRAGGING)
                 "
-                [hide]="!!containers.length"
+                [hide]="es.state === editorState.DRAGGING"
                 [contentlet]="contentlet"
                 (edit)="handleEditContentlet($event)"
                 (delete)="deleteContentlet($event)"
@@ -144,7 +144,7 @@
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
                 (moveStart)="moveContentlet($event)"
-                (moveStop)="resetDragProperties()"
+                (moveStop)="onDragEnd($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
@@ -152,7 +152,7 @@
                     !!containers.length &&
                     !!dragItem &&
                     !es.previewState.device &&
-                    es.state === editorState.LOADED
+                    es.state === editorState.DRAGGING
                 "
                 [containers]="containers"
                 [item]="dragItem"
