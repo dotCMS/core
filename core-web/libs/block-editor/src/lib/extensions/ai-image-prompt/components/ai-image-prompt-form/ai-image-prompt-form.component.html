@@ -49,6 +49,7 @@
                     <label
                         *ngIf="requiredPrompt; else labelNotRequired"
                         dotFieldRequired
+                        data-testid="prompt-label"
                         for="prompt">
                         {{ promptLabel | dm }}
                     </label>
@@ -65,7 +66,10 @@
                 <div class="field" *ngIf="aiProcessedPrompt && !isLoading">
                     <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten"
                         >{{ 'block-editor.extension.ai-image.rewritten' | dm }}
-                        <i class="pi pi-copy" (click)="copyToClipboard()"></i
+                        <i
+                            class="pi pi-copy"
+                            (click)="copyToClipboard()"
+                            data-testid="copy-to-clipboard"></i
                     ></label>
                     <textarea
                         class="w-full ai-image-prompt__rewritten-textarea"
@@ -109,7 +113,7 @@
     </button>
 </form>
 <ng-template #labelNotRequired>
-    <label for="prompt">
+    <label for="prompt" data-testid="prompt-label">
         {{ promptLabel | dm }}
     </label>
 </ng-template>
