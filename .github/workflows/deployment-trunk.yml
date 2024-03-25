@@ -171,6 +171,18 @@ jobs:
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      # The CLI artifacts are built and uploaded to Artifactory using the 'deploy-artifact-cli' action.
+      - name: CLI Deploy
+        id: cli_deploy
+        uses: ./.github/actions/deploy-artifact-cli
+        with:
+          branch: master
+          artifactory-repo-username: ${{ secrets.EE_REPO_USERNAME }}
+          artifactory-repo-password: ${{ secrets.EE_REPO_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          build-run-id: ${{ needs.deploy_check.outputs.run_id }}
+          commit-id: ${{ needs.deploy_check.outputs.build_sha }}
+
       - name: Create artifact with commit id
         if: needs.deploy_check.outputs.is_latest == 'true'
         run: |

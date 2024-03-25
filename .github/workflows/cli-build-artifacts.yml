@@ -1,34 +1,31 @@
-name: 'CLI Build Artifacts'
+name: 'CLI Build'
 on:
   workflow_call:
     inputs:
-      skipTests:
-        type: boolean
       buildNativeImage:
         type: boolean
-      uploadArtifacts:
-        type: boolean
+        required: true
       branch:
         type: string
-    secrets:
-      dotcms-license:
-        description: 'DotCMS License Key'
         required: true
-      artifactory-repo-username:
-        description: 'Artifactory Repository Username'
-        required: true
-      artifactory-repo-password:
-        description: 'Artifactory Repository Password'
-        required: true
-      github-token:
-        description: 'GitHub Token'
-        required: true
+    outputs:
+      artifact-id:
+        description: 'The ID of the uploaded artifact'
+        value: ${{ jobs.build.outputs.artifact-id }}
+      artifact-url:
+        description: 'The URL of the uploaded artifact'
+        value: ${{ jobs.build.outputs.artifact-url }}
 
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
   GRAALVM_VERSION: '22.1.0'
   BRANCH: ${{ inputs.branch || github.ref_name }}
+  SKIP_TESTS: true
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   os-runners:
@@ -56,6 +53,8 @@ jobs:
         include: ${{ fromJSON( needs.os-runners.outputs.runners ) }}
     runs-on: ${{ matrix.os }}
     outputs:
+      artifact-id: ${{ steps.upload-artifact.outputs.artifact-id }}
+      artifact-url: ${{ steps.upload-artifact.outputs.artifact-url }}
       date: ${{ steps.get-date.outputs.date }}
     steps:
       - name: 'Checkout'
@@ -168,26 +167,16 @@ jobs:
           restore-keys: |
             mavencore-${{ steps.get-date.outputs.date }}
 
-      - name: 'Prepare dotCMS license'
-        if: ${{ inputs.skipTests == false }}
-        env:
-          DOTCMS_LICENSE_KEY: ${{ secrets.dotcms-license }}
-        run: |
-          DOTCMS_LICENSE_PATH=${{ github.workspace }}/tools/dotcms-cli/license
-          mkdir -p ${DOTCMS_LICENSE_PATH}
-          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
-          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
-
       - name: 'Compile source code'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ inputs.skipTests }} -am -pl :dotcms-cli
+          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=$SKIP_TESTS -am -pl :dotcms-cli
 
       - name: 'Build uber-jar'
         if: ${{ matrix.label == 'Linux' }}
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Dquarkus.package.type="uber-jar" -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Dquarkus.package.type="uber-jar" -DskipTests=$SKIP_TESTS -pl :dotcms-cli
 
       # Builds a native image of the CLI using GRAALVM (Linux/macOS)
       # Runs on a matrix for different operating systems
@@ -195,7 +184,7 @@ jobs:
         if: ${{ inputs.buildNativeImage == true && matrix.os != 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Pnative -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Pnative -DskipTests=$SKIP_TESTS -pl :dotcms-cli
 
       # Builds a native image of the CLI using GRAALVM on Windows
       # Uses PowerShell for setup and execution
@@ -210,7 +199,7 @@ jobs:
         if: ${{ inputs.buildNativeImage == true }}
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw -B -ntp -Pdist package -DskipTests=${{ inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw -B -ntp -Pdist package -DskipTests=$SKIP_TESTS -pl :dotcms-cli
 
       - name: 'Distribution tree'
         if: ${{ inputs.buildNativeImage == true }}
@@ -219,63 +208,34 @@ jobs:
           ls -ltr cli/target/distributions
 
       - name: 'Upload built distribution'
+        id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.os }}
+          name: cli-artifacts-${{ matrix.os }}
           path: |
-            ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/*.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
           retention-days: 2
           if-no-files-found: ignore
 
-  upload:
-    if: ${{ inputs.uploadArtifacts == true }}
-    name: 'Upload Artifacts to Artifactory'
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v4
+      - name: Prepare reports archive (if maven failed)
+        if: failure()
+        shell: bash
+        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
+      - name: Upload reports Archive (if maven failed)
+        uses: actions/upload-artifact@v4
+        if: failure()
         with:
-          ref: ${{ env.BRANCH }}
-
-      - name: 'Cleanup Ubuntu Runner'
-        uses: ./.github/actions/cleanup-runner
-
-      - name: 'Download build artifacts'
-        uses: actions/download-artifact@v4
+          name: test-reports-cli-native-${{ matrix.label }}
+          path: 'test-reports.tgz'
+      - name: cli-build
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          pattern: artifacts-*
-          path: ${{ github.workspace }}/artifacts
-          merge-multiple: true
-
-      - name: 'List artifacts'
-        run: |
-          ls -R          
-
-      - name: 'Cache Maven Repository'
-        id: cache-maven
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: mavencore-${{ needs.build.outputs.date }}-${{ github.run_id }}
-          restore-keys: |
-            mavencore-${{ needs.build.outputs.date }}
-
-      - name: 'Upload to Artifactory'
-        env:
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.github-token }}
-          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.artifactory-repo-username }}
-          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.artifactory-repo-password }}
-        working-directory: ${{ github.workspace }}
-        run: |
-          if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
-            DOTCMS_CLI_NATIVE_ACTIVE=ALWAYS
-          else
-            DOTCMS_CLI_NATIVE_ACTIVE=NEVER
-          fi
-          tools/dotcms-cli/mvnw -B -Prelease jreleaser:upload -DartifactsDir=artifacts -Djreleaser.distributions.dotcms.cli.native.active=$DOTCMS_CLI_NATIVE_ACTIVE -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
-
-      - name: 'Cleanup'
-        run: |
-          rm -rf ${{ github.workspace }}/artifacts
+          name: "build-reports-test-cli - native ${{ matrix.label }}"
+          path: |
+            tools/dotcms-cli/**/target/failsafe-reports/*.xml
+            tools/dotcms-cli/**/target/jacoco-report/*.exec
+            target/build-report.json
+            LICENSE
+          retention-days: 2
