@@ -1,6 +1,9 @@
 // tslint:disable:typedef
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { SiteService } from '@dotcms/dotcms-js';
+import { DotSiteService } from '@dotcms/data-access';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 window['mapsApi$'] = new BehaviorSubject({ ready: false });
 
@@ -17,13 +20,26 @@ export class GoogleMapService {
     loadingApi: Boolean = false;
     mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
 
-    constructor() {
+    constructor(private siteService: SiteService, private dotSiteService: DotSiteService) {
+        this.getApiKey();
         this.mapsApi$ = window['mapsApi$'];
         this.mapsApi$.subscribe((gMapApi) => {
             if (gMapApi != null) {
                 this.apiReady = true;
             }
         });
+    }
+
+    //this method gets the Google key from the current sie
+    private getApiKey(): void {
+        const siteId = this.siteService.currentSite.identifier;
+
+        this.siteService
+            .getSiteById(siteId)
+            .pipe(takeUntilDestroyed())
+            .subscribe((site) => {
+                this.apiKey = site.googleMap || null;
+            });
     }
 
     loadApi(): void {
