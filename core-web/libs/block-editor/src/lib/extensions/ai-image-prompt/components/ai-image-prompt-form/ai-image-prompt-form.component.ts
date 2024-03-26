@@ -123,6 +123,10 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         this.toggleFormState(isLoading?.currentValue && !isLoading.firstChange);
     }
 
+    copyToClipboard(): void {
+        navigator.clipboard.writeText(this.aiProcessedPrompt);
+    }
+
     private initForm(): void {
         this.form = new FormGroup({
             text: new FormControl('', [Validators.required, DotValidators.noWhitespace]),

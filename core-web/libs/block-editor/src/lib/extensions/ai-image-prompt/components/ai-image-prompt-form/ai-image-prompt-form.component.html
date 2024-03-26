@@ -46,7 +46,11 @@
                 class="ai-image-prompt__text"
                 [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading">
                 <div class="field">
-                    <label [checkIsRequiredControl]="'type'" dotFieldRequired for="prompt">
+                    <label
+                        *ngIf="requiredPrompt; else labelNotRequired"
+                        dotFieldRequired
+                        data-testid="prompt-label"
+                        for="prompt">
                         {{ promptLabel | dm }}
                     </label>
                     <textarea
@@ -60,9 +64,13 @@
                     </textarea>
                 </div>
                 <div class="field" *ngIf="aiProcessedPrompt && !isLoading">
-                    <label for="prompt-rewritten">{{
-                        'block-editor.extension.ai-image.rewritten' | dm
-                    }}</label>
+                    <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten"
+                        >{{ 'block-editor.extension.ai-image.rewritten' | dm }}
+                        <i
+                            class="pi pi-copy"
+                            (click)="copyToClipboard()"
+                            data-testid="copy-to-clipboard"></i
+                    ></label>
                     <textarea
                         class="w-full ai-image-prompt__rewritten-textarea"
                         id="prompt-rewritten"
@@ -104,3 +112,8 @@
         </ng-template>
     </button>
 </form>
+<ng-template #labelNotRequired>
+    <label for="prompt" data-testid="prompt-label">
+        {{ promptLabel | dm }}
+    </label>
+</ng-template>

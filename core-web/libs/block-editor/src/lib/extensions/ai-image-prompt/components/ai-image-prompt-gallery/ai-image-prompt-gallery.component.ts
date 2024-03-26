@@ -1,5 +1,13 @@
 import { NgIf } from '@angular/common';
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    inject,
+    Input,
+    OnChanges,
+    Output,
+    SimpleChanges
+} from '@angular/core';
 
 import { SharedModule } from 'primeng/api';
 import { GalleriaModule } from 'primeng/galleria';
@@ -29,7 +37,7 @@ import {
     ],
     styleUrls: ['./ai-image-prompt-gallery.component.scss']
 })
-export class AiImagePromptGalleryComponent {
+export class AiImagePromptGalleryComponent implements OnChanges {
     @Input()
     isLoading = false;
 
@@ -69,4 +77,11 @@ export class AiImagePromptGalleryComponent {
         title: this.dotMessageService.get('block-editor.extension.ai-image.error'),
         icon: 'pi-exclamation-triangle'
     };
+
+    ngOnChanges(changes: SimpleChanges): void {
+        const error = changes.images?.currentValue?.[this.activeImageIndex]?.error;
+        if (error) {
+            this.emptyConfiguration.title = this.dotMessageService.get(error);
+        }
+    }
 }

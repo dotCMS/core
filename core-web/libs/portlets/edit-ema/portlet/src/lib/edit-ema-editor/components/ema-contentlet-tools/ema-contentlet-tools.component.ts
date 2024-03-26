@@ -46,8 +46,9 @@ export class EmaContentletToolsComponent {
     @Output() addWidget = new EventEmitter<ActionPayload>();
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() delete = new EventEmitter<ActionPayload>();
+
     @Output() moveStart = new EventEmitter<ActionPayload>();
-    @Output() moveStop = new EventEmitter<void>();
+    @Output() moveStop = new EventEmitter<DragEvent>();
 
     items: MenuItem[] = [
         {
@@ -85,8 +86,8 @@ export class EmaContentletToolsComponent {
         this.moveStart.emit(payload);
     }
 
-    dragEnd() {
-        this.moveStop.emit();
+    dragEnd(event: DragEvent): void {
+        this.moveStop.emit(event);
     }
 
     /**

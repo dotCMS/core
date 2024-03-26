@@ -47,7 +47,7 @@
             *ngIf="item.response; else errorMessage"
             [src]="item.response.contentlet.assetVersion"
             [preview]="true"
-            [alt]="item.response.contentlet.assetMetaData.title"
+            [alt]="item.response.contentlet.assetMetaData?.title"
             imageClass="ai-image-gallery__img">
             <ng-template pTemplate="indicator">
                 <i class="pi pi-window-maximize"></i>
