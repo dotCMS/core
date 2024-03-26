@@ -115,7 +115,7 @@ export const mockDotTemplate = () => {
     return {
         anonymous: false,
         friendlyName: '',
-        identifier: '',
+        identifier: '111',
         inode: '123',
         name: '',
         title: 'Template Name',
@@ -124,7 +124,7 @@ export const mockDotTemplate = () => {
         drawed: true,
         canEdit: true,
         theme: '',
-        layout: null,
+        layout: null as unknown as DotLayout,
         hasLiveVersion: true,
         working: true
     };
