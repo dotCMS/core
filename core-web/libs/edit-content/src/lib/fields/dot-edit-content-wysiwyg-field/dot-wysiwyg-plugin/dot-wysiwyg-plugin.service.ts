@@ -45,7 +45,6 @@ export class DotWysiwygPluginService {
                 });
             }
         });
-
         this.dotFilePlugin(editor);
     }
 
