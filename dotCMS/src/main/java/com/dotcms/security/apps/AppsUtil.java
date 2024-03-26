@@ -645,7 +645,7 @@ public class AppsUtil {
                 StringUtils.convertCamelToSnake(key
                                 .replaceAll("-config", StringPool.BLANK)
                                 .replaceAll(StringPool.DASH, StringPool.UNDERLINE))
-                        .replaceAll("dot_", StringPool.BLANK)
+                        .replace("dot_", StringPool.BLANK)
                         .toUpperCase();
         final String normalizedParam = StringUtils.convertCamelToSnake(paramName).toUpperCase();
         return String.format(APP_PARAM_ENV_VAR_TEMPLATE, normalizedKey, normalizedParam);
