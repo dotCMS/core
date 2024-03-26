@@ -186,16 +186,20 @@ export class AIContentPromptView {
             ? this.pluginKey?.getState(prevState)
             : { aIContentPromptOpen: false };
 
-        if (next?.aIContentPromptOpen === prev?.aIContentPromptOpen) {
-            return;
+        // if (next?.aIContentPromptOpen === prev?.aIContentPromptOpen) {
+        //     return;
+        // }
+
+        if (next?.aIContentPromptOpen === !prev?.aIContentPromptOpen) {
+            this.componentStore.showDialog();
         }
 
-        next.aIContentPromptOpen
-            ? this.show()
-            : this.hide(
-                  this.storeSate.status === ComponentStatus.IDLE ||
-                      this.storeSate.status === ComponentStatus.LOADED
-              );
+        // next.aIContentPromptOpen
+        //     ? this.show()
+        //     : this.hide(
+        //           this.storeSate.status === ComponentStatus.IDLE ||
+        //               this.storeSate.status === ComponentStatus.LOADED
+        //       );
     }
 
     createTooltip() {

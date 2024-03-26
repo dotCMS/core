@@ -27,3 +27,31 @@ form {
         }
     }
 }
+
+.ai-content__generated-text {
+    height: 22rem;
+}
+
+.ai-content__input-text {
+    height: 4rem;
+}
+
+.ai-content__buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-1;
+}
+
+::ng-deep {
+    .ai-content__dialog {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+:host ::ng-deep {
+    .p-dialog .p-dialog-content {
+        display: flex;
+        flex-direction: column;
+    }
+}

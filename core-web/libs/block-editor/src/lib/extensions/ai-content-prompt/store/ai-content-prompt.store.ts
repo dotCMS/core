@@ -16,6 +16,7 @@ export interface AiContentPromptState {
     deleteContent: boolean;
     status: ComponentStatus;
     error: string;
+    showDialog: boolean;
 }
 
 @Injectable({
@@ -41,6 +42,17 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
         ...state,
         deleteContent
     }));
+
+    readonly showDialog = this.updater((state) => ({
+        ...state,
+        showDialog: true
+    }));
+
+    readonly hideDialog = this.updater((state) => ({
+        ...state,
+        showDialog: false
+    }));
+
     // Effects
     readonly generateContent = this.effect((prompt$: Observable<string>) => {
         return prompt$.pipe(
@@ -90,7 +102,8 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
             acceptContent: false,
             deleteContent: false,
             status: ComponentStatus.INIT,
-            error: ''
+            error: '',
+            showDialog: false
         });
     }
 }

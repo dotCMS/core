@@ -33,6 +33,7 @@ interface AIContentForm {
 export class AIContentPromptComponent implements OnInit, OnDestroy {
     vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
     readonly ComponentStatus = ComponentStatus;
+    store: AiContentPromptStore = inject(AiContentPromptStore);
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
         textPrompt: new FormControl('', Validators.required)
     });
@@ -89,5 +90,9 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
      */
     onHideConfirm(): void {
         this.aiContentPromptStore.cleanError();
+    }
+
+    onPageChange($event: any) {
+        console.log($event);
     }
 }
