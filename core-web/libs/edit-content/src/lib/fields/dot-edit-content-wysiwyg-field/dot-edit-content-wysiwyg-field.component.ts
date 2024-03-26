@@ -1,7 +1,7 @@
 import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { RawEditorOptions } from 'tinymce';
 
-import { ChangeDetectionStrategy, Component, Input, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -10,8 +10,10 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 
+import { getFieldVariablesParsed } from '../../utils/functions.util';
+
 @Component({
-    selector: 'dot-wysiwyg-field',
+    selector: 'dot-edit-content-wysiwyg-field',
     standalone: true,
     imports: [EditorModule, FormsModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
@@ -29,19 +31,10 @@ import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin
         }
     ]
 })
-export class DotEditContentWYSIWYGFieldComponent {
+export class DotEditContentWYSIWYGFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
 
     private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
-
-    protected readonly init: RawEditorOptions = {
-        menubar: false,
-        image_caption: true,
-        image_advtab: true,
-        contextmenu: 'align link image',
-        setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor)
-    };
-
     protected readonly plugins = signal(
         'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template'
     );
@@ -49,4 +42,20 @@ export class DotEditContentWYSIWYGFieldComponent {
     protected readonly toolbar = signal(
         'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent dotAddImage hr'
     );
+
+    protected init: RawEditorOptions;
+
+    ngOnInit(): void {
+        const variables = getFieldVariablesParsed(this.field.fieldVariables);
+        this.init = {
+            menubar: false,
+            image_caption: true,
+            image_advtab: true,
+            contextmenu: 'align link image',
+            toolbar1: this.toolbar(),
+            plugins: this.plugins(),
+            ...variables,
+            setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor)
+        };
+    }
 }
