@@ -52,7 +52,7 @@ public class AppsUtilTest {
      * @throws Exception
      */
     @DataProvider
-    public static Object[] getTestCases() throws Exception {
+    public static Object[] getTestCases() {
         return new Object[]{
                 new UTFCharsRangeTestCase(0, 127, "C0 Controls and Basic Latin"),
                 new UTFCharsRangeTestCase(128, 255, "C1 Controls and Latin-1 Supplement"),
