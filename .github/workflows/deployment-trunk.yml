@@ -65,13 +65,16 @@ jobs:
       - name: Set options for artifact lookup
         id: lookup-type
         run: |
-          if [[ "${{ github.event.inputs.build_run_id || github.event.workflow_run.id }}" != "" ]]; then
-            echo 'branch=master' >> $GITHUB_OUTPUT
-            echo 'runid=' >> $GITHUB_OUTPUT
-          else
-            echo 'branch=' >> $GITHUB_OUTPUT
-            echo 'runid=${{ github.event.inputs.build_run_id || github.event.workflow_run.id }}' >> $GITHUB_OUTPUT
+          branch=''
+          runid='${{ github.event.inputs.build_run_id || github.event.workflow_run.id }}'
+          
+          if [[ "$runid" == "" ]]; then
+            branch='master'
+            runid=''
           fi
+
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+          echo "runid=$runid" >> $GITHUB_OUTPUT
 
       - name: Download Build Status
         id: data-download

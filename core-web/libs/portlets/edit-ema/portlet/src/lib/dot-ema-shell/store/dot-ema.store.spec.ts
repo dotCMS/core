@@ -144,7 +144,7 @@ describe('EditEmaStore', () => {
                             'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -156,7 +156,7 @@ describe('EditEmaStore', () => {
             it('should return contentState', (done) => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         code: undefined
                     });
                     done();
@@ -166,7 +166,7 @@ describe('EditEmaStore', () => {
 
         describe('updaters', () => {
             it('should update the editorState', (done) => {
-                spectator.service.updateEditorState(EDITOR_STATE.LOADED);
+                spectator.service.updateEditorState(EDITOR_STATE.IDLE);
 
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
@@ -177,7 +177,7 @@ describe('EditEmaStore', () => {
                             'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -205,7 +205,7 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED,
+                        editorState: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -236,7 +236,7 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED,
+                        editorState: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -554,7 +554,7 @@ describe('EditEmaStore', () => {
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -566,7 +566,7 @@ describe('EditEmaStore', () => {
             it('should return contentState', (done) => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         code: '<html><body><h1>Hello, World!</h1></body></html>'
                     });
                     done();
@@ -576,7 +576,7 @@ describe('EditEmaStore', () => {
 
         describe('updaters', () => {
             it('should update the editorState', (done) => {
-                spectator.service.updateEditorState(EDITOR_STATE.LOADED);
+                spectator.service.updateEditorState(EDITOR_STATE.IDLE);
 
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
@@ -586,7 +586,7 @@ describe('EditEmaStore', () => {
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         },
@@ -614,7 +614,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED,
+                        editorState: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
