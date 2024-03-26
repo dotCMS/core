@@ -1,0 +1,27 @@
+@use "variables" as *;
+
+:host {
+    background-color: $color-palette-primary-200;
+    height: 34px;
+    border: 1px solid $color-palette-primary-300;
+    border-left: 0;
+    border-right: 0;
+    padding: 0 $spacing-4;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    justify-content: center;
+    align-items: center;
+
+    .info-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: $spacing-0;
+        color: $black;
+        font-size: $font-size-sm;
+
+        i {
+            color: $color-palette-primary-500;
+        }
+    }
+}

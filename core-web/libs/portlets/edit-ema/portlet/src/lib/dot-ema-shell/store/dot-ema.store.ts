@@ -10,6 +10,7 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 
 import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
+    DEFAULT_VARIANT_ID,
     DotContainerMap,
     DotExperimentStatus,
     DotLayout,
@@ -26,7 +27,7 @@ import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
 import {
     ActionPayload,
     EditEmaState,
-    PreviewState,
+    EditorData,
     ReloadPagePayload,
     SavePagePayload
 } from '../../shared/models';
@@ -122,7 +123,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             },
             isEnterpriseLicense: state.isEnterpriseLicense,
             state: state.editorState ?? EDITOR_STATE.LOADING,
-            previewState: state.previewState,
+            editorData: state.editorData,
             runningExperiment: state.runningExperiment
         };
     });
@@ -190,8 +191,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                 editor: pageData,
                                                 isEnterpriseLicense: licenseData,
                                                 editorState: EDITOR_STATE.IDLE,
-                                                previewState: {
-                                                    editorMode: EDITOR_MODE.EDIT
+                                                editorData: {
+                                                    mode:
+                                                        params.variantName &&
+                                                        params.variantName !== DEFAULT_VARIANT_ID
+                                                            ? EDITOR_MODE.VARIANT
+                                                            : EDITOR_MODE.EDIT,
+                                                    variantInfo: {
+                                                        pageId: pageData.page.identifier
+                                                    }
                                                 },
                                                 variantName: params.variantName,
                                                 runningExperiment: experiment[0]
@@ -387,11 +395,31 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *
      * @memberof EditEmaStore
      */
-    readonly updatePreviewState = this.updater((state, previewState: PreviewState) => ({
-        ...state,
-        previewState,
-        editorState: EDITOR_STATE.IDLE
-    }));
+    readonly updateEditorData = this.updater((state, editorData: EditorData) => {
+        // If we are editing a variant, we need to change the editor mode to variant
+        const newEditordata =
+            editorData.mode === EDITOR_MODE.EDIT &&
+            state.variantName &&
+            state.variantName !== DEFAULT_VARIANT_ID
+                ? {
+                      ...state.editorData,
+                      mode: EDITOR_MODE.VARIANT,
+                      device: undefined,
+                      socialMedia: undefined
+                  }
+                : {
+                      ...editorData,
+                      variantInfo: {
+                          ...state.editorData.variantInfo // We need to maintain this
+                      }
+                  };
+
+        return {
+            ...state,
+            editorData: newEditordata,
+            editorState: EDITOR_STATE.IDLE
+        };
+    });
 
     /**
      * Create the url to add a page to favorites
@@ -480,8 +508,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             isEnterpriseLicense: false,
             error,
             editorState: EDITOR_STATE.IDLE,
-            previewState: {
-                editorMode: EDITOR_MODE.EDIT
+            editorData: {
+                mode: EDITOR_MODE.EDIT
             }
         });
     }

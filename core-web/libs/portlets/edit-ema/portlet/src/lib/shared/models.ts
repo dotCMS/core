@@ -70,10 +70,13 @@ export interface NavigationBarItem {
     isDisabled?: boolean;
 }
 
-export interface PreviewState {
-    editorMode: EDITOR_MODE;
+export interface EditorData {
+    mode: EDITOR_MODE;
     device?: DotDevice & { icon?: string };
     socialMedia?: string;
+    variantInfo?: {
+        pageId: string;
+    };
 }
 
 export interface EditEmaState {
@@ -82,7 +85,7 @@ export interface EditEmaState {
     editor: DotPageApiResponse;
     isEnterpriseLicense: boolean;
     editorState: EDITOR_STATE;
-    previewState: PreviewState;
+    editorData: EditorData;
     variantName?: string;
     runningExperiment?: DotExperiment;
 }

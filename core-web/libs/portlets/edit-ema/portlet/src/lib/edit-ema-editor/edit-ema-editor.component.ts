@@ -60,7 +60,7 @@ import {
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
-import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
+import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
@@ -156,7 +156,7 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
         DotDeviceSelectorSeoComponent,
-        DotEmaDeviceDisplayComponent,
+        DotEmaInfoDisplayComponent,
         DotEmaBookmarksComponent,
         DotEditEmaWorkflowActionsComponent,
         ProgressBarModule,
@@ -433,15 +433,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     updateCurrentDevice(device: DotDevice & { icon?: string }) {
-        this.store.updatePreviewState({
-            editorMode: EDITOR_MODE.PREVIEW,
+        this.store.updateEditorData({
+            mode: EDITOR_MODE.DEVICE,
             device
         });
     }
 
     goToEditMode() {
-        this.store.updatePreviewState({
-            editorMode: EDITOR_MODE.EDIT
+        this.store.updateEditorData({
+            mode: EDITOR_MODE.EDIT
         });
     }
 
@@ -840,8 +840,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     onSeoMediaChange(seoMedia: string) {
-        this.store.updatePreviewState({
-            editorMode: EDITOR_MODE.PREVIEW,
+        this.store.updateEditorData({
+            mode: EDITOR_MODE.SOCIAL_MEDIA,
             socialMedia: seoMedia
         });
     }

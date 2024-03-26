@@ -23,5 +23,7 @@ export enum EDITOR_STATE {
 
 export enum EDITOR_MODE {
     EDIT = 'edit',
-    PREVIEW = 'preview'
+    VARIANT = 'variant',
+    DEVICE = 'device',
+    SOCIAL_MEDIA = 'social-media'
 }

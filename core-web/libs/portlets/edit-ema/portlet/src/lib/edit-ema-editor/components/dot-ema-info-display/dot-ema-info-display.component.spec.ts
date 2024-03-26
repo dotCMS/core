@@ -4,13 +4,13 @@ import { CommonModule } from '@angular/common';
 
 import { mockDotDevices } from '@dotcms/utils-testing';
 
-import { DotEmaDeviceDisplayComponent } from './dot-ema-device-display.component';
+import { DotEmaInfoDisplayComponent } from './dot-ema-info-display.component';
 
-describe('DotEmaDeviceDisplayComponent', () => {
-    let spectator: Spectator<DotEmaDeviceDisplayComponent>;
+describe('DotEmaInfoDisplayComponent', () => {
+    let spectator: Spectator<DotEmaInfoDisplayComponent>;
 
     const createComponent = createComponentFactory({
-        component: DotEmaDeviceDisplayComponent,
+        component: DotEmaInfoDisplayComponent,
         imports: [CommonModule]
     });
 
