@@ -8,14 +8,14 @@ p-table {
             border-radius: $border-radius-md;
         }
 
-        & .p-datatable-thead {
+        .p-datatable-thead {
             > tr > th {
                 background-color: $color-palette-gray-200;
                 color: $black;
             }
         }
 
-        & .p-datatable-tbody {
+        .p-datatable-tbody {
             > tr:hover {
                 background-color: $color-palette-primary-200;
             }
