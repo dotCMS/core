@@ -17,7 +17,7 @@ p-table {
 
         & .p-datatable-tbody {
             > tr:hover {
-                background-color: #ecf0fd;
+                background-color: $color-palette-primary-200;
             }
         }
 
