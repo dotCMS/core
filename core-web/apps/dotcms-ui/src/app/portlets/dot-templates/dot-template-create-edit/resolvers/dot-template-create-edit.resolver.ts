@@ -20,12 +20,12 @@ export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
             ? this.service.getFiltered(inode).pipe(
                   map((templates: DotTemplate[]) => {
                       if (templates.length) {
-                          const firstTemplate = templates.find(
-                              (t) => t.inode === inode);
+                          const firstTemplate = templates.find((t) => t.inode === inode);
                           if (firstTemplate) {
                               return firstTemplate;
                           }
                       }
+
                       this.dotRouterService.gotoPortlet('templates');
                   })
               )
