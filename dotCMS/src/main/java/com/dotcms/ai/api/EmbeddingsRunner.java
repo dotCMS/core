@@ -47,7 +47,7 @@ class EmbeddingsRunner implements Runnable {
 
 
             final String cleanContent = String.join(" ", content.trim().split("\\s+"));
-            final int SPLIT_AT_TOKENS = embeddingsAPI.config.getConfigInteger(AppKeys.EMBEDDINGS_SPLIT_AT_TOKENS);
+            final int splitAtTokens = embeddingsAPI.config.getConfigInteger(AppKeys.EMBEDDINGS_SPLIT_AT_TOKENS);
 
             // split into sentences
             final BreakIterator iterator = BreakIterator.getSentenceInstance(Locale.getDefault());
@@ -60,7 +60,7 @@ class EmbeddingsRunner implements Runnable {
                 int tokenCount = EncodingUtil.encoding.get().countTokens(sentence);
                 totalTokens += tokenCount;
 
-                if (totalTokens < SPLIT_AT_TOKENS) {
+                if (totalTokens < splitAtTokens) {
                     buffer.append(sentence).append(" ");
                 } else {
                     saveEmbedding(buffer.toString(), contentlet, indexName);

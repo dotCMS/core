@@ -199,9 +199,8 @@ public class OpenAIAutoTagRunner implements AsyncWorkflowRunner {
 
     private JSONArray parseJsonResponse(String responseIn) {
         Logger.debug(this.getClass(),"---- response ----- \n" + responseIn + "\n/---- response -----");
-        String response = responseIn.replaceAll("\\R+", " ");
-        response = response.substring(response.indexOf("{"), response.lastIndexOf("}") + 1);
-        String finalResponse = response;
+        final String response = responseIn.replaceAll("\\R+", " ");
+        final String finalResponse = response.substring(response.indexOf("{"), response.lastIndexOf("}") + 1);
         return Try.of(() -> new JSONObject(finalResponse).getJSONArray("keywords")).getOrElseThrow(BadAIJsonFormatException::new);
     }
 

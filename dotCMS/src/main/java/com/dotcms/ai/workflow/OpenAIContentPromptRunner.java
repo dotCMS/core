@@ -122,17 +122,6 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
                 return;
             }
             saveContentlet(contentToSave, user);
-            APILocator.getSystemEventsAPI().push(SystemEventType.SWITCH_SITE,
-                    new Payload(
-                            contentToSave.getHost(),
-                            Visibility.USER_SESSION,
-                            new UserSessionBean(
-                                    user.getUserId(),
-                                    "35EAA2C95AAED8DAD04EEE31329EDD6B"
-                            )
-                    )
-            );
-
         } catch (Exception e) {
             final SystemMessageBuilder message = new SystemMessageBuilder().setMessage("Error:" + e.getMessage()).setLife(5000).setType(MessageType.SIMPLE_MESSAGE).setSeverity(MessageSeverity.ERROR);
 

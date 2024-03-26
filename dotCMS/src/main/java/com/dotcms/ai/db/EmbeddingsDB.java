@@ -333,9 +333,8 @@ public class EmbeddingsDB {
             for (int i = 0; i < params.size(); i++) {
                 statement.setObject((i + 1), params.get(i));
             }
-            Map<String, Long> results = new TreeMap<>();
             ResultSet rs = statement.executeQuery();
-            while (rs.next()) {
+            if (rs.next()) {
                 return rs.getLong("test");
             }
             return 0;

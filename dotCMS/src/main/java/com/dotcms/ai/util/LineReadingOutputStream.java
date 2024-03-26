@@ -1,6 +1,7 @@
 package com.dotcms.ai.util;
 
 import com.dotmarketing.exception.DotRuntimeException;
+import com.liferay.util.StringPool;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -86,7 +87,7 @@ public class LineReadingOutputStream extends OutputStream {
             throw new IllegalArgumentException();
         }
         if (start == end) {
-            return "";
+            return StringPool.BLANK;
         }
         final byte[] copy = Arrays.copyOfRange(b, start, end);
         return new String(copy, StandardCharsets.UTF_8);

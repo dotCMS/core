@@ -141,6 +141,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         return json;
     }
 
+    // TODO refactor to share logic with getTextPrompt()
     private String getSystemPrompt(String prompt, String supportingContent) {
         if (UtilMethods.isEmpty(prompt) || UtilMethods.isEmpty(supportingContent)) {
             throw new DotRuntimeException("no prompt or supporting content to summarize found");
@@ -177,13 +178,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private int countTokens(String testString) {
-        Optional<Encoding> encoderOpt = EncodingUtil.registry.getEncodingForModel(config.get().getConfig(AppKeys.MODEL));
-        if (encoderOpt.isEmpty()) {
-            throw new DotRuntimeException("Encoder not found");
-        }
-
-        return encoderOpt.get().countTokens(testString);
-
+        return EncodingUtil.registry
+                .getEncodingForModel(config.get().getConfig(AppKeys.MODEL))
+                .map(enc -> enc.countTokens(testString))
+                .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
     }
 
     /***
