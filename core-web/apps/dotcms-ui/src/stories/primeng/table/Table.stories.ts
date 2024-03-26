@@ -1,4 +1,4 @@
-import { Meta, Story, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
@@ -17,7 +17,7 @@ const addDays = (date, days) => {
     return result;
 };
 
-interface File {
+interface WorkflowItem {
     assignee: string;
     name: string;
     step: string;
@@ -25,7 +25,7 @@ interface File {
     date: string;
 }
 
-const files = [
+const data = [
     {
         assignee: 'Floyd Miles',
         name: 'saudi_riyal.flo',
@@ -96,7 +96,7 @@ const files = [
         step: 'Final Review',
         date: addDays(currentDate, 10).toISOString().split('T')[0]
     }
-] as File[];
+] as WorkflowItem[];
 
 export default {
     title: 'PrimeNG/Tables/Basic Table',
@@ -115,12 +115,12 @@ export default {
     }
 } as Meta;
 
-export const Default: Story = () => ({
+export const Default: StoryFn = () => ({
     props: {
-        files
+        data
     },
     template: `
-        <p-table [value]="files" styleClass="p-datatable-striped">
+        <p-table [value]="data" styleClass="p-datatable-striped">
         <ng-template pTemplate="header">
             <tr>
                 <th>
@@ -134,16 +134,16 @@ export const Default: Story = () => ({
                 <th>Menu</th>
             </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-file>
+        <ng-template pTemplate="body" let-workflowItem>
             <tr>
                 <td>
-                    <p-tableCheckbox [value]="file"></p-tableCheckbox>
+                    <p-tableCheckbox [value]="workflowItem"></p-tableCheckbox>
                 </td>
-                <td>{{ file.name }}</td>
-                <td><p-tag  class="sm p-tag-success">{{ file.status }}</p-tag></td>
-                <td>{{ file.assignee }}</td>
-                <td>{{ file.step }}</td>
-                <td>{{ file.date | date }}</td>
+                <td>{{ workflowItem.name }}</td>
+                <td><p-tag  class="sm p-tag-success">{{ workflowItem.status }}</p-tag></td>
+                <td>{{ workflowItem.assignee }}</td>
+                <td>{{ workflowItem.step }}</td>
+                <td>{{ workflowItem.date | date }}</td>
                 <td>
                     <i class="pi pi-ellipsis-v"></i>
                 </td>

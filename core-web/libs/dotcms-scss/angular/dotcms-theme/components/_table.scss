@@ -3,26 +3,30 @@ p-table {
     .p-datatable {
         border: 1px solid $color-palette-gray-400;
         border-radius: $border-radius-md;
-    }
 
-    .p-datatable > .p-datatable-wrapper {
-        border-radius: $border-radius-md;
-    }
+        > .p-datatable-wrapper {
+            border-radius: $border-radius-md;
+        }
 
-    .p-datatable .p-datatable-thead > tr > th {
-        background-color: $color-palette-gray-200;
-        color: $black;
-    }
+        & .p-datatable-thead {
+            > tr > th {
+                background-color: $color-palette-gray-200;
+                color: $black;
+            }
+        }
 
-    .p-datatable .p-datatable-tbody > tr:hover {
-        background-color: #ecf0fd;
+        & .p-datatable-tbody {
+            > tr:hover {
+                background-color: #ecf0fd;
+            }
+        }
+
+        .p-datatable-tbody td i.pi.pi-ellipsis-v {
+            color: $color-palette-primary-500;
+        }
     }
 
     .p-checkbox {
         border: 2px solid $color-palette-gray-400;
-    }
-
-    .p-datatable .p-datatable-tbody td i.pi.pi-ellipsis-v {
-        color: $color-palette-primary-500;
     }
 }
