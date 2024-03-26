@@ -162,6 +162,52 @@ describe('EditEmaStore', () => {
                     done();
                 });
             });
+
+            it('should return templateIdentifier', (done) => {
+                spectator.service.templateIdentifier$.subscribe((state) => {
+                    expect(state).toEqual('111');
+                    done();
+                });
+            });
+
+            it('should return layoutProperties', (done) => {
+                const containersMapMock = {
+                    '/default/': {
+                        type: 'containers',
+                        identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
+                        name: 'Medium Column (md-1)',
+                        categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93',
+                        source: 'DB',
+                        parentPermissionable: {
+                            hostname: 'demo.dotcms.com'
+                        }
+                    },
+                    '/banner/': {
+                        type: 'containers',
+                        identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                        name: 'Large Column (lg-1)',
+                        categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f',
+                        source: 'FILE',
+                        path: '/container/path',
+                        parentPermissionable: {
+                            hostname: 'demo.dotcms.com'
+                        }
+                    }
+                };
+                spectator.service.layoutProperties$.subscribe((state) => {
+                    expect(state).toEqual({
+                        layout: mockDotLayout(),
+                        themeId: mockDotTemplate().theme,
+                        pageId: '123',
+                        containersMap: containersMapMock,
+                        template: {
+                            identifier: '111',
+                            themeId: undefined
+                        }
+                    });
+                    done();
+                });
+            });
         });
 
         describe('updaters', () => {
