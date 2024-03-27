@@ -80,7 +80,7 @@ jobs:
             dotcms/dotcms-dev
           # generate Docker tags based on the following events/attributes
           tags: |
-            type=sha,enable=true,priority=100,prefix=latest,format=short
+            type=sha,enable=true,priority=100,prefix=latest-,format=short
             type=raw,value=latest
       -
         name: Set up QEMU
