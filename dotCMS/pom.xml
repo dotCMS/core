@@ -28,7 +28,7 @@
         <tomcat-dist-folder>dotserver/tomcat-${tomcat.version}</tomcat-dist-folder>
         <tomcat-lib-folder>${assembly-directory}/${tomcat-dist-folder}/lib</tomcat-lib-folder>
         <tomcat9-overrides>${project.basedir}/src/main/resources/container/tomcat9</tomcat9-overrides>
-        <exploded-webapp-dir>${project.build.directory}/${project.build.finalName}</exploded-webapp-dir>
+        <exploded-webapp-dir>${assembly-directory}/${tomcat-dist-folder}/webapps/ROOT</exploded-webapp-dir>
         <war.output.file>${project.build.directory}/${project.build.finalName}-war.war</war.output.file>
         <docker.base.image>tomcat:${tomcat.version}-jdk11</docker.base.image>
         <docker.skip.push>true</docker.skip.push>
