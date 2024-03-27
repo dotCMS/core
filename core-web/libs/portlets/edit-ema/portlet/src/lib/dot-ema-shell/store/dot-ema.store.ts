@@ -10,7 +10,6 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 
 import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
-    DEFAULT_VARIANT_ID,
     DotContainerMap,
     DotExperimentStatus,
     DotLayout,
@@ -35,7 +34,8 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createPageApiUrlWithQueryParams
+    createPageApiUrlWithQueryParams,
+    isDefaultVariant
 } from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
@@ -211,13 +211,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                 isEnterpriseLicense: licenseData,
                                                 editorState: EDITOR_STATE.IDLE,
                                                 editorData: {
-                                                    mode:
-                                                        params.variantName &&
-                                                        params.variantName !== DEFAULT_VARIANT_ID
-                                                            ? EDITOR_MODE.VARIANT
-                                                            : EDITOR_MODE.EDIT,
+                                                    mode: isDefaultVariant(params.variantName)
+                                                        ? EDITOR_MODE.EDIT
+                                                        : EDITOR_MODE.VARIANT,
                                                     variantInfo: {
-                                                        pageId: pageData.page.identifier
+                                                        pageId: pageData.page.identifier,
+                                                        canEdit:
+                                                            isDefaultVariant(params.variantName) ||
+                                                            !experiment[0] // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
                                                     }
                                                 },
                                                 variantName: params.variantName,
@@ -417,9 +418,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly updateEditorData = this.updater((state, editorData: EditorData) => {
         // If we are editing a variant, we need to change the editor mode to variant
         const newEditordata =
-            editorData.mode === EDITOR_MODE.EDIT &&
-            state.variantName &&
-            state.variantName !== DEFAULT_VARIANT_ID
+            editorData.mode === EDITOR_MODE.EDIT && !isDefaultVariant(state.variantName)
                 ? {
                       ...state.editorData,
                       mode: EDITOR_MODE.VARIANT,

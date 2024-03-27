@@ -98,7 +98,8 @@
         class="editor-content"
         [ngClass]="{
             'editor-content--device': es.editorData.mode === editorMode.DEVICE,
-            'editor-content--expanded': !es.editor.page.canEdit || !canEditVariant(),
+            'editor-content--expanded':
+                !es.editor.page.canEdit || !es.editorData.variantInfo.canEdit,
             'editor-content--hidden': es.editorData.mode === editorMode.SOCIAL_MEDIA
         }"
         data-testId="editor-content">
@@ -138,7 +139,7 @@
 
             <dot-ema-contentlet-tools
                 *ngIf="
-                    canEditVariant() &&
+                    es.editorData.variantInfo.canEdit &&
                     !!contentlet &&
                     !es.editorData.device &&
                     es.editor.page.canEdit &&
@@ -156,7 +157,7 @@
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
-                    canEditVariant() &&
+                    es.editorData.variantInfo.canEdit &&
                     !!containers.length &&
                     !!dragItem &&
                     !es.editorData.device &&
@@ -171,7 +172,7 @@
 
     <dot-edit-ema-palette
         *ngIf="
-            canEditVariant() &&
+            es.editorData.variantInfo.canEdit &&
             es.isEnterpriseLicense &&
             (es.editorData.mode === editorMode.EDIT || es.editorData.mode === editorMode.VARIANT) &&
             es.editor.page.canEdit
@@ -182,7 +183,7 @@
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
-    @if( canEditVariant() && es.editorData.mode === editorMode.EDIT) {
+    @if( es.editorData.variantInfo.canEdit && es.editorData.mode === editorMode.EDIT) {
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"

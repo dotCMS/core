@@ -214,3 +214,14 @@ export function createPageApiUrlWithQueryParams(
 
     return queryParams.length ? `${url}?${queryParams}` : url;
 }
+
+/**
+ * Check if the variant is the default one
+ *
+ * @export
+ * @param {string} [variant]
+ * @return {*}  {boolean}
+ */
+export function isDefaultVariant(variant?: string): boolean {
+    return !variant || variant === DEFAULT_VARIANT_ID;
+}

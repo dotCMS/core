@@ -76,6 +76,7 @@ export interface EditorData {
     socialMedia?: string;
     variantInfo?: {
         pageId: string;
+        canEdit: boolean;
     };
 }
 
