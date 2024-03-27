@@ -78,6 +78,7 @@ export interface EditorData {
         pageId: string;
         canEdit: boolean;
     };
+    canEditPage?: boolean;
 }
 
 export interface EditEmaState {

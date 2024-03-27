@@ -11,6 +11,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
 import { EDITOR_MODE } from '../../../shared/enums';
 import { EditorData } from '../../../shared/models';
@@ -24,7 +26,7 @@ interface InfoOptions {
 @Component({
     selector: 'dot-ema-info-display',
     standalone: true,
-    imports: [NgIf, ButtonModule],
+    imports: [NgIf, ButtonModule, DotMessagePipe],
     templateUrl: './dot-ema-info-display.component.html',
     styleUrls: ['./dot-ema-info-display.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -41,6 +43,8 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
     protected readonly editorMode = EDITOR_MODE;
 
     ngOnChanges() {
+        // Can edit should be top priority
+
         if (this.editorData.mode === this.editorMode.DEVICE) {
             this.options.set({
                 icon: this.editorData.device.icon,
@@ -48,9 +52,11 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                 action: () => this.goToEdit()
             });
         } else if (this.editorData.mode === this.editorMode.VARIANT) {
+            const modeLabel = this.editorData.variantInfo.canEdit ? 'Editing' : 'Viewing';
+
             this.options.set({
                 icon: 'pi pi-file-edit',
-                info: 'Editing <b>Some</b> Variant',
+                info: `${modeLabel} <b>Some</b> Variant`,
                 action: () =>
                     this.router.navigate(
                         [

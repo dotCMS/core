@@ -12,16 +12,21 @@
     justify-content: center;
     align-items: center;
 
-    .info-container {
+    .info-container,
+    .can-edit-container {
         display: flex;
         justify-content: center;
         align-items: center;
         gap: $spacing-0;
         color: $black;
         font-size: $font-size-sm;
+    }
 
-        i {
-            color: $color-palette-primary-500;
-        }
+    .info-container__icon {
+        color: $color-palette-primary-500;
+    }
+
+    .can-edit-container__icon {
+        color: $color-alert-yellow;
     }
 }

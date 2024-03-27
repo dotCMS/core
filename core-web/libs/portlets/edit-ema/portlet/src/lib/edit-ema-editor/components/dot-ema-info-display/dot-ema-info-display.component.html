@@ -5,8 +5,13 @@
     icon="pi pi-arrow-left"></p-button>
 
 <div class="info-container">
-    <i *ngIf="!!op.icon" [class]="op.icon" data-testId="info-icon"></i>
+    <i *ngIf="!!op.icon" [class]="op.icon + ' info-container__icon'" data-testId="info-icon"></i>
     <span [innerHTML]="op.info" data-testId="info-text"> </span>
 </div>
 
+<!-- Ask about the rules of this. -->
+<div class="can-edit-container" *ngIf="!editorData.canEditPage">
+    <i class="pi pi-exclamation-circle can-edit-container__icon"></i>
+    {{ 'editema.dont.have.edit.permission' | dm }}
+</div>
 }

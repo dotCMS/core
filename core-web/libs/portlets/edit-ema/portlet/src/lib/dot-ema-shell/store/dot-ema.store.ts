@@ -219,7 +219,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                         canEdit:
                                                             isDefaultVariant(params.variantName) ||
                                                             !experiment[0] // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
-                                                    }
+                                                    },
+                                                    canEditPage: pageData.page.canEdit
                                                 },
                                                 variantName: params.variantName,
                                                 runningExperiment: experiment[0]
@@ -426,10 +427,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                       socialMedia: undefined
                   }
                 : {
-                      ...editorData,
-                      variantInfo: {
-                          ...state.editorData.variantInfo // We need to maintain this
-                      }
+                      ...state.editorData,
+                      ...editorData
                   };
 
         return {
