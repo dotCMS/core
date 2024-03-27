@@ -4,7 +4,7 @@
 name: Trunk Deployment
 
 # The workflow run name is 'Trunk Deployment' appended with the name of the workflow run that triggered this workflow.
-run-name: Trunk Deployment - ${{ github.event.workflow_run.name }}
+run-name: Deploy Trunk-${{ github.event.workflow_dispatch.build_run_id || github.event.workflow_run.display_title }}
 
 # The concurrency group is 'trunk-deployment'. This ensures that only one run of this workflow can be in progress at a time.
 concurrency: trunk-deployment
