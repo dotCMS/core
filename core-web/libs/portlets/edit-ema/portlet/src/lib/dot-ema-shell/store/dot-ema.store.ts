@@ -216,7 +216,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                         : EDITOR_MODE.VARIANT,
                                                     variantInfo: {
                                                         pageId: pageData.page.identifier,
-                                                        canEdit:
+                                                        canEditVariant:
                                                             isDefaultVariant(params.variantName) ||
                                                             !experiment[0] // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
                                                     },

@@ -70,6 +70,7 @@
         <ng-container bottom>
             <dot-ema-info-display
                 *ngIf="
+                    !es.editorData.canEditPage ||
                     es.editorData.mode === editorMode.DEVICE ||
                     es.editorData.mode === editorMode.VARIANT
                 "
@@ -89,7 +90,7 @@
         [ngClass]="{
             'editor-content--device': es.editorData.mode === editorMode.DEVICE,
             'editor-content--expanded':
-                !es.editor.page.canEdit || !es.editorData.variantInfo.canEdit,
+                !es.editor.page.canEdit || !es.editorData.variantInfo.canEditVariant,
             'editor-content--hidden': es.editorData.mode === editorMode.SOCIAL_MEDIA
         }"
         data-testId="editor-content">
@@ -129,7 +130,7 @@
 
             <dot-ema-contentlet-tools
                 *ngIf="
-                    es.editorData.variantInfo.canEdit &&
+                    es.editorData.variantInfo.canEditVariant &&
                     !!contentlet &&
                     !es.editorData.device &&
                     es.editor.page.canEdit &&
@@ -147,7 +148,7 @@
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
-                    es.editorData.variantInfo.canEdit &&
+                    es.editorData.variantInfo.canEditVariant &&
                     !!containers.length &&
                     !!dragItem &&
                     !es.editorData.device &&
@@ -162,7 +163,7 @@
 
     <dot-edit-ema-palette
         *ngIf="
-            es.editorData.variantInfo.canEdit &&
+            es.editorData.variantInfo.canEditVariant &&
             es.isEnterpriseLicense &&
             (es.editorData.mode === editorMode.EDIT || es.editorData.mode === editorMode.VARIANT) &&
             es.editor.page.canEdit
@@ -173,7 +174,7 @@
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
-    @if( es.editorData.variantInfo.canEdit && es.editorData.mode === editorMode.EDIT) {
+    @if( es.editorData.variantInfo.canEditVariant && es.editorData.mode === editorMode.EDIT) {
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"

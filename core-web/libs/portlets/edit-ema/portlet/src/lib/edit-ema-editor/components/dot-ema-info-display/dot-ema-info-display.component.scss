@@ -17,16 +17,17 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        grid-column: 2;
         gap: $spacing-0;
         color: $black;
         font-size: $font-size-sm;
-    }
 
-    .info-container__icon {
-        color: $color-palette-primary-500;
-    }
+        .pi {
+            color: $color-palette-primary-500;
+        }
 
-    .can-edit-container__icon {
-        color: $color-alert-yellow;
+        .pi.warning {
+            color: $color-alert-yellow;
+        }
     }
 }

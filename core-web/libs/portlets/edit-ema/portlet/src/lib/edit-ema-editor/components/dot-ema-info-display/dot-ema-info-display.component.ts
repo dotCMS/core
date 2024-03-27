@@ -20,7 +20,7 @@ import { EditorData } from '../../../shared/models';
 interface InfoOptions {
     icon: string;
     info: string;
-    action: () => void;
+    action?: () => void;
 }
 
 @Component({
@@ -43,7 +43,12 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
     protected readonly editorMode = EDITOR_MODE;
 
     ngOnChanges() {
-        // Can edit should be top priority
+        if (!this.editorData.canEditPage) {
+            this.options.set({
+                icon: 'pi pi-exclamation-circle warning',
+                info: 'editema.dont.have.edit.permission'
+            });
+        }
 
         if (this.editorData.mode === this.editorMode.DEVICE) {
             this.options.set({
@@ -51,8 +56,11 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                 info: `${this.editorData.device.name} ${this.editorData.device.cssWidth} x ${this.editorData.device.cssHeight}`,
                 action: () => this.goToEdit()
             });
-        } else if (this.editorData.mode === this.editorMode.VARIANT) {
-            const modeLabel = this.editorData.variantInfo.canEdit ? 'Editing' : 'Viewing';
+        } else if (
+            this.editorData.mode === this.editorMode.VARIANT &&
+            this.editorData.canEditPage
+        ) {
+            const modeLabel = this.editorData.variantInfo.canEditVariant ? 'Editing' : 'Viewing';
 
             this.options.set({
                 icon: 'pi pi-file-edit',
