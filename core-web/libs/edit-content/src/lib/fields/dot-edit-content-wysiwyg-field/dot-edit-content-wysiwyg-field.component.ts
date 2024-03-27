@@ -1,7 +1,7 @@
 import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { RawEditorOptions } from 'tinymce';
 
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -46,14 +46,14 @@ export class DotEditContentWYSIWYGFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
 
     private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
-    protected init: RawEditorOptions;
+    protected init = signal<RawEditorOptions>(null);
 
     ngOnInit(): void {
-        this.init = {
+        this.init.set({
             ...DEFAULT_CONFIG,
             ...this.variables(),
             setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor)
-        };
+        });
     }
 
     private variables() {
