@@ -70,7 +70,6 @@ export class AreaPickerDialogComponent implements OnChanges {
                     }
                 }
             );
-            //this.mapsService.loadApi();
         }
 
         if (change.hidden && this.hidden && this.map) {

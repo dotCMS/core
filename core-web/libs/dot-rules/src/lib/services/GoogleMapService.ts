@@ -18,14 +18,10 @@ window['mapsApiReady'] = () => {
 @Injectable()
 export class GoogleMapService {
     apiReady = false;
-    loadingApi = false;
     mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
     private destroy$ = new Subject<boolean>();
     constructor(private siteService: SiteService, private dotSiteService: DotSiteService) {
-        console.log('GoogleMapService');
-        this.loadApi(this.siteService.currentSite.identifier).subscribe(() => {
-            this.loadingApi = false;
-        });
+        this.loadApi(this.siteService.currentSite.identifier).subscribe(() => {});
         this.mapsApi$ = window['mapsApi$'];
         this.mapsApi$.subscribe((gMapApi) => {
             if (gMapApi != null) {
@@ -38,9 +34,7 @@ export class GoogleMapService {
                 takeUntil(this.destroy$),
                 switchMap(({ identifier }) => this.loadApi(identifier))
             )
-            .subscribe(() => {
-                this.loadingApi = false;
-            });
+            .subscribe(() => {});
     }
 
     //this method gets the Google key from the current site and loads the Google Maps API
@@ -48,7 +42,6 @@ export class GoogleMapService {
         return this.siteService.getSiteById(siteId).pipe(
             take(1),
             switchMap((site) => {
-                this.loadingApi = true;
                 const url = `https://maps.googleapis.com/maps/api/js?key=${
                     site.googleMap || ''
                 }&callback=mapsApiReady`;
