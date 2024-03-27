@@ -1,10 +1,12 @@
 // tslint:disable:typedef
-import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { Site, SiteService } from '@dotcms/dotcms-js';
+
+import { Injectable } from '@angular/core';
+
+import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
+
 import { DotSiteService } from '@dotcms/data-access';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { map, skip, takeUntil, tap } from 'rxjs/operators';
+import { SiteService } from '@dotcms/dotcms-js';
 
 window['mapsApi$'] = new BehaviorSubject({ ready: false });
 
@@ -15,14 +17,15 @@ window['mapsApiReady'] = () => {
 
 @Injectable()
 export class GoogleMapService {
-    apiKey: string = null;
-
-    apiReady: Boolean = false;
-    loadingApi: Boolean = false;
+    apiReady = false;
+    loadingApi = false;
     mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
     private destroy$ = new Subject<boolean>();
     constructor(private siteService: SiteService, private dotSiteService: DotSiteService) {
-        this.getApiKey(this.siteService.currentSite.identifier);
+        console.log('GoogleMapService');
+        this.loadApi(this.siteService.currentSite.identifier).subscribe(() => {
+            this.loadingApi = false;
+        });
         this.mapsApi$ = window['mapsApi$'];
         this.mapsApi$.subscribe((gMapApi) => {
             if (gMapApi != null) {
@@ -31,48 +34,45 @@ export class GoogleMapService {
         });
 
         this.siteService.switchSite$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(({ identifier }) => this.getApiKey(identifier));
-    }
-
-    //this method gets the Google key from the current site
-    getApiKey(siteId): void {
-        this.siteService
-            .getSiteById(siteId)
-            .pipe(map((site) => site.googleMap || null))
-            .subscribe((apiKey) => {
-                this.apiKey = apiKey;
-                console.log('API KEY', this.apiKey);
+            .pipe(
+                takeUntil(this.destroy$),
+                switchMap(({ identifier }) => this.loadApi(identifier))
+            )
+            .subscribe(() => {
+                this.loadingApi = false;
             });
     }
 
-    loadApi(): void {
-        this.loadingApi = true;
-        let url: string;
-        if (this.apiKey) {
-            url = `https://maps.googleapis.com/maps/api/js?key=${this.apiKey}&callback=mapsApiReady`;
-        } else {
-            url = `https://maps.googleapis.com/maps/api/js?callback=mapsApiReady`;
-        }
-        console.log('URL to render', url);
-        this.addScript(url);
+    //this method gets the Google key from the current site and loads the Google Maps API
+    loadApi(siteId): Observable<boolean> {
+        return this.siteService.getSiteById(siteId).pipe(
+            take(1),
+            switchMap((site) => {
+                this.loadingApi = true;
+                const url = `https://maps.googleapis.com/maps/api/js?key=${
+                    site.googleMap || ''
+                }&callback=mapsApiReady`;
+
+                return this.addScript(url);
+            })
+        );
     }
 
-    addScript(url, callback?): void {
+    private addScript(url: string): Observable<boolean> {
         const id = 'google-maps-api';
+        const scriptLoad$ = new Subject<boolean>();
+        let script = document.getElementById(id) as HTMLScriptElement;
 
-        if (document.getElementById(id)) {
-            document.getElementById(id).remove();
-        }
+        document.getElementById(id)?.remove();
 
-        const script = document.createElement('script');
-        if (callback) {
-            script.onload = callback;
-        }
+        script = document.createElement('script');
         script.id = id;
         script.type = 'text/javascript';
         script.src = url;
-
         document.body.appendChild(script);
+
+        script.onload = () => scriptLoad$.next(true);
+
+        return scriptLoad$.asObservable();
     }
 }
