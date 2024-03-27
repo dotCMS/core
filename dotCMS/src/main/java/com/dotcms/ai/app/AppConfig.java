@@ -84,37 +84,18 @@ public class AppConfig implements Serializable {
     }
 
     public int getConfigInteger(AppKeys appKey) {
-        if (blacklisted(appKey)) {
-            return 0;
-        }
         String value =  Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         return Try.of(()->Integer.parseInt(value)).getOrElse(0);
     }
 
     public float getConfigFloat(AppKeys appKey) {
-        if (blacklisted(appKey)) {
-            return 0;
-        }
         String value =  Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         return Try.of(()->Float.parseFloat(value)).getOrElse(0f);
     }
 
-
-    private boolean blacklisted(AppKeys key) {
-        return false;
-        //return !key.key.startsWith("com.dotcms.ai");
-    }
-
     public boolean getConfigBoolean(AppKeys appKey) {
-        if (blacklisted(appKey)) {
-            return false;
-        }
-
         String value =  Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         return Try.of(()->Boolean.parseBoolean(value)).getOrElse(false);
-
-
-
     }
 
     public String[] getConfigArray(AppKeys appKey) {
@@ -128,27 +109,14 @@ public class AppConfig implements Serializable {
      * this is needed to allow for custom config properties to be added to the APP
      * defaults for the values can
      *
-     * @param key
+     * @param appKey
      * @return
      */
 
-    public String getConfig(AppKeys key) {
-        return getConfigString(key, key.defaultValue);
-    }
-
-    public String getConfigString(AppKeys appKey, String defaultValue) {
-        if (blacklisted(appKey)) {
-            return defaultValue;
-        }
-
+    public String getConfig(AppKeys appKey) {
         if (configValues.containsKey(appKey.key)) {
             return Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         }
         return appKey.defaultValue;
-
-
-
     }
-
-
 }

@@ -197,21 +197,11 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         long startTime = System.currentTimeMillis();
 
         Map<String, JSONObject> reducedResults = new LinkedHashMap<>();
-        Set<String> fieldsToShow = (searcher.showFields != null)
-                ? Arrays.stream(searcher.showFields).collect(Collectors.toSet())
-                : Set.of();
 
         for (EmbeddingsDTO result : searchResults) {
             JSONObject contentObject = reducedResults.getOrDefault(result.inode, dtoToContentJson(result, searcher.user));
 
             contentObject.getAsMap().computeIfAbsent("title", k -> result.title);
-
-            if (contentObject == null) {
-                continue;
-            }
-
-            //fieldsToShow.stream().forEach(c->contentObject.keySet().removeIf(k -> !fieldsToShow.contains(c)));
-
 
             JSONArray matches = contentObject.optJSONArray(MATCHES) == null ? new JSONArray() : contentObject.optJSONArray(MATCHES);
             JSONObject match = new JSONObject();

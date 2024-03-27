@@ -77,7 +77,7 @@ public class OpenAIAutoTagRunner implements AsyncWorkflowRunner {
                 Boolean.parseBoolean(params.get(OpenAIParams.LIMIT_TAGS_TO_HOST.key).getValue()),
                 Try.of(() -> Integer.parseInt(params.get(OpenAIParams.RUN_DELAY.key).getValue())).getOrElse(5),
                 params.get(OpenAIParams.MODEL.key).getValue(),
-                Try.of(() -> Float.parseFloat(params.get(OpenAIParams.TEMPERATURE).getValue())).getOrElse(ConfigService.INSTANCE.config().getConfigFloat(AppKeys.COMPLETION_TEMPERATURE))
+                Try.of(() -> Float.parseFloat(params.get(OpenAIParams.TEMPERATURE.key).getValue())).getOrElse(ConfigService.INSTANCE.config().getConfigFloat(AppKeys.COMPLETION_TEMPERATURE))
         );
     }
 
