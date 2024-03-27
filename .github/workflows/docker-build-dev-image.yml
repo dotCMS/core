@@ -7,6 +7,12 @@ on:
   schedule:
     - cron: "18 2 * * *"
 
+  # THIS IS HERE FOR TESTING PURPOSES
+  push:
+    branches:
+      - issue-28090-build-latest-dev-image
+
+
 jobs:
   docker-snapshot-master:
     name: Build/Push dotCMS Nightly Dev Image
