@@ -195,6 +195,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorState$ = this.store.editorState$.pipe(
         tap((state) => {
             // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+
             this.canEditVariant.set(
                 !this.queryParams.variantName ||
                     this.queryParams.variantName === DEFAULT_VARIANT_ID ||
@@ -202,6 +203,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             );
         })
     );
+
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
@@ -275,9 +277,28 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
+
         // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
         // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
         // this.store.updateEditorState(EDITOR_STATE.LOADING);
+
+        this.store.url$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            requestAnimationFrame(() => {
+                this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
+                    const href =
+                        (e.target as HTMLAnchorElement).href ||
+                        ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
+
+                    if (href) {
+                        e.preventDefault();
+                        const pathname = new URL(href).pathname;
+                        this.updateQueryParams({
+                            url: pathname
+                        });
+                    }
+                });
+            });
+        });
     }
 
     /**
