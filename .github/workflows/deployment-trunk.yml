@@ -30,7 +30,6 @@ on:
         type: boolean
         required: false
         default: false
-
 # The workflow has read access to the repository contents and actions.
 permissions:
   contents: read
@@ -38,6 +37,8 @@ permissions:
 jobs:
   deploy_check:
     runs-on: ubuntu-latest
+    # if event type is workflow_dispatch or conclusion of the workflow_run is success
+    if: (github.repository == 'dotcms/core' || github.repository == 'dotcms/core-workflow-test' ) &&  github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     outputs:
       should_deploy: ${{ steps.check.outputs.should_deploy }}
       is_latest: ${{ steps.check.outputs.is_latest }}
@@ -46,10 +47,6 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v4
-        with:
-          ref: master         # Specify the branch to check out
-          fetch-depth: 0      # Indicates to fetch all history for all branches and tags
-
       - name: Download latest artifact
         id: deployment-status
         uses: dawidd6/action-download-artifact@v2
@@ -67,15 +64,16 @@ jobs:
         run: |
           branch=''
           runid='${{ github.event.inputs.build_run_id || github.event.workflow_run.id }}'
-          
+          search_artifacts=false
           if [[ "$runid" == "" ]]; then
             branch='master'
             runid=''
+            search_artifacts=true
           fi
 
           echo "branch=$branch" >> $GITHUB_OUTPUT
           echo "runid=$runid" >> $GITHUB_OUTPUT
-
+          echo "search_artifacts=search_artifacts" >> $GITHUB_OUTPUT
       - name: Download Build Status
         id: data-download
         uses: dawidd6/action-download-artifact@v2
@@ -86,12 +84,13 @@ jobs:
           branch: ${{ steps.lookup-type.outputs.branch }}
           event: push
           run_id: ${{ steps.lookup-type.outputs.runid }}
-          search_artifacts: true
+          search_artifacts: ${{ steps.lookup-type.outputs.search_artifacts }}
           if_no_artifact_found: warn
 
       - name: Get SHAs and check if we should deploy
         id: check
         run: |
+          
           build_artifact_exists=${{ steps.data-download.outputs.found_artifact }}
           last_deployed_exists=${{ steps.deployment-status.outputs.found_artifact }} 
           if [[ ${last_deployed_exists} == "true" ]]; then
