@@ -20,8 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class OpenAIRequest {
 
-    static final long OPENAI_RATE_LIMIT_PER_MINUTE = ConfigProperties.getIntProperty("OPENAI_RATE_LIMIT_PER_MINUTE", 60);
-
     static final ConcurrentHashMap<OpenAIModel,Long> lastRestCall = new ConcurrentHashMap<>();
 
 
