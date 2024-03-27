@@ -48,8 +48,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup master branch locally without switching current branch
-        run: git fetch origin master:master
       - name: Download latest artifact
         id: deployment-status
         uses: dawidd6/action-download-artifact@v2
@@ -161,8 +159,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup master branch locally without switching current branch
-        run: git fetch origin master:master
       # A Docker image is built and pushed using the 'deploy-artifact-docker' action.
       - name: Build/Push Docker Image
         id: docker_build
