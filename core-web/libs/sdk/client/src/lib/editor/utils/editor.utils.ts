@@ -175,8 +175,4 @@ export function findVTLData(target: HTMLElement) {
             name: vltElement.dataset?.['dotUrl']
         };
     });
-
-    // if (vltElement) {
-    //     return vltElement.dataset?.['dotInode'];
-    // }
 }
