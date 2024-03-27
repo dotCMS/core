@@ -12,12 +12,20 @@ import { DotAiService } from '../../../shared';
 export interface AiContentPromptState {
     prompt: string;
     content: string;
-    acceptContent: boolean;
-    deleteContent: boolean;
+    selectedContent: string;
     status: ComponentStatus;
     error: string;
     showDialog: boolean;
 }
+
+const initialState: AiContentPromptState = {
+    prompt: '',
+    content: '',
+    selectedContent: '',
+    status: ComponentStatus.INIT,
+    error: '',
+    showDialog: false
+};
 
 @Injectable({
     providedIn: 'root'
@@ -26,21 +34,24 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     //Selectors
     readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
     readonly content$ = this.select((state) => state.content);
-    readonly deleteContent$ = this.select((state) => state.deleteContent);
     readonly status$ = this.select((state) => state.status);
+    readonly showDialog$ = this.select((state) => state.showDialog);
+    readonly selectedContent$ = this.select((state) => state.selectedContent);
     readonly vm$ = this.select((state) => state);
     //Updaters
     readonly setStatus = this.updater((state, status: ComponentStatus) => ({
         ...state,
         status
     }));
+
+    readonly setSelectedContent = this.updater((state, selectedContent: string) => ({
+        ...initialState,
+        selectedContent
+    }));
+
     readonly setAcceptContent = this.updater((state, acceptContent: boolean) => ({
         ...state,
         acceptContent
-    }));
-    readonly setDeleteContent = this.updater((state, deleteContent: boolean) => ({
-        ...state,
-        deleteContent
     }));
 
     readonly showDialog = this.updater((state) => ({
@@ -62,11 +73,11 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
                 return this.dotAiService.generateContent(prompt).pipe(
                     tapResponse(
                         (content) => {
-                            this.patchState({ status: ComponentStatus.LOADED, content, error: '' });
+                            this.patchState({ status: ComponentStatus.IDLE, content, error: '' });
                         },
                         (error: string) => {
                             this.patchState({
-                                status: ComponentStatus.LOADED,
+                                status: ComponentStatus.IDLE,
                                 content: '',
                                 error: error
                             });
@@ -96,14 +107,6 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     }));
 
     constructor(private dotAiService: DotAiService) {
-        super({
-            prompt: '',
-            content: '',
-            acceptContent: false,
-            deleteContent: false,
-            status: ComponentStatus.INIT,
-            error: '',
-            showDialog: false
-        });
+        super(initialState);
     }
 }

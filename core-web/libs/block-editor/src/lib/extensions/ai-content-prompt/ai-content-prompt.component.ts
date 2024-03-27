@@ -1,22 +1,16 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    ElementRef,
-    inject,
-    OnDestroy,
-    OnInit,
-    ViewChild
-} from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { filter, takeUntil } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotValidators } from '@dotcms/ui';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
@@ -26,50 +20,36 @@ interface AIContentForm {
 
 @Component({
     selector: 'dot-ai-content-prompt',
+
     templateUrl: './ai-content-prompt.component.html',
-    styleUrls: ['./ai-content-prompt.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./ai-content-prompt.component.scss']
 })
-export class AIContentPromptComponent implements OnInit, OnDestroy {
-    vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
-    readonly ComponentStatus = ComponentStatus;
+export class AIContentPromptComponent implements OnInit {
     store: AiContentPromptStore = inject(AiContentPromptStore);
+    vm$: Observable<AiContentPromptState> = this.store.vm$;
+    readonly ComponentStatus = ComponentStatus;
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
-        textPrompt: new FormControl('', Validators.required)
+        textPrompt: new FormControl('', [Validators.required, DotValidators.noWhitespace])
     });
     confirmationService = inject(ConfirmationService);
     dotMessageService = inject(DotMessageService);
-    private destroy$: Subject<boolean> = new Subject<boolean>();
-    @ViewChild('input') private input: ElementRef;
+    private destroyRef = inject(DestroyRef);
 
-    constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
+    @ViewChild('inputTextarea') private inputTextarea: HTMLTextAreaElement;
 
     ngOnInit() {
-        this.aiContentPromptStore.status$
+        this.store.showDialog$
             .pipe(
-                takeUntil(this.destroy$),
-                filter((status) => status === ComponentStatus.IDLE)
+                takeUntilDestroyed(this.destroyRef),
+                filter((showDialog) => showDialog)
             )
             .subscribe(() => {
-                this.form.reset();
-                this.input.nativeElement.focus();
+                console.log('focus text area');
+                this.inputTextarea.focus();
             });
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
-    /**
-     *  Handle submit event in the form
-     * @return {*}  {void}
-     * @memberof AIContentPromptComponent
-     */
-    onSubmit() {
-        const textPrompt = this.form.value.textPrompt;
-        if (textPrompt) {
-            this.aiContentPromptStore.generateContent(textPrompt);
-        }
+        this.store.status$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((status) => {
+            status === ComponentStatus.LOADING ? this.form.disable() : this.form.enable();
+        });
     }
 
     /**
@@ -79,7 +59,7 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
      * @memberof AIContentPromptComponent
      */
     handleScape(event: KeyboardEvent): void {
-        this.aiContentPromptStore.setStatus(ComponentStatus.INIT);
+        this.store.setStatus(ComponentStatus.INIT);
         event.stopPropagation();
     }
 
@@ -89,7 +69,7 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
      * @return {void}
      */
     onHideConfirm(): void {
-        this.aiContentPromptStore.cleanError();
+        this.store.cleanError();
     }
 
     onPageChange($event: any) {

@@ -93,91 +93,108 @@ export class AIContentPromptView {
         /**
          * Subscription to insert the AI Node and open the AI Content Actions.
          */
-        this.componentStore.content$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((content) => !!content)
-            )
-            .subscribe((content) => {
-                this.editor
-                    .chain()
-                    .closeAIPrompt()
-                    .insertAINode(content)
-                    .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
-                    .run();
-            });
+        // this.componentStore.content$
+        //     .pipe(
+        //         takeUntil(this.destroy$),
+        //         filter((content) => !!content)
+        //     )
+        //     .subscribe((content) => {
+        //         this.editor
+        //             .chain()
+        //             .closeAIPrompt()
+        //             .insertAINode(content)
+        //             .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
+        //             .run();
+        //     });
 
         /**
-         * Subscription to insert the text Content once accepted the generated content.
+         * Subscription to insert the text Content once accepted tin the Dialog.
          * Fired from the AI Content Actions plugin.
          */
-        this.componentStore.vm$
-            .pipe(
-                takeUntil(this.destroy$),
-                tap((state) => (this.storeSate = state)),
-                filter((state) => state.acceptContent)
-            )
-            .subscribe((state) => {
-                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
-                replaceNodeWithContent(this.editor, nodeInformation, state.content);
-
-                this.componentStore.setAcceptContent(false);
-            });
-
-        /**
-         * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
-         * template in ai-content-prompt.component.html
-         */
-
-        this.componentStore.status$.pipe(skip(1), takeUntil(this.destroy$)).subscribe((status) => {
-            if (status === ComponentStatus.INIT) {
-                this.tippy?.hide();
-            } else if (status === ComponentStatus.LOADING) {
-                this.editor.commands.setLoadingAIContentNode(true);
-            }
+        this.componentStore.selectedContent$.pipe(takeUntil(this.destroy$)).subscribe((content) => {
+            this.editor.chain().insertContent(content).closeAIPrompt().run();
         });
 
         /**
-         * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
+         * Subscription to update the editor state, when close the AI Content Prompt Dialog.
          */
-        this.componentStore.errorMsg$
+        this.componentStore.showDialog$
             .pipe(
-                filter((hasError) => !!hasError),
-                takeUntil(this.destroy$)
+                skip(1),
+                takeUntil(this.destroy$),
+                filter((value) => !value)
             )
-            .subscribe((error) => {
-                this.component.injector.get(ConfirmationService).confirm({
-                    key: 'ai-text-prompt-msg',
-                    message: this.component.injector.get(DotMessageService).get(error),
-                    header: 'Error',
-                    rejectVisible: false,
-                    acceptVisible: false
-                });
-                this.tippy?.hide();
+            .subscribe(() => {
+                this.editor.commands.closeAIPrompt();
             });
+
+        // this.componentStore.vm$
+        //     .pipe(
+        //         takeUntil(this.destroy$),
+        //         tap((state) => (this.storeSate = state)),
+        //         filter((state) => state.acceptContent)
+        //     )
+        //     .subscribe((state) => {
+        //         const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
+        //         replaceNodeWithContent(this.editor, nodeInformation, state.content);
+        //
+        //         this.componentStore.setAcceptContent(false);
+        //     });
+
+        // /**
+        //  * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
+        //  * template in ai-content-prompt.component.html
+        //  */
+        //
+        // this.componentStore.status$.pipe(skip(1), takeUntil(this.destroy$)).subscribe((status) => {
+        //     if (status === ComponentStatus.INIT) {
+        //         this.tippy?.hide();
+        //     } else if (status === ComponentStatus.LOADING) {
+        //         this.editor.commands.setLoadingAIContentNode(true);
+        //     }
+        // });
+
+        // /**
+        //  * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
+        //  */
+        // this.componentStore.errorMsg$
+        //     .pipe(
+        //         filter((hasError) => !!hasError),
+        //         takeUntil(this.destroy$)
+        //     )
+        //     .subscribe((error) => {
+        //         this.component.injector.get(ConfirmationService).confirm({
+        //             key: 'ai-text-prompt-msg',
+        //             message: this.component.injector.get(DotMessageService).get(error),
+        //             header: 'Error',
+        //             rejectVisible: false,
+        //             acceptVisible: false
+        //         });
+        //         this.tippy?.hide();
+        //     });
 
         /**
          * Subscription to delete AI_CONTENT node.
          * Fired from the AI Content Actions plugin.
          */
-        this.componentStore.deleteContent$
-            .pipe(
-                skip(1),
-                takeUntil(this.destroy$),
-                filter((deleteContent) => deleteContent)
-            )
-            .subscribe(() => {
-                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
-
-                if (nodeInformation) {
-                    this.editor.commands.deleteRange({
-                        from: nodeInformation.from,
-                        to: nodeInformation.to
-                    });
-                }
-
-                this.componentStore.setDeleteContent(false);
-            });
+        // this.componentStore.deleteContent$
+        //     .pipe(
+        //         skip(1),
+        //         takeUntil(this.destroy$),
+        //         filter((deleteContent) => deleteContent)
+        //     )
+        //     .subscribe(() => {
+        //         const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
+        //
+        //         if (nodeInformation) {
+        //             this.editor.commands.deleteRange({
+        //                 from: nodeInformation.from,
+        //                 to: nodeInformation.to
+        //             });
+        //         }
+        //
+        //         this.componentStore.setDeleteContent(false);
+        //     });
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -190,7 +207,7 @@ export class AIContentPromptView {
         //     return;
         // }
 
-        if (next?.aIContentPromptOpen === !prev?.aIContentPromptOpen) {
+        if (next?.aIContentPromptOpen && prev?.aIContentPromptOpen === false) {
             this.componentStore.showDialog();
         }
 
@@ -318,6 +335,7 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                     transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
                 const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
 
+                console.log('aIContentPromptOpen', aIContentPromptOpen);
                 if (typeof aIContentPromptOpen === 'boolean') {
                     return { aIContentPromptOpen };
                 }

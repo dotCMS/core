@@ -84,10 +84,6 @@ export class AIContentActionsView {
                 case ACTIONS.REGENERATE:
                     this.generateContent();
                     break;
-
-                case ACTIONS.DELETE:
-                    this.deleteContent();
-                    break;
             }
         });
 
@@ -164,16 +160,16 @@ export class AIContentActionsView {
         }
     }
 
-    private deleteContent() {
-        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
-        switch (pluginState.nodeType) {
-            case DOT_AI_TEXT_CONTENT_KEY:
-                this.aiContentPromptStore.setDeleteContent(true);
-                break;
-        }
-
-        this.editor.commands.closeAIContentActions();
-    }
+    // private deleteContent() {
+    //     const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
+    //     switch (pluginState.nodeType) {
+    //         case DOT_AI_TEXT_CONTENT_KEY:
+    //             this.aiContentPromptStore.setDeleteContent(true);
+    //             break;
+    //     }
+    //
+    //     this.editor.commands.closeAIContentActions();
+    // }
 
     private handleKeyDown(event: KeyboardEvent) {
         if (event.key === 'Backspace') {
