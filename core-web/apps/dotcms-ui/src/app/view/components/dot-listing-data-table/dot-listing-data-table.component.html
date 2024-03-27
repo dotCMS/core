@@ -100,7 +100,9 @@
         [attr.data-testId]="col.fieldName">
         <div class="listing-datatable__column-icon" *ngIf="col.icon">
             <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
-            <span>{{ col.textContent || rowData[col.fieldName] }}</span>
+            <span [style]="'view-transition-name:' + rowData[col.fieldName]">{{
+                col.textContent || rowData[col.fieldName]
+            }}</span>
         </div>
         <span *ngIf="!col.icon && col.fieldName !== 'nEntries' && col.format !== 'date'">
             {{ rowData[col.fieldName] }}
