@@ -38,7 +38,7 @@ jobs:
   deploy_check:
     runs-on: ubuntu-latest
     # if event type is workflow_dispatch or conclusion of the workflow_run is success
-    if: (github.repository == 'dotcms/core' || github.repository == 'dotcms/core-workflow-test' ) &&  github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: (github.repository == 'dotcms/core' || github.repository == 'dotcms/core-workflow-test' ) &&  ( github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' )
     outputs:
       should_deploy: ${{ steps.check.outputs.should_deploy }}
       is_latest: ${{ steps.check.outputs.is_latest }}
