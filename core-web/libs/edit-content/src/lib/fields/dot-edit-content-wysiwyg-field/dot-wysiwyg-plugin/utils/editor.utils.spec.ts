@@ -7,6 +7,7 @@ describe('formatDotImageNode', () => {
     it('should return formatted image node', () => {
         const asset: DotCMSContentlet = {
             ...EMPTY_CONTENTLET,
+            baseType: 'DOTASSET',
             assetVersion: 'version',
             asset: 'asset',
             title: 'title',

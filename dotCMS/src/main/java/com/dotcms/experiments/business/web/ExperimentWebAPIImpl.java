@@ -171,9 +171,6 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             final HttpServletRequest request, final HttpServletResponse response)
             throws DotDataException, DotSecurityException {
 
-        DotPreconditions.isTrue(runningExperiments != null && !runningExperiments.isEmpty(),
-                "Running Experiment can't be empty or null");
-
         final List<Experiment> experiments = new ArrayList<>();
 
         for (final Experiment experiment : runningExperiments) {
