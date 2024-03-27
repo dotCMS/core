@@ -85,6 +85,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly stateLoad$ = this.select((state) => state.editorState);
 
+    readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
+
+    readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
+
     readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
         return {
             state,
@@ -129,12 +133,27 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly clientHost$ = this.select((state) => state.clientHost);
 
-    readonly layoutProperties$ = this.select((state) => ({
+    /**
+     * Before this was layoutProperties, but are separate to "temp" selector.
+     * And then is merged with templateIdentifier in layoutProperties$.
+     * This is to try avoid extra-calls on the select, and avoid memory leaks
+     */
+    private readonly layoutProps$ = this.select((state) => ({
         layout: state.editor.layout,
         themeId: state.editor.template.theme,
         pageId: state.editor.page.identifier,
         containersMap: this.mapContainers(state.editor.containers)
     }));
+
+    readonly layoutProperties$ = this.select(
+        this.layoutProps$,
+        this.templateIdentifier$,
+        this.templateThemeId$,
+        (props, templateIdentifier, themeId) => ({
+            ...props,
+            template: { identifier: templateIdentifier, themeId }
+        })
+    );
 
     readonly shellProperties$ = this.select((state) => ({
         page: state.editor.page,
@@ -189,7 +208,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                 clientHost: params.clientHost,
                                                 editor: pageData,
                                                 isEnterpriseLicense: licenseData,
-                                                editorState: EDITOR_STATE.LOADED,
+                                                editorState: EDITOR_STATE.IDLE,
                                                 previewState: {
                                                     editorMode: EDITOR_MODE.EDIT
                                                 },
@@ -219,7 +238,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 return this.dotPageApiService.get(params).pipe(
                     tapResponse({
                         next: (editor) => {
-                            this.patchState({ editor, editorState: EDITOR_STATE.LOADED });
+                            this.patchState({ editor, editorState: EDITOR_STATE.IDLE });
                         },
                         error: ({ status }: HttpErrorResponse) =>
                             this.createEmptyState({ canEdit: false, canRead: false }, status),
@@ -244,23 +263,33 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             }),
             switchMap((payload) =>
                 this.dotPageApiService.save(payload).pipe(
-                    switchMap(() => this.syncEditorData(payload.params)),
-                    tapResponse(
-                        (pageData: DotPageApiResponse) => {
-                            this.patchState((state) => ({
-                                ...state,
-                                editor: pageData,
-                                editorState: EDITOR_STATE.LOADED
-                            }));
+                    switchMap(() =>
+                        this.dotPageApiService.get(payload.params).pipe(
+                            tapResponse(
+                                (pageData: DotPageApiResponse) => {
+                                    this.patchState((state) => ({
+                                        ...state,
+                                        editor: pageData,
+                                        editorState: EDITOR_STATE.IDLE
+                                    }));
 
-                            payload.whenSaved?.();
-                        },
-                        (e) => {
-                            console.error(e);
-                            payload.whenSaved?.();
-                            this.updateEditorState(EDITOR_STATE.ERROR);
-                        }
-                    )
+                                    payload.whenSaved?.();
+                                },
+                                (e) => {
+                                    console.error(e);
+                                    payload.whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.ERROR);
+                                }
+                            )
+                        )
+                    ),
+                    catchError((e) => {
+                        console.error(e);
+                        payload.whenSaved?.();
+                        this.updateEditorState(EDITOR_STATE.ERROR);
+
+                        return EMPTY;
+                    })
                 )
             )
         );
@@ -305,7 +334,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             life: 2000
                         });
 
-                        this.updateEditorState(EDITOR_STATE.LOADED);
+                        this.updateEditorState(EDITOR_STATE.IDLE);
 
                         return EMPTY;
                     }
@@ -317,13 +346,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             params: response.params
                         })
                         .pipe(
-                            switchMap(() => this.syncEditorData(response.params)),
+                            switchMap(() => this.dotPageApiService.get(response.params)),
                             tapResponse(
                                 (pageData: DotPageApiResponse) => {
                                     this.patchState((state) => ({
                                         ...state,
                                         editor: pageData,
-                                        editorState: EDITOR_STATE.LOADED
+                                        editorState: EDITOR_STATE.IDLE
                                     }));
 
                                     response.whenSaved?.();
@@ -379,19 +408,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly updatePreviewState = this.updater((state, previewState: PreviewState) => ({
         ...state,
-        previewState
+        previewState,
+        editorState: EDITOR_STATE.IDLE
     }));
-
-    /**
-     * Update the page containers
-     *
-     * @private
-     * @param {DotPageApiParams} params
-     * @memberof EditEmaStore
-     */
-    private syncEditorData = (params: DotPageApiParams) => {
-        return this.dotPageApiService.get(params);
-    };
 
     /**
      * Create the url to add a page to favorites
@@ -479,7 +498,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             clientHost: '',
             isEnterpriseLicense: false,
             error,
-            editorState: EDITOR_STATE.LOADED,
+            editorState: EDITOR_STATE.IDLE,
             previewState: {
                 editorMode: EDITOR_MODE.EDIT
             }

@@ -1,5 +1,4 @@
 import {
-    listenContentChange,
     listenEditorMessages,
     listenHoveredContentlet,
     pingEditor,
@@ -73,7 +72,6 @@ describe('DotCMSPageEditor', () => {
         });
 
         it('should update navigation', () => {
-            listenContentChange();
             updateNavigation('/');
             expect(postMessageToEditor).toHaveBeenCalledWith({
                 action: CUSTOMER_ACTIONS.NAVIGATION_UPDATE,
@@ -89,7 +87,6 @@ describe('DotCMSPageEditor', () => {
             expect(listenEditorMessages).toHaveBeenCalled();
             expect(listenHoveredContentlet).toHaveBeenCalled();
             expect(scrollHandler).toHaveBeenCalled();
-            expect(listenContentChange).toHaveBeenCalled();
         });
     });
 });

@@ -144,7 +144,7 @@ describe('EditEmaStore', () => {
                             'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -156,8 +156,54 @@ describe('EditEmaStore', () => {
             it('should return contentState', (done) => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         code: undefined
+                    });
+                    done();
+                });
+            });
+
+            it('should return templateIdentifier', (done) => {
+                spectator.service.templateIdentifier$.subscribe((state) => {
+                    expect(state).toEqual('111');
+                    done();
+                });
+            });
+
+            it('should return layoutProperties', (done) => {
+                const containersMapMock = {
+                    '/default/': {
+                        type: 'containers',
+                        identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
+                        name: 'Medium Column (md-1)',
+                        categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93',
+                        source: 'DB',
+                        parentPermissionable: {
+                            hostname: 'demo.dotcms.com'
+                        }
+                    },
+                    '/banner/': {
+                        type: 'containers',
+                        identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                        name: 'Large Column (lg-1)',
+                        categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f',
+                        source: 'FILE',
+                        path: '/container/path',
+                        parentPermissionable: {
+                            hostname: 'demo.dotcms.com'
+                        }
+                    }
+                };
+                spectator.service.layoutProperties$.subscribe((state) => {
+                    expect(state).toEqual({
+                        layout: mockDotLayout(),
+                        themeId: mockDotTemplate().theme,
+                        pageId: '123',
+                        containersMap: containersMapMock,
+                        template: {
+                            identifier: '111',
+                            themeId: undefined
+                        }
                     });
                     done();
                 });
@@ -166,7 +212,7 @@ describe('EditEmaStore', () => {
 
         describe('updaters', () => {
             it('should update the editorState', (done) => {
-                spectator.service.updateEditorState(EDITOR_STATE.LOADED);
+                spectator.service.updateEditorState(EDITOR_STATE.IDLE);
 
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
@@ -177,7 +223,7 @@ describe('EditEmaStore', () => {
                             'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -205,7 +251,7 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED,
+                        editorState: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -236,7 +282,7 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED,
+                        editorState: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -554,7 +600,7 @@ describe('EditEmaStore', () => {
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }
@@ -566,7 +612,7 @@ describe('EditEmaStore', () => {
             it('should return contentState', (done) => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         code: '<html><body><h1>Hello, World!</h1></body></html>'
                     });
                     done();
@@ -576,7 +622,7 @@ describe('EditEmaStore', () => {
 
         describe('updaters', () => {
             it('should update the editorState', (done) => {
-                spectator.service.updateEditorState(EDITOR_STATE.LOADED);
+                spectator.service.updateEditorState(EDITOR_STATE.IDLE);
 
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
@@ -586,7 +632,7 @@ describe('EditEmaStore', () => {
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
+                        state: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         },
@@ -614,7 +660,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED,
+                        editorState: EDITOR_STATE.IDLE,
                         previewState: {
                             editorMode: EDITOR_MODE.EDIT
                         }

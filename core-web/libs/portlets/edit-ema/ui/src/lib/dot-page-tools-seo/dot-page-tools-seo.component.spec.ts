@@ -49,23 +49,23 @@ describe('DotPageToolsSeoComponent', () => {
         };
         spectator = createComponent({
             props: {
-                visible: true,
                 currentPageUrlParams: pageToolUrlParamsTest
             }
         });
     });
 
     it('should have page tool list', async () => {
+        spectator.component.toggleDialog();
         spectator.detectChanges();
-
         const menuListItems = spectator.queryAll('[data-testId="page-tools-list-item"]');
 
         expect(menuListItems.length).toEqual(3);
     });
 
     it('should have correct href values in links', () => {
-        const tools = mockPageTools.pageTools;
+        spectator.component.toggleDialog();
         spectator.detectChanges();
+        const tools = mockPageTools.pageTools;
 
         const anchorElements = spectator.queryAll('[data-testId="page-tools-list-link"]');
 

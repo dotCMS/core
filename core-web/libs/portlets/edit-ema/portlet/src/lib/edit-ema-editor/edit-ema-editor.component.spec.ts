@@ -90,7 +90,7 @@ const messagesMock = {
     'editpage.content.add.already.message': 'This content is already added to this container'
 };
 
-const dragEventMock = {
+const dragMoveEventMock = {
     target: {
         dataset: {
             type: 'contentlet',
@@ -98,6 +98,20 @@ const dragEventMock = {
                 identifier: '123',
                 title: 'hello world',
                 contentType: 'File',
+                baseType: 'CONTENT'
+            })
+        }
+    }
+};
+const dragAddEventMock = {
+    target: {
+        dataset: {
+            type: 'contentlet',
+            item: JSON.stringify({
+                contentlet: {
+                    identifier: '322b7cc0-3ab9-4267-97f7-9634e519d5a8'
+                },
+                contentType: 'Banner',
                 baseType: 'CONTENT'
             })
         }
@@ -591,7 +605,7 @@ describe('EditEmaEditorComponent', () => {
 
             spectator.detectChanges();
 
-            store.updateEditorState(EDITOR_STATE.LOADED);
+            store.updateEditorState(EDITOR_STATE.IDLE);
         });
 
         describe('toast', () => {
@@ -1243,7 +1257,7 @@ describe('EditEmaEditorComponent', () => {
 
                         emulateEditURLMapContent();
                         expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
                         expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
                         expect(spyUpdateQueryParams).toHaveBeenCalledWith([], queryParams);
                         expect(spyStoreReload).not.toHaveBeenCalled();
@@ -1870,23 +1884,6 @@ describe('EditEmaEditorComponent', () => {
                         life: 2000
                     });
                 });
-
-                describe('misc', () => {
-                    it('should set the editorState to loaded when the iframe sends a postmessage of content changed', () => {
-                        const editorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                        window.dispatchEvent(
-                            new MessageEvent('message', {
-                                origin: HOST,
-                                data: {
-                                    action: 'content-change'
-                                }
-                            })
-                        );
-
-                        expect(editorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
-                    });
-                });
             });
         });
 
@@ -2015,7 +2012,7 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should not change persona on load same url', () => {
+            it('should not call navigate on load same url', () => {
                 const router = spectator.inject(Router);
                 jest.spyOn(router, 'navigate');
 
@@ -2033,12 +2030,7 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        url: 'page-one' //Same page as init
-                    },
-                    queryParamsHandling: 'merge'
-                });
+                expect(router.navigate).not.toHaveBeenCalled();
             });
 
             it('set url to a different route should set the editor state to loading', () => {
@@ -2061,7 +2053,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
             });
 
-            it('set url to the same route should set the editor state to loaded', () => {
+            it('set url to the same route should set the editor state to IDLE', () => {
                 const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
 
                 const url = "/ultra-cool-url-that-doesn't-exist";
@@ -2084,7 +2076,7 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
             });
 
             it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
@@ -2151,7 +2143,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(spectator.query(EmaPageDropzoneComponent)).not.toBeNull();
             });
 
-            it('should hide drop zone on palette drop', () => {
+            it('should hide drop zone on contentlet tools drop', () => {
                 spectator.detectChanges();
 
                 window.dispatchEvent(
@@ -2192,18 +2184,31 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                let dropZone = spectator.query(EmaPageDropzoneComponent);
+                let dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.item).toEqual({
+                const dropZoneDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="dropzone"]')
+                );
+
+                expect(dropZoneComponent.item).toEqual({
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.containers).toBe(BOUNDS_MOCK);
+                expect(dropZoneComponent.containers).toBe(BOUNDS_MOCK);
 
-                spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
+                spectator.triggerEventHandler(emaTools, 'moveStop', {
+                    dataTransfer: {
+                        dropEffect: 'move'
+                    }
+                });
+                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
+                    ...PAYLOAD_MOCK,
+                    position: 'after'
+                });
+
                 spectator.detectComponentChanges();
-                dropZone = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZone).toBeNull();
+                dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
+                expect(dropZoneComponent).toBeNull();
             });
 
             it('should move a contentlet from position in the same contentlet', () => {
@@ -2291,7 +2296,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(saveSpy).toHaveBeenCalledWith({
                     pageContainers: newPageContainers,
                     pageId: '123',
-                    whenSaved: expect.any(Function),
                     params: {
                         language_id: 1,
                         url: 'page-one'
@@ -2384,7 +2388,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(saveSpy).toHaveBeenCalledWith({
                     pageContainers: newPageContainers,
                     pageId: '123',
-                    whenSaved: expect.any(Function),
                     params: {
                         language_id: 1,
                         url: 'page-one'
@@ -2430,34 +2433,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
             });
 
-            it('should reset the contentlet when we update query params', () => {
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', {
-                    target: {
-                        dataset: {
-                            type: 'contentlet',
-                            item: JSON.stringify({
-                                contentlet: {
-                                    identifier: '123',
-                                    title: 'hello world'
-                                }
-                            })
-                        }
-                    }
-                });
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.contentlet).not.toBeNull();
-
-                spectator.component.onLanguageSelected(2); // triggers a query param change
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.contentlet).toBeNull();
-            });
-
             it('should show drop zone on iframe message', () => {
                 spectator.detectChanges();
 
@@ -2475,7 +2450,11 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+                spectator.triggerEventHandler(
+                    EditEmaPaletteComponent,
+                    'dragStart',
+                    dragMoveEventMock
+                );
 
                 spectator.detectComponentChanges();
 
@@ -2501,46 +2480,34 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+                spectator.triggerEventHandler(
+                    EditEmaPaletteComponent,
+                    'dragStart',
+                    dragAddEventMock
+                );
 
                 spectator.detectComponentChanges();
 
                 let dropZone = spectator.query(EmaPageDropzoneComponent);
 
+                const dropZoneDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="dropzone"]')
+                );
+
                 expect(dropZone.item).toEqual({
-                    contentType: 'File',
+                    contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
                 expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
+                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
+                    ...PAYLOAD_MOCK,
+                    position: 'after'
+                });
                 spectator.detectComponentChanges();
+
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
-            });
-
-            it('should reset the rows when we update query params', () => {
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.containers.length).toBe(BOUNDS_MOCK.length);
-
-                spectator.component.onLanguageSelected(2); // triggers a query param change
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.containers.length).toBe(0);
             });
         });
 

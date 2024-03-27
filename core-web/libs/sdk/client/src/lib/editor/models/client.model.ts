@@ -26,8 +26,6 @@ export enum CUSTOMER_ACTIONS {
      */
     PING_EDITOR = 'ping-editor',
 
-    CONTENT_CHANGE = 'content-change',
-
     NOOP = 'noop'
 }
 

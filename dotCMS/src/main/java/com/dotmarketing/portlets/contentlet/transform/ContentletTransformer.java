@@ -89,7 +89,8 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
         final boolean hasJsonFields = (contentletJsonAPI.isPersistContentAsJson() && UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON)));
         if(hasJsonFields){
           try {
-              final String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
+              String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
+              json = UtilMethods.escapeHTMLCodeFromJSON(json);//Escape HTML chars from JSON
               contentlet = contentletJsonAPI.mapContentletFieldsFromJson(json);
           }catch (Exception e){
               final String errorMsg = String.format("Unable to populate contentlet from json for ID='%s', Inode='%s', Content-Type '%s': %s", contentletId, inode, contentTypeId, e.getMessage());

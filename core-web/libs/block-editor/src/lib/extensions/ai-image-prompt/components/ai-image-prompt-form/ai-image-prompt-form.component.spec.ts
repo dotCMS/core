@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -107,5 +107,47 @@ describe('AiImagePromptFormComponent', () => {
 
         spectator.click(generateButton);
         expect(valueSpy).toHaveBeenCalled();
+    });
+
+    it('should make the prompt label as required in the UI', () => {
+        const REQUIRED_CLASS = 'p-label-input-required';
+        spectator.setInput('value', {
+            request: formValue,
+            response: { revised_prompt: 'New Prompt' }
+        } as DotGeneratedAIImage);
+        spectator.setInput('isLoading', false);
+
+        expect(spectator.query(byTestId('prompt-label')).classList).toContain(REQUIRED_CLASS);
+
+        spectator.setInput('value', {
+            request: { ...formValue, type: PromptType.AUTO },
+            response: { revised_prompt: 'New Prompt' }
+        } as DotGeneratedAIImage);
+
+        expect(spectator.query(byTestId('prompt-label')).classList).not.toContain(REQUIRED_CLASS);
+    });
+
+    it('should copy to clipboard the ai rewritten text', () => {
+        const writeText = jest.fn();
+
+        Object.assign(navigator, {
+            clipboard: {
+                writeText
+            }
+        });
+
+        const newGeneratedValue = {
+            request: formValue,
+            response: { revised_prompt: 'New Prompt' }
+        } as DotGeneratedAIImage;
+
+        spectator.setInput('value', newGeneratedValue);
+        spectator.setInput('isLoading', false);
+
+        const icon = spectator.query(byTestId('copy-to-clipboard'));
+
+        spectator.click(icon);
+
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('New Prompt');
     });
 });
