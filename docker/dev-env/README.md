@@ -20,13 +20,12 @@ When running this image, if you specify a source environment and a valid means t
 
 
 
-All of these examples expect you to login using:
+All of these examples expect you to login via https on port 8443.  There is a valid certificate if you are running locally using:
 
 https://local.dotcms.site:8443/dotAdmin
 
 #### Clone demo with a dotCMS API Token
-This pulls down the assets and a SQL dump that is then imported into the new dotCMS instance.  You will need to login with the same
-credientals that are used in the target environment.
+This pulls down the assets and a SQL dump that is then imported into the new dotCMS instance.  You will need to login with the same credentials that are used in the target environment.
 ```
 export TOK=XXXXXXX_YOUR_DOTCMS_TOKEN.eXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
@@ -41,8 +40,7 @@ docker run --rm \
 ```
 
 #### Clone demo with UserID/Password
-This pulls down the assets and a SQL dump that is then imported into the new dotCMS instance.  You will need to login with the same
-credientals that are used in the target environment.
+This pulls down the assets and a SQL dump that is then imported into the new dotCMS instance.  You will need to login with the same credentials that are used in the target environment.
 ```
 docker run --rm \
 --pull always \
