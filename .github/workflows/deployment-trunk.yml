@@ -73,7 +73,7 @@ jobs:
 
           echo "branch=$branch" >> $GITHUB_OUTPUT
           echo "runid=$runid" >> $GITHUB_OUTPUT
-          echo "search_artifacts=search_artifacts" >> $GITHUB_OUTPUT
+          echo "search_artifacts=$search_artifacts" >> $GITHUB_OUTPUT
       - name: Download Build Status
         id: data-download
         uses: dawidd6/action-download-artifact@v2
@@ -90,7 +90,6 @@ jobs:
       - name: Get SHAs and check if we should deploy
         id: check
         run: |
-          
           build_artifact_exists=${{ steps.data-download.outputs.found_artifact }}
           last_deployed_exists=${{ steps.deployment-status.outputs.found_artifact }} 
           if [[ ${last_deployed_exists} == "true" ]]; then
@@ -130,15 +129,17 @@ jobs:
           
           
           SKIP_CHECKS="${{ github.event.inputs.skip_checks == 'true' }}"
-          FORCE_LATESST="${{ github.event.inputs.force_latest == 'true' }}"
-          
+          FORCE_LATEST="${{ github.event.inputs.force_latest == 'true' }}"
+          echo "SKIP_CHECKS = ${SKIP_CHECKS}"
+          echo "FORCE_LATEST = ${FORCE_LATEST}"
+
           if [[ ${SKIP_CHECKS} == "true" || "${last_deployed_is_ancestor}" == "true" || "${last_deployed_exists}" != "true" ]]; then
                 echo "should_deploy=true" >> $GITHUB_OUTPUT
             else
                 echo "should_deploy=false" >> $GITHUB_OUTPUT
           fi
           
-          if [[ ${FORCE_LATESST} == "true" || ${last_deployed_is_ancestor} == true ]]; then
+          if [[ ${FORCE_LATEST} == "true" || ${last_deployed_is_ancestor} == true ]]; then
                 echo "setting latest on deployment"
                 echo "is_latest=true" >> $GITHUB_OUTPUT
             else
