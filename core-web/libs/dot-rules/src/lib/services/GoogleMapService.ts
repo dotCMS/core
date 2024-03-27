@@ -17,17 +17,12 @@ window['mapsApiReady'] = () => {
 
 @Injectable()
 export class GoogleMapService {
-    apiReady = false;
     mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
     private destroy$ = new Subject<boolean>();
     constructor(private siteService: SiteService, private dotSiteService: DotSiteService) {
         this.loadApi(this.siteService.currentSite.identifier).subscribe(() => {});
         this.mapsApi$ = window['mapsApi$'];
-        this.mapsApi$.subscribe((gMapApi) => {
-            if (gMapApi != null) {
-                this.apiReady = true;
-            }
-        });
+        this.mapsApi$.subscribe();
 
         this.siteService.switchSite$
             .pipe(

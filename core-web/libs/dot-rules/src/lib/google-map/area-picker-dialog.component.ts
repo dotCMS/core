@@ -65,9 +65,7 @@ export class AreaPickerDialogComponent implements OnChanges {
                 (_x) => {},
                 () => {},
                 () => {
-                    if (this.mapsService.apiReady) {
-                        this.readyMap();
-                    }
+                    this.readyMap();
                 }
             );
         }
