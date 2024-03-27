@@ -49,7 +49,6 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup master branch locally without switching current branch
-        if: github.ref != 'refs/heads/master'
         run: git fetch origin master:master
       - name: Download latest artifact
         id: deployment-status
@@ -163,7 +162,6 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup master branch locally without switching current branch
-        if: github.ref != 'refs/heads/master'
         run: git fetch origin master:master
       # A Docker image is built and pushed using the 'deploy-artifact-docker' action.
       - name: Build/Push Docker Image
