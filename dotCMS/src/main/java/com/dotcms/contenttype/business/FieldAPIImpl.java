@@ -908,7 +908,7 @@ public class FieldAPIImpl implements FieldAPI {
     @Override
     public boolean isFullScreenField(final com.dotcms.contenttype.model.field.Field field) {
 
-        if(!Config.getBooleanProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, false)){
+        if(!Config.getBooleanProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, true)){
             return false;
         }
 

@@ -321,7 +321,7 @@ class ContentTypeCommandIT extends CommandTest {
                     "--non-interactive");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
+            Assertions.assertTrue(output.startsWith("variable:"));
         }
     }
 
@@ -339,7 +339,7 @@ class ContentTypeCommandIT extends CommandTest {
                     "--name", "FileAsset", "--page", "0", "--pageSize", "10");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName: [FileAsset]"));
+            Assertions.assertTrue(output.startsWith("variable: [FileAsset]"));
         }
     }
 
@@ -357,7 +357,7 @@ class ContentTypeCommandIT extends CommandTest {
                      "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "ASC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            final List<String> strings = extractRowsByFieldName("varName",output);
+            final List<String> strings = extractRowsByFieldName("variable",output);
             Assertions.assertEquals( 3, strings.size());
             Assertions.assertTrue(isSortedAsc(strings),()->"The strings: "+strings);
         }
@@ -377,7 +377,7 @@ class ContentTypeCommandIT extends CommandTest {
                     "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "DESC");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            final List<String> strings = extractRowsByFieldName("varName",output);
+            final List<String> strings = extractRowsByFieldName("variable",output);
             Assertions.assertEquals( 3, strings.size());
             Assertions.assertTrue(isSortedDesc(strings),()->"The strings: "+strings);
         }
@@ -1049,7 +1049,7 @@ class ContentTypeCommandIT extends CommandTest {
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME, "--name", "FileAsset", "--token", token);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
+            Assertions.assertTrue(output.startsWith("variable:"));
         }
     }
 
