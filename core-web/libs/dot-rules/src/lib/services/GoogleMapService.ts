@@ -20,7 +20,7 @@ export class GoogleMapService {
     mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
     private destroy$ = new Subject<boolean>();
     constructor(private siteService: SiteService, private dotSiteService: DotSiteService) {
-        this.loadApi(this.siteService.currentSite.identifier).subscribe(() => {});
+        this.loadApi(this.siteService.currentSite.identifier).subscribe();
         this.mapsApi$ = window['mapsApi$'];
         this.mapsApi$.subscribe();
 
@@ -29,7 +29,7 @@ export class GoogleMapService {
                 takeUntil(this.destroy$),
                 switchMap(({ identifier }) => this.loadApi(identifier))
             )
-            .subscribe(() => {});
+            .subscribe();
     }
 
     //this method gets the Google key from the current site and loads the Google Maps API
