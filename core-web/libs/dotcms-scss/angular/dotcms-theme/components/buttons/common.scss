@@ -126,7 +126,7 @@
     max-width: 100%;
 
     .p-button-label {
-        color: inherit;
+        color: $color-palette-primary;
         @include truncate-text;
     }
 

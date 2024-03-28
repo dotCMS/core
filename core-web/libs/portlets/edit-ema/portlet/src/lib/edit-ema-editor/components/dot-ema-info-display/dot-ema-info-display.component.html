@@ -1,0 +1,13 @@
+@if (options(); as op) {
+<p-button
+    *ngIf="op.action"
+    (onClick)="op.action()"
+    styleClass="p-button-text p-button-sm p-button-rounded"
+    icon="pi pi-arrow-left"></p-button>
+
+<div class="info-container">
+    <i *ngIf="!!op.icon" [class]="op.icon + ' info-container__icon'" data-testId="info-icon"></i>
+    <span [innerHTML]="op.info.message | dm : op.info.args" data-testId="info-text"> </span>
+</div>
+
+}

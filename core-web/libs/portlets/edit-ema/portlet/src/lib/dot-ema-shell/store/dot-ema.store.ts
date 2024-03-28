@@ -11,6 +11,7 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotContainerMap,
+    DotDevice,
     DotExperimentStatus,
     DotLayout,
     DotPageContainerStructure
@@ -26,7 +27,7 @@ import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
 import {
     ActionPayload,
     EditEmaState,
-    PreviewState,
+    EditorData,
     ReloadPagePayload,
     SavePagePayload
 } from '../../shared/models';
@@ -34,7 +35,8 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createPageApiUrlWithQueryParams
+    createPageApiUrlWithQueryParams,
+    getIsDefaultVariant
 } from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
@@ -126,7 +128,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             },
             isEnterpriseLicense: state.isEnterpriseLicense,
             state: state.editorState ?? EDITOR_STATE.LOADING,
-            previewState: state.previewState,
+            editorData: state.editorData,
             runningExperiment: state.runningExperiment
         };
     });
@@ -159,7 +161,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         page: state.editor.page,
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
-        currentUrl: '/' + state.editor.page,
+        currentUrl: '/' + sanitizeURL(state.editor.page.pageURI),
         host: state.clientHost,
         error: state.error
     }));
@@ -204,13 +206,29 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 .pipe(
                                     tap({
                                         next: (experiment) => {
+                                            const isDefaultVariant = getIsDefaultVariant(
+                                                params.variantName
+                                            );
+                                            const canEditVariant =
+                                                isDefaultVariant || !experiment[0]; // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+
+                                            const mode = this.getInitialEditorMode(
+                                                isDefaultVariant,
+                                                canEditVariant
+                                            );
+
                                             return this.setState({
                                                 clientHost: params.clientHost,
                                                 editor: pageData,
                                                 isEnterpriseLicense: licenseData,
                                                 editorState: EDITOR_STATE.IDLE,
-                                                previewState: {
-                                                    editorMode: EDITOR_MODE.EDIT
+                                                editorData: {
+                                                    mode,
+                                                    variantInfo: {
+                                                        canEditVariant,
+                                                        pageId: pageData.page.identifier
+                                                    },
+                                                    canEditPage: pageData.page.canEdit
                                                 },
                                                 variantName: params.variantName,
                                                 runningExperiment: experiment[0]
@@ -406,11 +424,38 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *
      * @memberof EditEmaStore
      */
-    readonly updatePreviewState = this.updater((state, previewState: PreviewState) => ({
-        ...state,
-        previewState,
-        editorState: EDITOR_STATE.IDLE
-    }));
+    readonly updateEditorData = this.updater((state, editorData: EditorData) => {
+        return {
+            ...state,
+            editorData: {
+                ...state.editorData,
+                ...editorData
+            },
+            editorState: EDITOR_STATE.IDLE
+        };
+    });
+
+    readonly setDevice = this.updater((state, device: DotDevice) => {
+        return {
+            ...state,
+            editorData: {
+                ...state.editorData,
+                mode: EDITOR_MODE.DEVICE,
+                device
+            }
+        };
+    });
+
+    readonly setSocialMedia = this.updater((state, socialMedia: string) => {
+        return {
+            ...state,
+            editorData: {
+                ...state.editorData,
+                mode: EDITOR_MODE.SOCIAL_MEDIA,
+                socialMedia
+            }
+        };
+    });
 
     /**
      * Create the url to add a page to favorites
@@ -499,8 +544,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             isEnterpriseLicense: false,
             error,
             editorState: EDITOR_STATE.IDLE,
-            previewState: {
-                editorMode: EDITOR_MODE.EDIT
+            editorData: {
+                mode: EDITOR_MODE.EDIT
             }
         });
     }
@@ -541,4 +586,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             []
         );
     };
+
+    private getInitialEditorMode(isDefaultVariant: boolean, canEditVariant: boolean): EDITOR_MODE {
+        if (isDefaultVariant) {
+            return EDITOR_MODE.EDIT;
+        } else if (canEditVariant) {
+            return EDITOR_MODE.EDIT_VARIANT;
+        }
+
+        return EDITOR_MODE.PREVIEW_VARIANT;
+    }
 }

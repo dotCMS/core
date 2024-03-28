@@ -126,7 +126,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 {
                     iconURL: 'experiments',
                     label: 'editema.editor.navbar.experiments',
-                    href: `experiments/${page.identifier}`
+                    href: `experiments/${page.identifier}`,
+                    isDisabled: !page.canEdit
                 },
                 {
                     icon: 'pi-th-large',
