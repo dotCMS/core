@@ -21,7 +21,22 @@ public class Task230426AlterVarcharLengthOfLockedByCol implements StartupTask {
     }
     @Override
     public boolean forceRun() {
-        return true;
+
+
+        return new DotConnect()
+                .setSQL("select "
+                        + "character_maximum_length "
+                        + "from INFORMATION_SCHEMA.COLUMNS "
+                        + "where "
+                        + "table_name='contentlet_version_info' "
+                        + "and column_name='locked_by'")
+                .getInt("character_maximum_length") < 100;
+
+
+
+
+
+
     }
 
     @Override
