@@ -88,7 +88,10 @@ describe('DotEmaShellComponent', () => {
                                 },
                                 persona: DEFAULT_PERSONA
                             },
-                            site: mockSites[0]
+                            site: mockSites[0],
+                            template: {
+                                drawed: true
+                            }
                         });
                     },
                     save() {
@@ -169,7 +172,8 @@ describe('DotEmaShellComponent', () => {
                         icon: 'pi-table',
                         label: 'editema.editor.navbar.layout',
                         href: 'layout',
-                        isDisabled: false
+                        isDisabled: false,
+                        tooltip: null
                     },
                     {
                         icon: 'pi-sliders-h',
@@ -299,6 +303,70 @@ describe('DotEmaShellComponent', () => {
         });
     });
 
+    describe('without license ', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotPageApiService,
+                        useValue: {
+                            get() {
+                                return of({
+                                    page: {
+                                        title: 'hello world',
+                                        identifier: '123',
+                                        inode: '123',
+                                        canEdit: false,
+                                        canRead: false
+                                    },
+                                    viewAs: {
+                                        language: {
+                                            id: 1,
+                                            language: 'English',
+                                            countryCode: 'US',
+                                            languageCode: 'EN',
+                                            country: 'United States'
+                                        },
+                                        persona: DEFAULT_PERSONA
+                                    },
+                                    site: mockSites[0],
+                                    template: {
+                                        drawed: true
+                                    }
+                                });
+                            },
+                            save() {
+                                return of({});
+                            },
+                            getPersonas() {
+                                return of({
+                                    entity: [DEFAULT_PERSONA],
+                                    pagination: {
+                                        totalEntries: 1,
+                                        perPage: 10,
+                                        page: 1
+                                    }
+                                });
+                            }
+                        }
+                    },
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(false),
+                            canAccessEnterprisePortlet: () => of(false)
+                        }
+                    }
+                ]
+            });
+        });
+
+        it('should render not-license component', () => {
+            spectator.detectChanges();
+            expect(spectator.query(DotNotLicenseComponent)).toBeDefined();
+        });
+    });
+
     describe('without read permission', () => {
         beforeEach(() => {
             spectator = createComponent({
@@ -373,67 +441,6 @@ describe('DotEmaShellComponent', () => {
             expect(spectator.query(EditEmaNavigationBarComponent)).toBeNull();
             expect(spectator.query(ToastModule)).toBeNull();
             expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
-        });
-    });
-
-    describe('without license ', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotPageApiService,
-                        useValue: {
-                            get() {
-                                return of({
-                                    page: {
-                                        title: 'hello world',
-                                        identifier: '123',
-                                        inode: '123',
-                                        canEdit: false,
-                                        canRead: false
-                                    },
-                                    viewAs: {
-                                        language: {
-                                            id: 1,
-                                            language: 'English',
-                                            countryCode: 'US',
-                                            languageCode: 'EN',
-                                            country: 'United States'
-                                        },
-                                        persona: DEFAULT_PERSONA
-                                    },
-                                    site: mockSites[0]
-                                });
-                            },
-                            save() {
-                                return of({});
-                            },
-                            getPersonas() {
-                                return of({
-                                    entity: [DEFAULT_PERSONA],
-                                    pagination: {
-                                        totalEntries: 1,
-                                        perPage: 10,
-                                        page: 1
-                                    }
-                                });
-                            }
-                        }
-                    },
-                    {
-                        provide: DotLicenseService,
-                        useValue: {
-                            isEnterprise: () => of(false),
-                            canAccessEnterprisePortlet: () => of(false)
-                        }
-                    }
-                ]
-            });
-        });
-
-        it('should render not-license component', () => {
-            spectator.detectChanges();
-            expect(spectator.query(DotNotLicenseComponent)).toBeDefined();
         });
     });
 });
