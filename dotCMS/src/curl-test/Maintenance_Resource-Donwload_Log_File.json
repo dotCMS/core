@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "8d191a73-0416-49a4-bac5-0039155db62a",
+		"_postman_id": "60602a94-7a4a-4cd2-bb22-b29bad00a04e",
 		"name": "Maintenance Resource - Donwload Log File",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -146,7 +147,10 @@
 						"exec": [
 							"pm.test(\"Status code should be ok 404\", function () {",
 							"    pm.response.to.have.status(404);",
-							"});"
+							"});",
+							"",
+							"// ignore Download DB Dump collection",
+							"postman.setNextRequest(\"Download Starter\")"
 						],
 						"type": "text/javascript"
 					}

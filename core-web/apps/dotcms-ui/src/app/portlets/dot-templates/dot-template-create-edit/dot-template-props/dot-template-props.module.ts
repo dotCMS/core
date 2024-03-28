@@ -5,11 +5,11 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
 import { DotThemeSelectorDropdownModule } from '@components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.module';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
+    DotFormDialogComponent,
     DotMessagePipe
 } from '@dotcms/ui';
 
@@ -21,7 +21,7 @@ import { DotTemplateThumbnailFieldModule } from './dot-template-thumbnail-field/
     imports: [
         CommonModule,
         DotFieldValidationMessageComponent,
-        DotFormDialogModule,
+        DotFormDialogComponent,
         FormsModule,
         InputTextModule,
         InputTextareaModule,

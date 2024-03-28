@@ -1,17 +1,17 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.cli.common.AuthenticationMixin;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Comparator;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import picocli.CommandLine;
 
@@ -39,7 +39,7 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     HelpOptionMixin helpOption;
 
     @CommandLine.Mixin
-    PushMixin pushMixin;
+    FullPushOptionsMixin pushMixin;
 
     @CommandLine.Mixin
     AuthenticationMixin authenticationMixin;
@@ -50,20 +50,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     @Inject
     protected WorkspaceManager workspaceManager;
 
+    @Inject
+    Instance<DotPush> pushCommands;
 
-    /**
-     * The Resolved DotPush command instances
-     * But this also allows for mocking push commands
-     * @return the resolved push commands or mocked instances
-     */
-    Iterable<DotPush> pushCommands(){
-        return CDI.current().select(DotPush.class);
-    }
 
     @Override
     public Integer call() throws Exception {
         // Find the instances of all push subcommands
-        Iterable<DotPush> pushCommands = pushCommands();
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
@@ -76,8 +69,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         expandedArgs.add("--noValidateUnmatchedArguments");
         var args = expandedArgs.toArray(new String[0]);
 
+        // Sort the subcommands by order
+        final var pushCommandsSorted = pushCommands.stream()
+                .sorted(Comparator.comparingInt(DotPush::getOrder))
+                .collect(Collectors.toList());
+
         // Process each subcommand
-        for (var subCommand : pushCommands) {
+        for (var subCommand : pushCommandsSorted) {
 
             var cmdLine = createCommandLine(subCommand);
 

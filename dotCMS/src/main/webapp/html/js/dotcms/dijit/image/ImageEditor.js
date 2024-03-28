@@ -37,6 +37,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     activeEditor: undefined,
     urlWithInode: undefined,
 	currentNode: undefined,
+    variable: '',
+    width: 0,
+    height: 0,
 
 
     postCreate: function(){
@@ -290,6 +293,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             }.bind(this);
 
         }
+
+        width = this.iframe.dojo.byId("displayImageWidth").value;
+        height = this.iframe.dojo.byId("displayImageHeight").value;
         dojo.attr(this.iframe.dojo.byId("imageViewPort"), "class", "");
 
     },
@@ -467,6 +473,16 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     /**
+     * Emit image editor close event if user closes the window without saving
+     */
+    handleOnClose: function() {
+        const variable = this.variable;
+        const customEvent = new CustomEvent(`binaryField-close-image-editor-${variable}`, {});
+        document.dispatchEvent(customEvent);
+        this.closeImageWindow();
+    },
+
+    /**
      * cleans up old references, resets imageEditor
      */
     _cleanUpImageEditor : function (e){
@@ -584,6 +600,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     saveBinaryImage: function(activeEditor){
 
         let field = this.binaryFieldId;
+        let variable = this.variable;
+
         if(this.fieldContentletId.length>0) {
             field = this.fieldContentletId;
         }
@@ -605,10 +623,20 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
                     return () => {
                         if (xhr.status == 200) {
                             let dataJson = JSON.parse(xhr.responseText);
-                            self.tempId=dataJson.id;
                             if(window.document.getElementById(self.binaryFieldId + "ValueField")){
-                                window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id;
+                                
+                                window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id; // Emit here the id of the image
+                    
+                            } else {
+                                const customEvent = new CustomEvent(`binaryField-tempfile-${variable}`, {
+                                    detail: { tempFile: {
+                                        ...dataJson,
+                                        metadata: thisRef._imageMetadata(dataJson)
+                                    }}
+                                });
+                                document.dispatchEvent(customEvent);
                             }
+
                         } else {
                             alert("Error! Upload failed");
                         }
@@ -859,7 +887,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             this.iframe.dojo.byId("displayImageWidth").value = val;
         }
         this.iframe.dojo.byId("displayImageHeight").value = Math.round(val * showImageCoords.h / showImageCoords.w)
-
+        this._setImageDimension();
     },
 
 
@@ -875,7 +903,31 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         }
 
         this.iframe.dojo.byId("displayImageWidth").value = Math.round((val * showImageCoords.w ) /showImageCoords.h  )
+        this._setImageDimension();
+    },
 
+    /**
+     *  Sets the width and height of the image
+     * 
+     */
+    _setImageDimension: function() {
+        width = parseInt(this.iframe.dojo.byId("displayImageWidth").value);
+        height = parseInt(this.iframe.dojo.byId("displayImageHeight").value);
+    },
+
+    _imageMetadata: function(temp) {
+        const { length: fileSize, fileName: name } = temp;
+        const extension = name.split(".").pop();
+
+        return {
+            name,
+            contentType: `image/${extension}`,
+            editableAsText: false,
+            isImage: true,
+            fileSize,
+            width,
+            height
+        }
     },
 
 

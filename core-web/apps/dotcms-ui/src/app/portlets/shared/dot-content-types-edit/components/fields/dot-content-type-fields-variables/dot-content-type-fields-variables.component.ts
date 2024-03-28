@@ -5,7 +5,7 @@ import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/
 
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
@@ -17,14 +17,18 @@ import { DotFieldVariablesService } from './services/dot-field-variables.service
     templateUrl: './dot-content-type-fields-variables.component.html'
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
-    @Input()
-    field: DotCMSContentTypeField;
+    @Input() field: DotCMSContentTypeField;
+    @Input() showTable = true;
 
     fieldVariables: DotFieldVariable[] = [];
     blackList = {
         'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
             allowedBlocks: true
             // contentAssets: true
+        },
+        'com.dotcms.contenttype.model.field.ImmutableBinaryField': {
+            accept: true,
+            systemOptions: true
         }
     };
 
@@ -36,7 +40,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.field.currentValue) {
+        if (changes.field?.currentValue) {
             this.initTableData();
         }
     }
@@ -51,7 +55,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * @param {DotKeyValue} variable
      * @memberof DotContentTypeFieldsVariablesComponent
      */
-    deleteExistingVariable(variable: DotKeyValue): void {
+    deleteFieldVariable(variable: DotKeyValue): void {
         this.fieldVariablesService
             .delete(this.field, variable)
             .pipe(take(1))
@@ -72,7 +76,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * @param {DotKeyValue} variable
      * @memberof DotContentTypeFieldsVariablesComponent
      */
-    updateExistingVariable(variable: DotKeyValue): void {
+    updateFieldVariable(variable: DotKeyValue): void {
         this.fieldVariablesService
             .save(this.field, variable)
             .pipe(take(1))

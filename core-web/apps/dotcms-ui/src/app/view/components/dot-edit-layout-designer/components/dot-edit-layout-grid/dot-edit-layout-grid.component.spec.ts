@@ -11,7 +11,6 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
@@ -22,9 +21,8 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { NgGridModule } from '@dotcms/dot-layout-grid';
-import { DotAutofocusModule } from '@dotcms/dot-rules';
-import { DotLayoutBody } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotDialogActions, DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
@@ -120,7 +118,7 @@ describe('DotEditLayoutGridComponent', () => {
                 NgGridModule,
                 DotContainerSelectorLayoutModule,
                 BrowserAnimationsModule,
-                DotAutofocusModule,
+                DotAutofocusDirective,
                 ButtonModule,
                 TooltipModule,
                 DotMessagePipe

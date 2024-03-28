@@ -27,20 +27,16 @@
             ]
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "outputs": ["{options.outputFile}"],
-            "options": {
-                "lintFilePatterns": ["libs/dotcms/**/*.ts"]
-            }
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@nrwl/jest:jest",
+            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/libs/dotcms"],
             "options": {
-                "jestConfig": "libs/dotcms/jest.config.ts",
-                "passWithNoTests": true
+                "jestConfig": "libs/dotcms/jest.config.ts"
             }
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

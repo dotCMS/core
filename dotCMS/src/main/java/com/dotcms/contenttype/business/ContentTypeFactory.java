@@ -16,6 +16,28 @@ import java.util.List;
  */
 public interface ContentTypeFactory {
 
+	String INODE_COLUMN = "inode";
+	String NAME_COLUMN = "name";
+	String DESCRIPTION_COLUMN = "description";
+	String DEFAULT_STRUCTURE_COLUMN = "default_structure";
+	String REVIEW_INTERVAL_COLUMN = "review_interval";
+	String REVIEWER_ROLE_COLUMN = "reviewer_role";
+	String PAGE_DETAIL_COLUMN = "page_detail";
+	String STRUCTURE_TYPE_COLUMN = "structuretype";
+	String SYSTEM_COLUMN = "system";
+	String FIXED_COLUMN = "fixed";
+	String VELOCITY_VAR_NAME_COLUMN = "velocity_var_name";
+	String URL_MAP_PATTERN_COLUMN = "url_map_pattern";
+	String HOST_COLUMN = "host";
+	String FOLDER_COLUMN = "folder";
+	String EXPIRE_DATE_VAR_COLUMN = "expire_date_var";
+	String PUBLISH_DATE_VAR_COLUMN = "publish_date_var";
+	String MOD_DATE_COLUMN = "mod_date";
+	String SORT_ORDER_COLUMN = "sort_order";
+	String ICON_COLUMN = "icon";
+	String MARKED_FOR_DELETION_COLUMN = "marked_for_deletion";
+	String METADATA_COLUMN = "metadata";
+
 	default ContentTypeFactory instance(){
 		return new ContentTypeFactoryImpl();
 	}
@@ -64,7 +86,43 @@ public interface ContentTypeFactory {
 	
 	List<ContentType> search(String search, BaseContentType type, String orderBy, int limit, int offset) throws DotDataException;
 
+	/**
+	 * Returns a list of Content Types based on the specified list of search criteria that live in
+	 * the specified Site.
+
+	 * @param search  Allows you to add more conditions to the query via SQL code. It's internally
+	 *                sanitized by the API.
+	 * @param type    The Base Content Type to search for.
+	 * @param orderBy The order-by clause, which is internally sanitized by the API.
+	 * @param limit   The maximum number of returned items in the result set, for pagination
+	 *                purposes.
+	 * @param offset  The page number of the result set, for pagination purposes.
+	 * @param hostId  The ID of the Site that the Content Types live in.
+	 *
+	 * @return The list of {@link ContentType} objects matching the specified search criteria.
+	 *
+	 * @throws DotDataException An error occurred when retrieving information from the database.
+	 */
 	List<ContentType> search(String search, int type, String orderBy, int limit, int offset,String hostId) throws DotDataException;
+
+	/**
+	 * Returns a list of Content Types based on the specified list of search criteria. In
+	 * particular, this method allows you to search for Content Types in a specific list of Sites.
+	 *
+	 * @param sites   The list of one or more Site IDs to search for Content Types.
+	 * @param search  Allows you to add more conditions to the query via SQL code. It's internally
+	 *                sanitized by this Factory.
+	 * @param type    The Base Content Type to search for.
+	 * @param orderBy The order-by clause, which is internally sanitized by this Factory.
+	 * @param limit   The maximum number of returned items in the result set, for pagination
+	 *                purposes.
+	 * @param offset  The requested page number of the result set, for pagination purposes.
+	 *
+	 * @return The list of {@link ContentType} objects matching the specified search criteria.
+	 *
+	 * @throws DotDataException An error occurred when retrieving information from the database.
+	 */
+	List<ContentType> search(final List<String> sites, final String search, final int type, final String orderBy, final int limit, final int offset) throws DotDataException;
 
 	int searchCount(String search, BaseContentType baseType) throws DotDataException;
 
@@ -104,5 +162,11 @@ public interface ContentTypeFactory {
 	 * @throws DotDataException
 	 */
 	void markForDeletion(ContentType type) throws DotDataException;
+
+	/**
+	 * Return the count of {@link ContentType} assigned to not SYSTEM_WORFLOW
+	 * @return
+	 */
+	long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException;
 
 }

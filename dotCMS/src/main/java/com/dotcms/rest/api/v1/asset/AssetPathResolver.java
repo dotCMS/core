@@ -77,7 +77,7 @@ public class AssetPathResolver {
             }
 
             final Host host = siteByName.get();
-            final String path = BLANK.equals(uri.getPath()) ? FORWARD_SLASH : uri.getPath();
+            final String path = BLANK.equals(uri.getRawPath()) ? FORWARD_SLASH : uri.getRawPath();
             if (null == path) {
                 throw new IllegalArgumentException(String.format("Unable to determine path: [%s].", url));
             }
@@ -87,7 +87,8 @@ public class AssetPathResolver {
             final Optional<Folder> folder = resolveExistingFolder(decodedPath, host, user);
             if(folder.isEmpty()){
                 //if we've got this far we need to verify if the path is an asset. The folder will be expected to be the parent folder
-                Optional<FolderAndAsset> folderAndAsset = resolveAssetAndFolder(uri.getPath(), host, user, createMissingFolders);
+                Optional<FolderAndAsset> folderAndAsset = resolveAssetAndFolder(decodedPath, host,
+                        user, createMissingFolders);
                 if(folderAndAsset.isEmpty()){
                     throw new NotFoundInDbException(String.format("Unable to determine a valid folder or asset from uri: [%s].", url));
                 }
@@ -102,7 +103,8 @@ public class AssetPathResolver {
             }
 
             //if we succeed to determine a valid folder from the path then we resolve the last bit as an asset name
-            final String resource = uri.getRawQuery() != null ? uri.getPath() + "?" + uri.getRawQuery() : uri.getPath();
+            final String resource = uri.getRawQuery() != null ?
+                    uri.getRawPath() + "?" + uri.getRawQuery() : uri.getRawPath();
             final Optional<String> asset = asset(folder.get(), resource);
 
             final ResolvedAssetAndPath.Builder builder = ResolvedAssetAndPath.builder();
@@ -113,7 +115,7 @@ public class AssetPathResolver {
 
             asset.ifPresent(builder::asset);
             return builder.build();
-        } catch (URISyntaxException | DotSecurityException e) {
+        } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Error Parsing uri:" + url, e);
         }
     }
@@ -160,17 +162,16 @@ public class AssetPathResolver {
     /**
      * here we test a specific case we try to resolve anything that matches a pattern like forward slash followed by a string
      *
-     * @param rawPath
+     * @param decodedRawPath the decoded raw path
      * @param host
      * @param user
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Optional<FolderAndAsset> resolveAssetAndFolder(final String rawPath, final Host host, final User user, final boolean createMissingFolder)
+    Optional<FolderAndAsset> resolveAssetAndFolder(final String decodedRawPath, final Host host,
+            final User user, final boolean createMissingFolder)
             throws DotDataException, DotSecurityException {
-
-        final var decodedRawPath = URLDecoder.decode(rawPath, StandardCharsets.UTF_8);
 
         final String startsWithForwardSlash = "^\\/[a-zA-Z0-9\\.\\-]+$";
         // if our path starts with / followed by a string  then we're looking at file asset in the root folder

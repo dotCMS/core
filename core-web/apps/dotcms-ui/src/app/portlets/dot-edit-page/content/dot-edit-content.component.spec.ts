@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { mockProvider } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -15,21 +16,14 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
@@ -37,17 +31,28 @@ import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/te
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
+    DotContentTypeService,
     DotEditPageService,
     DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
     DotGenerateSecurePasswordService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPageRenderService,
     DotPropertiesService,
+    DotRouterService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
-    DotWorkflowService
+    DotWorkflowService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService,
+    DotExperimentsService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -67,15 +72,18 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotPageContainer,
+    DotPageContent,
     DotPageMode,
     DotPageRender,
-    DotPageRenderState
+    DotPageRenderState,
+    PageModelChangeEventType
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotCopyContentModalService } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
+    DotMessageDisplayServiceMock,
     DotWorkflowServiceMock,
     getExperimentMock,
     LoginServiceMock,
@@ -95,17 +103,12 @@ import {
     EDIT_BLOCK_EDITOR_CUSTOM_EVENT
 } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
-import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
-import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
-import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
-import { DotPageContent } from '../shared/models';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
 
@@ -297,6 +300,8 @@ describe('DotEditContentComponent', () => {
                 DotFavoritePageService,
                 DotExperimentsService,
                 DotSeoMetaTagsService,
+                DotSeoMetaTagsUtilService,
+                mockProvider(DotContentTypeService),
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -331,10 +336,14 @@ describe('DotEditContentComponent', () => {
                                 mode: DotPageMode.PREVIEW
                             }
                         },
-                        data: of({})
+                        data: of({}),
+                        queryParams: of({ language_id: '1' })
                     }
                 },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 ConfirmationService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotEventsService,
@@ -1269,11 +1278,13 @@ describe('DotEditContentComponent', () => {
                         });
 
                         spyOn(dotContentletEditorService, 'getActionUrl').and.returnValue(
-                            of('/url/')
+                            of('/url/test?_content_lang=23&test=random')
                         );
+
                         spyOn(dotContentletEditorService, 'create').and.callFake((param) => {
+                            //checking the replace of lang.
                             expect(param.data).toEqual({
-                                url: '/url/'
+                                url: '/url/test?_content_lang=1&test=random'
                             });
 
                             const event: any = {

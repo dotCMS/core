@@ -1,5 +1,7 @@
 package com.dotcms.dotpubsub;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import org.junit.BeforeClass;
@@ -13,7 +15,7 @@ public class PgNgDataSourceUrlTest {
 
     
 
-    final String PgNgUrl = "jdbc:pgsql://dotcmsUserName:dotcmsPassword@dbServer.com/dotcms";
+    final String PgNgUrl = "jdbc:pgsql://dotcmsUserName:dotcmsPassword@dbServer.com/dotcms?ssl.mode=" + PgNgDataSourceUrl.SSL_MODE;
 
     
     
@@ -72,8 +74,25 @@ public class PgNgDataSourceUrlTest {
         
         
     }
-    
-    
 
+    @Test
+    public void test_ssl_mode_is_added() throws MalformedURLException {
+
+        String url = "jdbc:postgresql://dbServer.com/dotcms";
+        String username = "username";
+        String password = "password";
+
+
+        PgNgDataSourceUrl testDataSource = new PgNgDataSourceUrl(username, password, url);
+
+        assert testDataSource.getDbUrl().contains("?ssl.mode=" + PgNgDataSourceUrl.SSL_MODE);
+
+        url = "jdbc:postgresql://dbServer.com/dotcms?test=here";
+
+
+        testDataSource = new PgNgDataSourceUrl(username, password, url);
+
+        assert testDataSource.getDbUrl().contains("&ssl.mode=" + PgNgDataSourceUrl.SSL_MODE);
+
+    }
 }
-

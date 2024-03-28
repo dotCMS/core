@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "66446a0d-a484-449f-8b78-a69e14929ad1",
+		"_postman_id": "ce070bf0-e702-4ae1-a6e6-615cfe50ec8c",
 		"name": "SystemTable",
 		"description": "This Postman test verifies that CRUD operations executed on the System Table API work as expected. This API allows users and developers to store global properties in the application.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -231,6 +231,122 @@
 			"response": []
 		},
 		{
+			"name": "Upserting a New Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Upserting a new key in the System Table\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"MY_KEY2\",\n    \"value\":\"value1\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table"
+					]
+				},
+				"description": "Adds a new key or updates an existing one. In this case, a new property is created."
+			},
+			"response": []
+		},
+		{
+			"name": "Upserting an Existing Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Upserting an existing key in the System Table\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"MY_KEY1\",\n    \"value\":\"upserted value3\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-table",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-table"
+					]
+				},
+				"description": "Adds a new key or updates an existing one. In this case, the previously created `MY_KEY1` property is updated."
+			},
+			"response": []
+		},
+		{
 			"name": "Getting the Previously Updated Key",
 			"event": [
 				{
@@ -248,7 +364,7 @@
 							"",
 							"pm.test(\"Expecting the correct updated value of the key\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.eql(\"value2\");",
+							"    pm.expect(jsonData.entity).to.eql(\"upserted value3\");",
 							"});",
 							""
 						],

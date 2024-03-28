@@ -23,6 +23,7 @@ export interface DotCMSWorkflowAction {
     schemeId: string;
     showOn: string[];
     actionInputs: DotCMSWorkflowInput[];
+    metadata?: Record<string, string>;
 }
 
 export enum DotCMSSystemActionType {
@@ -34,6 +35,10 @@ export enum DotCMSSystemActionType {
     DESTROY = 'DESTROY',
     DELETE = 'DELETE',
     ARCHIVE = 'ARCHIVE'
+}
+
+export enum DotCMSActionSubtype {
+    SEPARATOR = 'SEPARATOR'
 }
 
 export interface DotCMSSystemActionMappings {

@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-import { DotFormatDateService } from '../../services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/data-access';
 
 /*
  * Custom Pipe that returns the relative date.
@@ -11,8 +11,8 @@ export class DotRelativeDatePipe implements PipeTransform {
 
     transform(
         time: string | number = new Date().getTime(),
-        format: string = 'MM/dd/yyyy',
-        daysLimit: number = 7
+        format = 'MM/dd/yyyy',
+        daysLimit = 7
     ): string {
         const isMilliseconds = !isNaN(Number(time));
 

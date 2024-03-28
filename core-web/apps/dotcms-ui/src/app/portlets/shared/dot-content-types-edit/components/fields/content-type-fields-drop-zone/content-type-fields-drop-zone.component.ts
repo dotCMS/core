@@ -1,4 +1,4 @@
-import * as autoScroll from 'dom-autoscroller';
+import autoScroll from 'dom-autoscroller';
 import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { Subject } from 'rxjs';
@@ -19,13 +19,13 @@ import {
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotDialogActions
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { FieldUtil } from '@dotcms/utils-testing';
@@ -76,16 +76,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     @Output()
     removeFields = new EventEmitter<DotCMSContentTypeField[]>();
-
-    private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    get isBlockEditorField() {
-        return (
-            this.currentFieldType?.clazz ===
-            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-        );
-    }
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -97,6 +88,30 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         private elRef: ElementRef,
         private rendered: Renderer2
     ) {}
+
+    private _loading: boolean;
+
+    get loading(): boolean {
+        return this._loading;
+    }
+
+    @Input()
+    set loading(loading: boolean) {
+        this._loading = loading;
+
+        if (loading) {
+            this.dotLoadingIndicatorService.show();
+        } else {
+            this.dotLoadingIndicatorService.hide();
+        }
+    }
+
+    get isFieldWithSettings() {
+        return [
+            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+            'com.dotcms.contenttype.model.field.ImmutableBinaryField'
+        ].includes(this.currentFieldType?.clazz);
+    }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
         return fields.findIndex((item: DotCMSContentTypeField) => {
@@ -211,21 +226,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         if (changes.layout && changes.layout.currentValue) {
             this.fieldRows = _.cloneDeep(changes.layout.currentValue);
         }
-    }
-
-    @Input()
-    set loading(loading: boolean) {
-        this._loading = loading;
-
-        if (loading) {
-            this.dotLoadingIndicatorService.show();
-        } else {
-            this.dotLoadingIndicatorService.hide();
-        }
-    }
-
-    get loading(): boolean {
-        return this._loading;
     }
 
     ngOnDestroy(): void {
@@ -400,7 +400,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
         this.hideButtons =
             index !== this.OVERVIEW_TAB_INDEX &&
-            !(index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isBlockEditorField);
+            !(index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isFieldWithSettings);
     }
 
     /**
@@ -428,15 +428,15 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.dialogActions = controls;
     }
 
-    private setDroppedField(droppedField: DotCMSContentTypeField): void {
-        this.currentField = droppedField;
-        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
-    }
-
-    private toggleDialog(): void {
+    protected toggleDialog(): void {
         this.dialogActions = this.defaultDialogActions;
         this.activeTab = this.OVERVIEW_TAB_INDEX;
         this.displayDialog = !this.displayDialog;
+    }
+
+    private setDroppedField(droppedField: DotCMSContentTypeField): void {
+        this.currentField = droppedField;
+        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
     }
 
     private emitSaveFields(layout: DotCMSContentTypeLayoutRow[]): void {

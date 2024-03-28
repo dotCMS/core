@@ -15,7 +15,12 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Inplace } from 'primeng/inplace';
 import { Tooltip } from 'primeng/tooltip';
 
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
@@ -23,7 +28,6 @@ import {
     DotPageMode,
     ExperimentSteps
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
@@ -31,7 +35,6 @@ import {
     MockDotMessageService,
     PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
@@ -206,7 +209,13 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 url: 'link1',
                 promoted: false
             },
-            { id: '1111111', name: 'test', weight: 33.33, url: 'link2', promoted: false }
+            {
+                id: '1111111',
+                name: 'test',
+                weight: 33.33,
+                url: 'link2',
+                promoted: false
+            }
         ];
         beforeEach(() => {
             loadExperiment(EXPERIMENT_MOCK, variants);

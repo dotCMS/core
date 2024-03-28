@@ -19,12 +19,14 @@ export const imageElement = (attrs, newAttrs): DOMOutputSpec => {
 export const addImageLanguageId = (src: string, languageId: number) =>
     src.includes(LANGUAGE_ID) ? src : `${src}?${LANGUAGE_ID}=${languageId}`;
 
-export const getImageAttr = (attrs: DotCMSContentlet | string) => {
+export const getImageAttr = (
+    attrs: DotCMSContentlet | string | { url: string; base64: string }
+) => {
     if (typeof attrs === 'string') {
-        return { src: attrs };
+        return { src: attrs, data: 'null' };
     }
 
-    const { fileAsset, asset, title, languageId } = attrs;
+    const { fileAsset, asset, title, languageId } = attrs as DotCMSContentlet;
 
     return {
         data: attrs,

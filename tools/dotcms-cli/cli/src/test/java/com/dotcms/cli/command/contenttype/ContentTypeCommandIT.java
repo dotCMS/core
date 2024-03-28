@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.ContentTypeAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.push.MapperService;
+import com.dotcms.api.client.MapperService;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
@@ -24,26 +24,24 @@ import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
 import picocli.CommandLine;
@@ -78,7 +76,11 @@ class ContentTypeCommandIT extends CommandTest {
      */
     @Test
     void Test_Command_Content_Type_Pull_Option() throws IOException {
-        final Workspace workspace = workspaceManager.getOrCreate();
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -86,9 +88,16 @@ class ContentTypeCommandIT extends CommandTest {
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
                     "fileAsset", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
-            final String output = writer.toString();
+
+            // Reading the resulting JSON file
+            final var contentTypeFilePath = Path.of(workspace.contentTypes().toString(),
+                    "FileAsset.json");
+            Assertions.assertTrue(Files.exists(contentTypeFilePath));
+
+            // Validating it is a valid content type descriptor
+            var json = Files.readString(contentTypeFilePath);
             final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
-            final ContentType contentType = objectMapper.readValue(output, ContentType.class);
+            final ContentType contentType = objectMapper.readValue(json, ContentType.class);
             Assertions.assertNotNull(contentType.variable());
         } finally {
             workspaceManager.destroy(workspace);
@@ -312,12 +321,13 @@ class ContentTypeCommandIT extends CommandTest {
                     "--non-interactive");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
+            Assertions.assertTrue(output.startsWith("variable:"));
         }
     }
 
     /**
-     * Test Filter options
+     * Given scenario: We want to filter the content types by name
+     * Expected result: The output should contain only the content types that match the filter
      */
     @Test
     void Test_Command_Content_Filter_Option() {
@@ -329,8 +339,134 @@ class ContentTypeCommandIT extends CommandTest {
                     "--name", "FileAsset", "--page", "0", "--pageSize", "10");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
+            Assertions.assertTrue(output.startsWith("variable: [FileAsset]"));
         }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name
+     * Expected result: The output should come back ordered by varName and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Ascending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                     "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "ASC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name
+     * Expected result: The output should come back ordered by varName and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Descending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to order the content types by modDate
+     * Expected result: The output should come back ordered by modDate and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_modDate_Descending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "modDate", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("modDate",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings));
+        }
+    }
+
+
+    /**
+     * Given scenario: We want to order the content types by modDate
+     * Expected result: The output should come back ordered by modDate and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_modDate_Ascending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "modDate", "--direction", "ASC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("modDate",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings));
+        }
+    }
+
+    /**
+     * Function to verify if a list of strings is sorted in ascending order (case-insensitive)
+     * @param list  the list of strings
+     * @return true if the list is sorted in ascending order, false otherwise
+     */
+    public static boolean isSortedAsc(final List<String> list) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            if (String.CASE_INSENSITIVE_ORDER.compare(list.get(i), list.get(i + 1)) > 0) {
+                System.out.println("i: "+list.get(i) + " i+1: "+list.get(i+1));
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Function to verify if a list of strings is sorted in descending order (case-insensitive)
+     * @param list  the list of strings
+     * @return true if the list is sorted in descending order, false otherwise
+     */
+    public static boolean isSortedDesc(final List<String> list) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            if (String.CASE_INSENSITIVE_ORDER.compare(list.get(i), list.get(i + 1)) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Extracts the rows from the output text by the field name
+     * @param fieldName the field name to extract
+     * @param inputText the input text
+     * @return the list of rows
+     */
+    private static List<String> extractRowsByFieldName(final String fieldName, final String inputText) {
+        List<String> varNames = new ArrayList<>();
+        Pattern pattern = Pattern.compile(String.format("%s:\\s*\\[([^\\]]+)\\]",fieldName));
+        Matcher matcher = pattern.matcher(inputText);
+        while (matcher.find()) {
+            varNames.add(matcher.group(1).replaceAll("[^a-zA-Z0-9]", ""));
+        }
+        return varNames;
     }
 
     /**
@@ -422,7 +558,9 @@ class ContentTypeCommandIT extends CommandTest {
      */
     @Test
     void Test_Pull_Same_Content_Type_Multiple_Times() throws IOException {
-        final Workspace workspace = workspaceManager.getOrCreate();
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -643,39 +781,277 @@ class ContentTypeCommandIT extends CommandTest {
     }
 
     /**
-     * Creates a temporary folder with a random name.
+     * <b>Command to test:</b> content type pull <br>
+     * <b>Given Scenario:</b> Test the content type pull command. This test pulls all the content
+     * types in the default format (JSON). <br>
+     * <b>Expected Result:</b> All the existing content types should be pulled and saved as JSON
+     * files.
      *
-     * @return The path to the created temporary folder.
-     * @throws IOException If an I/O error occurs while creating the temporary folder.
+     * @throws IOException if there is an error pulling the content types
      */
-    private Path createTempFolder() throws IOException {
+    @Test
+    void Test_Command_Content_Type_Pull_Pull_All_Default_Format() throws IOException {
 
-        String randomFolderName = "folder-" + UUID.randomUUID();
-        return Files.createTempDirectory(randomFolderName);
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        // First we need to see if we already have content types to pull
+        final var contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+
+        // --
+        // Pulling all the existing content types to have a proper count
+        var contentTypesResponse = contentTypeAPI.getContentTypes(
+                null,
+                1,
+                1000,
+                "variable",
+                null,
+                null,
+                null
+        );
+        var contentTypesCount = 0;
+        if (contentTypesResponse != null && contentTypesResponse.entity() != null) {
+            contentTypesCount = contentTypesResponse.entity().size();
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ---
+            // ---
+            // Creating a some test content types in the server
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+
+            // Pulling all content types
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure we have the proper amount of JSON files in the content types folder
+            try (Stream<Path> walk = Files.walk(workspace.contentTypes())) {
+
+                var jsonFiles = walk.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".json"))
+                        .collect(Collectors.toList());
+
+                // Check the count first
+                Assertions.assertEquals(contentTypesCount, jsonFiles.size(),
+                        "The number of JSON files does not match the expected content types count.");
+
+                // Now check that none of the JSON files are empty
+                for (Path jsonFile : jsonFiles) {
+                    long fileSize = Files.size(jsonFile);
+                    Assertions.assertTrue(fileSize > 0,
+                            "JSON file " + jsonFile + " is empty.");
+                }
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
     }
 
     /**
-     * Deletes a temporary directory and all its contents.
+     * <b>Command to test:</b> content type pull <br>
+     * <b>Given Scenario:</b> Test the content type pull command. This test pulls all the content
+     * types in the YAML format. <br>
+     * <b>Expected Result:</b> All the existing content types should be pulled and saved as YAML
+     * files.
      *
-     * @param folderPath The path to the temporary directory to be deleted.
-     * @throws IOException If an I/O error occurs while deleting the directory or its contents.
+     * @throws IOException if there is an error pulling the content types
      */
-    private void deleteTempDirectory(Path folderPath) throws IOException {
-        Files.walkFileTree(folderPath, new SimpleFileVisitor<>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                Files.delete(file); // Deletes the file
-                return FileVisitResult.CONTINUE;
+    @Test
+    @Order(13)
+    void Test_Command_Content_Type_Pull_Pull_All_YAML_Format() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        // First we need to see if we already have contentTypes to pull
+        final var contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+
+        // --
+        // Pulling all the existing content types to have a proper count
+        var contentTypesResponse = contentTypeAPI.getContentTypes(
+                null,
+                1,
+                1000,
+                "variable",
+                null,
+                null,
+                null
+        );
+        var contentTypesCount = 0;
+        if (contentTypesResponse != null && contentTypesResponse.entity() != null) {
+            contentTypesCount = contentTypesResponse.entity().size();
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ---
+            // Creating a some test content types in the server
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+
+            // Pulling all content types
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    "--workspace", workspace.root().toString(),
+                    "-fmt", InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure we have the proper amount of JSON files in the content types folder
+            try (Stream<Path> walk = Files.walk(workspace.contentTypes())) {
+
+                var files = walk.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".yml"))
+                        .collect(Collectors.toList());
+
+                // Check the count first
+                Assertions.assertEquals(contentTypesCount, files.size(),
+                        "The number of YAML files does not match the expected content types count.");
+
+                // Now check that none of the JSON files are empty
+                for (Path file : files) {
+                    long fileSize = Files.size(file);
+                    Assertions.assertTrue(fileSize > 0,
+                            "YAML file " + file + " is empty.");
+                }
             }
 
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                    throws IOException {
-                Files.delete(dir); // Deletes the directory after its content has been deleted
-                return FileVisitResult.CONTINUE;
-            }
-        });
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
     }
+
+    /**
+     * <b>Command to test:</b> content type pull <br>
+     * <b>Given Scenario:</b> Test the content type pull command. This test pulls all the content
+     * types twice, testing the override works properly.<br>
+     * <b>Expected Result:</b> All the existing content types should be pulled and saved as YAML
+     * files.
+     *
+     * @throws IOException if there is an error pulling the content types
+     */
+    @Test
+    @Order(14)
+    void Test_Command_Content_Type_Pull_Pull_All_Twice() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        // First we need to see if we already have content types to pull
+        final var contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+
+        // --
+        // Pulling all the existing content types to have a proper count
+        var contentTypesResponse = contentTypeAPI.getContentTypes(
+                null,
+                1,
+                1000,
+                "variable",
+                null,
+                null,
+                null
+        );
+        var contentTypesCount = 0;
+        if (contentTypesResponse != null && contentTypesResponse.entity() != null) {
+            contentTypesCount = contentTypesResponse.entity().size();
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ---
+            // Creating a some test content types in the server
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+
+            // Pulling all content types
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    "--workspace", workspace.root().toString(),
+                    "-fmt", InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Executing a second pull of all the content types
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    "--workspace", workspace.root().toString(),
+                    "-fmt", InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure we have the proper amount of JSON files in the content types folder
+            try (Stream<Path> walk = Files.walk(workspace.contentTypes())) {
+
+                var files = walk.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".yml"))
+                        .collect(Collectors.toList());
+
+                // Check the count first
+                Assertions.assertEquals(contentTypesCount, files.size(),
+                        "The number of YAML files does not match the expected content types count.");
+
+                // Now check that none of the JSON files are empty
+                for (Path file : files) {
+                    long fileSize = Files.size(file);
+                    Assertions.assertTrue(fileSize > 0,
+                            "YAML file " + file + " is empty.");
+                }
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Test Find by name authenticated with token
+     * Given scenario: We want to find a content type by name using a token
+     * Expected result: The content type should be found and returned
+     */
+    @Test
+    void Test_Command_Content_Find_Authenticated_With_Token() {
+        final String token = requestToken();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME, "--name", "FileAsset", "--token", token);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.startsWith("variable:"));
+        }
+    }
+
 
 }

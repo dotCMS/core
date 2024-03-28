@@ -61,6 +61,8 @@ dotCMS/src/integration-test/resources/starter.zip
 /*.local.*
 dotCMS/src/main/webapp/dotAdmin
 dotCMS/src/main/webapp/dotcms-webcomponents
+dotCMS/src/main/webapp/dotcms-binary-field-builder
+dotCMS/src/main/webapp/dotcms-block-editor
 dotCMS/bin/*
 dotCMS/classes
 WAR/
@@ -107,6 +109,7 @@ node_modules/
 /core-web/~/dotcms/*
 
 # misc
+/core-web/.nx
 /core-web/.angular/cache
 /core-web/.sass-cache
 /core-web/connect.lock
@@ -143,3 +146,18 @@ pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
 release.properties
+
+/dependencies.txt
+/updates.txt
+
+environments/**/user*.properties
+dotlicense/license.dat
+
+# Prevent acidental commits of files that shouldn't be committed
+dotCMS/src/main/webapp/dotAdmin
+dotCMS/src/main/webapp/dotcms-webcomponents
+dotCMS/src/main/webapp/dotcms-binary-field-builder
+dotCMS/src/main/webapp/dotcms-block-editor
+dotCMS/src/main/webapp/WEB-INF/classes
+# allow build to cache files that are not removed on clean e.g. spotless index
+.cache

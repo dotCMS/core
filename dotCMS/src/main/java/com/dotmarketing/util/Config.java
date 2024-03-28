@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.IOUtils;
 
@@ -24,17 +25,19 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * This class provides access to the system configuration parameters that are set through the
  * {@code dotmarketing-config.properties}, and the {@code dotcms-config-cluster.properties} files.
+ *
+ * The order of the properties resolution is:
+ * 1) any property set by environmet variable
+ * 2) any property set by the system table (could be on runtime)
+ * 3) any property set by the property files
  *
  * @author root
  * @version 1.0
@@ -45,10 +48,12 @@ public class Config {
 
     //Generated File Indicator
     public static final String GENERATED_FILE = "dotGenerated_";
-    public static final AtomicBoolean useWatcherMode = new AtomicBoolean(true);
+    public static final AtomicBoolean useWatcherMode = new AtomicBoolean(false);
     public static final AtomicBoolean isWatching = new AtomicBoolean(false);
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
+
+    private static final Set<String> environmentSetKeys = ConcurrentHashMap.newKeySet();
 
     private static SystemTableConfigSource systemTableConfigSource = null;
 
@@ -80,13 +85,10 @@ public class Config {
 
     //Object Config properties      n
     public static javax.servlet.ServletContext CONTEXT = null;
-    public static String CONTEXT_PATH = null;
 
 
     //Config internal properties
-    private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
-    private static Date lastRefreshTime = new Date();
-    protected final static PropertiesConfiguration props = new PropertiesConfiguration();
+    protected final static MapConfiguration props = new MapConfiguration(new ConcurrentHashMap<>());
     private static ClassLoader classLoader = null;
     protected static URL dotmarketingPropertiesUrl = null;
     protected static URL clusterPropertiesUrl = null;
@@ -211,10 +213,7 @@ public class Config {
      */
     private static void readProperties(URL dotmarketingURL, URL clusterURL) {
         File dotmarketingFile = new File(dotmarketingURL.getPath());
-        Date lastDotmarketingModified = new Date(
-                dotmarketingFile.lastModified());
         File clusterFile = new File(clusterURL.getPath());
-        Date lastClusterModified = new Date(clusterFile.lastModified());
 
         if (props.isEmpty()) {
             synchronized (Config.class) {
@@ -225,49 +224,7 @@ public class Config {
                             "dotcms-config-cluster.properties");
                 }
             }
-        } else {
-            // Refresh the properties if changes detected in any of these
-            // properties files
-            if (lastDotmarketingModified.after(lastRefreshTime)
-                    || lastClusterModified.after(lastRefreshTime)) {
-                synchronized (Config.class) {
-                    if (lastDotmarketingModified.after(lastRefreshTime)
-                            || lastClusterModified.after(lastRefreshTime)) {
-                        try {
-                            props.clear();
-                            // Cleanup and read the properties for both files
-                            readProperties(dotmarketingFile,
-                                    "dotmarketing-config.properties");
-                            readProperties(clusterFile,
-                                    "dotcms-config-cluster.properties");
-                        } catch (Exception e) {
-                            Logger.fatal(
-                                    Config.class,
-                                    "Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]",
-                                    e);
-                            props.clear();
-                        }
-                    }
-                }
-            }
         }
-        String type = "";
-        try {
-            refreshInterval = props.getInt("config.refreshinterval");
-            type = "custom";
-        } catch (NoSuchElementException e) {
-            // Property not present, use default interval value
-            type = "default";
-        } finally {
-            // Display log message the first time, and then only if interval changes
-            if (prevInterval != refreshInterval) {
-                Logger.info(Config.class, "Assigned " + type + " refresh: "
-                        + refreshInterval + " minutes.");
-                prevInterval = refreshInterval;
-            }
-        }
-        // Set the last time we refresh/read the properties files
-        Config.lastRefreshTime = new Date();
     }
 
     /**
@@ -286,11 +243,16 @@ public class Config {
 
 
             propsInputStream = Files.newInputStream(fileToRead.toPath());
-            props.load(new InputStreamReader(propsInputStream));
+            //Using a mapConfiguration to avoid apache reload.
+            final PropertiesConfiguration pconfig = new PropertiesConfiguration();
+            pconfig.load(new InputStreamReader(propsInputStream));
+            pconfig.getKeys().forEachRemaining(k->{
+                props.addProperty(k, pconfig.getProperty(k));
+            });
             Logger.info(Config.class, "dotCMS Properties [" + fileName + "] Loaded");
             postProperties();
             // check if the configuration for the watcher has changed.
-            useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, true));
+            useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, false));
             if (useWatcherMode.get()) {
 
                 registerWatcher(fileToRead);
@@ -331,17 +293,20 @@ public class Config {
     }
 
     /**
+     * Force the refresh properties, only for testing
+     */
+    @VisibleForTesting
+    protected static void refreshProperties() {
+
+       _loadProperties();
+    }
+
+    /**
      *
      */
     private static void _refreshProperties() {
 
-        if ((props.isEmpty()) || // if props is null go ahead.
-                (
-                        (!useWatcherMode.get()) &&
-                                // if we are using watcher mode, do not need to check this
-                                (System.currentTimeMillis() > lastRefreshTime.getTime() + (
-                                        refreshInterval * 60 * 1000))
-                )) {
+        if (props.isEmpty()) {
             _loadProperties();
         }
     }
@@ -352,19 +317,53 @@ public class Config {
     private static void readEnvironmentVariables() {
         synchronized (Config.class) {
             EnvironmentVariablesService.getInstance().getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
-                    .forEach(e -> props.setProperty(e.getKey(), e.getValue()));
+                    .forEach(e -> {
+                        environmentSetKeys.add(e.getKey());
+                        props.setProperty(e.getKey(), e.getValue());
+                    });
         }
     }
 
 
-    private static String envKey(final String theKey) {
+    public static String envKey(final String theKey) {
 
-        String envKey = ENV_PREFIX + theKey.toUpperCase().replace(".", "_");
-        while (envKey.contains("__")) {
-            envKey = envKey.replace("__", "_");
+        if(!theKey.startsWith(ENV_PREFIX)) {
+            String envKey = ENV_PREFIX + theKey.toUpperCase().replace(".", "_").replace("-","_");
+            while (envKey.contains("__")) {
+                envKey = envKey.replace("__", "_");
+            }
+            return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
         }
-        return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
+        return theKey;
 
+    }
+
+    /**
+     * Returns a list of properties that contains the given String.
+     * Also gives priority to the System Env over the ones in the properties file.
+     * @param containsString
+     * @return list of properties
+     */
+    public static List<String> subsetContainsAsList(final String containsString){
+        final List<String> fullListProps = new ArrayList<String>();
+        props.getKeys().forEachRemaining(fullListProps::add);
+
+        //List with all system env props that contains the pattern
+        final String envContainsString = envKey(containsString);
+        final List<String> propList = fullListProps.stream().filter(prop -> prop.contains(envContainsString)).collect(Collectors.toList());
+
+        //List with all props with . (dotmarketing.properties) that contains the pattern
+        final List<String> configList = fullListProps.stream().filter(prop -> prop.contains(containsString)).collect(Collectors.toList());
+
+        //Final list union of the env list + configList which aren't set by envList
+        for(final String prop : configList){
+            final String keyRefactor = envKey(prop);
+            if(!propList.contains(keyRefactor)){
+                propList.add(prop);
+            }
+        }
+
+        return propList;
     }
 
     private static String getSystemTableValue(final String ...names) {
@@ -516,18 +515,27 @@ public class Config {
     public static String[] getStringArrayProperty(final String name, final String[] defaultValue) {
 
         final String envKey = envKey(name);
+
+        final Supplier<String[]> propsSupplier = () -> {
+
+            _refreshProperties();
+            return props.containsKey(envKey)
+                    ? props.getStringArray(envKey)
+                    : props.containsKey(name)
+                    ? props.getStringArray(name)
+                    : defaultValue;
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return valueString.split(StringPool.COMMA);
         }
 
-        _refreshProperties();
-
-        return props.containsKey(envKey)
-                ? props.getStringArray(envKey)
-                : props.containsKey(name)
-                        ? props.getStringArray(name)
-                        : defaultValue;
+        return propsSupplier.get();
     }
 
     /**
@@ -537,35 +545,56 @@ public class Config {
     public static int getIntProperty(final String name) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Integer> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Integer value = Try.of(() -> props.getInt(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+
+            return props.getInt(name);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Integer.parseInt(valueString);
         }
 
-        _refreshProperties();
-
-        Integer value = Try.of(() -> props.getInt(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-
-        return props.getInt(name);
+        return propsSupplier.get();
     }
 
     public static long getLongProperty(final String name, final long defaultVal) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Long> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Long value = Try.of(() -> props.getLong(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+            return props.getLong(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Long.parseLong(valueString);
         }
 
-        _refreshProperties();
-        Long value = Try.of(() -> props.getLong(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-        return props.getLong(name, defaultVal);
+        return propsSupplier.get();
     }
 
     /**
@@ -576,18 +605,29 @@ public class Config {
     public static int getIntProperty(final String name, final int defaultVal) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Integer> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
+            if (value != null) {
+                return value;
+            }
+
+            return props.getInt(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Integer.parseInt(valueString);
         }
 
-        _refreshProperties();
-        Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
-        if (value != null) {
-            return value;
-        }
-
-        return props.getInt(name, defaultVal);
+        return propsSupplier.get();
     }
 
     /**
@@ -597,19 +637,29 @@ public class Config {
     public static float getFloatProperty(final String name) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Float> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+
+            return props.getFloat(name);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Float.parseFloat(valueString);
         }
 
-        _refreshProperties();
-
-        Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-
-        return props.getFloat(name);
+        return propsSupplier.get();
     }
 
     /**
@@ -620,17 +670,28 @@ public class Config {
     public static float getFloatProperty(final String name, final float defaultVal) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Float> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+            return props.getFloat(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Float.parseFloat(valueString);
         }
 
-        _refreshProperties();
-        Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-        return props.getFloat(name, defaultVal);
+        return propsSupplier.get();
     }
 
 
@@ -643,17 +704,28 @@ public class Config {
     public static boolean getBooleanProperty(final String name) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Boolean> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Boolean value = Try.of(() -> props.getBoolean(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+            return props.getBoolean(name);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Boolean.parseBoolean(valueString);
         }
 
-        _refreshProperties();
-        Boolean value = Try.of(() -> props.getBoolean(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-        return props.getBoolean(name);
+        return propsSupplier.get();
     }
 
     /**
@@ -664,18 +736,30 @@ public class Config {
     public static boolean getBooleanProperty(String name, boolean defaultVal) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Boolean> propsSupplier = () -> {
+
+            _refreshProperties();
+            
+            final Boolean value =
+                    props.containsKey(envKey) ? Try.of(() -> props.getBoolean(envKey))
+                            .getOrNull() : null;
+            if (null != value) {
+                return value;
+            }
+            return props.getBoolean(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Boolean.parseBoolean(valueString);
         }
 
-        final Boolean value =
-                props.containsKey(envKey) ? Try.of(() -> props.getBoolean(envKey))
-                        .getOrNull() : null;
-        if (null != value) {
-            return value;
-        }
-        return props.getBoolean(name, defaultVal);
+        return propsSupplier.get();
     }
 
     /**
@@ -748,15 +832,6 @@ public class Config {
      */
     public static void setMyApp(javax.servlet.ServletContext myApp) {
         CONTEXT = myApp;
-        CONTEXT_PATH = myApp.getRealPath("/");
-    }
-
-
-    /**
-     *
-     */
-    public static void forceRefresh() {
-        lastRefreshTime = new Date(0);
     }
 
 }

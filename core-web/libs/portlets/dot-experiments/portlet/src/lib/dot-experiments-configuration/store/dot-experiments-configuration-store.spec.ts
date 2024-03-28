@@ -14,7 +14,11 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
@@ -34,7 +38,6 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
@@ -42,7 +45,6 @@ import {
     MockDotMessageService,
     PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
     DotExperimentsConfigurationState,
@@ -386,12 +388,36 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should edit a variant name of an experiment', (done) => {
             const variants: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
-                { id: '222', name: 'name to edit', weight: 50, url: 'url', promoted: false }
+                {
+                    id: '111',
+                    name: DEFAULT_VARIANT_NAME,
+                    weight: 50,
+                    url: 'url',
+                    promoted: false
+                },
+                {
+                    id: '222',
+                    name: 'name to edit',
+                    weight: 50,
+                    url: 'url',
+                    promoted: false
+                }
             ];
             const variantEdited: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
-                { id: '222', name: 'new name', weight: 50, url: 'url', promoted: false }
+                {
+                    id: '111',
+                    name: DEFAULT_VARIANT_NAME,
+                    weight: 50,
+                    url: 'url',
+                    promoted: false
+                },
+                {
+                    id: '222',
+                    name: 'new name',
+                    weight: 50,
+                    url: 'url',
+                    promoted: false
+                }
             ];
 
             dotExperimentsService.getById.mockReturnValue(
@@ -483,7 +509,10 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_MOCK.id);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
-            store.deleteVariant({ experimentId: EXPERIMENT_MOCK.id, variant: variants[1] });
+            store.deleteVariant({
+                experimentId: EXPERIMENT_MOCK.id,
+                variant: variants[1]
+            });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.trafficProportion.variants).toEqual(
@@ -507,7 +536,10 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.setSelectedGoal({ experimentId: EXPERIMENT_MOCK.id, goals: expectedGoals });
+            store.setSelectedGoal({
+                experimentId: EXPERIMENT_MOCK.id,
+                goals: expectedGoals
+            });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.goals).toEqual(expectedGoals);
@@ -626,7 +658,10 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.deleteGoal({ experimentId: EXPERIMENT_MOCK.id, goalLevel: goalLevelToDelete });
+            store.deleteGoal({
+                experimentId: EXPERIMENT_MOCK.id,
+                goalLevel: goalLevelToDelete
+            });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.goals).toEqual(null);

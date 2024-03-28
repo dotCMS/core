@@ -18,17 +18,23 @@ import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import {
+    CoreWebService,
+    DotcmsConfigService,
+    LoggerService,
+    LoginService,
+    StringUtils
+} from '@dotcms/dotcms-js';
 import {
     DotIconModule,
     DotMessagePipe,
     DotRelativeDatePipe,
+    DotSafeHtmlPipe,
     DotStringFormatPipe
 } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 import { ActionHeaderComponent } from './action-header/action-header.component';
@@ -142,7 +148,7 @@ describe('DotListingDataTableComponent', () => {
                 DotIconModule,
                 DotRelativeDatePipe,
                 HttpClientTestingModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 FormsModule,
                 ContextMenuModule,
@@ -167,6 +173,10 @@ describe('DotListingDataTableComponent', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });

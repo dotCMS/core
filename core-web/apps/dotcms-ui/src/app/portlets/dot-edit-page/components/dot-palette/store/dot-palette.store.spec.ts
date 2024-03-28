@@ -143,9 +143,11 @@ describe('DotPaletteStore', () => {
     });
 
     it('should update languageId', () => {
-        dotPaletteStore.setLanguageId('1');
+        dotPaletteStore.setLanguage('4');
         dotPaletteStore.state$.subscribe((data) => {
-            expect(data.languageId).toEqual('1');
+            expect(data.languageId).toEqual('4');
+            expect(data.filter).toEqual('');
+            expect(data.viewContentlet).toEqual('contentlet:out');
         });
     });
 

@@ -20,6 +20,7 @@
 <%@page import="com.dotcms.publisher.business.DotPublisherException"%>
 <%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
 <%@ page import="java.util.stream.Collectors" %>
+<%@ page import="com.liferay.portal.model.User" %>
 
 
 <%
@@ -81,6 +82,7 @@
 					pepAPI.deleteEndPointById(id);
 				}
 				List<PublishingEndPoint> endpoints = pepAPI.findSendingEndPointsByEnvironment(bundle.getId());
+				User bundleOwner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
 
 				PublisherAPI publisherAPI = PublisherAPI.getInstance();
 				List<PublishQueueElement> assets = publisherAPI.getQueueElementsByBundleId(bundle.getId());%>
@@ -90,17 +92,26 @@
 						<th width="100%" onclick="goToEditBundle('<%=bundle.getId()%>')" style="cursor:pointer">
 							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b> 
                             (<span> <%=bundle.getId() %> </span>)
+
                             <%if(bundle.bundleTgzExists()){%>
-                                - <%=LanguageUtil.get(pageContext, "Already Generated") %> / Filter:  
-                                <%if(bundle.getOperation()==null || bundle.getOperation()==0){%> 
+                                - <%=LanguageUtil.get(pageContext, "Already Generated") %> / Filter:
+                                <%if(bundle.getOperation()==null || bundle.getOperation()==0){%>
                                     <%=(bundle.getFilterKey()!=null) ?bundle.getFilterKey().replace(".yml", "")  :""%>
                                  <%}else{ %>
                                     Unpublish
                                  <%}%>
-                                 
-                  
+
+
                             <%} %>
 
+						</th>
+						<th align="right" nowrap="nowrap">
+							<p>
+								<strong>Created by: </strong>
+								<%if(bundle.getOwner() != null && bundleOwner != null ){%>
+								<%=bundleOwner.getFullName()%>
+								<%}%>
+							</p>
 						</th>
 						<th align="right" nowrap="nowrap">
 							

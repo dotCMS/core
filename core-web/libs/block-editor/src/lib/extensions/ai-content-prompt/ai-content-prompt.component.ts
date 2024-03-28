@@ -1,11 +1,24 @@
-import { of } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
-import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    inject,
+    OnDestroy,
+    OnInit,
+    ViewChild
+} from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 
-import { catchError } from 'rxjs/operators';
+import { ConfirmationService } from 'primeng/api';
 
-import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
+import { filter, takeUntil } from 'rxjs/operators';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
+import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
 interface AIContentForm {
     textPrompt: FormControl<string>;
@@ -14,40 +27,67 @@ interface AIContentForm {
 @Component({
     selector: 'dot-ai-content-prompt',
     templateUrl: './ai-content-prompt.component.html',
-    styleUrls: ['./ai-content-prompt.component.scss']
+    styleUrls: ['./ai-content-prompt.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AIContentPromptComponent {
-    isFormSubmitting = false;
-
-    @ViewChild('input') private input: ElementRef;
-    @Output() formSubmission = new EventEmitter<boolean>();
-
+export class AIContentPromptComponent implements OnInit, OnDestroy {
+    vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
+    readonly ComponentStatus = ComponentStatus;
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
         textPrompt: new FormControl('', Validators.required)
     });
+    confirmationService = inject(ConfirmationService);
+    dotMessageService = inject(DotMessageService);
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+    @ViewChild('input') private input: ElementRef;
 
-    constructor(private aiContentService: AiContentService) {}
+    constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
 
+    ngOnInit() {
+        this.aiContentPromptStore.status$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((status) => status === ComponentStatus.IDLE)
+            )
+            .subscribe(() => {
+                this.form.reset();
+                this.input.nativeElement.focus();
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+    /**
+     *  Handle submit event in the form
+     * @return {*}  {void}
+     * @memberof AIContentPromptComponent
+     */
     onSubmit() {
-        this.isFormSubmitting = true;
         const textPrompt = this.form.value.textPrompt;
-
         if (textPrompt) {
-            this.aiContentService
-                .getIAContent(textPrompt)
-                .pipe(catchError(() => of(null)))
-                .subscribe(() => {
-                    this.isFormSubmitting = false;
-                    this.formSubmission.emit(true);
-                });
+            this.aiContentPromptStore.generateContent(textPrompt);
         }
     }
 
-    cleanForm() {
-        this.form.reset();
+    /**
+     *  Handle scape key in the prompt input
+     * @param event
+     * @return {*}  {void}
+     * @memberof AIContentPromptComponent
+     */
+    handleScape(event: KeyboardEvent): void {
+        this.aiContentPromptStore.setStatus(ComponentStatus.INIT);
+        event.stopPropagation();
     }
 
-    focusField() {
-        this.input.nativeElement.focus();
+    /**
+     * Clears the error at the store on hiding the confirmation dialog.
+     *
+     * @return {void}
+     */
+    onHideConfirm(): void {
+        this.aiContentPromptStore.cleanError();
     }
 }

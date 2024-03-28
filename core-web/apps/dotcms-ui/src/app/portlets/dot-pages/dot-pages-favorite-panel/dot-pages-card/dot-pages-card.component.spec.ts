@@ -8,13 +8,15 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotIconModule,
+    DotMessagePipe,
+    DotPagesFavoritePageEmptySkeletonComponent,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
-
-import { DotPagesFavoritePageEmptySkeletonComponent } from '../../dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 
 describe('DotPagesCardComponent', () => {
     let component: DotPagesCardComponent;
@@ -33,7 +35,7 @@ describe('DotPagesCardComponent', () => {
                 DotIconModule,
                 DotPagesFavoritePageEmptySkeletonComponent,
                 TooltipModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 ButtonModule,
                 DotMessagePipe
             ],

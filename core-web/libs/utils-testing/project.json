@@ -6,11 +6,8 @@
     "prefix": "dotcms",
     "targets": {
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "options": {
-                "lintFilePatterns": ["libs/utils-testing/**/*.ts", "libs/utils-testing/**/*.html"]
-            }
+            "executor": "@nx/eslint:lint"
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

@@ -2,12 +2,13 @@ package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.api.client.ServiceManager;
-import com.dotcms.cli.common.FilesTestHelper;
+import com.dotcms.api.client.model.ServiceManager;
+import com.dotcms.cli.common.FilesTestHelperService;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
@@ -19,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
-class RemoteTraversalServiceIT extends FilesTestHelper {
+class RemoteTraversalServiceIT {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
@@ -33,11 +34,15 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     @Inject
     RemoteTraversalService remoteTraversalService;
 
+    @Inject
+    FilesTestHelperService filesTestHelper;
+
     @BeforeEach
     public void setupTest() throws IOException {
         serviceManager.removeAll().persist(
                 ServiceBean.builder().
                         name("default").
+                        url(new URL("http://localhost:8080")).
                         active(true).
                         build()
         );
@@ -74,7 +79,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Folders_Check() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -87,13 +92,23 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
+
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -110,8 +125,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -142,7 +158,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Asset_Check() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s/folder3/image 3.png", testSiteName);
 
@@ -155,7 +171,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -181,9 +199,10 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Asset_Check2() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
-        final var folderPath = String.format("//%s/folder2/subFolder2-1/subFolder2-1-1/image2.png",
+        final var folderPath = String.format(
+                "//%s/folder2/subFolder2-1/subFolder2-1-1-子資料夾/image2.png",
                 testSiteName);
 
         var result = remoteTraversalService.traverseRemoteFolder(
@@ -195,23 +214,26 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
-        // subFolder2-1-1 (Root)
+        // subFolder2-1-1-子資料夾 (Root)
         Assertions.assertEquals(0, treeNode.children().size());
 
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3, treeNode.assets().size());
     }
 
     @Test
     void Test_Folders_Depth_Zero() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(false);
+        final var testSiteName = filesTestHelper.prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -224,7 +246,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -243,7 +267,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Include() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(false);
+        final var testSiteName = filesTestHelper.prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -256,7 +280,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -266,6 +292,13 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         for (var child : treeNode.children()) {
             Assertions.assertFalse(child.folder().implicitGlobInclude());
         }
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -314,7 +347,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Include2() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(false);
+        final var testSiteName = filesTestHelper.prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -327,7 +360,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -337,6 +372,13 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         for (var child : treeNode.children()) {
             Assertions.assertFalse(child.folder().implicitGlobInclude());
         }
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -389,7 +431,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Include3() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(false);
+        final var testSiteName = filesTestHelper.prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -402,13 +444,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         Assertions.assertTrue(
                 treeNode.children().get(0).folder().explicitGlobInclude());
@@ -434,7 +485,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Include_Assets() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -447,13 +498,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -470,8 +530,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -492,7 +553,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Include_Assets2() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -505,13 +566,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -528,7 +598,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has no asset)
+        // subFolder2-1-1-子資料夾 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -550,7 +620,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Include_Assets3() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -563,13 +633,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -586,8 +665,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -608,7 +688,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Include_Assets4() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -621,13 +701,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -644,7 +733,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
+        // subFolder2-1-1-子資料夾 (has 1 asset)
         Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -666,7 +755,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Include_Assets5() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -679,13 +768,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -702,7 +800,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 0 asset)
+        // subFolder2-1-1-子資料夾 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -724,7 +822,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Exclude() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(false);
+        final var testSiteName = filesTestHelper.prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -737,7 +835,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption("**/subFolder1-1/**"),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -747,6 +847,13 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         for (var child : treeNode.children()) {
             Assertions.assertTrue(child.folder().implicitGlobInclude());
         }
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -795,7 +902,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Exclude2() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(false);
+        final var testSiteName = filesTestHelper.prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -808,7 +915,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption("**/subFolder1-1"),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
@@ -818,6 +927,13 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         for (var child : treeNode.children()) {
             Assertions.assertTrue(child.folder().implicitGlobInclude());
         }
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -870,7 +986,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Exclude3() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData(false);
+        final var testSiteName = filesTestHelper.prepareData(false);
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -883,13 +999,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption("folder1,folder3"),
                 parsePatternOption(null)
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         Assertions.assertTrue(
                 treeNode.children().get(0).folder().explicitGlobExclude());
@@ -913,7 +1038,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Exclude_Assets() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -926,13 +1051,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption("**/*.png")
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -949,7 +1083,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has no asset)
+        // subFolder2-1-1-子資料夾 (has no asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -971,7 +1105,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Exclude_Assets2() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -984,13 +1118,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption("**/*.jpg")
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -1007,8 +1150,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3
@@ -1029,7 +1173,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Exclude_Assets3() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -1042,13 +1186,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption("**/*.jpg,**/*.png")
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -1065,7 +1218,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 0 asset)
+        // subFolder2-1-1-子資料夾 (has 0 asset)
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
@@ -1087,7 +1240,7 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
     void Test_Exclude_Assets4() throws IOException {
 
         // Preparing the data for the test
-        final var testSiteName = prepareData();
+        final var testSiteName = filesTestHelper.prepareData();
 
         final var folderPath = String.format("//%s", testSiteName);
 
@@ -1100,13 +1253,22 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
                 parsePatternOption(null),
                 parsePatternOption("folder1/subFolder1-1/subFolder1-1-1/image?.*")
         );
-        var treeNode = result.getRight();
+        var optional = result.treeNode();
+        Assertions.assertTrue(optional.isPresent());
+        var treeNode = optional.get();
 
         // ============================
         //Validating the tree
         // ============================
         // Root
         Assertions.assertEquals(4, treeNode.children().size());
+
+        // Sorting the children to make the test deterministic
+        treeNode.sortChildren();
+        treeNode.children().get(0).sortChildren();
+        treeNode.children().get(1).sortChildren();
+        treeNode.children().get(2).sortChildren();
+        treeNode.children().get(3).sortChildren();
 
         // Folder1
         Assertions.assertEquals(3, treeNode.children().get(0).children().size());
@@ -1123,8 +1285,9 @@ class RemoteTraversalServiceIT extends FilesTestHelper {
         Assertions.assertEquals(3, treeNode.children().get(1).children().size());
         // SubFolder2-1
         Assertions.assertEquals(3, treeNode.children().get(1).children().get(0).children().size());
-        // subFolder2-1-1 (has 1 asset)
-        Assertions.assertEquals(1, treeNode.children().get(1).children().get(0).children().get(0).assets().size());
+        // subFolder2-1-1-子資料夾 (has 3 asset)
+        Assertions.assertEquals(3,
+                treeNode.children().get(1).children().get(0).children().get(0).assets().size());
         // SubFolder2-2
         Assertions.assertEquals(0, treeNode.children().get(1).children().get(1).children().size());
         // SubFolder2-3

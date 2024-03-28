@@ -13,9 +13,8 @@ import {
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotPropertiesService, DotRouterService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -68,7 +67,6 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onTemplateItemChange(item: DotTemplateItem) {
-        this.updateTemplate.emit(item);
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
         }
@@ -84,13 +82,13 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
         this.templateUpdate$
             .pipe(debounceTime(AUTOSAVE_DEBOUNCE_TIME), takeUntil(this.destroy$))
             .subscribe((templateItem) => {
-                this.saveAndPublish.emit(templateItem);
+                this.save.emit(templateItem);
             });
     }
 
     private subscribeOnChangeBeforeLeaveHandler(): void {
         this.dotRouterService.pageLeaveRequest$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.saveAndPublish.emit(this.lastTemplate);
+            this.save.emit(this.lastTemplate);
         });
     }
 }

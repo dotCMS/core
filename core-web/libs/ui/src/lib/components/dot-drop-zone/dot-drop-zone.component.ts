@@ -13,13 +13,17 @@ export interface DropZoneFileEvent {
     validity: DropZoneFileValidity;
 }
 
-export type DropZoneErrorType = 'fileTypeMismatch' | 'maxFileSizeExceeded';
+export enum DropZoneErrorType {
+    FILE_TYPE_MISMATCH = 'FILE_TYPE_MISMATCH',
+    MAX_FILE_SIZE_EXCEEDED = 'MAX_FILE_SIZE_EXCEEDED',
+    MULTIPLE_FILES_DROPPED = 'MULTIPLE_FILES_DROPPED'
+}
 
 export interface DropZoneFileValidity {
     fileTypeMismatch: boolean;
     maxFileSizeExceeded: boolean;
     multipleFilesDropped: boolean;
-    errorType?: DropZoneErrorType;
+    errorsType: DropZoneErrorType[];
     valid: boolean;
 }
 
@@ -53,10 +57,12 @@ export class DotDropZoneComponent {
     }
 
     private _accept: string[] = [];
+    private errorsType: DropZoneErrorType[] = [];
     private _validity: DropZoneFileValidity = {
         fileTypeMismatch: false,
         maxFileSizeExceeded: false,
         multipleFilesDropped: false,
+        errorsType: [],
         valid: true
     };
 
@@ -127,6 +133,10 @@ export class DotDropZoneComponent {
             (type) => mimeType.includes(type) || type.includes(`.${extension}`)
         );
 
+        if (!isValidType) {
+            this.errorsType.push(DropZoneErrorType.FILE_TYPE_MISMATCH);
+        }
+
         return isValidType;
     }
 
@@ -163,7 +173,31 @@ export class DotDropZoneComponent {
             return false;
         }
 
-        return file.size > this.maxFileSize;
+        const isTooLong = file.size > this.maxFileSize;
+
+        if (isTooLong) {
+            this.errorsType.push(DropZoneErrorType.MAX_FILE_SIZE_EXCEEDED);
+        }
+
+        return isTooLong;
+    }
+
+    /**
+     * Check if multiple files were dropped
+     *
+     * @private
+     * @param {File[]} files
+     * @return {*}  {boolean}
+     * @memberof DotDropZoneComponent
+     */
+    private multipleFilesDropped(files: File[]): boolean {
+        const multipleFilesDropped = files.length > 1;
+
+        if (multipleFilesDropped) {
+            this.errorsType.push(DropZoneErrorType.MULTIPLE_FILES_DROPPED);
+        }
+
+        return multipleFilesDropped;
     }
 
     /**
@@ -174,8 +208,9 @@ export class DotDropZoneComponent {
      * @memberof DotDropZoneComponent
      */
     private setValidity(files: File[]): void {
+        this.errorsType = []; // Reset the errors type
         const file = files[0]; // Only one file is allowed
-        const multipleFilesDropped = files.length > 1;
+        const multipleFilesDropped = this.multipleFilesDropped(files);
         const fileTypeMismatch = !this.typeMatch(file);
         const maxFileSizeExceeded = this.isFileTooLong(file);
         const valid = !fileTypeMismatch && !maxFileSizeExceeded && !multipleFilesDropped;
@@ -185,6 +220,7 @@ export class DotDropZoneComponent {
             multipleFilesDropped,
             fileTypeMismatch,
             maxFileSizeExceeded,
+            errorsType: this.errorsType,
             valid
         };
     }

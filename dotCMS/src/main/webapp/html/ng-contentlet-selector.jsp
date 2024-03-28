@@ -26,6 +26,7 @@
 
 <%
     String containerIdentifier = request.getParameter("container_id");
+    String language_id = request.getParameter("language_id");
     User user = PortalUtil.getUser(request);
     Container container = null;
     if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)) {
@@ -128,7 +129,7 @@
             name: "create-contentlet-from-edit-page",
             data: {
                 url,
-				contentType
+				contentType,
             }
         });
 
@@ -143,6 +144,24 @@
         }
 
         function contentSelected(content) {
+
+            // We need this to support the old way of doing things and be sure that ngEditContentletEvents is defined
+            window.ngEditContentletEvents = window.ngEditContentletEvents ?? undefined
+
+            var customEvent = document.createEvent("CustomEvent");
+
+            customEvent.initCustomEvent("ng-event", false, false,  {
+                name: "select-contentlet",
+                data: {
+                        inode: content.inode,
+                        identifier: content.identifier,
+                        type: content.typeVariable,
+                        baseType: content.baseType
+                    }
+            });
+
+            document.dispatchEvent(customEvent);
+
             if (ngEditContentletEvents) {
                 ngEditContentletEvents.next({
                     name: "select",
@@ -163,6 +182,7 @@
 
         function getCurrentUrlLanguageId () {
             var obj = window.location.href;
+
             const filter = "language_id=";
             const filteredUrl = obj.substring(obj.indexOf(filter));
             return filteredUrl.replace(filter, "");
@@ -187,6 +207,12 @@
             addContentDropdown+='</ul></div>';
             addContentTypePrimaryMenu.innerHTML= addContentDropdown;
             dojo.parser.parse(addContentTypePrimaryMenu);
+        }
+
+        function removeA11yClasses() {
+            ["dj_a11y","dijit_a11y"].forEach(function (className) {
+                 document.body.classList.remove(className);
+            });
         }
 
 
@@ -220,12 +246,14 @@
         dojo.addOnLoad(function () {
             contentSelector.show();
             loadAddContentTypePrimaryMenu();
+            removeA11yClasses();
         });
     </script>
 </head>
 <body>
 <div jsId="contentSelector"
      containerStructures='<%=containerStructures%>'
+     languageId="<%=language_id%>"
      onContentSelected="contentSelected"
      selectButtonLabel='<%= LanguageUtil.get(pageContext, "content.search.select") %>'
      dojoType="dotcms.dijit.form.ContentSelector">

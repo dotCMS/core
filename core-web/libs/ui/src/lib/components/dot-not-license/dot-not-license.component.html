@@ -1,0 +1,24 @@
+<i [class]="'pi pi-' + unlicenseData.icon" data-testId="icon"></i>
+
+<h4 data-testId="title">{{ unlicenseData.titleKey | dm }}</h4>
+
+<p data-testId="description">
+    {{ unlicenseData.titleKey | dm }} {{ 'only-available-in' | dm }}
+    <a href="https://www.dotcms.com/pricing/" target="_blank">
+        {{ 'dotcms-enterprise-edition' | dm }}.
+    </a>
+    {{ 'for-more-information' | dm }}:
+</p>
+
+<div class="actions">
+    <a target="_blank" data-testId="contact-us" href="https://dotcms.com/contact-us/">
+        {{ 'contact-us-for-more-information' | dm }}
+    </a>
+
+    <a
+        class="p-button p-button-outlined"
+        [innerText]="'request.a.trial.license' | dm"
+        data-testId="request-a-trial"
+        href="https://dotcms.com/licensing/request-a-license-3/index"
+        target="_blank"></a>
+</div>

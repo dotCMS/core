@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,8 +9,7 @@ import { DataViewModule } from 'primeng/dataview';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 import { SearchableDropdownComponent } from '.';
 

@@ -976,10 +976,9 @@ public class ContentletAjax {
 				}
 			}
 		}
-		if(allLanguages){
-			if (UtilMethods.isSet(sess)) {
+		if(allLanguages && (UtilMethods.isSet(sess) && sess.getAttribute(WebKeys.LANGUAGE_SEARCHED) == null)) {
 				sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(0));
-			}
+
 		}
 
 		if(UtilMethods.isSet(categoriesvalues)){
@@ -1219,13 +1218,13 @@ public class ContentletAjax {
 
 				searchResult = new HashMap<>();
 
-				final Map<String, String> searchResultFromMap = searchResults.get(con.getIdentifier());
+				final Map<String, String> searchResultFromMap = searchResults.get(con.getInode());
 
 				if (UtilMethods.isSet(searchResultFromMap)) {
 					final String variantFromMap = searchResultFromMap.get("variant");
 
 					if (VariantAPI.DEFAULT_VARIANT.name().equals(variantFromMap)) {
-						searchResults.put(con.getIdentifier(), searchResult);
+						searchResults.put(con.getInode(), searchResult);
 					} else {
 						continue;
 					}
@@ -1452,7 +1451,7 @@ public class ContentletAjax {
 			}
 
 			if (UtilMethods.isSet(searchResult)) {
-				searchResults.put(searchResult.get("identifier"), searchResult);
+				searchResults.put(searchResult.get("inode"), searchResult);
 			}
 		}
 
@@ -2255,18 +2254,6 @@ public class ContentletAjax {
 				clearBinary = false;
 			}
 
-			if (ve.hasLengthErrors()) {
-				final List<Field> reqs = ve.getNotValidFields()
-						.get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-				for (Field field : reqs) {
-					String errorString = LanguageUtil.get(user, "message.contentlet.maxlength");
-					errorString = errorString.replace("{0}", field.getFieldName());
-					errorString = errorString.replace("{1}", "255");
-					saveContentErrors.add(errorString);
-				}
-				clearBinary = false;
-			}
-
 			if (ve.hasPatternErrors()) {
 				List<Field> reqs = ve.getNotValidFields()
 						.get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
@@ -2491,16 +2478,6 @@ public class ContentletAjax {
 					for (Field field : reqs) {
 						String errorString = LanguageUtil.get(user,"message.contentlet.required");
 						errorString = errorString.replace("{0}", field.getFieldName());
-						saveContentErrors.add(errorString);
-					}
-				}
-
-				if(ve.hasLengthErrors()){
-					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-					for (Field field : reqs) {
-						String errorString = LanguageUtil.get(user,"message.contentlet.maxlength");
-						errorString = errorString.replace("{0}", field.getFieldName());
-						errorString = errorString.replace("{1}", "255");
 						saveContentErrors.add(errorString);
 					}
 				}

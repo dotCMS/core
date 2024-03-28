@@ -21,6 +21,7 @@ $dot-tab-height: 2.5rem;
 
     button {
         font-size: $spacing-3;
+        cursor: pointer;
     }
 }
 
@@ -35,6 +36,12 @@ $dot-tab-height: 2.5rem;
 
     &:hover {
         background: $color-palette-primary-100;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        background-color: $color-palette-gray-100;
+        color: $color-palette-gray-500;
     }
 }
 
@@ -56,6 +63,12 @@ $dot-tab-height: 2.5rem;
 
     &:hover {
         background: $color-palette-primary-200;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        background-color: $color-palette-gray-100;
+        color: $color-palette-gray-500;
     }
 }
 

@@ -1,0 +1,7 @@
+<dotcms-template-builder-lib
+    *ngIf="layoutProperties$ | async as layoutProperties"
+    [layout]="layoutProperties.layout"
+    [template]="layoutProperties.template"
+    [containerMap]="layoutProperties.containersMap"
+    (templateChange)="nextTemplateUpdate($event)"
+    data-testId="edit-ema-layout" />

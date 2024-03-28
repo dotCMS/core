@@ -9,21 +9,23 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DotEnvironment,
     DotExperiment,
     DotExperimentStatus,
     DotExperimentsWithActions,
     GroupedExperimentByStatus,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsStore } from '../../dot-experiments-shell/store/dot-experiments.store';
 
@@ -131,6 +133,10 @@ export class DotExperimentsListStore
                                 });
                             }
                         });
+
+                    grouped.forEach((group) => {
+                        group.experiments.sort((a, b) => b.modDate - a.modDate);
+                    });
                 }
 
                 return grouped.filter((item) => !!item.experiments.length);
@@ -217,7 +223,12 @@ export class DotExperimentsListStore
     readonly addExperiments = this.effect(
         (experiment$: Observable<Pick<DotExperiment, 'pageId' | 'name' | 'description'>>) => {
             return experiment$.pipe(
-                tap(() => this.setSidebarStatus({ status: ComponentStatus.SAVING, isOpen: true })),
+                tap(() =>
+                    this.setSidebarStatus({
+                        status: ComponentStatus.SAVING,
+                        isOpen: true
+                    })
+                ),
                 switchMap((experiment) =>
                     this.dotExperimentsService.add(experiment).pipe(
                         tapResponse(

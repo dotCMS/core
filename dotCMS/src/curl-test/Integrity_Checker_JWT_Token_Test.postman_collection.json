@@ -26,7 +26,23 @@
 											"    pm.expect(jsonData.entity).to.not.eq(undefined);",
 											"    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
 											"    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
-											"});"
+											"});",
+											"",
+											"pm.test('Response has a valid JWT', function () {",
+											"    pm.expect(pm.response.json().entity.jwt).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_.+/=]*$/);",
+											"})",
+											"",
+											"pm.test(\"Token ID should be unique\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    const tokenID = jsonData.entity.token.id;",
+											"    pm.collectionVariables.get(\"tokenIDs\") || pm.collectionVariables.set(\"tokenIDs\", []);",
+											"    const tokenIDs = pm.collectionVariables.get(\"tokenIDs\");",
+											"    pm.expect(tokenIDs).to.not.include(tokenID);",
+											"    tokenIDs.push(tokenID);",
+											"    pm.collectionVariables.set(\"tokenIDs\", tokenIDs);",
+											"});",
+											""
+		
 										],
 										"type": "text/javascript"
 									}

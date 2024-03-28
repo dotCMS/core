@@ -1,14 +1,11 @@
-import * as _ from 'lodash';
-
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotKeyValueUtil } from '@components/dot-key-value-ng/util/dot-key-value-util';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotApps, DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
+import { DotRouterService } from '@dotcms/data-access';
+import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 @Component({
@@ -17,11 +14,11 @@ import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.mo
     styleUrls: ['./dot-apps-configuration-detail.component.scss']
 })
 export class DotAppsConfigurationDetailComponent implements OnInit {
-    apps: DotApps;
+    apps: DotApp;
 
-    dynamicVariables: DotKeyValue[];
+    dynamicVariables: DotKeyValue[] = [];
     formData: { [key: string]: string };
-    formFields: DotAppsSecrets[];
+    formFields: DotAppsSecret[];
     formValid = false;
 
     constructor(
@@ -31,7 +28,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApps) => {
+        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
             this.apps = app;
             this.formFields = this.getSecrets(app.sites[0].secrets);
             this.dynamicVariables = this.transformSecretsToKeyValue(
@@ -69,32 +66,13 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     }
 
     /**
-     * Handle Save event doing if new a prepend, otherwise a replace
-     * to the local collection
-     * @param {DotKeyValue} variable
+     *
+     *
+     * @param {DotKeyValue[]} variable
      * @memberof DotAppsConfigurationDetailComponent
      */
-    saveDynamicVariable(variable: DotKeyValue): void {
-        const indexChanged = DotKeyValueUtil.getVariableIndexChanged(
-            variable,
-            this.dynamicVariables
-        );
-        if (indexChanged !== null) {
-            this.dynamicVariables[indexChanged] = _.cloneDeep(variable);
-        } else {
-            this.dynamicVariables = [variable, ...this.dynamicVariables];
-        }
-    }
-
-    /**
-     * Handle Delete event doing a removing the variable from the local collection
-     * @param {DotKeyValue} variable
-     * @memberof DotAppsConfigurationDetailComponent
-     */
-    deleteDynamicVariable(variable: DotKeyValue): void {
-        this.dynamicVariables = this.dynamicVariables.filter(
-            (item: DotKeyValue) => item.key !== variable.key
-        );
+    updateVariables(variables: DotKeyValue[]): void {
+        this.dynamicVariables = [...variables];
     }
 
     private getTransformedFormData(): DotAppsSaveData {
@@ -116,15 +94,12 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
         return params;
     }
 
-    private getSecrets(
-        secrets: DotAppsSecrets[],
-        includeDinamicFields: boolean = false
-    ): DotAppsSecrets[] {
-        return secrets.filter((secret: DotAppsSecrets) => secret.dynamic === includeDinamicFields);
+    private getSecrets(secrets: DotAppsSecret[], includeDinamicFields = false): DotAppsSecret[] {
+        return secrets.filter((secret: DotAppsSecret) => secret.dynamic === includeDinamicFields);
     }
 
-    private transformSecretsToKeyValue(secrets: DotAppsSecrets[]): DotKeyValue[] {
-        return secrets.map(({ name, hidden, value }: DotAppsSecrets) => {
+    private transformSecretsToKeyValue(secrets: DotAppsSecret[]): DotKeyValue[] {
+        return secrets.map(({ name, hidden, value }: DotAppsSecret) => {
             return { key: name, hidden: hidden, value: value };
         });
     }

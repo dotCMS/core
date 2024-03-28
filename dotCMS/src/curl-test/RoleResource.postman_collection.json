@@ -23,7 +23,22 @@
 							"    pm.expect(pm.response.text()).to.include(\"CMS\");",
 							"});",
 							"",
-							""
+							"",
+							"",
+							"pm.test(\"Entity array elements have required parameters\", function () {",
+							"    const responseData = pm.response.json();",
+							"    const entityArray = responseData.entity;",
+							"",
+							"    entityArray.forEach((entity) => {",
+							"        pm.expect(entity).to.have.property('editLayouts');",
+							"        pm.expect(entity).to.have.property('editPermissions');",
+							"        pm.expect(entity).to.have.property('editUsers');",
+							"        pm.expect(entity).to.have.property('locked');",
+							"        pm.expect(entity).to.have.property('name');",
+							"        pm.expect(entity).to.have.property('system');",
+							"        pm.expect(entity).to.have.property('user');",
+							"    });",
+							"});"
 						],
 						"type": "text/javascript"
 					}

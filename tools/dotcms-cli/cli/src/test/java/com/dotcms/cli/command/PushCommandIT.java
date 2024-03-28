@@ -2,14 +2,16 @@ package com.dotcms.cli.command;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.DotCMSITProfile;
+import com.dotcms.api.AuthenticationContext;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -22,13 +24,14 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.UUID;
+import java.util.stream.Stream;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -40,6 +43,9 @@ import picocli.CommandLine.ParseResult;
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
 class PushCommandIT extends CommandTest {
+
+    @Inject
+    AuthenticationContext authenticationContext;
 
     @Mock
     Instance<DotPush> pushCommands;
@@ -57,7 +63,7 @@ class PushCommandIT extends CommandTest {
     OutputOptionMixin outputOptionMixin;
 
     @Mock
-    PushMixin pushMixin;
+    FullPushOptionsMixin pushMixin;
 
     @Mock
     CommandLine.Model.CommandSpec commandSpec;
@@ -67,8 +73,13 @@ class PushCommandIT extends CommandTest {
     PushCommand pushCommand;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         MockitoAnnotations.openMocks(this);
+
+        resetServiceProfiles();
+        final String user = "admin@dotcms.com";
+        final char[] passwd = "admin".toCharArray();
+        authenticationContext.login(user, passwd);
     }
 
     /**
@@ -175,10 +186,10 @@ class PushCommandIT extends CommandTest {
             DotPush dotPush2 = mock(DotPush.class);
             DotPush dotPush3 = mock(DotPush.class);
 
-            when(pushCommands.iterator()).
-                    thenReturn(Arrays.asList(dotPush1, dotPush2, dotPush3).iterator());
+            when(pushCommands.stream())
+                    .thenReturn(Stream.of(dotPush1, dotPush2, dotPush3));
 
-            when(pushCommand.pushCommands()).thenReturn(pushCommands);
+            pushCommand.pushCommands = pushCommands;
 
             doReturn(commandLine).
                     when(pushCommand).
@@ -207,39 +218,87 @@ class PushCommandIT extends CommandTest {
     }
 
     /**
-     * This helper method is used to create a temporary folder for the test.
+     * This test ensures that all DotPush instances are called in the order specified by their
+     * getOrder() method during the execution of the PushCommand's call() method. The test employs
+     * Mockito's InOrder verification mode and specific CommandLine mocks for each DotPush instance
+     * to check that the DotPush commands are processed in the correct sequence.
      *
-     * @return a {@link Path} object representing a temporary directory for the test.
-     * @throws IOException if there's a problem in creating the temporary directory.
+     * @throws Exception If there is any exception during the test execution. The exceptions could
+     *                   arise from file operations (like creating and deleting temp directories) or
+     *                   from the execution of the command.
      */
-    private Path createTempFolder() throws IOException {
+    @Test
+    void testAllPushCommandsAreCalledInOrder() throws Exception {
 
-        String randomFolderName = "folder-" + UUID.randomUUID();
-        return Files.createTempDirectory(randomFolderName);
-    }
+        // Create a temporal folder
+        var tempFolder = createTempFolder();
 
-    /**
-     * This helper method is used to delete a directory and all its contents.
-     *
-     * @param folderPath the {@link Path} object of the directory to delete.
-     * @throws IOException if there's a problem in deleting the directory or its contents.
-     */
-    private void deleteTempDirectory(Path folderPath) throws IOException {
-        Files.walkFileTree(folderPath, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                Files.delete(file); // Deletes the file
-                return FileVisitResult.CONTINUE;
-            }
+        try {
 
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                    throws IOException {
-                Files.delete(dir); // Deletes the directory after its content has been deleted
-                return FileVisitResult.CONTINUE;
-            }
-        });
+            // And a workspace for it
+            workspaceManager.getOrCreate(tempFolder);
+
+            // Define push commands
+            DotPush dotPush1 = mock(DotPush.class);
+            when(dotPush1.getOrder()).thenReturn(2);
+
+            DotPush dotPush2 = mock(DotPush.class);
+            when(dotPush2.getOrder()).thenReturn(1);
+
+            DotPush dotPush3 = mock(DotPush.class);
+            when(dotPush3.getOrder()).thenReturn(4);
+
+            DotPush dotPush4 = mock(DotPush.class);
+            when(dotPush4.getOrder()).thenReturn(3);
+
+            when(pushCommands.stream())
+                    .thenReturn(Stream.of(dotPush1, dotPush2, dotPush3, dotPush4));
+            pushCommand.pushCommands = pushCommands;
+
+            // Define matching command lines for each dot push.
+            CommandLine commandLine1 = mock(CommandLine.class);
+            CommandLine commandLine2 = mock(CommandLine.class);
+            CommandLine commandLine3 = mock(CommandLine.class);
+            CommandLine commandLine4 = mock(CommandLine.class);
+
+            doReturn(commandLine1).when(pushCommand).createCommandLine(dotPush1);
+            doReturn(commandLine2).when(pushCommand).createCommandLine(dotPush2);
+            doReturn(commandLine3).when(pushCommand).createCommandLine(dotPush3);
+            doReturn(commandLine4).when(pushCommand).createCommandLine(dotPush4);
+
+            when(commandSpec.commandLine()).
+                    thenReturn(commandLine2, commandLine1, commandLine4, commandLine3);
+
+            when(commandLine1.getParseResult()).thenReturn(parseResult);
+            when(commandLine2.getParseResult()).thenReturn(parseResult);
+            when(commandLine3.getParseResult()).thenReturn(parseResult);
+            when(commandLine4.getParseResult()).thenReturn(parseResult);
+
+            when(parseResult.expandedArgs()).thenReturn(new ArrayList<>());
+
+            when(pushMixin.path()).thenReturn(tempFolder.toAbsolutePath());
+
+            pushCommand.workspaceManager = workspaceManager;
+            pushCommand.call();
+
+            // Verify the calls to createCommandLine and execute were in the right order
+            InOrder inOrder = inOrder(
+                    pushCommand, commandLine1, commandLine2, commandLine3, commandLine4
+            );
+            inOrder.verify(pushCommand).createCommandLine(dotPush2);
+            inOrder.verify(commandLine2).execute(any());
+            inOrder.verify(pushCommand).createCommandLine(dotPush1);
+            inOrder.verify(commandLine1).execute(any());
+            inOrder.verify(pushCommand).createCommandLine(dotPush4);
+            inOrder.verify(commandLine4).execute(any());
+            inOrder.verify(pushCommand).createCommandLine(dotPush3);
+            inOrder.verify(commandLine3).execute(any());
+
+            inOrder.verifyNoMoreInteractions(); // Checks if there are no more calls after the last one checked
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
     }
 
 }

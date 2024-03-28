@@ -7,8 +7,8 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotApiLinkComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPortletBaseComponent } from './dot-portlet-base.component';
@@ -35,7 +35,7 @@ export default {
                 ButtonModule,
                 CheckboxModule,
                 DotPortletBaseModule,
-                DotApiLinkModule,
+                DotApiLinkComponent,
                 TabViewModule
             ]
         }),

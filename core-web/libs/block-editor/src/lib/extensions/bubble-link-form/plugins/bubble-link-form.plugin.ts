@@ -342,7 +342,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 if (!editor.isActive('link') || !pos) {
                     lastNode = node;
 
-                    return;
+                    return null;
                 }
 
                 // If we click again in the same link node,
@@ -350,7 +350,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 if (isEqual(lastNode, node)) {
                     editor.chain().setTextSelection(pos).closeLinkForm().run();
 
-                    return;
+                    return null;
                 }
 
                 openFormLinkOnclik({ editor, view, pos });
@@ -364,7 +364,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
 
                 // same node here
                 if (!editor.isActive('link')) {
-                    return;
+                    return null;
                 }
 
                 openFormLinkOnclik({ editor, view, pos });

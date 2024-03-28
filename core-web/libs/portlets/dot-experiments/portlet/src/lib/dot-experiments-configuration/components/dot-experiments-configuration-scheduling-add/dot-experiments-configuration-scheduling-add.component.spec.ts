@@ -15,15 +15,17 @@ import { Calendar } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
 import { Sidebar } from 'primeng/sidebar';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { ExperimentSteps, TIME_90_DAYS } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationSchedulingAddComponent } from './dot-experiments-configuration-scheduling-add.component';
 
@@ -36,7 +38,10 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling'
 });
 
-const EXPERIMENT_MOCK = { ...getExperimentMock(0), scheduling: { startDate: 1, endDate: 12196e5 } };
+const EXPERIMENT_MOCK = {
+    ...getExperimentMock(0),
+    scheduling: { startDate: 1, endDate: 12196e5 }
+};
 const MOCK_DATA_MILLISECONDS = 16820996334200;
 const MOCK_DATE = new Date(MOCK_DATA_MILLISECONDS);
 describe('DotExperimentsConfigurationSchedulingAddComponent', () => {

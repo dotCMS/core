@@ -1499,12 +1499,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					ae.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.required", field.getFieldName()));
 				}
 			}
-			if(ve.hasLengthErrors()){
-				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-				for (Field field : reqs) {
-					ae.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.maxlength", field.getFieldName(),"255"));
-				}
-			}
 			if(ve.hasPatternErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
 				for (Field field : reqs) {
@@ -2032,6 +2026,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                                 if (null != id && UtilMethods.isSet(id.getId())) {
                                     text = id.getPath();
                                 }
+							} else if (field instanceof ImageField) {
+								final Identifier id = APILocator.getIdentifierAPI().find((String) value);
+								if (null != id && UtilMethods.isSet(id.getId())) {
+									text = id.getPath();
+								}
+
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if (field instanceof DateField) {

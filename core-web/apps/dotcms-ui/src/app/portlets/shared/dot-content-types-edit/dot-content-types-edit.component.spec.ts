@@ -16,18 +16,16 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotAlertConfirmService,
     DotContentTypesInfoService,
     DotCrudService,
     DotEventsService,
-    DotMessageService
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
@@ -35,12 +33,13 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotDialogModule, DotIconModule } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService,
@@ -167,7 +166,10 @@ describe('DotContentTypesEditComponent', () => {
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 ConfirmationService,
                 DotAlertConfirmService,
                 DotContentTypesInfoService,

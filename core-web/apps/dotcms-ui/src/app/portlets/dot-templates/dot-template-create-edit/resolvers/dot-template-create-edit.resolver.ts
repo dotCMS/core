@@ -5,8 +5,8 @@ import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/r
 
 import { map } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
 
 @Injectable()
@@ -20,10 +20,13 @@ export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
             ? this.service.getFiltered(inode).pipe(
                   map((templates: DotTemplate[]) => {
                       if (templates.length) {
-                          return templates[0];
-                      } else {
-                          this.dotRouterService.gotoPortlet('templates');
+                          const firstTemplate = templates.find((t) => t.inode === inode);
+                          if (firstTemplate) {
+                              return firstTemplate;
+                          }
                       }
+
+                      this.dotRouterService.gotoPortlet('templates');
                   })
               )
             : this.service.getById(route.paramMap.get('id'));

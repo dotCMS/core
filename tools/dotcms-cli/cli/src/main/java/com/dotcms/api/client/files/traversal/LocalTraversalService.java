@@ -20,7 +20,7 @@ public interface LocalTraversalService {
      * @return a TraverseResult containing a list of exceptions, the folder's local path structure
      * and its corresponding root node of the hierarchical tree
      */
-    TraverseResult traverseLocalFolder(TraverseParams params);
+    TraverseResult traverseLocalFolder(LocalTraverseParams params);
 
     /**
      * Builds the file system tree from the specified root node. The tree is built using a ForkJoinPool, which allows

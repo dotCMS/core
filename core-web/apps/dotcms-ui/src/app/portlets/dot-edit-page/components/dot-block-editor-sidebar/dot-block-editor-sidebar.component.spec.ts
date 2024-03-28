@@ -19,22 +19,63 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
 import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 
-const DEFAULT_LANG_ID = 1;
+const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+    contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
+    dataType: 'LONG_TEXT',
+    fieldType: 'Story-Block',
+    fieldTypeLabel: 'Block Editor',
+    fixed: false,
+    iDate: 1649791703000,
+    id: '71fe962eb681c5ffd6cd1623e5fc575a',
+    indexed: false,
+    listed: false,
+    hint: 'A helper text',
+    modDate: 1699364930000,
+    name: 'Blog Content',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 13,
+    unique: false,
+    variable: 'testName',
+    fieldVariables: [
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+            fieldId: '71fe962eb681c5ffd6cd1623e5fc575a',
+            id: 'b19e1d5d-47ad-40d7-b2bf-ccd0a5a86590',
+            key: 'allowedBlocks',
+            value: 'heading1'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+            fieldId: '71fe962eb681c5ffd6cd1623e5fc575a',
+            id: 'b19e1d5d-47ad-40d7-b2bf-ccd0a5a86590',
+            key: 'allowedContentTypes',
+            value: 'Activity'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+            fieldId: '71fe962eb681c5ffd6cd1623e5fc575a',
+            id: 'b19e1d5d-47ad-40d7-b2bf-ccd0a5a86590',
+            key: 'styles',
+            value: 'height:50%'
+        }
+    ]
+};
 
 @Component({
     selector: 'dot-block-editor',
     template: ''
 })
 export class MockDotBlockEditorComponent {
-    @Input() lang = DEFAULT_LANG_ID;
-    @Input() allowedContentTypes = '';
-    @Input() customStyles = '';
-    @Input() allowedBlocks = '';
-    @Input() showVideoThumbnail = false;
+    @Input() languageId = 1;
+    @Input() field: DotCMSContentTypeField;
     @Input() value: { [key: string]: string } | string = '';
 
     editor = {
@@ -49,14 +90,7 @@ class MockDotContentTypeService {
     getContentType() {
         return of({
             fields: [
-                {
-                    variable: 'testName',
-                    fieldVariables: [
-                        { key: 'allowedBlocks', value: 'heading1' },
-                        { key: 'allowedContentTypes', value: 'Activity' },
-                        { key: 'styles', value: 'height:50%' }
-                    ]
-                },
+                BLOCK_EDITOR_FIELD,
                 {
                     variable: 'otherName',
                     fieldVariables: [{ key: 'invalidKey', value: 'test' }]
@@ -154,12 +188,9 @@ describe('DotBlockEditorSidebarComponent', () => {
         ).componentInstance;
 
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
-        expect(blockEditor.lang).toEqual(clickEvent.dataset.language);
-        expect(blockEditor.showVideoThumbnail).toBeTruthy();
-        expect(blockEditor.allowedBlocks).toEqual('heading1');
-        expect(blockEditor.allowedContentTypes).toEqual('Activity');
+        expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
+        expect(blockEditor.languageId).toEqual(clickEvent.dataset.language);
         expect(blockEditor.value).toEqual(JSON.parse(clickEvent.dataset.blockEditorContent));
-        expect(blockEditor.customStyles).toEqual('height:50%');
     });
 
     it('should save changes in the editor', () => {

@@ -2,10 +2,12 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsReportDailyDetailsComponent } from './dot-experiments-report-daily-details.component';
 

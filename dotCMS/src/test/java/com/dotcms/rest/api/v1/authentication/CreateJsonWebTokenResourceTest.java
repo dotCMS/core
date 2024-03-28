@@ -18,6 +18,7 @@ import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -43,6 +44,11 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
     @Before
     public void initTest(){
         RestUtilTest.initMockContext();
+    }
+
+    @After
+    public void cleanupTest(){
+        RestUtilTest.cleanupContext();
     }
 
     public CreateJsonWebTokenResourceTest() {
@@ -109,40 +115,43 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(
+                    userId,
+                    pass,
+                    false,
+                    request,
+                    response))
+                    .thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(
-                userId,
-                pass,
-                false,
-                request,
-                response))
-                .thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new NoSuchUserException();
-            }
-        });
+                    throw new NoSuchUserException();
+                }
+            });
 
 
-        final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, responseUtil, jsonWebTokenUtils, securityLoggerServiceAPI);
-        final CreateTokenForm createTokenForm =
-                new CreateTokenForm.Builder().user(userId).password(pass).build();
+            final CreateJsonWebTokenResource createJsonWebTokenResource =
+                    new CreateJsonWebTokenResource(loginService, userLocalManager, responseUtil, jsonWebTokenUtils, securityLoggerServiceAPI);
+            final CreateTokenForm createTokenForm =
+                    new CreateTokenForm.Builder().user(userId).password(pass).build();
 
-        final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
+            final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -161,34 +170,37 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new UserEmailAddressException();
-            }
-        });
+                    throw new UserEmailAddressException();
+                }
+            });
 
 
-        final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, authenticationHelper, jsonWebTokenUtils, securityLoggerServiceAPI);
-        final CreateTokenForm createTokenForm =
-                new CreateTokenForm.Builder().user(userId).password(pass).build();
+            final CreateJsonWebTokenResource createJsonWebTokenResource =
+                    new CreateJsonWebTokenResource(loginService, userLocalManager, authenticationHelper, jsonWebTokenUtils, securityLoggerServiceAPI);
+            final CreateTokenForm createTokenForm =
+                    new CreateTokenForm.Builder().user(userId).password(pass).build();
 
-        final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
+            final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -206,34 +218,37 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new AuthException();
-            }
-        });
+                    throw new AuthException();
+                }
+            });
 
 
-        final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
-        final CreateTokenForm createTokenForm =
-                new CreateTokenForm.Builder().user(userId).password(pass).build();
+            final CreateJsonWebTokenResource createJsonWebTokenResource =
+                    new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+            final CreateTokenForm createTokenForm =
+                    new CreateTokenForm.Builder().user(userId).password(pass).build();
 
-        final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
+            final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -251,34 +266,37 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new UserPasswordException(UserPasswordException.PASSWORD_ALREADY_USED);
-            }
-        });
+                    throw new UserPasswordException(UserPasswordException.PASSWORD_ALREADY_USED);
+                }
+            });
 
 
-        final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
-        final CreateTokenForm createTokenForm =
-                new CreateTokenForm.Builder().user(userId).password(pass).build();
+            final CreateJsonWebTokenResource createJsonWebTokenResource =
+                    new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+            final CreateTokenForm createTokenForm =
+                    new CreateTokenForm.Builder().user(userId).password(pass).build();
 
-        final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
+            final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -296,35 +314,37 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new RequiredLayoutException();
-            }
-        });
+                    throw new RequiredLayoutException();
+                }
+            });
 
 
-        final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
-        final CreateTokenForm createTokenForm =
-                new CreateTokenForm.Builder().user(userId).password(pass).build();
+            final CreateJsonWebTokenResource createJsonWebTokenResource =
+                    new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+            final CreateTokenForm createTokenForm =
+                    new CreateTokenForm.Builder().user(userId).password(pass).build();
 
-        final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
+            final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 500);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("user-without-portlet"));
-
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 500);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("user-without-portlet"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -345,40 +365,43 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
 
         LocaleUtil.setUserWebAPI(userWebAPI);
         Config.CONTEXT = context;
+        try {
+            final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
+            user.setLocale(locale);
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getLocale()).thenReturn(locale); //
+            when(request.getSession(false)).thenReturn(session); //
+            when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
+            when(userLocalManager.getUserById(userId)).thenReturn(user);
+            when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
-        user.setLocale(locale);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getLocale()).thenReturn(locale); //
-        when(request.getSession(false)).thenReturn(session); //
-        when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
-        when(userLocalManager.getUserById(userId)).thenReturn(user);
-        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                    throw new UserActiveException();
+                }
+            });
 
-                throw new UserActiveException();
-            }
-        });
+            final CreateJsonWebTokenResource createJsonWebTokenResource =
+                    new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+            final CreateTokenForm createTokenForm =
+                    new CreateTokenForm.Builder().user(userId).password(pass).build();
 
-        final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
-        final CreateTokenForm createTokenForm =
-                new CreateTokenForm.Builder().user(userId).password(pass).build();
+            final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
 
-        final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
-
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("your-account-is-not-active"));
-        System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("your-account-is-not-active"));
+            System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -399,34 +422,37 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
 
         LocaleUtil.setUserWebAPI(userWebAPI);
         Config.CONTEXT = context;
+        try {
+            final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
+            user.setLocale(locale);
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getLocale()).thenReturn(locale); //
+            when(request.getSession(false)).thenReturn(session); //
+            when(request.getSession()).thenReturn(session); //
+            when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
+            when(userLocalManager.getUserById(userId)).thenReturn(user);
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenReturn(false);
+            when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
-        final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
-        user.setLocale(locale);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getLocale()).thenReturn(locale); //
-        when(request.getSession(false)).thenReturn(session); //
-        when(request.getSession()).thenReturn(session); //
-        when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
-        when(userLocalManager.getUserById(userId)).thenReturn(user);
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenReturn(false);
-        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+            final CreateJsonWebTokenResource createJsonWebTokenResource =
+                    new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+            final CreateTokenForm createTokenForm =
+                    new CreateTokenForm.Builder().user(userId).password(pass).build();
 
-        final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
-        final CreateTokenForm createTokenForm =
-                new CreateTokenForm.Builder().user(userId).password(pass).build();
+            final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
 
-        final Response response1 = createJsonWebTokenResource.getApiToken(request, response, createTokenForm);
-
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
-        System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+            System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
 

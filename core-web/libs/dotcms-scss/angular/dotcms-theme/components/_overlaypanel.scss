@@ -4,9 +4,8 @@
     background: $white;
     color: $black;
     border: 0 none;
-    border-radius: $border-radius-xs;
-    box-shadow: 0 11px 15px -7px $color-palette-black-op-20,
-        0 24px 38px 3px $color-palette-black-op-10, 0 9px 46px 8px $color-palette-black-op-10;
+    border-radius: $border-radius-md;
+    box-shadow: $shadow-m;
 }
 
 .p-overlaypanel .p-overlaypanel-content {

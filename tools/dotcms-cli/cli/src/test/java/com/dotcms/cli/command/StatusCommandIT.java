@@ -6,6 +6,7 @@ import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import java.net.URL;
 import org.junit.jupiter.api.*;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -37,7 +38,7 @@ class StatusCommandIT extends CommandTest {
      * Expected: We should get exit code 1 (Error) since we're not able to see our status unless at least 1 profile is selected and the respective message
      */
     @Test
-    public void Test_Command_Status_No_Profiles() {
+    void Test_Command_Status_No_Profiles() throws IOException {
 
         serviceManager.removeAll();
 
@@ -47,11 +48,11 @@ class StatusCommandIT extends CommandTest {
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
+            commandLine.setErr(out);
             final int status = commandLine.execute(StatusCommand.NAME);
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
             Assertions.assertTrue(writer.toString()
-                    .contains("No active profile is configured Please use instance Command."));
+                    .contains("No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup an instance to use CLI."));
         }
     }
 
@@ -61,7 +62,7 @@ class StatusCommandIT extends CommandTest {
      * @throws IOException
      */
     @Test
-    public void Test_Command_Status_Default_Profile_Not_Logged_In() throws IOException {
+    void Test_Command_Status_Default_Profile_Not_Logged_In() throws IOException {
 
         resetServiceProfiles();
 
@@ -72,7 +73,7 @@ class StatusCommandIT extends CommandTest {
             final int status = commandLine.execute(StatusCommand.NAME);
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
             Assertions.assertTrue(writer.toString().contains(
-                    "Active instance is [default] API is [http://localhost:8080/api] No active user Use login Command."));
+                    "Active instance is [default] API is [http://localhost:8080] No active user Use login Command."));
         }
     }
 
@@ -82,14 +83,15 @@ class StatusCommandIT extends CommandTest {
      * @throws IOException
      */
     @Test
-    public void Test_Command_Status_Default_Profile_Invalid_Credentials() throws IOException {
+    void Test_Command_Status_Default_Profile_Invalid_Credentials() throws IOException {
 
         final String user = "admin@dotCMS.com";
         final String token = "not-a-valid-token"; //it could have expired
 
         serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true)
+                .url(new URL("http://localhost:8080"))
                 .credentials(
-                        CredentialsBean.builder().user(user).token(token.toCharArray()).build())
+                        CredentialsBean.builder().user(user).tokenSupplier(token::toCharArray).build())
                 .build());
 
         final CommandLine commandLine = createCommand();
@@ -100,7 +102,7 @@ class StatusCommandIT extends CommandTest {
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.contains(String.format(
-                    "Active instance is [default] API is [http://localhost:8080/api] User [%s]",
+                    "Active instance is [default] API is [http://localhost:8080] User [%s]",
                     user)));
             Assertions.assertTrue(
                     output.contains("Current profile does not have a logged in user."));
@@ -113,7 +115,7 @@ class StatusCommandIT extends CommandTest {
      * @throws IOException
      */
     @Test
-    public void Test_Command_Status_Valid_Profile_And_User() throws IOException {
+    void Test_Command_Status_Valid_Profile_And_User() throws IOException {
 
         final String user = "admin@dotCMS.com";
         final String passwd = "admin";

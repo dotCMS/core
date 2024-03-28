@@ -32,6 +32,9 @@ export interface DotPaletteState {
     loading: boolean;
 }
 
+const CONTENTLET_VIEW_IN = 'contentlet:in';
+const CONTENTLET_VIEW_OUT = 'contentlet:out';
+
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     readonly vm$ = this.state$;
@@ -40,8 +43,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         return { ...state, filter: data };
     });
 
-    readonly setLanguageId = this.updater((state: DotPaletteState, data: string) => {
-        return { ...state, languageId: data };
+    readonly setLanguage = this.updater((state: DotPaletteState, languageId: string) => {
+        return { ...state, languageId, viewContentlet: CONTENTLET_VIEW_OUT, filter: '' };
     });
 
     readonly setViewContentlet = this.updater((state: DotPaletteState, data: string) => {
@@ -61,6 +64,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             loading: !(ComponentStatus.LOADED === ComponentStatus.LOADED)
         };
     });
+
     readonly setAllowedContent = this.updater((state: DotPaletteState, data: string[]) => {
         return { ...state, allowedContent: data };
     });
@@ -168,9 +172,20 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             filter: '',
             languageId: '1',
             totalRecords: 0,
-            viewContentlet: 'contentlet:out',
+            viewContentlet: CONTENTLET_VIEW_OUT,
             loading: false
         });
+    }
+
+    /**
+     * Switch language and request Content Types data.
+     * @param languageId
+     *
+     * @memberof DotPaletteStore
+     */
+    switchLanguage(languageId: string): void {
+        this.setLanguage(languageId);
+        this.getContenttypesData();
     }
 
     /**
@@ -289,7 +304,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      * @memberof DotPaletteContentletsComponent
      */
     switchView(variableName?: string): void {
-        const viewContentlet = variableName ? 'contentlet:in' : 'contentlet:out';
+        const viewContentlet = variableName ? CONTENTLET_VIEW_IN : CONTENTLET_VIEW_OUT;
         this.setViewContentlet(viewContentlet);
         this.setFilter('');
         this.loadContentlets(variableName);

@@ -12,14 +12,13 @@ import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus
 } from '@dotcms/dotcms-models';
-import { DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
+import { DotAddToBundleComponent, DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -31,7 +30,6 @@ import {
     DotExperimentsConfigurationStore
 } from './store/dot-experiments-configuration-store';
 
-import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 
@@ -41,14 +39,13 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         AsyncPipe,
         NgIf,
         DotExperimentsUiHeaderComponent,
-        DotExperimentsExperimentSummaryComponent,
         DotExperimentsConfigurationVariantsComponent,
         DotExperimentsConfigurationGoalsComponent,
         DotExperimentsConfigurationTrafficComponent,
         DotExperimentsConfigurationSchedulingComponent,
         DotExperimentsConfigurationSkeletonComponent,
         DotExperimentsInlineEditTextComponent,
-        DotAddToBundleModule,
+        DotAddToBundleComponent,
         DotRemoveConfirmPopupWithEscapeDirective,
         CardModule,
         ButtonModule,

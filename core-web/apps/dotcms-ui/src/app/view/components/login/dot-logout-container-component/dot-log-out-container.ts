@@ -2,9 +2,8 @@ import { Component, ViewEncapsulation } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
+import { DotRouterService } from '@dotcms/data-access';
 import { LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
-
-import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

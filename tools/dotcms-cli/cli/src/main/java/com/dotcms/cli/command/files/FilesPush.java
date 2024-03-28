@@ -5,23 +5,31 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_MODIFIED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
 import com.dotcms.api.client.files.PushService;
-import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
+import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.command.PushContext;
+import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.AssetsUtils;
-import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.common.LocalPathStructure;
+import com.dotcms.model.config.Workspace;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -51,6 +59,12 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @Inject
+    PushContext pushContext;
+
+    @Inject
+    ManagedExecutor executor;
+
     @Override
     public Integer call() throws Exception {
 
@@ -61,18 +75,19 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             output.throwIfUnmatchedArguments(spec.commandLine());
         }
 
-        // Getting the workspace
-        var workspace = getWorkspaceDirectory(pushMixin.path());
+        // Validating and resolving the workspace and path
+        var resolvedWorkspaceAndPath = resolveWorkspaceAndPath();
 
+        File finalInputFile = resolvedWorkspaceAndPath.getRight();
         CompletableFuture<List<TraverseResult>>
-                folderTraversalFuture = CompletableFuture.supplyAsync(
+                folderTraversalFuture = executor.supplyAsync(
                 () ->
-                    // Service to handle the traversal of the folder
-                     pushService.traverseLocalFolders(output, workspace,
-                            pushMixin.path().toFile(),
-                            filesPushMixin.removeAssets, filesPushMixin.removeFolders,
-                            false, true)
-                );
+                        // Service to handle the traversal of the folder
+                        pushService.traverseLocalFolders(
+                                output, resolvedWorkspaceAndPath.getLeft().root().toFile(),
+                                finalInputFile, filesPushMixin.removeAssets,
+                                filesPushMixin.removeFolders, false, pushMixin.failFast)
+        );
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"
         ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
@@ -80,7 +95,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                 folderTraversalFuture
         );
 
-        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+        CompletableFuture<Void> animationFuture = executor.runAsync(
                 consoleLoadingAnimation
         );
 
@@ -97,63 +112,114 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             return CommandLine.ExitCode.SOFTWARE;
         }
 
-        // Let's try to print these tree with some order
-        result.sort((o1, o2) -> {
-            var left = o1.localPaths();
-            var right = o2.localPaths();
-            return left.filePath().compareTo(right.filePath());
-        });
-
-        var count = 0;
-
-        if (!result.isEmpty()) {
-            for (var treeNodeData : result) {
-
-                var localPaths = treeNodeData.localPaths();
-                var treeNode = treeNodeData.treeNode();
-
-                var outputBuilder = new StringBuilder();
-
-                header(count++, localPaths, outputBuilder);
-
-                var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
-
-                if (treeNodePushInfo.hasChanges()) {
-
-                    changesSummary(treeNodePushInfo, outputBuilder);
-
-                    if (pushMixin.dryRun) {
-                        dryRunSummary(localPaths, treeNode, outputBuilder);
-                    }
-
-                    output.info(outputBuilder.toString());
-
-                    // ---
-                    // Pushing the tree
-                    if (!pushMixin.dryRun) {
-
-                         pushService.processTreeNodes(output, workspace.getAbsolutePath(),
-                                localPaths, treeNode, treeNodePushInfo, pushMixin.failFast,
-                                pushMixin.retryAttempts);
-
-                    }
-
-                } else {
-                    outputBuilder.
-                            append("\r\n").
-                            append(" ──────\n").
-                            append(
-                                    String.format(" No changes in %s to push%n%n", "Files"));
-                    output.info(outputBuilder.toString());
-                }
-            }
-        } else {
+        if (result.isEmpty()) {
             output.info(String.format("\r%n"
                     + " ──────%n"
                     + " No changes in %s to push%n%n", "Files"));
+        } else {
+            pushChangesIfAny(resolvedWorkspaceAndPath.getLeft().root(), result);
         }
 
+
         return CommandLine.ExitCode.OK;
+    }
+
+    /**
+     * Processes the results of the traversal and pushes the changes to the server.
+     * @param workspacePath The workspace path
+     * @param result The traversal result
+     */
+    private void pushChangesIfAny(final Path workspacePath, final List<TraverseResult> result) {
+        final String absolutePath = workspacePath.toFile().getAbsolutePath();
+        var count = 0;
+        for (var treeNodeData : result) {
+
+            var localPaths = treeNodeData.localPaths();
+            var optional = treeNodeData.treeNode();
+
+            if (optional.isEmpty()) {
+                continue;
+            }
+
+            final TreeNode treeNode = optional.get();
+
+            var outputBuilder = new StringBuilder();
+
+            header(count++, localPaths, outputBuilder);
+
+            var treeNodePushInfo = treeNode.collectPushInfo();
+
+            if (treeNodePushInfo.hasChanges()) {
+
+                changesSummary(treeNodePushInfo, outputBuilder);
+
+                if (pushMixin.dryRun) {
+                    dryRunSummary(localPaths, treeNode, outputBuilder);
+                }
+
+                output.info(outputBuilder.toString());
+
+                // ---
+                // Pushing the tree
+                if (!pushMixin.dryRun) {
+
+                    pushService.processTreeNodes(output, treeNodePushInfo,
+                            PushTraverseParams.builder()
+                                    .workspacePath(absolutePath)
+                                    .rootNode(treeNode)
+                                    .localPaths(localPaths)
+                                    .failFast(pushMixin.failFast)
+                                    .maxRetryAttempts(pushMixin.retryAttempts)
+                                    .pushContext(pushContext)
+                                    .build()
+                    );
+                }
+
+            } else {
+                outputBuilder.
+                        append("\r\n").
+                        append(" ──────\n").
+                        append(String.format(" No changes in %s to push%n%n", "Files"));
+                output.info(outputBuilder.toString());
+            }
+        }
+    }
+
+    /**
+     * Resolves the workspace and path for the current operation.
+     *
+     * @return A Pair object containing the Workspace and File objects representing the resolved
+     * workspace and path, respectively.
+     * @throws IOException If there is an error accessing the path or if no valid workspace is
+     *                     found.
+     */
+    private Pair<Workspace, File> resolveWorkspaceAndPath() throws IOException {
+
+        // Make sure the path is within a workspace
+        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
+                this.getPushMixin().path()
+        );
+        if (workspace.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("No valid workspace found at path: [%s]",
+                            this.getPushMixin().path()));
+        }
+
+        File inputFile = this.getPushMixin().path().toFile();
+        if (!inputFile.isAbsolute()) {
+            // If the path is not absolute, we assume it is relative to the files folder
+            inputFile = Path.of(
+                    workspace.get().files().toString(), inputFile.getPath()
+            ).toFile();
+        }
+        if (!inputFile.exists() || !inputFile.canRead()) {
+            throw new IOException(String.format(
+                    "Unable to access the path [%s] check that it does exist and that you have "
+                            + "read permissions on it.", inputFile)
+            );
+        }
+
+        return Pair.of(workspace.get(), inputFile);
     }
 
     private void header(int count, LocalPathStructure localPaths,
@@ -190,12 +256,12 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                             "- @|bold,%s [%s]|@ Assets to delete " +
                             "- @|bold,%s [%s]|@ Folders to push " +
                             "- @|bold,%s [%s]|@ Folders to delete\n\n",
-                    COLOR_NEW,pushInfo.assetsToPushCount(),
-                    COLOR_MODIFIED,pushInfo.assetsNewCount(),
-                    COLOR_DELETED,pushInfo.assetsModifiedCount(),
-                    COLOR_NEW,pushInfo.assetsToDeleteCount(),
-                    COLOR_DELETED,pushInfo.foldersToPushCount(),
-                    pushInfo.foldersToDeleteCount())
+                    pushInfo.assetsToPushCount(),
+                    COLOR_MODIFIED, pushInfo.assetsNewCount(),
+                    COLOR_DELETED, pushInfo.assetsModifiedCount(),
+                    COLOR_NEW, pushInfo.assetsToDeleteCount(),
+                    COLOR_NEW, pushInfo.foldersToPushCount(),
+                    COLOR_DELETED, pushInfo.foldersToDeleteCount())
             );
         } else {
             outputBuilder.append(String.format(" Push Data: " +
@@ -203,10 +269,10 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                             "- @|bold,%s [%s]|@ Assets to delete " +
                             "- @|bold,%s [%s]|@ Folders to push " +
                             "- @|bold,%s [%s]|@ Folders to delete\n\n",
-                    COLOR_NEW,pushInfo.assetsToPushCount(),
-                    COLOR_DELETED,pushInfo.assetsToDeleteCount(),
-                    COLOR_NEW,pushInfo.foldersToPushCount(),
-                    COLOR_DELETED,pushInfo.foldersToDeleteCount()));
+                    COLOR_NEW, pushInfo.assetsToPushCount(),
+                    COLOR_DELETED, pushInfo.assetsToDeleteCount(),
+                    COLOR_NEW, pushInfo.foldersToPushCount(),
+                    COLOR_DELETED, pushInfo.foldersToDeleteCount()));
         }
     }
 
@@ -228,6 +294,11 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Optional<String> getCustomMixinName() {
         return Optional.of(FILES_PUSH_MIXIN);
+    }
+
+    @Override
+    public int getOrder() {
+        return ApplyCommandOrder.FILES.getOrder();
     }
 
 }

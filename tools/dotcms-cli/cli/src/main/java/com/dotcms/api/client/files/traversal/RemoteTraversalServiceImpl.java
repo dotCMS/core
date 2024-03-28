@@ -2,24 +2,25 @@ package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.client.files.traversal.data.Pusher;
 import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.files.traversal.task.PushTreeNodeTask;
+import com.dotcms.api.client.files.traversal.task.PushTreeNodeTaskParams;
 import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTask;
+import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTaskParams;
+import com.dotcms.api.client.files.traversal.task.TraverseTaskResult;
 import com.dotcms.api.traversal.Filter;
-import com.dotcms.api.traversal.TreeNode;
-import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
-import org.apache.commons.lang3.tuple.Pair;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.CompletionException;
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import org.eclipse.microprofile.context.ManagedExecutor;
+import org.jboss.logging.Logger;
 
 /**
  * Service for traversing a dotCMS remote location and building a hierarchical tree representation of
@@ -34,10 +35,13 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
     Logger logger;
 
     @Inject
-    protected Retriever retriever;
+    Retriever retriever;
 
     @Inject
-    protected Pusher pusher;
+    Pusher pusher;
+
+    @Inject
+    ManagedExecutor executor;
 
     /**
      * Traverses the dotCMS remote location at the specified remote path and builds a hierarchical tree
@@ -56,7 +60,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
      */
     @ActivateRequestContext
     @Override
-    public Pair<List<Exception>, TreeNode> traverseRemoteFolder(
+    public TraverseTaskResult traverseRemoteFolder(
             final String path,
             final Integer depth,
             final boolean failFast,
@@ -84,62 +88,92 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 excludeAssetPatterns);
 
         // ---
-        var forkJoinPool = ForkJoinPool.commonPool();
-
         var task = new RemoteFolderTraversalTask(
                 logger,
-                retriever,
-                filter,
-                dotCMSPath.site(),
-                FolderView.builder()
+                executor,
+                retriever
+        );
+
+        task.setTaskParams(RemoteFolderTraversalTaskParams.builder()
+                .filter(filter)
+                .siteName(dotCMSPath.site())
+                .folder(FolderView.builder()
                         .host(dotCMSPath.site())
                         .path(dotCMSPath.folderPath().toString())
                         .name(dotCMSPath.folderName())
                         .level(0)
-                        .build(),
-                true,
-                depthToUse,
-                failFast
+                        .build())
+                .isRoot(true)
+                .depth(depthToUse)
+                .failFast(failFast)
+                .build()
         );
 
-        return forkJoinPool.invoke(task);
+        try {
+            return task.compute().join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
     /**
-     * Pushes the contents of the specified tree node to the remote server. The push operation is performed
-     * asynchronously using a ForkJoinPool, and the progress is tracked and displayed using the provided
-     * console progress bar.
+     * Pushes the contents of the specified tree node to the remote server. The push operation is
+     * performed asynchronously using a ForkJoinPool, and the progress is tracked and displayed
+     * using the provided console progress bar.
      *
-     * @param workspace          the local workspace path
-     * @param localPathStructure the local path structure of the folder being pushed
-     * @param treeNode           the tree node representing the folder and its contents with all the push
-     *                           information for each file and folder
-     * @param failFast           true to fail fast, false to continue on error
-     * @param isRetry            true if this is a retry attempt, false otherwise
-     * @param progressBar        the console progress bar to track and display the push progress
-     * @return A list of exceptions encountered during the push process.
+     * @param traverseParams@return A list of exceptions encountered during the push process.
      */
-    public List<Exception> pushTreeNode(final String workspace, final AssetsUtils.LocalPathStructure localPathStructure,
-                                        final TreeNode treeNode, final boolean failFast, final boolean isRetry,
-                                        ConsoleProgressBar progressBar) {
+    public List<Exception> pushTreeNode(PushTraverseParams traverseParams) {
 
         // If the language does not exist we need to create it
-        if (!localPathStructure.languageExists()) {
-            pusher.createLanguage(localPathStructure.language());
+        if (!traverseParams.localPaths().languageExists()) {
+           try {
+               pusher.createLanguage(traverseParams.localPaths().language());
+           } catch (Exception e) {
+               //If we failed to create the language we still continue with the push
+               // we simply let the user know and move on
+               final String errorMessage = String.format(
+                       "Error creating language. Can not process this folder [%s] branch.",
+                       traverseParams.localPaths().language());
+               logger.error(errorMessage, e);
+               return List.of(e);
+           }
         }
 
         // ---
-        var forkJoinPool = ForkJoinPool.commonPool();
         var task = new PushTreeNodeTask(
-                workspace,
-                localPathStructure,
-                treeNode,
-                failFast,
-                isRetry,
                 logger,
-                pusher,
-                progressBar);
-        return forkJoinPool.invoke(task);
+                executor,
+                traverseParams.pushContext(),
+                pusher
+        );
+        
+        task.setTaskParams(PushTreeNodeTaskParams.builder()
+                .workspacePath(traverseParams.workspacePath())
+                .localPaths(traverseParams.localPaths())
+                .rootNode(traverseParams.rootNode())
+                .failFast(traverseParams.failFast())
+                .isRetry(traverseParams.isRetry())
+                .maxRetryAttempts(traverseParams.maxRetryAttempts())
+                .progressBar(traverseParams.progressBar())
+                .build()
+        );
+
+        try {
+            return task.compute().join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
     /**

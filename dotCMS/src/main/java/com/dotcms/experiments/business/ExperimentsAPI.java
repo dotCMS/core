@@ -1,11 +1,11 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -183,6 +183,13 @@ public interface ExperimentsAPI {
     List<Experiment> getRunningExperiments() throws DotDataException;
 
     /**
+     * Return a list of the current RUNNING Experiments on the specific {@link Host}.
+     *
+     * @return
+     */
+    List<Experiment> getRunningExperiments(final Host host) throws DotDataException;
+
+    /**
      * Return a {@link Experiment}'s {@link Rule}
      *
      * @param experiment
@@ -200,7 +207,8 @@ public interface ExperimentsAPI {
      * @see ConfigExperimentUtil#isExperimentEnabled()
      *
      */
-    boolean isAnyExperimentRunning() throws DotDataException;
+    boolean isAnyExperimentRunning(final Host host) throws DotDataException;
+
 
     /**
      * Return the Experiment partial or total result.
@@ -213,15 +221,6 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     List<Experiment> cacheRunningExperiments() throws DotDataException;
-
-    /**
-     * Return a list of the Events into an Experiment group by {@link BrowserSession}
-     *
-     * @param experiment
-     * @param user
-     * @return
-     */
-    List<BrowserSession> getEvents(Experiment experiment, User user) throws DotDataException, DotSecurityException;
 
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s

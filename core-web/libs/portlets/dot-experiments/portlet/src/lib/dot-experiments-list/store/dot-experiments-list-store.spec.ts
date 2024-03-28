@@ -13,7 +13,11 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
@@ -22,14 +26,12 @@ import {
     DotExperimentsWithActions,
     GroupedExperimentByStatus
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     DotExperimentsStoreMock,
     getExperimentAllMocks,
     getExperimentMock,
     PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsListStore } from './dot-experiments-list-store';
 
@@ -41,7 +43,9 @@ const ActivatedRouteMock = {
         params: {
             pageId: routerParamsPageId
         },
-        parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } }
+        parent: {
+            parent: { parent: { data: { content: { page: { title: '' } } } } }
+        }
     },
     parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
@@ -200,11 +204,20 @@ describe('DotExperimentsListStore', () => {
         ] as DotExperimentsWithActions[];
 
         const expected: GroupedExperimentByStatus[] = [
-            { status: DotExperimentStatus.RUNNING, experiments: [...runningExperiments] },
-            { status: DotExperimentStatus.SCHEDULED, experiments: [...scheduledExperiments] },
+            {
+                status: DotExperimentStatus.RUNNING,
+                experiments: [...runningExperiments]
+            },
+            {
+                status: DotExperimentStatus.SCHEDULED,
+                experiments: [...scheduledExperiments]
+            },
             { status: DotExperimentStatus.DRAFT, experiments: [...draftExperiments] },
             { status: DotExperimentStatus.ENDED, experiments: [...endedExperiments] },
-            { status: DotExperimentStatus.ARCHIVED, experiments: [...archivedExperiments] }
+            {
+                status: DotExperimentStatus.ARCHIVED,
+                experiments: [...archivedExperiments]
+            }
         ];
 
         store.setExperiments([

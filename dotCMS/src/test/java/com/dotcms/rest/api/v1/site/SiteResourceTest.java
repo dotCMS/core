@@ -82,25 +82,28 @@ public class SiteResourceTest extends UnitTestBase {
         final Response responseExpected = Response.ok(new ResponseEntityView<>(hosts)).build();
 
         Config.CONTEXT = context;
+        try {
+            when(initDataObject.getUser()).thenReturn(user);
+            when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
+            when(initDataObject.getUser()).thenReturn(user);
+            when(paginationUtil.getPage(request, user, "filter",1, count,
+                    map("archive", false, "live", false, "system", false))).thenReturn(responseExpected);
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session);
+            when(request.getSession(false)).thenReturn(session);
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
+            SiteResource siteResource =
+                    new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
 
-        when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
-        when(initDataObject.getUser()).thenReturn(user);
-        when(paginationUtil.getPage(request, user, "filter",1, count,
-                map("archive", false, "live", false, "system", false))).thenReturn(responseExpected);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
+            final Response response = siteResource
+                    .sites(request, httpServletResponse, "filter", false, false, false, page, count);
 
-        final Response response = siteResource
-                .sites(request, httpServletResponse, "filter", false, false, false, page, count);
+            RestUtilTest.verifySuccessResponse(response);
 
-        RestUtilTest.verifySuccessResponse(response);
-
-        assertEquals(((ResponseEntityView) response.getEntity()).getEntity(), hosts);
+            assertEquals(((ResponseEntityView) response.getEntity()).getEntity(), hosts);
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
 
@@ -119,48 +122,51 @@ public class SiteResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 
         Config.CONTEXT = context;
+        try {
+            when(initDataObject.getUser()).thenReturn(user);
+            // final InitDataObject initData = this.webResource.init(null, request, response, true, null); // should logged in
+            when(webResource.init((WebResource.InitBuilder)notNull())).thenReturn(initDataObject);
 
-        when(initDataObject.getUser()).thenReturn(user);
-        // final InitDataObject initData = this.webResource.init(null, request, response, true, null); // should logged in
-        when(webResource.init((WebResource.InitBuilder)notNull())).thenReturn(initDataObject);
+            when(hostAPI.findAll(user, true)).thenReturn(hosts);
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session);
+            when(request.getSession(false)).thenReturn(session);
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
+            SiteResource siteResource =
+                    new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
 
-        when(hostAPI.findAll(user, true)).thenReturn(hosts);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
+            Response response1 = siteResource.switchSite(request, httpServletResponse);
+            System.out.println(response1);
+            System.out.println(response1.getEntity());
 
-        Response response1 = siteResource.switchSite(request, httpServletResponse);
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 500);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 500);
+            response1 = siteResource.switchSite(request, httpServletResponse, StringUtils.EMPTY);
+            System.out.println(response1);
+            System.out.println(response1.getEntity());
 
-        response1 = siteResource.switchSite(request, httpServletResponse, StringUtils.EMPTY);
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 404);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 404);
+            response1 = siteResource
+                    .switchSite(request, httpServletResponse, "48190c8c-not-found-8d1a-0cd5db894797");
+            System.out.println(response1);
+            System.out.println(response1.getEntity());
 
-        response1 = siteResource
-                .switchSite(request, httpServletResponse, "48190c8c-not-found-8d1a-0cd5db894797");
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 404);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 404);
+            response1 = siteResource.switchSite(request, httpServletResponse,
+                    "48190c8c-42c4-46af-8d1a-0cd5db894797"); // system, should be not allowed to switch
+            System.out.println(response1);
+            System.out.println(response1.getEntity());
 
-        response1 = siteResource.switchSite(request, httpServletResponse,
-                "48190c8c-42c4-46af-8d1a-0cd5db894797"); // system, should be not allowed to switch
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
-
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 404);
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 404);
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
 
@@ -180,56 +186,60 @@ public class SiteResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 
         Config.CONTEXT = context;
-        Map<String, Object> sessionAttributes = map(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
+        try {
+            Map<String, Object> sessionAttributes = map(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
 
-        when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
-        when(hostAPI.find("48190c8c-42c4-46af-8d1a-0cd5db894798", user, Boolean.TRUE)).thenReturn(host);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        doAnswer(new Answer<Void>() {
+            when(initDataObject.getUser()).thenReturn(user);
+            when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
+            when(hostAPI.find("48190c8c-42c4-46af-8d1a-0cd5db894798", user, Boolean.TRUE)).thenReturn(host);
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session);
+            when(request.getSession(false)).thenReturn(session);
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
+            doAnswer(new Answer<Void>() {
 
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
+                @Override
+                public Void answer(InvocationOnMock invocation) throws Throwable {
 
-                Object [] args = invocation.getArguments();
-                sessionAttributes.put((String) args[0], args[1]);
-                return null;
-            }
-        }).when(session).setAttribute(
-                anyString(),
-                anyObject()
-        );
+                    Object [] args = invocation.getArguments();
+                    sessionAttributes.put((String) args[0], args[1]);
+                    return null;
+                }
+            }).when(session).setAttribute(
+                    anyString(),
+                    anyObject()
+            );
 
-        doAnswer(new Answer<Void>() {
+            doAnswer(new Answer<Void>() {
 
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
+                @Override
+                public Void answer(InvocationOnMock invocation) throws Throwable {
 
-                Object [] args = invocation.getArguments();
-                sessionAttributes.remove((String) args[0]);
-                return null;
-            }
-        }).when(session).removeAttribute(
-                anyString()
-        );
+                    Object [] args = invocation.getArguments();
+                    sessionAttributes.remove((String) args[0]);
+                    return null;
+                }
+            }).when(session).removeAttribute(
+                    anyString()
+            );
 
-        SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
+            SiteResource siteResource =
+                    new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
 
-        Response response1 = siteResource
-                .switchSite(request, httpServletResponse, "48190c8c-42c4-46af-8d1a-0cd5db894798");
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
-        System.out.println(sessionAttributes);
+            Response response1 = siteResource
+                    .switchSite(request, httpServletResponse, "48190c8c-42c4-46af-8d1a-0cd5db894798");
+            System.out.println(response1);
+            System.out.println(response1.getEntity());
+            System.out.println(sessionAttributes);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 200);
-        assertTrue(sessionAttributes.size() == 1 );
-        assertTrue(!sessionAttributes.containsKey(WebKeys.CONTENTLET_LAST_SEARCH));
-        assertTrue(sessionAttributes.containsKey(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 200);
+            assertTrue(sessionAttributes.size() == 1 );
+            assertTrue(!sessionAttributes.containsKey(WebKeys.CONTENTLET_LAST_SEARCH));
+            assertTrue(sessionAttributes.containsKey(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     /**
@@ -245,32 +255,37 @@ public class SiteResourceTest extends UnitTestBase {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session = request.getSession();
         RestUtilTest.initMockContext();
-        final User user = new User();
-        final PaginatedArrayList<Host> siteList = getSites();
-        final Host currentSite = siteList.get(0);
-        final String currentSiteId = currentSite.getIdentifier();
-        final WebResource webResource = RestUtilTest.getMockWebResource( user, request );
-        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        try {
+            final User user = new User();
+            final PaginatedArrayList<Host> siteList = getSites();
+            final Host currentSite = siteList.get(0);
+            final String currentSiteId = currentSite.getIdentifier();
+            final WebResource webResource = RestUtilTest.getMockWebResource(user, request);
+            final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 
-        final HostAPI hostAPI = mock(HostAPI.class);
-        when( hostAPI.find(currentSiteId, user, false) ).thenReturn( currentSite );
+            final HostAPI hostAPI = mock(HostAPI.class);
+            when(hostAPI.find(currentSiteId, user, false)).thenReturn(currentSite);
 
-        final UserAPI userAPI = mock(UserAPI.class);
-        when(userAPI.loadUserById(Mockito.anyString())).thenReturn(user);
-        when( session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID ) )
-                .thenReturn( currentSite.getIdentifier() );
+            final UserAPI userAPI = mock(UserAPI.class);
+            when(userAPI.loadUserById(Mockito.anyString())).thenReturn(user);
+            when(session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID))
+                    .thenReturn(currentSite.getIdentifier());
 
-        final InitDataObject initDataObject = mock(InitDataObject.class);
-        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
-        when(initDataObject.getUser()).thenReturn(user);
+            final InitDataObject initDataObject = mock(InitDataObject.class);
+            when(webResource.init((WebResource.InitBuilder) anyObject())).thenReturn(
+                    initDataObject);
+            when(initDataObject.getUser()).thenReturn(user);
 
-        final SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
-        final Response response = siteResource.currentSite(request, httpServletResponse);
+            final SiteResource siteResource =
+                    new SiteResource(webResource, new SiteHelper(hostAPI), paginationUtil);
+            final Response response = siteResource.currentSite(request, httpServletResponse);
 
-        RestUtilTest.verifySuccessResponse(response);
-        Object entity = ((ResponseEntityView) response.getEntity()).getEntity();
-        assertEquals( currentSite, entity);
+            RestUtilTest.verifySuccessResponse(response);
+            Object entity = ((ResponseEntityView) response.getEntity()).getEntity();
+            assertEquals(currentSite, entity);
+        } finally {
+            RestUtilTest.cleanupContext();
+        }
     }
 
     /**

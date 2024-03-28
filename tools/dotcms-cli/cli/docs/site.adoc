@@ -50,7 +50,7 @@ xref:site-find.adoc[*find*]::
   *Use this command to Search / Find Sites.*
 
 xref:site-pull.adoc[*pull*]::
-  *Retrieves a site descriptor from a name or Id.*
+  *Retrieves sites descriptors*
 
 xref:site-push.adoc[*push*]::
   *Push sites*
@@ -75,9 +75,6 @@ xref:site-archive.adoc[*archive*]::
 
 xref:site-unarchive.adoc[*unarchive*]::
   *Use this command to unarchive a site.*
-
-xref:site-current.adoc[*current*]::
-  *Use this command to get the current Site.*
 
 // end::picocli-generated-man-section-commands[]
 

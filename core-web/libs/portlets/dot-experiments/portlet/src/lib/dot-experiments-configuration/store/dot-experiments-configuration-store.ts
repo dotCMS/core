@@ -10,12 +10,17 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedConditionOperatorsByTypeOfGoal,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DotEnvironment,
     DotExperiment,
     DotExperimentStatus,
     DotPageRenderState,
@@ -31,9 +36,6 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
     checkIfExperimentDescriptionIsSaving,
@@ -268,6 +270,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 this.dotExperimentsService.getById(experimentId).pipe(
                     tapResponse(
                         (experiment) => {
+                            console.warn(experiment);
                             this.patchState({
                                 experiment: experiment
                             });
@@ -451,7 +454,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly editVariant = this.effect(
         (
-            variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name' | 'id'> }>
+            variant$: Observable<{
+                experimentId: string;
+                data: Pick<DotExperiment, 'name' | 'id'>;
+            }>
         ) => {
             return variant$.pipe(
                 tap(() =>
@@ -649,7 +655,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     readonly setSelectedScheduling = this.effect(
-        (setScheduling$: Observable<{ scheduling: RangeOfDateAndTime; experimentId: string }>) => {
+        (
+            setScheduling$: Observable<{
+                scheduling: RangeOfDateAndTime;
+                experimentId: string;
+            }>
+        ) => {
             return setScheduling$.pipe(
                 tap(() => {
                     this.setSidebarStatus({
@@ -694,7 +705,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     readonly setSelectedAllocation = this.effect(
-        (trafficAllocation$: Observable<{ trafficAllocation: number; experimentId: string }>) => {
+        (
+            trafficAllocation$: Observable<{
+                trafficAllocation: number;
+                experimentId: string;
+            }>
+        ) => {
             return trafficAllocation$.pipe(
                 tap(() => {
                     this.setSidebarStatus({
@@ -961,6 +977,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
         const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
+
         super({
             ...initialState,
             hasEnterpriseLicense,

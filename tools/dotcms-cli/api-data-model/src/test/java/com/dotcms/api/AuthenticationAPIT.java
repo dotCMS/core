@@ -2,11 +2,12 @@ package com.dotcms.api;
 
 
 import com.dotcms.DotCMSITProfile;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
@@ -25,11 +26,11 @@ public class AuthenticationAPIT {
 
     @BeforeEach
     public void setupTest() throws IOException {
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
     }
 
     @Test
-    public void Test_Get_Token() {
+    public void Test_Get_Token() throws IOException {
         final String userString = "admin@dotCMS.com";
         final char[] passwordString = "admin".toCharArray();
         authenticationContext.login(userString, passwordString);

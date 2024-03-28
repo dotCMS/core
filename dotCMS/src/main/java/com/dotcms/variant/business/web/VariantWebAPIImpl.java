@@ -53,9 +53,11 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             currentVariantName = VariantAPI.DEFAULT_VARIANT.name();
         } else {
             try {
-                final Optional<Variant> byName = APILocator.getVariantAPI()
-                        .get(currentVariantName);
-                currentVariantName = byName.isPresent() ? byName.get().name() : VariantAPI.DEFAULT_VARIANT.name();
+                return APILocator.getVariantAPI()
+                        .get(currentVariantName)
+                        .filter((variant -> !variant.archived()))
+                        .orElse(VariantAPI.DEFAULT_VARIANT)
+                        .name();
             } catch (DotDataException e) {
                 Logger.error(VariantWebAPIImpl.class,
                         String.format("It is not possible get variant y name %s: %s",
@@ -236,17 +238,24 @@ public class VariantWebAPIImpl implements VariantWebAPI{
         final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, pageMode.respectAnonPerms);
         final ContentType type = contentlet.getContentType();
 
-        if (type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA
-                || "Host".equalsIgnoreCase(type.variable())) {
-            return true;
-        } else if (type.baseType() == BaseContentType.CONTENT
-                && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
-            return true;
-        } else if (type.baseType() == BaseContentType.WIDGET
-                && APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage()) {
-            return true;
-        }
+        return Boolean.TRUE.equals(contentlet.isHTMLPage()) ||
+                forceFallbackByContentType(type) ||
+                isContentletFallback(type) ||
+                isWidgetFallback(type);
+    }
 
-        return false;
+    private static boolean isWidgetFallback(ContentType type) {
+        return type.baseType() == BaseContentType.WIDGET
+                && APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage();
+    }
+
+    private static boolean isContentletFallback(ContentType type) {
+        return type.baseType() == BaseContentType.CONTENT
+                && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage();
+    }
+
+    private static boolean forceFallbackByContentType(ContentType type) {
+        return type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA
+                || "Host".equalsIgnoreCase(type.variable());
     }
 }

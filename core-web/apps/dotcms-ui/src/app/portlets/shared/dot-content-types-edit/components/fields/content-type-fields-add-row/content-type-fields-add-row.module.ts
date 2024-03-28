@@ -5,8 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
 
@@ -19,7 +18,7 @@ import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.
         ButtonModule,
         TooltipModule,
         SplitButtonModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ]
 })

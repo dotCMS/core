@@ -1,6 +1,6 @@
 import { merge, Observable, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
@@ -8,10 +8,12 @@ import { pluck, takeUntil, tap } from 'rxjs/operators';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import {
+    DotPageStateService,
+    DotRouterService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
-
-import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -20,6 +22,7 @@ import { DotPageStateService } from '../../content/services/dot-page-state/dot-p
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
     pageState$: Observable<DotPageRenderState>;
+    private dotSessionStorageService: DotSessionStorageService = inject(DotSessionStorageService);
     private pageUrl: string;
     private languageId: string;
     private pageIsSaved = false;
@@ -69,6 +72,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
+        this.dotSessionStorageService.removeVariantId();
         this.destroy$.next(true);
         this.destroy$.complete();
     }

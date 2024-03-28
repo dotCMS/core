@@ -1,0 +1,30 @@
+<div
+    *ngFor="let container of containers"
+    [ngStyle]="container | dotPosition"
+    [attr.data-payload]="container.payload"
+    data-type="container">
+    <div
+        *ngFor="let contentlet of container.contentlets"
+        [attr.data-payload]="contentlet.payload"
+        [ngStyle]="contentlet | dotPosition"
+        (drop)="onDrop($event)"
+        (dragover)="onDragover($event)"
+        data-type="contentlet"></div>
+
+    <ng-container
+        *ngTemplateOutlet="
+            errorTemplate;
+            context: { error: container | dotError : item, container: container }
+        "></ng-container>
+</div>
+
+<div class="pointer" [ngStyle]="pointerPosition"></div>
+
+<ng-template #errorTemplate let-error="error" let-container="container">
+    <div
+        class="drop-zone_error"
+        *ngIf="error.message.length"
+        [ngStyle]="container | dotPosition : true">
+        <span [innerHTML]="error.message | dm : error.args"></span>
+    </div>
+</ng-template>

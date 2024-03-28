@@ -44,7 +44,7 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef, lang
                     ({ chain }) => {
                         return chain()
                             .setMeta('preventAutolink', true)
-                            .setHighlight()
+                            ?.setHighlight?.()
                             .command(({ tr }) => {
                                 tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: true, openOnClick });
 
@@ -58,7 +58,7 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef, lang
                     ({ chain }) => {
                         return chain()
                             .setMeta('preventAutolink', true)
-                            .unsetHighlight()
+                            .unsetHighlight?.()
                             .command(({ tr }) => {
                                 tr.setMeta(LINK_FORM_PLUGIN_KEY, {
                                     isOpen: false,

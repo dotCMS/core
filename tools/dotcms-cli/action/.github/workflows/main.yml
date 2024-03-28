@@ -20,21 +20,30 @@ jobs:
       DOT_FORCE_DOWNLOAD: ${{ vars.DOT_FORCE_DOWNLOAD || 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         id: checkout
         with:
           fetch-depth: 0
 
-      - name: Get changes
-        id: changed-files
+      - name: Load .env file
+        uses: aarcangeli/load-dotenv@v1.0.0
+        with:
+          if-file-not-found: 'warn'
+
+      - name: Print env vars
         run: |
-          echo "changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | xargs)" >> $GITHUB_OUTPUT
+          echo "$GITHUB_ENV"
+
+      - name: Get changes
+        run: |
+          git diff --name-only ${{ github.event.before }} ${{ github.event.after }} > changed_files.txt
 
       - name: List changed files
         run: |
-          for file in ${{ steps.changed-files.outputs.changed_files }}; do
-              echo "$file was changed"
-          done    
+          while IFS= read -r line
+          do
+            echo "\"$line\" was changed"
+          done < changed_files.txt
 
       - name: Github Event Context properties
         run: |
@@ -52,7 +61,7 @@ jobs:
 
       - name: Create workspace if not exists
         id: dot-workspace
-        run: |          
+        run: |
           if [ ${{ env.DOT_CREATE_WORKSPACE }} = true ]; then
             echo "Creating workspace ::: "             
             chmod +x ./.github/workflows/scripts/workspace.sh
@@ -68,8 +77,8 @@ jobs:
         run: |
           saveChanges="${{ steps.dot-workspace.outputs.workspace-updated }}"
           if [ -n "${saveChanges}" ]; then            
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
+            git config user.name "${{ secrets.CI_MACHINE_USER }}"
+            git config user.email "dotCMS-Machine-User@dotcms.com"
             git add .
             git commit -m "pushing workspace changes"
             git push
@@ -78,15 +87,15 @@ jobs:
 
       - name: Run dotCMS CLI
         id: dot-push
-        run: |                                   
-            chmod +x ./.github/workflows/scripts/run-push.sh
-            source ./.github/workflows/scripts/run-push.sh
-            install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}" "${{env.DOT_API_URL}}" 
-            run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}"
-            echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
-            print_log
-            if [ $exit_code -ne 0 ]; then
-              echo "Error running dotCMS CLI"
-              exit 1
-            fi
+        run: |
+          chmod +x ./.github/workflows/scripts/run-push.sh
+          source ./.github/workflows/scripts/run-push.sh
+          install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}"
+          run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}" "${{ env.DOT_CLI_OPTS }}"
+          echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
+          print_log
+          if [ $exit_code -ne 0 ]; then
+            echo "Error running dotCMS CLI"
+            exit 1
+          fi
         shell: bash

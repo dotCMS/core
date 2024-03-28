@@ -1,8 +1,8 @@
 package com.dotcms.api;
 
 import com.dotcms.DotCMSITProfile;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.ByPathRequest;
@@ -11,6 +11,7 @@ import com.dotcms.model.config.ServiceBean;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import java.net.URL;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
@@ -44,6 +45,7 @@ class AssetAPIT {
         serviceManager.removeAll().persist(
                 ServiceBean.builder().
                         name("default").
+                        url(new URL("http://localhost:8080")).
                         active(true).
                         build()
         );

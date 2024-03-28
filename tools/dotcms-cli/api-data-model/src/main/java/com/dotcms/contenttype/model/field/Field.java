@@ -2,6 +2,8 @@
 package com.dotcms.contenttype.model.field;
 
 import com.dotcms.api.provider.ClientObjectMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -55,7 +57,10 @@ import org.immutables.value.Value.Default;
         @Type(value = WysiwygField.class),
         @Type(value = RowField.class),
         @Type(value = ColumnField.class),
+        @Type(value = JSONField.class),
 })
+@JsonInclude(Include.NON_DEFAULT)
+@Value.Style(passAnnotations = {JsonInclude.class})
 public abstract class Field {
 
     @Value.Default
@@ -175,7 +180,7 @@ public abstract class Field {
         return Collections.emptyList();
     }
 
-    static class ClassNameAliasResolver extends ClassNameIdResolver {
+    public static class ClassNameAliasResolver extends ClassNameIdResolver {
 
         static final String IMMUTABLE = "Immutable";
 

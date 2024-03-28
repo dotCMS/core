@@ -60,6 +60,7 @@ const octokit = new octokit_1.Octokit({
     },
     auth: githubToken
 });
+const perPage = 30;
 const fetchIssues = () => __awaiter(void 0, void 0, void 0, function* () {
     if (!fetchOperation) {
         core.warning('No fetch operation provided, aborting');
@@ -73,28 +74,46 @@ const fetchIssues = () => __awaiter(void 0, void 0, void 0, function* () {
     let issues;
     switch (fetchOperation) {
         case 'WITH_LABELS':
-            issues = yield getIssuesWithLabels(fetchValue);
+            issues = yield groupIssues(fetchValue, getIssuesWithLabels);
             break;
         default:
             core.warning(`Unknown fetch operation: ${fetchOperation}`);
             return [];
     }
-    if (issues.status !== 200) {
-        core.warning(`Failed to fetch issues: ${issues.status}`);
-        return [];
-    }
-    core.info(`Found ${issues.data.length} issues`);
-    return issues.data.map((issue) => issue.number);
+    core.info(`Found ${issues.length} issues`);
+    return issues.map((issue) => issue.number);
 });
 exports.fetchIssues = fetchIssues;
-const getIssuesWithLabels = (labels) => __awaiter(void 0, void 0, void 0, function* () {
-    const issues = yield octokit.request('GET /repos/{owner}/{repo}/issues?labels={labels}', {
+const getIssuesWithLabels = (labels, page) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`Sending request as: 'GET /repos/${owner}/${repo}/issues?labels=${labels}&per_page=${perPage}&page=${page}'`);
+    const issues = yield octokit.request('GET /repos/{owner}/{repo}/issues?labels={labels}&per_page={perPage}&page={page}', {
         owner,
         repo,
         headers,
-        labels
+        labels,
+        perPage,
+        page
     });
     return issues;
+});
+const groupIssues = (value, fetchFn) => __awaiter(void 0, void 0, void 0, function* () {
+    const allIssues = [];
+    let issues;
+    let page = 1;
+    do {
+        issues = yield fetchFn(value, page++);
+        if (issues.status !== 200) {
+            core.warning(`Failed to fetch issues: ${issues.status}`);
+            break;
+        }
+        const data = issues.data;
+        core.info(`Fetched ${data.length} issues`);
+        if (data.length > 0) {
+            core.info(`Fetched ${data.map((issue) => issue.number)} issues`);
+            allIssues.push(...data);
+        }
+    } while (issues.data.length === perPage);
+    return allIssues;
 });
 
 

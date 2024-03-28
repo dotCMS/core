@@ -1,18 +1,23 @@
 package com.dotcms.api;
 
 import com.dotcms.DotCMSITProfile;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
+import com.dotcms.common.SiteTestHelperService;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
-import com.dotcms.model.site.*;
+import com.dotcms.model.site.CopySiteRequest;
+import com.dotcms.model.site.CreateUpdateSiteRequest;
+import com.dotcms.model.site.GetSiteByNameRequest;
+import com.dotcms.model.site.Site;
+import com.dotcms.model.site.SiteView;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,9 +40,12 @@ class SiteAPIIT {
     @Inject
     ServiceManager serviceManager;
 
+    @Inject
+    SiteTestHelperService siteTestHelper;
+
     @BeforeEach
     public void setupTest() throws IOException {
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
 
         final String user = "admin@dotcms.com";
         final char[] passwd = "admin".toCharArray();
@@ -129,14 +137,12 @@ class SiteAPIIT {
 
         ResponseEntityView<SiteView> archiveSite = clientFactory.getClient(SiteAPI.class).archive(identifier);
         Assertions.assertNotNull(archiveSite.entity());
-        ResponseEntityView<SiteView> byName = clientFactory.getClient(SiteAPI.class).findByName(GetSiteByNameRequest.builder().siteName(newSiteName).build());
-        Assertions.assertTrue(byName.entity().isArchived());
+        Assertions.assertTrue(siteTestHelper.checkValidSiteStatus(newSiteName, false, true));
+
         ResponseEntityView<SiteView> unarchiveSite = clientFactory.getClient(SiteAPI.class).unarchive(identifier);
-        Assertions.assertFalse(unarchiveSite.entity().isArchived());
-
-        byName = clientFactory.getClient(SiteAPI.class).findByName(GetSiteByNameRequest.builder().siteName(newSiteName).build());
-        Assertions.assertFalse(byName.entity().isArchived());
-
+        Assertions.assertNotNull(unarchiveSite.entity());
+        Assertions.assertTrue(
+                siteTestHelper.checkValidSiteStatus(newSiteName, false, false));
     }
 
     @Test
@@ -153,11 +159,13 @@ class SiteAPIIT {
         Assert.assertFalse(createSiteResponse.entity().isLive());
 
         ResponseEntityView<SiteView> publishedSite = clientFactory.getClient(SiteAPI.class).publish(identifier);
-        Assertions.assertTrue(publishedSite.entity().isLive());
+        Assertions.assertNotNull(publishedSite.entity());
+        Assertions.assertTrue(siteTestHelper.checkValidSiteStatus(newSiteName, true, false));
 
         ResponseEntityView<SiteView> unPublishedSite = clientFactory.getClient(SiteAPI.class).unpublish(identifier);
-        Assertions.assertFalse(unPublishedSite.entity().isLive());
-
+        Assertions.assertNotNull(unPublishedSite.entity());
+        Assertions.assertTrue(
+                siteTestHelper.checkValidSiteStatus(newSiteName, false, false));
     }
 
     @Test
@@ -184,6 +192,5 @@ class SiteAPIIT {
         Assertions.assertNotNull(copy.entity());
 
     }
-
 
 }

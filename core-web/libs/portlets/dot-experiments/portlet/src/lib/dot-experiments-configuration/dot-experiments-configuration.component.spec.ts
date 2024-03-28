@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';
@@ -17,14 +17,19 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Menu } from 'primeng/menu';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { getExperimentMock, PARENT_RESOLVERS_ACTIVE_ROUTE_DATA } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
+import { DotAddToBundleComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    getExperimentMock,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
+} from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -37,7 +42,7 @@ import {
     DotExperimentsConfigurationStore
 } from './store/dot-experiments-configuration-store';
 
-import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
+import { DotExperimentsExperimentSummaryComponent } from '../dot-experiments-reports/components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 
@@ -94,7 +99,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationComponent,
         componentProviders: [DotExperimentsConfigurationStore],
-        imports: [MockModule(DotAddToBundleModule), DotMessagePipe],
+        imports: [MockComponent(DotAddToBundleComponent), DotMessagePipe],
 
         providers: [
             ConfirmationService,

@@ -7,11 +7,9 @@ import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 
-import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 
@@ -39,7 +37,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
                 DotAvatarDirective,
                 BadgeModule,
                 AvatarModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 ButtonModule
             ],

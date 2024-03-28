@@ -1,20 +1,17 @@
 <div class="message__wrapper flex gap-4 flex-column w-30rem">
     <div
         class="message__principal-wrapper flex align-items-center flex-column gap-2"
-        data-Testid="message-principal"
-    >
+        data-Testid="message-principal">
         <i
             class="message__icon pi"
             *ngIf="configuration?.icon"
             [ngClass]="[configuration.icon]"
-            data-Testid="message-icon"
-        ></i>
+            data-Testid="message-icon"></i>
         <h1 class="message__title" data-Testid="message-title">{{ configuration?.title }}</h1>
         <h2
             class="message__subtitle"
             *ngIf="configuration?.subtitle"
-            data-Testid="message-subtitle"
-        >
+            data-Testid="message-subtitle">
             {{ configuration?.subtitle }}
         </h2>
     </div>
@@ -22,14 +19,14 @@
     <ng-container *ngIf="!hideContactUsLink || buttonLabel">
         <div
             class="message__extra-wrapper flex align-items-center flex-column gap-2"
-            data-Testid="message-extra"
-        >
-            <p-button
+            data-Testid="message-extra">
+            <button
                 *ngIf="buttonLabel"
                 [label]="buttonLabel"
-                (onClick)="buttonAction.emit()"
-                data-Testid="message-button"
-            ></p-button>
+                [class.p-button-outlined]="secondaryButton"
+                (click)="buttonAction.emit()"
+                pButton
+                data-Testid="message-button"></button>
             <ng-container *ngIf="!hideContactUsLink">
                 <span *ngIf="!hideContactUsLink && buttonLabel">{{
                     'dot.common.or.text' | dm

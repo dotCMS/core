@@ -1,0 +1,108 @@
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { of } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+
+import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
+import {
+    DotTempFileThumbnailComponent,
+    DotDropZoneComponent,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSpinnerModule
+} from '@dotcms/ui';
+
+import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
+import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
+import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
+import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field.component';
+import { DotBinaryFieldStore } from './store/binary-field.store';
+import { CONTENTLET, CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, TEMP_FILES_MOCK } from './utils/mock';
+
+export default {
+    title: 'Library / Edit Content / Binary Field',
+    component: DotEditContentBinaryFieldComponent,
+    decorators: [
+        moduleMetadata({
+            imports: [
+                HttpClientModule,
+                BrowserAnimationsModule,
+                CommonModule,
+                ButtonModule,
+                DialogModule,
+                MonacoEditorModule,
+                DotDropZoneComponent,
+                DotBinaryFieldUiMessageComponent,
+                DotMessagePipe,
+                DotSpinnerModule,
+                InputTextModule,
+                DotBinaryFieldUrlModeComponent,
+                DotBinaryFieldPreviewComponent,
+                DotFieldValidationMessageComponent,
+                DotTempFileThumbnailComponent
+            ],
+            providers: [
+                DotBinaryFieldStore,
+                {
+                    provide: DotLicenseService,
+                    useValue: {
+                        isEnterprise: () => of(true)
+                    }
+                },
+                {
+                    provide: DotUploadService,
+                    useValue: {
+                        uploadFile: () => {
+                            return new Promise((resolve, _reject) => {
+                                setTimeout(() => {
+                                    const index = Math.floor(Math.random() * 3);
+                                    const TEMP_FILE = TEMP_FILES_MOCK[index];
+                                    resolve(TEMP_FILE); // TEMP_FILES_MOCK is imported from utils/mock.ts
+                                }, 2000);
+                            });
+                        }
+                    }
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
+                }
+            ]
+        })
+    ],
+    args: {
+        contentlet: CONTENTLET,
+        field: FIELD
+    },
+    argTypes: {
+        contentlet: {
+            defaultValue: CONTENTLET,
+            control: 'object',
+            description: 'Contentlet Object'
+        },
+        field: {
+            defaultValue: FIELD,
+            control: 'Object',
+            description: 'Content Type Field Object'
+        }
+    }
+} as Meta<DotEditContentBinaryFieldComponent>;
+
+const Template: Story<DotEditContentBinaryFieldComponent> = (
+    args: DotEditContentBinaryFieldComponent
+) => ({
+    props: args,
+    template: `<dot-edit-content-binary-field
+        [contentlet]="contentlet"
+        [field]="field"
+    ></dot-edit-content-binary-field>`
+});
+
+export const Primary = Template.bind({});

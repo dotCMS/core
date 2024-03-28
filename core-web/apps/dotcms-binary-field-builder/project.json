@@ -1,0 +1,108 @@
+{
+    "name": "dotcms-binary-field-builder",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "projectType": "application",
+    "sourceRoot": "apps/dotcms-binary-field-builder/src",
+    "prefix": "dotcms",
+    "targets": {
+        "build": {
+            "executor": "@nx/angular:browser-esbuild",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/apps/dotcms-binary-field-builder",
+                "index": "apps/dotcms-binary-field-builder/src/index.html",
+                "main": "apps/dotcms-binary-field-builder/src/main.ts",
+                "polyfills": ["zone.js"],
+                "tsConfig": "apps/dotcms-binary-field-builder/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                    "apps/dotcms-binary-field-builder/src/favicon.ico",
+                    "apps/dotcms-binary-field-builder/src/assets"
+                ],
+                "styles": [
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "libs/dotcms-scss/angular/dotcms-theme/_misc.scss",
+                    "libs/dotcms-scss/angular/dotcms-theme/components/buttons/common.scss",
+                    "libs/dotcms-scss/angular/dotcms-theme/components/buttons/_button.scss",
+                    "libs/dotcms-scss/angular/dotcms-theme/components/_dialog.scss",
+                    "libs/dotcms-scss/angular/dotcms-theme/components/form/_inputtext.scss",
+                    "libs/dotcms-scss/angular/dotcms-theme/utils/_validation.scss",
+                    "libs/dotcms-scss/angular/_prime-icons.scss"
+                ],
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dotcms-scss/angular"]
+                },
+                "scripts": [
+                    {
+                        "bundleName": "generator-runtime",
+                        "input": "node_modules/regenerator-runtime/runtime.js"
+                    }
+                ]
+            },
+            "configurations": {
+                "production": {
+                    "budgets": [
+                        {
+                            "type": "initial",
+                            "maximumWarning": "500kb",
+                            "maximumError": "2mb"
+                        },
+                        {
+                            "type": "anyComponentStyle",
+                            "maximumWarning": "400kb",
+                            "maximumError": "400kb"
+                        }
+                    ],
+                    "outputHashing": "none"
+                },
+                "development": {
+                    "buildOptimizer": false,
+                    "optimization": false,
+                    "vendorChunk": true,
+                    "extractLicenses": false,
+                    "sourceMap": true,
+                    "namedChunks": true,
+                    "watch": true
+                },
+                "tomcat": {
+                    "outputPath": "../../tomcat9/webapps/ROOT/dotcms-binary-field-builder",
+                    "sourceMap": true,
+                    "optimization": false,
+                    "watch": true
+                }
+            },
+            "defaultConfiguration": "production"
+        },
+        "serve": {
+            "executor": "@angular-devkit/build-angular:dev-server",
+            "configurations": {
+                "production": {
+                    "buildTarget": "dotcms-binary-field-builder:build:production"
+                },
+                "development": {
+                    "buildTarget": "dotcms-binary-field-builder:build:development"
+                }
+            },
+            "defaultConfiguration": "production"
+        },
+        "extract-i18n": {
+            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "options": {
+                "buildTarget": "dotcms-binary-field-builder:build"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "apps/dotcms-binary-field-builder/jest.config.ts"
+            }
+        }
+    },
+    "tags": []
+}

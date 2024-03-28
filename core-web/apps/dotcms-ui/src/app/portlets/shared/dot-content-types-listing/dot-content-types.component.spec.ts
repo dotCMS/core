@@ -16,17 +16,16 @@ import { ConfirmationService, SelectItem } from 'primeng/api';
 
 import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
 import {
-    DotHttpErrorHandled,
-    DotHttpErrorManagerService
-} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
+    DotFormatDateService,
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -37,11 +36,11 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
-    MockDotMessageService
+    MockDotMessageService,
+    MockPushPublishService
 } from '@dotcms/utils-testing';
 import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
 
@@ -84,22 +83,6 @@ class MockDotBaseTypeSelectorComponent {
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
         return observableOf(true);
-    }
-}
-
-@Injectable()
-export class MockPushPublishService {
-    getEnvironments() {
-        return observableOf([
-            {
-                id: '123',
-                name: 'Environment 1'
-            },
-            {
-                id: '456',
-                name: 'Environment 2'
-            }
-        ]);
     }
 }
 
@@ -187,7 +170,10 @@ describe('DotContentTypesPortletComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PushPublishService, useClass: MockPushPublishService },
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
-                { provide: DotHttpErrorManagerService, useClass: MockDotHttpErrorManagerService },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
+                },
                 { provide: DotContentTypeStore, useClass: MockDotContentTypeStore }
             ]
         }).compileComponents();

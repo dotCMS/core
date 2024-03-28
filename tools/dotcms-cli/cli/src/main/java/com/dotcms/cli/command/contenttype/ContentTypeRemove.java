@@ -8,7 +8,7 @@ import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.ResponseEntityView;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import org.apache.commons.lang3.BooleanUtils;
+import javax.inject.Inject;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -37,6 +37,9 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @Inject
+    Prompt prompt;
+
     /**
      *
      * @return
@@ -61,7 +64,7 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
 
     private boolean isDeleteConfirmed() {
        if(interactiveOption.isInteractive()) {
-           return Prompt.yesOrNo(false, "Are you sure you want to continue ");
+           return prompt.yesOrNo(false, "Are you sure you want to continue ");
        }
        return true;
     }

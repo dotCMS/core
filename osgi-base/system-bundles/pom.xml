@@ -33,7 +33,7 @@
         </repository>
         <repository>
             <snapshots>
-                <enabled>false</enabled>
+                <enabled>true</enabled>
                 <updatePolicy>never</updatePolicy>
             </snapshots>
             <releases>
@@ -55,7 +55,7 @@
         <dependency>
             <groupId>com.dotcms.samlbundle</groupId>
             <artifactId>com.dotcms.samlbundle</artifactId>
-            <version>23.01.01</version>
+            <version>24.02.29</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -70,6 +70,19 @@
             <artifactId>org.osgi.compendium</artifactId>
             <version>5.0.0</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms.core.plugins</groupId>
+            <artifactId>com.dotcms.telemetry</artifactId>
+            <version>1.0.0-20240315.145000-1</version>
+            <scope>provided</scope>
+
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

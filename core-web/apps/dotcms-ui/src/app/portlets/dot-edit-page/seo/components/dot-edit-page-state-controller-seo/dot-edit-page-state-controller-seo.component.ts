@@ -26,6 +26,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import {
     DotAlertConfirmService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPropertiesService
 } from '@dotcms/data-access';
@@ -38,13 +39,10 @@ import {
     DotVariantData,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { DotTabButtonsComponent, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
+import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotMessagePipe, DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
 
 import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info-seo/dot-edit-page-lock-info-seo.component';
-
-import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 
 enum DotConfirmationType {
     LOCK,
@@ -62,7 +60,7 @@ enum DotConfirmationType {
         FormsModule,
         InputSwitchModule,
         SelectButtonModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe,
         TooltipModule,
         ButtonModule,
@@ -73,7 +71,8 @@ enum DotConfirmationType {
     ]
 })
 export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges {
-    @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoSeoComponent;
+    @ViewChild('pageLockInfo', { static: true })
+    pageLockInfo: DotEditPageLockInfoSeoComponent;
     @ViewChild('deviceSelector') deviceSelector: DotDeviceSelectorSeoComponent;
     @ViewChild('menu') menu: Menu;
 
@@ -87,7 +86,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     featureFlagEditURLContentMapIsOn = false;
     mode: DotPageMode;
     options: SelectItem[] = [];
-    menuItems: MenuItem[];
+    menuItems: MenuItem[] = [];
 
     readonly dotPageMode = DotPageMode;
 
@@ -128,6 +127,12 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
             this.lock = this.isLocked(pageState);
             this.lockWarn = this.shouldWarnLock(pageState);
             this.mode = pageState.state.mode;
+
+            if (this.featureFlagEditURLContentMapIsOn && pageState.params.urlContentMap) {
+                this.menuItems = this.getMenuItems();
+            } else if (this.menuItems.length) {
+                this.menuItems = []; // We have to clean the menu items because the menu is not re-rendered when the flag is off or the urlContentMap is null
+            }
         }
     }
 
@@ -153,9 +158,13 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      */
     lockPageHandler(): void {
         if (this.shouldAskToLock()) {
-            this.showLockConfirmDialog().then(() => {
-                this.setLockerState();
-            });
+            this.showLockConfirmDialog()
+                .then(() => {
+                    this.setLockerState();
+                })
+                .catch(() => {
+                    this.lock = this.pageState.state.locked;
+                });
         } else {
             this.setLockerState();
         }
@@ -292,10 +301,6 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
         ];
     }
 
-    private canTakeLock(pageState: DotPageRenderState): boolean {
-        return pageState.page.canLock && pageState.state.lockedByAnotherUser;
-    }
-
     private getModeOption(mode: string, pageState: DotPageRenderState): SelectItem {
         const disabled = {
             edit: !pageState.page.canEdit || !pageState.page.canLock,
@@ -309,7 +314,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
             label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
             value: {
                 id: enumMode,
-                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState)
+                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState),
+                shouldRefresh: enumMode === DotPageMode.PREVIEW
             },
             disabled: disabled[mode]
         };
@@ -352,7 +358,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     }
 
     private isLocked(pageState: DotPageRenderState): boolean {
-        return pageState.state.locked && !this.canTakeLock(pageState);
+        return pageState.state.locked;
     }
 
     private isPersonalized(): boolean {

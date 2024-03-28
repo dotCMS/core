@@ -1,7 +1,131 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+#!/bin/bash
+# This script is used as a pre-commit hook for a Git repository.
+# It performs operations such as formatting and linting on staged files.
 
-cd core-web
-npx pretty-quick --staged
-npm run nx affected -- --target=lint --exclude=dot-rules,dot-layout-grid,dot-primeng-theme-styles,dot-rules,dotcms,dotcms-field-elements,dotcms-js,dotcms-models,dotcms-webcomponents,dotcdn-e2e,dotcms-block-editor,dotcms-block-editor-e2e,dotcms-ui-e2e,utils-testing,dojo-theme --fix=true
-cd ..
+. "$(dirname "$0")/_/husky.sh"  # Source the husky.sh script
+
+error_occurred=false
+
+# Perform fix operations on the staged files
+perform_fixes() {
+    local -a files=($1)         # Convert string to array
+    local add_to_index=$2       # Should be 'true' or 'false'
+    local file                  # Declare file variable for use in loop
+
+    if ! npx nx format:write; then
+        error_occurred=true
+    fi
+
+    if ! npx nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
+            error_occurred=true
+    fi
+
+
+
+   if [ "$add_to_index" = "true" ]; then
+       # Get a list of modified files in the working tree (excluding untracked/new files)
+       local modified_files=$(git diff --name-only)
+
+       # Loop through the list of files that were originally considered
+       for file in "${files[@]}"; do
+           if echo "$modified_files" | grep -Fxq "$file"; then
+               if ! git add -- "${root_dir}/${file}"; then
+                   error_occurred=true  # Record that an error occurred
+               fi
+           fi
+       done
+   fi
+}
+
+
+# Backup current working directory
+original_pwd=${PWD}
+
+# Ensure we're in the correct directory
+root_dir="$(git rev-parse --show-toplevel)"  # Get the root directory of the Git repository
+
+# Define core-web directory relative to the Git root
+core_web_dir="${root_dir}/core-web"
+
+# Moving to the core-web directory
+cd "${core_web_dir}" || exit  # Exit if the directory does not exist
+
+# Find untracked files in core-web
+staged_files=$(git diff --cached --name-only)  # Get a list of staged files
+modified_files=$(git diff --name-only)  # Get a list of modified but unstaged files
+
+# Find common files which are both staged and modified but not staged
+untracked_files=$(printf "%s\n%s" "$staged_files" "$modified_files" | sort | uniq -d)
+
+
+
+# Only create a temporary directory if there are untracked files
+if [ -n "${untracked_files}" ]; then
+    temp_dir=$(mktemp -d)
+    if [ ! -d "${temp_dir}" ]; then
+        echo "Failed to create temporary directory."
+        exit 1
+    fi
+fi
+
+current_subdir=$(basename "$(pwd)")  # Get the current subdirectory
+
+# Convert paths if necessary (adjust this logic based on your exact directory structure)
+for file in ${untracked_files}; do
+    relative_path="${file#${current_subdir}/}"  # Construct the path relative to the current directory
+
+    if echo "${staged_files}" | grep -q "^${file}$"; then
+        mkdir -p "${temp_dir}/$(dirname "${file}")"  # Ensure the directory structure exists in the temp directory
+        cp "${root_dir}/${file}" "${temp_dir}/${file}"  # Copy the file to the temp directory, preserving the directory structure
+        echo "Backing up ${file} to ${temp_dir}/${file}"
+        # Restore the original file state in the repo, removing unstaged changes
+        git checkout -- "${relative_path}"  # Using relative path relative to current directory
+    fi
+done
+
+echo "Backed up workspace to ${temp_dir}"
+git status
+
+
+# Perform operations on staged files and capture the error count
+if [ -n "${staged_files}" ]; then
+    perform_fixes "${staged_files}" true
+    errors=$?  # Capture the return value from perform_fixes
+fi
+
+# Check if the temporary directory is not empty
+if [ -n "${untracked_files}" ] && [ "$(ls -A "${temp_dir}")" ]; then
+    echo "Restoring untracked files..."
+    # Copy each file back from the temporary directory while maintaining the directory structure
+    find "${temp_dir}" -type f -exec sh -c '
+        for file; do
+            temp_dir='"${temp_dir}"'
+            root_dir='"${root_dir}"'
+            rel_path="${file#${temp_dir}/}"  # Extract the relative path by removing the temp directory prefix
+            dest_dir="$(dirname "${rel_path}")"  # Determine the destination directory based on the relative path
+            full_dest_path="${root_dir}/${rel_path}"  # Construct the full destination path
+            mkdir -p "${root_dir}/${dest_dir}"  # Ensure the destination directory exists
+            cp "${file}" "${full_dest_path}"  # Copy the file to the destination directory
+        done
+    ' sh {} +
+
+    # After restoring, perform actions like formatting on the originally staged files
+    if [ -n "${staged_files}" ]; then
+      perform_fixes "${untracked_files}" false
+    fi
+fi
+
+# After restoring files and before exiting, check if there were any errors
+if [ -n "${untracked_files}" ]; then
+    rm -r "${temp_dir}"
+fi
+
+# Restore original working directory
+cd "${original_pwd}" || exit  # Exit if the directory does not exist
+
+# Final check before exiting
+if [ "$error_occurred" = true ]; then
+    exit 1  # Change the exit code to reflect that an error occurred
+else
+    exit 0  # No errors, exit normally
+fi

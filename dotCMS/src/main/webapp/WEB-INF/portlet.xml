@@ -70,6 +70,12 @@
     <portlet>
         <portlet-name>containers</portlet-name>
         <display-name>Container Manager</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+
+    </portlet>
+    <portlet>
+        <portlet-name>containers-legacy</portlet-name>
+        <display-name>Container Manager (Legacy)</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
         <init-param>
             <name>view-action</name>
@@ -481,5 +487,10 @@
         <display-name>Velocity Playground</display-name>
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
-    
+
+    <portlet>
+        <portlet-name>dotai</portlet-name>
+        <display-name>dotAI</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
 </portlet-app>

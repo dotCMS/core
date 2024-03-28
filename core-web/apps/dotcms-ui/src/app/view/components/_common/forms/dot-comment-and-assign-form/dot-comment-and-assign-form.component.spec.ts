@@ -11,11 +11,10 @@ import { By } from '@angular/platform-browser';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotRolesService } from '@dotcms/data-access';
+import { DotRolesService, DotFormatDateService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
 
@@ -46,7 +45,7 @@ describe('DotAssigneeFormComponent', () => {
             ],
             imports: [
                 HttpClientTestingModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
