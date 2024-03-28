@@ -77,7 +77,10 @@ use {
     }
 }
 
-.edit-ema-nav-bar__item:hover:not(.edit-ema-nav-bar__item--active) {
+.edit-ema-nav-bar__item:hover:not(
+        .edit-ema-nav-bar__item--active,
+        .edit-ema-nav-bar__item--disabled
+    ) {
     position: relative;
 
     &::before {
