@@ -11,6 +11,7 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotContainerMap,
+    DotDevice,
     DotExperimentStatus,
     DotLayout,
     DotPageContainerStructure
@@ -431,6 +432,28 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 ...editorData
             },
             editorState: EDITOR_STATE.IDLE
+        };
+    });
+
+    readonly setDevice = this.updater((state, device: DotDevice) => {
+        return {
+            ...state,
+            editorData: {
+                ...state.editorData,
+                mode: EDITOR_MODE.DEVICE,
+                device
+            }
+        };
+    });
+
+    readonly setSocialMedia = this.updater((state, socialMedia: string) => {
+        return {
+            ...state,
+            editorData: {
+                ...state.editorData,
+                mode: EDITOR_MODE.SOCIAL_MEDIA,
+                socialMedia
+            }
         };
     });
 

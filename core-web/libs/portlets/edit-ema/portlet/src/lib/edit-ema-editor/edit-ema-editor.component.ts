@@ -422,10 +422,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     updateCurrentDevice(device: DotDevice & { icon?: string }) {
-        this.store.updateEditorData({
-            mode: EDITOR_MODE.DEVICE,
-            device
-        });
+        this.store.setDevice(device);
     }
 
     goToEditMode() {
@@ -830,10 +827,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     onSeoMediaChange(seoMedia: string) {
-        this.store.updateEditorData({
-            mode: EDITOR_MODE.SOCIAL_MEDIA,
-            socialMedia: seoMedia
-        });
+        this.store.setSocialMedia(seoMedia);
     }
 
     /**
