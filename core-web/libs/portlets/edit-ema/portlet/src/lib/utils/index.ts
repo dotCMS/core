@@ -222,6 +222,6 @@ export function createPageApiUrlWithQueryParams(
  * @param {string} [variant]
  * @return {*}  {boolean}
  */
-export function isDefaultVariant(variant?: string): boolean {
+export function getIsDefaultVariant(variant?: string): boolean {
     return !variant || variant === DEFAULT_VARIANT_ID;
 }

@@ -35,7 +35,7 @@ import {
     sanitizeURL,
     getPersonalization,
     createPageApiUrlWithQueryParams,
-    isDefaultVariant
+    getIsDefaultVariant
 } from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
@@ -205,20 +205,27 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 .pipe(
                                     tap({
                                         next: (experiment) => {
+                                            const isDefaultVariant = getIsDefaultVariant(
+                                                params.variantName
+                                            );
+                                            const canEditVariant =
+                                                isDefaultVariant || !experiment[0]; // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+
+                                            const mode = this.getInitialEditorMode(
+                                                isDefaultVariant,
+                                                canEditVariant
+                                            );
+
                                             return this.setState({
                                                 clientHost: params.clientHost,
                                                 editor: pageData,
                                                 isEnterpriseLicense: licenseData,
                                                 editorState: EDITOR_STATE.IDLE,
                                                 editorData: {
-                                                    mode: isDefaultVariant(params.variantName)
-                                                        ? EDITOR_MODE.EDIT
-                                                        : EDITOR_MODE.VARIANT,
+                                                    mode,
                                                     variantInfo: {
-                                                        pageId: pageData.page.identifier,
-                                                        canEditVariant:
-                                                            isDefaultVariant(params.variantName) ||
-                                                            !experiment[0] // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+                                                        canEditVariant,
+                                                        pageId: pageData.page.identifier
                                                     },
                                                     canEditPage: pageData.page.canEdit
                                                 },
@@ -417,23 +424,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * @memberof EditEmaStore
      */
     readonly updateEditorData = this.updater((state, editorData: EditorData) => {
-        // If we are editing a variant, we need to change the editor mode to variant
-        const newEditordata =
-            editorData.mode === EDITOR_MODE.EDIT && !isDefaultVariant(state.variantName)
-                ? {
-                      ...state.editorData,
-                      mode: EDITOR_MODE.VARIANT,
-                      device: undefined,
-                      socialMedia: undefined
-                  }
-                : {
-                      ...state.editorData,
-                      ...editorData
-                  };
-
         return {
             ...state,
-            editorData: newEditordata,
+            editorData: {
+                ...state.editorData,
+                ...editorData
+            },
             editorState: EDITOR_STATE.IDLE
         };
     });
@@ -567,4 +563,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             []
         );
     };
+
+    private getInitialEditorMode(isDefaultVariant: boolean, canEditVariant: boolean): EDITOR_MODE {
+        if (isDefaultVariant) {
+            return EDITOR_MODE.EDIT;
+        } else if (canEditVariant) {
+            return EDITOR_MODE.EDIT_VARIANT;
+        }
+
+        return EDITOR_MODE.PREVIEW_VARIANT;
+    }
 }

@@ -19,6 +19,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
 import { EDITOR_MODE } from '../../../shared/enums';
 import { EditorData } from '../../../shared/models';
+import { getIsDefaultVariant } from '../../../utils';
 
 interface InfoOptions {
     icon: string;
@@ -67,12 +68,10 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                 action: () => this.goToEdit()
             });
         } else if (
-            this.editorData.mode === this.editorMode.VARIANT &&
-            this.editorData.canEditPage
+            this.editorData.canEditPage &&
+            (this.editorData.mode === this.editorMode.EDIT_VARIANT ||
+                this.editorData.mode === this.editorMode.PREVIEW_VARIANT)
         ) {
-            const info = this.editorData.variantInfo.canEditVariant
-                ? 'editpage.editing.variant'
-                : 'editpage.viewing.variant';
             const experimentId = this.activatedRoute.snapshot.queryParams['experimentId'];
             const variantId = this.activatedRoute.snapshot.queryParams['variantName'];
 
@@ -87,7 +86,10 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
 
                     this.options.set({
                         info: {
-                            message: info,
+                            message:
+                                this.editorData.mode === this.editorMode.EDIT_VARIANT
+                                    ? 'editpage.editing.variant'
+                                    : 'editpage.viewing.variant',
                             args: [name]
                         },
                         icon: 'pi pi-file-edit',
@@ -96,7 +98,7 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                                 [
                                     '/edit-page/experiments/',
                                     this.editorData.variantInfo.pageId,
-                                    this.activatedRoute.snapshot.queryParams['experimentId'],
+                                    experimentId,
                                     'configuration'
                                 ],
                                 {
@@ -114,8 +116,18 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
     }
 
     protected goToEdit() {
-        this.store.updateEditorData({
-            mode: this.editorMode.EDIT
-        });
+        const isNotDefaultVariant = !getIsDefaultVariant(
+            this.activatedRoute.snapshot.queryParams['variantName']
+        );
+
+        if (isNotDefaultVariant) {
+            this.store.updateEditorData({
+                mode: this.editorData.variantInfo.canEditVariant
+                    ? this.editorMode.EDIT_VARIANT
+                    : this.editorMode.PREVIEW_VARIANT
+            });
+        } else {
+            this.store.updateEditorData({ mode: this.editorMode.EDIT });
+        }
     }
 }

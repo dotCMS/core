@@ -16,8 +16,8 @@
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
 
-            @if(es.editorData.mode === editorMode.EDIT || es.editorData.mode === editorMode.VARIANT)
-            {
+            @if(es.editorData.mode === editorMode.EDIT || es.editorData.mode ===
+            editorMode.EDIT_VARIANT) {
             <p-button
                 *ngIf="es.editor.urlContentMap as urlContentMap"
                 [label]="'editpage.toolbar.edit.url.map.content' | dm : [urlContentMap.contentType]"
@@ -63,7 +63,10 @@
                 (despersonalize)="onDespersonalize($event)"
                 data-testId="persona-selector" />
             <dot-edit-ema-workflow-actions
-                *ngIf="es.editorData.mode !== editorMode.VARIANT"
+                *ngIf="
+                    es.editorData.mode === editorMode.EDIT ||
+                    es.editorData.mode === editorMode.DEVICE
+                "
                 [inode]="es.editor.page.inode"
                 (newPage)="handleNewPage($event)" />
         </ng-container>
@@ -71,8 +74,8 @@
             <dot-ema-info-display
                 *ngIf="
                     !es.editorData.canEditPage ||
-                    es.editorData.mode === editorMode.DEVICE ||
-                    es.editorData.mode === editorMode.VARIANT
+                    (es.editorData.mode !== editorMode.EDIT &&
+                        es.editorData.mode !== editorMode.SOCIAL_MEDIA)
                 "
                 [editorData]="es.editorData"
                 data-testId="device-display" />
@@ -165,7 +168,8 @@
         *ngIf="
             es.editorData.variantInfo.canEditVariant &&
             es.isEnterpriseLicense &&
-            (es.editorData.mode === editorMode.EDIT || es.editorData.mode === editorMode.VARIANT) &&
+            (es.editorData.mode === editorMode.EDIT ||
+                es.editorData.mode === editorMode.EDIT_VARIANT) &&
             es.editor.page.canEdit
         "
         [languageId]="es.editor.viewAs.language.id"
