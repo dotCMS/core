@@ -425,12 +425,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.setDevice(device);
     }
 
-    goToEditMode() {
-        this.store.updateEditorData({
-            mode: EDITOR_MODE.EDIT
-        });
-    }
-
     /**
      * Handle the copy URL action
      *
