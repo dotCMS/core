@@ -7,7 +7,7 @@
 
 <div class="info-container">
     <i *ngIf="!!op.icon" [class]="op.icon + ' info-container__icon'" data-testId="info-icon"></i>
-    <span [innerHTML]="op.info | dm" data-testId="info-text"> </span>
+    <span [innerHTML]="op.info.message | dm : op.info.args" data-testId="info-text"> </span>
 </div>
 
 }
