@@ -6,6 +6,7 @@ import {
     EventEmitter,
     HostBinding,
     Input,
+    OnInit,
     Output,
     ViewChild,
     inject
@@ -17,12 +18,11 @@ import { MenuModule } from 'primeng/menu';
 
 import { DotMessageService } from '@dotcms/data-access';
 
-import { ActionPayload } from '../../../shared/models';
+import { ActionPayload, VTLFile } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 const BUTTON_WIDTH = 40;
 const BUTTON_HEIGHT = 40;
-const ACTIONS_CONTAINER_WIDTH = 128;
 const ACTIONS_CONTAINER_HEIGHT = 40;
 
 @Component({
@@ -33,7 +33,7 @@ const ACTIONS_CONTAINER_HEIGHT = 40;
     styleUrls: ['./ema-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EmaContentletToolsComponent {
+export class EmaContentletToolsComponent implements OnInit {
     @ViewChild('dragImage') dragImage: ElementRef;
     private dotMessageService = inject(DotMessageService);
 
@@ -45,6 +45,7 @@ export class EmaContentletToolsComponent {
     @Output() addForm = new EventEmitter<ActionPayload>();
     @Output() addWidget = new EventEmitter<ActionPayload>();
     @Output() edit = new EventEmitter<ActionPayload>();
+    @Output() editVTL = new EventEmitter<VTLFile>();
     @Output() delete = new EventEmitter<ActionPayload>();
 
     @Output() moveStart = new EventEmitter<ActionPayload>();
@@ -79,6 +80,29 @@ export class EmaContentletToolsComponent {
             }
         }
     ];
+
+    vtlFiles: MenuItem[] = [];
+
+    ACTIONS_CONTAINER_WIDTH: number; // Now is dynamic based on the page type (Headless - VTL)
+
+    ngOnInit() {
+        this.setVtlFiles();
+        this.ACTIONS_CONTAINER_WIDTH = this.contentlet.payload.vtlFiles ? 178 : 128;
+    }
+
+    /**
+     * Sets the VTL files for the component.
+     *
+     * @memberof EmaContentletToolsComponent
+     */
+    setVtlFiles() {
+        this.vtlFiles = this.contentlet.payload.vtlFiles?.map((file) => ({
+            label: file.name,
+            command: () => {
+                this.editVTL.emit(file);
+            }
+        }));
+    }
 
     dragStart(event: DragEvent, payload: ActionPayload): void {
         event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
@@ -161,7 +185,7 @@ export class EmaContentletToolsComponent {
      */
     getActionPosition(): Record<string, string> {
         const contentletCenterX = this.contentlet.x + this.contentlet.width;
-        const left = contentletCenterX - ACTIONS_CONTAINER_WIDTH - 8;
+        const left = contentletCenterX - this.ACTIONS_CONTAINER_WIDTH - 8;
         const top = this.contentlet.y - ACTIONS_CONTAINER_HEIGHT / 2;
 
         return {

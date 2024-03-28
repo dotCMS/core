@@ -149,3 +149,30 @@ export function findContentletElement(element: HTMLElement | null): HTMLElement 
         return findContentletElement(element?.['parentElement']);
     }
 }
+
+export function findVTLElement(element: HTMLElement | null): HTMLElement | null {
+    if (!element) return null;
+
+    if (element.dataset && element.dataset?.['dotObject'] === 'vtl-file') {
+        return element;
+    } else {
+        return findContentletElement(element?.['parentElement']);
+    }
+}
+
+export function findVTLData(target: HTMLElement) {
+    const vltElements = target.querySelectorAll(
+        '[data-dot-object="vtl-file"]'
+    ) as NodeListOf<HTMLElement>;
+
+    if (!vltElements.length) {
+        return null;
+    }
+
+    return Array.from(vltElements).map((vltElement) => {
+        return {
+            inode: vltElement.dataset?.['dotInode'],
+            name: vltElement.dataset?.['dotUrl']
+        };
+    });
+}

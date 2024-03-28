@@ -2,6 +2,7 @@ import { CUSTOMER_ACTIONS, postMessageToEditor } from '../models/client.model';
 import { DotCMSPageEditorConfig } from '../models/editor.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CUSTOMER } from '../models/listeners.model';
 import {
+    findVTLData,
     findContentletElement,
     getClosestContainerData,
     getPageElementBound
@@ -102,6 +103,7 @@ export function listenHoveredContentlet() {
         if (!target) return;
         const { x, y, width, height } = target.getBoundingClientRect();
 
+        const vtlFiles = findVTLData(target);
         const contentletPayload = {
             container:
                 // Here extract dot-container from contentlet if is Headless
@@ -115,7 +117,8 @@ export function listenHoveredContentlet() {
                 inode: target.dataset?.['dotInode'],
                 contentType: target.dataset?.['dotType'],
                 onNumberOfPages: target.dataset?.['dotOnNumberOfPages']
-            }
+            },
+            vtlFiles
         };
 
         postMessageToEditor({
