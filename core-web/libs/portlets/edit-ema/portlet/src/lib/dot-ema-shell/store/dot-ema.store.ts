@@ -160,7 +160,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         page: state.editor.page,
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
-        currentUrl: '/' + state.editor.page,
+        currentUrl: '/' + sanitizeURL(state.editor.page.pageURI),
         host: state.clientHost,
         error: state.error
     }));
