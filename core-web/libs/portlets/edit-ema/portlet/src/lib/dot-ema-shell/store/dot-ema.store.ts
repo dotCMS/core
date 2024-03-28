@@ -89,6 +89,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
 
+    readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
+
     readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
         return {
             state,
@@ -155,7 +157,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         })
     );
 
-    readonly shellProperties$ = this.select((state) => ({
+    readonly shellProps$ = this.select((state) => ({
         page: state.editor.page,
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
@@ -163,6 +165,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         host: state.clientHost,
         error: state.error
     }));
+
+    readonly shellProperties$ = this.select(
+        this.shellProps$,
+        this.templateDrawed$,
+        (props, templateDrawed) => ({ ...props, templateDrawed })
+    );
 
     // This data is needed to save the page on CRUD operation
     readonly pageData$ = this.select((state) => {
