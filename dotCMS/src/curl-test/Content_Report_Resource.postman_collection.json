@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "4210216c-e41b-413e-8e1c-f096844fd274",
+		"_postman_id": "ec804d51-d4b4-485a-8efb-2d077df5c8a8",
 		"name": "Content Report Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -788,6 +788,156 @@
 				}
 			],
 			"description": "Genrates a Content Report for a test Folder, containing a few Content Types."
+		},
+		{
+			"name": "404",
+			"item": [
+				{
+					"name": "Site does not exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/site/doesnotexist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"site",
+								"doesnotexist"
+							]
+						},
+						"description": "Generates a report using the Site Key."
+					},
+					"response": []
+				},
+				{
+					"name": "Folder does not exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/folder/12345",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"folder",
+								"12345"
+							]
+						},
+						"description": "Generates a report using the Folder ID."
+					},
+					"response": []
+				},
+				{
+					"name": "On folder site does not exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/folder/{{testFolderId}}?site=doesnotexist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"folder",
+								"{{testFolderId}}"
+							],
+							"query": [
+								{
+									"key": "site",
+									"value": "doesnotexist"
+								}
+							]
+						},
+						"description": "Generates a report using the Folder ID."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [

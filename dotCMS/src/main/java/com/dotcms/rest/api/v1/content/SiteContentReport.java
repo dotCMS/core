@@ -9,6 +9,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -50,7 +51,7 @@ public class SiteContentReport implements ContentReport {
         final String siteId = params.extraParam(ContentReportPaginator.SITE_PARAM);
         final Host site = this.siteAPI.get().find(siteId, params.user(), false);
         if (null == site || UtilMethods.isNotSet(site.getIdentifier())) {
-            return List.of();
+            throw new DoesNotExistException("The site with the given ID does not exist: " + siteId);
         }
         final String orderByParam = SQLUtil.getOrderByAndDirectionSql(params.orderBy(),
                 params.orderDirection());
