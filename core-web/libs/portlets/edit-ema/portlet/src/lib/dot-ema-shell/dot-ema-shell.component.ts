@@ -107,7 +107,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         map(({ currentUrl, page, host, languageId, siteId, templateDrawed, error }) => {
             const isLayoutDisabled = !page.canEdit || !templateDrawed;
 
-            if (isLayoutDisabled && this.router.url.includes('layout')) {
+            if (isLayoutDisabled && this.router.url?.includes('layout')) {
                 this.router.navigate(['./content'], { relativeTo: this.activatedRoute });
             }
 

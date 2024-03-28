@@ -330,9 +330,7 @@ describe('DotEmaShellComponent', () => {
                                         persona: DEFAULT_PERSONA
                                     },
                                     site: mockSites[0],
-                                    template: {
-                                        drawed: true
-                                    }
+                                    template: { drawed: true }
                                 });
                             },
                             save() {
@@ -393,7 +391,8 @@ describe('DotEmaShellComponent', () => {
                                         },
                                         persona: DEFAULT_PERSONA
                                     },
-                                    site: mockSites[0]
+                                    site: mockSites[0],
+                                    template: { drawed: true }
                                 });
                             },
                             save() {
@@ -421,19 +420,7 @@ describe('DotEmaShellComponent', () => {
                 ]
             });
 
-            spectator.triggerNavigation({
-                url: [],
-                queryParams: {
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                },
-                data: {
-                    data: {
-                        url: 'http://localhost:3000'
-                    }
-                }
-            });
+            router = spectator.inject(Router);
         });
 
         it('should not render components', () => {

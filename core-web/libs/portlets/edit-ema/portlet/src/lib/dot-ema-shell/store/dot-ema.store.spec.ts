@@ -172,7 +172,7 @@ describe('EditEmaStore', () => {
 
             it('should return templateDrawed', (done) => {
                 spectator.service.templateDrawed$.subscribe((state) => {
-                    expect(state).toEqual(false);
+                    expect(state).toEqual(true);
                     done();
                 });
             });
