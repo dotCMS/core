@@ -2,6 +2,7 @@ import { CUSTOMER_ACTIONS, postMessageToEditor } from '../models/client.model';
 import { DotCMSPageEditorConfig } from '../models/editor.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CUSTOMER } from '../models/listeners.model';
 import {
+    findVTLData,
     findContentletElement,
     getClosestContainerData,
     getPageElementBound
@@ -102,6 +103,7 @@ export function listenHoveredContentlet() {
         if (!target) return;
         const { x, y, width, height } = target.getBoundingClientRect();
 
+        const vtlFiles = findVTLData(target);
         const contentletPayload = {
             container:
                 // Here extract dot-container from contentlet if is Headless
@@ -113,8 +115,10 @@ export function listenHoveredContentlet() {
                 identifier: target.dataset?.['dotIdentifier'],
                 title: target.dataset?.['dotTitle'],
                 inode: target.dataset?.['dotInode'],
-                contentType: target.dataset?.['dotType']
-            }
+                contentType: target.dataset?.['dotType'],
+                onNumberOfPages: target.dataset?.['dotOnNumberOfPages']
+            },
+            vtlFiles
         };
 
         postMessageToEditor({
@@ -177,40 +181,6 @@ export function preserveScrollOnIframe() {
         type: 'listener',
         event: 'scroll',
         callback: preserveScrollCallback
-    });
-}
-
-/**
- * Listens for changes in the content and triggers a customer action when the content changes.
- *
- * @private
- * @memberof DotCMSPageEditor
- */
-export function listenContentChange() {
-    const observer = new MutationObserver((mutationsList) => {
-        for (const { addedNodes, removedNodes, type } of mutationsList) {
-            if (type === 'childList') {
-                const didNodesChanged = [
-                    ...Array.from(addedNodes),
-                    ...Array.from(removedNodes)
-                ].filter(
-                    (node) => (node as HTMLDivElement).dataset?.['dotObject'] === 'contentlet'
-                ).length;
-
-                if (didNodesChanged) {
-                    postMessageToEditor({
-                        action: CUSTOMER_ACTIONS.CONTENT_CHANGE
-                    });
-                }
-            }
-        }
-    });
-
-    observer.observe(document, { childList: true, subtree: true });
-
-    subscriptions.push({
-        type: 'observer',
-        observer
     });
 }
 

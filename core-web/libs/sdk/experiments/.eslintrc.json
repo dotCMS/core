@@ -21,7 +21,7 @@
                 "@nx/dependency-checks": [
                     "error",
                     {
-                        "ignoredDependencies": ["vite", "@nx/vite", "vite-plugin-dts"]
+                        "ignoredDependencies": ["vite", "@nx/vite", "vite-plugin-dts", "next"]
                     }
                 ]
             }

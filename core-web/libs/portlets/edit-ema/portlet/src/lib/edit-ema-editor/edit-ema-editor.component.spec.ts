@@ -15,7 +15,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
@@ -26,6 +25,7 @@ import {
     DotCurrentUserService,
     DotDevicesService,
     DotESContentService,
+    DotExperimentsService,
     DotFavoritePageService,
     DotHttpErrorManagerService,
     DotLanguagesService,
@@ -39,7 +39,8 @@ import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms
 import {
     DotCMSContentlet,
     CONTAINER_SOURCE,
-    DotPageContainerStructure
+    DotPageContainerStructure,
+    DEFAULT_VARIANT_ID
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
@@ -53,10 +54,12 @@ import {
     DotCurrentUserServiceMock,
     dotcmsContentletMock,
     seoOGTagsResultMock,
-    URL_MAP_CONTENTLET
+    URL_MAP_CONTENTLET,
+    getRunningExperimentMock
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -66,7 +69,6 @@ import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-pag
 import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
-import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
@@ -88,7 +90,7 @@ const messagesMock = {
     'editpage.content.add.already.message': 'This content is already added to this container'
 };
 
-const dragEventMock = {
+const dragMoveEventMock = {
     target: {
         dataset: {
             type: 'contentlet',
@@ -96,6 +98,20 @@ const dragEventMock = {
                 identifier: '123',
                 title: 'hello world',
                 contentType: 'File',
+                baseType: 'CONTENT'
+            })
+        }
+    }
+};
+const dragAddEventMock = {
+    target: {
+        dataset: {
+            type: 'contentlet',
+            item: JSON.stringify({
+                contentlet: {
+                    identifier: '322b7cc0-3ab9-4267-97f7-9634e519d5a8'
+                },
+                contentType: 'Banner',
                 baseType: 'CONTENT'
             })
         }
@@ -284,11 +300,11 @@ const URL_CONTENT_MAP_MOCK = {
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ButtonModule],
+        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe],
         declarations: [
             MockComponent(DotEditEmaWorkflowActionsComponent),
-            MockComponent(DotEmaDialogComponent),
-            MockComponent(DotResultsSeoToolComponent)
+            MockComponent(DotResultsSeoToolComponent),
+            MockComponent(DotEmaRunningExperimentComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -297,6 +313,16 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             ConfirmationService,
             DotFavoritePageService,
             DotESContentService,
+            {
+                provide: DotExperimentsService,
+                useValue: {
+                    getByStatus(pageId: string) {
+                        if (pageId == 'i-have-a-running-experiment') {
+                            return of([getRunningExperimentMock()]);
+                        } else return of([]);
+                    }
+                }
+            },
             {
                 provide: DotContentletService,
                 useValue: {
@@ -358,6 +384,32 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 useValue: {
                     get({ language_id }) {
                         return {
+                            5: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: 'i-have-a-running-experiment',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    rendered: '<div>New Content - Hello World</div>',
+                                    canEdit: true
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 4,
+                                        language: 'German',
+                                        countryCode: 'DE',
+                                        languageCode: 'de',
+                                        country: 'Germany'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
+                                containers: dotPageContainerStructureMock
+                            }),
                             4: of({
                                 page: {
                                     title: 'hello world',
@@ -553,7 +605,7 @@ describe('EditEmaEditorComponent', () => {
 
             spectator.detectChanges();
 
-            store.updateEditorState(EDITOR_STATE.LOADED);
+            store.updateEditorState(EDITOR_STATE.IDLE);
         });
 
         describe('toast', () => {
@@ -581,7 +633,7 @@ describe('EditEmaEditorComponent', () => {
                 const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
 
                 expect(button.nativeElement.href).toBe(
-                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
+                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
@@ -683,6 +735,56 @@ describe('EditEmaEditorComponent', () => {
 
                 componentsToHide.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
+                });
+            });
+
+            it('should hide the editor components when there is a running experiement and initialize the editor in a variant', () => {
+                const componentsToHide = [
+                    'palette',
+                    'dropzone',
+                    'contentlet-tools',
+                    'dialog',
+                    'confirm-dialog'
+                ]; // Test id of components that should hide when entering preview modes
+
+                spectator.detectChanges();
+
+                spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
+
+                spectator.detectChanges();
+                store.load({
+                    url: 'index',
+                    language_id: '5',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    variantName: 'hello-there'
+                });
+
+                spectator.detectChanges();
+
+                componentsToHide.forEach((testId) => {
+                    expect(spectator.query(byTestId(testId))).toBeNull();
+                });
+            });
+
+            it('should show the editor components when there is a running experiement and initialize the editor in a default variant', async () => {
+                const componentsToShow = ['palette', 'dialog', 'confirm-dialog'];
+
+                spectator.activatedRouteStub.setQueryParam('variantName', DEFAULT_VARIANT_ID);
+
+                spectator.detectChanges();
+
+                store.load({
+                    url: 'index',
+                    language_id: '5',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+
+                spectator.detectChanges();
+
+                componentsToShow.forEach((testId) => {
+                    expect(
+                        spectator.debugElement.query(By.css(`[data-testId="${testId}"]`))
+                    ).not.toBeNull();
                 });
             });
 
@@ -1085,14 +1187,14 @@ describe('EditEmaEditorComponent', () => {
 
                     const emulateEditURLMapContent = () => {
                         const editURLContentButton = spectator.debugElement.query(
-                            By.css('[data-testId="edit-url-content-map"] .p-button')
+                            By.css('[data-testId="edit-url-content-map"]')
                         );
                         const dialog = spectator.debugElement.query(
                             By.css('[data-testId="ema-dialog"]')
                         );
 
                         spectator.setInput('contentlet', baseContentletPayload);
-                        editURLContentButton.triggerEventHandler('click', {});
+                        editURLContentButton.triggerEventHandler('onClick', {});
                         triggerCustomEvent(dialog, 'action', {
                             event: new CustomEvent('ng-event', {
                                 detail: {
@@ -1115,6 +1217,7 @@ describe('EditEmaEditorComponent', () => {
                         spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
                         spyUpdateQueryParams = jest.spyOn(router, 'navigate');
                         spyStoreReload = jest.spyOn(store, 'reload');
+
                         spectator.detectChanges();
                     });
 
@@ -1154,7 +1257,7 @@ describe('EditEmaEditorComponent', () => {
 
                         emulateEditURLMapContent();
                         expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
                         expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
                         expect(spyUpdateQueryParams).toHaveBeenCalledWith([], queryParams);
                         expect(spyStoreReload).not.toHaveBeenCalled();
@@ -1781,23 +1884,6 @@ describe('EditEmaEditorComponent', () => {
                         life: 2000
                     });
                 });
-
-                describe('misc', () => {
-                    it('should set the editorState to loaded when the iframe sends a postmessage of content changed', () => {
-                        const editorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                        window.dispatchEvent(
-                            new MessageEvent('message', {
-                                origin: HOST,
-                                data: {
-                                    action: 'content-change'
-                                }
-                            })
-                        );
-
-                        expect(editorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
-                    });
-                });
             });
         });
 
@@ -1825,8 +1911,22 @@ describe('EditEmaEditorComponent', () => {
                 const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                 expect(iframe.nativeElement.src).toBe(
-                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
+                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
                 );
+            });
+
+            it('should render the running experiment component', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '5',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                }); // This will load a page with a running experiment
+
+                spectator.detectChanges();
+
+                const runningExperiment = spectator.query(byTestId('ema-running-experiment'));
+
+                expect(runningExperiment).not.toBeNull();
             });
 
             describe('VTL Page', () => {
@@ -1912,7 +2012,7 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should not change persona on load same url', () => {
+            it('should not call navigate on load same url', () => {
                 const router = spectator.inject(Router);
                 jest.spyOn(router, 'navigate');
 
@@ -1930,12 +2030,7 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        url: 'page-one' //Same page as init
-                    },
-                    queryParamsHandling: 'merge'
-                });
+                expect(router.navigate).not.toHaveBeenCalled();
             });
 
             it('set url to a different route should set the editor state to loading', () => {
@@ -1958,7 +2053,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
             });
 
-            it('set url to the same route should set the editor state to loaded', () => {
+            it('set url to the same route should set the editor state to IDLE', () => {
                 const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
 
                 const url = "/ultra-cool-url-that-doesn't-exist";
@@ -1981,7 +2076,7 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
             });
 
             it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
@@ -2048,7 +2143,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(spectator.query(EmaPageDropzoneComponent)).not.toBeNull();
             });
 
-            it('should hide drop zone on palette drop', () => {
+            it('should hide drop zone on contentlet tools drop', () => {
                 spectator.detectChanges();
 
                 window.dispatchEvent(
@@ -2089,18 +2184,31 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                let dropZone = spectator.query(EmaPageDropzoneComponent);
+                let dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.item).toEqual({
+                const dropZoneDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="dropzone"]')
+                );
+
+                expect(dropZoneComponent.item).toEqual({
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.containers).toBe(BOUNDS_MOCK);
+                expect(dropZoneComponent.containers).toBe(BOUNDS_MOCK);
 
-                spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
+                spectator.triggerEventHandler(emaTools, 'moveStop', {
+                    dataTransfer: {
+                        dropEffect: 'move'
+                    }
+                });
+                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
+                    ...PAYLOAD_MOCK,
+                    position: 'after'
+                });
+
                 spectator.detectComponentChanges();
-                dropZone = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZone).toBeNull();
+                dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
+                expect(dropZoneComponent).toBeNull();
             });
 
             it('should move a contentlet from position in the same contentlet', () => {
@@ -2188,7 +2296,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(saveSpy).toHaveBeenCalledWith({
                     pageContainers: newPageContainers,
                     pageId: '123',
-                    whenSaved: expect.any(Function),
                     params: {
                         language_id: 1,
                         url: 'page-one'
@@ -2281,7 +2388,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(saveSpy).toHaveBeenCalledWith({
                     pageContainers: newPageContainers,
                     pageId: '123',
-                    whenSaved: expect.any(Function),
                     params: {
                         language_id: 1,
                         url: 'page-one'
@@ -2327,34 +2433,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
             });
 
-            it('should reset the contentlet when we update query params', () => {
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', {
-                    target: {
-                        dataset: {
-                            type: 'contentlet',
-                            item: JSON.stringify({
-                                contentlet: {
-                                    identifier: '123',
-                                    title: 'hello world'
-                                }
-                            })
-                        }
-                    }
-                });
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.contentlet).not.toBeNull();
-
-                spectator.component.onLanguageSelected(2); // triggers a query param change
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.contentlet).toBeNull();
-            });
-
             it('should show drop zone on iframe message', () => {
                 spectator.detectChanges();
 
@@ -2372,7 +2450,11 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+                spectator.triggerEventHandler(
+                    EditEmaPaletteComponent,
+                    'dragStart',
+                    dragMoveEventMock
+                );
 
                 spectator.detectComponentChanges();
 
@@ -2398,46 +2480,34 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+                spectator.triggerEventHandler(
+                    EditEmaPaletteComponent,
+                    'dragStart',
+                    dragAddEventMock
+                );
 
                 spectator.detectComponentChanges();
 
                 let dropZone = spectator.query(EmaPageDropzoneComponent);
 
+                const dropZoneDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="dropzone"]')
+                );
+
                 expect(dropZone.item).toEqual({
-                    contentType: 'File',
+                    contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
                 expect(dropZone.containers).toBe(BOUNDS_MOCK);
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
+                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
+                    ...PAYLOAD_MOCK,
+                    position: 'after'
+                });
                 spectator.detectComponentChanges();
+
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
-            });
-
-            it('should reset the rows when we update query params', () => {
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.containers.length).toBe(BOUNDS_MOCK.length);
-
-                spectator.component.onLanguageSelected(2); // triggers a query param change
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.containers.length).toBe(0);
             });
         });
 

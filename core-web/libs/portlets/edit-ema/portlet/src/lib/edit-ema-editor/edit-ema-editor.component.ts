@@ -39,6 +39,7 @@ import {
     DotContentletService
 } from '@dotcms/data-access';
 import {
+    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotDevice,
     DotPersona,
@@ -60,6 +61,7 @@ import {
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -85,7 +87,8 @@ import {
     SetUrlPayload,
     ContainerPayload,
     ContentletPayload,
-    PageContainer
+    PageContainer,
+    VTLFile
 } from '../shared/models';
 import {
     areContainersEquals,
@@ -158,7 +161,8 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         DotEmaBookmarksComponent,
         DotEditEmaWorkflowActionsComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
+        DotEmaRunningExperimentComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -189,13 +193,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
 
-    readonly editorState$ = this.store.editorState$;
+    readonly editorState$ = this.store.editorState$.pipe(
+        tap((state) => {
+            // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+            this.canEditVariant.set(
+                !this.queryParams.variantName ||
+                    this.queryParams.variantName === DEFAULT_VARIANT_ID ||
+                    !state.runningExperiment
+            );
+        })
+    );
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
     readonly pageData = toSignal(this.store.pageData$);
 
     readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
+
+    readonly canEditVariant: WritableSignal<boolean> = signal(true);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
@@ -241,7 +256,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorState = EDITOR_STATE;
     readonly editorMode = EDITOR_MODE;
 
-    private draggedPayload: DraggedPalettePayload;
+    protected draggedPayload: DraggedPalettePayload;
 
     containers: Container[] = [];
     contentlet!: ContentletArea;
@@ -276,18 +291,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.contentState$
             .pipe(
                 takeUntil(this.destroy$),
-                filter(({ state }) => state === EDITOR_STATE.LOADED)
+                filter(({ state }) => state === EDITOR_STATE.IDLE)
             )
             .subscribe(({ code }) => {
+                // If we are idle then we are not dragging
+                this.resetDragProperties();
+
                 if (!this.isVTLPage()) {
                     // Only reload if is Headless.
                     // If is VTL, the content is updated by store.code$
                     this.reloadIframe();
-
-                    return;
+                } else {
+                    this.setIframeContent(code);
                 }
-
-                this.setIframeContent(code);
             });
     }
 
@@ -298,7 +314,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onIframePageLoad() {
-        this.store.updateEditorState(EDITOR_STATE.LOADED);
+        this.store.updateEditorState(EDITOR_STATE.IDLE);
     }
 
     /**
@@ -422,18 +438,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             editorMode: EDITOR_MODE.PREVIEW,
             device
         });
-
-        this.containers = []; // We need to reset the rows when we change the device
-        this.contentlet = null; // We need to reset the contentlet when we change the device
     }
 
     goToEditMode() {
         this.store.updatePreviewState({
             editorMode: EDITOR_MODE.EDIT
         });
-
-        this.containers = []; // We need to reset the rows when we change the device
-        this.contentlet = null; // We need to reset the contentlet when we change the device
     }
 
     /**
@@ -456,6 +466,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     moveContentlet(item: ActionPayload) {
+        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+
         this.draggedPayload = {
             type: 'contentlet',
             item: {
@@ -483,6 +495,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onDragStart(event: DragEvent) {
+        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+
         const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
             ContentletDragPayload,
             'type'
@@ -512,11 +526,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     /**
      * Reset rows when user stop dragging
      *
-     * @param {DragEvent} _event
      * @memberof EditEmaEditorComponent
      */
-    onDragEnd(_event: DragEvent) {
-        this.resetDragProperties();
+    onDragEnd(event: DragEvent) {
+        // If the dropEffect is none then the user didn't drop the item in the dropzone
+        if (event.dataTransfer.dropEffect === 'none') {
+            this.store.updateEditorState(EDITOR_STATE.IDLE);
+        }
     }
 
     /**
@@ -567,18 +583,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             if (!didInsert) {
                 this.handleDuplicatedContentlet();
 
-                this.resetDragProperties();
-
                 return;
             }
 
             this.store.savePage({
                 pageContainers,
                 pageId: payload.pageId,
-                params: this.queryParams,
-                whenSaved: () => {
-                    this.resetDragProperties();
-                }
+                params: this.queryParams
             });
 
             return;
@@ -747,12 +758,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
-            [CUSTOMER_ACTIONS.CONTENT_CHANGE]: () => {
-                // This event is sent when the mutation observer detects a change in the content
-
-                this.store.updateEditorState(EDITOR_STATE.LOADED);
-            },
-
             [CUSTOMER_ACTIONS.NAVIGATION_UPDATE]: () => {
                 const payload = <SetUrlPayload>data.payload;
 
@@ -762,18 +767,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const isSameUrl = this.queryParams.url === payload.url;
 
                 if (isSameUrl) {
-                    this.store.updateEditorState(EDITOR_STATE.LOADED);
                     this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
+                    this.store.updateEditorState(EDITOR_STATE.IDLE);
                 } else {
-                    this.store.updateEditorState(EDITOR_STATE.LOADING);
+                    this.updateQueryParams({
+                        url: payload.url,
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
                 }
-
-                this.updateQueryParams({
-                    url: payload.url,
-                    ...(isSameUrl
-                        ? {}
-                        : { 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier })
-                });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
                 this.containers = <Container[]>data.payload;
@@ -793,7 +794,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
                 this.resetDragProperties();
-                this.cd.detectChanges();
+                this.store.updateEditorState(EDITOR_STATE.IDLE);
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
                 this.iframe?.nativeElement?.contentWindow.postMessage(
@@ -855,14 +856,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private updateQueryParams(params: Params) {
+        this.store.updateEditorState(EDITOR_STATE.LOADING);
         this.router.navigate([], {
             queryParams: params,
             queryParamsHandling: 'merge'
         });
-
-        // Reset this on queryParams update
-        this.containers = [];
-        this.contentlet = null;
     }
 
     private handleDuplicatedContentlet() {
@@ -873,7 +871,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             life: 2000
         });
 
-        this.store.updateEditorState(EDITOR_STATE.LOADED);
+        this.store.updateEditorState(EDITOR_STATE.IDLE);
         this.dialog.resetDialog();
     }
 
@@ -916,9 +914,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     protected handleEditContentlet(payload: ActionPayload) {
         const { contentlet } = payload;
-        const { onNumberOfPages, title } = contentlet;
+        const { onNumberOfPages = '1', title } = contentlet;
 
-        if (!(onNumberOfPages > 1)) {
+        if (!(Number(onNumberOfPages) > 1)) {
             this.dialog.editContentlet(contentlet);
 
             return;
@@ -940,6 +938,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((contentlet) => {
                 this.dialog.editContentlet(contentlet);
             });
+    }
+
+    /**
+     * Handles the edit of a VTL file.
+     *
+     * @param {VTLFile} vtlFile - The VTL file to be edited.
+     * @memberof EditEmaEditorComponent
+     */
+    handleEditVTL(vtlFile: VTLFile) {
+        this.dialog.editVTLContentlet(vtlFile);
     }
 
     /**
@@ -1032,7 +1040,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
                 if (URL_MAP_FOR_CONTENT != this.queryParams.url) {
-                    this.store.updateEditorState(EDITOR_STATE.LOADED);
+                    this.store.updateEditorState(EDITOR_STATE.IDLE);
                     // If the URL is different, we need to navigate to the new URL
                     this.updateQueryParams({ url: URL_MAP_FOR_CONTENT });
 

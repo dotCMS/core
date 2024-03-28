@@ -4,6 +4,8 @@ export * from './lib/dot-spinner/dot-spinner.module';
 export * from './lib/modules/dot-dialog/dot-dialog.module';
 
 // Components
+export * from './lib/components/dot-asset-search/dot-asset-search.component';
+export * from './lib/components/dot-asset-search/components/dot-asset-search-dialog/dot-asset-search-dialog.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/components/dot-drop-zone/dot-drop-zone.component';

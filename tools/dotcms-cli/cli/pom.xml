@@ -146,6 +146,21 @@
                             <systemProperties>
                                 <testcontainers.docker.image>${testcontainers.docker.image}</testcontainers.docker.image>
                             </systemProperties>
+                            <manifestEntries>
+                                <Implementation-URL>${project.url}</Implementation-URL>
+                                <Java-Vendor>${java.vendor}</Java-Vendor>
+                                <Java-Version>${java.version}</Java-Version>
+                                <Os-Arch>${os.arch}</Os-Arch>
+                                <Os-Name>${os.name}</Os-Name>
+                                <Os-Version>${os.version}</Os-Version>
+                                <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                                <Scm-Url>${project.scm.url}</Scm-Url>
+                                <Scm-Revision>${buildNumber}</Scm-Revision>
+                                <!--suppress UnresolvedMavenProperty -->
+                                <SCM-Build>${scmBranch}</SCM-Build>
+                                <Implementation-Build>${buildNumber}</Implementation-Build>
+                                <Implementation-Timestamp>${timestamp}</Implementation-Timestamp>
+                            </manifestEntries>
                         </configuration>
                     </execution>
                 </executions>

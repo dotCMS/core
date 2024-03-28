@@ -54,6 +54,9 @@
             </a>
         </ng-container>
         <ng-container right>
+            <dot-ema-running-experiment
+                [runningExperiment]="es.runningExperiment"
+                data-testId="ema-running-experiment" />
             <dot-edit-ema-language-selector
                 [language]="es.editor.viewAs.language"
                 (selected)="onLanguageSelected($event)"
@@ -93,7 +96,7 @@
         class="editor-content"
         [ngClass]="{
             'editor-content--device': !!es.previewState.device,
-            'editor-content--expanded': !es.editor.page.canEdit,
+            'editor-content--expanded': !es.editor.page.canEdit || !canEditVariant(),
             'editor-content--hidden': es.previewState.socialMedia
         }"
         data-testId="editor-content">
@@ -111,7 +114,7 @@
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
-                    pointerEvents: this.containers.length ? 'none' : 'auto',
+                    pointerEvents: es.state === editorState.DRAGGING ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
                 (load)="onIframePageLoad()"
@@ -127,27 +130,30 @@
 
             <dot-ema-contentlet-tools
                 *ngIf="
+                    canEditVariant() &&
                     !!contentlet &&
                     !es.previewState.device &&
                     es.editor.page.canEdit &&
-                    es.state === editorState.LOADED
+                    (es.state === editorState.IDLE || es.state === editorState.DRAGGING)
                 "
-                [hide]="!!containers.length"
+                [hide]="es.state === editorState.DRAGGING"
                 [contentlet]="contentlet"
                 (edit)="handleEditContentlet($event)"
+                (editVTL)="handleEditVTL($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
                 (moveStart)="moveContentlet($event)"
-                (moveStop)="resetDragProperties()"
+                (moveStop)="onDragEnd($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
+                    canEditVariant() &&
                     !!containers.length &&
                     !!dragItem &&
                     !es.previewState.device &&
-                    es.state === editorState.LOADED
+                    es.state === editorState.DRAGGING
                 "
                 [containers]="containers"
                 [item]="dragItem"
@@ -158,6 +164,7 @@
 
     <dot-edit-ema-palette
         *ngIf="
+            canEditVariant() &&
             es.isEnterpriseLicense &&
             es.previewState.editorMode === editorMode.EDIT &&
             es.editor.page.canEdit
@@ -168,7 +175,7 @@
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
-    @if(es.previewState.editorMode === editorMode.EDIT) {
+    @if( canEditVariant() && es.previewState.editorMode === editorMode.EDIT) {
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"

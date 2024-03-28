@@ -14,12 +14,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
+    DotExperimentsService,
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotAddToBundleComponent, DotEmptyContainerComponent } from '@dotcms/ui';
 import {
     ActivatedRouteListStoreMock,

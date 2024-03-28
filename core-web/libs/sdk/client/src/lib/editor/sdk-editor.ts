@@ -1,5 +1,4 @@
 import {
-    listenContentChange,
     listenEditorMessages,
     listenHoveredContentlet,
     pingEditor,
@@ -51,7 +50,6 @@ export function initEditor(config?: DotCMSPageEditorConfig) {
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();
-    listenContentChange();
 }
 
 /**
