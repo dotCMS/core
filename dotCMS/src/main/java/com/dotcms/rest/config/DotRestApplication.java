@@ -178,6 +178,7 @@ public class DotRestApplication extends Application {
 			.add(WidgetResource.class)
 			.add(CMSConfigResource.class)
 			.add(OSGIResource.class)
+			.add(com.dotcms.rest.api.v1.osgi.OSGIResource.class)
 			.add(com.dotcms.rest.UserResource.class)
 			.add(ClusterResource.class)
 			.add(EnvironmentResource.class)
