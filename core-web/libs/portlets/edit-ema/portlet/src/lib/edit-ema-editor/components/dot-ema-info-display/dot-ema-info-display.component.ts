@@ -65,7 +65,9 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                     message: `${this.editorData.device.name} ${this.editorData.device.cssWidth} x ${this.editorData.device.cssHeight}`,
                     args: []
                 },
-                action: () => this.goToEdit()
+                action: () => {
+                    this.goToEdit();
+                }
             });
         } else if (
             this.editorData.canEditPage &&
@@ -93,7 +95,7 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                             args: [name]
                         },
                         icon: 'pi pi-file-edit',
-                        action: () =>
+                        action: () => {
                             this.router.navigate(
                                 [
                                     '/edit-page/experiments/',
@@ -109,7 +111,8 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                                     },
                                     queryParamsHandling: 'merge'
                                 }
-                            )
+                            );
+                        }
                     });
                 });
         }
