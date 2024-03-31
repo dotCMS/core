@@ -16,7 +16,10 @@ import {
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
 
-import { Container } from '../../edit-ema-editor/components/ema-page-dropzone/types';
+import {
+    Container,
+    ContentletArea
+} from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import {
     DotPageApiParams,
     DotPageApiResponse,
@@ -115,6 +118,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
         return {
             bounds: state.bounds,
+            contentletArea: state.contentletArea,
             clientHost: state.clientHost,
             favoritePageURL,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
@@ -216,7 +220,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                 },
                                                 variantName: params.variantName,
                                                 runningExperiment: experiment[0],
-                                                bounds: []
+                                                bounds: [],
+                                                contentletArea: null
                                             });
                                         },
                                         error: ({ status }: HttpErrorResponse) => {
@@ -420,6 +425,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         bounds: bounds
     }));
 
+    readonly setContentletArea = this.updater((state, contentletArea: ContentletArea) => ({
+        ...state,
+        contentletArea
+    }));
+
     /**
      * Create the url to add a page to favorites
      *
@@ -510,7 +520,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             previewState: {
                 editorMode: EDITOR_MODE.EDIT
             },
-            bounds: []
+            bounds: [],
+            contentletArea: null
         });
     }
 

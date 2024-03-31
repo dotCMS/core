@@ -68,12 +68,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
-import {
-    ContentletArea,
-    EmaDragItem,
-    ClientContentletArea,
-    Container
-} from './components/ema-page-dropzone/types';
+import { EmaDragItem, ClientContentletArea, Container } from './components/ema-page-dropzone/types';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
@@ -258,7 +253,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     protected draggedPayload: DraggedPalettePayload;
 
-    contentlet!: ContentletArea;
     dragItem: EmaDragItem;
 
     get queryParams(): DotPageApiParams {
@@ -783,12 +777,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 const payload = this.getPageSavePayload(contentletArea.payload);
 
-                this.contentlet = {
+                this.store.setContentletArea({
                     ...contentletArea,
                     payload
-                };
-
-                this.cd.detectChanges();
+                });
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
                 this.resetDragProperties();
@@ -986,9 +978,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     protected resetDragProperties() {
         this.draggedPayload = undefined;
-        this.contentlet = null;
         this.dragItem = null;
 
+        this.store.setContentletArea(null);
         this.store.setBounds([]);
     }
 

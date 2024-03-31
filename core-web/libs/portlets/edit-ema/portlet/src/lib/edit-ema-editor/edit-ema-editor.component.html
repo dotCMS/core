@@ -131,13 +131,13 @@
             <dot-ema-contentlet-tools
                 *ngIf="
                     canEditVariant() &&
-                    !!contentlet &&
+                    !!es.contentletArea &&
                     !es.previewState.device &&
                     es.editor.page.canEdit &&
                     (es.state === editorState.IDLE || es.state === editorState.DRAGGING)
                 "
                 [hide]="es.state === editorState.DRAGGING"
-                [contentlet]="contentlet"
+                [contentlet]="es.contentletArea"
                 (edit)="handleEditContentlet($event)"
                 (editVTL)="handleEditVTL($event)"
                 (delete)="deleteContentlet($event)"

@@ -2,7 +2,7 @@ import { DotDevice, DotExperiment } from '@dotcms/dotcms-models';
 
 import { EDITOR_MODE, EDITOR_STATE } from './enums';
 
-import { Container } from '../edit-ema-editor/components/ema-page-dropzone/types';
+import { Container, ContentletArea } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
 
 export interface VTLFile {
@@ -93,4 +93,5 @@ export interface EditEmaState {
     variantName?: string;
     runningExperiment?: DotExperiment;
     bounds: Container[];
+    contentletArea: ContentletArea;
 }
