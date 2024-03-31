@@ -150,12 +150,12 @@
             <dot-ema-page-dropzone
                 *ngIf="
                     canEditVariant() &&
-                    !!containers.length &&
+                    !!es.bounds.length &&
                     !!dragItem &&
                     !es.previewState.device &&
                     es.state === editorState.DRAGGING
                 "
-                [containers]="containers"
+                [containers]="es.bounds"
                 [item]="dragItem"
                 (place)="onPlaceItem($event)"
                 data-testId="dropzone" />

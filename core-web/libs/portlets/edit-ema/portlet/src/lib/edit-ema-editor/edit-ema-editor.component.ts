@@ -258,7 +258,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     protected draggedPayload: DraggedPalettePayload;
 
-    containers: Container[] = [];
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
 
@@ -777,8 +776,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
-                this.containers = <Container[]>data.payload;
-                this.cd.detectChanges();
+                this.store.setBounds(<Container[]>data.payload);
             },
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
                 const contentletArea = <ClientContentletArea>data.payload;
@@ -989,8 +987,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     protected resetDragProperties() {
         this.draggedPayload = undefined;
         this.contentlet = null;
-        this.containers = [];
         this.dragItem = null;
+
+        this.store.setBounds([]);
     }
 
     /**
