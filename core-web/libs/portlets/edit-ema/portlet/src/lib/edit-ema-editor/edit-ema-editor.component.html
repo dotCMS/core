@@ -1,12 +1,4 @@
 <ng-container *ngIf="editorState$ | async as es">
-    <dot-device-selector-seo
-        #deviceSelector
-        [apiLink]="es.iframeURL"
-        [hideSocialMedia]="!!es.clientHost"
-        (selected)="updateCurrentDevice($event)"
-        (changeSeoMedia)="onSeoMediaChange($event)"
-        appendTo="body"
-        data-testId="dot-device-selector"></dot-device-selector-seo>
     <dot-edit-ema-toolbar />
     <div
         class="editor-banner"
