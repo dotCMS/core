@@ -11,6 +11,7 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotContainerMap,
+    DotExperiment,
     DotExperimentStatus,
     DotLayout,
     DotPageContainerStructure
@@ -69,6 +70,20 @@ function getFormId(dotPageApiService: DotPageApiService) {
         );
 }
 
+export interface EditEmaStoreStateVM {
+    bounds: Container[];
+    contentletArea: ContentletArea;
+    clientHost: string;
+    favoritePageURL: string;
+    apiURL: string;
+    iframeURL: string;
+    editor: DotPageApiResponse;
+    isEnterpriseLicense: boolean;
+    state: EDITOR_STATE;
+    previewState: PreviewState;
+    runningExperiment: DotExperiment;
+}
+
 @Injectable()
 export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
@@ -100,7 +115,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         };
     });
 
-    readonly editorState$ = this.select((state) => {
+    readonly editorState$ = this.select<EditEmaStoreStateVM>((state) => {
         const pageURL = this.createPageURL({
             url: state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
