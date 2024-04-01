@@ -129,7 +129,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             isEnterpriseLicense: state.isEnterpriseLicense,
             state: state.editorState ?? EDITOR_STATE.LOADING,
             editorData: state.editorData,
-            runningExperiment: state.runningExperiment
+            currentExperiment: state.currentExperiment
         };
     });
 
@@ -204,11 +204,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             this.dotExperimentsService.getById(params.experimentId ?? '').pipe(
                                 tap({
                                     next: (experiment) => {
-                                        const runningExperiment =
-                                            experiment.status === DotExperimentStatus.RUNNING
-                                                ? experiment
-                                                : null;
-
                                         // Can be blocked by an experiment if there is a running experiment or a scheduled one
                                         const editingBlockedByExperiment = [
                                             DotExperimentStatus.RUNNING,
@@ -229,17 +224,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                         );
 
                                         return this.setState({
-                                            runningExperiment,
+                                            currentExperiment: experiment,
                                             clientHost: params.clientHost,
                                             editor: pageData,
                                             isEnterpriseLicense: licenseData,
                                             editorState: EDITOR_STATE.IDLE,
                                             editorData: {
                                                 mode,
-                                                variantInfo: {
-                                                    canEditVariant,
-                                                    pageId: pageData.page.identifier
-                                                },
+                                                canEditVariant,
                                                 canEditPage: pageData.page.canEdit
                                             },
                                             variantName: params.variantName

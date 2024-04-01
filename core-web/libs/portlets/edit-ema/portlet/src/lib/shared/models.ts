@@ -80,10 +80,7 @@ export interface EditorData {
     mode: EDITOR_MODE;
     device?: DotDevice & { icon?: string };
     socialMedia?: string;
-    variantInfo?: {
-        pageId: string;
-        canEditVariant: boolean;
-    };
+    canEditVariant?: boolean;
     canEditPage?: boolean;
 }
 
@@ -95,5 +92,5 @@ export interface EditEmaState {
     editorState: EDITOR_STATE;
     editorData: EditorData;
     variantName?: string;
-    runningExperiment?: DotExperiment;
+    currentExperiment?: DotExperiment;
 }

@@ -49,7 +49,8 @@
         </ng-container>
         <ng-container right>
             <dot-ema-running-experiment
-                [runningExperiment]="es.runningExperiment"
+                *ngIf="es.currentExperiment.status === experimentStatus.RUNNING"
+                [runningExperiment]="es.currentExperiment"
                 data-testId="ema-running-experiment" />
             <dot-edit-ema-language-selector
                 [language]="es.editor.viewAs.language"
@@ -75,6 +76,7 @@
                         es.editorData.mode !== editorMode.SOCIAL_MEDIA)
                 "
                 [editorData]="es.editorData"
+                [currentExperiment]="es.currentExperiment"
                 data-testId="device-display" />
         </ng-container>
     </dot-edit-ema-toolbar>
@@ -89,8 +91,7 @@
         class="editor-content"
         [ngClass]="{
             'editor-content--device': es.editorData.mode === editorMode.DEVICE,
-            'editor-content--expanded':
-                !es.editor.page.canEdit || !es.editorData.variantInfo.canEditVariant,
+            'editor-content--expanded': !es.editor.page.canEdit || !es.editorData.canEditVariant,
             'editor-content--hidden': es.editorData.mode === editorMode.SOCIAL_MEDIA
         }"
         data-testId="editor-content">
@@ -130,7 +131,7 @@
 
             <dot-ema-contentlet-tools
                 *ngIf="
-                    es.editorData.variantInfo.canEditVariant &&
+                    es.editorData.canEditVariant &&
                     !!contentlet &&
                     !es.editorData.device &&
                     es.editor.page.canEdit &&
@@ -149,7 +150,7 @@
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
-                    es.editorData.variantInfo.canEditVariant &&
+                    es.editorData.canEditVariant &&
                     !!containers.length &&
                     !!dragItem &&
                     !es.editorData.device &&
@@ -164,7 +165,7 @@
 
     <dot-edit-ema-palette
         *ngIf="
-            es.editorData.variantInfo.canEditVariant &&
+            es.editorData.canEditVariant &&
             es.isEnterpriseLicense &&
             (es.editorData.mode === editorMode.EDIT ||
                 es.editorData.mode === editorMode.EDIT_VARIANT) &&
@@ -176,7 +177,7 @@
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
-    @if( es.editorData.variantInfo.canEditVariant && es.editorData.mode === editorMode.EDIT) {
+    @if( es.editorData.canEditVariant && es.editorData.mode === editorMode.EDIT) {
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"

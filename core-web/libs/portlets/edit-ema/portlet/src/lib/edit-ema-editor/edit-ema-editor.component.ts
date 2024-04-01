@@ -41,6 +41,7 @@ import {
 import {
     DotCMSContentlet,
     DotDevice,
+    DotExperimentStatus,
     DotPersona,
     DotTreeNode,
     SeoMetaTags,
@@ -243,6 +244,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly host = '*';
     readonly editorState = EDITOR_STATE;
     readonly editorMode = EDITOR_MODE;
+    readonly experimentStatus = DotExperimentStatus;
 
     protected draggedPayload: DraggedPalettePayload;
 

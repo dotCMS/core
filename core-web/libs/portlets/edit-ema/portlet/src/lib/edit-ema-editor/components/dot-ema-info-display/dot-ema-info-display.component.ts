@@ -11,9 +11,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
-import { take } from 'rxjs/operators';
-
 import { DotExperimentsService } from '@dotcms/data-access';
+import { DotExperiment } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
@@ -41,6 +40,7 @@ interface InfoOptions {
 })
 export class DotEmaInfoDisplayComponent implements OnChanges {
     @Input() editorData: EditorData;
+    @Input() currentExperiment: DotExperiment;
 
     protected options = signal<InfoOptions>(undefined);
 
@@ -76,48 +76,41 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
             (this.editorData.mode === this.editorMode.EDIT_VARIANT ||
                 this.editorData.mode === this.editorMode.PREVIEW_VARIANT)
         ) {
-            const experimentId = this.activatedRoute.snapshot.queryParams['experimentId'];
             const variantId = this.activatedRoute.snapshot.queryParams['variantName'];
+            const name =
+                this.currentExperiment.trafficProportion.variants.find(
+                    (variant) => variant.id === variantId
+                )?.name ?? 'Unknown Variant';
 
-            this.experimentsService
-                .getById(experimentId)
-                .pipe(take(1))
-                .subscribe((experiment) => {
-                    const name =
-                        experiment.trafficProportion.variants.find(
-                            (variant) => variant.id === variantId
-                        )?.name ?? 'Unknown Variant';
-
-                    this.options.set({
-                        info: {
-                            message:
-                                this.editorData.mode === this.editorMode.EDIT_VARIANT
-                                    ? 'editpage.editing.variant'
-                                    : 'editpage.viewing.variant',
-                            args: [name]
-                        },
-                        icon: 'pi pi-file-edit',
-                        action: () => {
-                            this.router.navigate(
-                                [
-                                    '/edit-page/experiments/',
-                                    this.editorData.variantInfo.pageId,
-                                    experimentId,
-                                    'configuration'
-                                ],
-                                {
-                                    queryParams: {
-                                        mode: null,
-                                        variantName: null,
-                                        experimentId: null
-                                    },
-                                    queryParamsHandling: 'merge'
-                                }
-                            );
-                        },
-                        actionIcon: 'pi pi-arrow-left'
-                    });
-                });
+            this.options.set({
+                info: {
+                    message:
+                        this.editorData.mode === this.editorMode.EDIT_VARIANT
+                            ? 'editpage.editing.variant'
+                            : 'editpage.viewing.variant',
+                    args: [name]
+                },
+                icon: 'pi pi-file-edit',
+                action: () => {
+                    this.router.navigate(
+                        [
+                            '/edit-page/experiments/',
+                            this.currentExperiment.pageId,
+                            this.currentExperiment.id,
+                            'configuration'
+                        ],
+                        {
+                            queryParams: {
+                                mode: null,
+                                variantName: null,
+                                experimentId: null
+                            },
+                            queryParamsHandling: 'merge'
+                        }
+                    );
+                },
+                actionIcon: 'pi pi-arrow-left'
+            });
         }
     }
 
@@ -128,7 +121,7 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
 
         if (isNotDefaultVariant) {
             this.store.updateEditorData({
-                mode: this.editorData.variantInfo.canEditVariant
+                mode: this.editorData.canEditVariant
                     ? this.editorMode.EDIT_VARIANT
                     : this.editorMode.PREVIEW_VARIANT
             });
