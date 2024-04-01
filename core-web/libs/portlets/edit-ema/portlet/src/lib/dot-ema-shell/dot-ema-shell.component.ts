@@ -105,9 +105,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         error?: number;
     }> = this.store.shellProperties$.pipe(
         map(({ currentUrl, page, host, languageId, siteId, templateDrawed, error }) => {
-            const isLayoutDisabled = !page.canEdit || !templateDrawed;
 
-            if (isLayoutDisabled && this.router.url?.includes('layout')) {
+            console.log(this.activatedRoute.snapshot.firstChild);
+            const isLayoutDisabled = !page.canEdit || !templateDrawed;
+            // this.activatedRoute.snapshot?.firstChild?.routeConfig.path === 'layout'
+            if (isLayoutDisabled && this.activatedRoute.snapshot.firstChild.routeConfig.path === 'layout') {
                 this.router.navigate(['./content'], { relativeTo: this.activatedRoute });
             }
 
@@ -192,6 +194,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         combineLatest([this.activatedRoute.data, this.activatedRoute.queryParams])
             .pipe(takeUntil(this.destroy$))
             .subscribe(([{ data }]) => {
+                console.log("Inside ngOnInit!!");
                 this.store.load({
                     ...this.queryParams,
                     clientHost: data?.url
