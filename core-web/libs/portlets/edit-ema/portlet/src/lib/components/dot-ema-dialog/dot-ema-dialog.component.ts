@@ -25,7 +25,7 @@ import {
 } from './store/dot-ema-dialog.store';
 
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { ActionPayload } from '../../shared/models';
+import { ActionPayload, VTLFile } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
@@ -118,6 +118,19 @@ export class DotEmaDialogComponent {
         this.store.editContentlet({
             inode: contentlet.inode,
             title: contentlet.title
+        });
+    }
+
+    /**
+     * Edits a VTL contentlet.
+     *
+     * @param {VTLFile} vtlFile - The VTL file to edit.
+     * @memberof DotEmaDialogComponent
+     */
+    editVTLContentlet(vtlFile: VTLFile) {
+        this.store.editContentlet({
+            inode: vtlFile.inode,
+            title: vtlFile.name
         });
     }
 

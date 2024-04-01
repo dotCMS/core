@@ -43,7 +43,7 @@ public abstract class AbstractContentTypeCommand {
 
     String shortFormat(final ContentType contentType) {
         return String.format(
-                "varName: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] host: [@|bold,underline,green %s|@] modDate:[@|bold,yellow %s|@] desc: [@|bold,yellow %s|@]",
+                "variable: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] host: [@|bold,underline,green %s|@] modDate:[@|bold,yellow %s|@] description: [@|bold,yellow %s|@]",
                 contentType.variable(),
                 contentType.id(),
                 contentType.host(),

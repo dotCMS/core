@@ -87,7 +87,8 @@ import {
     SetUrlPayload,
     ContainerPayload,
     ContentletPayload,
-    PageContainer
+    PageContainer,
+    VTLFile
 } from '../shared/models';
 import {
     areContainersEquals,
@@ -814,6 +815,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
                 this.resetDragProperties();
+                this.store.updateEditorState(EDITOR_STATE.IDLE);
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
                 this.iframe?.nativeElement?.contentWindow.postMessage(
@@ -957,6 +959,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((contentlet) => {
                 this.dialog.editContentlet(contentlet);
             });
+    }
+
+    /**
+     * Handles the edit of a VTL file.
+     *
+     * @param {VTLFile} vtlFile - The VTL file to be edited.
+     * @memberof EditEmaEditorComponent
+     */
+    handleEditVTL(vtlFile: VTLFile) {
+        this.dialog.editVTLContentlet(vtlFile);
     }
 
     /**

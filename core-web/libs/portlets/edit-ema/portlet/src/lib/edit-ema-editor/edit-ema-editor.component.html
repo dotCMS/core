@@ -139,6 +139,7 @@
                 [hide]="es.state === editorState.DRAGGING"
                 [contentlet]="contentlet"
                 (edit)="handleEditContentlet($event)"
+                (editVTL)="handleEditVTL($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
