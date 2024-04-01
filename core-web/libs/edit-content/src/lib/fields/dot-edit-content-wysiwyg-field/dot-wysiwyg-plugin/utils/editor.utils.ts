@@ -39,7 +39,6 @@ export const replaceURLPattern = (pattern: string, asset: DotCMSContentlet) => {
         '{extension}': asset.extension,
         '{languageId}': asset.languageId.toString(),
         '{hostname}': asset.hostName,
-        '{hostName}': asset.hostName,
         '{inode}': asset.inode,
         '{hostId}': asset.host,
         '{identifier}': asset.identifier,
