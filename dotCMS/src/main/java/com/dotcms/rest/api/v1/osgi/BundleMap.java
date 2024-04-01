@@ -22,6 +22,38 @@ public class BundleMap implements Serializable {
 
     final boolean isSystem;
 
+    public long getBundleId() {
+        return bundleId;
+    }
+
+    public String getSymbolicName() {
+        return symbolicName;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public String getJarFile() {
+        return jarFile;
+    }
+
+    public int getState() {
+        return state;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public String getSeparator() {
+        return separator;
+    }
+
+    public boolean isSystem() {
+        return isSystem;
+    }
+
     private BundleMap(final Builder builder) {
         this.bundleId = builder.bundleId;
         this.symbolicName = builder.symbolicName;
