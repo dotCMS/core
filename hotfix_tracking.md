@@ -222,3 +222,5 @@ This maintenance release includes the following code fixes:
 177. https://github.com/dotCMS/core/issues/27187 : remove unneeded DB hit from edit content screen #27187
 178. https://github.com/dotCMS/core/issues/26004 : Image field doesn't export as a header in CSV #26004
 179. https://github.com/dotCMS/core/issues/23195 : Site Browser: Slow loading folder with many items #23195
+
+**Release-23.01.15**
