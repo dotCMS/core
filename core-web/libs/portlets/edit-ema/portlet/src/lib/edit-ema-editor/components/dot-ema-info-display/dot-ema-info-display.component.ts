@@ -11,7 +11,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotExperimentsService } from '@dotcms/data-access';
 import { DotExperiment } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -47,7 +46,6 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
     protected readonly store = inject(EditEmaStore);
     protected readonly router = inject(Router);
     protected readonly activatedRoute = inject(ActivatedRoute);
-    protected readonly experimentsService = inject(DotExperimentsService);
 
     protected readonly editorMode = EDITOR_MODE;
 

@@ -3,7 +3,8 @@
     *ngIf="op.action"
     [icon]="op.actionIcon"
     (onClick)="op.action()"
-    styleClass="p-button-text p-button-sm p-button-rounded"></p-button>
+    styleClass="p-button-text p-button-sm p-button-rounded"
+    data-testId="info-action"></p-button>
 
 <div class="info-container">
     <i *ngIf="!!op.icon" [class]="op.icon + ' info-container__icon'" data-testId="info-icon"></i>
