@@ -201,47 +201,61 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             }
                         }),
                         switchMap(({ pageData, licenseData }) =>
-                            this.dotExperimentsService
-                                .getByStatus(pageData.page.identifier, DotExperimentStatus.RUNNING)
-                                .pipe(
-                                    tap({
-                                        next: (experiment) => {
-                                            const isDefaultVariant = getIsDefaultVariant(
-                                                params.variantName
-                                            );
-                                            const canEditVariant =
-                                                isDefaultVariant || !experiment[0]; // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+                            this.dotExperimentsService.getAll(pageData.page.identifier).pipe(
+                                tap({
+                                    next: (experiments) => {
+                                        const runningExperiment = experiments.find(
+                                            (experiment) =>
+                                                experiment.status === DotExperimentStatus.RUNNING
+                                        );
 
-                                            const mode = this.getInitialEditorMode(
-                                                isDefaultVariant,
-                                                canEditVariant
-                                            );
+                                        const scheduleExperiment = experiments.find(
+                                            (experiment) =>
+                                                experiment.status === DotExperimentStatus.SCHEDULED
+                                        );
 
-                                            return this.setState({
-                                                clientHost: params.clientHost,
-                                                editor: pageData,
-                                                isEnterpriseLicense: licenseData,
-                                                editorState: EDITOR_STATE.IDLE,
-                                                editorData: {
-                                                    mode,
-                                                    variantInfo: {
-                                                        canEditVariant,
-                                                        pageId: pageData.page.identifier
-                                                    },
-                                                    canEditPage: pageData.page.canEdit
+                                        // Can be blocked by an experiment if there is a running experiment or a scheduled one
+                                        const editingBlockedByExperiment =
+                                            !!runningExperiment || !!scheduleExperiment;
+
+                                        const isDefaultVariant = getIsDefaultVariant(
+                                            params.variantName
+                                        );
+
+                                        // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+                                        const canEditVariant =
+                                            isDefaultVariant || !editingBlockedByExperiment;
+
+                                        const mode = this.getInitialEditorMode(
+                                            isDefaultVariant,
+                                            canEditVariant
+                                        );
+
+                                        return this.setState({
+                                            runningExperiment,
+                                            clientHost: params.clientHost,
+                                            editor: pageData,
+                                            isEnterpriseLicense: licenseData,
+                                            editorState: EDITOR_STATE.IDLE,
+                                            editorData: {
+                                                mode,
+                                                variantInfo: {
+                                                    canEditVariant,
+                                                    pageId: pageData.page.identifier
                                                 },
-                                                variantName: params.variantName,
-                                                runningExperiment: experiment[0]
-                                            });
-                                        },
-                                        error: ({ status }: HttpErrorResponse) => {
-                                            this.createEmptyState(
-                                                { canEdit: false, canRead: false },
-                                                status
-                                            );
-                                        }
-                                    })
-                                )
+                                                canEditPage: pageData.page.canEdit
+                                            },
+                                            variantName: params.variantName
+                                        });
+                                    },
+                                    error: ({ status }: HttpErrorResponse) => {
+                                        this.createEmptyState(
+                                            { canEdit: false, canRead: false },
+                                            status
+                                        );
+                                    }
+                                })
+                            )
                         )
                     );
                 })

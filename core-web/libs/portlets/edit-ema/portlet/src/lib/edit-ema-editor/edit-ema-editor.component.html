@@ -63,10 +63,7 @@
                 (despersonalize)="onDespersonalize($event)"
                 data-testId="persona-selector" />
             <dot-edit-ema-workflow-actions
-                *ngIf="
-                    es.editorData.mode === editorMode.EDIT ||
-                    es.editorData.mode === editorMode.DEVICE
-                "
+                *ngIf="es.editorData.mode === editorMode.EDIT"
                 [inode]="es.editor.page.inode"
                 (newPage)="handleNewPage($event)" />
         </ng-container>
