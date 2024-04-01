@@ -28,6 +28,7 @@ interface InfoOptions {
         args: string[];
     };
     action?: () => void;
+    actionIcon?: string;
 }
 
 @Component({
@@ -67,7 +68,8 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                 },
                 action: () => {
                     this.goToEdit();
-                }
+                },
+                actionIcon: 'pi pi-times'
             });
         } else if (
             this.editorData.canEditPage &&
@@ -112,7 +114,8 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                                     queryParamsHandling: 'merge'
                                 }
                             );
-                        }
+                        },
+                        actionIcon: 'pi pi-arrow-left'
                     });
                 });
         }
