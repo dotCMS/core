@@ -30,10 +30,7 @@ export class DotWysiwygPluginService {
     constructor() {
         this.dotPropertiesService
             .getKey('WYSIWYG_IMAGE_URL_PATTERN')
-            .subscribe((IMAGE_URL_PATTERN = '') => {
-                this.IMAGE_URL_PATTERN =
-                    IMAGE_URL_PATTERN || '/dA/{shortyId}/{name}?language_id={languageId}';
-            });
+            .subscribe((IMAGE_URL_PATTERN) => (this.IMAGE_URL_PATTERN = IMAGE_URL_PATTERN));
     }
 
     /**
