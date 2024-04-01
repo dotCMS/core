@@ -201,22 +201,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             }
                         }),
                         switchMap(({ pageData, licenseData }) =>
-                            this.dotExperimentsService.getAll(pageData.page.identifier).pipe(
+                            this.dotExperimentsService.getById(params.experimentId ?? '').pipe(
                                 tap({
-                                    next: (experiments) => {
-                                        const runningExperiment = experiments.find(
-                                            (experiment) =>
-                                                experiment.status === DotExperimentStatus.RUNNING
-                                        );
-
-                                        const scheduleExperiment = experiments.find(
-                                            (experiment) =>
-                                                experiment.status === DotExperimentStatus.SCHEDULED
-                                        );
+                                    next: (experiment) => {
+                                        const runningExperiment =
+                                            experiment.status === DotExperimentStatus.RUNNING
+                                                ? experiment
+                                                : null;
 
                                         // Can be blocked by an experiment if there is a running experiment or a scheduled one
-                                        const editingBlockedByExperiment =
-                                            !!runningExperiment || !!scheduleExperiment;
+                                        const editingBlockedByExperiment = [
+                                            DotExperimentStatus.RUNNING,
+                                            DotExperimentStatus.SCHEDULED
+                                        ].includes(experiment.status);
 
                                         const isDefaultVariant = getIsDefaultVariant(
                                             params.variantName
