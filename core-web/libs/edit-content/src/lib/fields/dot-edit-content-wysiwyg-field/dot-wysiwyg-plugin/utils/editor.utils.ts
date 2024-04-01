@@ -32,18 +32,21 @@ export const formatDotImageNode = (pattern: string, asset: DotCMSContentlet) => 
  * @returns
  */
 export const replaceURLPattern = (pattern: string, asset: DotCMSContentlet) => {
-    return pattern
-        .replace(/{name}/g, asset.fileName || asset.name)
-        .replace(/{fileName}/g, asset.fileName || asset.name)
-        .replace(/{path}/g, asset.path)
-        .replace(/{extension}/g, asset.extension)
-        .replace(/{languageId}/g, asset.languageId.toString())
-        .replace(/{hostname}/g, asset.hostName)
-        .replace(/{hostName}/g, asset.hostName)
-        .replace(/{inode}/g, asset.inode)
-        .replace(/{hostId}/g, asset.host)
-        .replace(/{identifier}/g, asset.identifier)
-        .replace(/{id}/g, asset.identifier)
-        .replace(/{shortyInode}/g, asset.inode.replace('-', '').substring(0, 10))
-        .replace(/{shortyId}/g, asset.identifier.replace('-', '').substring(0, 10));
+    const replacements = {
+        '{name}': asset.fileName || asset.name,
+        '{fileName}': asset.fileName || asset.name,
+        '{path}': asset.path,
+        '{extension}': asset.extension,
+        '{languageId}': asset.languageId.toString(),
+        '{hostname}': asset.hostName,
+        '{hostName}': asset.hostName,
+        '{inode}': asset.inode,
+        '{hostId}': asset.host,
+        '{identifier}': asset.identifier,
+        '{id}': asset.identifier,
+        '{shortyInode}': asset.inode.replace('-', '').substring(0, 10),
+        '{shortyId}': asset.identifier.replace('-', '').substring(0, 10)
+    };
+
+    return pattern.replace(/{\w+}/g, (placeholder) => replacements[placeholder] || placeholder);
 };
