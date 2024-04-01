@@ -279,10 +279,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.handlePostMessage(event)?.();
             });
 
-        // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
-        // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
-        // this.store.updateEditorState(EDITOR_STATE.LOADING);
-
         // In VTL Page if user click in a link in the page, we need to update the URL in the editor
         this.store.url$
             .pipe(
@@ -306,6 +302,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     });
                 });
             });
+
+        // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
+        // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
+        // this.store.updateEditorState(EDITOR_STATE.LOADING);
     }
 
     /**
