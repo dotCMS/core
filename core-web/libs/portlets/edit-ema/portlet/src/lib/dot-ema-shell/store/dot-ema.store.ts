@@ -208,7 +208,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                         const editingBlockedByExperiment = [
                                             DotExperimentStatus.RUNNING,
                                             DotExperimentStatus.SCHEDULED
-                                        ].includes(experiment.status);
+                                        ].includes(experiment?.status);
 
                                         const isDefaultVariant = getIsDefaultVariant(
                                             params.variantName

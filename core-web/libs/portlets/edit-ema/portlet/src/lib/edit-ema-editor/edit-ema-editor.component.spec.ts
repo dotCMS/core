@@ -55,7 +55,9 @@ import {
     dotcmsContentletMock,
     seoOGTagsResultMock,
     URL_MAP_CONTENTLET,
-    getRunningExperimentMock
+    getRunningExperimentMock,
+    getScheduleExperimentMock,
+    getDraftExperimentMock
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
@@ -73,7 +75,7 @@ import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST, PAYLOAD_MOCK } from '../shared/consts';
-import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
 
 global.URL.createObjectURL = jest.fn(
@@ -316,10 +318,14 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             {
                 provide: DotExperimentsService,
                 useValue: {
-                    getByStatus(pageId: string) {
-                        if (pageId == 'i-have-a-running-experiment') {
-                            return of([getRunningExperimentMock()]);
-                        } else return of([]);
+                    getById(experimentId: string) {
+                        if (experimentId == 'i-have-a-running-experiment') {
+                            return of(getRunningExperimentMock());
+                        } else if (experimentId == 'i-have-a-scheduled-experiment') {
+                            return of(getScheduleExperimentMock());
+                        } else if (experimentId) return of(getDraftExperimentMock());
+
+                        return of(null);
                     }
                 }
             },
@@ -383,7 +389,33 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 provide: DotPageApiService,
                 useValue: {
                     get({ language_id }) {
+                        // We use the language_id to determine the response, use this to test different behaviors
                         return {
+                            6: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    canEdit: false
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 6,
+                                        language: 'Portuguese',
+                                        countryCode: 'BR',
+                                        languageCode: 'br',
+                                        country: 'Brazil'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
+                                containers: dotPageContainerStructureMock
+                            }),
                             5: of({
                                 page: {
                                     title: 'hello world',
@@ -400,10 +432,10 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                 viewAs: {
                                     language: {
                                         id: 4,
-                                        language: 'German',
-                                        countryCode: 'DE',
-                                        languageCode: 'de',
-                                        country: 'Germany'
+                                        language: 'Russian',
+                                        countryCode: 'Ru',
+                                        languageCode: 'ru',
+                                        country: 'Russia'
                                     },
                                     persona: DEFAULT_PERSONA
                                 },
@@ -684,35 +716,6 @@ describe('EditEmaEditorComponent', () => {
                 jest.useRealTimers(); // Restore the real timers after each test
             });
 
-            it('should reset the selection on click on the go to edit button', () => {
-                spectator.detectChanges();
-
-                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                const iphone = mockDotDevices[0];
-
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
-                spectator.detectChanges();
-
-                const backToEditButton = spectator.debugElement.query(
-                    By.css('[data-testId="ema-back-to-edit"]')
-                );
-
-                spectator.triggerEventHandler(backToEditButton, 'onClick', {});
-
-                const selectedDevice = spectator.query(byTestId('selected-device'));
-
-                expect(selectedDevice).toBeNull();
-
-                expect(updatePreviewStateMock).toHaveBeenNthCalledWith(2, {
-                    editorMode: EDITOR_MODE.EDIT
-                });
-            });
-
             it('should hide the components that are not needed for preview mode', () => {
                 const componentsToHide = [
                     'palette',
@@ -756,7 +759,8 @@ describe('EditEmaEditorComponent', () => {
                     url: 'index',
                     language_id: '5',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
-                    variantName: 'hello-there'
+                    variantName: 'hello-there',
+                    experimentId: 'i-have-a-running-experiment'
                 });
 
                 spectator.detectChanges();
@@ -789,7 +793,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should show the components that need showed on preview mode', () => {
-                const componentsToShow = ['ema-back-to-edit', 'device-display']; // Test id of components that should show when entering preview modes
+                const componentsToShow = ['info-display']; // Test id of components that should show when entering preview modes
 
                 spectator.detectChanges();
 
@@ -807,8 +811,8 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should call updatePreviewState from the store', () => {
-                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
+            it('should call setDevice from the store', () => {
+                const setDeviceMock = jest.spyOn(store, 'setDevice');
 
                 spectator.detectChanges();
 
@@ -821,15 +825,12 @@ describe('EditEmaEditorComponent', () => {
                 spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
                 spectator.detectChanges();
 
-                expect(updatePreviewStateMock).toHaveBeenCalledWith({
-                    editorMode: EDITOR_MODE.PREVIEW,
-                    device: iphone
-                });
+                expect(setDeviceMock).toHaveBeenCalledWith(iphone);
             });
 
             // REMOVED THE `SKIP` WHEN THIS PR [https://github.com/dotCMS/core/pull/27866] IS MERGED
             it('should open seo results when clicking on a social media tile', () => {
-                const updatePreviewStateMock = jest.spyOn(store, 'updatePreviewState');
+                const setSocialMediaMock = jest.spyOn(store, 'setSocialMedia');
 
                 store.load({
                     url: 'index',
@@ -847,10 +848,7 @@ describe('EditEmaEditorComponent', () => {
 
                 expect(spectator.query(byTestId('results-seo-tool'))).not.toBeNull(); // This components share the same logic as the preview by device
 
-                expect(updatePreviewStateMock).toHaveBeenCalledWith({
-                    editorMode: EDITOR_MODE.PREVIEW,
-                    socialMedia: 'Facebook'
-                });
+                expect(setSocialMediaMock).toHaveBeenCalledWith('Facebook');
             });
         });
 
@@ -1919,7 +1917,8 @@ describe('EditEmaEditorComponent', () => {
                 store.load({
                     url: 'index',
                     language_id: '5',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    experimentId: 'i-have-a-running-experiment'
                 }); // This will load a page with a running experiment
 
                 spectator.detectChanges();
@@ -1927,6 +1926,50 @@ describe('EditEmaEditorComponent', () => {
                 const runningExperiment = spectator.query(byTestId('ema-running-experiment'));
 
                 expect(runningExperiment).not.toBeNull();
+            });
+
+            it('should show the info display when you cannot edit the page', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '6',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+
+                spectator.detectChanges();
+
+                const infoDisplay = spectator.query(byTestId('info-display'));
+
+                expect(infoDisplay).not.toBeNull();
+            });
+
+            it('should show the info display when trying to edit a variant of a running experiment', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '6',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    experimentId: 'i-have-a-running-experiment'
+                }); // This will load a page with a running experiment
+
+                spectator.detectChanges();
+
+                const infoDisplay = spectator.query(byTestId('info-display'));
+
+                expect(infoDisplay).not.toBeNull();
+            });
+
+            it('should show the info display when trying to edit a variant of an scheduled experiment', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '6',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    experimentId: 'i-have-a-scheduled-experiment'
+                }); // This will load a page with a scheduled experiment
+
+                spectator.detectChanges();
+
+                const infoDisplay = spectator.query(byTestId('info-display'));
+
+                expect(infoDisplay).not.toBeNull();
             });
 
             describe('VTL Page', () => {
