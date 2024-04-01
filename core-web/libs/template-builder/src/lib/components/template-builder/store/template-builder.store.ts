@@ -391,38 +391,54 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * GridStack use for the internal state and if we change it, we break it.
      * @memberof DotTemplateBuilderStore
      */
-    readonly updateOldRows = this.updater((state, newRows: DotGridStackWidget[]) => {
-        const { rows: oldRows } = state;
+    readonly updateOldRows = this.updater(
+        (
+            state,
+            {
+                newRows,
+                templateIdentifier
+            }: {
+                newRows: DotGridStackWidget[];
+                templateIdentifier: string;
+            }
+        ) => {
+            const { rows: oldRows } = state;
 
-        const newStateRows = oldRows.map((oldRow) => {
-            const newRow = newRows.find((newRow) => newRow.y === oldRow.y); // Look at the row in the same Y position
+            const shouldReplaceRows = state.templateIdentifier !== templateIdentifier;
+
+            const newStateRows = shouldReplaceRows
+                ? newRows
+                : oldRows.map((oldRow) => {
+                      const newRow = newRows.find((newRow) => newRow.y === oldRow.y); // Look at the row in the same Y position
+
+                      return {
+                          ...newRow, // We want the data from the backend
+                          id: oldRow.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
+                          subGridOpts: {
+                              ...(newRow?.subGridOpts || {}),
+                              children: newRow?.subGridOpts.children.map((newChild) => {
+                                  const oldChild = oldRow.subGridOpts.children.find(
+                                      (oldChild) => oldChild.x === newChild.x
+                                  ); // Look at the column in the same X position
+
+                                  return {
+                                      ...newChild, // We want the data from the backend
+                                      id: oldChild.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
+                                      containers: newChild.containers
+                                  };
+                              })
+                          }
+                      };
+                  });
 
             return {
-                ...newRow, // We want the data from the backend
-                id: oldRow.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
-                subGridOpts: {
-                    ...newRow.subGridOpts,
-                    children: newRow.subGridOpts.children.map((newChild) => {
-                        const oldChild = oldRow.subGridOpts.children.find(
-                            (oldChild) => oldChild.x === newChild.x
-                        ); // Look at the column in the same X position
-
-                        return {
-                            ...newChild, // We want the data from the backend
-                            id: oldChild.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
-                            containers: newChild.containers
-                        };
-                    })
-                }
+                ...state,
+                rows: newStateRows,
+                templateIdentifier,
+                shouldEmit: false
             };
-        });
-
-        return {
-            ...state,
-            rows: newStateRows,
-            shouldEmit: false
-        };
-    });
+        }
+    );
 
     /**
      * @description This method deletes a container from the sidebar

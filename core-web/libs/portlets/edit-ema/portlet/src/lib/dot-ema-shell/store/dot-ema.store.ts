@@ -85,6 +85,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly stateLoad$ = this.select((state) => state.editorState);
 
+    readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
+
+    readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
+
     readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
         return {
             state,
@@ -129,12 +133,27 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly clientHost$ = this.select((state) => state.clientHost);
 
-    readonly layoutProperties$ = this.select((state) => ({
+    /**
+     * Before this was layoutProperties, but are separate to "temp" selector.
+     * And then is merged with templateIdentifier in layoutProperties$.
+     * This is to try avoid extra-calls on the select, and avoid memory leaks
+     */
+    private readonly layoutProps$ = this.select((state) => ({
         layout: state.editor.layout,
         themeId: state.editor.template.theme,
         pageId: state.editor.page.identifier,
         containersMap: this.mapContainers(state.editor.containers)
     }));
+
+    readonly layoutProperties$ = this.select(
+        this.layoutProps$,
+        this.templateIdentifier$,
+        this.templateThemeId$,
+        (props, templateIdentifier, themeId) => ({
+            ...props,
+            template: { identifier: templateIdentifier, themeId }
+        })
+    );
 
     readonly shellProperties$ = this.select((state) => ({
         page: state.editor.page,

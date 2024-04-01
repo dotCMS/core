@@ -20,7 +20,6 @@
     /**
      * Ping the editor to see if the page is inside the editor
      */ CUSTOMER_ACTIONS["PING_EDITOR"] = "ping-editor";
-    CUSTOMER_ACTIONS["CONTENT_CHANGE"] = "content-change";
     CUSTOMER_ACTIONS["NOOP"] = "noop";
 })(CUSTOMER_ACTIONS || (CUSTOMER_ACTIONS = {}));
 /**
@@ -154,32 +153,23 @@
         return findContentletElement(element === null || element === void 0 ? void 0 : element["parentElement"]);
     }
 }
+function finVTLData(target) {
+    var vltElements = target.querySelectorAll('[data-dot-object="vtl-file"]');
+    if (!vltElements.length) {
+        return null;
+    }
+    return Array.from(vltElements).map(function(vltElement) {
+        var _vltElement_dataset, _vltElement_dataset1;
+        return {
+            inode: (_vltElement_dataset = vltElement.dataset) === null || _vltElement_dataset === void 0 ? void 0 : _vltElement_dataset["dotInode"],
+            name: (_vltElement_dataset1 = vltElement.dataset) === null || _vltElement_dataset1 === void 0 ? void 0 : _vltElement_dataset1["dotUrl"]
+        };
+    });
+// if (vltElement) {
+//     return vltElement.dataset?.['dotInode'];
+// }
+}
 
-function _array_like_to_array(arr, len) {
-    if (len == null || len > arr.length) len = arr.length;
-    for(var i = 0, arr2 = new Array(len); i < len; i++)arr2[i] = arr[i];
-    return arr2;
-}
-function _array_without_holes(arr) {
-    if (Array.isArray(arr)) return _array_like_to_array(arr);
-}
-function _iterable_to_array(iter) {
-    if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
-}
-function _non_iterable_spread() {
-    throw new TypeError("Invalid attempt to spread non-iterable instance.\\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-}
-function _to_consumable_array(arr) {
-    return _array_without_holes(arr) || _iterable_to_array(arr) || _unsupported_iterable_to_array(arr) || _non_iterable_spread();
-}
-function _unsupported_iterable_to_array(o, minLen) {
-    if (!o) return;
-    if (typeof o === "string") return _array_like_to_array(o, minLen);
-    var n = Object.prototype.toString.call(o).slice(8, -1);
-    if (n === "Object" && o.constructor) n = o.constructor.name;
-    if (n === "Map" || n === "Set") return Array.from(n);
-    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _array_like_to_array(o, minLen);
-}
 /**
  * Default reload function that reloads the current window.
  */ var defaultReloadFn = function() {
@@ -239,18 +229,21 @@ function _unsupported_iterable_to_array(o, minLen) {
     var pointerMoveCallback = function(event) {
         var // Here extract dot-container from contentlet if is Headless
         // or search in parent container if is VTL
-        _target_dataset, _target_dataset1, _target_dataset2, _target_dataset3, _target_dataset4, _target_dataset5;
+        _target_dataset, _target_dataset1, _target_dataset2, _target_dataset3, _target_dataset4, _target_dataset5, _target_dataset6;
         var target = findContentletElement(event.target);
         if (!target) return;
         var _target_getBoundingClientRect = target.getBoundingClientRect(), x = _target_getBoundingClientRect.x, y = _target_getBoundingClientRect.y, width = _target_getBoundingClientRect.width, height = _target_getBoundingClientRect.height;
+        var vtlFiles = finVTLData(target);
         var contentletPayload = {
             container: ((_target_dataset = target.dataset) === null || _target_dataset === void 0 ? void 0 : _target_dataset["dotContainer"]) ? JSON.parse((_target_dataset1 = target.dataset) === null || _target_dataset1 === void 0 ? void 0 : _target_dataset1["dotContainer"]) : getClosestContainerData(target),
             contentlet: {
                 identifier: (_target_dataset2 = target.dataset) === null || _target_dataset2 === void 0 ? void 0 : _target_dataset2["dotIdentifier"],
                 title: (_target_dataset3 = target.dataset) === null || _target_dataset3 === void 0 ? void 0 : _target_dataset3["dotTitle"],
                 inode: (_target_dataset4 = target.dataset) === null || _target_dataset4 === void 0 ? void 0 : _target_dataset4["dotInode"],
-                contentType: (_target_dataset5 = target.dataset) === null || _target_dataset5 === void 0 ? void 0 : _target_dataset5["dotType"]
-            }
+                contentType: (_target_dataset5 = target.dataset) === null || _target_dataset5 === void 0 ? void 0 : _target_dataset5["dotType"],
+                onNumberOfPages: (_target_dataset6 = target.dataset) === null || _target_dataset6 === void 0 ? void 0 : _target_dataset6["dotOnNumberOfPages"]
+            },
+            vtlFiles: vtlFiles
         };
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_CONTENTLET,
@@ -291,49 +284,6 @@ function _unsupported_iterable_to_array(o, minLen) {
     window.addEventListener("load", preserveScrollCallback);
 }
 /**
- * Listens for changes in the content and triggers a customer action when the content changes.
- *
- * @private
- * @memberof DotCMSPageEditor
- */ function listenContentChange() {
-    var observer = new MutationObserver(function(mutationsList) {
-        var _iteratorNormalCompletion = true, _didIteratorError = false, _iteratorError = undefined;
-        try {
-            for(var _iterator = mutationsList[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true){
-                var _step_value = _step.value, addedNodes = _step_value.addedNodes, removedNodes = _step_value.removedNodes, type = _step_value.type;
-                if (type === "childList") {
-                    var didNodesChanged = _to_consumable_array(Array.from(addedNodes)).concat(_to_consumable_array(Array.from(removedNodes))).filter(function(node) {
-                        var _node_dataset;
-                        return ((_node_dataset = node.dataset) === null || _node_dataset === void 0 ? void 0 : _node_dataset["dotObject"]) === "contentlet";
-                    }).length;
-                    if (didNodesChanged) {
-                        postMessageToEditor({
-                            action: CUSTOMER_ACTIONS.CONTENT_CHANGE
-                        });
-                    }
-                }
-            }
-        } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
-        } finally{
-            try {
-                if (!_iteratorNormalCompletion && _iterator.return != null) {
-                    _iterator.return();
-                }
-            } finally{
-                if (_didIteratorError) {
-                    throw _iteratorError;
-                }
-            }
-        }
-    });
-    observer.observe(document, {
-        childList: true,
-        subtree: true
-    });
-}
-/**
  * Sends a ping message to the editor.
  *
  */ function pingEditor() {
@@ -367,5 +317,4 @@ function _unsupported_iterable_to_array(o, minLen) {
     scrollHandler();
     preserveScrollOnIframe();
     listenHoveredContentlet();
-    listenContentChange();
 }
