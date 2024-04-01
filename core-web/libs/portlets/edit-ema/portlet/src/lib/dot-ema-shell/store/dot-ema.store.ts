@@ -103,7 +103,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             url: state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
-            variantName: state.variantName
+            variantName: state.editorData.variantId
         });
 
         const favoritePageURL = this.createFavoritePagesURL({
@@ -232,9 +232,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                             editorData: {
                                                 mode,
                                                 canEditVariant,
-                                                canEditPage: pageData.page.canEdit
-                                            },
-                                            variantName: params.variantName
+                                                canEditPage: pageData.page.canEdit,
+                                                variantId: params.variantName
+                                            }
                                         });
                                     },
                                     error: ({ status }: HttpErrorResponse) => {

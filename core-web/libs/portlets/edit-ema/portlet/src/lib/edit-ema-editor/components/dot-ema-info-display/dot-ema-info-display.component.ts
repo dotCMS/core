@@ -7,7 +7,7 @@ import {
     inject,
     signal
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -45,7 +45,6 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
 
     protected readonly store = inject(EditEmaStore);
     protected readonly router = inject(Router);
-    protected readonly activatedRoute = inject(ActivatedRoute);
 
     protected readonly editorMode = EDITOR_MODE;
 
@@ -74,7 +73,7 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
             (this.editorData.mode === this.editorMode.EDIT_VARIANT ||
                 this.editorData.mode === this.editorMode.PREVIEW_VARIANT)
         ) {
-            const variantId = this.activatedRoute.snapshot.queryParams['variantName'];
+            const variantId = this.editorData.variantId;
             const name =
                 this.currentExperiment.trafficProportion.variants.find(
                     (variant) => variant.id === variantId
@@ -113,9 +112,7 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
     }
 
     protected goToEdit() {
-        const isNotDefaultVariant = !getIsDefaultVariant(
-            this.activatedRoute.snapshot.queryParams['variantName']
-        );
+        const isNotDefaultVariant = !getIsDefaultVariant(this.editorData.variantId);
 
         if (isNotDefaultVariant) {
             this.store.updateEditorData({

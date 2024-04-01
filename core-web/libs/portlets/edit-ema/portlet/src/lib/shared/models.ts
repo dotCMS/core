@@ -82,6 +82,7 @@ export interface EditorData {
     socialMedia?: string;
     canEditVariant?: boolean;
     canEditPage?: boolean;
+    variantId?: string;
 }
 
 export interface EditEmaState {
@@ -91,6 +92,5 @@ export interface EditEmaState {
     isEnterpriseLicense: boolean;
     editorState: EDITOR_STATE;
     editorData: EditorData;
-    variantName?: string;
     currentExperiment?: DotExperiment;
 }

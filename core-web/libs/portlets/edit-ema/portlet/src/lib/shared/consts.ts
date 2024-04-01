@@ -1,8 +1,12 @@
 import { InjectionToken } from '@angular/core';
 
+import { mockSites } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
+import { mockDotLayout, mockDotTemplate, mockDotContainers } from '@dotcms/utils-testing';
 
 import { ActionPayload } from './models';
+
+import { DotPageApiResponse } from '../services/dot-page-api.service';
 
 export const EDIT_CONTENTLET_URL =
     '/c/portal/layout?p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=';
@@ -148,4 +152,33 @@ export const PAYLOAD_MOCK: ActionPayload = {
     ],
     pageId: 'a9f30020-54ef-494e-92ed-645e757171c2',
     position: 'before'
+};
+
+export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
+    page: {
+        pageURI: 'test-url',
+        title: 'Test Page',
+        identifier: '123',
+        inode: '123-i',
+        canEdit: true,
+        canRead: true,
+        contentType: 'htmlpageasset'
+    },
+    viewAs: {
+        language: {
+            id: 1,
+            language: 'English',
+            countryCode: 'US',
+            languageCode: '1',
+            country: 'United States'
+        },
+
+        persona: {
+            ...DEFAULT_PERSONA
+        }
+    },
+    site: mockSites[0],
+    layout: mockDotLayout(),
+    template: mockDotTemplate(),
+    containers: mockDotContainers()
 };

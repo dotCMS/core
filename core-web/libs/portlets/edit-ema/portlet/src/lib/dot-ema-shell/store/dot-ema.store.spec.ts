@@ -19,38 +19,9 @@ import {
 import { EditEmaStore } from './dot-ema.store';
 
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../../shared/consts';
+import { DEFAULT_PERSONA, MOCK_RESPONSE_HEADLESS } from '../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload } from '../../shared/models';
-
-const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
-    page: {
-        pageURI: 'test-url',
-        title: 'Test Page',
-        identifier: '123',
-        inode: '123-i',
-        canEdit: true,
-        canRead: true,
-        contentType: 'htmlpageasset'
-    },
-    viewAs: {
-        language: {
-            id: 1,
-            language: 'English',
-            countryCode: 'US',
-            languageCode: '1',
-            country: 'United States'
-        },
-
-        persona: {
-            ...DEFAULT_PERSONA
-        }
-    },
-    site: mockSites[0],
-    layout: mockDotLayout(),
-    template: mockDotTemplate(),
-    containers: mockDotContainers()
-};
 
 const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     page: {
@@ -235,7 +206,8 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.PREVIEW_VARIANT,
                             canEditPage: true,
-                            canEditVariant: false
+                            canEditVariant: false,
+                            variantId: '111'
                         }
                     });
                     done();
@@ -268,7 +240,8 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.PREVIEW_VARIANT,
                             canEditPage: true,
-                            canEditVariant: false
+                            canEditVariant: false,
+                            variantId: '222'
                         }
                     });
                     done();
@@ -301,7 +274,8 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT_VARIANT,
                             canEditPage: true,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            variantId: '111'
                         }
                     });
                     done();
