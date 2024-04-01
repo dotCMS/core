@@ -49,7 +49,11 @@ export const getRunningExperimentMock = (): DotExperiment | undefined => {
 };
 
 export const getDraftExperimentMock = (): DotExperiment | undefined => {
-    return ExperimentMocks.find((experiment) => experiment.status === DotExperimentStatus.DRAFT);
+    return ExperimentMocks.find(
+        (experiment) =>
+            experiment.status === DotExperimentStatus.DRAFT &&
+            experiment.trafficProportion.variants.length > 1
+    );
 };
 
 export const getScheduleExperimentMock = (): DotExperiment | undefined => {

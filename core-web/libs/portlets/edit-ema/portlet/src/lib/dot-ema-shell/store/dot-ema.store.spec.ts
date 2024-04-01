@@ -6,7 +6,9 @@ import { MessageService } from 'primeng/api';
 
 import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
-    DotExperimentsServiceMock,
+    getDraftExperimentMock,
+    getRunningExperimentMock,
+    getScheduleExperimentMock,
     mockDotContainers,
     mockDotLayout,
     MockDotMessageService,
@@ -106,7 +108,17 @@ describe('EditEmaStore', () => {
                 },
                 {
                     provide: DotExperimentsService,
-                    useValue: DotExperimentsServiceMock
+                    useValue: {
+                        getById(experimentId: string) {
+                            if (experimentId == 'i-have-a-running-experiment') {
+                                return of(getRunningExperimentMock());
+                            } else if (experimentId == 'i-have-a-scheduled-experiment') {
+                                return of(getScheduleExperimentMock());
+                            } else if (experimentId) return of(getDraftExperimentMock());
+
+                            return of(null);
+                        }
+                    }
                 }
             ]
         });
@@ -139,14 +151,157 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment: null,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL:
                             'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true
+                        }
+                    });
+                    done();
+                });
+            });
+
+            it('should return editorState with canEditPage setted to false', (done) => {
+                const headlessResponseWithoutEditPermission = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false
+                    }
+                };
+
+                const dotPageApiService = spectator.inject(DotPageApiService);
+
+                dotPageApiService.get.andReturn(of(headlessResponseWithoutEditPermission));
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        clientHost: 'http://localhost:3000',
+                        editor: headlessResponseWithoutEditPermission,
+                        currentExperiment: null,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: false,
+                            canEditVariant: true
+                        }
+                    });
+                    done();
+                });
+            });
+
+            it('should return cannot edit variant for a page with a running experiment', (done) => {
+                const currentExperiment = getRunningExperimentMock();
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123',
+                    experimentId: 'i-have-a-running-experiment',
+                    variantName: currentExperiment.trafficProportion.variants[1].id
+                });
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.PREVIEW_VARIANT,
+                            canEditPage: true,
+                            canEditVariant: false
+                        }
+                    });
+                    done();
+                });
+            });
+
+            it('should return cannot edit variant for a page with a scheduled experiment', (done) => {
+                const currentExperiment = getScheduleExperimentMock();
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123',
+                    experimentId: 'i-have-a-scheduled-experiment',
+                    variantName: currentExperiment.trafficProportion.variants[1].id
+                });
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=222&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=222&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.PREVIEW_VARIANT,
+                            canEditPage: true,
+                            canEditVariant: false
+                        }
+                    });
+                    done();
+                });
+            });
+
+            it('should return can edit variant for a page with a draft experiment', (done) => {
+                const currentExperiment = getDraftExperimentMock();
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123',
+                    experimentId: 'i-have-a-draft-experiment',
+                    variantName: currentExperiment.trafficProportion.variants[1].id
+                });
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT_VARIANT,
+                            canEditPage: true,
+                            canEditVariant: true
                         }
                     });
                     done();
@@ -218,14 +373,17 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment: null,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL:
                             'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditVariant: true,
+                            canEditPage: true
                         }
                     });
                     done();
@@ -250,10 +408,13 @@ describe('EditEmaStore', () => {
                     expect(state as unknown).toEqual({
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment: null,
                         isEnterpriseLicense: true,
                         editorState: EDITOR_STATE.IDLE,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditVariant: true,
+                            canEditPage: true
                         }
                     });
                     done();
@@ -282,9 +443,12 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
+                        currentExperiment: null,
                         editorState: EDITOR_STATE.IDLE,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true
                         }
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
@@ -561,7 +725,17 @@ describe('EditEmaStore', () => {
                 },
                 {
                     provide: DotExperimentsService,
-                    useValue: DotExperimentsServiceMock
+                    useValue: {
+                        getById(experimentId: string) {
+                            if (experimentId == 'i-have-a-running-experiment') {
+                                return of(getRunningExperimentMock());
+                            } else if (experimentId == 'i-have-a-scheduled-experiment') {
+                                return of(getScheduleExperimentMock());
+                            } else if (experimentId) return of(getDraftExperimentMock());
+
+                            return of(null);
+                        }
+                    }
                 }
             ]
         });
@@ -596,13 +770,16 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
+                        currentExperiment: null,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true
                         }
                     });
                     done();
@@ -628,15 +805,18 @@ describe('EditEmaStore', () => {
                     expect(state).toEqual({
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
+
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true
                         },
-                        runningExperiment: undefined
+                        currentExperiment: null
                     });
                     done();
                 });
@@ -660,9 +840,12 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         isEnterpriseLicense: true,
+                        currentExperiment: null,
                         editorState: EDITOR_STATE.IDLE,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true
                         }
                     });
                     done();
