@@ -153,7 +153,12 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": ""
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier=e424abd7e2e7a9031c5a0a3c18182f1b",
@@ -324,7 +329,12 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": ""
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier=9044ec0fdb3788a814ccabf789f376d4",
@@ -500,7 +510,12 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": ""
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier=e424abd7e2e7a9031c5a0a3c18182f1b",
