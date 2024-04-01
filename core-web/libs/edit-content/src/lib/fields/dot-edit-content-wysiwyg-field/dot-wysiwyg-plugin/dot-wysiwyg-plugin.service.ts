@@ -6,7 +6,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { filter } from 'rxjs/operators';
 
-import { DotUploadFileService } from '@dotcms/data-access';
+import { DotPropertiesService, DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotAssetSearchDialogComponent } from '@dotcms/ui';
 
@@ -22,7 +22,19 @@ import { formatDotImageNode } from './utils/editor.utils';
 export class DotWysiwygPluginService {
     private readonly dialogService: DialogService = inject(DialogService);
     private readonly dotUploadFileService: DotUploadFileService = inject(DotUploadFileService);
+    private readonly dotPropertiesService: DotPropertiesService = inject(DotPropertiesService);
     private readonly ngZone: NgZone = inject(NgZone);
+
+    private IMAGE_URL_PATTERN = '';
+
+    constructor() {
+        this.dotPropertiesService
+            .getKey('WYSIWYG_IMAGE_URL_PATTERN')
+            .subscribe((IMAGE_URL_PATTERN = '') => {
+                this.IMAGE_URL_PATTERN =
+                    IMAGE_URL_PATTERN || '/dA/{shortyId}/{name}?language_id={languageId}';
+            });
+    }
 
     /**
      * Initialize the plugins for the WYSIWYG editor
@@ -72,7 +84,7 @@ export class DotWysiwygPluginService {
             ref.onClose
                 .pipe(filter((asset) => !!asset))
                 .subscribe((asset: DotCMSContentlet) =>
-                    editor.insertContent(formatDotImageNode(asset))
+                    editor.insertContent(formatDotImageNode(this.IMAGE_URL_PATTERN, asset))
                 );
         });
     }
@@ -104,7 +116,7 @@ export class DotWysiwygPluginService {
                 .subscribe((contentlets) => {
                     const data = contentlets[0];
                     const asset = data[Object.keys(data)[0]];
-                    editor.insertContent(formatDotImageNode(asset));
+                    editor.insertContent(formatDotImageNode(this.IMAGE_URL_PATTERN, asset));
                 });
         });
     }
