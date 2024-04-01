@@ -1,12 +1,12 @@
 import { Observable } from 'rxjs';
 
-import { Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { filter } from 'rxjs/operators';
+import { delay, filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -33,34 +33,13 @@ export class AIContentPromptComponent implements OnInit {
     });
     confirmationService = inject(ConfirmationService);
     dotMessageService = inject(DotMessageService);
+    submitButtonLabel = `block-editor.extension.ai-image.generate`;
     private destroyRef = inject(DestroyRef);
 
-    @ViewChild('inputTextarea') private inputTextarea: HTMLTextAreaElement;
+    @ViewChild('inputTextarea') private inputTextarea: ElementRef<HTMLTextAreaElement>;
 
     ngOnInit() {
-        this.store.showDialog$
-            .pipe(
-                takeUntilDestroyed(this.destroyRef),
-                filter((showDialog) => showDialog)
-            )
-            .subscribe(() => {
-                console.log('focus text area');
-                this.inputTextarea.focus();
-            });
-        this.store.status$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((status) => {
-            status === ComponentStatus.LOADING ? this.form.disable() : this.form.enable();
-        });
-    }
-
-    /**
-     *  Handle scape key in the prompt input
-     * @param event
-     * @return {*}  {void}
-     * @memberof AIContentPromptComponent
-     */
-    handleScape(event: KeyboardEvent): void {
-        this.store.setStatus(ComponentStatus.INIT);
-        event.stopPropagation();
+        this.setSubscriptions();
     }
 
     /**
@@ -72,7 +51,28 @@ export class AIContentPromptComponent implements OnInit {
         this.store.cleanError();
     }
 
-    onPageChange($event: any) {
-        console.log($event);
+    private setSubscriptions(): void {
+        // Focus on the input when the dialog is shown and clean form.
+        this.store.showDialog$
+            .pipe(
+                takeUntilDestroyed(this.destroyRef),
+                filter((showDialog) => showDialog),
+                delay(10) // wait dialog to be visible
+            )
+            .subscribe(() => {
+                this.form.reset();
+                this.inputTextarea.nativeElement.focus();
+            });
+
+        // Disable the form and change the submit button label when the status is loading
+        this.store.status$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((status) => {
+            if (status === ComponentStatus.LOADING) {
+                this.form.disable();
+                this.submitButtonLabel = 'block-editor.extension.ai-image.generating';
+            } else {
+                this.form.enable();
+                this.submitButtonLabel = 'block-editor.extension.ai-image.generate';
+            }
+        });
     }
 }

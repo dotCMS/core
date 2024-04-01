@@ -108,12 +108,14 @@ export class AIContentPromptView {
         //     });
 
         /**
-         * Subscription to insert the text Content once accepted tin the Dialog.
+         * Subscription to insert the text Content once accepted in the Dialog.
          * Fired from the AI Content Actions plugin.
          */
-        this.componentStore.selectedContent$.pipe(takeUntil(this.destroy$)).subscribe((content) => {
-            this.editor.chain().insertContent(content).closeAIPrompt().run();
-        });
+        this.componentStore.selectedContent$
+            .pipe(takeUntil(this.destroy$), skip(1))
+            .subscribe((content) => {
+                this.editor.chain().insertContent(content).run();
+            });
 
         /**
          * Subscription to update the editor state, when close the AI Content Prompt Dialog.
@@ -335,7 +337,6 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                     transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
                 const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
 
-                console.log('aIContentPromptOpen', aIContentPromptOpen);
                 if (typeof aIContentPromptOpen === 'boolean') {
                     return { aIContentPromptOpen };
                 }

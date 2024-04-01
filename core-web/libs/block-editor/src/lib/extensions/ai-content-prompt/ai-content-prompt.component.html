@@ -56,7 +56,9 @@
             <textarea
                 class="ai-content__input-text"
                 #inputTextarea
+                [autofocus]="true"
                 [placeholder]="'block-editor.extension.ai-content.ask.placeholder' | dm"
+                pAutoFocus
                 pInputTextarea
                 formControlName="textPrompt"></textarea>
 
@@ -65,10 +67,11 @@
                     [label]="'block-editor.extension.ai-image.insert' | dm"
                     [disabled]="vm.status === ComponentStatus.LOADING || !vm.content"
                     (click)="store.setSelectedContent(vm.content)"
+                    type="button"
                     pButton></button>
                 <button
                     class="p-button-outlined"
-                    [label]="'Generate'"
+                    [label]="submitButtonLabel | dm"
                     [disabled]="form.invalid || vm.status === ComponentStatus.LOADING"
                     type="submit"
                     pButton>

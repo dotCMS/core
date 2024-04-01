@@ -38,6 +38,7 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     readonly showDialog$ = this.select((state) => state.showDialog);
     readonly selectedContent$ = this.select((state) => state.selectedContent);
     readonly vm$ = this.select((state) => state);
+
     //Updaters
     readonly setStatus = this.updater((state, status: ComponentStatus) => ({
         ...state,
@@ -45,17 +46,13 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     }));
 
     readonly setSelectedContent = this.updater((state, selectedContent: string) => ({
-        ...initialState,
+        ...state,
+        showDialog: false,
         selectedContent
     }));
 
-    readonly setAcceptContent = this.updater((state, acceptContent: boolean) => ({
-        ...state,
-        acceptContent
-    }));
-
-    readonly showDialog = this.updater((state) => ({
-        ...state,
+    readonly showDialog = this.updater(() => ({
+        ...initialState,
         showDialog: true
     }));
 
@@ -87,20 +84,7 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
             })
         );
     });
-    /**
-     * When this effect is triggered, it uses the latest prompt value from the store's state
-     * to generate content using the `generateContent` effect.
-     *
-     * @param trigger$ - An observable that triggers the effect when it emits a value (e.g., `this.reGenerateContent()`)
-     * @returns An observable representing the triggering of the effect.
-     * @memberof AiContentPromptStore
-     */
-    readonly reGenerateContent = this.effect((trigger$: Observable<void>) => {
-        return trigger$.pipe(
-            withLatestFrom(this.state$),
-            tap(([_, { prompt }]) => this.generateContent(of(prompt)))
-        );
-    });
+
     readonly cleanError = this.updater((state) => ({
         ...state,
         error: ''
