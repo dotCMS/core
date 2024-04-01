@@ -1,5 +1,7 @@
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+export const DEFAULT_IMAGE_URL_PATTERN = '/dA/{shortyId}/{name}?language_id={languageId}';
+
 export const formatDotImageNode = (pattern: string, asset: DotCMSContentlet) => {
     const src = replaceURLPattern(pattern, asset);
 

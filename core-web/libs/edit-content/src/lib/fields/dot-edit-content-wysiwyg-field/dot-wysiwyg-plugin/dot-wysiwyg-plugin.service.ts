@@ -10,7 +10,7 @@ import { DotPropertiesService, DotUploadFileService } from '@dotcms/data-access'
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotAssetSearchDialogComponent } from '@dotcms/ui';
 
-import { formatDotImageNode } from './utils/editor.utils';
+import { DEFAULT_IMAGE_URL_PATTERN, formatDotImageNode } from './utils/editor.utils';
 
 /**
  * Service to initialize the plugins for the WYSIWYG editor
@@ -25,11 +25,12 @@ export class DotWysiwygPluginService {
     private readonly dotPropertiesService: DotPropertiesService = inject(DotPropertiesService);
     private readonly ngZone: NgZone = inject(NgZone);
 
-    private IMAGE_URL_PATTERN = '';
+    private IMAGE_URL_PATTERN = DEFAULT_IMAGE_URL_PATTERN;
 
     constructor() {
         this.dotPropertiesService
             .getKey('WYSIWYG_IMAGE_URL_PATTERN')
+            .pipe(filter((IMAGE_URL_PATTERN) => !!IMAGE_URL_PATTERN))
             .subscribe((IMAGE_URL_PATTERN) => (this.IMAGE_URL_PATTERN = IMAGE_URL_PATTERN));
     }
 
