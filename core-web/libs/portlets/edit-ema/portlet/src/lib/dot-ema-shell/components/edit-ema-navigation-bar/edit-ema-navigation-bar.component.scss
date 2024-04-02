@@ -102,7 +102,7 @@ use {
         height: 64px;
         width: 64px;
         transition-property: height, width;
-        transition-duration: 0.3s;
+        transition-duration: $basic-speed;
         transition-timing-function: ease-in-out;
     }
 
