@@ -60,7 +60,7 @@ LABEL com.dotcms.description "dotCMS Content Management System"
 ARG USER_UID="65001"
 ARG USER_GID="65001"
 
-COPY --from=composed-base / /
+COPY --from=container-base / /
 
 # Switching to non-root user to install SDKMAN!
 USER $USER_UID:$USER_GID
