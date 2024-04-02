@@ -194,12 +194,14 @@ describe('DotEmaDialogComponent', () => {
 
             component.createContentlet({
                 url: 'https://demo.dotcms.com/jsp.jsp',
-                contentType: 'test'
+                contentType: 'test',
+                payload: PAYLOAD_MOCK
             });
 
             expect(createContentletSpy).toHaveBeenCalledWith({
                 contentType: 'test',
-                url: 'https://demo.dotcms.com/jsp.jsp'
+                url: 'https://demo.dotcms.com/jsp.jsp',
+                payload: PAYLOAD_MOCK
             });
         });
 
