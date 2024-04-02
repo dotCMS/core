@@ -70,11 +70,7 @@
         </ng-container>
         <ng-container bottom>
             <dot-ema-info-display
-                *ngIf="
-                    !es.editorData.canEditPage ||
-                    (es.editorData.mode !== editorMode.EDIT &&
-                        es.editorData.mode !== editorMode.SOCIAL_MEDIA)
-                "
+                *ngIf="!es.editorData.canEditPage || es.editorData.mode !== editorMode.EDIT"
                 [editorData]="es.editorData"
                 [currentExperiment]="es.currentExperiment"
                 data-testId="info-display" />

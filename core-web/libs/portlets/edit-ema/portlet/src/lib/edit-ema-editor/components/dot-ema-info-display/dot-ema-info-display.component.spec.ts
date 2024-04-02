@@ -150,6 +150,48 @@ describe('DotEmaInfoDisplayComponent', () => {
         });
     });
 
+    describe('social media', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    currentExperiment: getRunningExperimentMock(),
+                    editorData: {
+                        mode: EDITOR_MODE.SOCIAL_MEDIA,
+                        socialMedia: 'Facebook'
+                    }
+                }
+            });
+
+            store = spectator.inject(EditEmaStore);
+
+            store.load({
+                clientHost: 'http://localhost:3000',
+                url: 'index',
+                language_id: '1',
+                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+            });
+        });
+
+        it('should show social media name, icon and action button', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('info-text')).textContent.trim()).toBe(
+                'Viewing Facebook social media preview'
+            );
+            expect(spectator.query(byTestId('info-icon'))).not.toBeNull();
+        });
+
+        it('should call goToEdit when clicking on action button', () => {
+            const goToEditSpy = jest.spyOn(spectator.component, 'goToEdit');
+            spectator.detectChanges();
+
+            const infoAction = spectator.debugElement.query(By.css('[data-testId="info-action"]'));
+
+            spectator.triggerEventHandler(infoAction, 'onClick', {});
+
+            expect(goToEditSpy).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('edit permissions', () => {
         beforeEach(() => {
             spectator = createComponent({

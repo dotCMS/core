@@ -68,6 +68,18 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                 },
                 actionIcon: 'pi pi-times'
             });
+        } else if (this.editorData.mode === this.editorMode.SOCIAL_MEDIA) {
+            this.options.set({
+                icon: `pi pi-${this.editorData.socialMedia.toLowerCase()}`,
+                info: {
+                    message: `Viewing <b>${this.editorData.socialMedia}</b> social media preview`,
+                    args: []
+                },
+                action: () => {
+                    this.goToEdit();
+                },
+                actionIcon: 'pi pi-times'
+            });
         } else if (
             this.editorData.canEditPage &&
             (this.editorData.mode === this.editorMode.EDIT_VARIANT ||
@@ -111,7 +123,7 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
         }
     }
 
-    protected goToEdit() {
+    public goToEdit() {
         const isNotDefaultVariant = !getIsDefaultVariant(this.editorData.variantId);
 
         if (isNotDefaultVariant) {
