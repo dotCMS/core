@@ -1,6 +1,7 @@
 import { Editor } from 'tinymce';
 
-import { Injectable, NgZone, inject } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -27,10 +28,15 @@ export class DotWysiwygPluginService {
 
     private IMAGE_URL_PATTERN = DEFAULT_IMAGE_URL_PATTERN;
 
+    private readonly destroyRef$ = inject(DestroyRef);
+
     constructor() {
         this.dotPropertiesService
             .getKey('WYSIWYG_IMAGE_URL_PATTERN')
-            .pipe(filter((IMAGE_URL_PATTERN) => !!IMAGE_URL_PATTERN))
+            .pipe(
+                takeUntilDestroyed(this.destroyRef$),
+                filter((IMAGE_URL_PATTERN) => !!IMAGE_URL_PATTERN)
+            )
             .subscribe((IMAGE_URL_PATTERN) => (this.IMAGE_URL_PATTERN = IMAGE_URL_PATTERN));
     }
 
