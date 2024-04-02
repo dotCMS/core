@@ -5,7 +5,7 @@ import { Subject } from 'rxjs';
 
 import { ComponentRef } from '@angular/core';
 
-import { filter, skip, takeUntil, tap } from 'rxjs/operators';
+import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
