@@ -153,10 +153,19 @@ export class DotEmaDialogComponent {
      * @param {{ url: string; contentType: string }} { url, contentType }
      * @memberof DotEmaDialogComponent
      */
-    createContentlet({ url, contentType }: { url: string; contentType: string }) {
+    createContentlet({
+        url,
+        contentType,
+        payload
+    }: {
+        url: string;
+        contentType: string;
+        payload: ActionPayload;
+    }) {
         this.store.createContentlet({
             url,
-            contentType
+            contentType,
+            payload
         });
     }
 
