@@ -65,13 +65,15 @@ export class AIContentPromptComponent implements OnInit {
             });
 
         // Disable the form and change the submit button label when the status is loading
-        this.store.status$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((status) => {
-            if (status === ComponentStatus.LOADING) {
+        this.vm$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
+            if (state.status === ComponentStatus.LOADING) {
                 this.form.disable();
                 this.submitButtonLabel = 'block-editor.extension.ai-image.generating';
             } else {
                 this.form.enable();
-                this.submitButtonLabel = 'block-editor.extension.ai-image.generate';
+                this.submitButtonLabel = state.content
+                    ? 'block-editor.extension.ai-image.regenerate'
+                    : 'block-editor.extension.ai-image.generate';
             }
         });
     }

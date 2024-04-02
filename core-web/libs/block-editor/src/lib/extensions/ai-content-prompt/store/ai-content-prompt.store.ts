@@ -1,9 +1,9 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -33,7 +33,6 @@ const initialState: AiContentPromptState = {
 export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     //Selectors
     readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
-    readonly content$ = this.select((state) => state.content);
     readonly status$ = this.select((state) => state.status);
     readonly showDialog$ = this.select((state) => state.showDialog);
     readonly selectedContent$ = this.select((state) => state.selectedContent);
