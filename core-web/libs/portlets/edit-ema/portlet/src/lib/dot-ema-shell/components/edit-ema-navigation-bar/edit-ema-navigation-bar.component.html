@@ -12,9 +12,11 @@
         class="edit-ema-nav-bar__item"
         [routerLink]="item.isDisabled ? null : item.href"
         [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
+        [pTooltip]="item.tooltip | dm"
         data-testId="nav-bar-item"
         routerLinkActive="edit-ema-nav-bar__item--active"
         queryParamsHandling="merge"
+        tooltipPosition="left"
         rel="noopener">
         <ng-container
             [ngTemplateOutlet]="item.icon ? icon : iconURL"
