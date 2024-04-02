@@ -19,6 +19,7 @@ import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-mo
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import {
+    CreateContentletAction,
     CreateFromPaletteAction,
     DialogStatus,
     DotEmaDialogStore
@@ -153,15 +154,7 @@ export class DotEmaDialogComponent {
      * @param {{ url: string; contentType: string }} { url, contentType }
      * @memberof DotEmaDialogComponent
      */
-    createContentlet({
-        url,
-        contentType,
-        payload
-    }: {
-        url: string;
-        contentType: string;
-        payload: ActionPayload;
-    }) {
+    createContentlet({ url, contentType, payload }: CreateContentletAction) {
         this.store.createContentlet({
             url,
             contentType,
