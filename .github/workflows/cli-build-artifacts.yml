@@ -176,7 +176,7 @@ jobs:
         if: ${{ matrix.label == 'Linux' }}
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Dquarkus.package.type="uber-jar" -DskipTests=$SKIP_TESTS -pl :dotcms-cli
+          ./mvnw package -Puber-jar -DskipTests=$SKIP_TESTS -pl :dotcms-cli
 
       # Builds a native image of the CLI using GRAALVM (Linux/macOS)
       # Runs on a matrix for different operating systems
