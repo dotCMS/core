@@ -14,7 +14,7 @@
         <ng-container [ngSwitch]="sp.error">
             <dot-info-page *ngSwitchCase="403" [info]="EMA_INFO_PAGES.ACCESS_DENIED" />
             <dot-info-page *ngSwitchCase="404" [info]="EMA_INFO_PAGES.NOT_FOUND" />
-            <!-- <dot-not-license *ngSwitchCase="401" /> -->
+            <dot-not-license *ngSwitchCase="401" />
         </ng-container>
     </ng-template>
 </ng-container>

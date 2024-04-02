@@ -106,7 +106,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     }> = this.store.shellProperties$.pipe(
         map(({ currentUrl, page, host, languageId, siteId, templateDrawed, error }) => {
             const isLayoutDisabled = !page.canEdit || !templateDrawed;
-            // this.activatedRoute.snapshot?.firstChild?.routeConfig.path === 'layout'
+
             if (
                 isLayoutDisabled &&
                 this.activatedRoute.snapshot?.firstChild?.routeConfig.path === 'layout'
