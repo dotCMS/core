@@ -1,37 +1,3 @@
-<!--<ng-container *ngIf="vm$ | async as vm">-->
-<!--    <form id="ai-text-prompt" [formGroup]="form" (ngSubmit)="onSubmit()" autocomplete="off">-->
-<!--        <span class="p-input-icon-right">-->
-<!--            <input-->
-<!--                #input-->
-<!--                [attr.disabled]="vm.status === ComponentStatus.LOADING || null"-->
-<!--                (keydown.escape)="$event.stopPropagation()"-->
-<!--                (keyup.escape)="handleScape($event)"-->
-<!--                formControlName="textPrompt"-->
-<!--                pInputText-->
-<!--                placeholder="{{-->
-<!--                    'block-editor.extension.ai-content.ask-ai-to-write-something' | dm-->
-<!--                }}"-->
-<!--                type="text" />-->
-
-<!--            <ng-container *ngIf="vm.status === ComponentStatus.LOADING; else submitButton">-->
-<!--                <span class="pi pi-spin pi-spinner"></span>-->
-<!--            </ng-container>-->
-
-<!--            <ng-template #submitButton>-->
-<!--                <button-->
-<!--                    class="p-button-rounded p-button-text"-->
-<!--                    icon="pi pi-send"-->
-<!--                    pButton-->
-<!--                    type="submit"></button>-->
-<!--            </ng-template>-->
-<!--        </span>-->
-<!--    </form>-->
-<!--</ng-container>-->
-<!--<p-confirmDialog-->
-<!--    [style]="{ width: '500px' }"-->
-<!--    (onHide)="onHideConfirm()"-->
-<!--    appendTo="body"-->
-<!--    key="ai-text-prompt-msg" />-->
 <ng-container *ngIf="vm$ | async as vm">
     <p-dialog
         [(visible)]="vm.showDialog"
