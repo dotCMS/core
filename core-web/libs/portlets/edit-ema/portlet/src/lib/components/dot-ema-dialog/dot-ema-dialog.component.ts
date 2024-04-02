@@ -149,9 +149,9 @@ export class DotEmaDialogComponent {
     }
 
     /**
-     * Create contentlet form
+     * Create contentlet in the edit content
      *
-     * @param {{ url: string; contentType: string }} { url, contentType }
+     * @param {CreateContentletAction} { url, contentType, payload }
      * @memberof DotEmaDialogComponent
      */
     createContentlet({ url, contentType, payload }: CreateContentletAction) {
