@@ -36,12 +36,7 @@ import {
     DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
-import {
-    DotCMSContentlet,
-    CONTAINER_SOURCE,
-    DotPageContainerStructure,
-    DEFAULT_VARIANT_ID
-} from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
@@ -74,7 +69,21 @@ import { EditEmaEditorComponent } from './edit-ema-editor.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW, HOST, PAYLOAD_MOCK } from '../shared/consts';
+import {
+    DEFAULT_PERSONA,
+    WINDOW,
+    HOST,
+    PAYLOAD_MOCK,
+    EDIT_ACTION_PAYLOAD_MOCK,
+    PAGE_INODE_MOCK,
+    QUERY_PARAMS_MOCK,
+    TREE_NODE_MOCK,
+    URL_CONTENT_MAP_MOCK,
+    newContentlet,
+    dotPageContainerStructureMock,
+    dragAddEventMock,
+    dragMoveEventMock
+} from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
 
@@ -90,213 +99,6 @@ const messagesMock = {
     'dot.common.dialog.reject': 'Reject',
     'editpage.content.add.already.title': 'Content already added',
     'editpage.content.add.already.message': 'This content is already added to this container'
-};
-
-const dragMoveEventMock = {
-    target: {
-        dataset: {
-            type: 'contentlet',
-            item: JSON.stringify({
-                identifier: '123',
-                title: 'hello world',
-                contentType: 'File',
-                baseType: 'CONTENT'
-            })
-        }
-    }
-};
-const dragAddEventMock = {
-    target: {
-        dataset: {
-            type: 'contentlet',
-            item: JSON.stringify({
-                contentlet: {
-                    identifier: '322b7cc0-3ab9-4267-97f7-9634e519d5a8'
-                },
-                contentType: 'Banner',
-                baseType: 'CONTENT'
-            })
-        }
-    }
-};
-
-const dotPageContainerStructureMock: DotPageContainerStructure = {
-    '123': {
-        container: {
-            archived: false,
-            categoryId: '123',
-            deleted: false,
-            friendlyName: '123',
-            identifier: '123',
-            live: false,
-            locked: false,
-            maxContentlets: 123,
-            name: '123',
-            path: '123',
-            pathName: '123',
-            postLoop: '123',
-            preLoop: '123',
-            source: CONTAINER_SOURCE.DB,
-            title: '123',
-            type: '123',
-            working: false
-        },
-        containerStructures: [
-            {
-                contentTypeVar: '123'
-            }
-        ],
-        contentlets: {
-            '123': [
-                {
-                    baseType: '123',
-                    content: 'something',
-                    contentType: '123',
-                    dateCreated: '123',
-                    dateModifed: '123',
-                    folder: '123',
-                    host: '123',
-                    identifier: '123',
-                    inode: '123',
-                    languageId: 123,
-                    live: false,
-                    locked: false,
-                    modDate: '123',
-                    modUser: '123',
-                    owner: '123',
-                    working: false,
-                    title: '123',
-                    url: '123',
-                    __icon__: '123',
-                    archived: false,
-                    deleted: false,
-                    hasTitleImage: false,
-                    hostName: '123',
-                    image: '123',
-                    modUserName: '123',
-                    sortOrder: 123,
-                    stInode: '123',
-                    titleImage: '123'
-                },
-                {
-                    baseType: '456',
-                    content: 'something',
-                    contentType: '456',
-                    dateCreated: '456',
-                    dateModifed: '456',
-                    folder: '456',
-                    host: '456',
-                    identifier: '456',
-                    inode: '456',
-                    languageId: 456,
-                    live: false,
-                    locked: false,
-                    modDate: '456',
-                    modUser: '456',
-                    owner: '456',
-                    working: false,
-                    title: '456',
-                    url: '456',
-                    __icon__: '456',
-                    archived: false,
-                    deleted: false,
-                    hasTitleImage: false,
-                    hostName: '456',
-                    image: '456',
-                    modUserName: '456',
-                    sortOrder: 456,
-                    stInode: '456',
-                    titleImage: '456'
-                }
-            ],
-            '456': [
-                {
-                    baseType: '123',
-                    content: 'something',
-                    contentType: '123',
-                    dateCreated: '123',
-                    dateModifed: '123',
-                    folder: '123',
-                    host: '123',
-                    identifier: '123',
-                    inode: '123',
-                    languageId: 123,
-                    live: false,
-                    locked: false,
-                    modDate: '123',
-                    modUser: '123',
-                    owner: '123',
-                    working: false,
-                    title: '123',
-                    url: '123',
-                    __icon__: '123',
-                    archived: false,
-                    deleted: false,
-                    hasTitleImage: false,
-                    hostName: '123',
-                    image: '123',
-                    modUserName: '123',
-                    sortOrder: 123,
-                    stInode: '123',
-                    titleImage: '123'
-                }
-            ]
-        }
-    }
-};
-
-const PAGE_INODE_MOCK = '1234';
-const QUERY_PARAMS_MOCK = { language_id: 1, url: 'page-one' };
-
-const TREE_NODE_MOCK = {
-    containerId: '123',
-    contentId: '123',
-    pageId: '123',
-    relationType: 'test',
-    treeOrder: '1',
-    variantId: 'test',
-    personalization: 'dot:default'
-};
-
-const newContentlet = {
-    ...dotcmsContentletMock,
-    inode: '123',
-    title: 'test'
-};
-
-const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
-    language_id: '1',
-    pageContainers: [
-        {
-            identifier: 'test',
-            uuid: 'test',
-            contentletsId: []
-        }
-    ],
-    contentlet: {
-        identifier: 'contentlet-identifier-123',
-        inode: 'contentlet-inode-123',
-        title: 'Hello World',
-        contentType: 'test',
-        onNumberOfPages: 1
-    },
-    container: {
-        identifier: 'test',
-        acceptTypes: 'test',
-        uuid: 'test',
-        maxContentlets: 1,
-        contentletsId: ['123'],
-        variantId: '123'
-    },
-    pageId: 'test',
-    position: 'before'
-};
-
-const URL_CONTENT_MAP_MOCK = {
-    contentType: 'Blog',
-    identifier: '123',
-    inode: '1234',
-    title: 'hello world'
 };
 
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
