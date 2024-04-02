@@ -39,9 +39,9 @@ import {
     DotContentletService
 } from '@dotcms/data-access';
 import {
-    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotDevice,
+    DotExperimentStatus,
     DotPersona,
     DotTreeNode,
     SeoMetaTags,
@@ -60,7 +60,7 @@ import {
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
-import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
+import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
@@ -157,7 +157,7 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
         DotDeviceSelectorSeoComponent,
-        DotEmaDeviceDisplayComponent,
+        DotEmaInfoDisplayComponent,
         DotEmaBookmarksComponent,
         DotEditEmaWorkflowActionsComponent,
         ProgressBarModule,
@@ -193,24 +193,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
 
-    readonly editorState$ = this.store.editorState$.pipe(
-        tap((state) => {
-            // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
-            this.canEditVariant.set(
-                !this.queryParams.variantName ||
-                    this.queryParams.variantName === DEFAULT_VARIANT_ID ||
-                    !state.runningExperiment
-            );
-        })
-    );
+    readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
     readonly pageData = toSignal(this.store.pageData$);
 
     readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
-
-    readonly canEditVariant: WritableSignal<boolean> = signal(true);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
@@ -255,6 +244,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly host = '*';
     readonly editorState = EDITOR_STATE;
     readonly editorMode = EDITOR_MODE;
+    readonly experimentStatus = DotExperimentStatus;
 
     protected draggedPayload: DraggedPalettePayload;
 
@@ -434,16 +424,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     updateCurrentDevice(device: DotDevice & { icon?: string }) {
-        this.store.updatePreviewState({
-            editorMode: EDITOR_MODE.PREVIEW,
-            device
-        });
-    }
-
-    goToEditMode() {
-        this.store.updatePreviewState({
-            editorMode: EDITOR_MODE.EDIT
-        });
+        this.store.setDevice(device);
     }
 
     /**
@@ -844,10 +825,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     onSeoMediaChange(seoMedia: string) {
-        this.store.updatePreviewState({
-            editorMode: EDITOR_MODE.PREVIEW,
-            socialMedia: seoMedia
-        });
+        this.store.setSocialMedia(seoMedia);
     }
 
     /**

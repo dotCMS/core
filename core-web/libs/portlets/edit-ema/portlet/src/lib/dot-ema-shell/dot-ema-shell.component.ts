@@ -139,7 +139,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     {
                         iconURL: 'experiments',
                         label: 'editema.editor.navbar.experiments',
-                        href: `experiments/${page.identifier}`
+                        href: `experiments/${page.identifier}`,
+                        isDisabled: !page.canEdit
                     },
                     {
                         icon: 'pi-th-large',
@@ -194,9 +195,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         combineLatest([this.activatedRoute.data, this.activatedRoute.queryParams])
             .pipe(takeUntil(this.destroy$))
-            .subscribe(([{ data }]) => {
+            .subscribe(([{ data }, queryParams]) => {
                 this.store.load({
-                    ...this.queryParams,
+                    ...(queryParams as DotPageApiParams),
                     clientHost: data?.url
                 });
             });

@@ -77,7 +77,8 @@ describe('DotEmaShellComponent', () => {
                                 identifier: '123',
                                 inode: '123',
                                 canEdit: true,
-                                canRead: true
+                                canRead: true,
+                                pageURI: 'index'
                             },
                             viewAs: {
                                 language: {
@@ -185,7 +186,8 @@ describe('DotEmaShellComponent', () => {
                     {
                         iconURL: 'experiments',
                         label: 'editema.editor.navbar.experiments',
-                        href: 'experiments/123'
+                        href: 'experiments/123',
+                        isDisabled: false
                     },
                     {
                         icon: 'pi-th-large',
