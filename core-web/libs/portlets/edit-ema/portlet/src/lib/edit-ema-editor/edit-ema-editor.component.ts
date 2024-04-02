@@ -293,11 +293,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
 
                         if (href) {
-                            e.preventDefault();
-                            const pathname = new URL(href).pathname;
-                            this.updateQueryParams({
-                                url: pathname
-                            });
+                            const url = new URL(href);
+
+                            // Check if the URL is not external
+                            if (url.hostname === window.location.hostname) {
+                                e.preventDefault();
+
+                                this.updateQueryParams({
+                                    url: url.pathname
+                                });
+                            }
                         }
                     });
                 });
