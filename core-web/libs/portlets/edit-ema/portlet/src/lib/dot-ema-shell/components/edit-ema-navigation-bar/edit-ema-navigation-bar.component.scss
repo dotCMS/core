@@ -26,10 +26,18 @@
     padding: 0 $spacing-0;
     text-decoration: none;
     color: $black;
+    position: relative;
 
     .pi {
         font-size: $font-size-xl;
         color: $color-palette-primary-800;
+    }
+
+    &::before {
+        position: absolute;
+        content: "";
+        height: 0;
+        width: 0;
     }
 }
 
@@ -84,7 +92,6 @@ use {
     position: relative;
 
     &::before {
-        content: "";
         position: absolute;
         top: 50%;
         left: 50%;
@@ -94,7 +101,9 @@ use {
         border-radius: $border-radius-sm;
         height: 64px;
         width: 64px;
-        transition: all 0, 3s ease-in-out;
+        transition-property: height, width;
+        transition-duration: 0.3s;
+        transition-timing-function: ease-in-out;
     }
 
     .pi,
