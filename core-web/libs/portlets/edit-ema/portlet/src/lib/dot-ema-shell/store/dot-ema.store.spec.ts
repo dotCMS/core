@@ -299,6 +299,13 @@ describe('EditEmaStore', () => {
                 });
             });
 
+            it('should return templateDrawed', (done) => {
+                spectator.service.templateDrawed$.subscribe((state) => {
+                    expect(state).toEqual(true);
+                    done();
+                });
+            });
+
             it('should return layoutProperties', (done) => {
                 const containersMapMock = {
                     '/default/': {

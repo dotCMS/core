@@ -664,6 +664,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
+
                 if (shouldReloadPage) {
                     this.reloadURLContentMapPage(contentletIdentifier);
 
@@ -701,7 +702,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
                     contentType: detail.data.contentType,
-                    url: detail.data.url
+                    url: detail.data.url,
+                    payload
                 });
                 this.cd.detectChanges();
             },
