@@ -1,7 +1,6 @@
 package com.dotmarketing.startup.runonce;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
@@ -25,15 +24,8 @@ public class Task230426AlterVarcharLengthOfLockedByCol implements StartupTask {
     }
     @Override
     public boolean forceRun() {
-        boolean shouldRun = false;
-        try {
-            final Map<String, String> columnData = new DotDatabaseMetaData().getModifiedColumnLength("contentlet_version_info",
-                    "locked_by");
-            shouldRun = columnData.get("field_length").equals("100");
-        } catch (Exception e) {
-            Logger.error(this.getClass(),"An error occurred when trying to pull the field_length");
-        }
-        return !shouldRun;
+        return !(new DotDatabaseMetaData().isColumnLengthExpected("contentlet_version_info",
+                "locked_by","100"));
     }
 
     @Override

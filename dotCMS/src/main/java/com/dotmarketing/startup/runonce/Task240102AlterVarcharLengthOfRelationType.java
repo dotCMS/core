@@ -21,15 +21,8 @@ public class Task240102AlterVarcharLengthOfRelationType implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        boolean shouldRun = false;
-        try {
-            final Map<String, String> columnData = new DotDatabaseMetaData().getModifiedColumnLength("tree",
-                    "relation_type");
-            shouldRun = columnData.get("field_length").equals("255");
-        } catch (Exception e) {
-            Logger.error(this.getClass(),"An error occurred when trying to pull the field_length");
-        }
-        return !shouldRun;
+        return !(new DotDatabaseMetaData().isColumnLengthExpected("tree",
+                "relation_type","255"));
     }
 
     @Override
