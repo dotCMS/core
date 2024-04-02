@@ -91,7 +91,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                 url,
                 contentType,
                 payload
-            }: { url: string; contentType: string; payload?: ActionPayload }
+            }: { url: string; contentType: string; payload: ActionPayload }
         ) => {
             return {
                 ...state,
