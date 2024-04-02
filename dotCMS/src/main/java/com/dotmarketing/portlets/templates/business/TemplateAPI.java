@@ -419,4 +419,7 @@ public interface TemplateAPI {
 	 */
 	List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException;
 
+    Template saveAndUpdateLayout(Template template, TemplateLayout layout, Host site, User user,
+								 boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 }

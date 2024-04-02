@@ -32,10 +32,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.factories.PublishFactory;
-import com.dotmarketing.factories.TreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
+import com.dotmarketing.factories.*;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -46,11 +43,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.portlets.templates.design.bean.Sidebar;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -69,16 +62,9 @@ import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
@@ -107,6 +93,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	private final  Lazy<HTMLPageAssetAPI> htmlPageAssetAPI = Lazy.of(APILocator::getHTMLPageAssetAPI);
 	private final  HostAPI          hostAPI                = APILocator.getHostAPI();
 	private final  Lazy<Template>   systemTemplate         = Lazy.of(SystemTemplate::new);
+
+	private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+
 
 	@Override
 	public Template systemTemplate() {
@@ -1259,6 +1248,90 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	@WrapInTransaction
 	public List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException {
 		return FactoryLocator.getTemplateFactory().getPages(templateId);
+	}
+
+	@Override
+	public Template saveAndUpdateLayout(final Template template, final TemplateLayout layout, final Host site,
+										final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+
+		template.setDrawedBody(layout);
+		template.setDrawed(true);
+
+		final Template templateFromDB = find(template.getInode(), user, respectFrontendRoles);
+		final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+		LayoutChanges changes = getChange(templateLayoutFromDB, layout);
+
+		final List<String> pageIds = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles)
+				.stream()
+				.map(Contentlet::getIdentifier)
+				.collect(Collectors.toList());
+
+		multiTreeAPI.updateMultiTrees(changes, pageIds);
+		return saveTemplate(template, site, user, respectFrontendRoles);
+	}
+
+	private LayoutChanges getChange(final TemplateLayout oldLayout, final TemplateLayout newLayout) {
+		final LayoutChanges layoutChanges = new LayoutChanges();
+
+		final List<ContainerUUID> newContainers = getContainers(newLayout);
+
+		addMoveAndNewChanges(newContainers, layoutChanges);
+		addRemoveChanges(oldLayout, newContainers, layoutChanges);
+
+		return layoutChanges;
+	}
+
+	private static void addMoveAndNewChanges(List<ContainerUUID> newContainers, LayoutChanges layoutChanges) {
+		final Map<String,Integer> uuidByContainer = new HashMap<>();
+
+		newContainers.stream().forEach(newContainer -> {
+			Integer maxUUID = uuidByContainer.get(newContainer.getIdentifier());
+
+			if (maxUUID == null) {
+				maxUUID = 1;
+			} else {
+				maxUUID++;
+			}
+
+			uuidByContainer.put(newContainer.getIdentifier(), maxUUID);
+
+			if (newContainer.getUUID().equals(ContainerUUID.UUID_DEFAULT_VALUE)) {
+				layoutChanges.include(newContainer.getIdentifier(), String.valueOf(maxUUID));
+			} else if (Integer.parseInt(newContainer.getUUID()) != maxUUID) {
+				layoutChanges.change(newContainer.getIdentifier(), newContainer.getUUID(), String.valueOf(maxUUID));
+			}
+		});
+	}
+
+	private static void addRemoveChanges(TemplateLayout oldLayout, List<ContainerUUID> newContainers, LayoutChanges layoutChanges) {
+		final List<ContainerUUID> oldContainers = getContainers(oldLayout);
+
+		oldContainers.stream().forEach(oldContainer -> {
+			Optional<ContainerUUID> newContainer = newContainers.stream()
+					.filter(containerUUID -> containerUUID.getIdentifier().equals(oldContainer.getIdentifier()))
+					.filter(containerUUID -> containerUUID.getUUID().equals(oldContainer.getUUID()))
+					.findFirst();
+
+			if (!newContainer.isPresent()) {
+				layoutChanges.remove(oldContainer.getIdentifier(), oldContainer.getUUID());
+			}
+		});
+	}
+
+	private static List<ContainerUUID> getContainers(TemplateLayout layout) {
+		final List<ContainerUUID> bodyContainers = layout.getBody().getRows().stream()
+				.flatMap(row -> row.getColumns().stream())
+				.flatMap(column -> column.getContainers().stream())
+				.collect(Collectors.toList());
+
+		final Sidebar sidebar = layout.getSidebar();
+
+		final List<ContainerUUID> sidebarContainers = sidebar != null ? sidebar.getContainers() : Collections.emptyList();
+
+		return Stream.concat(bodyContainers.stream(), sidebarContainers.stream())
+				.collect(Collectors.toList());
 	}
 
 	private Template findTemplateByPath (final String path,final String hostId, final User user, final boolean respectFrontendRoles, final boolean showLive) throws DotDataException, DotSecurityException {

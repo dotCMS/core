@@ -11,6 +11,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -31,13 +32,17 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.LayoutChanges;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -46,22 +51,16 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.util.Collections;
+
+import java.util.*;
 import java.util.stream.Stream;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
 
 /**
  * This class provides utility routines to interact with the Multi-Tree structures in the system. A
@@ -76,6 +75,8 @@ import java.util.stream.Collectors;
  */
 public class MultiTreeAPIImpl implements MultiTreeAPI {
 
+    private static Lazy<Boolean> DELETE_ORPHANED_CONTENTS_FROM_CONTAINER =
+            Lazy.of(() -> Config.getBooleanProperty("DELETE_ORPHANED_CONTENTS_FROM_CONTAINER", true));
     private static final String SELECT_MULTITREES_BY_VARIANT = "SELECT * FROM multi_tree WHERE variant_id = ?";
     private final Lazy<MultiTreeCache> multiTreeCache = Lazy.of(CacheLocator::getMultiTreeCache);
 
@@ -1252,31 +1253,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return count.intValue();
     }
 
-    @Override
-    @WrapInTransaction
-    public void updateMultiTrees(final Collection<String> pagesId, final String containerId,
-            final String oldValue, final String newValue) throws DotDataException {
 
-        DotPreconditions.notNull(pagesId, () -> "Pages id collection cannot be null");
-        DotPreconditions.isTrue(!pagesId.isEmpty(), () -> "Pages id collection cannot be empty");
-
-        final String innerContainerId = FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)
-                ? getFileContainerId(containerId) : containerId;
-
-        final String updateQuery = String.format("UPDATE multi_tree set relation_type = ? WHERE parent1 in (%s) AND parent2 = ? AND relation_type = ?",
-                pagesId.stream().map(value -> "'" + value + "'").collect(Collectors.joining(",")));
-
-        new DotConnect().setSQL(updateQuery)
-                .addParam(newValue)
-                .addParam(innerContainerId)
-                .addParam(oldValue)
-                .loadResult();
-
-        pagesId.stream().forEach(pageId -> {
-            CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId);
-            CacheLocator.getHTMLPageCache().remove(pageId);
-        });
-    }
 
     @Override
     @WrapInTransaction
@@ -1288,6 +1265,93 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return TransformerLocator.createMultiTreeTransformer(results).asList();
     }
 
+
+    /**
+     * Update the {@link MultiTree} according to the {@link LayoutChanges}.
+     *
+     * @param layoutChanges
+     * @param identifiers
+     * @throws DotDataException
+     */
+    @Override
+    @WrapInTransaction
+    public void updateMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds) throws DotDataException {
+        final List<Params> parametersToMark = new ArrayList<>();
+
+        final boolean deleteOrphanedContents = DELETE_ORPHANED_CONTENTS_FROM_CONTAINER.get();
+
+        markMultiTreeToUpdate(layoutChanges, pageIds, parametersToMark);
+
+        updateMarkedMultiTrees(layoutChanges, pageIds);
+
+        if (deleteOrphanedContents) {
+            removeMultiTrees(layoutChanges, pageIds);
+        }
+
+    }
+
+    private static void removeMultiTrees(LayoutChanges layoutChanges, final Collection<String> pageIds) throws DotDataException {
+        final List<Params> parametersToRemoved = new ArrayList<>();
+
+        for (String identifier : pageIds) {
+            parametersToRemoved.addAll(
+                    layoutChanges.getAll().stream()
+                            .filter(LayoutChanges.ContainerChanged::isRemove)
+                            .map(changed -> new Params.Builder()
+                                    .add(identifier, changed.getContainerId(), getMakValue(changed))
+                                    .build()
+                            )
+                            .collect(Collectors.toList())
+            );
+        }
+
+        new DotConnect().executeBatch("DELETE FROM multi_tree " +
+                "WHERE parent1 = ? AND parent2 = ? and relation_type = ?", parametersToRemoved);
+    }
+
+    private static void updateMarkedMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds)
+            throws DotDataException {
+        final boolean deleteOrphanedContents = DELETE_ORPHANED_CONTENTS_FROM_CONTAINER.get();
+        final List<Params> parametersToUpdate = new ArrayList<>();
+
+        for (String identifier : pageIds) {
+            parametersToUpdate.addAll(
+                    layoutChanges.getAll().stream()
+                            .filter(changed -> !deleteOrphanedContents || changed.isMoved())
+                            .map(changed -> new Params.Builder()
+                                    .add(String.valueOf(changed.getNewInstanceId()),
+                                            identifier, changed.getContainerId(), getMakValue(changed))
+                                    .build()
+                            ).collect(Collectors.toList())
+            );
+        }
+
+        new DotConnect().executeBatch("UPDATE multi_tree SET relation_type = ? " +
+                "WHERE parent1 = ? AND parent2 = ? and relation_type = ?", parametersToUpdate);
+    }
+
+    @NotNull
+    private static String getMakValue(LayoutChanges.ContainerChanged changed) {
+        return String.valueOf((Integer.parseInt(changed.getOldInstanceId()) * -1) - 1);
+    }
+
+    private static void markMultiTreeToUpdate(final LayoutChanges layoutChanges, final Collection<String> pageIds,
+                                              final List<Params> parametersToMark) throws DotDataException {
+
+        for (String identifier : pageIds) {
+            parametersToMark.addAll(
+                    layoutChanges.getAll().stream()
+                            .filter(changed -> !changed.isNew())
+                            .map(changed -> new Params.Builder()
+                                    .add(identifier, changed.getContainerId(), changed.getOldInstanceId())
+                                    .build()
+                            ).collect(Collectors.toList())
+            );
+        }
+
+        new DotConnect().executeBatch("UPDATE multi_tree SET relation_type = (CAST (relation_type AS numeric) * -1 )-1\n" +
+                "WHERE parent1 = ? AND parent2 = ? AND relation_type = ? AND relation_type <> '-1'", parametersToMark);
+    }
 
     private String getFileContainerId(final String containerId) {
         try {
@@ -1409,4 +1473,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
+    @VisibleForTesting
+    public static void setDeleteOrphanedContentsFromContainer(final boolean newValue){
+        DELETE_ORPHANED_CONTENTS_FROM_CONTAINER = Lazy.of(() -> newValue);
+    }
 }
