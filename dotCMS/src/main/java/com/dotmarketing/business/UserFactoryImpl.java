@@ -270,7 +270,6 @@ public class UserFactoryImpl implements UserFactory {
         } else{
             validateMaximumLength(user.getFirstName(),user.getLastName(),user.getEmailAddress());
             user.setModificationDate(new Date());
-
             final String emailAddress = user.getEmailAddress();
             if (UtilMethods.isSet(emailAddress)) {
                 user.setEmailAddress(emailAddress.trim().toLowerCase());
