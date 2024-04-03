@@ -104,59 +104,74 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         seoProperties: DotPageToolUrlParams;
         error?: number;
     }> = this.store.shellProperties$.pipe(
-        map(({ currentUrl, page, host, languageId, siteId, error }) => ({
-            items: [
-                {
-                    icon: 'pi-file',
-                    label: 'editema.editor.navbar.content',
-                    href: 'content'
-                },
-                {
-                    icon: 'pi-table',
-                    label: 'editema.editor.navbar.layout',
-                    href: 'layout',
-                    isDisabled: !page.canEdit
-                },
-                {
-                    icon: 'pi-sliders-h',
-                    label: 'editema.editor.navbar.rules',
-                    href: `rules/${page.identifier}`,
-                    isDisabled: !page.canEdit
-                },
-                {
-                    iconURL: 'experiments',
-                    label: 'editema.editor.navbar.experiments',
-                    href: `experiments/${page.identifier}`
-                },
-                {
-                    icon: 'pi-th-large',
-                    label: 'editema.editor.navbar.page-tools',
-                    action: () => {
-                        this.pageTools.toggleDialog();
+        map(({ currentUrl, page, host, languageId, siteId, templateDrawed, error }) => {
+            const isLayoutDisabled = !page.canEdit || !templateDrawed;
+
+            if (
+                isLayoutDisabled &&
+                this.activatedRoute.snapshot?.firstChild?.routeConfig.path === 'layout'
+            ) {
+                this.router.navigate(['./content'], { relativeTo: this.activatedRoute });
+            }
+
+            return {
+                items: [
+                    {
+                        icon: 'pi-file',
+                        label: 'editema.editor.navbar.content',
+                        href: 'content'
+                    },
+                    {
+                        icon: 'pi-table',
+                        label: 'editema.editor.navbar.layout',
+                        href: 'layout',
+                        isDisabled: isLayoutDisabled,
+                        tooltip: isLayoutDisabled
+                            ? 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+                            : null
+                    },
+                    {
+                        icon: 'pi-sliders-h',
+                        label: 'editema.editor.navbar.rules',
+                        href: `rules/${page.identifier}`,
+                        isDisabled: !page.canEdit
+                    },
+                    {
+                        iconURL: 'experiments',
+                        label: 'editema.editor.navbar.experiments',
+                        href: `experiments/${page.identifier}`,
+                        isDisabled: !page.canEdit
+                    },
+                    {
+                        icon: 'pi-th-large',
+                        label: 'editema.editor.navbar.page-tools',
+                        action: () => {
+                            this.pageTools.toggleDialog();
+                        }
+                    },
+                    {
+                        icon: 'pi-ellipsis-v',
+                        label: 'editema.editor.navbar.properties',
+                        action: () => {
+                            this.dialog.editContentlet({
+                                inode: page.inode,
+                                title: page.title,
+                                identifier: page.identifier,
+                                contentType: page.contentType
+                            });
+                        }
                     }
+                ],
+                canRead: page.canRead,
+                seoProperties: {
+                    currentUrl,
+                    languageId,
+                    siteId,
+                    requestHostName: host
                 },
-                {
-                    icon: 'pi-ellipsis-v',
-                    label: 'editema.editor.navbar.properties',
-                    action: () => {
-                        this.dialog.editContentlet({
-                            inode: page.inode,
-                            title: page.title,
-                            identifier: page.identifier,
-                            contentType: page.contentType
-                        });
-                    }
-                }
-            ],
-            canRead: page.canRead,
-            seoProperties: {
-                currentUrl,
-                languageId,
-                siteId,
-                requestHostName: host
-            },
-            error
-        }))
+                error
+            };
+        })
     );
     private readonly activatedRoute = inject(ActivatedRoute);
     private readonly router = inject(Router);
@@ -180,9 +195,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         combineLatest([this.activatedRoute.data, this.activatedRoute.queryParams])
             .pipe(takeUntil(this.destroy$))
-            .subscribe(([{ data }]) => {
+            .subscribe(([{ data }, queryParams]) => {
                 this.store.load({
-                    ...this.queryParams,
+                    ...(queryParams as DotPageApiParams),
                     clientHost: data?.url
                 });
             });

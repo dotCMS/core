@@ -24,7 +24,7 @@ class Utils {
             // Declarations
             const fileName = 'Cypress-DB-Seed.tar.gz';
             const method = 'POST';
-            const url = '/api/bundle?sync=true';
+            const url = '/api/bundle/sync';
             const fileType = 'application/gzip';
 
             return new Cypress.Promise((resolve) => {
