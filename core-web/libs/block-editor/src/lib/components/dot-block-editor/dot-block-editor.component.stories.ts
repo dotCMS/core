@@ -4,17 +4,22 @@ import { of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+import { MessageService } from 'primeng/api';
 import { ListboxModule } from 'primeng/listbox';
 import { MenuModule } from 'primeng/menu';
 import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
-import { DotMessageService, DotPropertiesService, DotUploadFileService } from '@dotcms/data-access';
-import { DotContentSearchService, DotLanguageService } from '@dotcms/ui';
-
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
+import {
+    DotContentSearchService,
+    DotMessageService,
+    DotPropertiesService,
+    DotUploadFileService,
+    FileStatus
+} from '../../../../../data-access/src';
 import { BlockEditorModule } from '../../block-editor.module';
 import {
     AssetFormComponent,
@@ -27,7 +32,6 @@ import {
     ASSET_MOCK,
     CONTENTLETS_MOCK,
     DotAiService,
-    FileStatus,
     SuggestionsComponent,
     SuggestionsService
 } from '../../shared';
@@ -143,7 +147,7 @@ export const Primary = () => ({
                     }
                 },
                 {
-                    provide: DotLanguageService,
+                    provide: MessageService,
                     useValue: {
                         getLanguages() {
                             return of({
