@@ -162,6 +162,22 @@ describe('DotEmaDialogComponent', () => {
             });
         });
 
+        it('should trigger editVTLContentlet in the store', () => {
+            const editVTLContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
+
+            const vtlFile = {
+                inode: '123',
+                name: 'test.vtl'
+            };
+
+            component.editVTLContentlet(vtlFile);
+
+            expect(editVTLContentletSpy).toHaveBeenCalledWith({
+                inode: vtlFile.inode,
+                title: vtlFile.name
+            });
+        });
+
         it('should trigger editContentlet in the store for url Map', () => {
             const editContentletSpy = jest.spyOn(storeSpy, 'editUrlContentMapContentlet');
 
@@ -178,12 +194,14 @@ describe('DotEmaDialogComponent', () => {
 
             component.createContentlet({
                 url: 'https://demo.dotcms.com/jsp.jsp',
-                contentType: 'test'
+                contentType: 'test',
+                payload: PAYLOAD_MOCK
             });
 
             expect(createContentletSpy).toHaveBeenCalledWith({
                 contentType: 'test',
-                url: 'https://demo.dotcms.com/jsp.jsp'
+                url: 'https://demo.dotcms.com/jsp.jsp',
+                payload: PAYLOAD_MOCK
             });
         });
 

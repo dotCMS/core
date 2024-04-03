@@ -19,13 +19,14 @@ import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-mo
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import {
+    CreateContentletAction,
     CreateFromPaletteAction,
     DialogStatus,
     DotEmaDialogStore
 } from './store/dot-ema-dialog.store';
 
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { ActionPayload } from '../../shared/models';
+import { ActionPayload, VTLFile } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
@@ -122,6 +123,19 @@ export class DotEmaDialogComponent {
     }
 
     /**
+     * Edits a VTL contentlet.
+     *
+     * @param {VTLFile} vtlFile - The VTL file to edit.
+     * @memberof DotEmaDialogComponent
+     */
+    editVTLContentlet(vtlFile: VTLFile) {
+        this.store.editContentlet({
+            inode: vtlFile.inode,
+            title: vtlFile.name
+        });
+    }
+
+    /**
      * Edit URL Content Map Contentlet
      *
      * @param {DotCMSContentlet} { inode, title }
@@ -135,15 +149,16 @@ export class DotEmaDialogComponent {
     }
 
     /**
-     * Create contentlet form
+     * Create contentlet in the edit content
      *
-     * @param {{ url: string; contentType: string }} { url, contentType }
+     * @param {CreateContentletAction} { url, contentType, payload }
      * @memberof DotEmaDialogComponent
      */
-    createContentlet({ url, contentType }: { url: string; contentType: string }) {
+    createContentlet({ url, contentType, payload }: CreateContentletAction) {
         this.store.createContentlet({
             url,
-            contentType
+            contentType,
+            payload
         });
     }
 

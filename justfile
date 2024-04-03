@@ -64,7 +64,7 @@ dev-run:
 
 # Maps paths in the docker container to local paths, useful for development
 dev-run-map-dev-paths:
-    ./mvnw -pl :dotcms-core -Pocker-start -Pmap-dev-paths
+    ./mvnw -pl :dotcms-core -Pdocker-start -Pmap-dev-paths
 
 # Starts the dotCMS application in debug mode with suspension, useful for troubleshooting
 dev-run-debug-suspend:
