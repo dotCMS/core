@@ -6,11 +6,44 @@
 export const EXPERIMENT_WINDOWS_KEY = 'dotExperiment';
 
 /**
+ * The key used to store or retrieve the information in the SessionStore
+ *
+ * @constant {string}
+ */
+export const EXPERIMENT_QUERY_PARAM_KEY = 'variantName';
+
+/**
+ * The key used to store or retrieve the information in the SessionStore
+ * indicating whether an experiment has already been checked.
+ *
+ * @constant {string}
+ */
+export const EXPERIMENT_ALREADY_CHECKED_KEY = 'experimentAlreadyCheck';
+
+/**
+ * EXPERIMENT_FETCH_EXPIRE_TIME is a constant that represents the name of the variable used to store
+ * the expire time for experiment fetching. It is a string value 'experimentFetchExpireTime'.
+ *
+ * @constant {string}
+ */
+export const EXPERIMENT_FETCH_EXPIRE_TIME_KEY = 'experimentFetchExpireTime';
+
+/**
+ * The duration in milliseconds for which data should be stored in the local storage.
+ *
+ * @type {number}
+ * @constant
+ * @default 86400000 (A day)
+ *
+ */
+export const LOCAL_STORAGE_TIME_DURATION_MILLISECONDS = 86400 * 1000;
+
+/**
  * The name of the experiment script file.
  *
  * @constant {string}
  */
-export const EXPERIMENT_SCRIPT_FILE_NAME = 'standalone.cjs.js';
+export const EXPERIMENT_SCRIPT_FILE_NAME = 'dot-experiments.min.iife.js';
 
 /**
  * The prefix used for the experiment script data attributes.
@@ -42,14 +75,6 @@ export const EXPERIMENT_ALLOWED_DATA_ATTRIBUTES = [
 export const API_EXPERIMENTS_URL = 'api/v1/experiments/isUserIncluded';
 
 /**
- * The name of the experiment database in the IndexDB.
- *
- * @type {string}
- * @constant
- */
-export const EXPERIMENT_DB_NAME = 'DotExperimentDB';
-
-/**
  * The name of the experiment database store in indexDB.
  *
  * @type {string}
@@ -64,10 +89,16 @@ export const EXPERIMENT_DB_STORE_NAME = 'dotExperimentStore';
 export const EXPERIMENT_DB_KEY_PATH = 'running_experiment';
 
 /**
- * EXPERIMENT_DB_DEFAULT_VERSION is a constant variable that represents
- * the default version of the experiment database in IndexDB.
+ * Enumeration of debug levels.
  *
- * @type {number}
- * @const
+ * @enum {string}
+ * @readonly
  */
-export const EXPERIMENT_DB_DEFAULT_VERSION = 1;
+export enum DEBUG_LEVELS {
+    NONE = 'NONE',
+    DEBUG = 'DEBUG',
+    WARN = 'WARN',
+    ERROR = 'ERROR'
+}
+
+export const PAGE_VIEW_EVENT_NAME = 'pageview';

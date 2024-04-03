@@ -143,6 +143,11 @@
 									"",
 									"pm.test(\"Identifier check\", function () {",
 									"    pm.expect(\"SYSTEM_THEME\").to.eql(jsonData[0].identifier);",
+									"});",
+									"// Test for directory traversal",
+									"pm.test(\"Directory traversal should not be possible\", function () {",
+									"    var filesMasks = pm.response.json().entity[0].filesMasks;",
+									"    pm.expect(filesMasks).to.be.null;",
 									"});"
 								],
 								"type": "text/javascript"
@@ -276,6 +281,11 @@
 									"",
 									"pm.test(\"Identifier check\", function () {",
 									"    pm.expect(\"SYSTEM_THEME\").to.eql(jsonData.identifier);",
+									"});",
+									"// Test to check for directory traversal",
+									"pm.test(\"No directory traversal in the path\", function () {",
+									"    var path = pm.response.json().entity.path;",
+									"    pm.expect(path).to.not.include('..');",
 									"});"
 								],
 								"type": "text/javascript"

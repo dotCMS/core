@@ -202,8 +202,8 @@ describe('DotDeviceSelectorSeoComponent', () => {
         expect(selectorMask).toBeDefined();
     });
 
-    it('should hide the media tiles and show the secondary link when hideMediaTiles is true', () => {
-        component.hideMediaTiles = true;
+    it('should hide the media tiles and show the secondary link when hideSocialMedia is true', () => {
+        component.hideSocialMedia = true;
         fixtureHost.detectChanges();
 
         const link = de.query(By.css('[data-testId="dot-device-selector-link-secondary"]'));

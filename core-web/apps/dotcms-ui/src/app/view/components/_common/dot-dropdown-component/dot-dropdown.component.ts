@@ -6,6 +6,7 @@ import {
     HostListener,
     Input,
     OnChanges,
+    OnInit,
     Output,
     SimpleChanges
 } from '@angular/core';
@@ -27,7 +28,7 @@ import {
     styleUrls: ['./dot-dropdown.component.scss'],
     templateUrl: 'dot-dropdown.component.html'
 })
-export class DotDropdownComponent implements OnChanges {
+export class DotDropdownComponent implements OnChanges, OnInit {
     @Input()
     disabled = false;
 

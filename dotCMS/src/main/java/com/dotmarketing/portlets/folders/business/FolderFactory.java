@@ -14,11 +14,14 @@ import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 /**
+ * This Factory class allows you to interact with Folders in dotCMS.
  *
  * @author maria
+ * @since Mar 22nd, 2012
  */
 public abstract class FolderFactory {
 
@@ -156,4 +159,38 @@ public abstract class FolderFactory {
 	 */
     public abstract void updateUserReferences(String userId, String replacementUserId)
             throws DotDataException;
+
+	/**
+	 * Generates a report of the different Content Types living under a Folder, and the number of
+	 * content items for each type. This implementation analyzes all child folders and their
+	 * respective sub-child folders, not only the specified one.
+	 *
+	 * @param folderPath     The path of the folder to analyze.
+	 * @param siteId         The ID of the Site that the folder lives in.
+	 * @param orderBy        The column name used to order the results by.
+	 * @param orderDirection The sort direction of the results.
+	 * @param limit          The maximum number of results to return, for pagination purposes.
+	 * @param offset         The page number of the results to return, for pagination purposes.
+	 *
+	 * @return A list of maps, each one representing a different Content Type and the total number
+	 * of content items for each type.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the database.
+	 */
+	abstract List<Map<String, Object>> getContentReport(final String folderPath, final String siteId, final String orderBy, final String orderDirection, final int limit, final int offset) throws DotDataException;
+
+	/**
+	 * Returns the total count of Content Types that live under the specified Folder and all of its
+	 * sub-folders.
+	 *
+	 * @param folderPath The path of the folder to analyze.
+	 * @param siteId     The ID of the Site that the folder lives in.
+	 *
+	 * @return The total count of Content Types that live under the specified Folder and all of its
+	 * sub-folders
+	 *
+	 * @throws DotDataException An error occurred when interacting with the database.
+	 */
+	abstract int getContentTypeCount(final String folderPath, final String siteId) throws DotDataException;
+
 }

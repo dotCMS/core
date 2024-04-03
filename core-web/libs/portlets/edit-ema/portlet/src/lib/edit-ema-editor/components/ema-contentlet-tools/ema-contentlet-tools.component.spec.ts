@@ -294,4 +294,36 @@ describe('EmaContentletToolsComponent', () => {
             expect(spectator.query(byTestId('actions'))).toBeNull();
         });
     });
+
+    describe('VTL contentlet', () => {
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    props: {
+                        contentlet: {
+                            ...contentletAreaMock,
+                            payload: {
+                                ...contentletAreaMock.payload,
+                                vtlFiles: [
+                                    {
+                                        inode: '123',
+                                        name: 'test.vtl'
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }))
+        );
+
+        it('should set right position for actions', () => {
+            const topButton = spectator.query(byTestId('actions'));
+            expect(topButton).toHaveStyle({
+                position: 'absolute',
+                left: '414px',
+                top: '80px',
+                zIndex: '1'
+            });
+        });
+    });
 });

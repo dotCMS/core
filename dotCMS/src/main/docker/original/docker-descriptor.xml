@@ -6,14 +6,14 @@
     <fileSets>
         <!-- hack to make sure these empty directories get included-->
         <fileSet>
-            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}/config</directory>
+            <directory>${assembly-directory}/${tomcat-dist-folder}/config</directory>
             <outputDirectory>dotserver/tomcat-${tomcat.version}/temp</outputDirectory>
             <excludes>
                 <exclude>**/*</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}/config</directory>
+            <directory>${assembly-directory}/${tomcat-dist-folder}/config</directory>
             <outputDirectory>dotserver/tomcat-${tomcat.version}/logs</outputDirectory>
             <excludes>
                 <exclude>**/*</exclude>
@@ -21,7 +21,7 @@
         </fileSet>
 
         <fileSet>
-            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}</directory>
+            <directory>${assembly-directory}/${tomcat-dist-folder}</directory>
             <outputDirectory>dotserver/tomcat-${tomcat.version}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
@@ -34,58 +34,13 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}</directory>
+            <directory>${assembly-directory}/${tomcat-dist-folder}</directory>
             <outputDirectory>dotserver/tomcat-${tomcat.version}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>
             <fileMode>0755</fileMode>
             <directoryMode>0755</directoryMode>
-        </fileSet>
-        <fileSet>
-            <directory>${docs-directory}</directory>
-            <outputDirectory>docs</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${exploded-webapp-dir}</directory>
-            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
-            <excludes>
-                <exclude>**/dotcms-webcomponents/dist/dotcms-webcomponents/**</exclude>
-                <exclude>**/dotcms-binary-field-builder/dist/dotcms-binary-field-builder/**</exclude>
-                <exclude>**/dotcms-block-editor/dist/dotcms-block-editor/**</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${exploded-webapp-dir}/dotcms-webcomponents/dist</directory>
-            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
-            <includes>
-                <include>**/dotcms-webcomponents/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${exploded-webapp-dir}/dotcms-binary-field-builder/dist</directory>
-            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
-            <includes>
-                <include>**/dotcms-binary-field-builder/**</include>
-            </includes>
-        </fileSet>
-
-        <fileSet>
-            <directory>${exploded-webapp-dir}/dotcms-block-editor/dist</directory>
-            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
-            <includes>
-                <include>**/dotcms-block-editor/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${tomcat-lib-folder}</directory>
-            <outputDirectory>dotserver/tomcat-${tomcat.version}/lib</outputDirectory>
-            <includes>
-                <include>tomcat-redis-session-manager-${tomcat.redis.session.manager.version}.jar</include>
-                <include>tomcat-catalina-${tomcat.catalina.version}.jar</include>
-                <include>commons-pool2-${commons-pool2.version}.jar</include>
-                <include>jedis-${jedis.version}.jar</include>
-            </includes>
         </fileSet>
     </fileSets>
 

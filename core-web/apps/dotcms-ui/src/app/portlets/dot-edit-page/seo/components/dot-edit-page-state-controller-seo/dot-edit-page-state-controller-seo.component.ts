@@ -26,6 +26,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import {
     DotAlertConfirmService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPropertiesService
 } from '@dotcms/data-access';
@@ -39,9 +40,7 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
+import { DotMessagePipe, DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
 
 import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info-seo/dot-edit-page-lock-info-seo.component';
 
@@ -61,7 +60,7 @@ enum DotConfirmationType {
         FormsModule,
         InputSwitchModule,
         SelectButtonModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe,
         TooltipModule,
         ButtonModule,

@@ -14,11 +14,10 @@ jest.mock('./utils/utils', () => ({
 }));
 
 describe('IIFE Execution', () => {
-    beforeEach(() => {
-        // /delete window[EXPERIMENT_WINDOWS_KEY];
-    });
     it('should call getScriptDataAttributes and set window[EXPERIMENT_WINDOWS_KEY]', () => {
-        const fakeInstance = {} as DotExperiments;
+        const fakeInstance = {
+            initialize: jest.fn()
+        } as unknown as DotExperiments;
 
         const getInstanceMock = jest
             .spyOn(DotExperiments, 'getInstance')

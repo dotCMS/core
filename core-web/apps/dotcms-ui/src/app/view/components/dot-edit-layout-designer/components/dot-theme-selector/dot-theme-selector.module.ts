@@ -9,10 +9,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotThemesService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotDialogModule, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 
@@ -29,7 +27,7 @@ import { DotThemeSelectorComponent } from './dot-theme-selector.component';
         DataViewModule,
         DotDialogModule,
         DotIconModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     exports: [DotThemeSelectorComponent],

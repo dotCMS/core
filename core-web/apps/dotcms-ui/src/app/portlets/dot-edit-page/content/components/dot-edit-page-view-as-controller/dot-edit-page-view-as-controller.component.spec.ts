@@ -16,6 +16,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPersonasService
 } from '@dotcms/data-access';
@@ -27,7 +28,7 @@ import {
     DotPageRenderState,
     DotPersona
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
@@ -42,11 +43,8 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
-
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
 @Component({
     selector: 'dot-test-host',
@@ -125,7 +123,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
                 MockDotDeviceSelectorComponent,
                 MockDotLanguageSelectorComponent
             ],
-            imports: [BrowserAnimationsModule, TooltipModule, DotPipesModule, DotMessagePipe],
+            imports: [BrowserAnimationsModule, TooltipModule, DotSafeHtmlPipe, DotMessagePipe],
             providers: [
                 DotLicenseService,
                 {

@@ -17,7 +17,7 @@ declare global {
 if (window) {
     // TODO: make this file buildable by task and publish to dotCMS/src/main/webapp/html
     try {
-        const dataAttributes = getScriptDataAttributes();
+        const dataAttributes = getScriptDataAttributes(window.location);
         if (dataAttributes) {
             window[EXPERIMENT_WINDOWS_KEY] = DotExperiments.getInstance({ ...dataAttributes });
         }

@@ -23,6 +23,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
@@ -46,14 +47,16 @@ import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.elasticsearch.action.search.SearchResponse;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -62,7 +65,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.elasticsearch.action.search.SearchResponse;
 
 /**
  * Implementation class for the {@link ContentTypeAPI}. Each content item in dotCMS is an instance of a Content Type. The
@@ -116,29 +118,45 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
-  /**
-   * Content-Type Delete Entry point
-   * @param type Content Type that will be deleted
-   * @throws DotSecurityException
-   * @throws DotDataException
-   */
   @Override
-  public void delete(ContentType type) throws DotSecurityException, DotDataException {
-    if (!contentTypeCanBeDeleted(type)) {
-      Logger.warn(this, "Content Type " + type.name()
-              + " cannot be deleted because it is referenced by other content types");
+  public void delete(final ContentType contentType) throws DotSecurityException, DotDataException {
+    this.delete(contentType, true);
+  }
+
+  @Override
+  public void deleteSync(final ContentType contentType) throws DotSecurityException, DotDataException {
+    this.delete(contentType, false);
+  }
+
+  /**
+   * Deletes the specified Content Type, either in the same database transaction or as a separate
+   * process.
+   *
+   * @param contentType The {@link ContentType} being deleted.
+   * @param async       If the deletion process should be executed asynchronously -- i.e.; in a
+   *                    separate process, set this to {@code true}.
+   *
+   * @throws DotSecurityException The specified User does not have edition permissions on this
+   *                              Content Type.
+   * @throws DotDataException     An error occurred when interacting with the database.
+   */
+  private void delete(final ContentType contentType, final boolean async) throws DotSecurityException, DotDataException {
+    if (!contentTypeCanBeDeleted(contentType)) {
+      Logger.warn(this, String.format("Content Type '%s' does not exist", contentType.name()));
       return;
     }
-
-    final boolean asyncDelete = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC, true);;
-    final boolean asyncDeleteWithJob = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC_WITH_JOB, true);
+    boolean asyncDelete = async;
+    boolean asyncDeleteWithJob = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC_WITH_JOB, true);
+    if (async) {
+      asyncDelete = Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC, true);
+    }
 
     if (!asyncDelete) {
-      Logger.debug(this, String.format(" Content type (%s) will be deleted sequentially.", type.name()));
-      transactionalDelete(type);
+      Logger.debug(this, () -> String.format("Content Type '%s' will be deleted synchronously", contentType.name()));
+      this.transactionalDelete(contentType);
     } else {
       //We make a copy to hold all the contentlets that will be deleted asynchronously and then dispose the original one
-      triggerAsyncDelete(type, asyncDeleteWithJob);
+      this.triggerAsyncDelete(contentType, asyncDeleteWithJob);
     }
   }
 
@@ -207,8 +225,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
   }
 
-  boolean contentTypeCanBeDeleted(ContentType type) throws DotDataException, DotSecurityException {
-
+  /**
+   * Verifies whether the {@link User} calling this method has the required {@code EDIT}
+   * permissions to delete the specified Content Type or not.
+   *
+   * @param type The {@link ContentType} to be deleted.
+   *
+   * @return If the {@link User} has the required permissions to delete the specified Content
+   * Type, returns {@code true}.
+   *
+   * @throws DotDataException     An error occurred when accessing the database.
+   * @throws DotSecurityException The specified User does not have the necessary permissions to
+   *                              perform this action.
+   */
+  protected boolean contentTypeCanBeDeleted(ContentType type) throws DotDataException, DotSecurityException {
       if (null == type.id()) {
           throw new DotDataException("ContentType must have an id set");
       }
@@ -467,14 +497,23 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return count(condition,base,null);
   }
 
+  @CloseDBIfOpened
+  @Override
+  public int count(final String condition, final BaseContentType base, final String siteId) throws DotDataException {
+    return countForSites(condition, base, UtilMethods.isSet(siteId) ? List.of(siteId) : null);
+  }
 
   @CloseDBIfOpened
   @Override
-  public int count(final String condition, final BaseContentType base, final String hostId) throws DotDataException {
+  public int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException {
     try {
-      return perms.filterCollection(this.contentTypeFactory.search(condition, base.getType(), "mod_date", -1, 0,hostId), PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles, user).size();
-    } catch (DotSecurityException e) {
+      final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(siteIds, this.user, this.respectFrontendRoles);
+      return this.perms.filterCollection(this.contentTypeFactory.search(resolvedSiteIds,
+              condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0),
+              PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user).size();
+    } catch (final DotSecurityException e) {
+      Logger.error(this, String.format("An error occurred when getting the Content Type count for Sites " +
+              "[ %s ] with condition [ %s ]: %s", siteIds, condition, ExceptionUtil.getErrorMessage(e)), e);
       throw new DotStateException(e);
     }
   }
@@ -735,32 +774,42 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return this.search( condition, base, orderBy,  limit,  offset,null);
   }
 
-    @CloseDBIfOpened
-    @Override
-    public List<ContentType> search(String condition, BaseContentType base, final String orderBy, final int limit, final int offset, final String hostId)
-            throws DotDataException {
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
+          throws DotDataException {
 
-        final List<ContentType> returnTypes = new ArrayList<>();
-        int rollingOffset = offset;
-        try {
-            while ((limit<0)||(returnTypes.size() < limit)) {
-                final List<ContentType> rawContentTypes = this.contentTypeFactory.search(condition, base.getType(), orderBy, limit, rollingOffset,hostId);
-                if (rawContentTypes.isEmpty()) {
-                    break;
-                }
-                returnTypes.addAll(perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-                if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
-                    break;
-                }
-                rollingOffset += limit;
-            }
-
-            final int maxAmount = (limit<0)?returnTypes.size():Math.min(limit, returnTypes.size());
-            return returnTypes.subList(0, maxAmount);
-        } catch (DotSecurityException e) {
-            throw new DotStateException(e);
+    final List<ContentType> returnTypes = new ArrayList<>();
+    int rollingOffset = offset;
+    try {
+      while ((limit<0)||(returnTypes.size() < limit)) {
+        final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(sites, this.user, this.respectFrontendRoles);
+        final List<ContentType> rawContentTypes = this.contentTypeFactory.search(resolvedSiteIds,
+                condition, base.getType(), orderBy, limit, rollingOffset);
+        if (rawContentTypes.isEmpty()) {
+          break;
         }
+        returnTypes.addAll(this.perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user));
+        if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
+          break;
+        }
+        rollingOffset += limit;
+      }
 
+      final int maxAmount = (limit<0)?returnTypes.size():Math.min(limit, returnTypes.size());
+      return returnTypes.subList(0, maxAmount);
+    } catch (final DotSecurityException e) {
+      Logger.error(this, String.format("An error occurred when searching for Content Types: " +
+              "%s", ExceptionUtil.getErrorMessage(e)));
+      throw new DotStateException(e);
+    }
+  }
+
+  @CloseDBIfOpened
+    @Override
+    public List<ContentType> search(final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset, final String siteId)
+            throws DotDataException {
+        return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base, orderBy, limit, offset);
     }
 
   @CloseDBIfOpened

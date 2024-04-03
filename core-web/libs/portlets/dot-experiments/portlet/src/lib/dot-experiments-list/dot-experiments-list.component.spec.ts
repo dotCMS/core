@@ -6,23 +6,21 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { provideComponentStore } from '@ngrx/component-store';
-import { MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
 import {
+    DotExperimentsService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
-    DotMessageService,
-    DotFormatDateService
+    DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotEmptyContainerComponent } from '@dotcms/ui';
+import { DotAddToBundleComponent, DotEmptyContainerComponent } from '@dotcms/ui';
 import {
     ActivatedRouteListStoreMock,
     DotExperimentsStoreMock,
@@ -63,7 +61,7 @@ describe('ExperimentsListComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsListComponent,
         componentProviders: [provideComponentStore(DotExperimentsListStore)],
-        imports: [MockModule(DotAddToBundleModule)],
+        imports: [MockComponent(DotAddToBundleComponent)],
         providers: [
             ConfirmationService,
             mockProvider(DotExperimentsStore, DotExperimentsStoreMock),

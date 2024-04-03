@@ -2,6 +2,7 @@ package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -23,6 +24,9 @@ public abstract class AbstractContentTypeCommand {
     protected OutputOptionMixin output;
 
     @CommandLine.Mixin
+    protected AuthenticationMixin authenticationMixin;
+
+    @CommandLine.Mixin
     protected HelpOptionMixin helpOption;
 
     Optional<ContentType> findExistingContentType(final ContentTypeAPI contentTypeAPI, final String varNameOrId ){
@@ -39,7 +43,7 @@ public abstract class AbstractContentTypeCommand {
 
     String shortFormat(final ContentType contentType) {
         return String.format(
-                "varName: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] host: [@|bold,underline,green %s|@] modDate:[@|bold,yellow %s|@] desc: [@|bold,yellow %s|@]",
+                "variable: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] host: [@|bold,underline,green %s|@] modDate:[@|bold,yellow %s|@] description: [@|bold,yellow %s|@]",
                 contentType.variable(),
                 contentType.id(),
                 contentType.host(),

@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
     SpectatorRouting,
     createRoutingFactory,
@@ -20,23 +20,24 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotContentTypeService,
+    DotContentletService,
     DotCopyContentService,
     DotCurrentUserService,
     DotDevicesService,
     DotESContentService,
+    DotExperimentsService,
     DotFavoritePageService,
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
-import {
-    DotCMSContentlet,
-    CONTAINER_SOURCE,
-    DotPageContainerStructure
-} from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
@@ -46,10 +47,16 @@ import {
     mockDotDevices,
     LoginServiceMock,
     DotCurrentUserServiceMock,
-    dotcmsContentletMock
+    dotcmsContentletMock,
+    seoOGTagsResultMock,
+    URL_MAP_CONTENTLET,
+    getRunningExperimentMock,
+    getScheduleExperimentMock,
+    getDraftExperimentMock
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -59,11 +66,24 @@ import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-pag
 import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
-import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW, HOST, PAYLOAD_MOCK } from '../shared/consts';
+import { DotPageApiService } from '../services/dot-page-api.service';
+import {
+    DEFAULT_PERSONA,
+    WINDOW,
+    HOST,
+    PAYLOAD_MOCK,
+    EDIT_ACTION_PAYLOAD_MOCK,
+    PAGE_INODE_MOCK,
+    QUERY_PARAMS_MOCK,
+    TREE_NODE_MOCK,
+    URL_CONTENT_MAP_MOCK,
+    newContentlet,
+    dotPageContainerStructureMock,
+    dragAddEventMock,
+    dragMoveEventMock
+} from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
 
@@ -81,199 +101,14 @@ const messagesMock = {
     'editpage.content.add.already.message': 'This content is already added to this container'
 };
 
-const dragEventMock = {
-    target: {
-        dataset: {
-            type: 'contentlet',
-            item: JSON.stringify({
-                identifier: '123',
-                title: 'hello world',
-                contentType: 'File',
-                baseType: 'CONTENT'
-            })
-        }
-    }
-};
-
-const dotPageContainerStructureMock: DotPageContainerStructure = {
-    '123': {
-        container: {
-            archived: false,
-            categoryId: '123',
-            deleted: false,
-            friendlyName: '123',
-            identifier: '123',
-            live: false,
-            locked: false,
-            maxContentlets: 123,
-            name: '123',
-            path: '123',
-            pathName: '123',
-            postLoop: '123',
-            preLoop: '123',
-            source: CONTAINER_SOURCE.DB,
-            title: '123',
-            type: '123',
-            working: false
-        },
-        containerStructures: [
-            {
-                contentTypeVar: '123'
-            }
-        ],
-        contentlets: {
-            '123': [
-                {
-                    baseType: '123',
-                    content: 'something',
-                    contentType: '123',
-                    dateCreated: '123',
-                    dateModifed: '123',
-                    folder: '123',
-                    host: '123',
-                    identifier: '123',
-                    inode: '123',
-                    languageId: 123,
-                    live: false,
-                    locked: false,
-                    modDate: '123',
-                    modUser: '123',
-                    owner: '123',
-                    working: false,
-                    title: '123',
-                    url: '123',
-                    __icon__: '123',
-                    archived: false,
-                    deleted: false,
-                    hasTitleImage: false,
-                    hostName: '123',
-                    image: '123',
-                    modUserName: '123',
-                    sortOrder: 123,
-                    stInode: '123',
-                    titleImage: '123'
-                },
-                {
-                    baseType: '456',
-                    content: 'something',
-                    contentType: '456',
-                    dateCreated: '456',
-                    dateModifed: '456',
-                    folder: '456',
-                    host: '456',
-                    identifier: '456',
-                    inode: '456',
-                    languageId: 456,
-                    live: false,
-                    locked: false,
-                    modDate: '456',
-                    modUser: '456',
-                    owner: '456',
-                    working: false,
-                    title: '456',
-                    url: '456',
-                    __icon__: '456',
-                    archived: false,
-                    deleted: false,
-                    hasTitleImage: false,
-                    hostName: '456',
-                    image: '456',
-                    modUserName: '456',
-                    sortOrder: 456,
-                    stInode: '456',
-                    titleImage: '456'
-                }
-            ],
-            '456': [
-                {
-                    baseType: '123',
-                    content: 'something',
-                    contentType: '123',
-                    dateCreated: '123',
-                    dateModifed: '123',
-                    folder: '123',
-                    host: '123',
-                    identifier: '123',
-                    inode: '123',
-                    languageId: 123,
-                    live: false,
-                    locked: false,
-                    modDate: '123',
-                    modUser: '123',
-                    owner: '123',
-                    working: false,
-                    title: '123',
-                    url: '123',
-                    __icon__: '123',
-                    archived: false,
-                    deleted: false,
-                    hasTitleImage: false,
-                    hostName: '123',
-                    image: '123',
-                    modUserName: '123',
-                    sortOrder: 123,
-                    stInode: '123',
-                    titleImage: '123'
-                }
-            ]
-        }
-    }
-};
-
-const PAGE_INODE_MOCK = '1234';
-const QUERY_PARAMS_MOCK = { language_id: 1, url: 'page-one' };
-
-const TREE_NODE_MOCK = {
-    containerId: '123',
-    contentId: '123',
-    pageId: '123',
-    relationType: 'test',
-    treeOrder: '1',
-    variantId: 'test',
-    personalization: 'dot:default'
-};
-
-const newContentlet = {
-    ...dotcmsContentletMock,
-    inode: '123',
-    title: 'test'
-};
-
-const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
-    language_id: '1',
-    pageContainers: [
-        {
-            identifier: 'test',
-            uuid: 'test',
-            contentletsId: []
-        }
-    ],
-    contentlet: {
-        identifier: 'contentlet-identifier-123',
-        inode: 'contentlet-inode-123',
-        title: 'Hello World',
-        contentType: 'test',
-        onNumberOfPages: 1
-    },
-    container: {
-        identifier: 'test',
-        acceptTypes: 'test',
-        uuid: 'test',
-        maxContentlets: 1,
-        contentletsId: ['123'],
-        variantId: '123'
-    },
-    pageId: 'test',
-    position: 'before'
-};
-
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe],
         declarations: [
             MockComponent(DotEditEmaWorkflowActionsComponent),
-            MockComponent(DotEmaDialogComponent)
+            MockComponent(DotResultsSeoToolComponent),
+            MockComponent(DotEmaRunningExperimentComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -282,6 +117,26 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             ConfirmationService,
             DotFavoritePageService,
             DotESContentService,
+            {
+                provide: DotExperimentsService,
+                useValue: {
+                    getById(experimentId: string) {
+                        if (experimentId == 'i-have-a-running-experiment') {
+                            return of(getRunningExperimentMock());
+                        } else if (experimentId == 'i-have-a-scheduled-experiment') {
+                            return of(getScheduleExperimentMock());
+                        } else if (experimentId) return of(getDraftExperimentMock());
+
+                        return of(null);
+                    }
+                }
+            },
+            {
+                provide: DotContentletService,
+                useValue: {
+                    getContentletByInode: () => of(URL_MAP_CONTENTLET)
+                }
+            },
             {
                 provide: DotHttpErrorManagerService,
                 useValue: {
@@ -323,6 +178,11 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ],
         providers: [
+            {
+                provide: DotSeoMetaTagsService,
+                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
+            },
+            DotSeoMetaTagsUtilService,
             DialogService,
             DotCopyContentService,
             DotCopyContentModalService,
@@ -331,7 +191,85 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 provide: DotPageApiService,
                 useValue: {
                     get({ language_id }) {
+                        // We use the language_id to determine the response, use this to test different behaviors
                         return {
+                            6: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    canEdit: false
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 6,
+                                        language: 'Portuguese',
+                                        countryCode: 'BR',
+                                        languageCode: 'br',
+                                        country: 'Brazil'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
+                                containers: dotPageContainerStructureMock
+                            }),
+                            5: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: 'i-have-a-running-experiment',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    rendered: '<div>New Content - Hello World</div>',
+                                    canEdit: true
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 4,
+                                        language: 'Russian',
+                                        countryCode: 'Ru',
+                                        languageCode: 'ru',
+                                        country: 'Russia'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
+                                containers: dotPageContainerStructureMock
+                            }),
+                            4: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    rendered: '<div>New Content - Hello World</div>',
+                                    canEdit: true
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 4,
+                                        language: 'German',
+                                        countryCode: 'DE',
+                                        languageCode: 'de',
+                                        country: 'Germany'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
+                                containers: dotPageContainerStructureMock
+                            }),
                             3: of({
                                 page: {
                                     title: 'hello world',
@@ -355,6 +293,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     },
                                     persona: DEFAULT_PERSONA
                                 },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
                                 containers: dotPageContainerStructureMock
                             }),
                             2: of({
@@ -402,6 +341,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     },
                                     persona: DEFAULT_PERSONA
                                 },
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
                                 containers: dotPageContainerStructureMock
                             })
                         }[language_id];
@@ -457,6 +397,7 @@ describe('EditEmaEditorComponent', () => {
         let addMessageSpy: jest.SpyInstance;
         let dotCopyContentModalService: DotCopyContentModalService;
         let dotCopyContentService: DotCopyContentService;
+        let dotContentletService: DotContentletService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
         const createComponent = createRouting({ canEdit: true, canRead: true });
@@ -485,6 +426,7 @@ describe('EditEmaEditorComponent', () => {
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
+            dotContentletService = spectator.inject(DotContentletService, true);
 
             addMessageSpy = jest.spyOn(messageService, 'add');
 
@@ -497,7 +439,7 @@ describe('EditEmaEditorComponent', () => {
 
             spectator.detectChanges();
 
-            store.updateEditorState(EDITOR_STATE.LOADED);
+            store.updateEditorState(EDITOR_STATE.IDLE);
         });
 
         describe('toast', () => {
@@ -525,7 +467,7 @@ describe('EditEmaEditorComponent', () => {
                 const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
 
                 expect(button.nativeElement.href).toBe(
-                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
+                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
@@ -568,27 +510,12 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('Preview mode', () => {
-            it('should reset the selection on click on the x button', () => {
-                spectator.detectChanges();
+            beforeEach(() => {
+                jest.useFakeTimers(); // Mock the timers
+            });
 
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                const iphone = mockDotDevices[0];
-
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
-                spectator.detectChanges();
-
-                const deviceDisplay = spectator.debugElement.query(
-                    By.css('[data-testId="device-display"]')
-                );
-
-                spectator.triggerEventHandler(deviceDisplay, 'resetDevice', {});
-
-                const selectedDevice = spectator.query(byTestId('selected-device'));
-
-                expect(selectedDevice).toBeNull();
+            afterEach(() => {
+                jest.useRealTimers(); // Restore the real timers after each test
             });
 
             it('should hide the components that are not needed for preview mode', () => {
@@ -616,8 +543,59 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            it('should hide the editor components when there is a running experiement and initialize the editor in a variant', () => {
+                const componentsToHide = [
+                    'palette',
+                    'dropzone',
+                    'contentlet-tools',
+                    'dialog',
+                    'confirm-dialog'
+                ]; // Test id of components that should hide when entering preview modes
+
+                spectator.detectChanges();
+
+                spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
+
+                spectator.detectChanges();
+                store.load({
+                    url: 'index',
+                    language_id: '5',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    variantName: 'hello-there',
+                    experimentId: 'i-have-a-running-experiment'
+                });
+
+                spectator.detectChanges();
+
+                componentsToHide.forEach((testId) => {
+                    expect(spectator.query(byTestId(testId))).toBeNull();
+                });
+            });
+
+            it('should show the editor components when there is a running experiement and initialize the editor in a default variant', async () => {
+                const componentsToShow = ['palette', 'dialog', 'confirm-dialog'];
+
+                spectator.activatedRouteStub.setQueryParam('variantName', DEFAULT_VARIANT_ID);
+
+                spectator.detectChanges();
+
+                store.load({
+                    url: 'index',
+                    language_id: '5',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+
+                spectator.detectChanges();
+
+                componentsToShow.forEach((testId) => {
+                    expect(
+                        spectator.debugElement.query(By.css(`[data-testId="${testId}"]`))
+                    ).not.toBeNull();
+                });
+            });
+
             it('should show the components that need showed on preview mode', () => {
-                const componentsToShow = ['ema-back-to-edit', 'device-display']; // Test id of components that should show when entering preview modes
+                const componentsToShow = ['info-display']; // Test id of components that should show when entering preview modes
 
                 spectator.detectChanges();
 
@@ -633,6 +611,46 @@ describe('EditEmaEditorComponent', () => {
                 componentsToShow.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).not.toBeNull();
                 });
+            });
+
+            it('should call setDevice from the store', () => {
+                const setDeviceMock = jest.spyOn(store, 'setDevice');
+
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                expect(setDeviceMock).toHaveBeenCalledWith(iphone);
+            });
+
+            // REMOVED THE `SKIP` WHEN THIS PR [https://github.com/dotCMS/core/pull/27866] IS MERGED
+            it('should open seo results when clicking on a social media tile', () => {
+                const setSocialMediaMock = jest.spyOn(store, 'setSocialMedia');
+
+                store.load({
+                    url: 'index',
+                    language_id: '3',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+
+                jest.runOnlyPendingTimers();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'Facebook');
+
+                expect(spectator.query(byTestId('results-seo-tool'))).not.toBeNull(); // This components share the same logic as the preview by device
+
+                expect(setSocialMediaMock).toHaveBeenCalledWith('Facebook');
             });
         });
 
@@ -909,6 +927,14 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('edit', () => {
+                const baseContentletPayload = {
+                    x: 100,
+                    y: 100,
+                    width: 500,
+                    height: 500,
+                    payload: EDIT_ACTION_PAYLOAD_MOCK
+                };
+
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
 
@@ -916,13 +942,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    spectator.setInput('contentlet', {
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
+                    spectator.setInput('contentlet', baseContentletPayload);
 
                     spectator.detectComponentChanges();
 
@@ -956,6 +976,111 @@ describe('EditEmaEditorComponent', () => {
                             done();
                         }
                     );
+                });
+
+                describe('reload', () => {
+                    let spyContentlet: jest.SpyInstance;
+                    let spyDialog: jest.SpyInstance;
+                    let spyReloadIframe: jest.SpyInstance;
+                    let spyStoreReload: jest.SpyInstance;
+                    let spyUpdateQueryParams: jest.SpyInstance;
+
+                    const emulateEditURLMapContent = () => {
+                        const editURLContentButton = spectator.debugElement.query(
+                            By.css('[data-testId="edit-url-content-map"]')
+                        );
+                        const dialog = spectator.debugElement.query(
+                            By.css('[data-testId="ema-dialog"]')
+                        );
+
+                        spectator.setInput('contentlet', baseContentletPayload);
+                        editURLContentButton.triggerEventHandler('onClick', {});
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                                    payload: {
+                                        shouldReloadPage: true,
+                                        contentletIdentifier: URL_MAP_CONTENTLET.identifier,
+                                        htmlPageReferer: '/my-awesome-page'
+                                    }
+                                }
+                            })
+                        });
+                    };
+
+                    beforeEach(() => {
+                        const router = spectator.inject(Router, true);
+                        const dialog = spectator.component.dialog;
+                        spyContentlet = jest.spyOn(dotContentletService, 'getContentletByInode');
+                        spyDialog = jest.spyOn(dialog, 'editUrlContentMapContentlet');
+                        spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
+                        spyUpdateQueryParams = jest.spyOn(router, 'navigate');
+                        spyStoreReload = jest.spyOn(store, 'reload');
+
+                        spectator.detectChanges();
+                    });
+
+                    it('should reload the page after editing a urlContentMap if the url do not change', () => {
+                        const storeReloadPayload = {
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        };
+
+                        spyContentlet.mockReturnValue(
+                            of({
+                                ...URL_MAP_CONTENTLET,
+                                URL_MAP_FOR_CONTENT: 'page-one'
+                            })
+                        );
+
+                        emulateEditURLMapContent();
+                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(spyReloadIframe).toHaveBeenCalled();
+                        expect(spyStoreReload).toHaveBeenCalledWith(storeReloadPayload);
+                        expect(spyUpdateQueryParams).not.toHaveBeenCalled();
+                    });
+
+                    it('should update the query params after editing a urlContentMap if the url changed', () => {
+                        const SpyEditorState = jest.spyOn(store, 'updateEditorState');
+                        const queryParams = {
+                            queryParams: {
+                                url: URL_MAP_CONTENTLET.URL_MAP_FOR_CONTENT
+                            },
+                            queryParamsHandling: 'merge'
+                        };
+
+                        spyContentlet.mockReturnValue(of(URL_MAP_CONTENTLET));
+
+                        emulateEditURLMapContent();
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyUpdateQueryParams).toHaveBeenCalledWith([], queryParams);
+                        expect(spyStoreReload).not.toHaveBeenCalled();
+                        expect(spyReloadIframe).toHaveBeenCalled();
+                    });
+
+                    it('should handler error ', () => {
+                        const SpyEditorState = jest.spyOn(store, 'updateEditorState');
+                        const SpyHandlerError = jest
+                            .spyOn(dotHttpErrorManagerService, 'handle')
+                            .mockReturnValue(of(null));
+
+                        spyContentlet.mockReturnValue(throwError({}));
+
+                        emulateEditURLMapContent();
+                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
+                        expect(SpyHandlerError).toHaveBeenCalledWith({});
+                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.ERROR);
+                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
+                        expect(spyUpdateQueryParams).not.toHaveBeenCalled();
+                        expect(spyStoreReload).not.toHaveBeenCalled();
+                        expect(spyReloadIframe).not.toHaveBeenCalled();
+                    });
                 });
 
                 describe('Copy content', () => {
@@ -1024,12 +1149,8 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(copySpy).toHaveBeenCalledWith(TREE_NODE_MOCK); // It's not being called
                         expect(dialogLoadingSpy).toHaveBeenCalledWith('Hello World');
-                        expect(editContentletSpy).toHaveBeenCalledWith({
-                            ...EDIT_ACTION_PAYLOAD_MOCK,
-                            contentlet: newContentlet
-                        });
+                        expect(editContentletSpy).toHaveBeenCalledWith(newContentlet);
                         expect(modalSpy).toHaveBeenCalled();
-                        expect(reloadIframeSpy).toHaveBeenCalledWith('ema-reload-page', '*');
                     });
 
                     it('should show an error if the copy content fails', () => {
@@ -1084,7 +1205,7 @@ describe('EditEmaEditorComponent', () => {
                         expect(copySpy).not.toHaveBeenCalled();
                         expect(dialogLoadingSpy).not.toHaveBeenCalled();
                         expect(editContentletSpy).toHaveBeenCalledWith(
-                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
+                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES.contentlet
                         );
                         expect(modalSpy).toHaveBeenCalled();
                         expect(reloadIframeSpy).not.toHaveBeenCalledWith();
@@ -1563,23 +1684,6 @@ describe('EditEmaEditorComponent', () => {
                         life: 2000
                     });
                 });
-
-                describe('misc', () => {
-                    it('should set the editorState to loaded when the iframe sends a postmessage of content changed', () => {
-                        const editorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                        window.dispatchEvent(
-                            new MessageEvent('message', {
-                                origin: HOST,
-                                data: {
-                                    action: 'content-change'
-                                }
-                            })
-                        );
-
-                        expect(editorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
-                    });
-                });
             });
         });
 
@@ -1607,29 +1711,123 @@ describe('EditEmaEditorComponent', () => {
                 const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                 expect(iframe.nativeElement.src).toBe(
-                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
+                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
-            it('iframe should have the correct content when is VTL', () => {
+            it('should render the running experiment component', () => {
                 store.load({
                     url: 'index',
-                    language_id: '3',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
+                    language_id: '5',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    experimentId: 'i-have-a-running-experiment'
+                }); // This will load a page with a running experiment
+
                 spectator.detectChanges();
 
-                spectator.component.onIframePageLoad({
-                    clientHost: '',
-                    editor: { page: { rendered: '<div>hello world</div>' } }
-                } as { clientHost: string; editor: DotPageApiResponse }); // I didn't find another way to mock the iframe loading
+                const runningExperiment = spectator.query(byTestId('ema-running-experiment'));
 
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                expect(runningExperiment).not.toBeNull();
+            });
 
-                expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
-                    '<div>hello world</div>'
-                );
+            it('should show the info display when you cannot edit the page', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '6',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+
+                spectator.detectChanges();
+
+                const infoDisplay = spectator.query(byTestId('info-display'));
+
+                expect(infoDisplay).not.toBeNull();
+            });
+
+            it('should show the info display when trying to edit a variant of a running experiment', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '6',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    experimentId: 'i-have-a-running-experiment'
+                }); // This will load a page with a running experiment
+
+                spectator.detectChanges();
+
+                const infoDisplay = spectator.query(byTestId('info-display'));
+
+                expect(infoDisplay).not.toBeNull();
+            });
+
+            it('should show the info display when trying to edit a variant of an scheduled experiment', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '6',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    experimentId: 'i-have-a-scheduled-experiment'
+                }); // This will load a page with a scheduled experiment
+
+                spectator.detectChanges();
+
+                const infoDisplay = spectator.query(byTestId('info-display'));
+
+                expect(infoDisplay).not.toBeNull();
+            });
+
+            describe('VTL Page', () => {
+                beforeEach(() => {
+                    jest.useFakeTimers(); // Mock the timers
+                    store.load({
+                        url: 'index',
+                        language_id: '3',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+                    spectator.detectChanges();
+                });
+
+                afterEach(() => {
+                    jest.useRealTimers(); // Restore the real timers after each test
+                });
+
+                it('iframe should have the correct content when is VTL', () => {
+                    jest.runOnlyPendingTimers();
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                        '<div>hello world</div>'
+                    );
+                });
+
+                it('iframe should have reload the page and add the new content, maintaining scroll', () => {
+                    const params = {
+                        language_id: '4',
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    };
+
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                    const scrollSpy = jest
+                        .spyOn(spectator.component.iframe.nativeElement.contentWindow, 'scrollTo')
+                        .mockImplementation(() => jest.fn);
+
+                    iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
+
+                    store.reload({
+                        params,
+                        whenReloaded: () => {
+                            /* */
+                        }
+                    });
+                    spectator.detectChanges();
+
+                    jest.runOnlyPendingTimers();
+
+                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                        '<div>New Content - Hello World</div>'
+                    );
+                    expect(scrollSpy).toHaveBeenCalledWith(0, 100);
+                });
             });
 
             it('should navigate to new url and change persona when postMessage SET_URL', () => {
@@ -1659,7 +1857,7 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should not change persona on load same url', () => {
+            it('should not call navigate on load same url', () => {
                 const router = spectator.inject(Router);
                 jest.spyOn(router, 'navigate');
 
@@ -1677,12 +1875,7 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        url: 'page-one' //Same page as init
-                    },
-                    queryParamsHandling: 'merge'
-                });
+                expect(router.navigate).not.toHaveBeenCalled();
             });
 
             it('set url to a different route should set the editor state to loading', () => {
@@ -1705,7 +1898,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
             });
 
-            it('set url to the same route should set the editor state to loaded', () => {
+            it('set url to the same route should set the editor state to IDLE', () => {
                 const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
 
                 const url = "/ultra-cool-url-that-doesn't-exist";
@@ -1728,7 +1921,7 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
             });
 
             it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
@@ -1795,7 +1988,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(spectator.query(EmaPageDropzoneComponent)).not.toBeNull();
             });
 
-            it('should hide drop zone on palette drop', () => {
+            it('should hide drop zone on contentlet tools drop', () => {
                 spectator.detectChanges();
 
                 window.dispatchEvent(
@@ -1836,18 +2029,31 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                let dropZone = spectator.query(EmaPageDropzoneComponent);
+                let dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.item).toEqual({
+                const dropZoneDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="dropzone"]')
+                );
+
+                expect(dropZoneComponent.item).toEqual({
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZoneComponent.containers).toBe(BOUNDS_MOCK);
 
-                spectator.triggerEventHandler(emaTools, 'moveStop', undefined);
+                spectator.triggerEventHandler(emaTools, 'moveStop', {
+                    dataTransfer: {
+                        dropEffect: 'move'
+                    }
+                });
+                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
+                    ...PAYLOAD_MOCK,
+                    position: 'after'
+                });
+
                 spectator.detectComponentChanges();
-                dropZone = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZone).toBeNull();
+                dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
+                expect(dropZoneComponent).toBeNull();
             });
 
             it('should move a contentlet from position in the same contentlet', () => {
@@ -1935,7 +2141,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(saveSpy).toHaveBeenCalledWith({
                     pageContainers: newPageContainers,
                     pageId: '123',
-                    whenSaved: expect.any(Function),
                     params: {
                         language_id: 1,
                         url: 'page-one'
@@ -2028,7 +2233,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(saveSpy).toHaveBeenCalledWith({
                     pageContainers: newPageContainers,
                     pageId: '123',
-                    whenSaved: expect.any(Function),
                     params: {
                         language_id: 1,
                         url: 'page-one'
@@ -2074,34 +2278,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
             });
 
-            it('should reset the contentlet when we update query params', () => {
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', {
-                    target: {
-                        dataset: {
-                            type: 'contentlet',
-                            item: JSON.stringify({
-                                contentlet: {
-                                    identifier: '123',
-                                    title: 'hello world'
-                                }
-                            })
-                        }
-                    }
-                });
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.contentlet).not.toBeNull();
-
-                spectator.component.onLanguageSelected(2); // triggers a query param change
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.contentlet).toBeNull();
-            });
-
             it('should show drop zone on iframe message', () => {
                 spectator.detectChanges();
 
@@ -2119,13 +2295,17 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+                spectator.triggerEventHandler(
+                    EditEmaPaletteComponent,
+                    'dragStart',
+                    dragMoveEventMock
+                );
 
                 spectator.detectComponentChanges();
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
                 expect(dropZone.item).toEqual({
                     contentType: 'File',
                     baseType: 'CONTENT'
@@ -2145,46 +2325,34 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+                spectator.triggerEventHandler(
+                    EditEmaPaletteComponent,
+                    'dragStart',
+                    dragAddEventMock
+                );
 
                 spectator.detectComponentChanges();
 
                 let dropZone = spectator.query(EmaPageDropzoneComponent);
 
-                expect(dropZone.item).toEqual({
-                    contentType: 'File',
-                    baseType: 'CONTENT'
-                });
-                expect(dropZone.rows).toBe(BOUNDS_MOCK);
-
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
-                spectator.detectComponentChanges();
-                dropZone = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZone).toBeNull();
-            });
-
-            it('should reset the rows when we update query params', () => {
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
+                const dropZoneDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="dropzone"]')
                 );
 
+                expect(dropZone.item).toEqual({
+                    contentType: 'Banner',
+                    baseType: 'CONTENT'
+                });
+                expect(dropZone.containers).toBe(BOUNDS_MOCK);
+
+                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
+                    ...PAYLOAD_MOCK,
+                    position: 'after'
+                });
                 spectator.detectComponentChanges();
 
-                expect(spectator.component.rows.length).toBe(BOUNDS_MOCK.length);
-
-                spectator.component.onLanguageSelected(2); // triggers a query param change
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.component.rows.length).toBe(0);
+                dropZone = spectator.query(EmaPageDropzoneComponent);
+                expect(dropZone).toBeNull();
             });
         });
 
@@ -2253,26 +2421,6 @@ describe('EditEmaEditorComponent', () => {
                 expect(routerSpy).not.toHaveBeenCalled();
             });
         });
-
-        // describe('reaload iframe', () => {
-        //     let spy: jest.SpyInstance;
-        //     let dialog: DebugElement;
-
-        //     beforeEach(() => {
-        //         spy = jest.spyOn(
-        //             spectator.component.iframe.nativeElement.contentWindow,
-        //             'postMessage'
-        //         );
-        //         spectator.detectChanges();
-        //         dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
-        //     });
-
-        //     it('should update to Loading state', () => {
-        //         triggerCustomEvent(dialog, 'reloadIframe', true);
-        //         spectator.detectChanges();
-        //         expect(spy).toHaveBeenCalledWith('ema-reload-page', '*');
-        //     });
-        // });
     });
 
     describe('without edit permission', () => {

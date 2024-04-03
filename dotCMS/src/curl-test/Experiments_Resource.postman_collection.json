@@ -70,19 +70,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -153,7 +150,12 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": ""
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier=e424abd7e2e7a9031c5a0a3c18182f1b",
@@ -241,19 +243,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -324,7 +323,12 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": ""
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier=9044ec0fdb3788a814ccabf789f376d4",
@@ -417,19 +421,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -500,7 +501,12 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": ""
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier=e424abd7e2e7a9031c5a0a3c18182f1b",
@@ -3149,19 +3155,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -7731,19 +7734,16 @@
 									]
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"raw": "{{serverURL}}/api/bundle/sync",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
-										"bundle"
+										"bundle",
+										"sync"
 									],
 									"query": [
-										{
-											"key": "sync",
-											"value": "true"
-										},
 										{
 											"key": "AUTH_TOKEN",
 											"value": "",
@@ -8464,19 +8464,16 @@
 									]
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"raw": "{{serverURL}}/api/bundle/sync",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
-										"bundle"
+										"bundle",
+										"sync"
 									],
 									"query": [
-										{
-											"key": "sync",
-											"value": "true"
-										},
 										{
 											"key": "AUTH_TOKEN",
 											"value": "",
@@ -9881,19 +9878,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -10385,19 +10379,16 @@
 									]
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"raw": "{{serverURL}}/api/bundle/sync",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
-										"bundle"
+										"bundle",
+										"sync"
 									],
 									"query": [
-										{
-											"key": "sync",
-											"value": "true"
-										},
 										{
 											"key": "AUTH_TOKEN",
 											"value": "",
@@ -12251,19 +12242,16 @@
 									]
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"raw": "{{serverURL}}/api/bundle/sync",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
-										"bundle"
+										"bundle",
+										"sync"
 									],
 									"query": [
-										{
-											"key": "sync",
-											"value": "true"
-										},
 										{
 											"key": "AUTH_TOKEN",
 											"value": "",

@@ -15,17 +15,18 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 import { DialogModule } from 'primeng/dialog';
 
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import {
+    CreateContentletAction,
     CreateFromPaletteAction,
     DialogStatus,
     DotEmaDialogStore
 } from './store/dot-ema-dialog.store';
 
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { ActionPayload } from '../../shared/models';
+import { ActionPayload, VTLFile } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
@@ -111,10 +112,10 @@ export class DotEmaDialogComponent {
     /**
      * Edit contentlet
      *
-     * @param {ActionPayload} payload
-     * @memberof EditEmaEditorComponent
+     * @param {Partial<DotCMSContentlet>} contentlet
+     * @memberof DotEmaDialogComponent
      */
-    editContentlet({ contentlet }: Partial<ActionPayload>) {
+    editContentlet(contentlet: Partial<DotCMSContentlet>) {
         this.store.editContentlet({
             inode: contentlet.inode,
             title: contentlet.title
@@ -122,15 +123,42 @@ export class DotEmaDialogComponent {
     }
 
     /**
-     * Create contentlet form
+     * Edits a VTL contentlet.
      *
-     * @param {{ url: string; contentType: string }} { url, contentType }
+     * @param {VTLFile} vtlFile - The VTL file to edit.
      * @memberof DotEmaDialogComponent
      */
-    createContentlet({ url, contentType }: { url: string; contentType: string }) {
+    editVTLContentlet(vtlFile: VTLFile) {
+        this.store.editContentlet({
+            inode: vtlFile.inode,
+            title: vtlFile.name
+        });
+    }
+
+    /**
+     * Edit URL Content Map Contentlet
+     *
+     * @param {DotCMSContentlet} { inode, title }
+     * @memberof DotEmaDialogComponent
+     */
+    editUrlContentMapContentlet({ inode, title }: DotCMSContentlet) {
+        this.store.editUrlContentMapContentlet({
+            inode,
+            title
+        });
+    }
+
+    /**
+     * Create contentlet in the edit content
+     *
+     * @param {CreateContentletAction} { url, contentType, payload }
+     * @memberof DotEmaDialogComponent
+     */
+    createContentlet({ url, contentType, payload }: CreateContentletAction) {
         this.store.createContentlet({
             url,
-            contentType
+            contentType,
+            payload
         });
     }
 

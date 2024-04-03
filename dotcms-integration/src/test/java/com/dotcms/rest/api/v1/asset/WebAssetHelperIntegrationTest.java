@@ -8,6 +8,7 @@ import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -21,7 +22,9 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -165,6 +168,84 @@ public class WebAssetHelperIntegrationTest {
                 APILocator.systemUser());
     }
 
+    /**
+     * Method to test :  {@link WebAssetHelper#getAssetInfo(String, User)}
+     * Given Scenario: We submit a valid path using a limited user
+     * Expected Result: We should not get the asset info back but a Security Exception
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void TestGetSiteInfoLimitedUser() throws DotDataException, DotSecurityException {
+        final Folder subBar = new FolderDataGen().parent(bar).name("bar2").nextPersisted();
+        new FolderDataGen().site(host).parent(subBar).name("bar2-1").nextPersisted();
+        final String folderPath = parentFolderPath() +  subBar.getName() + "/";
+        final User chrisPublisherUser = TestUserUtils.getChrisPublisherUser(host);
+        Logger.info(this, "TestGetFolderInfo  ::  " +folderPath );
+        WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final WebAssetView assetInfo = webAssetHelper.getAssetInfo(folderPath, APILocator.systemUser());
+        Assert.assertNotNull(assetInfo);
+
+        final Permission siteReadPermissions = new Permission(host.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(chrisPublisherUser).getId(), PermissionAPI.PERMISSION_READ );
+        APILocator.getPermissionAPI().save(siteReadPermissions, host, APILocator.systemUser(), false);
+
+        Exception exception = null;
+        try {
+            webAssetHelper.getAssetInfo(folderPath, chrisPublisherUser);
+        }catch (Exception e){
+            exception = e;
+        }
+        Assert.assertNotNull(exception);
+        Assert.assertTrue(exception instanceof DotSecurityException);
+    }
+
+    /**
+     * Method to test :  {@link WebAssetHelper#getAssetInfo(String, User)}
+     * Given Scenario: Assuming a limited user has no access to sub-folders we want to test that they can't access them.
+     * So we give our limited user Chris access to the parent folder /foo/bar/ but not to the sub-folder /foo/bar/bar2/
+     * then we feed our helper method getAssetInfo with a valid folder path /foo/bar/
+     * Expected Result: We should get access to the root folder but not to the sub-folders
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void TestLimitedUserHasNoAccessToSubFolders() throws DotDataException, DotSecurityException {
+        //Create a sub-folder
+        final String folderName = String.format("bar-%s", RandomStringUtils.randomAlphabetic(5));
+        final Folder subBar = new FolderDataGen().parent(bar).name(folderName).nextPersisted();
+        final String subFolderName = String.format("sub-bar-%s", RandomStringUtils.randomAlphabetic(5));
+        new FolderDataGen().site(host).parent(subBar).name(subFolderName).nextPersisted();
+        final String folderPath = parentFolderPath();
+        //Bring in our limited user
+        final User chrisPublisherUser = TestUserUtils.getChrisPublisherUser(host);
+        //Give him access to the parent folder
+        final Permission siteReadPermissions = new Permission(host.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(chrisPublisherUser).getId(), PermissionAPI.PERMISSION_READ );
+        APILocator.getPermissionAPI().save(siteReadPermissions, host, APILocator.systemUser(), false);
+
+        final Permission fooReadPermissions = new Permission(bar.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(chrisPublisherUser).getId(), PermissionAPI.PERMISSION_READ );
+        APILocator.getPermissionAPI().save(fooReadPermissions, bar, APILocator.systemUser(), false);
+
+        Logger.info(this, "TestGetFolderInfo  ::  " +folderPath );
+        WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+
+        //Test we can access the parent folder
+        final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
+                .resolve(folderPath, chrisPublisherUser);
+
+        //We should be able to access the parent folder
+        //Now request the asset info
+        final WebAssetView assetInfo = webAssetHelper.getAssetInfo(assetAndPath,false, chrisPublisherUser);
+        // We should get the asset info back
+        Assert.assertNotNull(assetInfo);
+        Assert.assertTrue(assetInfo instanceof FolderView);
+        FolderView folderView = (FolderView) assetInfo;
+        //But no sub-folders should be returned
+        Assert.assertNotNull(folderView.subFolders());
+        Assert.assertTrue(folderView.subFolders().isEmpty());
+    }
 
     /**
      * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}

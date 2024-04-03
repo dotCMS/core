@@ -78,6 +78,18 @@
 									"    pm.expect(jsonData.entity).to.not.eq(undefined);",
 									"    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
 									"    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
+									"});",
+									"",
+									"pm.test(\"JWT token format is valid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.jwt).to.be.a('string').and.to.match(/^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+$/);",
+									"});",
+									"",
+									"var responseBody = pm.response.json();",
+									"// Check if the expiry date is present in the response",
+									"pm.test(\"Expiry Date is present in the response\", function() {",
+									"    pm.expect(responseBody.entity.token.expiresDate).to.be.a('number');",
+									"    pm.expect(responseBody.entity.token.expiresDate).to.not.equal(null);",
 									"});"
 								],
 								"type": "text/javascript"

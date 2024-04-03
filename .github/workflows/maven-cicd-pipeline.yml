@@ -12,8 +12,8 @@ on:
         required: false
   push:
     branches:
-        - master
-        - release-*
+      - master
+      - release-*
   pull_request:
   merge_group:
 concurrency:
@@ -35,6 +35,7 @@ jobs:
   changes:
     name: Check Changed Files
     runs-on: ubuntu-latest
+
     permissions:
       pull-requests: read
     outputs:
@@ -52,40 +53,39 @@ jobs:
           list-files: 'escape'
       - name: Rewrite Filter
         id: filter-rewrite
+        env:
+          CICD_SKIP_TESTS: ${{ vars.CICD_SKIP_TESTS }}
         run: |
-          # Run all steps on master branch to catch any issues that got through
+          # Default action outcomes based on paths-filter action outputs
+          frontend=${{ steps.filter.outputs.frontend }}
+          cli=${{ steps.filter.outputs.cli }}
+          backend=${{ steps.filter.outputs.backend }}
+          build=${{ steps.filter.outputs.build }}
+          jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
+
+          # Check if the commit is to the master branch
           is_master=$(echo ${{ github.ref }} | sed -n 's/refs\/heads\/master/&/p')
-          
+          skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
+
+          # Adjust outputs based on conditions
           if [ "$is_master" == "refs/heads/master" ]; then
-            echo "Build is on master branch. Setting all outputs to true."
+            echo "Running build and all tests on the master branch."
+            build=true
             frontend=true
             cli=true
             backend=true
-            build=true
             jvm_unit_test=true
-          else
-            frontend=${{ steps.filter.outputs.frontend }}
-            cli=${{ steps.filter.outputs.cli }}
-            backend=${{ steps.filter.outputs.backend }}
-            build=${{ steps.filter.outputs.build }}
-            jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }} 
-          
-            is_backend=false
-            backend_files=( ${{ steps.filter.outputs.backend_files }} )
-            for backend_file in "${backend_files[@]}"
-            do
-              echo "Evaluating ${backend_file}"
-              if [[ ! ${backend_file} =~ ^dotCMS/src/main/webapp/html/.*\.(js|css)$ ]]; then
-                echo "Backend file ${backend_file} is not a frontend file... aborting search"
-                is_backend=true
-                break
-              fi
-            done
-          
-            backend=${is_backend}
-            [[ "${backend}" == 'true' ]] && build=true && jvm_unit_test=true
           fi
-          
+          # The below line ensures that if skip_tests is true, all tests are set to false.
+          if [ "$skip_tests" == "true" ]; then
+            echo "Skipping tests as per CICD_SKIP_TESTS flag."
+            frontend=false
+            cli=false
+            backend=false
+            jvm_unit_test=false
+          fi
+
+          # Export the outcomes as GitHub Actions outputs
           echo "frontend=${frontend}" >> $GITHUB_OUTPUT
           echo "cli=${cli}" >> $GITHUB_OUTPUT
           echo "backend=${backend}" >> $GITHUB_OUTPUT
@@ -354,7 +354,7 @@ jobs:
           restore-keys: yarn-
       - name: Build # expect node cache to exist from
         shell: bash
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
       - name: Prepare failure archive (if maven failed)
         if: failure()
         shell: bash
@@ -529,12 +529,25 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
+
+  #
+  # Run CLI build artifacts
+  #
+  build-cli:
+    name: CLI Build
+    needs: [build-jdk11,linux-jvm-tests,linux-integration-tests,linux-postman-tests]
+    uses: ./.github/workflows/cli-build-artifacts.yml
+    with:
+      buildNativeImage: true
+      branch: ${{ github.ref }}
+
   sonarqube:
     name: SonarQube Scan
     runs-on: ubuntu-latest
-    needs: [build-jdk11,linux-jvm-tests,linux-integration-tests,linux-postman-tests]
+    needs: [build-jdk11,linux-jvm-tests,linux-integration-tests,linux-postman-tests,linux-frontend-tests,linux-cli-tests]
     if: |
-      (success() || failure()) &&
+      (always() && !cancelled()) &&
+      (needs.changes.outputs.build == 'true') &&
       (github.repository == 'dotCMS/core') &&
       (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
     steps:
@@ -586,12 +599,8 @@ jobs:
           ./mvnw $JVM_TEST_MAVEN_OPTS -Dsonar.log.level=DEBUG org.sonarsource.scanner.maven:sonar-maven-plugin:sonar '-Dcoverage.execution.locations=build-reports/**/*.exec' -Dsonar.projectKey=dotCMS_core_AYSbIemxK43eThAXTlt- -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.token=$SONAR_TOKEN
       - name: SonarQube Quality Gate check
         id: sonarqube-quality-gate-check
-        if: |
-          (success() || failure()) &&
-          (github.repository == 'dotCMS/core') &&
-          (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
         uses: sonarsource/sonarqube-quality-gate-action@master
-        continue-on-error: true
+        continue-on-error: false
         # Force to fail step after specific time.
         timeout-minutes: 10
         with:
@@ -609,7 +618,7 @@ jobs:
   prepare-report-data:
     name: Prepare Report Data
     runs-on: ubuntu-20.04
-    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests,sonarqube ]
+    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests,sonarqube,build-cli ]
     if: always()
     outputs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
@@ -633,9 +642,9 @@ jobs:
           while IFS=" " read -r key result; do
             key=$(echo $key | tr -d ' {')
             result=$(echo $result | tr -d ',')
-            
+          
             echo "Job: $key, Result: $result"
-            
+          
             if [[ $result == "cancelled" ]]; then
               AGGREGATE_STATUS="CANCELLED"
               break
@@ -643,7 +652,7 @@ jobs:
               AGGREGATE_STATUS="FAILURE"
             fi
           done < <(echo "$jobs_status" | awk -F': ' '/result:/ {print $1,$2}')
-                                          
+          
           FIRST_FAIL_STEP=""
           FIRST_FAIL_MODULE=""
           
@@ -657,12 +666,12 @@ jobs:
           else
               PR_TITLE="N/A"
               BRANCH="${{ github.ref }}"
-             
+          
               echo "Creating workflow data for branch ${BRANCH}"
           fi
           
           BRANCH="${BRANCH##*/}"
-        
+          
           PR_TITLE_JQ=$(jq --arg title "$PR_TITLE" -n '$title')
           
           echo '"branch": "'$BRANCH'",' >> workflow-data.json
@@ -712,14 +721,14 @@ jobs:
                 fi
                 done
               fi
-              
+          
               # If not the last file, append a comma
               if (( report_index != total_reports )); then
                 echo ',' >> workflow-data.json
               fi
             done
           fi
-      
+          
           echo '],' >> workflow-data.json
           echo '"aggregate_status": "'$AGGREGATE_STATUS'"' >> workflow-data.json
           if [[ "$AGGREGATE_STATUS" != "SUCCESS" ]]; then

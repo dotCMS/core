@@ -77,6 +77,11 @@
         *ngSwitchCase="fieldTypes.KEY_VALUE"
         [formControlName]="field.variable"
         [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-wysiwyg-field
+        *ngSwitchCase="fieldTypes.WYSIWYG"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
 </ng-container>
 
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

@@ -68,24 +68,6 @@ class SiteCommandIT extends CommandTest {
     }
 
     /**
-     * Given scenario: Simply call current site Expected Result: Verify the command completes
-     * successfully
-     */
-    @Test
-    @Order(1)
-    void Test_Command_Current_Site() {
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteCurrent.NAME);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("Current Site is "));
-        }
-    }
-
-    /**
      * Given scenario: Simply call find by name command Expected Result: Verify the command
      * completes successfully
      */
@@ -1232,5 +1214,26 @@ class SiteCommandIT extends CommandTest {
             this.path = path;
         }
     }
+
+    /**
+     * Given scenario: Find a site using the site name. Authentication is done using a token.
+     * Expected Result: The site should be found
+     * @throws IOException
+     */
+    @Test
+    @Order(18)
+    void Test_Find_Site_Command_Authenticate_With_Token() throws IOException {
+        final String token = requestToken();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName, "--token", token);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.startsWith("name:"));
+        }
+    }
+
 
 }

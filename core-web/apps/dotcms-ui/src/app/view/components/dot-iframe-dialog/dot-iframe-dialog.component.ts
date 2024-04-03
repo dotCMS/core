@@ -11,7 +11,7 @@ import {
 
 import { filter } from 'rxjs/operators';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-iframe-dialog',

@@ -9,6 +9,7 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
+import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
@@ -33,7 +34,8 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotFieldRequiredDirective,
         BlockEditorModule,
         DotEditContentBinaryFieldComponent,
-        DotEditContentKeyValueComponent
+        DotEditContentKeyValueComponent,
+        DotEditContentWYSIWYGFieldComponent
     ]
 })
 export class DotEditContentFieldComponent {

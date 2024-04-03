@@ -37,4 +37,10 @@
             padding-top: 0;
         }
     }
+
+    dot-experiments-shell dot-experiments-list {
+        .dot-experiment {
+            padding: $spacing-3 $spacing-5 $spacing-5 $spacing-5 !important;
+        }
+    }
 }

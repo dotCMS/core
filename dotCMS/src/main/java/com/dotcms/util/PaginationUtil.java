@@ -176,6 +176,7 @@ public class PaginationUtil {
 	 *
 	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
 	 */
+	@SuppressWarnings("unchecked")
 	public <T, R> Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
 								   final int perPage, final String orderBy, final OrderDirection direction,
 								   final Map<String, Object> extraParams,

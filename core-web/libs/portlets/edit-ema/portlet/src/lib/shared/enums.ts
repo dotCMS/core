@@ -16,6 +16,15 @@ export enum NG_CUSTOM_EVENTS {
 // The current state of the editor
 export enum EDITOR_STATE {
     LOADING = 'loading',
-    LOADED = 'loaded',
+    IDLE = 'idle',
+    DRAGGING = 'dragging',
     ERROR = 'error'
+}
+
+export enum EDITOR_MODE {
+    EDIT = 'edit',
+    EDIT_VARIANT = 'edit-variant',
+    PREVIEW_VARIANT = 'preview-variant',
+    DEVICE = 'device',
+    SOCIAL_MEDIA = 'social-media'
 }

@@ -10,17 +10,20 @@ export interface DotExperimentConfig {
     'api-key': string;
     server: string;
     debug: boolean;
+    trackPageView?: boolean;
 }
 
 /**
  * Interface representing a LookBackWindow.
  *
  * @interface LookBackWindow
- * @property {number} expireMillis - The time in milliseconds when the LookBackWindow should expire.
+ * @property {number} expireMillis - The number of days in milliseconds when the LookBackWindow should expire.
  * @property {string} value - The value associated with the LookBackWindow.
+ * @property {number} expireTime - Value generated to define the expire timestamp of the experiment
  */
 interface LookBackWindow {
     expireMillis: number;
+    expireTime?: number;
     value: string;
 }
 
@@ -47,7 +50,7 @@ interface Regexs {
  * @property {string} name - The name of the variant.
  * @property {string} url - The fully qualified URL where the variant is being applied, with query parameters already set.
  */
-interface Variant {
+export interface Variant {
     name: string;
     url: string;
 }
@@ -67,7 +70,7 @@ interface Variant {
  * @property {string} runningId - The running identifier of the experiment.
  * @property {Variant} variant - The Variant assigned to the user making the request.
  */
-interface Experiment {
+export interface Experiment {
     id: string;
     lookBackWindow: LookBackWindow;
     name: string;
@@ -108,4 +111,47 @@ export interface IsUserIncludedApiResponse {
     i18nMessagesMap: Record<string, string>;
     errors: string[];
     messages: string[];
+}
+
+/**
+ * `ExperimentParsed` is an interface representing the parsed data of an experiment.
+ *
+ * This data is slated to be sent to Analytics in the PagaView event.
+ * `ExperimentParsed` consists of two main properties that capture the essence of the experiment.
+ *
+ * @property {string} href - This is the URL of the experiment, aiding in tracking the location or origin of the experiment.
+ *
+ * @property {ExperimentEvent[]} experiments - This property is an array of `ExperimentEvent` objects.
+ * Each `ExperimentEvent` object represents the detail of an individual experiment being carried out.
+ */
+export interface ExperimentParsed {
+    href: string;
+    experiments: ExperimentEvent[];
+}
+
+/**
+ * `ExperimentEvent` is an interface representing a single experiment event.
+ *
+ * This event contains several properties detailing the nature, status, and categorization of the experiment.
+ *
+ * @property {string} experiment - This is the name or identifier of the experiment. It helps track the specific experiment being conducted.
+ *
+ * @property {string} runningId - This is the running identifier of the experiment. It should be unique for each instance of an experiment.
+ *
+ * @property {boolean} isExperimentPage - This Boolean value indicates if the current page is the one where the experiment is being conducted.
+ *
+ * @property {boolean} isTargetPage - This Boolean value indicates if the current page is the target page of the experiment.
+ * The target is the page that you want users to land on as a result of the experiment.
+ *
+ * @property {string} lookBackWindow - This is the lookback window, which defines the time period for which the experiment is valid or should be considered.
+ *
+ * @property {string} variant - This is the variant of the experiment. Use this to specify different versions of an experiment.
+ */
+export interface ExperimentEvent {
+    experiment: string;
+    runningId: string;
+    isExperimentPage: boolean;
+    isTargetPage: boolean;
+    lookBackWindow: string;
+    variant: string;
 }

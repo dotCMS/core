@@ -27,7 +27,10 @@ const secrets = [
         label: 'Name:',
         required: true,
         type: 'STRING',
-        value: 'test'
+        value: 'test',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -37,7 +40,10 @@ const secrets = [
         label: 'Password:',
         required: true,
         type: 'STRING',
-        value: '****'
+        value: '****',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -47,7 +53,10 @@ const secrets = [
         label: 'Enabled:',
         required: false,
         type: 'BOOL',
-        value: 'true'
+        value: 'true',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -67,7 +76,10 @@ const secrets = [
         ],
         required: true,
         type: 'SELECT',
-        value: '1'
+        value: '1',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     },
     {
         dynamic: false,
@@ -77,7 +89,10 @@ const secrets = [
         label: 'Integration:',
         required: false,
         type: 'BUTTON',
-        value: 'urlLink'
+        value: 'urlLink',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     }
 ];
 

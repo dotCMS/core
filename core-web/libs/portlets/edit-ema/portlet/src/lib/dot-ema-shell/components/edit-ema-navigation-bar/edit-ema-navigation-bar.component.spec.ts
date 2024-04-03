@@ -128,7 +128,7 @@ describe('EditEmaNavigationBarComponent', () => {
 
                 spectator.click(contentButton);
 
-                expect(spectator.query(byTestId('nav-bar-item')).classList[1]).toBe(
+                expect(spectator.query(byTestId('nav-bar-item')).classList).toContain(
                     'edit-ema-nav-bar__item--active'
                 );
             });

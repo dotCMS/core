@@ -6,8 +6,7 @@ import { NgModule } from '@angular/core';
 import { AvatarModule } from 'primeng/avatar';
 
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotAvatarDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 
@@ -17,7 +16,7 @@ import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-he
         AvatarModule,
         DotAvatarDirective,
         DotCopyLinkModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         MarkdownModule.forChild(),
         DotMessagePipe
     ],

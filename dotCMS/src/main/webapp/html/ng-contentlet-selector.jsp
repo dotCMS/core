@@ -209,6 +209,12 @@
             dojo.parser.parse(addContentTypePrimaryMenu);
         }
 
+        function removeA11yClasses() {
+            ["dj_a11y","dijit_a11y"].forEach(function (className) {
+                 document.body.classList.remove(className);
+            });
+        }
+
 
         djConfig = {
             parseOnLoad: true,
@@ -240,6 +246,7 @@
         dojo.addOnLoad(function () {
             contentSelector.show();
             loadAddContentTypePrimaryMenu();
+            removeA11yClasses();
         });
     </script>
 </head>

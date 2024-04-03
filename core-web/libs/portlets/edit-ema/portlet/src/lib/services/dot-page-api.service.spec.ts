@@ -20,7 +20,7 @@ describe('DotPageApiService', () => {
             .subscribe();
 
         spectator.expectOne(
-            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
+            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
             HttpMethod.GET
         );
     });
@@ -36,7 +36,7 @@ describe('DotPageApiService', () => {
             .subscribe();
 
         spectator.expectOne(
-            '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
+            '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
             HttpMethod.GET
         );
     });
@@ -45,11 +45,36 @@ describe('DotPageApiService', () => {
         spectator.service
             .save({
                 pageContainers: [],
-                pageId: 'test'
+                pageId: 'test',
+                params: {
+                    url: 'test-url',
+                    language_id: 'en',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                }
             })
             .subscribe();
 
-        spectator.expectOne('/api/v1/page/test/content', HttpMethod.POST);
+        spectator.expectOne('/api/v1/page/test/content?variantName=DEFAULT', HttpMethod.POST);
+    });
+
+    it('should send a POST request to save the data to a variant', () => {
+        spectator.service
+            .save({
+                pageContainers: [],
+                pageId: 'test',
+                params: {
+                    url: 'test-url',
+                    language_id: 'en',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    variantName: 'i-have-the-high-ground'
+                }
+            })
+            .subscribe();
+
+        spectator.expectOne(
+            '/api/v1/page/test/content?variantName=i-have-the-high-ground',
+            HttpMethod.POST
+        );
     });
 
     it('should remove trailing and leading slashes in the url', () => {
@@ -62,7 +87,7 @@ describe('DotPageApiService', () => {
             .subscribe();
 
         spectator.expectOne(
-            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
+            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
             HttpMethod.GET
         );
     });
