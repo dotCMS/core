@@ -204,7 +204,7 @@ public class OSGIUtil {
             return ;
         }
         
-        if("RESET".equals(extraPackages)) {
+            if("RESET".equals(extraPackages)) {
             new File(OSGIUtil.getInstance().getOsgiExtraConfigPath()).delete();
             debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
             return;

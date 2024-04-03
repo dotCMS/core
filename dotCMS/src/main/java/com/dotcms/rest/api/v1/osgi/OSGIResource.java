@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.osgi;
 
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityListView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -49,6 +50,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -234,6 +236,8 @@ public class OSGIResource {
                                     schema = @Schema(implementation = ResponseEntityBooleanView.class))),
                     @ApiResponse(responseCode = "404", description = "Bundle not found"),
                     @ApiResponse(responseCode = "400", description = "Error undeploying OSGI Bundle"),
+                    @ApiResponse(responseCode = "400", description = "Can not stop system bundle")
+
             })
     public final ResponseEntityBooleanView undeploy(@Context final HttpServletRequest request,
                                                     @Context final HttpServletResponse response,
@@ -245,6 +249,10 @@ public class OSGIResource {
 
         final String sanitizeFileNameJarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
         final Bundle bundle = findBundleOrThrowNotExist(bundleId);
+        final String bundleLocation = bundle.getLocation();
+        if (isSystemBundle(bundleLocation)) {
+            throw new BadRequestException("Can undeploy system bundle: " + jarName);
+        }
         bundle.uninstall();
 
         //Then move the bundle from the load folder to the undeployed folder
@@ -344,7 +352,8 @@ public class OSGIResource {
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntityStringView.class))),
-                    @ApiResponse(responseCode = "404", description = "Bundle not found")
+                    @ApiResponse(responseCode = "404", description = "Bundle not found"),
+                    @ApiResponse(responseCode = "400", description = "Can not stop system bundle")
             })
     public final ResponseEntityStringView stop(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response,
@@ -355,11 +364,19 @@ public class OSGIResource {
 
         Logger.debug(this, ()->"Stopping OSGI jar " + jarName);
         final Bundle bundle = findBundleOrThrowNotExist(bundleId);
+        final String bundleLocation = bundle.getLocation();
+        if (isSystemBundle(bundleLocation)) {
+            throw new BadRequestException("Can not stop system bundle: " + jarName);
+        }
         bundle.stop();
         final String responseText = String.format("OSGI Bundle %s Stopped", jarName);
         Logger.debug(this, responseText);
         removeReferences();
         return new ResponseEntityStringView(responseText);
+    }
+
+    private boolean isSystemBundle (final String bundleLocation) {
+        return bundleLocation.contains("felix/bundle") || bundleLocation.contains("System Bundle");
     }
 
     /**
@@ -383,7 +400,8 @@ public class OSGIResource {
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntityStringView.class))),
-                    @ApiResponse(responseCode = "404", description = "Bundle not found")
+                    @ApiResponse(responseCode = "404", description = "Bundle not found"),
+                    @ApiResponse(responseCode = "400", description = "Can not stop system bundle")
             })
     public final ResponseEntityStringView start(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
@@ -394,6 +412,10 @@ public class OSGIResource {
 
         Logger.debug(this, ()->"Starting OSGI jar " + jarName);
         final Bundle bundle = findBundleOrThrowNotExist(bundleId);
+        final String bundleLocation = bundle.getLocation();
+        if (isSystemBundle(bundleLocation)) {
+            throw new BadRequestException("Can not stop system bundle: " + jarName);
+        }
         bundle.start();
         final String responseText = String.format("OSGI Bundle %s started", jarName);
         Logger.debug(this, responseText);
@@ -588,4 +610,37 @@ public class OSGIResource {
                 files.stream().map(File::getName).collect(Collectors.toSet())))
                 .build();
     }
+
+    /**
+     * Returns available plugins to load
+     *
+     * @param request
+     * @param response
+     * @return ResponseEntityStringView
+     */
+    @GET
+    @Path ("/available-plugins")
+    @Produces (MediaType.APPLICATION_JSON)
+    @Operation(summary = "get available plugins",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityListView.class)))
+            })
+    public ResponseEntityListView<String> getAvailablePlugis (@Context HttpServletRequest request,
+                                                      @Context final HttpServletResponse response) {
+
+        checkUserPermissions(request, response, "dynamic-plugins");
+
+        Logger.debug(this, ()-> "Getting available plugins");
+
+        final String path = OSGIUtil.getInstance().getFelixUndeployPath();
+        final File undeployDirectory = new File(path);
+
+        return new ResponseEntityListView<>(
+                Arrays.stream(undeployDirectory.list()).filter(f -> f.toLowerCase().endsWith(".jar")).collect(Collectors.toList())
+        );
+    }
+
 }
