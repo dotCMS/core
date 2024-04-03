@@ -88,3 +88,4 @@ This maintenance release includes the following code fixes:
 81. https://github.com/dotCMS/core/issues/27894 : Security: Critical Vulnerability in Postgres JDBC Driver #27894
 82. https://github.com/dotCMS/core/issues/27909 : Invalid role check when accessing resource #27909
 83. https://github.com/dotCMS/core/issues/27910 : Log too verbose in certain situations #27910
+84. https://github.com/dotCMS/core/issues/27453 : Make experience plugin into a system plugin #27453
