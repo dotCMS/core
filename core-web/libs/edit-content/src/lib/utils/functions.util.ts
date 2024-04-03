@@ -175,8 +175,5 @@ export const stringToJson = (value: string) => {
         return {};
     }
 
-    // Add double quotes around keys
-    const json = value.replace(/(\w+):/g, '"$1":');
-
-    return isValidJson(json) ? JSON.parse(json) : {};
+    return isValidJson(value) ? JSON.parse(value) : {};
 };

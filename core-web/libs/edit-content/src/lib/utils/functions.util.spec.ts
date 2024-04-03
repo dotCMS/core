@@ -496,14 +496,6 @@ describe('Utils Functions', () => {
             expect(result).toEqual({ key: 'value' });
         });
 
-        it('should format the JSON and return parsed object when provided with valid JSON string', () => {
-            const jsonString = '{ key: "value" }';
-
-            const result = stringToJson(jsonString);
-
-            expect(result).toEqual({ key: 'value' });
-        });
-
         it('should return empty object when provided with invalid JSON string', () => {
             const jsonString = '{ key: value }';
 
