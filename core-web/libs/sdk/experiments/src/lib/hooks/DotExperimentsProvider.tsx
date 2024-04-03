@@ -7,27 +7,38 @@ import { DotExperimentConfig } from '../shared/models';
 
 type RedirectFn = () => void;
 
-interface ConfigWithRedirectAndLocation extends DotExperimentConfig {
+interface ConfigWithRedirect {
     redirectFn: RedirectFn;
 }
 
 interface DotExperimentsProviderProps {
     children?: ReactNode;
-    config: ConfigWithRedirectAndLocation;
+    config: ConfigWithRedirect;
 }
 
 /**
  * `DotExperimentsProvider` is a component that uses React's Context API to provide
  * an instance of `DotExperiments` to all of its descendants.
  *
+ * The location changes are tracked to manage functionality like redirection of the page.
+
+ * The configuration for `DotExperiments` (except `redirectFn`) is set based on the following environment variables:
+ * - `api-key`: `NEXT_PUBLIC_EXPERIMENTS_API_KEY` (Analytics API key generated in DotCMS)
+ * - `server`: `NEXT_PUBLIC_DOTCMS_HOST` (DotCMS server URL)
+ * - `debug`: `NEXT_PUBLIC_EXPERIMENTS_DEBUG`
+ *
  * @component
  * @example
  * ```jsx
- * import { DotExperimentConfig } from '../shared/models';
  *
  * // Your application component
  * function App() {
- *   const config: DotExperimentConfig = // your DotExperiments configuration
+ *
+ * // Other configuration options will be taken from environment variables.
+ *  const config = {
+ *     redirectFn: YourRedirectFunction
+ *   };
+ *
  *   return (
  *     <DotExperimentsProvider config={config}>
  *       <YourDescendantComponent />
@@ -53,13 +64,13 @@ export const DotExperimentsProvider = ({
 
     // Initialize the DotExperiments instance
     useEffect(() => {
-        const defaultConfig = {
-            'api-key': process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY,
-            server: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-            debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG
+        const defaultConfig: DotExperimentConfig = {
+            'api-key': process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY || 'default-api-key',
+            server: process.env.NEXT_PUBLIC_DOTCMS_HOST || 'default-host',
+            debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG === 'true'
         };
 
-        const finalConfig = { ...defaultConfig, ...config };
+        const finalConfig: DotExperimentConfig = { ...defaultConfig, ...config };
         const dotExperimentsInstance = DotExperiments.getInstance(finalConfig);
         dotExperimentsInstance.ready().then(() => {
             setInstance(dotExperimentsInstance);

@@ -54,12 +54,8 @@ export const verifyRegex = (regexToCheck: string | null, href: string): boolean 
     try {
         const regexExp = new RegExp(regexToCheck);
         const url = new URL(href);
-        // console.info('href', href);
-        // console.info('url', url);
 
         const sanitizedHref = `${url.origin}${url.pathname.toLowerCase()}${url.search}`;
-
-        // console.info('sanitizedHref', sanitizedHref);
 
         return regexExp.test(sanitizedHref);
     } catch (error) {

@@ -1,5 +1,5 @@
+import { DotExperiments } from './dot-experiments';
 import { EXPERIMENT_WINDOWS_KEY } from './shared/constants';
-import { DotExperiments } from './shared/dot-experiments';
 import { getScriptDataAttributes } from './shared/utils/utils';
 
 declare global {

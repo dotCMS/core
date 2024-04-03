@@ -96,6 +96,11 @@ export class DotExperiments {
     // eslint-disable-next-line no-restricted-globals
     private currentLocation: Location = location;
 
+    /**
+     * Represents the previous location.
+     *
+     * @type {string}
+     */
     private prevLocation = '';
 
     private constructor(private readonly config: DotExperimentConfig) {
@@ -329,6 +334,7 @@ export class DotExperiments {
             return false;
         }
 
+        // If the previous location is the same as the current location, we don't need to track the page view
         if (this.prevLocation === this.currentLocation.href) {
             this.logger.log(
                 `No shouldTrackPageView, preview location is the same as current location.`
