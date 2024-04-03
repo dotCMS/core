@@ -97,8 +97,8 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
                     fieldId: '1',
                     id: '1',
-                    key: 'toolbar1',
-                    value: 'undo redo'
+                    key: 'tinymceprops',
+                    value: '{ "toolbar1": "undo redo"}'
                 }
             ];
 
@@ -121,8 +121,8 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
                     fieldId: '1',
                     id: '1',
-                    key: 'theme',
-                    value: 'modern'
+                    key: 'tinymceprops',
+                    value: '{theme: "modern"}'
                 }
             ];
 

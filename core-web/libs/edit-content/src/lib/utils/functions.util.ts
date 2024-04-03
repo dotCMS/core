@@ -171,9 +171,12 @@ export const getFieldVariablesParsed = <T extends Record<string, string | boolea
  *       not valid JSON, an empty object will be returned.
  */
 export const stringToJson = (value: string) => {
-    if (value && isValidJson(value)) {
-        return JSON.parse(value);
+    if (!value) {
+        return {};
     }
 
-    return {};
+    // Add double quotes around keys
+    const json = value.replace(/(\w+):/g, '"$1":');
+
+    return isValidJson(json) ? JSON.parse(json) : {};
 };
