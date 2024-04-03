@@ -425,7 +425,7 @@ dependencies {
     testImplementation (group: 'org.mockito', name: 'mockito-core', version: '2.28.2'){}
     testImplementation (group: 'org.objenesis', name: 'objenesis', version: '2.5.1'){}
     implementation (group: 'org.ow2.asm', name: 'asm', version: '5.0.4'){}
-    compileOnly (group: 'org.postgresql', name: 'postgresql', version: '42.5.1') {
+    compileOnly (group: 'org.postgresql', name: 'postgresql', version: '42.7.2') {
         exclude group: 'org.checkerframework', module: 'checker-qual'
     }
     testImplementation (group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.9'){}
