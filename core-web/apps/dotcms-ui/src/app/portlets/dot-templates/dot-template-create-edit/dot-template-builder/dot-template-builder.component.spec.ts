@@ -28,7 +28,7 @@ import {
     DotPropertiesService,
     DotRouterService
 } from '@dotcms/data-access';
-import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
+import { DotLayout, DotTemplate, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
@@ -51,7 +51,7 @@ import {
 })
 class TemplateBuilderMockComponent {
     @Input() layout: DotLayout;
-    @Input() themeId: string;
+    @Input() template: Partial<DotTemplate>;
     @Output() templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 }
 
@@ -280,7 +280,7 @@ describe('DotTemplateBuilderComponent', () => {
 
         it('should set the themeId @Input correctly', () => {
             const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
-            expect(templateBuilder.componentInstance.themeId).toBe('123');
+            expect(templateBuilder.componentInstance.template.themeId).toBe('123');
         });
 
         it('should trigger onTemplateItemChange new-template-builder when the layout is changed', () => {

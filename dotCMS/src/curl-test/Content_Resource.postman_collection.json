@@ -592,19 +592,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -1789,6 +1786,15 @@
 								"type": "text"
 							}
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/UNPUBLISH?inode={{fileInode}}&identifier={{fileId}}&indexPolicy=WAIT_FOR",
 							"host": [
@@ -1865,6 +1871,15 @@
 								"type": "text"
 							}
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/ARCHIVE?inode={{fileInode}}&identifier={{fileId}}&indexPolicy=WAIT_FOR",
 							"host": [
@@ -1941,6 +1956,15 @@
 								"type": "text"
 							}
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DELETE?inode={{fileInode}}&identifier={{fileId}}&indexPolicy=WAIT_FOR",
 							"host": [

@@ -39,6 +39,12 @@ interface EditContentletPayload {
     title: string;
 }
 
+export interface CreateContentletAction {
+    url: string;
+    contentType: string;
+    payload: ActionPayload;
+}
+
 @Injectable()
 export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     constructor() {
@@ -85,14 +91,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof DotEmaDialogStore
      */
     readonly createContentlet = this.updater(
-        (
-            state,
-            {
-                url,
-                contentType,
-                payload
-            }: { url: string; contentType: string; payload?: ActionPayload }
-        ) => {
+        (state, { url, contentType, payload }: CreateContentletAction) => {
             return {
                 ...state,
                 url: url,

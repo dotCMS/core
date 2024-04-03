@@ -68,7 +68,7 @@ describe('DotHttpErrorManagerService', () => {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
                 },
-                { provide: DotRouterService, useClass: MockDotRouterJestService },
+                { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
                 ConfirmationService,
                 DotAlertConfirmService,
                 DotHttpErrorManagerService

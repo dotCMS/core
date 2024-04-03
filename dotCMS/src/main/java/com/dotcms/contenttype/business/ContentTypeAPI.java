@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -53,23 +54,47 @@ public interface ContentTypeAPI {
 		  "container", "template", "user", "calendarEvent");
 
   /**
-   * Deletes the given Content Type
-   * 
-   * @param st Content Type that will be deleted
-   * @throws DotSecurityException The user does not have permissions to perform this action.
-   * @throws DotDataException Error occurred when performing the action.
+   * Deletes the specified Content Type. By default, the process that actually deletes it is
+   * asynchronous, meaning that a separate thread/transaction takes care of it. You can change this
+   * behavior by updating the value of the {@link ContentTypeAPIImpl#DELETE_CONTENT_TYPE_ASYNC}
+   * property to {@code true}.
+   *
+   * @param contentType The {@link ContentType} being deleted.
+   *
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   * @throws DotDataException     An error occurred when interacting with the database.
    */
-  void delete(ContentType st) throws DotSecurityException, DotDataException;
+  void delete(final ContentType contentType) throws DotSecurityException, DotDataException;
 
   /**
-   * Find a Content Type given the inode
-   * 
-   * @param inodeOrVar Either the Inode or the Velocity var name representing the Structure to find
-   * @return Content Type Object
-   * @throws DotSecurityException The user does not have permissions to perform this action.
-   * @throws DotDataException Error occurred when performing the action.
+   * Deletes the specified Content Type. By default, the process that actually deletes it is
+   * asynchronous, meaning that a separate thread/transaction takes care of it. With this
+   * implementation, you can force dotCMS to <b>wait for the deletion process to be over before
+   * moving on</b>. Therefore, given the implications related to performance, this method must be
+   * used carefully
+   *
+   * @param contentType The {@link ContentType} being deleted.
+   *
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   * @throws DotDataException     An error occurred when interacting with the database.
    */
-  ContentType find(String inodeOrVar) throws DotSecurityException, DotDataException;
+  void deleteSync(final ContentType contentType) throws DotSecurityException, DotDataException;
+
+  /**
+   * Returns the Content Type that matches the specified Inode or Velocity Variable Name.
+   *
+   * @param inodeOrVar Either the Inode or the Velocity var name representing the Content Type to
+   *                   find.
+   *
+   * @return The {@link ContentType} that was requested.
+   *
+   * @throws DotSecurityException  The user does not have permissions to perform this action.
+   * @throws DotDataException      Error occurred when performing the action.
+   * @throws NotFoundInDbException The Content Type was not found in the database.
+   */
+  ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException;
 
   /**
    * Returns a list of Content Types based on the specified list of Velocity Variable Names. If one or more Velocity

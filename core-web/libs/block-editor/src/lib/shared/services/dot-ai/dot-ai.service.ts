@@ -129,10 +129,18 @@ export class DotAiService {
             })
             .pipe(
                 pluck('entity', 'results'),
-                map((contentlets: DotCMSContentlet[]) => ({
-                    contentlet: Object.values(contentlets[0])[0],
-                    ...aiResponse
-                })),
+                map((contentlets: DotCMSContentlet[]) => {
+                    const contentlet = Object.values(contentlets[0])[0];
+                    // under errorMessage is how the backend returns an error.
+                    if (contentlet.errorMessage) {
+                        throw new Error('Could not publish the image.');
+                    }
+
+                    return {
+                        contentlet,
+                        ...aiResponse
+                    };
+                }),
                 catchError(() =>
                     throwError(
                         'block-editor.extension.ai-image.api-error.error-publishing-ai-image'

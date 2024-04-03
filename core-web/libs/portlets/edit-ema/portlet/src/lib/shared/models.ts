@@ -1,12 +1,18 @@
-import { DotDevice } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperiment } from '@dotcms/dotcms-models';
 
 import { EDITOR_MODE, EDITOR_STATE } from './enums';
 
 import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
 
+export interface VTLFile {
+    inode: string;
+    name: string;
+}
+
 export interface ClientData {
     contentlet?: ContentletPayload;
     container: ContainerPayload;
+    vtlFiles?: VTLFile[];
 }
 
 export interface PositionPayload extends ClientData {
@@ -70,10 +76,13 @@ export interface NavigationBarItem {
     isDisabled?: boolean;
 }
 
-export interface PreviewState {
-    editorMode: EDITOR_MODE;
+export interface EditorData {
+    mode: EDITOR_MODE;
     device?: DotDevice & { icon?: string };
     socialMedia?: string;
+    canEditVariant?: boolean;
+    canEditPage?: boolean;
+    variantId?: string;
 }
 
 export interface EditEmaState {
@@ -82,5 +91,6 @@ export interface EditEmaState {
     editor: DotPageApiResponse;
     isEnterpriseLicense: boolean;
     editorState: EDITOR_STATE;
-    previewState: PreviewState;
+    editorData: EditorData;
+    currentExperiment?: DotExperiment;
 }

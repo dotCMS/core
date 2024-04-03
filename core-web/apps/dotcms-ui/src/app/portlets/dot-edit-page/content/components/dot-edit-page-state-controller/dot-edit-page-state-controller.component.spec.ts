@@ -21,6 +21,7 @@ import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPropertiesService
 } from '@dotcms/data-access';
@@ -48,8 +49,6 @@ import {
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
-
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',

@@ -26,7 +26,6 @@ export const DotExperimentsPortletRoutes: Routes = [
         },
 
         canActivateChild: [AnalyticsAppGuard],
-
         children: [
             {
                 path: '',
@@ -53,5 +52,10 @@ export const DotExperimentsPortletRoutes: Routes = [
                 component: DotExperimentsReportsComponent
             }
         ]
+    },
+    {
+        path: '**',
+        redirectTo: 'analytic-app-misconfiguration',
+        pathMatch: 'full'
     }
 ];

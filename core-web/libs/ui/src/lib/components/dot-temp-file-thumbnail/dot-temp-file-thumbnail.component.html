@@ -5,19 +5,27 @@
         [title]="name"
         [alt]="name"
         (error)="handleError()"
-        data-testId="thumbail-image" />
+        data-testId="thumbnail-image" />
 
     <video
         *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.video"
         (error)="handleError()"
         controls
-        data-testId="thumbail-video">
+        data-testId="thumbnail-video">
         <source [src]="src" />
     </video>
+
+    <img
+        *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.pdf"
+        [src]="src"
+        [title]="name"
+        [alt]="name"
+        (error)="handleError()"
+        data-testId="thumbnail-pdf" />
 
     <i
         *ngSwitchDefault
         [ngClass]="['pi', icon]"
         [ngStyle]="{ 'font-size': iconSize, color: 'var(--color-palette-secondary-400)' }"
-        data-testId="thumbail-icon"></i>
+        data-testId="thumbnail-icon"></i>
 </ng-container>
