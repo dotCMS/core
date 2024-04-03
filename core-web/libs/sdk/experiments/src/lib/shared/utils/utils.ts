@@ -94,19 +94,6 @@ export const getScriptDataAttributes = (location: Location): DotExperimentConfig
 };
 
 /**
- * Logger is a function that logs a message to the console with a prefix.
- *
- * @param {string} msg - The message to be logged.
- * @param isDebug
- * @returns {void}
- */
-export const dotLogger = (msg: string, isDebug?: boolean): void => {
-    if (isDebug !== false) {
-        console.warn(`[dotCMS Experiments] ${msg}`);
-    }
-};
-
-/**
  * Checks the flag indicating whether the experiment has already been checked.
  *
  * @function checkFlagExperimentAlreadyChecked
@@ -202,3 +189,5 @@ export const objectsAreEqual = (obj1: Experiment[], obj2: Experiment[]): boolean
 
     return JSON.stringify(obj1) === JSON.stringify(obj2);
 };
+
+export const defaultRedirectFn = (href: string) => (window.location.href = href);

@@ -1,6 +1,5 @@
 "use client";
 
-
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
 import Activity from "./content-types/activity";
@@ -13,11 +12,18 @@ import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
 
+import { DotExperimentsProvider } from "@dotcms/experiments";
+
+
 export function MyPage({ data, nav }) {
-  const { refresh } = useRouter();
+  const { refresh, replace, route, asPath, query } = useRouter();
   const pathname = usePathname();
 
+
   return (
+    // Provide the DotExperimentsProvider with the configuration and instance of DotExperiments
+    <DotExperimentsProvider config={{redirectFn: replace}} >
+
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
       {data.layout.header && (
         <Header>
@@ -42,5 +48,7 @@ export function MyPage({ data, nav }) {
       </main>
       {data.layout.footer && <Footer />}
     </div>
+
+    </DotExperimentsProvider>
   );
 }

@@ -58,6 +58,7 @@ describe('Utility ', () => {
             const experimentScriptUrl = 'http://example.com/' + EXPERIMENT_SCRIPT_FILE_NAME;
             document.body.innerHTML = `<script src="${experimentScriptUrl}" data-experiment-api-key="testKey" data-experiment-server="http://localhost"></script>`;
 
+            // eslint-disable-next-line no-restricted-globals
             const attributes = getScriptDataAttributes(location);
             expect(attributes).toEqual({
                 'api-key': 'testKey',

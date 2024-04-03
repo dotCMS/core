@@ -1,3 +1,5 @@
+import { EXPERIMENT_QUERY_PARAM_KEY } from './constants';
+
 /**
  * Represents the configuration for the SDK experiment.
  *
@@ -154,4 +156,8 @@ export interface ExperimentEvent {
     isTargetPage: boolean;
     lookBackWindow: string;
     variant: string;
+}
+
+export interface VariantQueryParams {
+    [EXPERIMENT_QUERY_PARAM_KEY]: string;
 }

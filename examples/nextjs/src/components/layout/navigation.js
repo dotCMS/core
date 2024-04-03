@@ -1,8 +1,13 @@
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useExperiments } from "@dotcms/experiments";
+
 
 function Navigation({ items, className }) {
     const searchParams = useSearchParams();
+    const {getVariantAsQueryParam} = useExperiments();
+
+    const currentQueryParams = Object.fromEntries(searchParams.entries())
 
     return (
         <nav className={className}>
@@ -11,7 +16,7 @@ function Navigation({ items, className }) {
                     <Link
                         href={{
                             pathname: '/',
-                            query: Object.fromEntries(searchParams.entries()) // We need to maintain the query params on the navigation, this way next loads the page with the same query params
+                          query: {...getVariantAsQueryParam('/', currentQueryParams)} // We need to maintain the query params on the navigation, this way next loads the page with the same query params
                         }}>
                         Home
                     </Link>
@@ -21,7 +26,7 @@ function Navigation({ items, className }) {
                         <Link
                             href={{
                                 pathname: item.href,
-                                query: Object.fromEntries(searchParams.entries()) // We need to maintain the query params on the navigation, this way next loads the page with the same query params
+                                query: {...getVariantAsQueryParam(item.href, currentQueryParams)} // We need to maintain the query params on the navigation, this way next loads the page with the same query params
                             }}
                             target={item.target}>
                             {item.title}
