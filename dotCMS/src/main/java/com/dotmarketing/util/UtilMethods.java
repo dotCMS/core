@@ -3645,4 +3645,21 @@ public class UtilMethods {
     public static <T> T isSetOrGet(final T toEvaluate, final T defaultValue){
         return UtilMethods.isSet(toEvaluate) ? toEvaluate : defaultValue;
     }
+
+
+    /**
+     * Finds if the length of the given value is valid
+     *
+     * @param value
+     * @param maxLength
+     * @param <T>
+     * @return
+     */
+    public static <T> boolean exceedsMaxLength(T value, int maxLength) {
+        if (value instanceof String) {
+            String stringValue = (String) value;
+            return stringValue.length() > maxLength;
+        }
+        return false;
+    }
 }
