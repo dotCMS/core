@@ -92,7 +92,6 @@ export interface EditEmaState {
     editor: DotPageApiResponse;
     isEnterpriseLicense: boolean;
     editorState: EDITOR_STATE;
-    runningExperiment?: DotExperiment;
     bounds: Container[];
     contentletArea: ContentletArea;
     editorData: EditorData;
