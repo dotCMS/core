@@ -262,6 +262,21 @@ public class ContainerLoader implements DotLoader {
             }
 
             // FOR LOOP
+            // todo: if not contentlets, adds the fake contentlet.
+            velocityCodeBuilder.append("#if(!$CONTENTLETS || $CONTENTLETS.size() == 0)");
+            velocityCodeBuilder.append("<!-- This is the fake contentlet to add -->\n" +
+                    "<div\n" +
+                    "  data-dot-object=\"contentlet\"\n" +
+                    "  data-dot-identifier=\"TEMP_EMPTY_CONTENTLET\"\n" +
+                    "  data-dot-title=\"TEMP_EMPTY_CONTENTLET\"\n" +
+                    "  data-dot-inode=\"TEMPY_EMPTY_CONTENTLET_INODE\"\n" +
+                    "  data-dot-type=\"TEMP_EMPTY_CONTENTLET_TYPE\"\n" +
+                    "  data-dot-container='{\"acceptTypes\":\"CallToAction,webPageContent,calendarEvent,Image,Product,Video,dotAsset,Blog,Banner,Activity,WIDGET,FORM\",\"identifier\":\"//demo.dotcms.com/application/containers/default/\",\"maxContentlets\":\"25\",\"uuid\":null}'\n" +
+                    "  style=\"width: 100%; background-color: rgb(236, 240, 253); display: flex; justify-content: center; align-items: center; color: rgb(3, 14, 50); height: 10rem;\"\n" +
+                    ">\n" +
+                    "  This container is empty\n" +
+                    "</div>");
+            velocityCodeBuilder.append("#else");
 
             velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
 
@@ -382,6 +397,9 @@ public class ContainerLoader implements DotLoader {
 
             velocityCodeBuilder.append("#set($dotContentMap='')");
                 // ##End of foreach loop
+            velocityCodeBuilder.append("#end");
+
+            //end here the else for the fake contentlet
             velocityCodeBuilder.append("#end");
                 
             // end content dot-data-container
