@@ -224,3 +224,5 @@ This maintenance release includes the following code fixes:
 179. https://github.com/dotCMS/core/issues/23195 : Site Browser: Slow loading folder with many items #23195
 
 **Release-23.01.15**
+
+180. https://github.com/dotCMS/core/issues/27894 : Security: Critical Vulnerability in Postgres JDBC Driver #27894
