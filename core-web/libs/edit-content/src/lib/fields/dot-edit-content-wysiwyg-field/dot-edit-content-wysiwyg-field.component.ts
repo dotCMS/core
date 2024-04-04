@@ -1,4 +1,5 @@
 import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
+import { of } from 'rxjs';
 import { RawEditorOptions } from 'tinymce';
 
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
@@ -6,6 +7,9 @@ import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/for
 
 import { DialogService } from 'primeng/dynamicdialog';
 
+import { catchError } from 'rxjs/operators';
+
+import { DotScriptingApiService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
@@ -32,6 +36,7 @@ const DEFAULT_CONFIG = {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         DialogService,
+        DotScriptingApiService,
         DotWysiwygPluginService,
         { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }
     ],
@@ -46,29 +51,23 @@ export class DotEditContentWYSIWYGFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
 
     private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
+    private readonly dotScriptingApiService = inject(DotScriptingApiService);
+
     protected init = signal<RawEditorOptions>(null);
 
     ngOnInit(): void {
-        this.init.set({
-            ...DEFAULT_CONFIG,
-            ...this.variables(),
-            setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor)
-        });
-    }
-
-    private variables() {
         const variables = getFieldVariablesParsed(this.field.fieldVariables);
-
-        /**
-         * Old theme are not supported in the new version of TinyMCE
-         * In the new version, there is only one theme, which is the default one
-         * There is a new property called `theme_url` that allows to set a custom theme
-         * Docs: https://www.tiny.cloud/docs/tinymce/latest/editor-theme/
-         */
-        if (variables.theme) {
-            delete variables.theme;
-        }
-
-        return variables;
+        this.dotScriptingApiService
+            .get<RawEditorOptions>('tinymceprops')
+            .pipe(catchError(() => of({})))
+            .subscribe((GLOBAL_CONFIG = {}) => {
+                this.init.set({
+                    setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor),
+                    ...DEFAULT_CONFIG,
+                    ...GLOBAL_CONFIG,
+                    ...variables,
+                    theme: 'silver' // In the new version, there is only one theme, which is the default one. Docs: https://www.tiny.cloud/docs/tinymce/latest/editor-theme/
+                });
+            });
     }
 }
