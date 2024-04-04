@@ -264,18 +264,7 @@ public class ContainerLoader implements DotLoader {
             // on edit mode, takes in consideration the case where the contentlet list is empty, in that scenario we need to add a temp contentlet, otherwise the container will not be editable, cannot add contentlets
             if (mode == PageMode.EDIT_MODE) {
                 velocityCodeBuilder.append("#if(!$CONTENTLETS || $CONTENTLETS.size() == 0)");
-                velocityCodeBuilder.append("<!-- This is the fake contentlet to add -->\n" +
-                        "<div\n" +
-                        "  data-dot-object=\"contentlet\"\n" +
-                        "  data-dot-identifier=\"TEMP_EMPTY_CONTENTLET\"\n" +
-                        "  data-dot-title=\"TEMP_EMPTY_CONTENTLET\"\n" +
-                        "  data-dot-inode=\"TEMPY_EMPTY_CONTENTLET_INODE\"\n" +
-                        "  data-dot-type=\"TEMP_EMPTY_CONTENTLET_TYPE\"\n" +
-                        "  data-dot-container='{\"acceptTypes\":\"CallToAction,webPageContent,calendarEvent,Image,Product,Video,dotAsset,Blog,Banner,Activity,WIDGET,FORM\",\"identifier\":\"//demo.dotcms.com/application/containers/default/\",\"maxContentlets\":\"25\",\"uuid\":null}'\n" +
-                        "  style=\"width: 100%; background-color: rgb(236, 240, 253); display: flex; justify-content: center; align-items: center; color: rgb(3, 14, 50); height: 10rem;\"\n" +
-                        ">\n" +
-                        "  This container is empty\n" +
-                        "</div>");
+                addTempFakeContentletToEmptyContainer(container, uuid, velocityCodeBuilder, containerContentTypeList, typeAPI);
                 velocityCodeBuilder.append("#else");
             }
 
@@ -434,9 +423,41 @@ public class ContainerLoader implements DotLoader {
         return writeOutVelocity(filePath, velocityCodeBuilder.toString());
     }
 
+    private void addTempFakeContentletToEmptyContainer(final Container container,
+                                                       final String uuid,
+                                                       final StringBuilder velocityCodeBuilder,
+                                                       final List<ContainerStructure> containerContentTypeList,
+                                                       final ContentTypeAPI typeAPI) {
+        velocityCodeBuilder.append("<!-- This is the fake contentlet to add -->" +
+                "<div\n" +
+                "  data-dot-object=\"contentlet\"\n" +
+                "  data-dot-identifier=\"TEMP_EMPTY_CONTENTLET\"\n" +
+                "  data-dot-title=\"TEMP_EMPTY_CONTENTLET\"\n" +
+                "  data-dot-inode=\"TEMPY_EMPTY_CONTENTLET_INODE\"\n" +
+                "  data-dot-type=\"TEMP_EMPTY_CONTENTLET_TYPE\"\n" +
+                "  data-dot-container='{" +
+                    "\"acceptTypes\":\"");
+        for (final ContainerStructure containerContentType : containerContentTypeList) {
 
+            try {
+                final ContentType contentType = typeAPI.find(containerContentType.getStructureId());
+                velocityCodeBuilder.append(contentType.variable());
+                velocityCodeBuilder.append(",");
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.warn(this.getClass(), "unable to find content type:" + containerContentType);
+            }
+        }
 
-
+        velocityCodeBuilder.append("WIDGET,FORM");
+        velocityCodeBuilder.append("\"" +
+        ",\"identifier\":\""+ this.getDataDotIdentifier(container)  +"\"" +
+        ",\"maxContentlets\":\" "+ container.getMaxContentlets() +"\"" +
+        ",\"uuid\":"+ uuid +"}'\n" +
+        "  style=\"width: 100%; background-color: rgb(236, 240, 253); display: flex; justify-content: center; align-items: center; color: rgb(3, 14, 50); height: 10rem;\"\n" +
+    ">\n" +
+    "  This container is empty\n" +
+    "</div>");
+    }
 
 
 }
