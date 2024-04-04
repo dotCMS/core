@@ -4,6 +4,7 @@ import { MockComponent, MockProvider, MockProviders } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
+import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
@@ -76,6 +77,7 @@ describe('EditEmaToolbarComponent', () => {
                 provide: EditEmaStore,
                 useValue: {
                     editorState$: of({
+                        favoritePageURL: 'http://localhost:8080/fav',
                         iframeURL: 'http://localhost:8080/index',
                         clientHost: 'http://localhost:3000',
                         apiURL: 'http://localhost/api/v1/page/json/page-one',
@@ -91,7 +93,12 @@ describe('EditEmaToolbarComponent', () => {
                                 inode: '456'
                             },
                             viewAs: {
-                                persona: {}
+                                persona: {
+                                    id: '123'
+                                },
+                                language: {
+                                    id: 1
+                                }
                             }
                         }
                     }),
@@ -120,168 +127,235 @@ describe('EditEmaToolbarComponent', () => {
         confirmationService = spectator.inject(ConfirmationService);
     });
 
-    describe('events', () => {
-        describe('dot-device-selector-seo', () => {
-            it('should call store.setDevice', () => {
-                jest.spyOn(store, 'setDevice');
+    describe('dot-device-selector-seo', () => {
+        let deviceSelector: DebugElement;
 
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
-
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
-                spectator.detectChanges();
-
-                expect(store.setDevice).toHaveBeenCalledWith(iphone);
-            });
-
-            it('should call store.setSocialMedia', () => {
-                jest.spyOn(store, 'setSocialMedia');
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'facebook');
-                spectator.detectChanges();
-
-                expect(store.setSocialMedia).toHaveBeenCalledWith('facebook');
+        beforeEach(() => {
+            deviceSelector = spectator.debugElement.query(
+                By.css('[data-testId="dot-device-selector"]')
+            );
+        });
+        it('should have attr', () => {
+            expect(deviceSelector.attributes).toEqual({
+                appendTo: 'body',
+                'data-testId': 'dot-device-selector',
+                'ng-reflect-api-link': 'http://localhost:8080/index',
+                'ng-reflect-hide-social-media': 'true'
             });
         });
 
-        describe('ema-preview', () => {
-            it('should call deviceSelector.openMenu', () => {
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
+        it('should call store.setDevice', () => {
+            jest.spyOn(store, 'setDevice');
 
-                jest.spyOn(deviceSelector.componentInstance, 'openMenu');
+            const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
 
-                const emaPreviewButton = spectator.debugElement.query(
-                    By.css('[data-testId="ema-preview"]')
-                );
+            spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+            spectator.detectChanges();
 
-                spectator.triggerEventHandler(emaPreviewButton, 'onClick', { hello: 'world' });
-                spectator.detectChanges();
+            expect(store.setDevice).toHaveBeenCalledWith(iphone);
+        });
 
-                expect(deviceSelector.componentInstance.openMenu).toHaveBeenCalledWith({
-                    hello: 'world'
-                });
+        it('should call store.setSocialMedia', () => {
+            jest.spyOn(store, 'setSocialMedia');
+
+            const deviceSelector = spectator.debugElement.query(
+                By.css('[data-testId="dot-device-selector"]')
+            );
+
+            spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'facebook');
+            spectator.detectChanges();
+
+            expect(store.setSocialMedia).toHaveBeenCalledWith('facebook');
+        });
+    });
+
+    describe('ema-preview', () => {
+        let emaPreviewButton: DebugElement;
+
+        beforeEach(() => {
+            emaPreviewButton = spectator.debugElement.query(By.css('[data-testId="ema-preview"]'));
+        });
+
+        it('should have attr', () => {
+            expect(emaPreviewButton.attributes).toEqual({
+                class: 'p-element',
+                'data-testId': 'ema-preview',
+                icon: 'pi pi-desktop',
+                'ng-reflect-icon': 'pi pi-desktop',
+                'ng-reflect-style-class': 'p-button-text p-button-sm',
+                styleClass: 'p-button-text p-button-sm'
             });
         });
 
-        describe('ema-copy-url', () => {
-            it('should call messageService.add', () => {
-                const button = spectator.debugElement.query(By.css('[data-testId="ema-copy-url"]'));
+        it('should call deviceSelector.openMenu', () => {
+            const deviceSelector = spectator.debugElement.query(
+                By.css('[data-testId="dot-device-selector"]')
+            );
 
-                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
+            jest.spyOn(deviceSelector.componentInstance, 'openMenu');
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: 'Copied',
-                    life: 3000
-                });
+            spectator.triggerEventHandler(emaPreviewButton, 'onClick', { hello: 'world' });
+            spectator.detectChanges();
+
+            expect(deviceSelector.componentInstance.openMenu).toHaveBeenCalledWith({
+                hello: 'world'
+            });
+        });
+    });
+
+    describe('dot-ema-bookmarks', () => {
+        it('should have attr', () => {
+            const bookmarks = spectator.query(DotEmaBookmarksComponent);
+
+            expect(bookmarks.url).toBe('http://localhost:8080/fav');
+        });
+    });
+
+    describe('ema-copy-url', () => {
+        let button: DebugElement;
+
+        beforeEach(() => {
+            button = spectator.debugElement.query(By.css('[data-testId="ema-copy-url"]'));
+        });
+
+        it('should have attr', () => {
+            expect(button.attributes).toEqual({
+                class: 'p-element',
+                'data-testId': 'ema-copy-url',
+                icon: 'pi pi-copy',
+                'ng-reflect-icon': 'pi pi-copy',
+                'ng-reflect-style-class': 'p-button-text p-button-sm',
+                'ng-reflect-text': 'http://localhost:8080/index',
+                styleClass: 'p-button-text p-button-sm'
             });
         });
 
-        describe('dot-edit-ema-language-selector', () => {
-            it('should set language', () => {
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
-                spectator.detectChanges();
+        it('should call messageService.add', () => {
+            spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
 
-                expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'Copied',
+                life: 3000
+            });
+        });
+    });
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { language_id: 2 },
-                    queryParamsHandling: 'merge'
-                });
+    describe('dot-edit-ema-language-selector', () => {
+        it('should have attr', () => {
+            const languageSelector = spectator.query(EditEmaLanguageSelectorComponent);
+
+            expect(languageSelector.language).toEqual({ id: 1 });
+        });
+
+        it('should set language', () => {
+            spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
+            spectator.detectChanges();
+
+            expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                queryParams: { language_id: 2 },
+                queryParamsHandling: 'merge'
+            });
+        });
+    });
+
+    describe('dot-edit-ema-persona-selector', () => {
+        it('should have attr', () => {
+            const personaSelector = spectator.query(EditEmaPersonaSelectorComponent);
+
+            expect(personaSelector.pageId).toBe('123');
+            expect(personaSelector.value).toEqual({
+                id: '123'
             });
         });
 
-        describe('dot-edit-ema-persona-selector', () => {
-            it('should personalize - no confirmation', () => {
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: true
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
-                spectator.detectChanges();
+        it('should personalize - no confirmation', () => {
+            spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                identifier: '123',
+                pageId: '123',
+                personalized: true
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any);
+            spectator.detectChanges();
 
-                expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+            expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { 'com.dotmarketing.persona.id': '123' },
-                    queryParamsHandling: 'merge'
-                });
-            });
-
-            it('should personalize - confirmation', () => {
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: false
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
-                spectator.detectChanges();
-
-                expect(confirmationService.confirm).toHaveBeenCalledWith({
-                    accept: expect.any(Function),
-                    acceptLabel: 'Accept',
-                    header: 'Personalize',
-                    message: 'Confirm personalization?',
-                    reject: expect.any(Function),
-                    rejectLabel: 'Reject'
-                });
-            });
-
-            xit('should personalize - call service', () => {
-                expect(true).toBe(true);
-            });
-
-            it('should despersonalize', () => {
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: true
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
-
-                spectator.detectChanges();
-
-                expect(confirmationService.confirm).toHaveBeenCalledWith({
-                    accept: expect.any(Function),
-                    acceptLabel: 'Accept',
-                    header: 'Despersonalization?',
-                    message: 'Confirm despersonalization?',
-                    rejectLabel: 'Reject'
-                });
-            });
-
-            xit('should dpersonalize - call service', () => {
-                expect(true).toBe(true);
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                queryParams: { 'com.dotmarketing.persona.id': '123' },
+                queryParamsHandling: 'merge'
             });
         });
 
-        describe('dot-edit-ema-workflow-actions', () => {
-            it('should update page', () => {
-                spectator.triggerEventHandler(DotEditEmaWorkflowActionsComponent, 'newPage', {
-                    pageURI: '/path-and-stuff',
-                    url: 'path',
-                    languageId: 1
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+        it('should personalize - confirmation', () => {
+            spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                identifier: '123',
+                pageId: '123',
+                personalized: false
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any);
+            spectator.detectChanges();
 
-                spectator.detectChanges();
+            expect(confirmationService.confirm).toHaveBeenCalledWith({
+                accept: expect.any(Function),
+                acceptLabel: 'Accept',
+                header: 'Personalize',
+                message: 'Confirm personalization?',
+                reject: expect.any(Function),
+                rejectLabel: 'Reject'
+            });
+        });
 
-                expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+        xit('should personalize - call service', () => {
+            expect(true).toBe(true);
+        });
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { language_id: '1', url: '/path-and-stuff' },
-                    queryParamsHandling: 'merge'
-                });
+        it('should despersonalize', () => {
+            spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
+                identifier: '123',
+                pageId: '123',
+                personalized: true
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any);
+
+            spectator.detectChanges();
+
+            expect(confirmationService.confirm).toHaveBeenCalledWith({
+                accept: expect.any(Function),
+                acceptLabel: 'Accept',
+                header: 'Despersonalization?',
+                message: 'Confirm despersonalization?',
+                rejectLabel: 'Reject'
+            });
+        });
+
+        xit('should dpersonalize - call service', () => {
+            expect(true).toBe(true);
+        });
+    });
+
+    describe('dot-edit-ema-workflow-actions', () => {
+        it('should have attr', () => {
+            const workflowActions = spectator.query(DotEditEmaWorkflowActionsComponent);
+
+            expect(workflowActions.inode).toBe('456');
+        });
+        it('should update page', () => {
+            spectator.triggerEventHandler(DotEditEmaWorkflowActionsComponent, 'newPage', {
+                pageURI: '/path-and-stuff',
+                url: 'path',
+                languageId: 1
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any);
+
+            spectator.detectChanges();
+
+            expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                queryParams: { language_id: '1', url: '/path-and-stuff' },
+                queryParamsHandling: 'merge'
             });
         });
     });
