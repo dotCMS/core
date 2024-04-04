@@ -14,14 +14,17 @@
             (ngSubmit)="store.generateContent(form.value.textPrompt)">
             <textarea
                 class="ai-content__generated-text"
+                *ngIf="vm.status !== ComponentStatus.LOADING; else skeleton"
                 [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
                 [readOnly]="true"
                 formControlName="generatedText"
                 pInputTextarea></textarea>
             <p-paginator
+                [style]="{ visibility: vm.generatedContent?.length ? 'visible' : 'hidden' }"
                 [totalRecords]="vm.generatedContent?.length"
                 [rows]="1"
                 [first]="vm.activeIndex"
+                [pageLinkSize]="3"
                 (onPageChange)="store.updateActiveIndex($event.page)"></p-paginator>
 
             <textarea
@@ -42,7 +45,7 @@
                     pButton></button>
                 <button
                     class="p-button-outlined"
-                    [label]="vm.submitLabel | dm"
+                    [label]="submitButtonLabel | dm"
                     [disabled]="form.invalid || vm.status === ComponentStatus.LOADING"
                     type="submit"
                     pButton>
@@ -70,4 +73,8 @@
             </div>
         </form>
     </p-dialog>
+
+    <ng-template #skeleton>
+        <p-skeleton width="100%" height="22rem" styleClass="" data-testid="ai-skeleton" />
+    </ng-template>
 </ng-container>

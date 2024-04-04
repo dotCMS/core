@@ -1,16 +1,22 @@
 import { Observable } from 'rxjs';
 
+import { AsyncPipe, NgIf } from '@angular/common';
 import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { PaginatorModule } from 'primeng/paginator';
+import { SkeletonModule } from 'primeng/skeleton';
 
 import { delay, filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotValidators } from '@dotcms/ui';
+import { DotMessagePipe, DotValidators } from '@dotcms/ui';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
@@ -21,8 +27,19 @@ interface AIContentForm {
 
 @Component({
     selector: 'dot-ai-content-prompt',
-
+    standalone: true,
     templateUrl: './ai-content-prompt.component.html',
+    imports: [
+        DialogModule,
+        ReactiveFormsModule,
+        PaginatorModule,
+        InputTextareaModule,
+        DotMessagePipe,
+        ButtonModule,
+        SkeletonModule,
+        NgIf,
+        AsyncPipe
+    ],
     styleUrls: ['./ai-content-prompt.component.scss']
 })
 export class AIContentPromptComponent implements OnInit {
@@ -35,7 +52,7 @@ export class AIContentPromptComponent implements OnInit {
     });
     confirmationService = inject(ConfirmationService);
     dotMessageService = inject(DotMessageService);
-    submitButtonLabel = `block-editor.extension.ai-image.generate`;
+    submitButtonLabel: string;
     private destroyRef = inject(DestroyRef);
 
     @ViewChild('inputTextarea') private inputTextarea: ElementRef<HTMLTextAreaElement>;
@@ -74,6 +91,11 @@ export class AIContentPromptComponent implements OnInit {
         // Set the form content based on the active index
         this.store.activeContent$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
             this.form.patchValue({ textPrompt: data?.prompt, generatedText: data?.content });
+        });
+
+        // Set the submit button label
+        this.store.submitLabel$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((label) => {
+            this.submitButtonLabel = label;
         });
     }
 }

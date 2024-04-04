@@ -84,10 +84,13 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
         selectedContent
     }));
 
-    readonly showDialog = this.updater(() => ({
-        ...initialState,
-        showDialog: true
-    }));
+    readonly showDialog = this.updater(() => {
+        return {
+            ...initialState,
+            generatedContent: [],
+            showDialog: true
+        };
+    });
 
     readonly hideDialog = this.updater((state) => ({
         ...state,
@@ -138,6 +141,6 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     }));
 
     constructor(private dotAiService: DotAiService) {
-        super(initialState);
+        super({ ...initialState });
     }
 }
