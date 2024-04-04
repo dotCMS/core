@@ -65,13 +65,7 @@ describe('EditEmaStore', () => {
                     provide: DotPageApiService,
                     useValue: {
                         get() {
-                            return of({
-                                ...MOCK_RESPONSE_HEADLESS,
-                                page: {
-                                    ...MOCK_RESPONSE_HEADLESS.page,
-                                    pageURI: 'test-url'
-                                }
-                            });
+                            return of({});
                         },
                         save: jest.fn(),
                         getFormIndetifier: jest.fn()
@@ -117,6 +111,25 @@ describe('EditEmaStore', () => {
 
         describe('selectors', () => {
             it('should return editorState', (done) => {
+                const dotPageApiService = spectator.inject(DotPageApiService);
+
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            pageURI: 'test-url'
+                        }
+                    })
+                );
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
                         bounds: [],
@@ -778,6 +791,8 @@ describe('EditEmaStore', () => {
             it('should return editorState', (done) => {
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         currentExperiment: null,
@@ -789,7 +804,8 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            variantId: undefined
                         }
                     });
                     done();
@@ -813,9 +829,10 @@ describe('EditEmaStore', () => {
 
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL: '',
                         isEnterpriseLicense: true,
@@ -824,7 +841,8 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            variantId: undefined
                         },
                         currentExperiment: null
                     });
