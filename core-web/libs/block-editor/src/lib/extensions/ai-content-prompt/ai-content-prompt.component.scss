@@ -27,3 +27,23 @@ form {
         }
     }
 }
+
+.ai-content__generated-text {
+    height: 22rem;
+}
+
+.ai-content__input-text {
+    height: 4rem;
+}
+
+.ai-content__buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-1;
+}
+
+.ai-content__form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+}

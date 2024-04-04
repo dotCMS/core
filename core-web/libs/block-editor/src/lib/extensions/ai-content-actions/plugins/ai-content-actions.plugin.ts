@@ -6,14 +6,11 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { takeUntil } from 'rxjs/operators';
-
 import { Editor } from '@tiptap/core';
 
-import { DOT_AI_TEXT_CONTENT_KEY } from '../../ai-content-prompt/ai-content-prompt.extension';
 import { AiContentPromptStore } from '../../ai-content-prompt/store/ai-content-prompt.store';
 import { DotAiImagePromptStore } from '../../ai-image-prompt/ai-image-prompt.store';
-import { ACTIONS, AIContentActionsComponent } from '../ai-content-actions.component';
+import { AIContentActionsComponent } from '../ai-content-actions.component';
 import { AI_CONTENT_ACTIONS_PLUGIN_KEY } from '../ai-content-actions.extension';
 import { TIPPY_OPTIONS } from '../utils';
 
@@ -73,24 +70,6 @@ export class AIContentActionsView {
         this.aiContentPromptStore = this.component.injector.get(AiContentPromptStore);
         this.dotAiImagePromptStore = this.component.injector.get(DotAiImagePromptStore);
 
-        this.component.instance.actionEmitter.pipe(takeUntil(this.destroy$)).subscribe((action) => {
-            //TODO: Create a store to handle this actions, and remove external stores references. Since the update / apply
-            // methods in the plugins get fired ( to often) on every change in the editor.
-            switch (action) {
-                case ACTIONS.ACCEPT:
-                    this.acceptContent();
-                    break;
-
-                case ACTIONS.REGENERATE:
-                    this.generateContent();
-                    break;
-
-                case ACTIONS.DELETE:
-                    this.deleteContent();
-                    break;
-            }
-        });
-
         this.view.dom.addEventListener('keydown', this.handleKeyDown.bind(this));
     }
 
@@ -141,37 +120,10 @@ export class AIContentActionsView {
     }
 
     private acceptContent() {
-        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
-
         this.editor.commands.closeAIContentActions();
-
-        switch (pluginState.nodeType) {
-            case DOT_AI_TEXT_CONTENT_KEY:
-                this.aiContentPromptStore.setAcceptContent(true);
-                break;
-        }
     }
 
     private generateContent() {
-        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
-
-        this.editor.commands.closeAIContentActions();
-
-        switch (pluginState.nodeType) {
-            case DOT_AI_TEXT_CONTENT_KEY:
-                this.aiContentPromptStore.reGenerateContent();
-                break;
-        }
-    }
-
-    private deleteContent() {
-        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
-        switch (pluginState.nodeType) {
-            case DOT_AI_TEXT_CONTENT_KEY:
-                this.aiContentPromptStore.setDeleteContent(true);
-                break;
-        }
-
         this.editor.commands.closeAIContentActions();
     }
 

@@ -21,7 +21,7 @@
                 *ngIf="ds.url"
                 [style]="{
                     border: 'none',
-                    display: ds.status !== dialogStatus.INIT ? 'none' : 'block'
+                    height: ds.status !== dialogStatus.INIT ? '0' : null
                 }"
                 [src]="ds.url | safeUrl"
                 (load)="onIframeLoad()"

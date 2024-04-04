@@ -11,7 +11,7 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotContainerMap,
-    DotExperiment,
+    DotDevice,
     DotExperimentStatus,
     DotLayout,
     DotPageContainerStructure
@@ -31,7 +31,7 @@ import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
 import {
     ActionPayload,
     EditEmaState,
-    PreviewState,
+    EditorData,
     ReloadPagePayload,
     SavePagePayload
 } from '../../shared/models';
@@ -39,7 +39,8 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createPageApiUrlWithQueryParams
+    createPageApiUrlWithQueryParams,
+    getIsDefaultVariant
 } from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
@@ -70,20 +71,6 @@ function getFormId(dotPageApiService: DotPageApiService) {
         );
 }
 
-export interface EditEmaStoreStateVM {
-    bounds: Container[];
-    contentletArea: ContentletArea;
-    clientHost: string;
-    favoritePageURL: string;
-    apiURL: string;
-    iframeURL: string;
-    editor: DotPageApiResponse;
-    isEnterpriseLicense: boolean;
-    state: EDITOR_STATE;
-    previewState: PreviewState;
-    runningExperiment: DotExperiment;
-}
-
 @Injectable()
 export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
@@ -108,6 +95,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
 
+    readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
+
     readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
         return {
             state,
@@ -115,12 +104,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         };
     });
 
-    readonly editorState$ = this.select<EditEmaStoreStateVM>((state) => {
+    readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
             url: state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
-            variantName: state.variantName
+            variantName: state.editorData.variantId
         });
 
         const favoritePageURL = this.createFavoritePagesURL({
@@ -147,8 +136,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             },
             isEnterpriseLicense: state.isEnterpriseLicense,
             state: state.editorState ?? EDITOR_STATE.LOADING,
-            previewState: state.previewState,
-            runningExperiment: state.runningExperiment
+            editorData: state.editorData,
+            currentExperiment: state.currentExperiment
         };
     });
 
@@ -176,14 +165,20 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         })
     );
 
-    readonly shellProperties$ = this.select((state) => ({
+    readonly shellProps$ = this.select((state) => ({
         page: state.editor.page,
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
-        currentUrl: '/' + state.editor.page,
+        currentUrl: '/' + sanitizeURL(state.editor.page.pageURI),
         host: state.clientHost,
         error: state.error
     }));
+
+    readonly shellProperties$ = this.select(
+        this.shellProps$,
+        this.templateDrawed$,
+        (props, templateDrawed) => ({ ...props, templateDrawed })
+    );
 
     // This data is needed to save the page on CRUD operation
     readonly pageData$ = this.select((state) => {
@@ -220,33 +215,52 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             }
                         }),
                         switchMap(({ pageData, licenseData }) =>
-                            this.dotExperimentsService
-                                .getByStatus(pageData.page.identifier, DotExperimentStatus.RUNNING)
-                                .pipe(
-                                    tap({
-                                        next: (experiment) => {
-                                            return this.setState({
-                                                clientHost: params.clientHost,
-                                                editor: pageData,
-                                                isEnterpriseLicense: licenseData,
-                                                editorState: EDITOR_STATE.IDLE,
-                                                previewState: {
-                                                    editorMode: EDITOR_MODE.EDIT
-                                                },
-                                                variantName: params.variantName,
-                                                runningExperiment: experiment[0],
-                                                bounds: [],
-                                                contentletArea: null
-                                            });
-                                        },
-                                        error: ({ status }: HttpErrorResponse) => {
-                                            this.createEmptyState(
-                                                { canEdit: false, canRead: false },
-                                                status
-                                            );
-                                        }
-                                    })
-                                )
+                            this.dotExperimentsService.getById(params.experimentId ?? '').pipe(
+                                tap({
+                                    next: (experiment) => {
+                                        // Can be blocked by an experiment if there is a running experiment or a scheduled one
+                                        const editingBlockedByExperiment = [
+                                            DotExperimentStatus.RUNNING,
+                                            DotExperimentStatus.SCHEDULED
+                                        ].includes(experiment?.status);
+
+                                        const isDefaultVariant = getIsDefaultVariant(
+                                            params.variantName
+                                        );
+
+                                        // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+                                        const canEditVariant =
+                                            isDefaultVariant || !editingBlockedByExperiment;
+
+                                        const mode = this.getInitialEditorMode(
+                                            isDefaultVariant,
+                                            canEditVariant
+                                        );
+
+                                        return this.setState({
+                                            currentExperiment: experiment,
+                                            clientHost: params.clientHost,
+                                            editor: pageData,
+                                            isEnterpriseLicense: licenseData,
+                                            editorState: EDITOR_STATE.IDLE,
+                                            bounds: [],
+                                            contentletArea: null,
+                                            editorData: {
+                                                mode,
+                                                canEditVariant,
+                                                canEditPage: pageData.page.canEdit,
+                                                variantId: params.variantName
+                                            }
+                                        });
+                                    },
+                                    error: ({ status }: HttpErrorResponse) => {
+                                        this.createEmptyState(
+                                            { canEdit: false, canRead: false },
+                                            status
+                                        );
+                                    }
+                                })
+                            )
                         )
                     );
                 })
@@ -429,11 +443,38 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *
      * @memberof EditEmaStore
      */
-    readonly updatePreviewState = this.updater((state, previewState: PreviewState) => ({
-        ...state,
-        previewState,
-        editorState: EDITOR_STATE.IDLE
-    }));
+    readonly updateEditorData = this.updater((state, editorData: EditorData) => {
+        return {
+            ...state,
+            editorData: {
+                ...state.editorData,
+                ...editorData
+            },
+            editorState: EDITOR_STATE.IDLE
+        };
+    });
+
+    readonly setDevice = this.updater((state, device: DotDevice) => {
+        return {
+            ...state,
+            editorData: {
+                ...state.editorData,
+                mode: EDITOR_MODE.DEVICE,
+                device
+            }
+        };
+    });
+
+    readonly setSocialMedia = this.updater((state, socialMedia: string) => {
+        return {
+            ...state,
+            editorData: {
+                ...state.editorData,
+                mode: EDITOR_MODE.SOCIAL_MEDIA,
+                socialMedia
+            }
+        };
+    });
 
     readonly setBounds = this.updater((state, bounds: Container[]) => ({
         ...state,
@@ -499,6 +540,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     private createEmptyState(permissions: { canEdit: boolean; canRead: boolean }, error?: number) {
         this.setState({
+            bounds: [],
+            contentletArea: null,
             editor: {
                 page: {
                     title: '',
@@ -532,11 +575,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             isEnterpriseLicense: false,
             error,
             editorState: EDITOR_STATE.IDLE,
-            previewState: {
-                editorMode: EDITOR_MODE.EDIT
-            },
-            bounds: [],
-            contentletArea: null
+            editorData: {
+                mode: EDITOR_MODE.EDIT
+            }
         });
     }
 
@@ -576,4 +617,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             []
         );
     };
+
+    private getInitialEditorMode(isDefaultVariant: boolean, canEditVariant: boolean): EDITOR_MODE {
+        if (isDefaultVariant) {
+            return EDITOR_MODE.EDIT;
+        } else if (canEditVariant) {
+            return EDITOR_MODE.EDIT_VARIANT;
+        }
+
+        return EDITOR_MODE.PREVIEW_VARIANT;
+    }
 }

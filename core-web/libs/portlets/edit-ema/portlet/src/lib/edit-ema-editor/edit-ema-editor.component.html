@@ -1,40 +1,33 @@
 <ng-container *ngIf="editorState$ | async as es">
     <dot-edit-ema-toolbar />
-    <div
-        class="editor-banner"
-        *ngIf="es.previewState.device || !es.editor.page.canEdit"
-        data-testId="editor-banner">
-        <dot-ema-device-display
-            *ngIf="es.previewState.device"
-            [currentDevice]="es.previewState.device"
-            data-testId="device-display" />
-        <div class="editor-banner--message" *ngIf="!es.editor.page.canEdit">
-            <i class="pi pi-exclamation-circle"></i>
-            {{ 'editema.dont.have.edit.permission' | dm }}
-        </div>
-    </div>
     <dot-results-seo-tool
-        *ngIf="es.previewState.socialMedia && ogTags() && ogTagsResults$"
-        [seoMedia]="es.previewState.socialMedia"
+        *ngIf="es.editorData.mode === editorMode.SOCIAL_MEDIA && ogTags() && ogTagsResults$"
+        [seoMedia]="es.editorData.socialMedia"
         [seoOGTags]="ogTags()"
         [seoOGTagsResults]="ogTagsResults$"
         data-testId="results-seo-tool"></dot-results-seo-tool>
     <div
         class="editor-content"
         [ngClass]="{
-            'editor-content--device': !!es.previewState.device,
-            'editor-content--expanded': !es.editor.page.canEdit || !canEditVariant(),
-            'editor-content--hidden': es.previewState.socialMedia
+            'editor-content--device': es.editorData.mode === editorMode.DEVICE,
+            'editor-content--expanded': !es.editor.page.canEdit || !es.editorData.canEditVariant,
+            'editor-content--hidden': es.editorData.mode === editorMode.SOCIAL_MEDIA
         }"
         data-testId="editor-content">
         <div
             class="iframe-wrapper"
             [ngClass]="{
-                'iframe-wrapper--device': !!es.previewState.device,
+                'iframe-wrapper--device': es.editorData.mode === editorMode.DEVICE,
             }"
             [ngStyle]="{
-                width: !!es.previewState.device ? es.previewState.device.cssWidth + 'px' : '100%',
-                height: !!es.previewState.device ? es.previewState.device.cssHeight + 'px' : '100%'
+                width:
+                    es.editorData.mode === editorMode.DEVICE
+                        ? es.editorData.device.cssWidth + 'px'
+                        : '100%',
+                height:
+                    es.editorData.mode === editorMode.DEVICE
+                        ? es.editorData.device.cssHeight + 'px'
+                        : '100%'
             }">
             <iframe
                 #iframe
@@ -57,9 +50,9 @@
 
             <dot-ema-contentlet-tools
                 *ngIf="
-                    canEditVariant() &&
+                    es.editorData.canEditVariant &&
                     !!es.contentletArea &&
-                    !es.previewState.device &&
+                    !es.editorData.device &&
                     es.editor.page.canEdit &&
                     (es.state === editorState.IDLE || es.state === editorState.DRAGGING)
                 "
@@ -76,10 +69,10 @@
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
-                    canEditVariant() &&
+                    es.editorData.canEditVariant &&
                     !!es.bounds.length &&
                     !!dragItem &&
-                    !es.previewState.device &&
+                    !es.editorData.device &&
                     es.state === editorState.DRAGGING
                 "
                 [containers]="es.bounds"
@@ -91,9 +84,10 @@
 
     <dot-edit-ema-palette
         *ngIf="
-            canEditVariant() &&
+            es.editorData.canEditVariant &&
             es.isEnterpriseLicense &&
-            es.previewState.editorMode === editorMode.EDIT &&
+            (es.editorData.mode === editorMode.EDIT ||
+                es.editorData.mode === editorMode.EDIT_VARIANT) &&
             es.editor.page.canEdit
         "
         [languageId]="es.editor.viewAs.language.id"
@@ -102,7 +96,7 @@
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
-    @if( canEditVariant() && es.previewState.editorMode === editorMode.EDIT) {
+    @if( es.editorData.canEditVariant && es.editorData.mode === editorMode.EDIT) {
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"

@@ -1,5 +1,3 @@
-import { Observable } from 'rxjs';
-
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewChild, inject } from '@angular/core';
@@ -11,16 +9,22 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotDevice,
+    DotExperimentStatus,
+    DotPersona
+} from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditEmaStore, EditEmaStoreStateVM } from '../../../dot-ema-shell/store/dot-ema.store';
+import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../../shared/enums';
 import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -39,6 +43,7 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         DotEmaRunningExperimentComponent,
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
+        DotEmaInfoDisplayComponent,
         DotEditEmaWorkflowActionsComponent,
         ClipboardModule
     ],
@@ -58,8 +63,9 @@ export class EditEmaToolbarComponent {
     private readonly personalizeService = inject(DotPersonalizeService);
     private readonly activatedRouter = inject(ActivatedRoute);
 
-    readonly editorState$: Observable<EditEmaStoreStateVM> = this.store.editorState$;
+    readonly editorState$ = this.store.editorState$;
     readonly editorMode = EDITOR_MODE;
+    readonly experimentStatus = DotExperimentStatus;
 
     get queryParams(): DotPageApiParams {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
@@ -72,10 +78,7 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaEditorComponent
      */
     updateCurrentDevice(device: DotDevice & { icon?: string }) {
-        this.store.updatePreviewState({
-            editorMode: EDITOR_MODE.PREVIEW,
-            device
-        });
+        this.store.setDevice(device);
     }
 
     /**
@@ -85,22 +88,19 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     onSeoMediaChange(seoMedia: string) {
-        this.store.updatePreviewState({
-            editorMode: EDITOR_MODE.PREVIEW,
-            socialMedia: seoMedia
-        });
+        this.store.setSocialMedia(seoMedia);
     }
 
     /**
-     * Go to edit mode
+     * Handle edit content map
      *
-     * @memberof EditEmaToolbarComponent
+     * @protected
+     * @param {DotCMSContentlet} contentlet
+     * @memberof EditEmaEditorComponent
      */
-    goToEditMode() {
-        this.store.updatePreviewState({
-            editorMode: EDITOR_MODE.EDIT
-        });
-    }
+    // protected editContentMap(contentlet: DotCMSContentlet): void {
+    //     this.dialog.editUrlContentMapContentlet(contentlet); <-- TODO: Maybe a new service for this?
+    // }
 
     /**
      * Handle the copy URL action

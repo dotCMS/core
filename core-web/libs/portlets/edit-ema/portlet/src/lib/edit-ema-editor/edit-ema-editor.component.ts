@@ -37,8 +37,8 @@ import {
     DotContentletService
 } from '@dotcms/data-access';
 import {
-    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
+    DotExperimentStatus,
     DotTreeNode,
     SeoMetaTags,
     SeoMetaTagsResult
@@ -51,7 +51,7 @@ import {
     DotCopyContentModalService
 } from '@dotcms/ui';
 
-import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
+import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
@@ -136,7 +136,7 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         EmaPageDropzoneComponent,
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
-        DotEmaDeviceDisplayComponent,
+        DotEmaBookmarksComponent,
         ProgressBarModule,
         DotResultsSeoToolComponent
     ],
@@ -166,24 +166,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
 
-    readonly editorState$ = this.store.editorState$.pipe(
-        tap((state) => {
-            // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
-            this.canEditVariant.set(
-                !this.queryParams.variantName ||
-                    this.queryParams.variantName === DEFAULT_VARIANT_ID ||
-                    !state.runningExperiment
-            );
-        })
-    );
+    readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
     readonly pageData = toSignal(this.store.pageData$);
 
     readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
-
-    readonly canEditVariant: WritableSignal<boolean> = signal(true);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
@@ -228,6 +217,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly host = '*';
     readonly editorState = EDITOR_STATE;
     readonly editorMode = EDITOR_MODE;
+    readonly experimentStatus = DotExperimentStatus;
 
     protected draggedPayload: DraggedPalettePayload;
 
@@ -553,6 +543,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
+
                 if (shouldReloadPage) {
                     this.reloadURLContentMapPage(contentletIdentifier);
 
@@ -590,7 +581,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
                     contentType: detail.data.contentType,
-                    url: detail.data.url
+                    url: detail.data.url,
+                    payload
                 });
                 this.cd.detectChanges();
             },

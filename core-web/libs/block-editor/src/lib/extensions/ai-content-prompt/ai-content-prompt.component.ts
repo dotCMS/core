@@ -1,22 +1,16 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    ElementRef,
-    inject,
-    OnDestroy,
-    OnInit,
-    ViewChild
-} from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { filter, takeUntil } from 'rxjs/operators';
+import { delay, filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotValidators } from '@dotcms/ui';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
@@ -26,60 +20,26 @@ interface AIContentForm {
 
 @Component({
     selector: 'dot-ai-content-prompt',
+
     templateUrl: './ai-content-prompt.component.html',
-    styleUrls: ['./ai-content-prompt.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./ai-content-prompt.component.scss']
 })
-export class AIContentPromptComponent implements OnInit, OnDestroy {
-    vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
+export class AIContentPromptComponent implements OnInit {
+    store: AiContentPromptStore = inject(AiContentPromptStore);
+    vm$: Observable<AiContentPromptState> = this.store.vm$;
     readonly ComponentStatus = ComponentStatus;
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
-        textPrompt: new FormControl('', Validators.required)
+        textPrompt: new FormControl('', [Validators.required, DotValidators.noWhitespace])
     });
     confirmationService = inject(ConfirmationService);
     dotMessageService = inject(DotMessageService);
-    private destroy$: Subject<boolean> = new Subject<boolean>();
-    @ViewChild('input') private input: ElementRef;
+    submitButtonLabel = `block-editor.extension.ai-image.generate`;
+    private destroyRef = inject(DestroyRef);
 
-    constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
+    @ViewChild('inputTextarea') private inputTextarea: ElementRef<HTMLTextAreaElement>;
 
     ngOnInit() {
-        this.aiContentPromptStore.status$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((status) => status === ComponentStatus.IDLE)
-            )
-            .subscribe(() => {
-                this.form.reset();
-                this.input.nativeElement.focus();
-            });
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
-    /**
-     *  Handle submit event in the form
-     * @return {*}  {void}
-     * @memberof AIContentPromptComponent
-     */
-    onSubmit() {
-        const textPrompt = this.form.value.textPrompt;
-        if (textPrompt) {
-            this.aiContentPromptStore.generateContent(textPrompt);
-        }
-    }
-
-    /**
-     *  Handle scape key in the prompt input
-     * @param event
-     * @return {*}  {void}
-     * @memberof AIContentPromptComponent
-     */
-    handleScape(event: KeyboardEvent): void {
-        this.aiContentPromptStore.setStatus(ComponentStatus.INIT);
-        event.stopPropagation();
+        this.setSubscriptions();
     }
 
     /**
@@ -88,6 +48,33 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
      * @return {void}
      */
     onHideConfirm(): void {
-        this.aiContentPromptStore.cleanError();
+        this.store.cleanError();
+    }
+
+    private setSubscriptions(): void {
+        // Focus on the input when the dialog is shown and clean form.
+        this.store.showDialog$
+            .pipe(
+                takeUntilDestroyed(this.destroyRef),
+                filter((showDialog) => showDialog),
+                delay(10) // wait dialog to be visible
+            )
+            .subscribe(() => {
+                this.form.reset();
+                this.inputTextarea.nativeElement.focus();
+            });
+
+        // Disable the form and change the submit button label when the status is loading
+        this.vm$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
+            if (state.status === ComponentStatus.LOADING) {
+                this.form.disable();
+                this.submitButtonLabel = 'block-editor.extension.ai-image.generating';
+            } else {
+                this.form.enable();
+                this.submitButtonLabel = state.content
+                    ? 'block-editor.extension.ai-image.regenerate'
+                    : 'block-editor.extension.ai-image.generate';
+            }
+        });
     }
 }
