@@ -1,4 +1,4 @@
-:host ::ng-deep  {
+:host ::ng-deep {
     dot-dialog {
         .dialog__header--shadowed {
             box-shadow: none;
@@ -6,6 +6,9 @@
         .dialog__content {
             padding-top: 0;
         }
+
+        &.active {
+            z-index: 1100; // This is to make sure the dialog is on top of the other dialogs
+        }
     }
 }
-

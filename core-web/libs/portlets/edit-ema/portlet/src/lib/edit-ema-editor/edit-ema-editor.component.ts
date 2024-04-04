@@ -36,7 +36,8 @@ import {
     DotHttpErrorManagerService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
-    DotContentletService
+    DotContentletService,
+    DotEventsService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -192,6 +193,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
+    private readonly dotEventsService = inject(DotEventsService);
 
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
@@ -718,6 +720,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.dialog.resetDialog();
                     }
                 });
+            },
+            [NG_CUSTOM_EVENTS.COMPARE_CONTENTLET]: () => {
+                this.dotEventsService.notify(NG_CUSTOM_EVENTS.COMPARE_CONTENTLET, detail.data);
             }
         })[detail.name];
     }
