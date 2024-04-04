@@ -14,7 +14,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 
-import { getFieldVariablesParsed } from '../../utils/functions.util';
+import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
 
 const DEFAULT_CONFIG = {
     menubar: false,
@@ -56,7 +56,9 @@ export class DotEditContentWYSIWYGFieldComponent implements OnInit {
     protected init = signal<RawEditorOptions>(null);
 
     ngOnInit(): void {
-        const variables = getFieldVariablesParsed(this.field.fieldVariables);
+        const { tinymceprops } = getFieldVariablesParsed(this.field.fieldVariables);
+        const variables = stringToJson(tinymceprops as string);
+
         this.dotScriptingApiService
             .get<RawEditorOptions>('tinymceprops')
             .pipe(catchError(() => of({})))

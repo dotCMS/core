@@ -108,8 +108,8 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
                     fieldId: '1',
                     id: '1',
-                    key: 'toolbar1',
-                    value: 'undo redo'
+                    key: 'tinymceprops',
+                    value: '{ "toolbar1": "undo redo"}'
                 }
             ];
 
@@ -133,8 +133,8 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
                     fieldId: '1',
                     id: '1',
-                    key: 'theme',
-                    value: 'modern'
+                    key: 'tinymceprops',
+                    value: '{theme: "modern"}'
                 }
             ];
 
@@ -187,8 +187,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
         it('should overwrite the systemwide TinyMCE props with the field variables', () => {
             const globalConfig = {
-                toolbar1: 'undo redo | bold italic',
-                theme: 'modern'
+                toolbar1: 'undo redo | bold italic'
             };
 
             const fieldVariables = [
@@ -196,8 +195,8 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
                     fieldId: '1',
                     id: '1',
-                    key: 'toolbar1',
-                    value: 'undo redo'
+                    key: 'tinymceprops',
+                    value: '{ "toolbar1" : "undo redo" }'
                 }
             ];
 

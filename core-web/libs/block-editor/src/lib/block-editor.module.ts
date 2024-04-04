@@ -5,6 +5,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 // DotCMS JS
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { PaginatorModule } from 'primeng/paginator';
 
 import {
     DotContentSearchService,
@@ -56,7 +59,10 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotMessagePipe,
         ConfirmDialogModule,
         AIImagePromptComponent,
-        DotAssetSearchComponent
+        DotAssetSearchComponent,
+        DialogModule,
+        InputTextareaModule,
+        PaginatorModule
     ],
     declarations: [
         EditorDirective,
