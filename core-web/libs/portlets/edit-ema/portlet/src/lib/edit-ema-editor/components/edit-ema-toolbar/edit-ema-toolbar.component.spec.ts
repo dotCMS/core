@@ -26,6 +26,47 @@ describe('EditEmaToolbarComponent', () => {
         spectator = createComponent();
     });
 
+    describe('events', () => {
+        it('should call setDevice from the store', () => {
+            const setDeviceMock = jest.spyOn(store, 'setDevice');
+
+            spectator.detectChanges();
+
+            const deviceSelector = spectator.debugElement.query(
+                By.css('[data-testId="dot-device-selector"]')
+            );
+
+            const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+            spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+            spectator.detectChanges();
+
+            expect(setDeviceMock).toHaveBeenCalledWith(iphone);
+        });
+
+        it('should open seo results when clicking on a social media tile', () => {
+            const setSocialMediaMock = jest.spyOn(store, 'setSocialMedia');
+
+            store.load({
+                url: 'index',
+                language_id: '3',
+                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+            });
+
+            jest.runOnlyPendingTimers();
+
+            const deviceSelector = spectator.debugElement.query(
+                By.css('[data-testId="dot-device-selector"]')
+            );
+
+            spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'Facebook');
+
+            expect(spectator.query(byTestId('results-seo-tool'))).not.toBeNull(); // This components share the same logic as the preview by device
+
+            expect(setSocialMediaMock).toHaveBeenCalledWith('Facebook');
+        });
+    });
+
     describe('DOM', () => {
         it('should have left-content on left', () => {
             const leftContent = spectator.query(byTestId('toolbar-left-content'));

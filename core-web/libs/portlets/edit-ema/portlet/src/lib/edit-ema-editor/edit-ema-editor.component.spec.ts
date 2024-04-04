@@ -61,6 +61,7 @@ import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { CUSTOM_PERSONA } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component.spec';
+import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
@@ -108,7 +109,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
         declarations: [
             MockComponent(DotEditEmaWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
-            MockComponent(DotEmaRunningExperimentComponent)
+            MockComponent(DotEmaRunningExperimentComponent),
+            MockComponent(EditEmaToolbarComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -527,15 +529,10 @@ describe('EditEmaEditorComponent', () => {
                     'confirm-dialog'
                 ]; // Test id of components that should hide when entering preview modes
 
-                spectator.detectChanges();
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
                 const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
 
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                store.setDevice(iphone);
+
                 spectator.detectChanges();
 
                 componentsToHide.forEach((testId) => {
@@ -599,6 +596,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
+                // TODO: trigger the state change
                 const deviceSelector = spectator.debugElement.query(
                     By.css('[data-testId="dot-device-selector"]')
                 );
@@ -611,46 +609,6 @@ describe('EditEmaEditorComponent', () => {
                 componentsToShow.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).not.toBeNull();
                 });
-            });
-
-            it('should call setDevice from the store', () => {
-                const setDeviceMock = jest.spyOn(store, 'setDevice');
-
-                spectator.detectChanges();
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
-
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
-                spectator.detectChanges();
-
-                expect(setDeviceMock).toHaveBeenCalledWith(iphone);
-            });
-
-            // REMOVED THE `SKIP` WHEN THIS PR [https://github.com/dotCMS/core/pull/27866] IS MERGED
-            it('should open seo results when clicking on a social media tile', () => {
-                const setSocialMediaMock = jest.spyOn(store, 'setSocialMedia');
-
-                store.load({
-                    url: 'index',
-                    language_id: '3',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-
-                jest.runOnlyPendingTimers();
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'Facebook');
-
-                expect(spectator.query(byTestId('results-seo-tool'))).not.toBeNull(); // This components share the same logic as the preview by device
-
-                expect(setSocialMediaMock).toHaveBeenCalledWith('Facebook');
             });
         });
 
@@ -883,7 +841,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -942,7 +900,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    spectator.setInput('contentlet', baseContentletPayload);
+                    store.setContentletArea(baseContentletPayload);
 
                     spectator.detectComponentChanges();
 
@@ -993,8 +951,10 @@ describe('EditEmaEditorComponent', () => {
                             By.css('[data-testId="ema-dialog"]')
                         );
 
-                        spectator.setInput('contentlet', baseContentletPayload);
+                        store.setContentletArea(baseContentletPayload);
+
                         editURLContentButton.triggerEventHandler('onClick', {});
+
                         triggerCustomEvent(dialog, 'action', {
                             event: new CustomEvent('ng-event', {
                                 detail: {
@@ -1135,7 +1095,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        spectator.setInput('contentlet', CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
@@ -1163,7 +1123,7 @@ describe('EditEmaEditorComponent', () => {
                         modalSpy.mockReturnValue(of({ shouldCopy: true }));
                         spectator.detectChanges();
 
-                        spectator.setInput('contentlet', CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
@@ -1190,7 +1150,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        spectator.setInput('contentlet', CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
@@ -1225,7 +1185,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1293,7 +1253,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1384,7 +1344,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1473,7 +1433,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1551,7 +1511,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1640,7 +1600,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
