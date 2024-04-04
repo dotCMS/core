@@ -16,6 +16,7 @@ import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-p
 
 interface AIContentForm {
     textPrompt: FormControl<string>;
+    generatedText: FormControl<string>;
 }
 
 @Component({
@@ -29,7 +30,8 @@ export class AIContentPromptComponent implements OnInit {
     vm$: Observable<AiContentPromptState> = this.store.vm$;
     readonly ComponentStatus = ComponentStatus;
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
-        textPrompt: new FormControl('', [Validators.required, DotValidators.noWhitespace])
+        textPrompt: new FormControl('', [Validators.required, DotValidators.noWhitespace]),
+        generatedText: new FormControl('')
     });
     confirmationService = inject(ConfirmationService);
     dotMessageService = inject(DotMessageService);
@@ -64,17 +66,14 @@ export class AIContentPromptComponent implements OnInit {
                 this.inputTextarea.nativeElement.focus();
             });
 
-        // Disable the form and change the submit button label when the status is loading
-        this.vm$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
-            if (state.status === ComponentStatus.LOADING) {
-                this.form.disable();
-                this.submitButtonLabel = 'block-editor.extension.ai-image.generating';
-            } else {
-                this.form.enable();
-                this.submitButtonLabel = state.content
-                    ? 'block-editor.extension.ai-image.regenerate'
-                    : 'block-editor.extension.ai-image.generate';
-            }
+        // Disable form and set the submit button label based on the status.
+        this.store.status$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((status) => {
+            this.form[status === ComponentStatus.LOADING ? 'disable' : 'enable']();
+        });
+
+        // Set the form content based on the active index
+        this.store.activeContent$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
+            this.form.patchValue({ textPrompt: data?.prompt, generatedText: data?.content });
         });
     }
 }

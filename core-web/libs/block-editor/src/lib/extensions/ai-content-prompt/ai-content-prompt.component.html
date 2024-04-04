@@ -15,29 +15,34 @@
             <textarea
                 class="ai-content__generated-text"
                 [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
-                [value]="vm.content"
                 [readOnly]="true"
+                formControlName="generatedText"
                 pInputTextarea></textarea>
+            <p-paginator
+                [totalRecords]="vm.generatedContent?.length"
+                [rows]="1"
+                [first]="vm.activeIndex"
+                (onPageChange)="store.updateActiveIndex($event.page)"></p-paginator>
 
             <textarea
                 class="ai-content__input-text"
                 #inputTextarea
-                [autofocus]="true"
                 [placeholder]="'block-editor.extension.ai-content.ask.placeholder' | dm"
-                pAutoFocus
                 pInputTextarea
                 formControlName="textPrompt"></textarea>
 
             <div class="ai-content__buttons">
                 <button
                     [label]="'block-editor.extension.ai-image.insert' | dm"
-                    [disabled]="vm.status === ComponentStatus.LOADING || !vm.content"
-                    (click)="store.setSelectedContent(vm.content)"
+                    [disabled]="
+                        vm.status === ComponentStatus.LOADING || !vm.generatedContent?.length
+                    "
+                    (click)="store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)"
                     type="button"
                     pButton></button>
                 <button
                     class="p-button-outlined"
-                    [label]="submitButtonLabel | dm"
+                    [label]="vm.submitLabel | dm"
                     [disabled]="form.invalid || vm.status === ComponentStatus.LOADING"
                     type="submit"
                     pButton>
