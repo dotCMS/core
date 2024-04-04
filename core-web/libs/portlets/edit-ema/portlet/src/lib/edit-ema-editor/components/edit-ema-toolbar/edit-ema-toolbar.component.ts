@@ -76,7 +76,7 @@ export class EditEmaToolbarComponent {
      * Update the current device
      *
      * @param {DotDevice} [device]
-     * @memberof EditEmaEditorComponent
+     * @memberof EditEmaToolbarComponent
      */
     updateCurrentDevice(device: DotDevice & { icon?: string }) {
         this.store.setDevice(device);
@@ -97,7 +97,7 @@ export class EditEmaToolbarComponent {
      *
      * @protected
      * @param {DotCMSContentlet} contentlet
-     * @memberof EditEmaEditorComponent
+     * @memberof EditEmaToolbarComponent
      */
     // protected editContentMap(contentlet: DotCMSContentlet): void {
     //     this.dialog.editUrlContentMapContentlet(contentlet); <-- TODO: Maybe a new service for this?
@@ -106,7 +106,7 @@ export class EditEmaToolbarComponent {
     /**
      * Handle the copy URL action
      *
-     * @memberof EditEmaEditorComponent
+     * @memberof EditEmaToolbarComponent
      */
     triggerCopyToast() {
         this.messageService.add({
@@ -170,7 +170,7 @@ export class EditEmaToolbarComponent {
      * Handle the persona despersonalization
      *
      * @param {(DotPersona & { pageId: string })} persona
-     * @memberof EditEmaEditorComponent
+     * @memberof EditEmaToolbarComponent
      */
     onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
         this.confirmationService.confirm({
@@ -202,7 +202,7 @@ export class EditEmaToolbarComponent {
      * Update the query params if the url or the language id changed
      *
      * @param {DotCMSContentlet} page
-     * @memberof EditEmaEditorComponent
+     * @memberof EditEmaToolbarComponent
      */
     handleNewPage(page: DotCMSContentlet): void {
         const { pageURI, url, languageId } = page;
