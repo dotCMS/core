@@ -56,6 +56,7 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
 describe('EditEmaStore', () => {
     describe('EditEmaStore Headless', () => {
         let spectator: SpectatorService<EditEmaStore>;
+        let dotPageApiService: SpyObject<DotPageApiService>;
 
         const createService = createServiceFactory({
             service: EditEmaStore,
@@ -100,6 +101,17 @@ describe('EditEmaStore', () => {
 
         beforeEach(() => {
             spectator = createService();
+
+            dotPageApiService = spectator.inject(DotPageApiService);
+            jest.spyOn(dotPageApiService, 'get').mockImplementation(({ url }) => {
+                return of({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        pageURI: url
+                    }
+                });
+            });
 
             spectator.service.load({
                 clientHost: 'http://localhost:3000',
