@@ -6,6 +6,7 @@ import {
     EXPERIMENT_ALREADY_CHECKED_KEY,
     EXPERIMENT_DB_KEY_PATH,
     EXPERIMENT_DB_STORE_NAME,
+    EXPERIMENT_DEFAULT_VARIANT_NAME,
     EXPERIMENT_QUERY_PARAM_KEY,
     PAGE_VIEW_EVENT_NAME
 } from './shared/constants';
@@ -225,11 +226,12 @@ export class DotExperiments {
     ): Promise<void> {
         this.logger.group('Location Changed Process');
         this.logger.time('Total location changed');
+
         this.currentLocation = location;
         await this.verifyExperimentData();
         const variantAssigned = this.getVariantFromHref(location.href);
 
-        if (variantAssigned) {
+        if (variantAssigned && variantAssigned.name !== EXPERIMENT_DEFAULT_VARIANT_NAME) {
             const searchParams = new URLSearchParams(location.search);
             const currentVariant = searchParams.get(EXPERIMENT_QUERY_PARAM_KEY);
 
@@ -266,14 +268,7 @@ export class DotExperiments {
      * @return {void}
      */
     public trackPageView(): void {
-        if (!this.shouldTrackPageView()) {
-            this.logger.log(`No trackPageView triggered.`);
-
-            return;
-        }
-
         this.track(PAGE_VIEW_EVENT_NAME);
-
         this.prevLocation = this.currentLocation.href;
     }
 
@@ -288,17 +283,17 @@ export class DotExperiments {
      * @returns {Variant | null} The variant associated with the URL if it exists, null otherwise.
      */
     public getVariantFromHref(path: string | null): Variant | null {
-        if (this.experimentsAssigned && path) {
-            const experiment = this.experimentsAssigned.find((experiment) => {
-                const url = getFullUrl(this.currentLocation, path) ?? '';
-
-                return url ? verifyRegex(experiment.regexs.isExperimentPage, url) : false;
-            });
-
-            return experiment ? experiment.variant : null;
+        if (!(this.experimentsAssigned && path)) {
+            return null;
         }
 
-        return null;
+        const experiment = this.experimentsAssigned.find((experiment) => {
+            const url = getFullUrl(this.currentLocation, path) ?? '';
+
+            return verifyRegex(experiment.regexs.isExperimentPage, url);
+        });
+
+        return experiment?.variant || null;
     }
 
     /**
@@ -312,12 +307,12 @@ export class DotExperiments {
             const experiment = this.experimentsAssigned.find((experiment) => {
                 const url = getFullUrl(this.currentLocation, path) ?? '';
 
-                return url ? verifyRegex(experiment.regexs.isExperimentPage, url) : false;
+                return verifyRegex(experiment.regexs.isExperimentPage, url);
             });
 
-            return experiment
-                ? { [EXPERIMENT_QUERY_PARAM_KEY]: experiment.variant.name }
-                : ({} as VariantQueryParams);
+            if (experiment && experiment.variant.name !== EXPERIMENT_DEFAULT_VARIANT_NAME) {
+                return { [EXPERIMENT_QUERY_PARAM_KEY]: experiment.variant.name };
+            }
         }
 
         return {} as VariantQueryParams;
@@ -593,7 +588,12 @@ export class DotExperiments {
         }
 
         // trigger the page view event
-        this.trackPageView();
+        if (this.shouldTrackPageView()) {
+            this.trackPageView();
+            this.logger.log(`No trackPageView triggered.`);
+
+            return;
+        }
     }
 
     /**

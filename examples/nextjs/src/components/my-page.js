@@ -19,10 +19,16 @@ export function MyPage({ data, nav }) {
   const { refresh, replace, route, asPath, query } = useRouter();
   const pathname = usePathname();
 
+  const experimentConfig = {
+    'api-key': process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY ,
+    server: process.env.NEXT_PUBLIC_DOTCMS_HOST ,
+    debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG,
+    redirectFn: replace
+  }
 
   return (
     // Provide the DotExperimentsProvider with the configuration and instance of DotExperiments
-    <DotExperimentsProvider config={{redirectFn: replace}} >
+    <DotExperimentsProvider config={experimentConfig} >
 
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
       {data.layout.header && (

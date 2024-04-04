@@ -50,7 +50,6 @@ export const verifyRegex = (regexToCheck: string | null, href: string): boolean 
         return false;
     }
 
-    // console.info('regexToCheck', regexToCheck);
     try {
         const regexExp = new RegExp(regexToCheck);
         const url = new URL(href);

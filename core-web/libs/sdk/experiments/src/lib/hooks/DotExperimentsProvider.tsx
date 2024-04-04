@@ -7,7 +7,7 @@ import { DotExperimentConfig } from '../shared/models';
 
 type RedirectFn = () => void;
 
-interface ConfigWithRedirect {
+interface ConfigWithRedirect extends DotExperimentConfig {
     redirectFn: RedirectFn;
 }
 
@@ -64,14 +64,7 @@ export const DotExperimentsProvider = ({
 
     // Initialize the DotExperiments instance
     useEffect(() => {
-        const defaultConfig: DotExperimentConfig = {
-            'api-key': process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY || 'default-api-key',
-            server: process.env.NEXT_PUBLIC_DOTCMS_HOST || 'default-host',
-            debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG === 'true'
-        };
-
-        const finalConfig: DotExperimentConfig = { ...defaultConfig, ...config };
-        const dotExperimentsInstance = DotExperiments.getInstance(finalConfig);
+        const dotExperimentsInstance = DotExperiments.getInstance(config);
         dotExperimentsInstance.ready().then(() => {
             setInstance(dotExperimentsInstance);
         });

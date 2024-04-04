@@ -2,8 +2,8 @@
 import fakeIndexedDB from 'fake-indexeddb';
 import fetchMock from 'fetch-mock';
 
-import { API_EXPERIMENTS_URL } from './constants';
 import { DotExperiments } from './dot-experiments';
+import { API_EXPERIMENTS_URL, EXPERIMENT_QUERY_PARAM_KEY } from './shared/constants';
 import {
     IsUserIncludedResponse,
     LocationMock,
@@ -15,8 +15,8 @@ import {
     sessionStorageMock,
     TIME_15_DAYS_MILLISECONDS,
     TIME_5_DAYS_MILLISECONDS
-} from './mocks/mock';
-import { DotExperimentConfig } from './models';
+} from './shared/mocks/mock';
+import { DotExperimentConfig } from './shared/models';
 
 jest.spyOn(Date, 'now').mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
 
@@ -47,7 +47,8 @@ if (!globalThis.structuredClone) {
 global.window = Object.create(window);
 Object.defineProperty(window, 'location', {
     value: {
-        href: 'http://localhost:8080/'
+        href: 'http://localhost:8080/',
+        origin: 'http://localhost:8080'
     }
 });
 
@@ -55,7 +56,8 @@ describe('DotExperiments', () => {
     const configMock: DotExperimentConfig = {
         'api-key': 'yourApiKey',
         server: 'http://localhost:8080/',
-        debug: false
+        debug: false,
+        trackPageView: true
     };
 
     describe('DotExperiments Instance and Initialization', () => {
@@ -97,7 +99,7 @@ describe('DotExperiments', () => {
         it('should not call to trackPageView if you send the flag', async () => {
             const config: DotExperimentConfig = { ...configMock, trackPageView: false };
 
-            fetchMock.post(`${configMock.server}${API_EXPERIMENTS_URL}`, {
+            fetchMock.post(`${configMock.server}/${API_EXPERIMENTS_URL}`, {
                 status: 200,
                 body: IsUserIncludedResponse,
                 headers: {
@@ -115,6 +117,41 @@ describe('DotExperiments', () => {
                 expect(spyTrackPageView).not.toHaveBeenCalled();
             });
         });
+
+        it('should return a a string with the query params of variant by the url given', async () => {
+            const config: DotExperimentConfig = { ...configMock, trackPageView: false };
+
+            fetchMock.post(
+                `${configMock.server}/${API_EXPERIMENTS_URL}`,
+                {
+                    status: 200,
+                    body: IsUserIncludedResponse,
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                },
+                { overwriteRoutes: true }
+            );
+
+            const instance = DotExperiments.getInstance(config);
+            await instance.ready();
+
+            const EMPTY_URL = '';
+            const expected1 = {};
+            expect(instance.getVariantAsQueryParam(EMPTY_URL)).toStrictEqual(expected1);
+
+            const URL_WITH_EXPERIMENT = '/blog';
+            const expected2 = {
+                [EXPERIMENT_QUERY_PARAM_KEY]:
+                    IsUserIncludedResponse.entity.experiments[0].variant.name
+            };
+            expect(instance.getVariantAsQueryParam(URL_WITH_EXPERIMENT)).toStrictEqual(expected2);
+
+            const URL_NO_EXPERIMENT = '/destinations';
+            const expected3 = {};
+            expect(instance.getVariantAsQueryParam(URL_NO_EXPERIMENT)).toStrictEqual(expected3);
+        });
     });
 
     describe('Class interactions', () => {
@@ -127,7 +164,7 @@ describe('DotExperiments', () => {
         it('should simulate the changes of the data in first run, after 5 days and 15 days.', async () => {
             // First time the user enter to the page
 
-            fetchMock.post(`${configMock.server}${API_EXPERIMENTS_URL}`, {
+            fetchMock.post(`${configMock.server}/${API_EXPERIMENTS_URL}`, {
                 status: 200,
                 body: IsUserIncludedResponse,
                 headers: {
@@ -154,7 +191,7 @@ describe('DotExperiments', () => {
             );
 
             fetchMock.post(
-                `${configMock.server}${API_EXPERIMENTS_URL}`,
+                `${configMock.server}/${API_EXPERIMENTS_URL}`,
                 {
                     status: 200,
                     body: NewIsUserIncludedResponse,
@@ -175,7 +212,7 @@ describe('DotExperiments', () => {
             });
 
             fetchMock.post(
-                `${configMock.server}${API_EXPERIMENTS_URL}`,
+                `${configMock.server}/${API_EXPERIMENTS_URL}`,
                 {
                     status: 200,
                     body: [],

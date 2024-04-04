@@ -12,14 +12,20 @@ const client = dotcmsClient.init({
 });
 
 export async function generateMetadata({ params, searchParams }) {
-    const data = await client.page.get({
+
+    const requestData = {
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
         'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || '',
         mode: searchParams.mode,
-        // This is the variant name that will be used to get the content from the experiments
-        variantName: searchParams['variantName'] ? searchParams['variantName'] : 'DEFAULT',
-    });
+    };
+
+    // Add variantName to requestData if it exists and is not 'DEFAULT'
+    if (searchParams['variantName'] && searchParams['variantName'] !== 'DEFAULT') {
+        requestData.variantName = searchParams['variantName'];
+    }
+
+    const data = await client.page.get(requestData);
 
     return {
         title: data.entity.page.friendlyName || data.entity.page.title
@@ -27,14 +33,19 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 export default async function Home({ searchParams, params }) {
-    const data = await client.page.get({
+    const requestData = {
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
-        personaId: searchParams['com.dotmarketing.persona.id'] || '',
+        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || '',
         mode: searchParams.mode,
-        // Get the correct page to render
-        variantName: searchParams['variantName'] ? searchParams['variantName'] : 'DEFAULT'
-    });
+    };
+
+    // Add variantName to requestData if it exists and is not 'DEFAULT'
+    if (searchParams['variantName'] && searchParams['variantName'] !== 'DEFAULT') {
+        requestData.variantName = searchParams['variantName'];
+    }
+
+    const data = await client.page.get(requestData);
 
     const nav = await client.nav.get({
         path: '/',

@@ -32,7 +32,7 @@ export const useExperiments = () => {
      * @param {Record<string, string>} currentQueryParams - The current set of query parameters.
      * @returns {Record<string, string>} The updated set of query parameters.
      */
-    const getVariantAsQueryParam = useCallback(
+    const getVariantAsQueryParamObject = useCallback(
         (href: string, currentQueryParams: Record<string, string>) => {
             const variantParams = experimentContext
                 ? experimentContext.getVariantAsQueryParam(href)
@@ -56,5 +56,5 @@ export const useExperiments = () => {
         [experimentContext]
     );
 
-    return { getVariantAsQueryParam };
+    return { getVariantAsQueryParamObject };
 };
