@@ -16,8 +16,7 @@ import {
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
-    DotMessageService,
-    DotPersonalizeService
+    DotMessageService
 } from '@dotcms/data-access';
 import { SiteService, mockSites } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
@@ -25,7 +24,6 @@ import { DotNotLicenseComponent } from '@dotcms/ui';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
-    DotPersonalizeServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -114,10 +112,6 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
-            },
-            {
-                provide: DotPersonalizeService,
-                useValue: new DotPersonalizeServiceMock()
             }
         ]
     });

@@ -32,7 +32,6 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
-    DotPersonalizeService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
@@ -43,7 +42,6 @@ import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } fro
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
-    DotPersonalizeServiceMock,
     DotDevicesServiceMock,
     mockDotDevices,
     LoginServiceMock,
@@ -170,10 +168,6 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             {
                 provide: WINDOW,
                 useValue: window
-            },
-            {
-                provide: DotPersonalizeService,
-                useValue: new DotPersonalizeServiceMock()
             }
         ],
         providers: [
@@ -379,10 +373,6 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             {
                 provide: WINDOW,
                 useValue: window
-            },
-            {
-                provide: DotPersonalizeService,
-                useValue: new DotPersonalizeServiceMock()
             },
             mockProvider(DotContentTypeService)
         ]

@@ -47,6 +47,7 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         DotEditEmaWorkflowActionsComponent,
         ClipboardModule
     ],
+    providers: [DotPersonalizeService],
     templateUrl: './edit-ema-toolbar.component.html',
     styleUrls: ['./edit-ema-toolbar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
