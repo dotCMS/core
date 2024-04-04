@@ -14,7 +14,6 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe, mockDotDevices } from '@dotcms/utils-testing';
 
@@ -96,11 +95,9 @@ describe('EditEmaToolbarComponent', () => {
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
                                 apiURL: 'http://localhost/api/v1/page/json/page-one',
-                                currentExperiment: {
-                                    status: DotExperimentStatus.RUNNING
-                                },
                                 editorData: {
-                                    mode: EDITOR_MODE.EDIT
+                                    mode: EDITOR_MODE.EDIT,
+                                    canEditPage: true
                                 },
                                 editor: {
                                     page: {
@@ -368,8 +365,80 @@ describe('EditEmaToolbarComponent', () => {
 
         describe('dot-ema-info-display', () => {
             it('should be hidden', () => {
-                const infoDisplay = spectator.query(byTestId('dot-ema-info-display'));
+                const infoDisplay = spectator.query(byTestId('info-display'));
                 expect(infoDisplay).toBeNull();
+            });
+        });
+
+        describe('dot-ema-running-experiment', () => {
+            it('should be hidden', () => {
+                const experiments = spectator.query(byTestId('ema-running-experiment'));
+                expect(experiments).toBeNull();
+            });
+        });
+    });
+
+    describe('preview', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: EditEmaStore,
+                        useValue: {
+                            editorState$: of({
+                                favoritePageURL: 'http://localhost:8080/fav',
+                                iframeURL: 'http://localhost:8080/index',
+                                clientHost: 'http://localhost:3000',
+                                apiURL: 'http://localhost/api/v1/page/json/page-one',
+                                editorData: {
+                                    mode: EDITOR_MODE.DEVICE,
+                                    canEditPage: true
+                                },
+                                editor: {
+                                    page: {
+                                        identifier: '123',
+                                        inode: '456'
+                                    },
+                                    viewAs: {
+                                        persona: {
+                                            id: '123'
+                                        },
+                                        language: {
+                                            id: 1
+                                        }
+                                    }
+                                }
+                            }),
+                            load: jest.fn(),
+                            setDevice: jest.fn(),
+                            setSocialMedia: jest.fn(),
+                            updateEditorState: jest.fn()
+                        }
+                    }
+                ]
+            });
+            store = spectator.inject(EditEmaStore);
+            messageService = spectator.inject(MessageService);
+            router = spectator.inject(Router);
+            confirmationService = spectator.inject(ConfirmationService);
+        });
+
+        describe('dot-ema-running-experiment', () => {
+            it('should be hidden', () => {
+                const experiments = spectator.query(byTestId('ema-running-experiment'));
+                expect(experiments).toBeNull();
+            });
+        });
+
+        describe('dot-ema-info-display', () => {
+            it('should have attr', () => {
+                const infoDisplay = spectator.query(DotEmaInfoDisplayComponent);
+                expect(infoDisplay.editorData).toEqual({
+                    canEditPage: true,
+                    mode: EDITOR_MODE.DEVICE
+                });
+
+                expect(infoDisplay.currentExperiment).not.toBeDefined();
             });
         });
     });
