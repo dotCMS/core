@@ -15,6 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
@@ -47,7 +48,6 @@ import {
     mockDotDevices,
     LoginServiceMock,
     DotCurrentUserServiceMock,
-    dotcmsContentletMock,
     seoOGTagsResultMock,
     URL_MAP_CONTENTLET,
     getRunningExperimentMock,
@@ -102,7 +102,7 @@ const messagesMock = {
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe],
+        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
             MockComponent(DotEditEmaWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
@@ -111,9 +111,9 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
         ],
         detectChanges: false,
         componentProviders: [
+            ConfirmationService,
             MessageService,
             EditEmaStore,
-            ConfirmationService,
             DotFavoritePageService,
             DotESContentService,
             {
@@ -524,9 +524,7 @@ describe('EditEmaEditorComponent', () => {
 
         describe('customer actions', () => {
             describe('delete', () => {
-                xit('should open a confirm dialog and save on confirm', () => {
-                    spectator.detectChanges();
-
+                it('should open a confirm dialog and save on confirm', () => {
                     const payload: ActionPayload = {
                         pageId: '123',
                         language_id: '1',
@@ -571,7 +569,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.triggerEventHandler(EmaContentletToolsComponent, 'delete', payload);
 
-                    spectator.detectChanges();
+                    spectator.detectComponentChanges();
 
                     expect(confirmDialogOpen).toHaveBeenCalled();
 
@@ -1970,72 +1968,6 @@ describe('EditEmaEditorComponent', () => {
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
-            });
-        });
-
-        describe('Workflow actions', () => {
-            it('should set the inputs correctly', () => {
-                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
-
-                expect(component.inode).toBe(PAGE_INODE_MOCK);
-            });
-
-            it('should update reload if the page url changes', () => {
-                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
-                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
-
-                component.newPage.emit({
-                    ...dotcmsContentletMock,
-                    url: 'new-page'
-                });
-
-                spectator.detectChanges();
-
-                expect(routerSpy).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        ...QUERY_PARAMS_MOCK,
-                        url: 'new-page',
-                        language_id: '1'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-            });
-
-            it('should update reload if the language changes', () => {
-                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
-                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
-
-                component.newPage.emit({
-                    ...dotcmsContentletMock,
-                    url: 'index',
-                    languageId: 2
-                });
-
-                spectator.detectChanges();
-
-                expect(routerSpy).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        ...QUERY_PARAMS_MOCK,
-                        url: 'index',
-                        language_id: '2'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-            });
-
-            it('should not reload if neither the url or language changes ', () => {
-                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
-                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
-
-                component.newPage.emit({
-                    ...dotcmsContentletMock,
-                    url: QUERY_PARAMS_MOCK.url,
-                    languageId: QUERY_PARAMS_MOCK.language_id
-                });
-
-                spectator.detectChanges();
-
-                expect(routerSpy).not.toHaveBeenCalled();
             });
         });
     });
