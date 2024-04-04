@@ -1255,21 +1255,48 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 										final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		template.setDrawedBody(layout);
+		final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(),
+				user, false);
+
+		if (UtilMethods.isSet(templateFromDB)) {
+			final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+			LayoutChanges changes = getChange(templateLayoutFromDB, layout);
+
+			final List<String> pageIds = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles)
+					.stream()
+					.map(Contentlet::getIdentifier)
+					.collect(Collectors.toList());
+
+			multiTreeAPI.updateMultiTrees(changes, pageIds);
+		}
+
+		template.setDrawedBody(reOrder(layout));
 		template.setDrawed(true);
 
-		final Template templateFromDB = find(template.getInode(), user, respectFrontendRoles);
-		final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-
-		LayoutChanges changes = getChange(templateLayoutFromDB, layout);
-
-		final List<String> pageIds = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles)
-				.stream()
-				.map(Contentlet::getIdentifier)
-				.collect(Collectors.toList());
-
-		multiTreeAPI.updateMultiTrees(changes, pageIds);
 		return saveTemplate(template, site, user, respectFrontendRoles);
+	}
+
+	private TemplateLayout reOrder(final TemplateLayout layout) {
+		final List<ContainerUUID> containers = getContainers(layout);
+
+		final Map<String,Integer> uuidByContainer = new HashMap<>();
+
+		containers.stream().forEach(containerUUID -> {
+			Integer maxUUID = uuidByContainer.get(containerUUID.getIdentifier());
+
+			if (maxUUID == null) {
+				maxUUID = 1;
+			} else {
+				maxUUID++;
+			}
+
+			uuidByContainer.put(containerUUID.getIdentifier(), maxUUID);
+
+			containerUUID.setUuid(maxUUID.toString());
+		});
+
+		return layout;
 	}
 
 	private LayoutChanges getChange(final TemplateLayout oldLayout, final TemplateLayout newLayout) {

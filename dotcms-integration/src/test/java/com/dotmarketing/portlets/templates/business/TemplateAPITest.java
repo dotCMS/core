@@ -1597,7 +1597,22 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "2")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container, "3")
+                .addColumn(50)
+                .withContainer(container, "4")
+                .next();
+
+        assertEquals(expectedTemplateLayout, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
 
@@ -1751,7 +1766,22 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container, "2")
+                .addColumn(50)
+                .withContainer(container, "3")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "4")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
 
@@ -1900,7 +1930,17 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "2")
+                .next();
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
+
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(2, multiTreesFromDB.size());
 
@@ -2042,7 +2082,17 @@ public class TemplateAPITest extends IntegrationTestBase {
                     false);
 
             final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-            assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+            final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container, "1")
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container, "2")
+                    .next();
+
+            assertEquals(templateLayoutExpected, templateLayoutFromDB);
             final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
             assertEquals(5, multiTreesFromDB.size());
 
@@ -2206,7 +2256,25 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout newTemplateExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "2")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container, "3")
+                .addColumn(50)
+                .withContainer(container, "4")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "5")
+                .next();
+
+        assertEquals(newTemplateExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
 
@@ -2371,7 +2439,24 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(33)
+                .withContainer(container, "2")
+                .addColumn(33)
+                .withContainer(container, "3")
+                .addColumn(33)
+                .withContainer(container, "4")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "5")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
 
@@ -2537,7 +2622,25 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "2")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container, "3")
+                .addColumn(50)
+                .withContainer(container, "4")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "5")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
 
@@ -2715,7 +2818,34 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "3")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container, "4")
+                .addColumn(50)
+                .withContainer(container, "5")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "6")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "7")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "8")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
 
@@ -2878,7 +3008,22 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "2")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container, "3")
+                .addColumn(50)
+                .withContainer(container, "4")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
 
@@ -3053,7 +3198,25 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container_2, "2")
+                .addColumn(50)
+                .withContainer(container_1, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_3, "1")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(6, multiTreesFromDB.size());
 
@@ -3219,7 +3382,25 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_3, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container_2, "1")
+                .addColumn(50)
+                .withContainer(container_1, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "2")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(6, multiTreesFromDB.size());
 
@@ -3382,7 +3563,22 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected =new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(50)
+                .withContainer(container_2, "1")
+                .addColumn(50)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_3, "1")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
 
@@ -3542,7 +3738,22 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container_2, "1")
+                .addColumn(50)
+                .withContainer(container_1, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "2")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
 
@@ -3706,7 +3917,22 @@ public class TemplateAPITest extends IntegrationTestBase {
                     false);
 
             final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-            assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+            final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                    .addRow()
+                    .addColumn(50)
+                    .withContainer(container_2, "1")
+                    .addColumn(50)
+                    .withContainer(container_1, "1")
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container_2, "2")
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container_3, "1")
+                    .next();
+
+            assertEquals(templateLayoutExpected, templateLayoutFromDB);
             final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
             assertEquals(6, multiTreesFromDB.size());
 
@@ -3876,7 +4102,22 @@ public class TemplateAPITest extends IntegrationTestBase {
                     false);
 
             final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-            assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+            final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container_1, "1")
+                    .addRow()
+                    .addColumn(50)
+                    .withContainer(container_2, "1")
+                    .addColumn(50)
+                    .withContainer(container_1, "2")
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container_2, "2")
+                    .next();
+
+            assertEquals(templateLayoutExpected, templateLayoutFromDB);
             final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
             assertEquals(6, multiTreesFromDB.size());
 
@@ -4048,7 +4289,28 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "2")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container_2, "1")
+                .addColumn(50)
+                .withContainer(container_1, "3")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_3, "1")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(6, multiTreesFromDB.size());
 
@@ -4210,6 +4472,27 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container_2, "1")
+                .addColumn(50)
+                .withContainer(container_1, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_3, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "3")
+                .next();
+
         assertEquals(newTemplateLayout, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(6, multiTreesFromDB.size());
@@ -4387,6 +4670,27 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "2")
+                .addRow()
+                .addColumn(50)
+                .withContainer(container_2, "2")
+                .addColumn(50)
+                .withContainer(container_1, "3")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_3, "1")
+                .next();
+
         assertEquals(newTemplateLayout, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(6, multiTreesFromDB.size());
@@ -4557,7 +4861,23 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_3, "1")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(3, multiTreesFromDB.size());
 
@@ -4718,7 +5038,23 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_3, "1")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(4, multiTreesFromDB.size());
 
@@ -4886,7 +5222,26 @@ public class TemplateAPITest extends IntegrationTestBase {
                 false);
 
         final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
-        assertEquals(newTemplateLayout, templateLayoutFromDB);
+
+        final TemplateLayout templateLayoutExpected = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_1, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_2, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container_3, "1")
+                .next();
+
+        assertEquals(templateLayoutExpected, templateLayoutFromDB);
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(4, multiTreesFromDB.size());
 

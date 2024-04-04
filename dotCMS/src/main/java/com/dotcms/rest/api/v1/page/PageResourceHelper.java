@@ -396,6 +396,7 @@ public class PageResourceHelper implements Serializable {
             throws DotDataException, DotSecurityException {
 
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+
         final Template saveTemplate;
         final boolean useByAnotherPage = this.templateAPI.getPages(page.getTemplateId()).stream()
                 .anyMatch(pageVersion -> !page.getIdentifier().equals(pageVersion.getIdentifier()) ||
