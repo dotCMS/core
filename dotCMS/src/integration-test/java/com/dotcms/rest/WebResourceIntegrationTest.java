@@ -3,7 +3,9 @@ package com.dotcms.rest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.IntegrationTestBase;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.InvalidLicenseException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,6 +33,7 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
   private static User backEndUser = null;
   private static User cmsAnon = null;
   private static User apiUser = null;
+  private static User cmsAdmin = null;
 
   @CloseDB
   @BeforeClass
@@ -51,15 +54,26 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
     apiUser = new UserDataGen().nextPersisted();
     
     cmsAnon = APILocator.getUserAPI().getAnonymousUser();
-    
-    
+
+    cmsAdmin = new UserDataGen().nextPersisted();
+    APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), cmsAdmin);
+    APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), cmsAdmin);
+
     assertTrue("backEndUser has backend role", backEndUser.isBackendUser());
-    
+
     assertTrue("frontEndUser has frontEnd role", frontEndUser.isFrontendUser());
+
+    assertTrue("cmsAdmin has CMS_Admin role", cmsAdmin.isAdmin());
   }
 
   private HttpServletRequest anonymousRequest() {
     return new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/api/testing-web-resorce").request()).request();
+  }
+
+  private HttpServletRequest adminRequest() {
+    final HttpServletRequest request = anonymousRequest();
+    request.setAttribute(WebKeys.USER, cmsAdmin);
+    return request;
   }
   
   private HttpServletRequest frontEndRequest() {
@@ -155,6 +169,116 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
         .requiredFrontendUser(true)
         .requestAndResponse(apiRequest(), response)
         .init();
+  }
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void test_checkAnonymousPermissions_NONE() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, NONE);
+    final InitBuilder initBuilder = new WebResource.InitBuilder()
+            .rejectWhenNoUser(true)
+            .requestAndResponse(anonymousRequest(), response);
+
+    new WebResource().checkAnonymousPermissions(initBuilder,APILocator.getUserAPI().getAnonymousUser() );
+
+  }
+
+  @Test
+  public void test_checkAnonymousPermissions_READ_works() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
+    final InitBuilder initBuilder = new WebResource.InitBuilder()
+            .requiredAnonAccess(AnonymousAccess.READ)
+            .requestAndResponse(anonymousRequest(), response);
+
+    new WebResource().checkAnonymousPermissions(initBuilder,APILocator.getUserAPI().getAnonymousUser() );
+    assertTrue("Anonymous read should be allowed", true);
+  }
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void test_checkAnonymousPermissions_READ_fails_when_write_requested() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
+    final InitBuilder initBuilder = new WebResource.InitBuilder()
+            .requiredAnonAccess(AnonymousAccess.WRITE)
+            .requestAndResponse(anonymousRequest(), response);
+
+    new WebResource().checkAnonymousPermissions(initBuilder,APILocator.getUserAPI().getAnonymousUser() );
+    assertTrue("Anonymous read should be allowed", true);
+  }
+
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void test_checkAnonymousPermissions_fails_when_reject_with_no_user() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
+    final InitBuilder initBuilder = new WebResource.InitBuilder()
+            .rejectWhenNoUser(true)
+            .requestAndResponse(anonymousRequest(), response);
+
+    new WebResource().checkAnonymousPermissions(initBuilder,APILocator.getUserAPI().getAnonymousUser() );
+    assertTrue("Anonymous read should be allowed", true);
+  }
+
+  @Test
+  public void allow_cms_admin_when_specified() throws Exception {
+
+    InitDataObject initDataObject =
+            new WebResource.InitBuilder()
+                    .requestAndResponse(adminRequest(), response)
+                    .requireAdmin(true)
+                    .init();
+    assertEquals("CMS Admin should be allowed", initDataObject.getUser(), cmsAdmin);
+
+  }
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void disallow_backend_access_server_if_multiple_required_roles_include_cmsAdmin() throws Exception {
+
+    final InitDataObject initDataObject = new WebResource.InitBuilder()
+            .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE, Role.DOTCMS_BACK_END_USER)
+            .requestAndResponse(backEndRequest(), response)
+            .init();
+  }
+
+
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void disallow_backend_access_server_if_backendUser_tries_to_access_cmsadmin() throws Exception {
+
+    final InitDataObject initDataObject = new WebResource.InitBuilder()
+            .requiredBackendUser(true)
+            .requireAdmin(true)
+            .requestAndResponse(backEndRequest(), response)
+            .init();
+  }
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void disallow_backend_access_server_if_frontendUser_tries_to_access_cmsadmin() throws Exception {
+
+    final InitDataObject initDataObject = new WebResource.InitBuilder()
+            .requiredBackendUser(true)
+            .requireAdmin(true)
+            .requestAndResponse(frontEndRequest(), response)
+            .init();
+  }
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void disallow_backend_access_server_if_anon_tries_to_access_cmsadmin() throws Exception {
+
+    final InitDataObject initDataObject = new WebResource.InitBuilder()
+            .requiredBackendUser(true)
+            .requireAdmin(true)
+            .requestAndResponse(anonymousRequest(), response)
+            .init();
+  }
+
+
+
+  public void allow_backend_access_server_if_cmsadmin_tries_to_access_cmsadmin() throws Exception {
+
+    final InitDataObject initDataObject = new WebResource.InitBuilder()
+            .requiredBackendUser(true)
+            .requireAdmin(true)
+            .requestAndResponse(adminRequest(), response)
+            .init();
+    assertEquals("CMS Admin should be allowed", initDataObject.getUser(), cmsAdmin);
   }
 
   @Test
