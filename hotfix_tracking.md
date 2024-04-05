@@ -244,3 +244,4 @@ This maintenance release includes the following code fixes:
 **Release-22.03.15**
 
 201. https://github.com/dotCMS/core/issues/27894 : Security: Critical Vulnerability in Postgres JDBC Driver #27894
+202. https://github.com/dotCMS/core/issues/27910 : Log too verbose in certain situations #27910
