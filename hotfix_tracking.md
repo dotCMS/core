@@ -242,3 +242,5 @@ This maintenance release includes the following code fixes:
 200. https://github.com/dotCMS/core/issues/26796 : Reserved names fields should be compared in a case-insensitive manner to avoid errors and inconsistencies. #26796
 
 **Release-22.03.15**
+
+201. https://github.com/dotCMS/core/issues/27894 : Security: Critical Vulnerability in Postgres JDBC Driver #27894
