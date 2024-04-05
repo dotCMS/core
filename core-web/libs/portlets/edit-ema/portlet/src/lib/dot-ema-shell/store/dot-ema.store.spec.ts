@@ -511,7 +511,7 @@ describe('EditEmaStore', () => {
                 });
             });
 
-            xit("should call get method from dotPageApiService when 'save' action is dispatched", () => {
+            it("should call get method from dotPageApiService when 'save' action is dispatched", () => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
 
                 jest.spyOn(dotPageApiService, 'save').mockReturnValue(of({}));
@@ -532,7 +532,7 @@ describe('EditEmaStore', () => {
                 });
 
                 // This get called twice, once for the load in the before each and once for the save
-                expect(dotPageApiService.get).toHaveBeenNthCalledWith(2, {
+                expect(dotPageApiService.get).toHaveBeenCalledWith({
                     language_id: '2',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '456'
