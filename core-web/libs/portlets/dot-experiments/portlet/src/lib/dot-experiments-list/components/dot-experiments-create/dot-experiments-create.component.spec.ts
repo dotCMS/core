@@ -7,8 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotExperimentsService, DotMessageService } from '@dotcms/data-access';
 import {
     DotFieldValidationMessageComponent,
     DotSidebarDirective,

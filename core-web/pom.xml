@@ -176,7 +176,7 @@
                             <targetPath>dotAdmin</targetPath>
                         </resource>
                         <resource>
-                            <directory>${project.basedir}/dist/libs</directory>
+                            <directory>${project.basedir}/dist/libs/dotcms-webcomponents/dist</directory>
                             <filtering>false</filtering>
                             <includes>
                                 <include>dotcms-webcomponents/**/*</include>

@@ -8,9 +8,11 @@ import {
     EventEmitter,
     OnChanges
 } from '@angular/core';
-import { GoogleMapService } from '../services/GoogleMapService';
+
 import { LoggerService } from '@dotcms/dotcms-js';
+
 import { GCircle } from '../models/gcircle.model';
+import { GoogleMapService } from '../services/GoogleMapService';
 
 let mapIdCounter = 1;
 
@@ -30,10 +32,9 @@ let mapIdCounter = 1;
         [hidden]="hidden"
         [okEnabled]="true"
         (ok)="onOkAction($event)"
-        (cancel)="onCancelAction($event)"
-    >
-        <div *ngIf="!hidden" class="cw-dialog-body">
-            <div id="{{ mapId }}" class="g-map" *ngIf="!hidden"></div>
+        (cancel)="onCancelAction($event)">
+        <div class="cw-dialog-body" *ngIf="!hidden">
+            <div class="g-map" id="{{ mapId }}" *ngIf="!hidden"></div>
         </div>
     </cw-modal-dialog>`
 })
@@ -64,13 +65,11 @@ export class AreaPickerDialogComponent implements OnChanges {
                 (_x) => {},
                 () => {},
                 () => {
-                    if (this.mapsService.apiReady) {
-                        this.readyMap();
-                    }
+                    this.readyMap();
                 }
             );
-            this.mapsService.loadApi();
         }
+
         if (change.hidden && this.hidden && this.map) {
             this.loggerService.debug(
                 'AreaPickerDialogComponent',
@@ -88,6 +87,7 @@ export class AreaPickerDialogComponent implements OnChanges {
              */
             this.map = null;
         }
+
         if (change.hidden && !this.hidden && this.map) {
             this.loggerService.debug(
                 'AreaPickerDialogComponent',

@@ -133,10 +133,10 @@ public class AppsUtil {
         secret.getValue().setEnvVarValue(
                 Optional.ofNullable(
                         discoverEnvVarValue(
-                                secret.getValue().getEnvVar(),
                                 () -> guessEnvVar(
                                         appSecrets.getKey(),
-                                        secret.getKey())))
+                                        secret.getKey()),
+                                secret.getValue().getEnvVar()))
                         .map(String::toCharArray)
                         .orElse(null));
     }
@@ -563,7 +563,7 @@ public class AppsUtil {
                         .withType(Type.STRING)
                         .withEnvVar(null)
                         .withEnvShow(true)
-                        .withEnvValue(discoverEnvVarValue(null, () -> guessEnvVar(key, paramName)))
+                        .withEnvValue(discoverEnvVarValue(() -> guessEnvVar(key, paramName), null))
                         .build());
     }
 
@@ -628,7 +628,7 @@ public class AppsUtil {
                         .withType(pd.getType())
                         .withEnvVar(pd.getEnvVar())
                         .withEnvShow(pd.getEnvShow())
-                        .withEnvValue(discoverEnvVarValue(pd.getEnvVar(), () -> guessEnvVar(key, paramName)))
+                        .withEnvValue(discoverEnvVarValue(() -> guessEnvVar(key, paramName), pd.getEnvVar()))
                         .build())
                 .orElse(null);
     }
@@ -645,6 +645,7 @@ public class AppsUtil {
                 StringUtils.convertCamelToSnake(key
                                 .replaceAll("-config", StringPool.BLANK)
                                 .replaceAll(StringPool.DASH, StringPool.UNDERLINE))
+                        .replace("dot_", StringPool.BLANK)
                         .toUpperCase();
         final String normalizedParam = StringUtils.convertCamelToSnake(paramName).toUpperCase();
         return String.format(APP_PARAM_ENV_VAR_TEMPLATE, normalizedKey, normalizedParam);
@@ -653,29 +654,21 @@ public class AppsUtil {
     /**
      * Discovers the environment variable value based on the given environment variable name.
      *
-     * @param envVar the environment variable name
      * @param envVarSupplier the environment variable supplier to return the guessed environment variable name
+     * @param envVar the environment variable name
      * @return the environment variable value
      */
-    private static String discoverEnvVarValue(final String envVar, final Supplier<String> envVarSupplier) {
-        if (UtilMethods.isSet(envVar)) {
-            final String envValue = System.getenv(envVar);
-            if (Objects.nonNull(envValue)) {
-                return envValue;
-            }
-        }
-
-        final String discovered = envVarSupplier.get();
-        if (UtilMethods.isSet(discovered)) {
-            return Config.getStringProperty(discovered, null);
-        }
-
-        return null;
+    private static String discoverEnvVarValue(final Supplier<String> envVarSupplier, final String envVar) {
+        return Optional
+                .ofNullable(envVarSupplier.get())
+                .map(discovered -> Config.getStringProperty(discovered, null))
+                .or(() -> Optional.ofNullable(envVar).map(System::getenv))
+                .orElse(null);
     }
 
     /**
      * Returns the Secrets of a specific App for a given Site in dotCMS.
-     * This is done by evaluating searching for a secret with the given param name and if found evaluates if
+     * This is done by evaluating searching for a secret with the given param name and if found evaluates that
      * it is required, editable and has no value set.
      * If the secret is not found then just evaluate the required flag.
      *

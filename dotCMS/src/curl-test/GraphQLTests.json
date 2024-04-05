@@ -316,19 +316,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -401,19 +398,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -486,19 +480,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -571,13 +562,14 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
 								{
@@ -1459,19 +1451,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -1641,19 +1630,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -2405,19 +2391,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -2636,19 +2619,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -2884,19 +2864,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3057,19 +3034,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3142,19 +3116,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3227,19 +3198,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3312,19 +3280,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3397,19 +3362,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3482,19 +3444,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3567,19 +3526,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -4706,19 +4662,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -5376,19 +5329,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -5461,19 +5411,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -5605,19 +5552,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -5894,19 +5838,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -6037,19 +5978,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -6181,19 +6119,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -6622,19 +6557,16 @@
 									]
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"raw": "{{serverURL}}/api/bundle/sync",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
-										"bundle"
+										"bundle",
+										"sync"
 									],
 									"query": [
-										{
-											"key": "sync",
-											"value": "true"
-										},
 										{
 											"key": "AUTH_TOKEN",
 											"value": "",
@@ -6767,19 +6699,16 @@
 									]
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"raw": "{{serverURL}}/api/bundle/sync",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
-										"bundle"
+										"bundle",
+										"sync"
 									],
 									"query": [
-										{
-											"key": "sync",
-											"value": "true"
-										},
 										{
 											"key": "AUTH_TOKEN",
 											"value": "",
@@ -9743,19 +9672,16 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"raw": "{{serverURL}}/api/bundle/sync",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle"
+								"bundle",
+								"sync"
 							],
 							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",

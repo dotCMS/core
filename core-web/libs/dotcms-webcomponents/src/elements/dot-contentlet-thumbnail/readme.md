@@ -8,8 +8,8 @@
 | Property             | Attribute              | Description | Type                | Default     |
 | -------------------- | ---------------------- | ----------- | ------------------- | ----------- |
 | `alt`                | `alt`                  |             | `string`            | `''`        |
+| `backgroundImage`    | `background-image`     |             | `boolean`           | `false`     |
 | `contentlet`         | --                     |             | `DotContentletItem` | `undefined` |
-| `cover`              | `cover`                |             | `boolean`           | `true`      |
 | `fieldVariable`      | `field-variable`       |             | `string`            | `''`        |
 | `height`             | `height`               |             | `string`            | `''`        |
 | `iconSize`           | `icon-size`            |             | `string`            | `''`        |

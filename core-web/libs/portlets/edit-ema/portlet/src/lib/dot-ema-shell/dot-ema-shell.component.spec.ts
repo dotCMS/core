@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -13,6 +13,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
 import {
+    DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
@@ -22,6 +23,7 @@ import { SiteService, mockSites } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import {
+    DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     DotPersonalizeServiceMock,
     SiteServiceMock
@@ -42,6 +44,7 @@ describe('DotEmaShellComponent', () => {
     let store: EditEmaStore;
     let siteService: SiteServiceMock;
     let router: Router;
+    let route: ActivatedRoute;
 
     const createComponent = createRoutingFactory({
         component: DotEmaShellComponent,
@@ -57,6 +60,10 @@ describe('DotEmaShellComponent', () => {
             DotMessageService,
             DialogService,
             {
+                provide: DotExperimentsService,
+                useValue: DotExperimentsServiceMock
+            },
+            {
                 provide: DotLanguagesService,
                 useValue: new DotLanguagesServiceMock()
             },
@@ -70,7 +77,8 @@ describe('DotEmaShellComponent', () => {
                                 identifier: '123',
                                 inode: '123',
                                 canEdit: true,
-                                canRead: true
+                                canRead: true,
+                                pageURI: 'index'
                             },
                             viewAs: {
                                 language: {
@@ -82,7 +90,10 @@ describe('DotEmaShellComponent', () => {
                                 },
                                 persona: DEFAULT_PERSONA
                             },
-                            site: mockSites[0]
+                            site: mockSites[0],
+                            template: {
+                                drawed: true
+                            }
                         });
                     },
                     save() {
@@ -126,7 +137,7 @@ describe('DotEmaShellComponent', () => {
             });
             siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
             store = spectator.inject(EditEmaStore, true);
-            router = spectator.inject(Router);
+            router = spectator.inject(Router, true);
             jest.spyOn(store, 'load');
 
             spectator.triggerNavigation({
@@ -163,7 +174,8 @@ describe('DotEmaShellComponent', () => {
                         icon: 'pi-table',
                         label: 'editema.editor.navbar.layout',
                         href: 'layout',
-                        isDisabled: false
+                        isDisabled: false,
+                        tooltip: null
                     },
                     {
                         icon: 'pi-sliders-h',
@@ -174,7 +186,8 @@ describe('DotEmaShellComponent', () => {
                     {
                         iconURL: 'experiments',
                         label: 'editema.editor.navbar.experiments',
-                        href: 'experiments'
+                        href: 'experiments/123',
+                        isDisabled: false
                     },
                     {
                         icon: 'pi-th-large',
@@ -319,7 +332,8 @@ describe('DotEmaShellComponent', () => {
                                         },
                                         persona: DEFAULT_PERSONA
                                     },
-                                    site: mockSites[0]
+                                    site: mockSites[0],
+                                    template: { drawed: true }
                                 });
                             },
                             save() {
@@ -346,20 +360,10 @@ describe('DotEmaShellComponent', () => {
                     }
                 ]
             });
-
-            spectator.triggerNavigation({
-                url: [],
-                queryParams: {
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                },
-                data: {
-                    data: {
-                        url: 'http://localhost:3000'
-                    }
-                }
-            });
+            route = spectator.inject(ActivatedRoute);
+            jest.spyOn(route.snapshot, 'firstChild', 'get').mockReturnValue({
+                routeConfig: { path: 'content' }
+            } as ActivatedRouteSnapshot);
         });
 
         it('should not render components', () => {
@@ -370,7 +374,7 @@ describe('DotEmaShellComponent', () => {
         });
     });
 
-    describe('without license ', () => {
+    describe('without license', () => {
         beforeEach(() => {
             spectator = createComponent({
                 providers: [
@@ -396,7 +400,8 @@ describe('DotEmaShellComponent', () => {
                                         },
                                         persona: DEFAULT_PERSONA
                                     },
-                                    site: mockSites[0]
+                                    site: mockSites[0],
+                                    template: { drawed: true }
                                 });
                             },
                             save() {

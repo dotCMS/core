@@ -609,10 +609,78 @@ describe('DotTemplateBuilderStore', () => {
             }
         });
 
-        service.updateOldRows(updatedRows);
+        service.updateOldRows({ newRows: updatedRows, templateIdentifier: '111' });
 
         rows$.subscribe(({ rows, shouldEmit }) => {
             expect(rows).toEqual(resultAfterMerge);
+            expect(shouldEmit).toEqual(false);
+            done();
+        });
+    });
+
+    it('should replace the rows with the new data - when is diffrent template identifier', (done) => {
+        // Here i just swapped the rows and changed the uuid as expected from the backend
+        const swappedRows = [
+            {
+                ...ROWS_MINIMAL_MOCK[1],
+                y: 0 // This sets the order of the rows
+            },
+            {
+                ...ROWS_MINIMAL_MOCK[0],
+                y: 1 // This sets the order of the rows
+            }
+        ];
+
+        // Update the containers uuid simulating the backend
+        const updatedRows: DotGridStackWidget[] = [
+            {
+                ...ROWS_MINIMAL_MOCK[1],
+                id: 'random test 2',
+                y: 0, // This sets the order of the rows
+                subGridOpts: {
+                    ...ROWS_MINIMAL_MOCK[1].subGridOpts,
+                    children: ROWS_MINIMAL_MOCK[1].subGridOpts.children.map((col) => ({
+                        ...col,
+                        id: 'hello there 2',
+                        containers: col.containers.map((child, i) => ({
+                            ...child,
+                            uuid: `${i + 1}` // 1 for the 0 index
+                        }))
+                    }))
+                }
+            },
+            {
+                ...ROWS_MINIMAL_MOCK[0],
+                id: 'random test 1',
+                y: 1, // This sets the order of the rows
+                subGridOpts: {
+                    ...ROWS_MINIMAL_MOCK[0].subGridOpts,
+                    children: ROWS_MINIMAL_MOCK[0].subGridOpts.children.map((col) => ({
+                        ...col,
+                        id: 'hello there 1',
+                        containers: col.containers.map((child, i) => ({
+                            ...child,
+                            uuid: `${i + 3}` // 1 for the 0 index and 2 for the first 2 containers
+                        }))
+                    }))
+                }
+            }
+        ];
+
+        service.setState({
+            ...INITIAL_STATE_MOCK,
+            rows: swappedRows,
+            layoutProperties: {
+                footer: false,
+                header: false,
+                sidebar: {}
+            }
+        });
+
+        service.updateOldRows({ newRows: updatedRows, templateIdentifier: '222' }); //Different template identifier
+
+        rows$.subscribe(({ rows, shouldEmit }) => {
+            expect(rows).toEqual(updatedRows);
             expect(shouldEmit).toEqual(false);
             done();
         });

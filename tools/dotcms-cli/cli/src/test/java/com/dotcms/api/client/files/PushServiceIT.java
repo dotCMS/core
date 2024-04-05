@@ -815,15 +815,125 @@ class PushServiceIT {
         }
     }
 
-            /**
-             * This method checks and waits for the indexing of a specific asset in a given folder of a
-             * site. It validates the existence of the site, folder, and asset and waits for a specified
-             * time period for the system to index the new data.
-             *
-             * @param siteName   the name of the site
-             * @param folderPath the path of the folder where the asset is located
-             * @param assetName  the name of the asset
-             */
+    /**
+     * Given scenario: We are trying to push a file with illegal characters in the name
+     * Expected Result: The file should not be pushed and an exception should be thrown
+     * @throws IOException if an I/O error occurs
+     */
+    @Test
+    void Test_Push_Files_with_IllegalChars() throws IOException {
+
+            // Create a temporal folder for the pull
+            var tempFolder = filesTestHelper.createTempFolder();
+            var workspace = workspaceManager.getOrCreate(tempFolder);
+
+            try {
+                // Preparing the data for the test
+                final var testSiteName = filesTestHelper.prepareData();
+
+                final var folderPath = String.format("//%s", testSiteName);
+
+                // Pulling the content
+                OutputOptionMixin outputOptions = new MockOutputOptionMixin();
+                final Path absolutePath = workspace.files().toAbsolutePath();
+
+                Map<String, Object> customOptions = Map.of(
+                        INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                        INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                        EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                        EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                        NON_RECURSIVE, false,
+                        PRESERVE, false,
+                        INCLUDE_EMPTY_FOLDERS, true
+                );
+
+                // Execute the pull
+                pullService.pull(
+                        PullOptions.builder().
+                                destination(absolutePath.toFile()).
+                                contentKey(folderPath).
+                                isShortOutput(false).
+                                failFast(true).
+                                maxRetryAttempts(0).
+                                customOptions(customOptions).
+                                build(),
+                        outputOptions,
+                        fileProvider,
+                        filePullHandler
+                );
+
+                Path anyLiveFolder = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder3");
+                Path fileWithIllegalName = Path.of(anyLiveFolder.toString(), "IMG_\"_550D397\"_2B98B-1.txt");
+                Path path = Files.write(fileWithIllegalName, "This is a test".getBytes(), java.nio.file.StandardOpenOption.CREATE);
+                Assertions.assertTrue(Files.exists(path));
+
+                // Now we are going to push the content
+                var traverseResults = pushService.traverseLocalFolders(outputOptions, tempFolder.toFile(), tempFolder.toFile(),
+                        true, true, true, true);
+
+                Assertions.assertNotNull(traverseResults);
+                Assertions.assertEquals(2, traverseResults.size());// Live and working folders
+
+                final TraverseResult traverseResult1 = traverseResults.get(0);
+                final TraverseResult traverseResult2 = traverseResults.get(1);
+
+                // Validating the processing order
+                Assertions.assertEquals(
+                        "live",
+                        traverseResult1.localPaths().status()
+                );
+                Assertions.assertEquals(
+                        "working",
+                        traverseResult2.localPaths().status()
+                );
+                // Validating no errors were found
+                Assertions.assertTrue(traverseResult1.exceptions().isEmpty());// No errors should be found
+                Assertions.assertTrue(traverseResult2.exceptions().isEmpty());// No errors should be found
+
+                var optional = traverseResult1.treeNode();
+                Assertions.assertTrue(optional.isPresent());
+                final TreeNode treeNode = optional.get();
+                var treeNodePushInfo = treeNode.collectPushInfo();
+
+                // Should be nothing to push as we are pushing the same folder we pull
+                Assertions.assertEquals(1, treeNodePushInfo.assetsToPushCount());
+                Assertions.assertEquals(1, treeNodePushInfo.assetsNewCount());
+
+                //Here's where the actual test takes place: We are going to push a file with illegal chars
+                Exception exception = null;
+                try {
+
+                    pushService.processTreeNodes(outputOptions, treeNodePushInfo,
+                            PushTraverseParams.builder()
+                                    .workspacePath(tempFolder.toFile().getAbsolutePath())
+                                    .localPaths(traverseResult1.localPaths())
+                                    .rootNode(treeNode)
+                                    .failFast(true)
+                                    .maxRetryAttempts(0)
+                                    .pushContext(pushContext)
+                                    .build());
+
+                    Assertions.fail("Pushing a file with illegal chars should throw an exception");
+                } catch (Exception e) {
+                    exception = e;
+                }
+
+                Assertions.assertNotNull(exception);
+                Assertions.assertTrue(exception.getMessage().contains("has invalid characters in the name. Skipping push on this file for security reasons"));
+            } finally {
+                filesTestHelper.deleteTempDirectory(tempFolder);
+            }
+    }
+
+        /**
+         * This method checks and waits for the indexing of a specific asset in a given folder of a
+         * site. It validates the existence of the site, folder, and asset and waits for a specified
+         * time period for the system to index the new data.
+         *
+         * @param siteName   the name of the site
+         * @param folderPath the path of the folder where the asset is located
+         * @param assetName  the name of the asset
+         */
     private void indexCheckAndWait(final String siteName, final String folderPath,
             final String assetName) {
 
