@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -131,6 +132,33 @@ public interface LanguageAPI {
 	 * @return
 	 */
 	public List<LanguageKey> getLanguageKeys(String langCode);
+
+	/**
+     * Introduced to support the new language keys saved as contentlets
+     *
+     * @param langId long language id
+     * @param limit int limit
+     * @param offset int offset
+     * @return List of LanguageVariable
+     */
+	List<LanguageVariable> findLanguageVariables(final long langId, int limit, int offset) throws DotDataException;
+
+	/**
+	 *
+	 * @param langCode ISO code of the language
+	 * @param countryCode ISO code of the country
+	 * @return List of LanguageVariable
+	 * @throws DotDataException if there is an error retrieving the language variables
+	 */
+	List<LanguageVariable> findLanguageVariables(final String langCode, final String countryCode) throws DotDataException;
+
+	/**
+	 *
+	 * @param langCode		ISO code of the language
+	 * @return List of LanguageVariable
+	 * @throws DotDataException if there is an error retrieving the language variables
+	 */
+	List<LanguageVariable> findLanguageVariables(final String langCode) throws DotDataException;
 
 	/**
 	 * 

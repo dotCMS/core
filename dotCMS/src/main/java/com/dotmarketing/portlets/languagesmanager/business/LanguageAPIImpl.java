@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.languagesmanager.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -15,10 +16,13 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariableImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
@@ -28,18 +32,23 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Implementation class for the {@link LanguageAPI}.
@@ -51,14 +60,21 @@ import org.apache.velocity.tools.view.context.ViewContext;
  */
 public class LanguageAPIImpl implements LanguageAPI {
 
-
-    private final static LanguageKeyComparator LANGUAGE_KEY_COMPARATOR = new LanguageKeyComparator();
+	private static final LanguageKeyComparator LANGUAGE_KEY_COMPARATOR = new LanguageKeyComparator();
 
 	private HttpServletRequest request; // todo: this should be decouple from the api
 	private LanguageFactory factory;
 	private LanguageVariableAPI languageVariableAPI;
 	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-	
+
+	Lazy<ContentType> langVarContentType = Lazy.of(() -> {
+		try {
+			return APILocator.getContentTypeAPI(APILocator.systemUser()).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+		} catch (DotDataException | DotSecurityException e) {
+			throw new IllegalStateException("Can't seem to find a content-type for LangVars! ",e);
+		}
+	});
+
 	/**
 	 * Inits the service with the user {@link ViewContext}
 	 * @param obj
@@ -204,7 +220,93 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return factory.hasLanguage(languageCode, countryCode);
 	}
 
-    @CloseDBIfOpened
+	@CloseDBIfOpened
+	@Override
+	public List<LanguageVariable> findLanguageVariables(final long langId, final int limit, final int offset)
+			throws DotDataException {
+		final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
+		final ContentType contentType = langVarContentType.get();
+		final List<Contentlet> byContentTypeAndLanguage = contentletFactory.findByContentTypeAndLanguage(
+				contentType, langId, limit, offset);
+		return byContentTypeAndLanguage.stream()
+				.map(fromContentlet()).filter(Objects::nonNull)
+				.collect(CollectionsUtils.toImmutableList());
+	}
+
+	@NotNull
+	private Function<Contentlet, LanguageVariable> fromContentlet() {
+		return contentlet -> {
+			try {
+				return LanguageVariableImpl.fromContentlet(contentlet);
+			} catch (DotSecurityException e) {
+				Logger.warn(this, e.getMessage(), e);
+				return null;
+			}
+		};
+	}
+
+
+	@CloseDBIfOpened
+	@Override
+	public List<LanguageVariable> findLanguageVariables(final String langCode, final String countryCode)
+			throws DotDataException {
+		final Language lang = getLanguage(langCode, countryCode);
+		final List<LanguageVariable> languageVariables = new ArrayList<>(findLanguageVariables(lang.getId(), 0, 0));
+		languageVariables.sort(new LanguageVariableComparator());
+		return ImmutableList.copyOf(languageVariables);
+	}
+
+	@CloseDBIfOpened
+	public List<LanguageVariable> findLanguageVariables(final String langCode) throws DotDataException{
+		final Language lang = getLanguage(langCode, null);
+		final List<LanguageVariable> languageVariables = new ArrayList<>(findLanguageVariables(lang.getId(), 0, 0));
+		languageVariables.sort(new LanguageVariableComparator());
+		return ImmutableList.copyOf(languageVariables);
+	}
+
+	public void saveLanguageVariables(final Language lang, final Map<String, String> generalKeysIncoming,
+			final Map<String, String> specificKeys, final Set<String> toDeleteKeys) throws DotDataException {
+
+		final List<LanguageVariable> existingGeneralKeys  = findLanguageVariables(lang.getLanguageCode());
+		final List<LanguageVariable> existingSpecificKeys = findLanguageVariables(lang.getLanguageCode(),lang.getCountryCode());
+
+		final Map<String, String> generalKeys = new HashMap<>(generalKeysIncoming);
+
+		// if the key is in the existing keys, update the value and remove it from the incoming keys
+		existingGeneralKeys.replaceAll(key -> {
+			if (generalKeys.containsKey(key.getKey())) {
+				key = new LanguageVariableImpl(key.getKey(), generalKeys.get(key.getKey()), lang.getId());
+				generalKeys.remove(key.getKey());
+			}
+			return key;
+		});
+
+		for(LanguageVariable key:existingSpecificKeys){
+			if(specificKeys.containsKey(key.getKey())){
+				//key.setValue(specificKeys.get(key.getKey()));
+				specificKeys.remove(key.getKey());
+			}
+		}
+
+		for(LanguageVariable key:existingGeneralKeys){
+			generalKeys.put(key.getKey(), key.getValue());
+		}
+
+		for(LanguageVariable key:existingSpecificKeys){
+			specificKeys.put(key.getKey(), key.getValue());
+		}
+
+		try {
+
+			factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
+			Logger.debug(this, "Created language file for lang: " + lang);
+		} catch (DotDataException e) {
+			Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
+		}
+	}
+
+	@CloseDBIfOpened
+	@Deprecated(since = "24.04")
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode) {
 		final List<LanguageKey> list = factory.getLanguageKeys(langCode);
@@ -213,6 +315,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
     @CloseDBIfOpened
+	@Deprecated(since = "24.04")
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode, final String countryCode) {
 		final List<LanguageKey> list = factory.getLanguageKeys(langCode, countryCode);
@@ -221,6 +324,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
     @CloseDBIfOpened
+	@Deprecated(since = "24.04")
 	@Override
 	public List<LanguageKey> getLanguageKeys(final Language lang) {
 		final String langCode = lang.getLanguageCode();
@@ -235,6 +339,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@Override
     @WrapInTransaction
+	@Deprecated(since = "24.04")
 	public void createLanguageFiles(final Language lang) {
 
         this.factory.createLanguageFiles(lang);
@@ -242,6 +347,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	@WrapInTransaction
+	@Deprecated(since = "24.04")
 	@Override
 	public void saveLanguageKeys(final Language lang, final Map<String, String> generalKeysIncoming,
                                  final Map<String, String> specificKeys, final Set<String> toDeleteKeys) throws DotDataException {

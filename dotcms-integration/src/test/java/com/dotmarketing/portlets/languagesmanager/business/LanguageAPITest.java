@@ -11,6 +11,7 @@ import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageVariableDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -21,6 +22,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -336,5 +338,72 @@ public class LanguageAPITest {
 		when(adminUser.isAdmin()).thenReturn(true);
 		return adminUser;
 	}
+
+	private String nextUniqueKey() {
+		return "key_" + System.currentTimeMillis();
+	}
+
+	private String nextUniqueValue() {
+		return "value_" + System.currentTimeMillis();
+	}
+
+	@Test
+	public void Test_Find_LanguageVariables_By_Language_Code_And_Country_Code() throws DotDataException {
+		final String key = nextUniqueKey();
+		final String value = nextUniqueValue();
+		LanguageDataGen languageDataGen = new LanguageDataGen();
+		final Language newLang = languageDataGen.nextPersisted();
+		LanguageVariableDataGen languageVariableDataGen = new LanguageVariableDataGen();
+		languageVariableDataGen.languageId(newLang.getId()).key(key).value(value).nextPersisted();
+
+		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+		final List<LanguageVariable> languageVariables = languageAPI.findLanguageVariables(newLang.getLanguageCode(), newLang.getCountryCode());
+		Assert.assertNotNull(languageVariables);
+		Assert.assertTrue(languageVariables.size() > 0);
+		Assert.assertEquals("Key does not match",key,languageVariables.get(0).getKey());
+		Assert.assertEquals("Val does not match",value,languageVariables.get(0).getValue());
+	}
+
+	@Test
+	public void Test_Find_LanguageVariables_By_Language_Code() throws DotDataException {
+		final String key = nextUniqueKey();
+		final String value = nextUniqueValue();
+		//Create a country-codeless language
+		LanguageDataGen languageDataGen = new LanguageDataGen();
+		final Language next = languageDataGen.next();
+		next.setCountryCode(null);
+		next.setCountry(null);
+		final Language newLang = languageDataGen.persist(next);
+
+		LanguageVariableDataGen languageVariableDataGen = new LanguageVariableDataGen();
+		languageVariableDataGen.languageId(newLang.getId()).key(key).value(value).nextPersisted();
+
+		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+		final List<LanguageVariable> languageVariables = languageAPI.findLanguageVariables(newLang.getLanguageCode());
+		Assert.assertNotNull(languageVariables);
+		Assert.assertTrue(languageVariables.size() > 0);
+		Assert.assertEquals("Key does not match",key,languageVariables.get(0).getKey());
+		Assert.assertEquals("Val does not match",value,languageVariables.get(0).getValue());
+	}
+
+	@Test
+	public void Test_Find_LanguageVariables_By_Language_Id() throws DotDataException {
+		final String key = nextUniqueKey();
+		final String value = nextUniqueValue();
+		//Create a country-codeless language
+		LanguageDataGen languageDataGen = new LanguageDataGen();
+		final Language newLang = languageDataGen.nextPersisted();
+
+		LanguageVariableDataGen languageVariableDataGen = new LanguageVariableDataGen();
+		languageVariableDataGen.languageId(newLang.getId()).key(key).value(value).nextPersisted();
+
+		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+		final List<LanguageVariable> languageVariables = languageAPI.findLanguageVariables(newLang.getId(), 0, 0);
+		Assert.assertNotNull(languageVariables);
+		Assert.assertTrue(languageVariables.size() > 0);
+		Assert.assertEquals("Key does not match",key,languageVariables.get(0).getKey());
+		Assert.assertEquals("Val does not match",value,languageVariables.get(0).getValue());
+	}
+
 
 }

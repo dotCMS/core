@@ -6,11 +6,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import java.io.Serializable;
 
-final public class KeyValue404 extends Contentlet implements KeyValue, Serializable {
-final public String KEY_VALUE_404="KEY_VALUE__404";
+public final class KeyValue404 extends Contentlet implements KeyValue, Serializable {
+
+    public static final String KEY_VALUE_404="KEY_VALUE__404";
+
     @Override
     public String getKey() {
-        // TODO Auto-generated method stub
         return KEY_VALUE_404;
     }
 
@@ -19,7 +20,7 @@ final public String KEY_VALUE_404="KEY_VALUE__404";
         return KEY_VALUE_404;
     }
 
-    @Override
+    //@Override
     public void setKey(String key) {
 
     }
@@ -30,7 +31,7 @@ final public String KEY_VALUE_404="KEY_VALUE__404";
         return KEY_VALUE_404;
     }
 
-    @Override
+    //@Override
     public void setValue(String value) {
 
     }

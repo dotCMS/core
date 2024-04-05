@@ -24,9 +24,7 @@ public class KeyValueCacheImplTest {
         final long languageId = 2;
         final String contentTypeId = "1";
 
-        final KeyValue keyValue = new DefaultKeyValue();
-        keyValue.setKey(key);
-        keyValue.setValue(value);
+        final KeyValue keyValue = new DefaultKeyValue(key, value);
 
         KeyValueCache keyValueCache = new KeyValueCacheImpl();
         keyValueCache.addByLanguageAndContentType(languageId, contentTypeId, keyValue);
@@ -58,9 +56,7 @@ public class KeyValueCacheImplTest {
         final String contentTypeId = String.valueOf(time);
         final long wrongLangId = 50;
 
-        final KeyValue keyValue = new DefaultKeyValue();
-        keyValue.setKey(key);
-        keyValue.setValue(value);
+        final KeyValue keyValue = new DefaultKeyValue(key, value);
 
         KeyValueCache keyValueCache = new KeyValueCacheImpl();
         keyValueCache.addByLanguageAndContentType(languageId, contentTypeId, keyValue);
@@ -78,9 +74,7 @@ public class KeyValueCacheImplTest {
         final String contentTypeId = String.valueOf(time);
         final String wrongContentTypeId =  "xyz";
 
-        final KeyValue keyValue = new DefaultKeyValue();
-        keyValue.setKey(key);
-        keyValue.setValue(value);
+        final KeyValue keyValue = new DefaultKeyValue(key, value);
 
         KeyValueCache keyValueCache = new KeyValueCacheImpl();
         keyValueCache.addByLanguageAndContentType(languageId, contentTypeId, keyValue);
@@ -99,9 +93,7 @@ public class KeyValueCacheImplTest {
         final String contentTypeId = String.valueOf(time);
         final boolean live = false;
 
-        final KeyValue keyValue = new DefaultKeyValue();
-        keyValue.setKey(key);
-        keyValue.setValue(value);
+        final KeyValue keyValue = new DefaultKeyValue(key, value);
 
         KeyValueCache keyValueCache = new KeyValueCacheImpl();
         keyValueCache.add(languageId, contentTypeId, live, keyValue);
@@ -136,9 +128,7 @@ public class KeyValueCacheImplTest {
         final String contentTypeId = String.valueOf(time);
         final boolean live = true;
 
-        final KeyValue keyValue = new DefaultKeyValue();
-        keyValue.setKey(key);
-        keyValue.setValue(value);
+        final KeyValue keyValue = new DefaultKeyValue(key, value);
 
         KeyValueCache keyValueCache = new KeyValueCacheImpl();
         keyValueCache.add(languageId, contentTypeId, live, keyValue);
@@ -158,9 +148,7 @@ public class KeyValueCacheImplTest {
         final boolean live = true;
         final long wrongLanguageId = 50;
 
-        final KeyValue keyValue = new DefaultKeyValue();
-        keyValue.setKey(key);
-        keyValue.setValue(value);
+        final KeyValue keyValue = new DefaultKeyValue(key, value);
 
         KeyValueCache keyValueCache = new KeyValueCacheImpl();
         keyValueCache.add(languageId, contentTypeId, live, keyValue);
@@ -180,9 +168,7 @@ public class KeyValueCacheImplTest {
         final boolean live = true;
         final String wrongContentTypeId = "123123";
 
-        final KeyValue keyValue = new DefaultKeyValue();
-        keyValue.setKey(key);
-        keyValue.setValue(value);
+        final KeyValue keyValue = new DefaultKeyValue(key, value);
 
         final KeyValueCache keyValueCache = new KeyValueCacheImpl();
         keyValueCache.add(languageId, contentTypeId, live, keyValue);

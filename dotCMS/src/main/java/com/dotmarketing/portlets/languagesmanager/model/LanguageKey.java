@@ -1,7 +1,11 @@
 package com.dotmarketing.portlets.languagesmanager.model;
 
 import java.io.Serializable;
-
+/**
+ * We're no longer reading Language Variables from resource bundle files, so this class is no longer needed.
+ * @deprecated since 24.04, for removal = true
+ */
+@Deprecated(since = "24.04", forRemoval = true)
 public class LanguageKey implements Serializable, Comparable<LanguageKey> {
 
 	/**

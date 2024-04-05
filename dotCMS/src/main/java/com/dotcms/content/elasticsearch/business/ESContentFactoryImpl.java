@@ -1156,6 +1156,35 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
+    public List<Contentlet> findByContentTypeAndLanguage(ContentType contentType, long languageId, int limit, int offset) throws DotDataException, DotStateException {
+        final DotConnect dotConnect = new DotConnect();
+
+        final String select = "select contentlet.*, inode.owner "
+                + "from contentlet, contentlet_version_info, inode "
+                + "where structure_inode = '" + contentType.inode() + "' "
+                + " and contentlet_version_info.identifier=contentlet.identifier "
+                + " and contentlet_version_info.working_inode=contentlet.inode "
+                + " and contentlet.inode = inode.inode "
+                + " and contentlet.language_id = " + languageId + " ";
+        dotConnect.setSQL(select);
+
+        if (offset > 0) {
+            dotConnect.setStartRow(offset);
+        }
+        if (limit > 0) {
+            dotConnect.setMaxRows(limit);
+        }
+
+        List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
+                (dotConnect.loadObjectResults()).asList();
+
+        contentlets.forEach(contentlet ->contentletCache
+                .add(String.valueOf(contentlet.getInode()), contentlet));
+
+        return contentlets;
+    }
+
+    @Override
     public int countByType(ContentType contentType, boolean includeAllVersion){
         final DotConnect dotConnect = new DotConnect();
         if(includeAllVersion){

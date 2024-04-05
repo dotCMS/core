@@ -11,12 +11,14 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -204,6 +206,28 @@ public class ContentletFactoryTest extends ContentletBaseTest {
 
         count = contentletFactory.countByType(contentType, true);
         Assert.assertEquals(4, count);
+    }
+
+    /**
+     * Method under test: {@link ContentletFactory#findByContentTypeAndLanguage(ContentType, long, int, int)}
+     * Given scenario: we have a content type and a language, and we create a contentlet of that type and language
+     * Expected result: we should be able to find that contentlet by content type and language
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testFindContentletByContentTypeAndLanguage() throws DotDataException, DotSecurityException {
+        final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen();
+        final ContentType contentType = contentTypeDataGen.name("any").nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        //Create some content
+        final Contentlet contentlet = contentletDataGen.languageId(language.getId())
+                .nextPersisted();
+        final List<Contentlet> byContentTypeAndLanguage = contentletFactory.findByContentTypeAndLanguage(
+                contentType, language.getId(), -1, -1);
+        Assert.assertEquals(1, byContentTypeAndLanguage.size());
+        Assert.assertEquals(contentlet.getInode(), byContentTypeAndLanguage.get(0).getInode());
     }
 
 }

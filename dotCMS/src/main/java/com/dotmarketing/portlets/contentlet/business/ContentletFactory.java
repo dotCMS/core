@@ -209,6 +209,19 @@ public abstract class ContentletFactory {
     protected abstract List<Contentlet> findByStructure(String structureInode, Date maxDate,
             int limit, int offset) throws DotDataException, DotStateException, DotSecurityException;
 
+
+	/**
+	 * Returns all Contentlets for a specific structure using pagination
+	 * @param contentType
+	 * @param languageId
+	 * @param limit
+	 * @param offset
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	public abstract List<Contentlet> findByContentTypeAndLanguage(ContentType contentType, long languageId, int limit, int offset) throws DotDataException, DotStateException;
+
 	/**
 	 * select count contentlet by ContentType
 	 *
