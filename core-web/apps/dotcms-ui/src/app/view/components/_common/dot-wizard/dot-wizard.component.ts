@@ -6,14 +6,13 @@ import {
     ComponentRef,
     Input,
     OnDestroy,
-    OnInit,
     QueryList,
     Type,
     ViewChild,
     ViewChildren
 } from '@angular/core';
 
-import { takeUntil } from 'rxjs/operators';
+import { switchMap, take, takeUntil } from 'rxjs/operators';
 
 import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
 import { DotMessageService, DotWizardService } from '@dotcms/data-access';
@@ -35,7 +34,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss']
 })
-export class DotWizardComponent implements OnInit, OnDestroy {
+export class DotWizardComponent implements OnDestroy {
     wizardData: { [key: string]: string };
     dialogActions: DotDialogActions;
     transform = '';
@@ -58,18 +57,21 @@ export class DotWizardComponent implements OnInit, OnDestroy {
         private componentFactoryResolver: ComponentFactoryResolver,
         private dotMessageService: DotMessageService,
         private dotWizardService: DotWizardService
-    ) {}
+    ) {
+        this.dotWizardService.showDialog$
+            .pipe(
+                takeUntil(this.destroy$),
+                switchMap((data) => {
+                    this.data = data;
 
-    ngOnInit() {
-        this.dotWizardService.showDialog$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
-            this.data = data;
-            // need to wait to render the dotContainerReference.
-            setTimeout(() => {
+                    return this.formHosts.changes.pipe(take(1)); // This a potential fix to the race condition but I have a ExpressionChangedAfterItHasBeenCheckedError in the console
+                })
+            )
+            .subscribe(() => {
                 this.loadComponents();
                 this.setDialogActions();
                 this.focusFistFormElement();
-            }, 0);
-        });
+            });
     }
 
     ngOnDestroy(): void {

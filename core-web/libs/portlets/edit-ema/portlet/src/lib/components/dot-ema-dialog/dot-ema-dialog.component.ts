@@ -7,15 +7,22 @@ import {
     DestroyRef,
     ElementRef,
     EventEmitter,
+    NgZone,
     Output,
     ViewChild,
     inject
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
+import { MessageService } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSWorkflowActionEvent
+} from '@dotcms/dotcms-models';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import {
@@ -25,6 +32,7 @@ import {
     DotEmaDialogStore
 } from './store/dot-ema-dialog.store';
 
+import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
 import { ActionPayload, VTLFile } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
@@ -44,7 +52,7 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
         DialogModule,
         DotSpinnerModule
     ],
-    providers: [DotEmaDialogStore]
+    providers: [DotEmaDialogStore, DotEmaWorkflowActionsService]
 })
 export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
@@ -53,6 +61,10 @@ export class DotEmaDialogComponent {
 
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly store = inject(DotEmaDialogStore);
+    private readonly workflowActions = inject(DotEmaWorkflowActionsService);
+    private readonly ngZone = inject(NgZone);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly messageService = inject(MessageService);
 
     protected readonly dialogState = toSignal(this.store.dialogState$);
     protected readonly dialogStatus = DialogStatus;
@@ -186,6 +198,26 @@ export class DotEmaDialogComponent {
         this.store.loadingIframe(title);
     }
 
+    handleWorkflowEvent(event: DotCMSWorkflowActionEvent) {
+        this.workflowActions
+            .handleWorkflowAction(event, this.callEmbeddedFunction.bind(this))
+            .subscribe(({ callback, args }) => {
+                this.callEmbeddedFunction(callback, args);
+                this.messageService.add({
+                    severity: 'success',
+                    summary: this.dotMessageService.get('Workflow-Action'),
+                    detail: this.dotMessageService.get('edit.content.fire.action.success'),
+                    life: 2000
+                });
+            });
+    }
+
+    callEmbeddedFunction(callback: string, args: unknown[]) {
+        this.ngZone.run(() => {
+            this.iframe.nativeElement.contentWindow[callback](...args);
+        });
+    }
+
     /**
      * Iframe load event
      *
@@ -204,6 +236,15 @@ export class DotEmaDialogComponent {
             .pipe(takeUntilDestroyed(this.destroyRef$))
             .subscribe((event: CustomEvent) => {
                 this.action.emit({ event, payload: this.dialogState().payload });
+
+                if (event.detail.name === NG_CUSTOM_EVENTS.OPEN_WIZARD) {
+                    this.handleWorkflowEvent(event.detail.data);
+                } else if (
+                    event.detail.name === NG_CUSTOM_EVENTS.SAVE_PAGE &&
+                    event.detail.payload.isMoveAction
+                ) {
+                    this.iframe.nativeElement.contentWindow.location.reload();
+                }
             });
     }
 

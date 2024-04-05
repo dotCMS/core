@@ -14,7 +14,7 @@
         position: absolute;
         right: 0;
         top: 0;
-        z-index: 1000;
+        z-index: 1103;
     }
 
     &.no-overflow {
@@ -49,6 +49,7 @@
     overflow-x: hidden;
     overflow-y: auto;
     padding: 0.25rem $spacing-6 0;
+    // z-index: 1102;
 
     &::-webkit-scrollbar {
         width: $spacing-1;
