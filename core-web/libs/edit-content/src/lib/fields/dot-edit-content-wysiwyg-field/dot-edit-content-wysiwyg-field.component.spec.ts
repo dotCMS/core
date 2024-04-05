@@ -2,8 +2,10 @@ import { expect } from '@jest/globals';
 import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { EditorComponent, EditorModule } from '@tinymce/tinymce-angular';
 import { MockComponent, MockService } from 'ng-mocks';
+import { of, throwError } from 'rxjs';
 import { Editor } from 'tinymce';
 
+import { HttpClient } from '@angular/common/http';
 import {
     ControlContainer,
     FormGroupDirective,
@@ -34,12 +36,19 @@ const DEFAULT_CONFIG = {
 describe('DotEditContentWYSIWYGFieldComponent', () => {
     let spectator: Spectator<DotEditContentWYSIWYGFieldComponent>;
     let dotWysiwygPluginService: DotWysiwygPluginService;
+    let httpClient: HttpClient;
 
     const createComponent = createComponentFactory({
         component: DotEditContentWYSIWYGFieldComponent,
         imports: [EditorModule, FormsModule, ReactiveFormsModule],
         declarations: [MockComponent(EditorComponent)],
         componentViewProviders: [
+            {
+                provide: HttpClient,
+                useValue: {
+                    get: () => of({})
+                }
+            },
             {
                 provide: DotWysiwygPluginService,
                 useValue: {
@@ -70,6 +79,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         });
 
         dotWysiwygPluginService = spectator.inject(DotWysiwygPluginService, true);
+        httpClient = spectator.inject(HttpClient, true);
     });
 
     it('should instance WYSIWYG editor and set the correct configuration', () => {
@@ -77,6 +87,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         const editor = spectator.query(EditorComponent);
         expect(editor.init).toEqual({
             ...DEFAULT_CONFIG,
+            theme: 'silver',
             setup: expect.any(Function)
         });
     });
@@ -110,6 +121,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             const editor = spectator.query(EditorComponent);
             expect(editor.init).toEqual({
                 ...DEFAULT_CONFIG,
+                theme: 'silver',
                 toolbar1: 'undo redo',
                 setup: expect.any(Function)
             });
@@ -134,6 +146,75 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             const editor = spectator.query(EditorComponent);
             expect(editor.init).toEqual({
                 ...DEFAULT_CONFIG,
+                theme: 'silver',
+                setup: expect.any(Function)
+            });
+        });
+    });
+
+    describe('Systemwide TinyMCE prop', () => {
+        it('should set the systemwide TinyMCE props', () => {
+            const globalConfig = {
+                toolbar1: 'undo redo | bold italic',
+                theme: 'modern'
+            };
+
+            jest.spyOn(httpClient, 'get').mockReturnValue(of(globalConfig));
+
+            spectator.detectChanges();
+
+            const editor = spectator.query(EditorComponent);
+            expect(editor.init).toEqual({
+                ...DEFAULT_CONFIG,
+                ...globalConfig,
+                theme: 'silver',
+                setup: expect.any(Function)
+            });
+        });
+
+        it('should set default values if the systemwide TinyMCE props throws an error', () => {
+            jest.spyOn(httpClient, 'get').mockReturnValue(throwError(null));
+
+            spectator.detectChanges();
+
+            const editor = spectator.query(EditorComponent);
+            expect(editor.init).toEqual({
+                ...DEFAULT_CONFIG,
+                theme: 'silver',
+                setup: expect.any(Function)
+            });
+        });
+
+        it('should overwrite the systemwide TinyMCE props with the field variables', () => {
+            const globalConfig = {
+                toolbar1: 'undo redo | bold italic'
+            };
+
+            const fieldVariables = [
+                {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                    fieldId: '1',
+                    id: '1',
+                    key: 'tinymceprops',
+                    value: '{ "toolbar1" : "undo redo" }'
+                }
+            ];
+
+            jest.spyOn(httpClient, 'get').mockReturnValue(of(globalConfig));
+
+            spectator.setInput('field', {
+                ...WYSIWYG_MOCK,
+                fieldVariables
+            });
+
+            spectator.detectChanges();
+
+            const editor = spectator.query(EditorComponent);
+            expect(editor.init).toEqual({
+                ...DEFAULT_CONFIG,
+                ...globalConfig,
+                theme: 'silver',
+                toolbar1: 'undo redo',
                 setup: expect.any(Function)
             });
         });
