@@ -5,6 +5,7 @@ import { MockComponent, MockService } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 import { Editor } from 'tinymce';
 
+import { HttpClient } from '@angular/common/http';
 import {
     ControlContainer,
     FormGroupDirective,
@@ -14,7 +15,7 @@ import {
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotScriptingApiService, DotUploadFileService } from '@dotcms/data-access';
+import { DotUploadFileService } from '@dotcms/data-access';
 
 import { DotEditContentWYSIWYGFieldComponent } from './dot-edit-content-wysiwyg-field.component';
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
@@ -35,7 +36,7 @@ const DEFAULT_CONFIG = {
 describe('DotEditContentWYSIWYGFieldComponent', () => {
     let spectator: Spectator<DotEditContentWYSIWYGFieldComponent>;
     let dotWysiwygPluginService: DotWysiwygPluginService;
-    let dotScriptingApiService: DotScriptingApiService;
+    let httpClient: HttpClient;
 
     const createComponent = createComponentFactory({
         component: DotEditContentWYSIWYGFieldComponent,
@@ -43,7 +44,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         declarations: [MockComponent(EditorComponent)],
         componentViewProviders: [
             {
-                provide: DotScriptingApiService,
+                provide: HttpClient,
                 useValue: {
                     get: () => of({})
                 }
@@ -62,7 +63,6 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         providers: [
             FormGroupDirective,
             DialogService,
-            DotScriptingApiService,
             {
                 provide: DotUploadFileService,
                 useValue: MockService(DotUploadFileService)
@@ -79,7 +79,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         });
 
         dotWysiwygPluginService = spectator.inject(DotWysiwygPluginService, true);
-        dotScriptingApiService = spectator.inject(DotScriptingApiService, true);
+        httpClient = spectator.inject(HttpClient, true);
     });
 
     it('should instance WYSIWYG editor and set the correct configuration', () => {
@@ -159,7 +159,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                 theme: 'modern'
             };
 
-            jest.spyOn(dotScriptingApiService, 'get').mockReturnValue(of(globalConfig));
+            jest.spyOn(httpClient, 'get').mockReturnValue(of(globalConfig));
 
             spectator.detectChanges();
 
@@ -173,7 +173,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         });
 
         it('should set default values if the systemwide TinyMCE props throws an error', () => {
-            jest.spyOn(dotScriptingApiService, 'get').mockReturnValue(throwError(null));
+            jest.spyOn(httpClient, 'get').mockReturnValue(throwError(null));
 
             spectator.detectChanges();
 
@@ -200,7 +200,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                 }
             ];
 
-            jest.spyOn(dotScriptingApiService, 'get').mockReturnValue(of(globalConfig));
+            jest.spyOn(httpClient, 'get').mockReturnValue(of(globalConfig));
 
             spectator.setInput('field', {
                 ...WYSIWYG_MOCK,

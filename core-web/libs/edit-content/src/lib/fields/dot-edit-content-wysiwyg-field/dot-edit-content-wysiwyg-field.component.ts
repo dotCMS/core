@@ -2,6 +2,7 @@ import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { of } from 'rxjs';
 import { RawEditorOptions } from 'tinymce';
 
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -9,7 +10,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { catchError } from 'rxjs/operators';
 
-import { DotScriptingApiService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
@@ -30,13 +30,13 @@ const DEFAULT_CONFIG = {
 @Component({
     selector: 'dot-edit-content-wysiwyg-field',
     standalone: true,
-    imports: [EditorModule, FormsModule, ReactiveFormsModule],
+    imports: [EditorModule, FormsModule, ReactiveFormsModule, HttpClientModule],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
     styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
+        HttpClient,
         DialogService,
-        DotScriptingApiService,
         DotWysiwygPluginService,
         { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }
     ],
@@ -51,16 +51,17 @@ export class DotEditContentWYSIWYGFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
 
     private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
-    private readonly dotScriptingApiService = inject(DotScriptingApiService);
+    private readonly http = inject(HttpClient);
 
-    protected init = signal<RawEditorOptions>(null);
+    private readonly configPath = '/api/vtl/tinymceprops';
+    protected readonly init = signal<RawEditorOptions>(null);
 
     ngOnInit(): void {
         const { tinymceprops } = getFieldVariablesParsed(this.field.fieldVariables);
         const variables = stringToJson(tinymceprops as string);
 
-        this.dotScriptingApiService
-            .get<RawEditorOptions>('tinymceprops')
+        this.http
+            .get<RawEditorOptions>(this.configPath)
             .pipe(catchError(() => of({})))
             .subscribe((GLOBAL_CONFIG = {}) => {
                 this.init.set({
