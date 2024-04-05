@@ -465,6 +465,9 @@ public class WebAssetHelper {
         if (null == fileInputStream) {
             //if no FileInputStream  is present we return the folder info
             //because we support creating folders by just specifying the path
+
+            checkFolderReadPermissions(user, folder);
+
             return toAssetsFolder(folder);
         }
 
@@ -483,14 +486,15 @@ public class WebAssetHelper {
                 // We trust that the asset we're getting here is working and or live which is the inode we need to do the checkout
                 final AssetView asset = versions.get(0);
 
+                checkWriteFolderPermissions(user, folder);
                 handleArchivedVersions(user, asset, lang.get());
-
                 //now checkout and create a new version of the asset in the given language
                 final Contentlet checkout = contentletAPI.checkout(asset.inode(), user, false);
                 updateFileAsset(tempFile.file, host, folder, lang.get(), checkout);
                 savedAsset = checkinOrPublish(checkout, user, live);
 
             } else {
+                checkWriteFolderPermissions(user, folder);
                 //asset does not exist. So create new one
                 final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, user, lang.get());
                 savedAsset = checkinOrPublish(contentlet, user, live);
@@ -503,10 +507,38 @@ public class WebAssetHelper {
     }
 
     /**
+     * Checks if the user has read permissions for the given folder
+     * @param user the user performing the action
+     * @param folder the folder to check
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
+     */
+    private void checkFolderReadPermissions(User user, Folder folder) throws DotDataException, DotSecurityException {
+        if(!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)){
+            throw new DotSecurityException(String.format("User [%s] does not have permission to read folder [%s]",
+                    user.getUserId(), folder.getInode()));
+        }
+    }
+
+    /**
+     * Checks if the user has write permissions for the given folder
+     * @param user the user performing the action
+     * @param folder the folder to check
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
+     */
+    private void checkWriteFolderPermissions(User user, Folder folder) throws DotDataException, DotSecurityException {
+        if(!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_WRITE, user, false)){
+            throw new DotSecurityException(String.format("User [%s] does not have permission to write to folder [%s]",
+                    user.getUserId(), folder.getInode()));
+        }
+    }
+
+    /**
      * If we want to be successful publishing content that has been archived we need to get rid of any archived version
      * @param user the user performing the action
      * @param asset the asset to check
-     * @param language the language to check
+     *  @param language the language to check
      * @throws DotSecurityException
      * @throws DotDataException
      */
