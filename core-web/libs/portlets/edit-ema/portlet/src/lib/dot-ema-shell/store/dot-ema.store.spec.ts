@@ -117,6 +117,13 @@ describe('EditEmaStore', () => {
         });
 
         describe('selectors', () => {
+            it('should return page url', (done) => {
+                spectator.service.url$.subscribe((url) => {
+                    expect(url).toEqual('test-url');
+                    done();
+                });
+            });
+
             it('should return editorState', (done) => {
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({

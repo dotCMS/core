@@ -266,6 +266,36 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
+
+        // In VTL Page if user click in a link in the page, we need to update the URL in the editor
+        this.store.url$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter(() => this.isVTLPage())
+            )
+            .subscribe(() => {
+                requestAnimationFrame(() => {
+                    this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
+                        const href =
+                            (e.target as HTMLAnchorElement).href ||
+                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
+
+                        if (href) {
+                            const url = new URL(href);
+
+                            // Check if the URL is not external
+                            if (url.hostname === window.location.hostname) {
+                                e.preventDefault();
+
+                                this.updateQueryParams({
+                                    url: url.pathname
+                                });
+                            }
+                        }
+                    });
+                });
+            });
+
         // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
         // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
         // this.store.updateEditorState(EDITOR_STATE.LOADING);
