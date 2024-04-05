@@ -50,8 +50,8 @@ const DEFAULT_CONFIG = {
 export class DotEditContentWYSIWYGFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
 
-    private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
     private readonly http = inject(HttpClient);
+    private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
 
     private readonly configPath = '/api/vtl/tinymceprops';
     protected readonly init = signal<RawEditorOptions>(null);
