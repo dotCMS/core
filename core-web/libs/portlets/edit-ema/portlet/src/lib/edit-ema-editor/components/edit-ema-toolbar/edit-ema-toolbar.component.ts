@@ -102,17 +102,6 @@ export class EditEmaToolbarComponent {
     }
 
     /**
-     * Handle edit content map
-     *
-     * @protected
-     * @param {DotCMSContentlet} contentlet
-     * @memberof EditEmaToolbarComponent
-     */
-    // protected editContentMap(contentlet: DotCMSContentlet): void {
-    //     this.dialog.editUrlContentMapContentlet(contentlet); <-- TODO: Maybe a new service for this?
-    // }
-
-    /**
      * Handle the copy URL action
      *
      * @memberof EditEmaToolbarComponent
