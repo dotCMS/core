@@ -30,10 +30,9 @@
                     type="button"
                     icon="pi pi-chevron-left"
                     pButton></button>
-                <span
-                    >{{ vm.activeIndex + 1 }} {{ 'of' | dm }}
-                    {{ vm.generatedContent?.length }}</span
-                >
+                <span>
+                    {{ vm.activeIndex + 1 }} {{ 'of' | dm }} {{ vm.generatedContent?.length }}
+                </span>
                 <button
                     class="p-button-text p-button-sm p-button-rounded"
                     [disabled]="vm.activeIndex === vm.generatedContent?.length - 1"
