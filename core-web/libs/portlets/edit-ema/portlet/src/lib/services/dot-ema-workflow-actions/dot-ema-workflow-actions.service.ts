@@ -240,30 +240,8 @@ export class DotEmaWorkflowActionsService {
 
         processedData['contentlet'] = {}; // needed for indexPolicy=WAIT_FOR
 
-        return processedData as DotProcessedWorkflowPayload;
+        return processedData;
     }
-
-    private mergeCommentAndAssign(workflow: DotCMSWorkflowAction): DotCMSWorkflowInput[] {
-        const body: Record<string, boolean> = {};
-        let workflows: DotCMSWorkflowInput[];
-        workflow.actionInputs.forEach((input) => {
-            if (this.isValidActionInput(input.id)) {
-                body[input.id] = true;
-            }
-        });
-        if (Object.keys(body).length) {
-            workflows = workflow.actionInputs.filter((input) => !this.isValidActionInput(input.id));
-            workflows.unshift({
-                id: DotActionInputs.COMMENTANDASSIGN,
-                body: { ...body, ...this.getAssignableData(workflow) }
-            });
-        } else {
-            return workflow.actionInputs;
-        }
-
-        return workflows;
-    }
-
     openWizard(event: DotCMSWorkflowActionEvent): Observable<DotWorkflowPayload> {
         const wizardInput = this.setWizardInput(
             event.workflow,
@@ -296,10 +274,7 @@ export class DotEmaWorkflowActionsService {
             .fireTo({
                 inode: event.inode,
                 actionId: event.workflow.id,
-                data: this.processWorkflowPayload(
-                    data as DotWorkflowPayload,
-                    event.workflow.actionInputs
-                )
+                data: this.processWorkflowPayload(data, event.workflow.actionInputs)
             })
             .pipe(
                 catchError((error) => {
@@ -309,8 +284,29 @@ export class DotEmaWorkflowActionsService {
             );
     }
 
-    isBulkAction(event: DotCMSWorkflowActionEvent): boolean {
-        return !!(event.selectedInodes && event.selectedInodes.length);
+    private isBulkAction(event: DotCMSWorkflowActionEvent): boolean {
+        return !!event.selectedInodes?.length;
+    }
+
+    private mergeCommentAndAssign(workflow: DotCMSWorkflowAction): DotCMSWorkflowInput[] {
+        const body: Record<string, boolean> = {};
+        let workflows: DotCMSWorkflowInput[];
+        workflow.actionInputs.forEach((input) => {
+            if (this.isValidActionInput(input.id)) {
+                body[input.id] = true;
+            }
+        });
+        if (Object.keys(body).length) {
+            workflows = workflow.actionInputs.filter((input) => !this.isValidActionInput(input.id));
+            workflows.unshift({
+                id: DotActionInputs.COMMENTANDASSIGN,
+                body: { ...body, ...this.getAssignableData(workflow) }
+            });
+        } else {
+            return workflow.actionInputs;
+        }
+
+        return workflows;
     }
 
     private getAssignableData(workflow: DotCMSWorkflowAction): DotAssignableData {
@@ -332,10 +328,7 @@ export class DotEmaWorkflowActionsService {
         event: DotCMSWorkflowActionEvent,
         data?: DotWorkflowPayload
     ): DotActionBulkRequestOptions {
-        const processedData = this.processWorkflowPayload(
-            data as DotWorkflowPayload,
-            event.workflow.actionInputs
-        );
+        const processedData = this.processWorkflowPayload(data, event.workflow.actionInputs);
         const requestOptions: DotActionBulkRequestOptions = {
             workflowActionId: event.workflow.id,
             additionalParams: {
