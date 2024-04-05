@@ -3691,6 +3691,6 @@ public class UtilMethods {
      * @return
      */
     public static <T extends CharSequence> boolean exceedsMaxLength(final T value, final int maxLength) {
-        return value.length() > maxLength;
+        return value != null && value.length() > maxLength;
     }
 }
