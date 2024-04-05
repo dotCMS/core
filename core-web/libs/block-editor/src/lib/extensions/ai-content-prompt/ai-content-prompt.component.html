@@ -21,21 +21,24 @@
                 pInputTextarea></textarea>
             <div
                 class="ai-content__pagination"
-                *ngIf="vm.status !== ComponentStatus.LOADING; else paginationSkeleton"
-                [class.ai-content__pagination--hidden]="!(vm.generatedContent.length > 1)">
+                *ngIf="vm.status !== ComponentStatus.LOADING; else paginationSkeleton">
                 <button
                     class="p-button-text p-button-sm p-button-rounded"
-                    [disabled]="vm.activeIndex === 0"
+                    [disabled]="vm.activeIndex === 0 || vm.generatedContent?.length === 0"
                     (click)="store.updateActiveIndex(vm.activeIndex - 1)"
                     type="button"
                     icon="pi pi-chevron-left"
                     pButton></button>
                 <span>
-                    {{ vm.activeIndex + 1 }} {{ 'of' | dm }} {{ vm.generatedContent?.length }}
+                    {{ vm.generatedContent?.length ? vm.activeIndex + 1 : 0 }} {{ 'of' | dm }}
+                    {{ vm.generatedContent?.length }}
                 </span>
                 <button
                     class="p-button-text p-button-sm p-button-rounded"
-                    [disabled]="vm.activeIndex === vm.generatedContent?.length - 1"
+                    [disabled]="
+                        vm.activeIndex === vm.generatedContent?.length - 1 ||
+                        vm.generatedContent?.length === 0
+                    "
                     (click)="store.updateActiveIndex(vm.activeIndex + 1)"
                     type="button"
                     icon="pi pi-chevron-right"
