@@ -1,5 +1,5 @@
 <ng-container *ngIf="editorState$ | async as es">
-    <dot-edit-ema-toolbar />
+    <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
     <dot-results-seo-tool
         *ngIf="es.editorData.mode === editorMode.SOCIAL_MEDIA && ogTags() && ogTagsResults$"
         [seoMedia]="es.editorData.socialMedia"

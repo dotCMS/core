@@ -1,6 +1,13 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewChild, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Output,
+    ViewChild,
+    inject
+} from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -53,6 +60,8 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditEmaToolbarComponent {
+    @Output() readonly editUrlContentMap = new EventEmitter<DotCMSContentlet>();
+
     @ViewChild('personaSelector')
     personaSelector!: EditEmaPersonaSelectorComponent;
 

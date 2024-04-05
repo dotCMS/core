@@ -62,6 +62,7 @@ import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-pag
 import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
+import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
@@ -594,6 +595,25 @@ describe('EditEmaEditorComponent', () => {
                     height: 500,
                     payload: EDIT_ACTION_PAYLOAD_MOCK
                 };
+
+                it('should edit urlContentMap page', () => {
+                    const dialog = spectator.query(DotEmaDialogComponent);
+
+                    jest.spyOn(dialog, 'editUrlContentMapContentlet');
+
+                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'editUrlContentMap', {
+                        identifier: '123',
+                        inode: '456',
+                        title: 'Hello World'
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    } as any);
+
+                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith({
+                        identifier: '123',
+                        inode: '456',
+                        title: 'Hello World'
+                    });
+                });
 
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();

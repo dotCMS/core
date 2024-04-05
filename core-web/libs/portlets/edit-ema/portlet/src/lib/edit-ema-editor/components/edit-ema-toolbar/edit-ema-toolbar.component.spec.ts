@@ -171,6 +171,15 @@ describe('EditEmaToolbarComponent', () => {
             });
         });
 
+        describe('edit-url-content-map', () => {
+            it('should be hidden', () => {
+                const editURLContentButton = spectator.debugElement.query(
+                    By.css('[data-testId="edit-url-content-map"]')
+                );
+                expect(editURLContentButton).toBeNull();
+            });
+        });
+
         describe('ema-preview', () => {
             let emaPreviewButton: DebugElement;
 
@@ -498,6 +507,92 @@ describe('EditEmaToolbarComponent', () => {
                 expect(experiments.runningExperiment).toEqual({
                     status: DotExperimentStatus.RUNNING
                 });
+            });
+        });
+    });
+
+    describe('urlContentMap', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: EditEmaStore,
+                        useValue: {
+                            editorState$: of({
+                                favoritePageURL: 'http://localhost:8080/fav',
+                                iframeURL: 'http://localhost:8080/index',
+                                clientHost: 'http://localhost:3000',
+                                apiURL: 'http://localhost/api/v1/page/json/page-one',
+                                editorData: {
+                                    mode: EDITOR_MODE.EDIT,
+                                    canEditPage: true
+                                },
+                                editor: {
+                                    urlContentMap: {
+                                        identifier: '123',
+                                        inode: '456',
+                                        title: 'This is the content title'
+                                    },
+                                    page: {
+                                        identifier: '123',
+                                        inode: '456'
+                                    },
+                                    viewAs: {
+                                        persona: {
+                                            id: '123'
+                                        },
+                                        language: {
+                                            id: 1
+                                        }
+                                    }
+                                }
+                            }),
+                            load: jest.fn(),
+                            setDevice: jest.fn(),
+                            setSocialMedia: jest.fn(),
+                            updateEditorState: jest.fn()
+                        }
+                    }
+                ]
+            });
+            store = spectator.inject(EditEmaStore);
+            messageService = spectator.inject(MessageService);
+            router = spectator.inject(Router);
+            confirmationService = spectator.inject(ConfirmationService);
+        });
+
+        it('should have attr', () => {
+            const editURLContentButton = spectator.debugElement.query(
+                By.css('[data-testId="edit-url-content-map"]')
+            );
+
+            expect(editURLContentButton.attributes).toEqual({
+                class: 'p-element',
+                'data-testId': 'edit-url-content-map',
+                icon: 'pi pi-pencil',
+                'ng-reflect-icon': 'pi pi-pencil',
+                'ng-reflect-style-class': 'p-button-text p-button-sm',
+                styleClass: 'p-button-text p-button-sm'
+            });
+        });
+        it('should emit', () => {
+            let output;
+            spectator.output('editUrlContentMap').subscribe((result) => (output = result));
+
+            const editURLContentButton = spectator.debugElement.query(
+                By.css('[data-testId="edit-url-content-map"]')
+            );
+
+            spectator.triggerEventHandler(editURLContentButton, 'onClick', {
+                identifier: '123',
+                inode: '456',
+                title: 'This is the content title'
+            });
+
+            expect(output).toEqual({
+                identifier: '123',
+                inode: '456',
+                title: 'This is the content title'
             });
         });
     });
