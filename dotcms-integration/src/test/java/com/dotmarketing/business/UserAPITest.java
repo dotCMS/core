@@ -1407,7 +1407,7 @@ public class UserAPITest extends IntegrationTestBase {
 			fail("Expected DotDataException to be thrown");
 		} catch (DotDataException e) {
 			// Verify that the exception message matches the expected message
-			assertEquals("Length of First name provided exceeds the maximum limit 100", e.getMessage());
+			assertEquals("Length of First Name provided exceeds the maximum limit 100", e.getMessage());
 		}
 	}
 
@@ -1429,7 +1429,7 @@ public class UserAPITest extends IntegrationTestBase {
 			fail("Expected DotDataException to be thrown");
 		} catch (DotDataException e) {
 			// Verify that the exception message matches the expected message
-			assertEquals("Length of Last name provided exceeds the maximum limit 100", e.getMessage());
+			assertEquals("Length of Last Name provided exceeds the maximum limit 100", e.getMessage());
 		}
 	}
 

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.user.ajax;
 
+import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
 import static com.dotmarketing.business.ajax.DwrUtil.validateUsersPortletPermissions;
 import java.util.ArrayList;
@@ -137,6 +138,7 @@ public class UserAjax {
 
 		//Validate if this logged in user has the required permissions to access the users portlet
 		validateUsersPortletPermissions(getLoggedInUser());
+		validateMaximumLength(firstName,lastName,email);
 
         //auth
 		User modUser = getAdminUser();
@@ -244,7 +246,7 @@ public class UserAjax {
 
 		//Validate if this logged in user has the required permissions to access the users portlet
 		validateUsersPortletPermissions(modUser);
-	
+		validateMaximumLength(firstName,lastName,email);
 		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		

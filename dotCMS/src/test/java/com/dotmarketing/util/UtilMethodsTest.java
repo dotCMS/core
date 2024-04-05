@@ -169,12 +169,21 @@ public class UtilMethodsTest extends UnitTestBase {
 		assertFalse(UtilMethods.isEmpty(()->contentlet.getMap()));
 
 	}
-
+	/**
+	 * Test method {@link UtilMethods#exceedsMaxLength(CharSequence, int)}
+	 * Given scenario: The method is invoked with a valid string value and maximum length allowed
+	 * Expected result: This returns the false when the length of given string value doesn't exceed the maximum value length
+	 */
 	@Test
 	public void testStringWithinMaxLength() {
 		assertFalse(UtilMethods.exceedsMaxLength("hello", 10));
 	}
 
+	/**
+	 * Test method {@link UtilMethods#exceedsMaxLength(CharSequence, int)}
+	 * Given scenario: The method is invoked with a valid string value and maximum length allowed
+	 * Expected result: This returns the true when the length of given string value doesn't exceed the maximum value length
+	 */
 	@Test
 	public void testStringMaxLength() {
 		assertTrue(UtilMethods.exceedsMaxLength("J7uQX9vLsI6MwP8oYgqK4jVt2A0L5jXt2W4hS9bE8pZ7yM3iR1oV6nL3eZ2hK4tD9", 10));

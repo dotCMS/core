@@ -268,7 +268,6 @@ public class UserFactoryImpl implements UserFactory {
         if (user.getUserId() == null) {
             throw new DotRuntimeException("Can't save a user without a userId");
         } else{
-            validateMaximumLength(user.getFirstName(),user.getLastName(),user.getEmailAddress());
             user.setModificationDate(new Date());
             final String emailAddress = user.getEmailAddress();
             if (UtilMethods.isSet(emailAddress)) {
@@ -318,6 +317,7 @@ public class UserFactoryImpl implements UserFactory {
         try {
             dotConnect.loadResult();
         } catch (DotDataException e) {
+            Logger.debug(this, "An exception occurred while creating a user");
             throw new DotDataException("Creating a user has failed while executing the SQL due to "+ e.getMessage(), e);
         }
         return user;
@@ -365,6 +365,7 @@ public class UserFactoryImpl implements UserFactory {
         try {
             dotConnect.loadResult();
         } catch (DotDataException e) {
+            Logger.debug(this, "An exception occurred while updating a user");
             throw new DotDataException("Updating a user has failed while executing the SQL due to "+ e.getMessage(), e);
         }
 

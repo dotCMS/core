@@ -3690,11 +3690,7 @@ public class UtilMethods {
      * @param <T>
      * @return
      */
-    public static <T> boolean exceedsMaxLength(T value, int maxLength) {
-        if (value instanceof String) {
-            String stringValue = (String) value;
-            return stringValue.length() > maxLength;
-        }
-        return false;
+    public static <T extends CharSequence> boolean exceedsMaxLength(final T value, final int maxLength) {
+        return value.length() > maxLength;
     }
 }

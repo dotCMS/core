@@ -202,12 +202,12 @@ public class UserHelper {
         }
     }
 
-    public static void validateMaximumLength(String firstName, String lastName, String email) throws DotDataException {
+    public static void validateMaximumLength(final String firstName, final String lastName, final String email) throws DotDataException {
         if (UtilMethods.exceedsMaxLength(firstName, MAX_FIELD_LENGTH)) {
-            throw new DotDataException("Length of First name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+            throw new DotDataException("Length of First Name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
         }
         if (UtilMethods.exceedsMaxLength(lastName, MAX_FIELD_LENGTH)) {
-            throw new DotDataException("Length of Last name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+            throw new DotDataException("Length of Last Name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
         }
         if (UtilMethods.exceedsMaxLength(email, MAX_FIELD_LENGTH)) {
             throw new DotDataException("Length of Email Address provided exceeds the maximum limit "+ MAX_FIELD_LENGTH);
