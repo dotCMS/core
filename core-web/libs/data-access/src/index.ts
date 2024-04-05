@@ -4,7 +4,6 @@ export * from './lib/dot-containers/dot-containers.service';
 export * from './lib/dot-content-type/dot-content-type.service';
 export * from './lib/dot-content-types-info/dot-content-types-info.service';
 export * from './lib/dot-contentlet-locker/dot-contentlet-locker.service';
-
 export * from './lib/dot-contentlet/dot-contentlet.service';
 export * from './lib/dot-copy-content/dot-copy-content.service';
 export * from './lib/dot-crud/dot-crud.service';
