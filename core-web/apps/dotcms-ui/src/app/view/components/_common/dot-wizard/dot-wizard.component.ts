@@ -12,7 +12,7 @@ import {
     ViewChildren
 } from '@angular/core';
 
-import { switchMap, take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
 import { DotMessageService, DotWizardService } from '@dotcms/data-access';
@@ -58,20 +58,15 @@ export class DotWizardComponent implements OnDestroy {
         private dotMessageService: DotMessageService,
         private dotWizardService: DotWizardService
     ) {
-        this.dotWizardService.showDialog$
-            .pipe(
-                takeUntil(this.destroy$),
-                switchMap((data) => {
-                    this.data = data;
-
-                    return this.formHosts.changes.pipe(take(1)); // This a potential fix to the race condition but I have a ExpressionChangedAfterItHasBeenCheckedError in the console
-                })
-            )
-            .subscribe(() => {
+        this.dotWizardService.showDialog$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
+            this.data = data;
+            // need to wait to render the dotContainerReference.
+            setTimeout(() => {
                 this.loadComponents();
                 this.setDialogActions();
                 this.focusFistFormElement();
-            });
+            }, 1000);
+        });
     }
 
     ngOnDestroy(): void {
