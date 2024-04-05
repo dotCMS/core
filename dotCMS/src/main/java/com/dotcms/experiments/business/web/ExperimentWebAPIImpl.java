@@ -66,9 +66,9 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .filter(experiment -> !idsToExclude.contains(experiment.id().get()))
                     .collect(Collectors.toList()) : experimentsRunning;
 
-        final List<String> excludedExperimentIdsEnded = idsToExclude.stream()
+        final List<String> excludedExperimentIdsEnded = idsToExclude != null ? idsToExclude.stream()
                 .filter(experimentId -> !experimentsRunningId.contains(experimentId))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()) : Collections.emptyList();
 
         if (experimentFiltered.isEmpty()) {
             return new SelectedExperiments.Builder()
