@@ -351,6 +351,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         return updatedRendered;
     }
 
+    unlockPage(inode: string) {
+        this.store.unlockPage(inode);
+    }
+
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();

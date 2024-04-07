@@ -13,13 +13,14 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
 import {
+    DotContentletLockerService,
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import { SiteService, mockSites } from '@dotcms/dotcms-js';
+import { LoginService, SiteService, mockSites } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import {
@@ -50,7 +51,21 @@ describe('DotEmaShellComponent', () => {
         component: DotEmaShellComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
-        providers: [{ provide: SiteService, useClass: SiteServiceMock }],
+        providers: [
+            { provide: SiteService, useClass: SiteServiceMock },
+            {
+                provide: DotContentletLockerService,
+                useValue: {
+                    unlock: (_inode: string) => of({})
+                }
+            },
+            {
+                provide: LoginService,
+                useValue: {
+                    getCurrentUser: () => of({})
+                }
+            }
+        ],
         declarations: [MockComponent(DotEmaDialogComponent)],
         componentProviders: [
             MessageService,

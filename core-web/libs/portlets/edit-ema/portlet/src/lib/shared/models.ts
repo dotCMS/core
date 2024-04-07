@@ -83,6 +83,11 @@ export interface EditorData {
     canEditVariant?: boolean;
     canEditPage?: boolean;
     variantId?: string;
+    page?: {
+        isLocked: boolean;
+        canLock: boolean;
+        lockedByUser: string;
+    };
 }
 
 export interface EditEmaState {

@@ -4,7 +4,13 @@ import { of } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 
-import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotExperimentsService,
+    DotLicenseService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     getDraftExperimentMock,
     getRunningExperimentMock,
@@ -32,7 +38,11 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         canEdit: true,
         canRead: true,
         rendered: '<html><body><h1>Hello, World!</h1></body></html>',
-        contentType: 'htmlpageasset'
+        contentType: 'htmlpageasset',
+        canLock: true,
+        locked: false,
+        lockedBy: '',
+        lockedByName: ''
     },
     viewAs: {
         language: {
@@ -90,6 +100,18 @@ describe('EditEmaStore', () => {
                             return of(null);
                         }
                     }
+                },
+                {
+                    provide: DotContentletLockerService,
+                    useValue: {
+                        unlock: (_inode: string) => of({})
+                    }
+                },
+                {
+                    provide: LoginService,
+                    useValue: {
+                        getCurrentUser: () => of({})
+                    }
                 }
             ]
         });
@@ -139,7 +161,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -180,7 +207,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: false,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -214,7 +246,12 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.PREVIEW_VARIANT,
                             canEditPage: true,
                             canEditVariant: false,
-                            variantId: '111'
+                            variantId: '111',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -248,7 +285,12 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.PREVIEW_VARIANT,
                             canEditPage: true,
                             canEditVariant: false,
-                            variantId: '222'
+                            variantId: '222',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -282,7 +324,12 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.EDIT_VARIANT,
                             canEditPage: true,
                             canEditVariant: true,
-                            variantId: '111'
+                            variantId: '111',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -371,7 +418,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditVariant: true,
-                            canEditPage: true
+                            canEditPage: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -402,7 +454,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditVariant: true,
-                            canEditPage: true
+                            canEditPage: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -436,7 +493,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
@@ -724,6 +786,18 @@ describe('EditEmaStore', () => {
                             return of(null);
                         }
                     }
+                },
+                {
+                    provide: DotContentletLockerService,
+                    useValue: {
+                        unlock: (_inode: string) => of({})
+                    }
+                },
+                {
+                    provide: LoginService,
+                    useValue: {
+                        getCurrentUser: () => of({})
+                    }
                 }
             ]
         });
@@ -767,7 +841,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -802,7 +881,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         },
                         currentExperiment: null
                     });
@@ -833,7 +917,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -934,6 +1023,15 @@ describe('EditEmaStore', () => {
                         language_id: '1'
                     }
                 });
+            });
+
+            it('should call unlock page service', () => {
+                const dotContentletLockerService = spectator.inject(DotContentletLockerService);
+                const spyUnlock = jest.spyOn(dotContentletLockerService, 'unlock');
+
+                spectator.service.unlockPage('123');
+
+                expect(spyUnlock).toHaveBeenCalledWith('123');
             });
 
             it('should not add form to page when the form is dupe and triggers a message', () => {

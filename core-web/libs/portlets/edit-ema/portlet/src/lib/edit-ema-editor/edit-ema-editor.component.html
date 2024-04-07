@@ -64,13 +64,26 @@
                 (despersonalize)="onDespersonalize($event)"
                 data-testId="persona-selector" />
             <dot-edit-ema-workflow-actions
-                *ngIf="es.editorData.mode === editorMode.EDIT"
+                *ngIf="es.editorData.mode === editorMode.EDIT && !es.editorData.page.isLocked"
                 [inode]="es.editor.page.inode"
                 (newPage)="handleNewPage($event)" />
+
+            @if(es.editorData.page.isLocked && es.editorData.page.canLock) {
+            <p-button
+                [label]="'Unlock' | dm"
+                [loading]="es.state === editorState.LOADING"
+                (click)="unlockPage(es.editor.page.inode)"
+                styleClass="p-button-sm"
+                data-testId="unlock-button"></p-button>
+            }
         </ng-container>
         <ng-container bottom>
             <dot-ema-info-display
-                *ngIf="!es.editorData.canEditPage || es.editorData.mode !== editorMode.EDIT"
+                *ngIf="
+                    !es.editorData.canEditPage ||
+                    es.editorData.mode !== editorMode.EDIT ||
+                    es.editorData.page.isLocked
+                "
                 [editorData]="es.editorData"
                 [currentExperiment]="es.currentExperiment"
                 data-testId="info-display" />
@@ -87,7 +100,10 @@
         class="editor-content"
         [ngClass]="{
             'editor-content--device': es.editorData.mode === editorMode.DEVICE,
-            'editor-content--expanded': !es.editor.page.canEdit || !es.editorData.canEditVariant,
+            'editor-content--expanded':
+                !es.editor.page.canEdit ||
+                !es.editorData.canEditVariant ||
+                es.editorData.page.isLocked,
             'editor-content--hidden': es.editorData.mode === editorMode.SOCIAL_MEDIA
         }"
         data-testId="editor-content">
@@ -131,7 +147,8 @@
                     !!contentlet &&
                     !es.editorData.device &&
                     es.editor.page.canEdit &&
-                    (es.state === editorState.IDLE || es.state === editorState.DRAGGING)
+                    (es.state === editorState.IDLE || es.state === editorState.DRAGGING) &&
+                    !es.editorData.page.isLocked
                 "
                 [hide]="es.state === editorState.DRAGGING"
                 [contentlet]="contentlet"
@@ -165,7 +182,8 @@
             es.isEnterpriseLicense &&
             (es.editorData.mode === editorMode.EDIT ||
                 es.editorData.mode === editorMode.EDIT_VARIANT) &&
-            es.editor.page.canEdit
+            es.editor.page.canEdit &&
+            !es.editorData.page.isLocked
         "
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
