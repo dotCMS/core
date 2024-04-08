@@ -18,6 +18,10 @@ import {
 } from '@dotcms/dotcms-models';
 
 import {
+    Container,
+    ContentletArea
+} from '../../edit-ema-editor/components/ema-page-dropzone/types';
+import {
     DotPageApiParams,
     DotPageApiResponse,
     DotPageApiService
@@ -119,6 +123,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         const iframeURL = state.clientHost ? `${state.clientHost}/${pageURL}` : '';
 
         return {
+            bounds: state.bounds,
+            contentletArea: state.contentletArea,
             clientHost: state.clientHost,
             favoritePageURL,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
@@ -239,6 +245,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                             editor: pageData,
                                             isEnterpriseLicense: licenseData,
                                             editorState: EDITOR_STATE.IDLE,
+                                            bounds: [],
+                                            contentletArea: null,
                                             editorData: {
                                                 mode,
                                                 canEditVariant,
@@ -470,6 +478,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         };
     });
 
+    readonly setBounds = this.updater((state, bounds: Container[]) => ({
+        ...state,
+        bounds: bounds
+    }));
+
+    readonly setContentletArea = this.updater((state, contentletArea: ContentletArea) => ({
+        ...state,
+        contentletArea
+    }));
+
     /**
      * Create the url to add a page to favorites
      *
@@ -524,6 +542,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     private createEmptyState(permissions: { canEdit: boolean; canRead: boolean }, error?: number) {
         this.setState({
+            bounds: [],
+            contentletArea: null,
             editor: {
                 page: {
                     title: '',
