@@ -466,6 +466,7 @@ public class WebAssetHelper {
             //if no FileInputStream  is present we return the folder info
             //because we support creating folders by just specifying the path
 
+            //if we fail to verify read permissions we need to throw an exception therefore the exception will roll back the transaction
             checkFolderReadPermissions(user, folder);
 
             return toAssetsFolder(folder);
@@ -486,7 +487,7 @@ public class WebAssetHelper {
                 // We trust that the asset we're getting here is working and or live which is the inode we need to do the checkout
                 final AssetView asset = versions.get(0);
 
-                checkWriteFolderPermissions(user, folder);
+                checkFolderWritePermissions(user, folder);
                 handleArchivedVersions(user, asset, lang.get());
                 //now checkout and create a new version of the asset in the given language
                 final Contentlet checkout = contentletAPI.checkout(asset.inode(), user, false);
@@ -494,7 +495,7 @@ public class WebAssetHelper {
                 savedAsset = checkinOrPublish(checkout, user, live);
 
             } else {
-                checkWriteFolderPermissions(user, folder);
+                checkFolderWritePermissions(user, folder);
                 //asset does not exist. So create new one
                 final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, user, lang.get());
                 savedAsset = checkinOrPublish(contentlet, user, live);
@@ -527,7 +528,7 @@ public class WebAssetHelper {
      * @throws DotDataException any data related exception
      * @throws DotSecurityException any security violation exception
      */
-    private void checkWriteFolderPermissions(User user, Folder folder) throws DotDataException, DotSecurityException {
+    private void checkFolderWritePermissions(User user, Folder folder) throws DotDataException, DotSecurityException {
         if(!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_WRITE, user, false)){
             throw new DotSecurityException(String.format("User [%s] does not have permission to write to folder [%s]",
                     user.getUserId(), folder.getInode()));
