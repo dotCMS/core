@@ -158,7 +158,7 @@ export class DotEmaWorkflowActionsService {
                     this.messageService.add({
                         life: 3000,
                         detail: this.dotMessageService.get(
-                            'editpage.actions.fire.error.no.environment'
+                            'publisher_dialog_environment_mandatory'
                         ),
                         summary: this.dotMessageService.get('Workflow-Action'),
                         severity: 'error'
