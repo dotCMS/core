@@ -239,7 +239,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
 
         // In VTL Page if user click in a link in the page, we need to update the URL in the editor
-        this.store.url$
+        this.store.pageRendered$
             .pipe(
                 takeUntil(this.destroy$),
                 filter(() => this.isVTLPage())
