@@ -12,13 +12,25 @@
             class="ai-content__form"
             [formGroup]="form"
             (ngSubmit)="store.generateContent(form.value.textPrompt)">
-            <textarea
-                class="ai-content__generated-text"
-                *ngIf="vm.status !== ComponentStatus.LOADING; else skeleton"
-                [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
-                [readOnly]="true"
-                formControlName="generatedText"
-                pInputTextarea></textarea>
+            <ng-container
+                [ngTemplateOutlet]="
+                    vm.status === ComponentStatus.LOADING
+                        ? skeleton
+                        : vm.generatedContent[vm.activeIndex]?.error
+                        ? errorMessage
+                        : generatedText
+                " />
+            <ng-template #generatedText>
+                <textarea
+                    class="ai-content__generated-text"
+                    #generatedText
+                    *ngIf="vm.status !== ComponentStatus.LOADING; else skeleton"
+                    [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
+                    [readOnly]="true"
+                    formControlName="generatedText"
+                    pInputTextarea>
+                </textarea>
+            </ng-template>
             <div
                 class="ai-content__pagination"
                 *ngIf="vm.status !== ComponentStatus.LOADING; else paginationSkeleton">
@@ -98,5 +110,14 @@
 
     <ng-template #paginationSkeleton>
         <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
+    </ng-template>
+
+    <ng-template #errorMessage>
+        <dot-empty-container
+            [hideContactUsLink]="true"
+            [buttonLabel]="'try-again' | dm"
+            [secondaryButton]="true"
+            [configuration]="emptyConfiguration"
+            (buttonAction)="store.generateContent(form.value.textPrompt)" />
     </ng-template>
 </ng-container>

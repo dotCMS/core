@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe, NgIf, NgTemplateOutlet } from '@angular/common';
 import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -15,7 +15,12 @@ import { delay, filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotValidators } from '@dotcms/ui';
+import {
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    DotValidators,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
@@ -36,7 +41,9 @@ interface AIContentForm {
         ButtonModule,
         SkeletonModule,
         NgIf,
-        AsyncPipe
+        AsyncPipe,
+        DotEmptyContainerComponent,
+        NgTemplateOutlet
     ],
     styleUrls: ['./ai-content-prompt.component.scss']
 })
@@ -52,6 +59,10 @@ export class AIContentPromptComponent implements OnInit {
     dotMessageService = inject(DotMessageService);
     submitButtonLabel: string;
     private destroyRef = inject(DestroyRef);
+    emptyConfiguration: PrincipalConfiguration = {
+        title: this.dotMessageService.get('block-editor.extension.ai-content.error'),
+        icon: 'pi-exclamation-triangle'
+    };
 
     @ViewChild('inputTextarea') private inputTextarea: ElementRef<HTMLTextAreaElement>;
 

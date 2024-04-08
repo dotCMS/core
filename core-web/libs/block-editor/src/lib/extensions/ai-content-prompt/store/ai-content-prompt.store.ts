@@ -21,7 +21,6 @@ export interface AiContentPromptState {
     selectedContent: string;
     activeIndex: number;
     status: ComponentStatus;
-    error: string;
     showDialog: boolean;
     submitLabel: string;
 }
@@ -32,7 +31,6 @@ const initialState: AiContentPromptState = {
     selectedContent: '',
     activeIndex: null,
     status: ComponentStatus.INIT,
-    error: '',
     showDialog: false,
     submitLabel: 'block-editor.extension.ai-image.generate'
 };
@@ -42,7 +40,6 @@ const initialState: AiContentPromptState = {
 })
 export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     //Selectors
-    readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
     readonly activeIndex$ = this.select((state) => state.activeIndex);
     readonly generatedContent$ = this.select((state) => state.generatedContent);
     readonly status$ = this.select((state) => state.status);
@@ -116,16 +113,15 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
                             this.patchState({
                                 status: ComponentStatus.IDLE,
                                 generatedContent,
-                                error: '',
                                 activeIndex: generatedContent.length - 1
                             });
                         },
                         (error: string) => {
                             generatedContent.push({ prompt, content: null, error: error });
+                            debugger;
                             this.patchState({
                                 status: ComponentStatus.IDLE,
                                 generatedContent,
-                                error: error,
                                 activeIndex: generatedContent.length - 1
                             });
                         }
