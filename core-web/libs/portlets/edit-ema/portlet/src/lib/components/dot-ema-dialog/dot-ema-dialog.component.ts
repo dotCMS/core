@@ -201,14 +201,24 @@ export class DotEmaDialogComponent {
     handleWorkflowEvent(event: DotCMSWorkflowActionEvent) {
         this.workflowActions
             .handleWorkflowAction(event, this.callEmbeddedFunction.bind(this))
-            .subscribe(({ callback, args }) => {
-                this.callEmbeddedFunction(callback, args);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: this.dotMessageService.get('Workflow-Action'),
-                    detail: this.dotMessageService.get('edit.content.fire.action.success'),
-                    life: 2000
-                });
+            .subscribe(({ callback, args, summary, detail }) => {
+                // We know is an error when we have summary and detail
+                if (summary && detail) {
+                    this.messageService.add({
+                        life: 2000,
+                        severity: 'error',
+                        summary,
+                        detail
+                    });
+                } else {
+                    this.callEmbeddedFunction(callback, args);
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: this.dotMessageService.get('Workflow-Action'),
+                        detail: this.dotMessageService.get('edit.content.fire.action.success'),
+                        life: 2000
+                    });
+                }
             });
     }
 

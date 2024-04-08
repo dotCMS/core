@@ -1,5 +1,6 @@
 import { Observable, of } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -10,11 +11,10 @@ import {
     PushPublishService,
     DotMessageService,
     DotWizardService,
-    DotHttpErrorManagerService,
     DotWorkflowActionsFireService,
-    DotFormatDateService,
-    DotHttpErrorHandled
+    DotFormatDateService
 } from '@dotcms/data-access';
+import { HttpCode } from '@dotcms/dotcms-js';
 import {
     DotActionBulkRequestOptions,
     DotActionBulkResult,
@@ -31,6 +31,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { EDIT_CONTENT_CALLBACK_FUNCTION } from '../../shared/consts';
+import { MessageInfo, WorkflowActionResult } from '../../shared/models';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',
@@ -56,7 +57,6 @@ export class DotEmaWorkflowActionsService {
         private dotMessageService: DotMessageService,
         private messageService: MessageService,
         private dotWizardService: DotWizardService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private dotFormatDateService: DotFormatDateService
     ) {}
@@ -64,11 +64,7 @@ export class DotEmaWorkflowActionsService {
     handleWorkflowAction(
         event: DotCMSWorkflowActionEvent,
         embeddedFunction?: (callbackName: string, args: unknown[]) => void
-    ): Observable<{
-        workflowName: string;
-        callback: string;
-        args: unknown[];
-    }> {
+    ): Observable<Partial<WorkflowActionResult>> {
         return this.triggerWizardOpening(event).pipe(
             take(1),
             switchMap((event) =>
@@ -89,7 +85,11 @@ export class DotEmaWorkflowActionsService {
                                 tap(() => {
                                     embeddedFunction('fireActionLoadingIndicator', []);
                                 }),
-                                map((response: DotActionBulkResult | DotHttpErrorHandled) => {
+                                map((response: DotActionBulkResult | MessageInfo) => {
+                                    if ('summary' in response) {
+                                        return response;
+                                    }
+
                                     return {
                                         workflowName: event.workflow.name,
                                         callback: event.callback,
@@ -112,11 +112,17 @@ export class DotEmaWorkflowActionsService {
                         }
 
                         return this.fireWorkflowAction(event, payload).pipe(
-                            map(() => ({
-                                workflowName: event.workflow.name,
-                                callback: event.callback,
-                                args: []
-                            }))
+                            map((response) => {
+                                if ('summary' in response) {
+                                    return response as WorkflowActionResult;
+                                }
+
+                                return {
+                                    workflowName: event.workflow.name,
+                                    callback: event.callback,
+                                    args: []
+                                };
+                            })
                         );
                     })
                 )
@@ -151,9 +157,10 @@ export class DotEmaWorkflowActionsService {
                 if (!environments.length) {
                     this.messageService.add({
                         life: 3000,
-                        summary: this.dotMessageService.get(
-                            'editpage.actions.fire.error.add.environment'
+                        detail: this.dotMessageService.get(
+                            'editpage.actions.fire.error.no.environment'
                         ),
+                        summary: this.dotMessageService.get('Workflow-Action'),
                         severity: 'error'
                     });
                 }
@@ -175,8 +182,7 @@ export class DotEmaWorkflowActionsService {
         inputs: DotCMSWorkflowInput[]
     ): DotProcessedWorkflowPayload {
         return this.containsPushPublish(inputs)
-            ? { ...data, contentlet: {} }
-            : {
+            ? {
                   ...data,
                   whereToSend: data.environment.join(),
                   iWantTo: data.pushActionSelected,
@@ -199,7 +205,8 @@ export class DotEmaWorkflowActionsService {
                   environment: undefined,
                   pushActionSelected: undefined,
                   contentlet: {} // needed for indexPolicy=WAIT_FOR
-              };
+              }
+            : { ...data, contentlet: {} };
     }
     openWizard(event: DotCMSWorkflowActionEvent): Observable<DotWorkflowPayload> {
         const wizardInput = this.setWizardInput(
@@ -216,11 +223,11 @@ export class DotEmaWorkflowActionsService {
     fireBulkWorkflowAction(
         event: DotCMSWorkflowActionEvent,
         data?: DotWorkflowPayload
-    ): Observable<DotActionBulkResult | DotHttpErrorHandled> {
+    ): Observable<DotActionBulkResult | MessageInfo> {
         return this.dotWorkflowActionsFireService.bulkFire(this.processBulkData(event, data)).pipe(
             take(1),
-            catchError((error) => {
-                return this.httpErrorManagerService.handle(error); // These need to be a message with toast.
+            catchError((error: HttpErrorResponse) => {
+                return this.getErrorMessage(error); // These need to be a message with toast.
             })
         );
     }
@@ -257,7 +264,7 @@ export class DotEmaWorkflowActionsService {
     fireWorkflowAction(
         event: DotCMSWorkflowActionEvent,
         data?: DotWorkflowPayload
-    ): Observable<DotCMSContentlet | DotHttpErrorHandled> {
+    ): Observable<DotCMSContentlet | MessageInfo> {
         return this.dotWorkflowActionsFireService
             .fireTo({
                 inode: event.inode,
@@ -265,8 +272,8 @@ export class DotEmaWorkflowActionsService {
                 data: this.processWorkflowPayload(data, event.workflow.actionInputs)
             })
             .pipe(
-                catchError((error) => {
-                    return this.httpErrorManagerService.handle(error);
+                catchError((error: HttpErrorResponse) => {
+                    return this.getErrorMessage(error);
                 }),
                 take(1)
             );
@@ -354,5 +361,49 @@ export class DotEmaWorkflowActionsService {
         }
 
         return requestOptions;
+    }
+
+    /**
+     * Get the error message based on the response status
+     *
+     * @private
+     * @param {HttpErrorResponse} [response]
+     * @return {*}  {{
+     *         detail: string;
+     *         summary: string;
+     *     }}
+     * @memberof DotEmaWorkflowActionsService
+     */
+    private getErrorMessage(response?: HttpErrorResponse): Observable<MessageInfo> {
+        return of(
+            {
+                [HttpCode.NOT_FOUND]: {
+                    summary: this.dotMessageService.get('dot.common.http.error.404.header'),
+                    detail: this.dotMessageService.get('dot.common.http.error.404.message')
+                },
+
+                [HttpCode.UNAUTHORIZED]: {
+                    summary: this.dotMessageService.get('dot.common.http.error.403.header'),
+                    detail: this.dotMessageService.get('dot.common.http.error.403.message')
+                },
+
+                [HttpCode.FORBIDDEN]: {
+                    summary: this.dotMessageService.get('dot.common.http.error.403.header'),
+                    detail: this.dotMessageService.get('dot.common.http.error.403.message')
+                },
+                [HttpCode.SERVER_ERROR]: {
+                    summary: this.dotMessageService.get('dot.common.http.error.500.header'),
+                    detail: this.dotMessageService.get('dot.common.http.error.500.message')
+                },
+                [HttpCode.BAD_REQUEST]: {
+                    summary: this.dotMessageService.get('dot.common.http.error.400.header'),
+                    detail: this.dotMessageService.get('dot.common.http.error.400.message')
+                },
+                [HttpCode.NO_CONTENT]: {
+                    summary: this.dotMessageService.get('dot.common.http.error.204.header'),
+                    detail: this.dotMessageService.get('dot.common.http.error.204.message')
+                }
+            }[response.status]
+        );
     }
 }
