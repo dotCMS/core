@@ -1,5 +1,5 @@
 <ng-container *ngIf="vm$ | async as vm; else noContent">
-    <div
+    <!-- <div
         class="topBar"
         *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]"
         data-testId="topBar">
@@ -10,7 +10,7 @@
             >{{ 'edit.content.layout.beta.message.switch' | dm }}</a
         >
         {{ 'edit.content.layout.beta.message.needed' | dm }}
-    </div>
+    </div> -->
     <dot-edit-content-toolbar
         class="header"
         [actions]="vm.actions"
@@ -22,11 +22,10 @@
             })
         "></dot-edit-content-toolbar>
     <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
-    <aside class="sidebar">
-        <dot-edit-content-aside
-            [contentLet]="vm.contentlet"
-            [contentType]="vm.contentType.variable" />
-    </aside>
+    <dot-edit-content-aside
+        class="sidebar"
+        [contentlet]="vm.contentlet"
+        [contentType]="vm.contentType.variable" />
 </ng-container>
 
 <ng-template #noContent>{{ 'edit.content.layout.no.content.to.show ' | dm }}</ng-template>

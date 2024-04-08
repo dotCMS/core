@@ -5,6 +5,7 @@ import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angu
 import { RouterLink } from '@angular/router';
 
 import { ChipModule } from 'primeng/chip';
+import { DividerModule } from 'primeng/divider';
 
 import { DotWorkflowService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
@@ -37,12 +38,13 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
         ContentletStatusPipe,
         RouterLink,
         AsyncPipe,
-        DotLinkComponent
+        DotLinkComponent,
+        DividerModule
     ],
     providers: [DotWorkflowService]
 })
 export class DotEditContentAsideComponent implements OnInit {
-    @Input() contentLet!: DotCMSContentlet;
+    @Input() contentlet!: DotCMSContentlet;
     @Input() contentType!: string;
 
     private readonly workFlowService = inject(DotWorkflowService);
@@ -50,10 +52,8 @@ export class DotEditContentAsideComponent implements OnInit {
     workflow$!: Observable<DotCMSWorkflowStatus>;
 
     ngOnInit() {
-        if (this.contentLet?.inode) {
-            this.workflow$ = this.workFlowService.getWorkflowStatus(this.contentLet.inode);
-        } else {
-            this.workflow$ = of({ scheme: null, step: null, task: null });
-        }
+        this.workflow$ = this.contentlet?.inode
+            ? this.workFlowService.getWorkflowStatus(this.contentlet.inode)
+            : of({ scheme: null, step: null, task: null });
     }
 }

@@ -1,34 +1,151 @@
 @use "variables" as *;
 
 :host {
-    padding: 0 $spacing-3;
-    display: block;
+    display: flex;
+    width: 350px;
+    height: 100%;
+    padding-bottom: $spacing-0;
+    flex-direction: column;
+    align-items: flex-start;
+    border-left: 1px solid $color-palette-gray-400;
+    background: $color-palette-gray-100;
+    box-shadow: $shadow-m;
 }
 
-.edit-content-aside--header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: $spacing-1;
+dd {
+    display: block;
+    width: 100%;
+    margin: 0;
+}
 
-    strong {
+.content-aside,
+.content-aside__section {
+    display: block;
+    width: 100%;
+
+    .content-aside__header {
+        display: flex;
+        height: 48px;
+        padding: 0 $spacing-3;
+        align-items: center;
+        gap: $spacing-1;
+        background: $color-palette-primary-200;
+
+        i {
+            width: 1.25rem;
+            height: 1.25rem;
+            padding: 0 $spacing-4;
+        }
+
+        label {
+            color: $black;
+            font-size: $font-size-lmd;
+            font-weight: $font-weight-bold;
+            line-height: $line-height-lg;
+        }
+    }
+
+    .content-aside__information {
+        display: flex;
+        padding: $spacing-3;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        gap: $spacing-1;
+
+        .content-aside__status {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+
+    .content-aside__metadata {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: $spacing-1;
+
+        .sidebar-card {
+            display: flex;
+            flex-direction: column;
+            background: $white;
+            padding: $spacing-1;
+            border-radius: $border-radius-lg;
+            gap: $spacing-0;
+        }
+
+        .sidebar-card__header {
+            margin: 0;
+            color: var(--Black, #14151a);
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: 140%; /* 19.6px */
+        }
+
+        .sidebar-card__label {
+            color: var(--Gray-Scale-800, #515667);
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: 140%; /* 19.6px */
+        }
+    }
+
+    .content-history__container {
         display: flex;
         align-items: center;
-        gap: 0.3em;
-    }
-}
+        flex: 1 0 0;
+        align-self: stretch;
+        border-radius: 8px;
+        background: var(--White, #fff);
 
-.edit-content-aside--item {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: $spacing-1;
-    grid-auto-rows: $spacing-5;
+        .content-history {
+            display: flex;
+            padding: 8px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--padding-gap-s, 4px);
+            flex: 1 0 0;
+            position: relative;
 
-    p {
-        color: $color-palette-gray-800;
-        margin: 0;
-    }
+            &:not(:first-child)::before {
+                content: "";
+                position: absolute;
+                height: 39px;
+                border-left: 1px solid var(--Gray-Scale-300, #ebecef);
+                left: 0;
+                top: 0;
+                bottom: 0;
+                margin: auto;
+            }
+        }
 
-    dd {
-        margin: 0;
+        .content-history__title {
+            color: var(--Black, #14151a);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 140%; /* 19.6px */
+        }
+
+        .content-history__author {
+            overflow: hidden;
+            color: var(--Gray-Scale-800, #515667);
+            text-overflow: ellipsis;
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: 140%; /* 19.6px */
+        }
+
+        .content-history__date {
+            color: var(--Gray-Scale-700, #6c7389);
+            font-size: 12px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: 140%; /* 16.8px */
+        }
     }
 }
