@@ -164,34 +164,6 @@ export class DotEmaWorkflowActionsService {
     }
 
     /**
-     * Returns the input needed to collect information of the Workflow inputs.
-     *
-     * @param {DotCMSWorkflowAction} workflow
-     * @param {string} title
-     * @returns DotWizardInput
-     * @memberof DotWorkflowEventHandlerService
-     */
-    setWizardInput(workflow: DotCMSWorkflowAction, title: string): DotWizardInput | null {
-        const steps: DotWizardStep[] = [];
-        this.mergeCommentAndAssign(workflow).forEach((input: DotCMSWorkflowInput) => {
-            const formComponentId = input.id as DotWizardComponentEnum;
-            if (WORKFLOW_STEP_MAP[formComponentId]) {
-                steps.push({
-                    component: input.id,
-                    data: input.body
-                });
-            }
-        });
-
-        return steps.length
-            ? {
-                  title: title,
-                  steps: steps
-              }
-            : null;
-    }
-
-    /**
      * convert the data collected to what is expecting the endpoint.
      * @param {{ [key: string]: any }} data
      * @param {DotCMSWorkflowInput[]} inputs
@@ -251,6 +223,35 @@ export class DotEmaWorkflowActionsService {
                 return this.httpErrorManagerService.handle(error); // These need to be a message with toast.
             })
         );
+    }
+
+    /**
+     * Returns the input needed to collect information of the Workflow inputs.
+     *
+     * @param {DotCMSWorkflowAction} workflow
+     * @param {string} title
+     * @returns DotWizardInput
+     * @memberof DotWorkflowEventHandlerService
+     */
+    setWizardInput(workflow: DotCMSWorkflowAction, title: string): DotWizardInput | null {
+        const steps = this.mergeCommentAndAssign(workflow).reduce((steps, input) => {
+            const formComponentId = input.id as DotWizardComponentEnum;
+            if (WORKFLOW_STEP_MAP[formComponentId]) {
+                steps.push({
+                    component: input.id,
+                    data: input.body
+                });
+            }
+
+            return steps;
+        }, [] as DotWizardStep[]);
+
+        return steps.length
+            ? {
+                  title,
+                  steps
+              }
+            : null;
     }
 
     fireWorkflowAction(
@@ -329,21 +330,21 @@ export class DotEmaWorkflowActionsService {
         const requestOptions: DotActionBulkRequestOptions = {
             workflowActionId: event.workflow.id,
             additionalParams: {
+                additionalParamsMap: { _path_to_move: processedData.pathToMove },
                 assignComment: {
-                    comment: processedData.comments,
-                    assign: processedData.assign
+                    assign: processedData.assign,
+                    comment: processedData.comments
                 },
                 pushPublish: {
                     whereToSend: processedData.whereToSend,
-                    iWantTo: processedData.iWantTo,
-                    expireDate: processedData.expireDate,
-                    expireTime: processedData.expireTime,
-                    publishDate: processedData.publishDate,
                     publishTime: processedData.publishTime,
+                    expireDate: processedData.expireDate,
+                    publishDate: processedData.publishDate,
+                    expireTime: processedData.expireTime,
                     filterKey: processedData.filterKey,
-                    timezoneId: processedData.timezoneId
-                },
-                additionalParamsMap: { _path_to_move: processedData.pathToMove }
+                    timezoneId: processedData.timezoneId,
+                    iWantTo: processedData.iWantTo
+                }
             }
         };
         if (Array.isArray(event.selectedInodes)) {
