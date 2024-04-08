@@ -148,9 +148,7 @@ export class DotEmaWorkflowActionsService {
         return this.pushPublishService.getEnvironments().pipe(
             take(1),
             map((environments: DotEnvironment[]) => {
-                if (environments.length) {
-                    return true;
-                } else {
+                if (!environments.length) {
                     this.messageService.add({
                         life: 3000,
                         summary: this.dotMessageService.get(
@@ -160,7 +158,7 @@ export class DotEmaWorkflowActionsService {
                     });
                 }
 
-                return false;
+                return !!environments.length;
             })
         );
     }
