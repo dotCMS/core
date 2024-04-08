@@ -32,6 +32,13 @@ form {
     height: 22rem;
 }
 
+.ai-content__pagination {
+    display: flex;
+    justify-content: center;
+    gap: $spacing-1;
+    align-items: center;
+}
+
 .ai-content__input-text {
     height: 4rem;
 }

@@ -24,7 +24,6 @@ import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
     AIContentActionsComponent,
-    AIContentPromptComponent,
     AIImagePromptComponent,
     BubbleFormComponent,
     BubbleLinkFormComponent,
@@ -59,6 +58,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotMessagePipe,
         ConfirmDialogModule,
         AIImagePromptComponent,
+        AIImagePromptComponent,
         DotAssetSearchComponent,
         DialogModule,
         InputTextareaModule,
@@ -77,7 +77,6 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
         FloatingButtonComponent,
-        AIContentPromptComponent,
         AIContentActionsComponent
     ],
     providers: [
@@ -104,7 +103,6 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent,
-        AIContentPromptComponent,
         AIContentActionsComponent
     ]
 })
