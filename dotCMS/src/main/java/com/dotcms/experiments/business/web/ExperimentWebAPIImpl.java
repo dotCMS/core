@@ -56,14 +56,27 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
 
         final List<Experiment> experimentsRunning = APILocator.getExperimentsAPI()
                 .getRunningExperiments(currentHost);
+
+        final List<String> experimentsRunningId = experimentsRunning.stream()
+                .map(experiment -> experiment.id().get())
+                .collect(Collectors.toList());
+
         final List<Experiment> experimentFiltered = UtilMethods.isSet(idsToExclude) ?
                 experimentsRunning.stream()
                     .filter(experiment -> !idsToExclude.contains(experiment.id().get()))
                     .collect(Collectors.toList()) : experimentsRunning;
 
-        if (experimentFiltered == null || experimentFiltered.isEmpty()) {
-            return new SelectedExperiments(Collections.EMPTY_LIST, Collections.EMPTY_LIST,
-                    UtilMethods.isSet(idsToExclude) ? new ArrayList(idsToExclude) : Collections.EMPTY_LIST);
+        final List<String> excludedExperimentIdsEnded = idsToExclude != null ? idsToExclude.stream()
+                .filter(experimentId -> !experimentsRunningId.contains(experimentId))
+                .collect(Collectors.toList()) : Collections.emptyList();
+
+        if (experimentFiltered.isEmpty()) {
+            return new SelectedExperiments.Builder()
+                    .experiments(Collections.emptyList())
+                    .included(Collections.emptyList())
+                    .excluded(UtilMethods.isSet(idsToExclude) ? new ArrayList<>(idsToExclude) : Collections.emptyList())
+                    .excludedExperimentIdsEnded(excludedExperimentIdsEnded)
+                    .build();
         }
 
         final List<Experiment> experimentsSelected = pickExperiments(experimentFiltered, request, response);
@@ -71,9 +84,12 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
         final List<SelectedExperiment> selectedExperiments = !experimentsSelected.isEmpty() ?
                 getSelectedExperimentsResult(experimentsSelected) : getNoneExperimentListResult();
 
-        return new SelectedExperiments(selectedExperiments,
-                experimentFiltered.stream().map(experiment -> experiment.id().get()).collect(Collectors.toList()),
-                UtilMethods.isSet(idsToExclude) ? new ArrayList(idsToExclude) : Collections.EMPTY_LIST);
+        return new SelectedExperiments.Builder()
+                .experiments(selectedExperiments)
+                .included(experimentFiltered.stream().map(experiment -> experiment.id().get()).collect(Collectors.toList()))
+                .excluded(UtilMethods.isSet(idsToExclude) ? new ArrayList(idsToExclude) : Collections.EMPTY_LIST)
+                .excludedExperimentIdsEnded(excludedExperimentIdsEnded)
+                .build();
     }
 
     private static Optional<Host> getCurrentHost(HttpServletRequest request)  {

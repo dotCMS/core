@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import io.vavr.Lazy;
@@ -107,16 +108,24 @@ public class EventLogWebInterceptor implements WebInterceptor {
 
         final String requestPayload = IOUtils.toString(request.getReader());
         final String realIp = request.getRemoteAddr();
-        final Map<String, Object> requestJsonPayload = JsonUtil.getJsonFromString(requestPayload);
-        final List<Map<String, Object>> experiments = (List<Map<String, Object>>) requestJsonPayload.get("experiments");
+        final Collection<Map<String, Object>> eventsMapFromPayload = getEventsMapFromPayload(requestPayload);
 
-        if (!UtilMethods.isSet(experiments)) {
-            return;
+        for (Map<String, Object> eventMap : eventsMapFromPayload) {
+            final List<Map<String, Object>> experiments = (List<Map<String, Object>>) eventMap.get("experiments");
+
+            if (!UtilMethods.isSet(experiments)) {
+                return;
+            }
+
+            submitEventToJitSuServer(request, eventMap, realIp, experiments);
         }
 
-        requestJsonPayload.remove("experiments");
+    }
 
-        final EventsPayload eventPayload = new EventsPayload(requestJsonPayload);
+    private void submitEventToJitSuServer(HttpServletRequest request, Map<String, Object> eventMap, String realIp, List<Map<String, Object>> experiments) {
+        eventMap.remove("experiments");
+
+        final EventsPayload eventPayload = new EventsPayload(eventMap);
         final String mungedIp = (realIp.lastIndexOf(".") > -1)
                 ? realIp.substring(0, realIp.lastIndexOf(".")) + ".1"
                 : "0.0.0.0";
@@ -140,6 +149,19 @@ public class EventLogWebInterceptor implements WebInterceptor {
         } catch(Exception e) {
             Logger.error(this, "Could not submit event log", e);
 
+        }
+    }
+
+    private static Collection<Map<String, Object>> getEventsMapFromPayload(String requestPayload) throws IOException {
+        try {
+            return JsonUtil.getObjectFromJson(requestPayload, Collection.class);
+        } catch (MismatchedInputException e) {
+            final Map<String, Object> uniqueEvent = JsonUtil.getJsonFromString(requestPayload);
+
+            final HashSet<Map<String, Object>> result = new HashSet<>();
+            result.add(uniqueEvent);
+
+            return result;
         }
     }
 
