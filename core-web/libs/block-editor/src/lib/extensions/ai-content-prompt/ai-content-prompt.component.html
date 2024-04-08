@@ -14,25 +14,51 @@
             (ngSubmit)="store.generateContent(form.value.textPrompt)">
             <textarea
                 class="ai-content__generated-text"
+                *ngIf="vm.status !== ComponentStatus.LOADING; else skeleton"
                 [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
-                [value]="vm.content"
                 [readOnly]="true"
+                formControlName="generatedText"
                 pInputTextarea></textarea>
+            <div
+                class="ai-content__pagination"
+                *ngIf="vm.status !== ComponentStatus.LOADING; else paginationSkeleton">
+                <button
+                    class="p-button-text p-button-sm p-button-rounded"
+                    [disabled]="vm.activeIndex === 0 || vm.generatedContent?.length === 0"
+                    (click)="store.updateActiveIndex(vm.activeIndex - 1)"
+                    type="button"
+                    icon="pi pi-chevron-left"
+                    pButton></button>
+                <span>
+                    {{ vm.generatedContent?.length ? vm.activeIndex + 1 : 0 }} {{ 'of' | dm }}
+                    {{ vm.generatedContent?.length }}
+                </span>
+                <button
+                    class="p-button-text p-button-sm p-button-rounded"
+                    [disabled]="
+                        vm.activeIndex === vm.generatedContent?.length - 1 ||
+                        vm.generatedContent?.length === 0
+                    "
+                    (click)="store.updateActiveIndex(vm.activeIndex + 1)"
+                    type="button"
+                    icon="pi pi-chevron-right"
+                    pButton></button>
+            </div>
 
             <textarea
                 class="ai-content__input-text"
                 #inputTextarea
-                [autofocus]="true"
                 [placeholder]="'block-editor.extension.ai-content.ask.placeholder' | dm"
-                pAutoFocus
                 pInputTextarea
                 formControlName="textPrompt"></textarea>
 
             <div class="ai-content__buttons">
                 <button
                     [label]="'block-editor.extension.ai-image.insert' | dm"
-                    [disabled]="vm.status === ComponentStatus.LOADING || !vm.content"
-                    (click)="store.setSelectedContent(vm.content)"
+                    [disabled]="
+                        vm.status === ComponentStatus.LOADING || !vm.generatedContent?.length
+                    "
+                    (click)="store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)"
                     type="button"
                     pButton></button>
                 <button
@@ -65,4 +91,12 @@
             </div>
         </form>
     </p-dialog>
+
+    <ng-template #skeleton>
+        <p-skeleton width="100%" height="22rem" />
+    </ng-template>
+
+    <ng-template #paginationSkeleton>
+        <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
+    </ng-template>
 </ng-container>

@@ -8,8 +8,6 @@ import { ComponentRef } from '@angular/core';
 
 import { Editor } from '@tiptap/core';
 
-import { AiContentPromptStore } from '../../ai-content-prompt/store/ai-content-prompt.store';
-import { DotAiImagePromptStore } from '../../ai-image-prompt/ai-image-prompt.store';
 import { AIContentActionsComponent } from '../ai-content-actions.component';
 import { AI_CONTENT_ACTIONS_PLUGIN_KEY } from '../ai-content-actions.extension';
 import { TIPPY_OPTIONS } from '../utils';
@@ -48,9 +46,6 @@ export class AIContentActionsView {
 
     public component: ComponentRef<AIContentActionsComponent>;
 
-    private aiContentPromptStore: AiContentPromptStore;
-    private dotAiImagePromptStore: DotAiImagePromptStore;
-
     private destroy$ = new Subject<boolean>();
 
     constructor(props: AIContentActionsViewProps) {
@@ -65,10 +60,6 @@ export class AIContentActionsView {
         this.element.remove();
         this.pluginKey = pluginKey;
         this.component = component;
-
-        // Reference of stores available ROOT through the Angular component.
-        this.aiContentPromptStore = this.component.injector.get(AiContentPromptStore);
-        this.dotAiImagePromptStore = this.component.injector.get(DotAiImagePromptStore);
 
         this.view.dom.addEventListener('keydown', this.handleKeyDown.bind(this));
     }
