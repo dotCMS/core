@@ -189,15 +189,21 @@ export class DotEmaDialogComponent {
     }
 
     /**
-     * Show loading iframe dialog
+     * Show loading iframe
      *
-     * @param {string} [title='']
+     * @param {string} [title]
      * @memberof DotEmaDialogComponent
      */
-    showLoadingIframe(title = '') {
-        this.store.loadingIframe(title);
+    showLoadingIframe(title?: string) {
+        this.store.loadingIframe(title ?? '');
     }
 
+    /**
+     * Handle workflow event
+     *
+     * @param {DotCMSWorkflowActionEvent} event
+     * @memberof DotEmaDialogComponent
+     */
     handleWorkflowEvent(event: DotCMSWorkflowActionEvent) {
         this.workflowActions
             .handleWorkflowAction(event, this.callEmbeddedFunction.bind(this))
@@ -222,9 +228,26 @@ export class DotEmaDialogComponent {
             });
     }
 
-    callEmbeddedFunction(callback: string, args: unknown[]) {
+    /**
+     * Reload iframe
+     *
+     * @memberof DotEmaDialogComponent
+     */
+    reloadIframe() {
+        this.iframe.nativeElement.contentWindow.location.reload();
+    }
+
+    /**
+     * Call embedded function
+     *
+     * @private
+     * @param {string} callback
+     * @param {unknown[]} args
+     * @memberof DotEmaDialogComponent
+     */
+    private callEmbeddedFunction(callback: string, args: unknown[] = []) {
         this.ngZone.run(() => {
-            this.iframe.nativeElement.contentWindow[callback](...args);
+            this.iframe.nativeElement.contentWindow?.[callback]?.(...args);
         });
     }
 
@@ -253,7 +276,7 @@ export class DotEmaDialogComponent {
                     event.detail.name === NG_CUSTOM_EVENTS.SAVE_PAGE &&
                     event.detail.payload.isMoveAction
                 ) {
-                    this.iframe.nativeElement.contentWindow.location.reload();
+                    this.reloadIframe();
                 }
             });
     }
