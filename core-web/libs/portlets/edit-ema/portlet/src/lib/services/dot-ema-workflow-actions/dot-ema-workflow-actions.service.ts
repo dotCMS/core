@@ -286,27 +286,6 @@ export class DotEmaWorkflowActionsService {
         return !!event.selectedInodes?.length;
     }
 
-    private mergeCommentAndAssign(workflow: DotCMSWorkflowAction): DotCMSWorkflowInput[] {
-        const body: Record<string, boolean> = {};
-        let workflows: DotCMSWorkflowInput[];
-        workflow.actionInputs.forEach((input) => {
-            if (this.isValidActionInput(input.id)) {
-                body[input.id] = true;
-            }
-        });
-        if (Object.keys(body).length) {
-            workflows = workflow.actionInputs.filter((input) => !this.isValidActionInput(input.id));
-            workflows.unshift({
-                id: DotActionInputs.COMMENTANDASSIGN,
-                body: { ...body, ...this.getAssignableData(workflow) }
-            });
-        } else {
-            return workflow.actionInputs;
-        }
-
-        return workflows;
-    }
-
     private getAssignableData(workflow: DotCMSWorkflowAction): DotAssignableData {
         return {
             roleId: workflow.nextAssign,
@@ -320,6 +299,27 @@ export class DotEmaWorkflowActionsService {
             id === DotActionInputs.COMMENTABLE ||
             id === DotActionInputs.MOVEABLE
         );
+    }
+
+    private mergeCommentAndAssign(workflow: DotCMSWorkflowAction): DotCMSWorkflowInput[] {
+        const body: Record<string, boolean> = {};
+        let workflows: DotCMSWorkflowInput[];
+        workflow.actionInputs.forEach((input) => {
+            if (this.isValidActionInput(input.id)) {
+                body[input.id] = true;
+            }
+        });
+        if (Object.keys(body).length) {
+            workflows = workflow.actionInputs.filter((input) => !this.isValidActionInput(input.id));
+            workflows.unshift({
+                body: { ...body, ...this.getAssignableData(workflow) },
+                id: DotActionInputs.COMMENTANDASSIGN
+            });
+        } else {
+            return workflow.actionInputs;
+        }
+
+        return workflows;
     }
 
     private processBulkData(
