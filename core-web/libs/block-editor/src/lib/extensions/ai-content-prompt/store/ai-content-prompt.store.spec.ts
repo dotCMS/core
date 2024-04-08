@@ -34,11 +34,13 @@ describe('AiContentPromptStore', () => {
     it('should showDialog and set the initial state', (done) => {
         const initialState: AiContentPromptState = {
             prompt: '',
-            content: '',
+            generatedContent: [],
             selectedContent: '',
+            activeIndex: null,
             status: ComponentStatus.INIT,
             error: '',
-            showDialog: false
+            showDialog: false,
+            submitLabel: 'block-editor.extension.ai-image.generate'
         };
 
         //dirty state
@@ -86,7 +88,7 @@ describe('AiContentPromptStore', () => {
         // Check if state is updated correctly
         store.state$.subscribe((state) => {
             expect(state.status).toBe(ComponentStatus.IDLE);
-            expect(state.content).toBe(content);
+            expect(state.generatedContent).toBe([{ content, prompt }]);
             done();
         });
     });
