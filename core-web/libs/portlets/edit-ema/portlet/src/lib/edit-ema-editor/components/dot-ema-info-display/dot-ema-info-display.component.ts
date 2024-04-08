@@ -50,17 +50,17 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
 
     ngOnChanges() {
         if (this.editorData.page.isLocked) {
-            let message = `<b>Locked </b> by ${this.editorData.page.lockedByUser}`;
+            let message = 'editpage.locked-by';
 
             if (!this.editorData.page.canLock) {
-                message += '. To unlock contact your administrator';
+                message = 'editpage.locked-by-contact-administrator';
             }
 
             this.options.set({
                 icon: 'pi pi-lock',
                 info: {
                     message,
-                    args: []
+                    args: [this.editorData.page.lockedByUser]
                 }
             });
 

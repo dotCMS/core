@@ -243,10 +243,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                         const canEditVariant =
                                             isDefaultVariant || !editingBlockedByExperiment;
 
-                                        const mode = this.getInitialEditorMode(
+                                        const isLocked =
+                                            pageData.page.locked &&
+                                            pageData.page.lockedBy !== currentUser.userId;
+
+                                        const mode = this.getInitialEditorMode({
                                             isDefaultVariant,
-                                            canEditVariant
-                                        );
+                                            canEditVariant,
+                                            isLocked
+                                        });
 
                                         return this.setState({
                                             currentExperiment: experiment,
@@ -262,10 +267,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                 canEditPage: pageData.page.canEdit,
                                                 variantId: params.variantName,
                                                 page: {
-                                                    isLocked:
-                                                        pageData.page.locked &&
-                                                        pageData.page.lockedBy !==
-                                                            currentUser.userId,
+                                                    isLocked,
                                                     canLock: pageData.page.canLock,
                                                     lockedByUser: pageData.page.lockedByName
                                                 }
@@ -666,7 +668,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     };
 
-    private getInitialEditorMode(isDefaultVariant: boolean, canEditVariant: boolean): EDITOR_MODE {
+    private getInitialEditorMode({
+        isDefaultVariant,
+        canEditVariant,
+        isLocked
+    }: {
+        isDefaultVariant: boolean;
+        canEditVariant: boolean;
+        isLocked: boolean;
+    }): EDITOR_MODE {
+        if (isLocked) {
+            return EDITOR_MODE.LOCKED;
+        }
+
         if (isDefaultVariant) {
             return EDITOR_MODE.EDIT;
         } else if (canEditVariant) {

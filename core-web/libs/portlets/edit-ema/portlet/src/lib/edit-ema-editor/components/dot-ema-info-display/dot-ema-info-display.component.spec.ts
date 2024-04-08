@@ -366,9 +366,7 @@ describe('DotEmaInfoDisplayComponent', () => {
 
                 spectator.detectChanges();
 
-                expect(spectator.query(byTestId('info-text')).innerHTML).toBe(
-                    '<b>Locked </b> by user'
-                );
+                expect(spectator.query(byTestId('info-text')).innerHTML).toBe('editpage.locked-by');
             });
         });
 
@@ -388,7 +386,7 @@ describe('DotEmaInfoDisplayComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('info-text')).innerHTML).toBe(
-                    '<b>Locked </b> by user. To unlock contact your administrator'
+                    'editpage.locked-by-contact-administrator'
                 );
             });
         });

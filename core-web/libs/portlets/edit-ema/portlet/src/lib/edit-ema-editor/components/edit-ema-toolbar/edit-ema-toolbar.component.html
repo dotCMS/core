@@ -65,7 +65,7 @@
                 (despersonalize)="onDespersonalize($event)"
                 data-testId="persona-selector" />
             <dot-edit-ema-workflow-actions
-                *ngIf="es.editorData.mode === editorMode.EDIT && !es.editorData.page.isLocked"
+                *ngIf="es.editorData.mode === editorMode.EDIT"
                 [inode]="es.editor.page.inode"
                 (newPage)="handleNewPage($event)" />
 
@@ -80,11 +80,7 @@
         </div>
     </p-toolbar>
     <dot-ema-info-display
-        *ngIf="
-            !es.editorData.canEditPage ||
-            es.editorData.mode !== editorMode.EDIT ||
-            es.editorData.page.isLocked
-        "
+        *ngIf="!es.editorData.canEditPage || es.editorData.mode !== editorMode.EDIT"
         [editorData]="es.editorData"
         [currentExperiment]="es.currentExperiment"
         data-testId="info-display" />
