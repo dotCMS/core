@@ -166,16 +166,6 @@ export class DotEmaWorkflowActionsService {
     }
 
     /**
-     * Check if Push Publish is par of th sub-actions of the workflow.
-     * @param {DotCMSWorkflowInput[]} inputs
-     * @returns boolean
-     * @memberof DotWorkflowEventHandlerService
-     */
-    containsPushPublish(inputs: DotCMSWorkflowInput[]): boolean {
-        return inputs.some((input) => input.id === 'pushPublish');
-    }
-
-    /**
      * Returns the input needed to collect information of the Workflow inputs.
      *
      * @param {DotCMSWorkflowAction} workflow
@@ -214,33 +204,32 @@ export class DotEmaWorkflowActionsService {
         data: DotWorkflowPayload,
         inputs: DotCMSWorkflowInput[]
     ): DotProcessedWorkflowPayload {
-        const processedData: DotProcessedWorkflowPayload = { ...data };
-        if (this.containsPushPublish(inputs)) {
-            processedData['whereToSend'] = data.environment.join();
-            processedData['iWantTo'] = data.pushActionSelected;
-            processedData['publishTime'] = this.dotFormatDateService.format(
-                new Date(data.publishDate),
-                'HH-mm'
-            );
-            processedData['publishDate'] = this.dotFormatDateService.format(
-                new Date(data.publishDate),
-                'yyyy-MM-dd'
-            );
-            processedData['expireTime'] = this.dotFormatDateService.format(
-                data.expireDate ? new Date(data.expireDate) : new Date(),
-                'HH-mm'
-            );
-            processedData['expireDate'] = this.dotFormatDateService.format(
-                data.expireDate ? new Date(data.expireDate) : new Date(),
-                'yyyy-MM-dd'
-            );
-            delete processedData.environment;
-            delete processedData.pushActionSelected;
-        }
-
-        processedData['contentlet'] = {}; // needed for indexPolicy=WAIT_FOR
-
-        return processedData;
+        return this.containsPushPublish(inputs)
+            ? { ...data, contentlet: {} }
+            : {
+                  ...data,
+                  whereToSend: data.environment.join(),
+                  iWantTo: data.pushActionSelected,
+                  publishTime: this.dotFormatDateService.format(
+                      new Date(data.publishDate),
+                      'HH-mm'
+                  ),
+                  publishDate: this.dotFormatDateService.format(
+                      new Date(data.publishDate),
+                      'yyyy-MM-dd'
+                  ),
+                  expireTime: this.dotFormatDateService.format(
+                      data.expireDate ? new Date(data.expireDate) : new Date(),
+                      'HH-mm'
+                  ),
+                  expireDate: this.dotFormatDateService.format(
+                      data.expireDate ? new Date(data.expireDate) : new Date(),
+                      'yyyy-MM-dd'
+                  ),
+                  environment: undefined,
+                  pushActionSelected: undefined,
+                  contentlet: {} // needed for indexPolicy=WAIT_FOR
+              };
     }
     openWizard(event: DotCMSWorkflowActionEvent): Observable<DotWorkflowPayload> {
         const wizardInput = this.setWizardInput(
@@ -261,7 +250,7 @@ export class DotEmaWorkflowActionsService {
         return this.dotWorkflowActionsFireService.bulkFire(this.processBulkData(event, data)).pipe(
             take(1),
             catchError((error) => {
-                return this.httpErrorManagerService.handle(error);
+                return this.httpErrorManagerService.handle(error); // These need to be a message with toast.
             })
         );
     }
@@ -282,6 +271,16 @@ export class DotEmaWorkflowActionsService {
                 }),
                 take(1)
             );
+    }
+
+    /**
+     * Check if Push Publish is par of th sub-actions of the workflow.
+     * @param {DotCMSWorkflowInput[]} inputs
+     * @returns boolean
+     * @memberof DotWorkflowEventHandlerService
+     */
+    containsPushPublish(inputs: DotCMSWorkflowInput[]): boolean {
+        return inputs.some((input) => input.id === 'pushPublish');
     }
 
     private isBulkAction(event: DotCMSWorkflowActionEvent): boolean {
