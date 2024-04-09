@@ -420,6 +420,7 @@ public class WebAssetHelperIntegrationTest {
                 exception = e;
             }
             Assert.assertNotNull(exception);
+            Assert.assertTrue(exception instanceof DotSecurityException);
         }
 
     }
