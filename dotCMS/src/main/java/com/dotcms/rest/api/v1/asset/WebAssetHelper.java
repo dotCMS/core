@@ -465,6 +465,9 @@ public class WebAssetHelper {
         if (null == fileInputStream) {
             //if no FileInputStream  is present we return the folder info
             //because we support creating folders by just specifying the path
+            //At least we have to have read permissions to the folder
+            //if we fail to verify read permissions we need to throw an exception therefore the exception will roll back the folder creation
+            checkFolderReadPermissions(user, folder);
             return toAssetsFolder(folder);
         }
 
@@ -483,14 +486,15 @@ public class WebAssetHelper {
                 // We trust that the asset we're getting here is working and or live which is the inode we need to do the checkout
                 final AssetView asset = versions.get(0);
 
+                checkFolderPublishPermissions(user, folder);
                 handleArchivedVersions(user, asset, lang.get());
-
                 //now checkout and create a new version of the asset in the given language
                 final Contentlet checkout = contentletAPI.checkout(asset.inode(), user, false);
                 updateFileAsset(tempFile.file, host, folder, lang.get(), checkout);
                 savedAsset = checkinOrPublish(checkout, user, live);
 
             } else {
+                checkFolderPublishPermissions(user, folder);
                 //asset does not exist. So create new one
                 final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, user, lang.get());
                 savedAsset = checkinOrPublish(contentlet, user, live);
@@ -499,6 +503,34 @@ public class WebAssetHelper {
             return toAsset(fileAsset);
         } finally {
             disposeTempFile(tempFile);
+        }
+    }
+
+    /**
+     * Checks if the user has read permissions for the given folder
+     * @param user the user performing the action
+     * @param folder the folder to check
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
+     */
+    private void checkFolderReadPermissions(User user, Folder folder) throws DotDataException, DotSecurityException {
+        if(!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)){
+            throw new DotSecurityException(String.format("User [%s] does not have permission to read folder [%s]",
+                    user.getUserId(), folder.getInode()));
+        }
+    }
+
+    /**
+     * Checks if the user has write permissions for the given folder
+     * @param user the user performing the action
+     * @param folder the folder to check
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
+     */
+    private void checkFolderPublishPermissions(User user, Folder folder) throws DotDataException, DotSecurityException {
+        if(!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)){
+            throw new DotSecurityException(String.format("User [%s] does not have permission to write to folder [%s]",
+                    user.getUserId(), folder.getInode()));
         }
     }
 
@@ -563,14 +595,6 @@ public class WebAssetHelper {
      */
     Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live)
             throws DotDataException, DotSecurityException {
-
-        if (!permissionAPI.doesUserHavePermission(checkout, PermissionAPI.PERMISSION_PUBLISH, user,
-                false)) {
-            Logger.info(this,
-                    String.format("User [%s] does not have permission to publish asset [%s]",
-                            user.getUserId(), checkout.getIdentifier()));
-            return checkout;
-        }
 
         var contentletToProcess = checkout;
         var checkedIn = false;
