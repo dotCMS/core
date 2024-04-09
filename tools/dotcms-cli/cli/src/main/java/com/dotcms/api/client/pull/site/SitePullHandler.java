@@ -1,6 +1,7 @@
 package com.dotcms.api.client.pull.site;
 
 import com.dotcms.api.client.pull.GeneralPullHandler;
+import com.dotcms.api.client.util.NameUtil;
 import com.dotcms.model.pull.PullOptions;
 import com.dotcms.model.site.SiteView;
 import java.util.List;
@@ -31,7 +32,7 @@ public class SitePullHandler extends GeneralPullHandler<SiteView> {
 
     @Override
     public String fileName(final SiteView site) {
-        return site.hostName();
+        return NameUtil.siteFileName(site);
     }
 
     @Override

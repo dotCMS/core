@@ -27,7 +27,7 @@ public class LanguageFetcher implements ContentFetcher<Language>, Serializable {
     public List<Language> fetch(final boolean failFast, final Map<String, Object> customOptions) {
 
         final var languageAPI = clientFactory.getClient(LanguageAPI.class);
-        return languageAPI.list().entity();
+        return languageAPI.listForPull().entity();
     }
 
     @ActivateRequestContext

@@ -46,4 +46,19 @@ public class CommonViews {
 
     }
 
+    /**
+     * The LanguageFileView interface defines the view used for the language file descriptor
+     */
+    public interface LanguageFileView {
+
+    }
+
+    /**
+     * The LanguageExternalView interface defines the view used for some server operations as those
+     * server operations require more data than the one displayed in the language file descriptor
+     */
+    public interface LanguageExternalView {
+
+    }
+
 }

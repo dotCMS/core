@@ -316,6 +316,25 @@ public class PushTask<T> extends
             final Path path = Path.of(localFile.getAbsolutePath());
             Files.writeString(path, asString);
 
+            // Check if we need to rename the file
+            String localFileName = localFile.getName();
+            int lastDotPosition = localFileName.lastIndexOf('.');
+            String localDileNameWithoutExtension = localFileName.substring(0, lastDotPosition);
+            String localFileNameExtension = localFileName.substring(lastDotPosition + 1);
+
+            final var expectedFileName = this.params.pushHandler().fileName(content);
+            if (!localDileNameWithoutExtension.equals(expectedFileName)) {
+
+                // Something changed in the content that requires a file rename
+
+                final String renamedFileName = String.format(
+                        "%s.%s", expectedFileName, localFileNameExtension
+                );
+
+                final var renamedFile = new File(localFile.getParent(), renamedFileName);
+                Files.move(path, renamedFile.toPath());
+            }
+
         } catch (Exception e) {
 
             var message = String.format(

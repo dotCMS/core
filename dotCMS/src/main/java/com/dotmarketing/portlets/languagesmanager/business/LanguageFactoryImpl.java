@@ -404,6 +404,12 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			}
 			dbUpsert(lang);
 			CacheLocator.getLanguageCache().clearLanguages();
+			// Cleaning up the createDefaultLanguageLock if we are updating the default language,
+			// otherwise changes won't be reflected.
+			if (createDefaultLanguageLock.get() != null
+					&& createDefaultLanguageLock.get().getId() == lang.getId()) {
+				createDefaultLanguageLock.set(null);
+			}
 		} catch (DotDataException e) {
 
 			throw new DotRuntimeException("saveLanguage failed to save the language:" + lang, e);

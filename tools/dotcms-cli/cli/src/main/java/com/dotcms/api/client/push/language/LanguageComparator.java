@@ -2,8 +2,11 @@ package com.dotcms.api.client.push.language;
 
 import com.dotcms.api.client.push.ContentComparator;
 import com.dotcms.model.language.Language;
+import java.io.File;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 
@@ -17,16 +20,24 @@ public class LanguageComparator implements ContentComparator<Language> {
 
     @ActivateRequestContext
     @Override
-    public Optional<Language> findMatchingServerContent(Language localLanguage,
-            List<Language> serverContents) {
+    public Optional<Language> findMatchingServerContent(File localFile,
+            Language localLanguage, List<Language> serverContents) {
 
-        // Compare by id first.
-        var result = findById(localLanguage.id(), serverContents);
+        // Compare by ISO code first.
+        var result = findByISOCode(localLanguage.isoCode(), serverContents);
 
-        if (result.isEmpty()) {
+        if (result.isEmpty() && localLanguage.id().isPresent()) {
 
-            // If not found by id, compare by ISO code.
-            result = findByISOCode(localLanguage.isoCode(), serverContents);
+            // If not found by ISO code, compare by id
+            result = findById(localLanguage.id(), serverContents);
+        }
+
+        // If nothing was found let's use the file name as a last resort, this is useful because the
+        // file name is the ISO code, and someone might have changed the ISO code in the json file,
+        // confusing the validation process, processing it as a new language.
+        if (result.isEmpty() && !getFileName(localFile).equalsIgnoreCase(localLanguage.isoCode())) {
+            // The ISO changed
+            result = findByISOCode(getFileName(localFile), serverContents);
         }
 
         return result;
@@ -34,15 +45,16 @@ public class LanguageComparator implements ContentComparator<Language> {
 
     @ActivateRequestContext
     @Override
-    public Optional<Language> localContains(Language serverContent, List<Language> localLanguages) {
+    public Optional<Language> localContains(Language serverContent, List<File> localFiles,
+            List<Language> localLanguages) {
 
-        // Compare by id first.
-        var result = findById(serverContent.id(), localLanguages);
+        // Compare by ISO code first.
+        var result = findByISOCode(serverContent.isoCode(), localLanguages);
 
         if (result.isEmpty()) {
 
-            // If not found by id, compare by ISO code.
-            result = findByISOCode(serverContent.isoCode(), localLanguages);
+            // If not found by ISO code, compare by id
+            result = findById(serverContent.id(), localLanguages);
         }
 
         return result;
@@ -58,7 +70,33 @@ public class LanguageComparator implements ContentComparator<Language> {
         }
 
         // Comparing the local and server content in order to determine if we need to update or not the content
-        return localLanguage.equals(serverContent);
+        return equals(localLanguage, serverContent);
+    }
+
+    /**
+     * Checks if two Language objects are equal based on their language, default language, and ISO
+     * code.
+     *
+     * @param toCompare the Language object to compare
+     * @param another   the Language object to compare against
+     * @return true if the two Language objects are equal, false otherwise
+     */
+    private boolean equals(@Nullable Language toCompare, @Nullable Language another) {
+
+        if (toCompare == another) {
+            return true;
+        }
+
+        if (toCompare == null || another == null) {
+            return false;
+        }
+
+        return Objects.equals(
+                toCompare.language().orElse(""), another.language().orElse("")
+        ) && Objects.equals(
+                toCompare.defaultLanguage().orElse(false),
+                another.defaultLanguage().orElse(false)
+        ) && toCompare.isoCode().equalsIgnoreCase(another.isoCode());
     }
 
     /**
