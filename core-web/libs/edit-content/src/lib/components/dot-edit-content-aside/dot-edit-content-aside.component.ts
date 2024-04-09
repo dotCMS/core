@@ -5,7 +5,6 @@ import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angu
 import { RouterLink } from '@angular/router';
 
 import { ChipModule } from 'primeng/chip';
-import { DividerModule } from 'primeng/divider';
 
 import { DotWorkflowService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
@@ -38,8 +37,7 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
         ContentletStatusPipe,
         RouterLink,
         AsyncPipe,
-        DotLinkComponent,
-        DividerModule
+        DotLinkComponent
     ],
     providers: [DotWorkflowService]
 })

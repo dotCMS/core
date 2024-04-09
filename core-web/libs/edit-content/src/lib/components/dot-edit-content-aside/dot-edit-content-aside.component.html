@@ -19,11 +19,16 @@
             </dd>
             <dd class="content-aside__metadata">
                 <div class="sidebar-card">
-                    <h4 class="sidebar-card__header">Content Type</h4>
+                    <div class="sidebar-card__header">
+                        <span>Content Type</span>
+                    </div>
                     <label class="sidebar-card__label">{{ contentlet.contentType }}</label>
                 </div>
                 <div class="sidebar-card">
-                    <h4 class="sidebar-card__header">References</h4>
+                    <div class="sidebar-card__header">
+                        <span> References </span>
+                        <i class="pi pi-eye"></i>
+                    </div>
                     <label class="sidebar-card__label">Used in 5 pages</label>
                 </div>
                 <div class="content-history__container">
@@ -32,13 +37,11 @@
                         <label class="content-history__author">W. Warren</label>
                         <label class="content-history__date">2 days ago</label>
                     </div>
-                    <!-- <p-divider [layout]="'vertical'"></p-divider> -->
                     <div class="content-history">
                         <label class="content-history__title">Modified</label>
                         <label class="content-history__author">B. Simmons</label>
                         <label class="content-history__date">1 week ago</label>
                     </div>
-                    <!-- <p-divider [layout]="'vertical'"></p-divider> -->
                     <div class="content-history">
                         <label class="content-history__title">Created</label>
                         <label class="content-history__author">A. User</label>
@@ -46,6 +49,16 @@
                     </div>
                 </div>
             </dd>
+        </div>
+    </section>
+
+    <section class="content-aside__section">
+        <div class="content-aside__header">
+            <label aria-label="Workflow">{{ 'Workflow' | dm }}</label>
+            <div class="content-aside__icon">
+                <i class="pi pi-history"></i>
+                <label>Show All</label>
+            </div>
         </div>
     </section>
 </aside>

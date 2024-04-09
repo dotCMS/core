@@ -30,11 +30,27 @@ dd {
         align-items: center;
         gap: $spacing-1;
         background: $color-palette-primary-200;
+        justify-content: space-between;
 
-        i {
-            width: 1.25rem;
-            height: 1.25rem;
-            padding: 0 $spacing-4;
+        .content-aside__icon {
+            display: flex;
+            justify-content: center;
+            gap: $spacing-0;
+
+            label {
+                color: $color-palette-primary-500;
+                font-size: 12px;
+                font-style: normal;
+                font-weight: 400;
+                line-height: 140%;
+                text-transform: capitalize;
+            }
+
+            i {
+                width: 1rem;
+                height: 1rem;
+                color: $color-palette-primary-500;
+            }
         }
 
         label {
@@ -77,12 +93,17 @@ dd {
         }
 
         .sidebar-card__header {
-            margin: 0;
+            display: flex;
+            justify-content: space-between;
             color: var(--Black, #14151a);
             font-size: 14px;
             font-style: normal;
             font-weight: 600;
             line-height: 140%; /* 19.6px */
+
+            i {
+                color: $color-palette-primary-500;
+            }
         }
 
         .sidebar-card__label {
@@ -110,6 +131,13 @@ dd {
             gap: var(--padding-gap-s, 4px);
             flex: 1 0 0;
             position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+
+            label {
+                width: 100%;
+            }
 
             &:not(:first-child)::before {
                 content: "";
