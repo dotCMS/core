@@ -65,6 +65,13 @@
 
             <div class="ai-content__buttons">
                 <button
+                    class="p-button-text"
+                    [label]="'Cancel' | dm"
+                    (click)="store.hideDialog()"
+                    type="button"
+                    pButton></button>
+                <button
+                    class="ml-auto"
                     [label]="'block-editor.extension.ai-image.insert' | dm"
                     [disabled]="
                         vm.status === ComponentStatus.LOADING ||
