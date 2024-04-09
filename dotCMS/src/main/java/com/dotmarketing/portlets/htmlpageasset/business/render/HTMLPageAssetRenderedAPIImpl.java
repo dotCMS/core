@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
@@ -136,15 +137,22 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         fireRulesOnPage(htmlPageUrl.getHTMLPage(), request, response);
 
-        return new HTMLPageAssetRenderedBuilder()
+        final HTMLPageAssetRenderedBuilder htmlPageAssetRenderedBuilder = new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(htmlPageUrl.getHTMLPage())
                 .setUser(context.getUser())
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
-                .setLive(htmlPageUrl.hasLive())
-                .build(false, context.getPageMode());
+                .setLive(htmlPageUrl.hasLive());
+
+        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+            APILocator.getExperimentsAPI()
+                    .getRunningExperimentPerPage(htmlPageUrl.getHTMLPage().getIdentifier())
+                    .ifPresent(experiment -> htmlPageAssetRenderedBuilder.setRunningExperiment(experiment));
+        }
+
+        return htmlPageAssetRenderedBuilder.build(false, context.getPageMode());
     }
 
     @Override
@@ -191,7 +199,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         fireRulesOnPage(htmlPageUrl.getHTMLPage(), request, response);
 
-        return new HTMLPageAssetRenderedBuilder()
+        final HTMLPageAssetRenderedBuilder htmlPageAssetRenderedBuilder = new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(htmlPageUrl.getHTMLPage())
                 .setUser(context.getUser())
                 .setRequest(request)
@@ -199,8 +207,15 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setSite(host)
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
-                .setParseJSON(context.isParseJSON())
-                .build(true, mode);
+                .setParseJSON(context.isParseJSON());
+
+        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+            APILocator.getExperimentsAPI()
+                    .getRunningExperimentPerPage(htmlPageUrl.getHTMLPage().getIdentifier())
+                    .ifPresent(experiment -> htmlPageAssetRenderedBuilder.setRunningExperiment(experiment));
+        }
+
+        return htmlPageAssetRenderedBuilder.build(true, mode);
     }
 
     @Override
@@ -260,12 +275,14 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final Contentlet device = APILocator.getDeviceAPI().getCurrentDevice(request, user)
                 .orElse(null);
 
-        return new ViewAsPageStatus(
-                getVisitor(request),
-                WebAPILocator.getLanguageWebAPI().getLanguage(request),
-                device,
-                pageMode,
-                personalized );
+        return new ViewAsPageStatus.Builder()
+                .setVisitor(getVisitor(request))
+                .setLanguage(WebAPILocator.getLanguageWebAPI().getLanguage(request))
+                .setDevice(device)
+                .setPageMode(pageMode)
+                .setPersonalized(personalized)
+                .setVariant(currentVariantId)
+                .build();
     }
 
     public String getPageHtml(

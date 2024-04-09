@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
@@ -63,6 +64,8 @@ public class HTMLPageAssetRenderedBuilder {
     private String pageUrlMapper;
     private boolean live;
     private boolean parseJSON;
+
+    private Experiment runningExperiment;
 
     /**
      * Creates an instance of this Builder, along with all the required dotCMS APIs.
@@ -162,7 +165,8 @@ public class HTMLPageAssetRenderedBuilder {
                     .canEditTemplate(canEditTemplate).viewAs(
                             this.htmlPageAssetRenderedAPI.getViewAsStatus(request,
                                     mode, this.htmlPageAsset, user))
-                    .pageUrlMapper(pageUrlMapper).live(live);
+                    .pageUrlMapper(pageUrlMapper).live(live)
+                    .runningExperiment(runningExperiment);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
 
             return pageViewBuilder.build();
@@ -185,7 +189,8 @@ public class HTMLPageAssetRenderedBuilder {
                     .canEditTemplate(canEditTemplate).viewAs(
                     this.htmlPageAssetRenderedAPI.getViewAsStatus(request,
                             mode, this.htmlPageAsset, user))
-                    .pageUrlMapper(pageUrlMapper).live(live);
+                    .pageUrlMapper(pageUrlMapper).live(live)
+                    .runningExperiment(runningExperiment);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
 
             return pageViewBuilder.build();
@@ -248,4 +253,7 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
+    public void setRunningExperiment(Experiment experiment) {
+        this.runningExperiment = experiment;
+    }
 }

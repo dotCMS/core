@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotcms.experiments.model.Experiment;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -52,6 +53,8 @@ public class PageView implements Serializable {
     final String pageUrlMapper;
     final boolean live;
 
+    final Experiment runningExperiment;
+
     /**
      * Creates an instance of this class based on a builder.
      */
@@ -69,6 +72,7 @@ public class PageView implements Serializable {
         this.numberContents = getContentsNumber();
         this.live = builder.live;
         this.urlContent = builder.urlContent;
+        this.runningExperiment = builder.runningExperiment;
     }
 
     public boolean isLive() {
@@ -184,6 +188,10 @@ public class PageView implements Serializable {
         return urlContent;
     }
 
+    public Experiment getRunningExperiment() {
+        return runningExperiment;
+    }
+
     public static class Builder {
 
         //  The {@link Host} where the HTML Page lives in.
@@ -202,6 +210,8 @@ public class PageView implements Serializable {
         private  Contentlet urlContent;
         private String pageUrlMapper;
         private boolean live;
+
+        private Experiment runningExperiment;
 
         public Builder site(final Host site) {
             this.site = site;
@@ -260,6 +270,11 @@ public class PageView implements Serializable {
 
         public PageView build() {
             return new PageView(this);
+        }
+
+        public Builder runningExperiment(final Experiment runningExperiment) {
+            this.runningExperiment = runningExperiment;
+            return this;
         }
     }
 
