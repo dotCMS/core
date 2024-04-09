@@ -166,7 +166,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			fieldList.add(plot);
 			fieldList.add(boxOffice);
 
-			contentTypeAPI.save(movieOriginal, fieldList);
+			movieOriginal = contentTypeAPI.save(movieOriginal, fieldList);
 
 			final List<Field> fieldsRecovery = APILocator.getContentTypeFieldAPI().byContentTypeId(movieOriginal.id());
 
@@ -2650,11 +2650,11 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	 * <ul>
 	 *     <li><b>Method to test:
 	 *     </b>{@link ContentTypeAPI#copyFromAndDependencies(CopyContentTypeBean)}</li>
-	 *     <li><b>Given Scenario: Creates a test Content Type and a test Workflow Schemes. Then,
+	 *     <li><b>Given Scenario: </b>Creates a test Content Type and a test Workflow Schemes. Then,
 	 *     assigns it to the test Content Type. Finally, copies the source Content Type and its
-	 *     dependencies.</b></li>
-	 *     <li><b>Expected Result: The copied Content Type must point to the same Workflow Scheme
-	 *     as it was copied with dependencies.</b></li>
+	 *     dependencies.</li>
+	 *     <li><b>Expected Result: </b>The copied Content Type must point to the same Workflow
+	 *     Scheme as it was copied with dependencies.</li>
 	 * </ul>
 	 */
 	@Test
@@ -2730,11 +2730,11 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	 * <ul>
 	 *     <li><b>Method to test:
 	 *     </b>{@link ContentTypeAPI#copyFromAndDependencies(CopyContentTypeBean, Host)}</li>
-	 *     <li><b>Given Scenario: Creates a test Content Type and a test Workflow Schemes. Then,
+	 *     <li><b>Given Scenario: </b>Creates a test Content Type and a test Workflow Schemes. Then,
 	 *     assigns it to the test Content Type. Create a new test Site as well. Finally, copies the
-	 *     source Content Type and its dependencies to the new Site.</b></li>
-	 *     <li><b>Expected Result: The copied Content Type must point to the same Workflow Scheme
-	 *     as it was copied with dependencies, and also point to the new Site.</b></li>
+	 *     source Content Type and its dependencies to the new Site.</li>
+	 *     <li><b>Expected Result: </b>The copied Content Type must point to the same Workflow
+	 *     Scheme as it was copied with dependencies, and also point to the new Site.</li>
 	 * </ul>
 	 */
 	@Test
