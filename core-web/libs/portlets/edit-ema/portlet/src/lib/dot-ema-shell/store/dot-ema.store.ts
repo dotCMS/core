@@ -442,7 +442,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     page: {
                                         ...state.editorData.page,
                                         isLocked: false
-                                    }
+                                    },
+                                    mode: EDITOR_MODE.EDIT
                                 }
                             }));
                         },
