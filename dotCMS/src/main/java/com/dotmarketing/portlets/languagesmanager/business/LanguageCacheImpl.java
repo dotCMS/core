@@ -46,6 +46,11 @@ public class LanguageCacheImpl extends LanguageCache {
 		cache.remove(ALL_LANGUAGES_KEY, getPrimaryGroup());
 	}
 
+	public void clearDefaultLanguage() {
+		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		cache.remove(DEFAULT_LANGUAGE, getPrimaryGroup());
+	}
+
 	public Language getDefaultLanguage(){
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 		Language defaultLang = LANG_404;
