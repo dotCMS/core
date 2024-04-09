@@ -16,7 +16,7 @@ import { DotExperimentsProvider } from "@dotcms/experiments";
 
 
 export function MyPage({ data, nav }) {
-  const { refresh, replace, route, asPath, query } = useRouter();
+  const { refresh, replace} = useRouter();
   const pathname = usePathname();
 
   const experimentConfig = {
@@ -25,7 +25,7 @@ export function MyPage({ data, nav }) {
     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG,
     redirectFn: replace
   }
-
+  
   return (
     // Provide the DotExperimentsProvider with the configuration and instance of DotExperiments
     <DotExperimentsProvider config={experimentConfig} >

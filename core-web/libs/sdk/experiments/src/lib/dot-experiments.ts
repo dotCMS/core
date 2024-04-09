@@ -10,7 +10,7 @@ import {
     EXPERIMENT_QUERY_PARAM_KEY,
     PAGE_VIEW_EVENT_NAME
 } from './shared/constants';
-import { DotExperimentConfig, Experiment, Variant, VariantQueryParams } from './shared/models';
+import { DotExperimentConfig, Experiment, Variant } from './shared/models';
 import {
     getExperimentsIds,
     parseData,
@@ -118,8 +118,33 @@ export class DotExperiments {
         this.logger = new DotLogger(this.config.debug, 'DotExperiment');
     }
 
+    /**
+     * Retrieves the array of experiments assigned to an instance of the class.
+     *
+     * @return {Experiment[]} An array containing the experiments assigned to the instance.
+     */
     public get experiments(): Experiment[] {
         return this.experimentsAssigned;
+    }
+
+    /**
+     * Returns a custom redirect function. If a custom redirect function is not configured,
+     * the default redirect function will be used.
+     *
+     * @return {function} A function that accepts a URL string parameter and performs a redirect.
+     *                    If no parameter is provided, the function will not perform any action.
+     */
+    public get customRedirectFn(): (url: string) => void {
+        return this.config.redirectFn ?? defaultRedirectFn;
+    }
+
+    /**
+     * Retrieves the current location.
+     *
+     * @returns {Location} The current location.
+     */
+    public get location(): Location {
+        return this.currentLocation;
     }
 
     /**
@@ -297,12 +322,14 @@ export class DotExperiments {
     }
 
     /**
-     * Returns the variant as a query parameter object based on the provided path.
+     * Returns the experiment variant name as a URL search parameter.
      *
-     * @param {string | null} path - The path used to determine the variant.
-     * @return {VariantQueryParams} - The variant as a query parameter object, or an empty object if no variant exists.
+     * @param {string|null} path - The path to the current page.
+     * @returns {URLSearchParams} - The URL search parameters containing the experiment variant name.
      */
-    public getVariantAsQueryParam(path: string | null): VariantQueryParams {
+    public getVariantAsQueryParam(path: string | null): URLSearchParams {
+        let params: Record<string, string> = {};
+
         if (this.experimentsAssigned && path) {
             const experiment = this.experimentsAssigned.find((experiment) => {
                 const url = getFullUrl(this.currentLocation, path) ?? '';
@@ -311,11 +338,11 @@ export class DotExperiments {
             });
 
             if (experiment && experiment.variant.name !== EXPERIMENT_DEFAULT_VARIANT_NAME) {
-                return { [EXPERIMENT_QUERY_PARAM_KEY]: experiment.variant.name };
+                params = { [EXPERIMENT_QUERY_PARAM_KEY]: experiment.variant.name };
             }
         }
 
-        return {} as VariantQueryParams;
+        return new URLSearchParams(params);
     }
 
     /**

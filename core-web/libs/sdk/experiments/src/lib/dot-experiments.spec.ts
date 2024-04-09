@@ -138,18 +138,18 @@ describe('DotExperiments', () => {
             await instance.ready();
 
             const EMPTY_URL = '';
-            const expected1 = {};
+            const expected1 = new URLSearchParams({});
             expect(instance.getVariantAsQueryParam(EMPTY_URL)).toStrictEqual(expected1);
 
             const URL_WITH_EXPERIMENT = '/blog';
-            const expected2 = {
+            const expected2 = new URLSearchParams({
                 [EXPERIMENT_QUERY_PARAM_KEY]:
                     IsUserIncludedResponse.entity.experiments[0].variant.name
-            };
+            });
             expect(instance.getVariantAsQueryParam(URL_WITH_EXPERIMENT)).toStrictEqual(expected2);
 
             const URL_NO_EXPERIMENT = '/destinations';
-            const expected3 = {};
+            const expected3 = new URLSearchParams({});
             expect(instance.getVariantAsQueryParam(URL_NO_EXPERIMENT)).toStrictEqual(expected3);
         });
     });

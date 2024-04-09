@@ -161,7 +161,7 @@ const isFullUrl = (url: string): boolean => {
  */
 export const updateUrlWithExperimentVariant = (
     location: Location | string,
-    variant: Variant
+    variant: Variant | null
 ): string => {
     const href = typeof location === 'string' ? location : location.href;
     const url = new URL(href);
@@ -190,4 +190,10 @@ export const objectsAreEqual = (obj1: Experiment[], obj2: Experiment[]): boolean
     return JSON.stringify(obj1) === JSON.stringify(obj2);
 };
 
+/**
+ * A function to redirect the user to a new URL.
+ *
+ * @param {string} href - The URL to redirect to.
+ * @returns {void}
+ */
 export const defaultRedirectFn = (href: string) => (window.location.href = href);

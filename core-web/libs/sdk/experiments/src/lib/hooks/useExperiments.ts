@@ -1,60 +1,78 @@
-import { useCallback, useContext } from 'react';
+// Update the location of the DotExperiments instance when it changes
+import { useContext, useEffect } from 'react';
+
+import { isInsideEditor } from '@dotcms/client';
 
 import DotExperimentsContext from './DotExperimentsContext';
 
-import { EXPERIMENT_QUERY_PARAM_KEY } from '../shared/constants';
+import { EXPERIMENT_DEFAULT_VARIANT_NAME, EXPERIMENT_QUERY_PARAM_KEY } from '../shared/constants';
 
 /**
- * A custom hook to interact with DotCMS Experiments.
- * Currently, this hook provides a method to get an experiment variant
- * as a query parameter and add it to a URL string.
+ * `useExperiments` is a custom hook for updating the location of the DotExperiments instance when it changes.
  *
- * @returns {Object} The API for this hook.
- * @returns {Function} getVariantAsQueryParam - A function to get experiment variant as a query param and append it to a URL string.
- *
- * @example
- * ```javascript
- * const { getVariantAsQueryParam } = useExperiments();
- * const urlWithVariant = getVariantAsQueryParam(url, currentQueryParams);
- * ```
- *
+ * @returns {void}
  */
-export const useExperiments = () => {
+export const useExperiments = (): void => {
+    // retrieve experiment context
     const experimentContext = useContext(DotExperimentsContext);
+    /**
+     * This effect adds a change listener to the experiment context, specifically updating the location.
+     * It doesn't have a meaningful return; it primarily triggers side-effects.
+     */
+    useEffect(() => {
+        if (!experimentContext || typeof document === 'undefined') {
+            return;
+        }
+
+        const insideEditor = isInsideEditor();
+        if (!insideEditor) {
+            const location = typeof window !== 'undefined' ? window.location : undefined;
+            if (experimentContext && location) {
+                experimentContext.locationChanged(location, experimentContext.customRedirectFn);
+            }
+        }
+    }, [experimentContext]);
 
     /**
-     * This function gets an experiment variant as a query parameter based on the provided URL and current URL query parameters.
-     * If there's an experiment variant for the URL, it appends that variant as a query parameter.
-     * If there's no experiment variant for the URL but the EXPERIMENT_QUERY_PARAM_KEY exists in the current query parameters, this method removes the EXPERIMENT_QUERY_PARAM_KEY.
-     * If there's no experiment variant for the URL and the EXPERIMENT_QUERY_PARAM_KEY doesn't exist in the current query parameters, the URL is returned unchanged.
-     *
-     * @param {string} href - The URL that might contain an experiment.
-     * @param {Record<string, string>} currentQueryParams - The current set of query parameters.
-     * @returns {Record<string, string>} The updated set of query parameters.
+     * This effect sets a click handler on the document.
+     * It captures click events and redirects to a new URL if the clicked anchor has a variant assigned.
      */
-    const getVariantAsQueryParamObject = useCallback(
-        (href: string, currentQueryParams: Record<string, string>) => {
-            const variantParams = experimentContext
-                ? experimentContext.getVariantAsQueryParam(href)
-                : {};
+    useEffect(() => {
+        if (!experimentContext) {
+            return;
+        }
 
-            // If variantParams is not empty, append variantParams to currentQueryParams
-            if (Object.keys(variantParams).length > 0) {
-                currentQueryParams = { ...currentQueryParams, ...variantParams };
+        const customClickHandler = (event: MouseEvent) => {
+            const target = event.target as HTMLAnchorElement;
+            // Check if the clicked element is an anchor
+            if (target.tagName.toLowerCase() === 'a') {
+                const clickedHref = target.getAttribute('href');
+                if (clickedHref) {
+                    const modifiedUrl = new URL(clickedHref, experimentContext.location.href);
+                    // Remove the experiment query param from the URL
+                    modifiedUrl.searchParams.delete(EXPERIMENT_QUERY_PARAM_KEY);
+
+                    event.preventDefault();
+                    // Get the variant from the href of the clicked anchor
+                    const variant = experimentContext.getVariantFromHref(clickedHref);
+
+                    if (variant && variant.name !== EXPERIMENT_DEFAULT_VARIANT_NAME) {
+                        // Set the experiment query param in the URL if the variant is not the default one
+                        modifiedUrl.searchParams.set(EXPERIMENT_QUERY_PARAM_KEY, variant.name);
+                    }
+
+                    // Redirect to the new URL using the custom redirect function
+                    experimentContext.customRedirectFn(modifiedUrl.toString());
+                }
             }
+        };
 
-            // If the EXPERIMENT_QUERY_PARAM_KEY is already in current params and variantParams is empty, delete EXPERIMENT_QUERY_PARAM_KEY
-            if (
-                EXPERIMENT_QUERY_PARAM_KEY in currentQueryParams &&
-                Object.keys(variantParams).length === 0
-            ) {
-                delete currentQueryParams[EXPERIMENT_QUERY_PARAM_KEY];
-            }
+        // Register the click handler to all elements in the document
+        document.addEventListener('click', customClickHandler);
 
-            return currentQueryParams;
-        },
-        [experimentContext]
-    );
-
-    return { getVariantAsQueryParamObject };
+        return () => {
+            // Remove the click handler when the component is unmounted
+            document.removeEventListener('click', customClickHandler);
+        };
+    }, [experimentContext]);
 };

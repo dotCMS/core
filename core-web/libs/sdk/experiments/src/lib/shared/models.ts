@@ -13,6 +13,7 @@ export interface DotExperimentConfig {
     server: string;
     debug: boolean;
     trackPageView?: boolean;
+    redirectFn?: (url: string) => void;
 }
 
 /**
