@@ -3,6 +3,8 @@ import { of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import {
     DotWizardService,
     DotWorkflowActionsFireService,
@@ -126,12 +128,14 @@ describe('DotEmaWorkflowActionsService', () => {
     let dotWizardService: DotWizardService;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
     let pushPublishService: PushPublishService;
+    let messageService: MessageService;
 
     const createService = createServiceFactory({
         service: DotEmaWorkflowActionsService,
         providers: [
             DotWizardService,
             mockProvider(DotWorkflowActionsFireService),
+            MessageService,
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
@@ -155,6 +159,7 @@ describe('DotEmaWorkflowActionsService', () => {
         dotWizardService = spectator.inject(DotWizardService);
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         pushPublishService = spectator.inject(PushPublishService);
+        messageService = spectator.inject(MessageService);
     });
 
     it('should set wizard input', () => {
@@ -193,29 +198,37 @@ describe('DotEmaWorkflowActionsService', () => {
         expect(data).toEqual(mockWizardOutputTransformedData);
     });
 
-    describe('wizard', () => {
-        it('should open with the correct data', () => {
+    describe('handleWorkflowAction', () => {
+        it('should open with the correct data', (done) => {
             jest.spyOn(dotWizardService, 'open');
-            // spectator.service.open({ ...mockWAEvent });
-            expect(dotWizardService.open).toHaveBeenCalledWith(mockWizardInput);
+            jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
+                of(dotcmsContentletMock)
+            );
+            spectator.service.handleWorkflowAction({ ...mockWAEvent }).subscribe(() => {
+                expect(dotWizardService.open).toHaveBeenCalledWith(mockWizardInput);
+
+                done();
+            });
+            dotWizardService.output$({ ...mockWizardOutputData });
         });
 
-        it('should fire the workflow action with the correct data, execute the callback and send a message on output', () => {
+        it('should fire the workflow action with the correct data, execute the callback and send a message on output', (done) => {
             jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
                 of(dotcmsContentletMock)
             );
 
-            // spectator.service.open({ ...mockWAEvent });
-            dotWizardService.output$({ ...mockWizardOutputData });
-
-            expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
-                inode: mockWAEvent.inode,
-                actionId: mockWAEvent.workflow.id,
-                data: mockWizardOutputTransformedData
+            spectator.service.handleWorkflowAction({ ...mockWAEvent }).subscribe(() => {
+                expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
+                    inode: mockWAEvent.inode,
+                    actionId: mockWAEvent.workflow.id,
+                    data: mockWizardOutputTransformedData
+                });
+                done();
             });
+            dotWizardService.output$({ ...mockWizardOutputData });
         });
 
-        it('should fire BULK action with the correct data, execute the callback and send a message on output', () => {
+        it('should fire BULK action with the correct data, execute the callback and send a message on output', (done) => {
             const mockBulkResponse: DotActionBulkResult = {
                 skippedCount: 1,
                 successCount: 2,
@@ -250,13 +263,25 @@ describe('DotEmaWorkflowActionsService', () => {
                 of(mockBulkResponse)
             );
 
-            // spectator.service.open({
-            //     ...mockWAEvent,
-            //     selectedInodes: 'query'
-            // });
-            dotWizardService.output$({ ...mockWizardOutputData });
+            const embeddedFunction = jest.fn();
 
-            expect(dotWorkflowActionsFireService.bulkFire).toHaveBeenCalledWith(mockBulkRequest);
+            spectator.service
+                .handleWorkflowAction(
+                    {
+                        ...mockWAEvent,
+                        selectedInodes: 'query'
+                    },
+                    embeddedFunction
+                )
+                .subscribe(() => {
+                    expect(dotWorkflowActionsFireService.bulkFire).toHaveBeenCalledWith(
+                        mockBulkRequest
+                    );
+
+                    expect(embeddedFunction).toHaveBeenCalledWith('fireActionLoadingIndicator', []);
+                    done();
+                });
+            dotWizardService.output$({ ...mockWizardOutputData });
         });
     });
 
@@ -266,19 +291,20 @@ describe('DotEmaWorkflowActionsService', () => {
                 expect(flag).toEqual(true);
             });
         });
-        it('should return false and display a notification is there are no environments ', () => {
+        it('should return false and display a notification is there are no environments ', (done) => {
             jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
+            jest.spyOn(messageService, 'add');
 
             spectator.service.checkPublishEnvironments().subscribe((flag: boolean) => {
                 expect(flag).toEqual(false);
+                expect(messageService.add).toHaveBeenCalledWith({
+                    life: 3000,
+                    detail: 'publisher_dialog_environment_mandatory',
+                    summary: 'Workflow Action',
+                    severity: 'error'
+                });
+                done();
             });
-
-            // expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
-            //     life: 3000,
-            //     message: messageServiceMock.get('editpage.actions.fire.error.add.environment'),
-            //     severity: DotMessageSeverity.ERROR,
-            //     type: DotMessageType.SIMPLE_MESSAGE
-            // });
         });
     });
 

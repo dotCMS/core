@@ -272,10 +272,10 @@ export class DotEmaWorkflowActionsService {
                 data: this.processWorkflowPayload(data, event.workflow.actionInputs)
             })
             .pipe(
+                take(1),
                 catchError((error: HttpErrorResponse) => {
                     return this.getErrorMessage(error);
-                }),
-                take(1)
+                })
             );
     }
 
