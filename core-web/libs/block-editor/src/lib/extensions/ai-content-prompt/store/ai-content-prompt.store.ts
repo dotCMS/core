@@ -103,22 +103,30 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     readonly generateContent = this.effect((prompt$: Observable<string>) => {
         return prompt$.pipe(
             withLatestFrom(this.state$),
-            switchMap(([prompt, { generatedContent }]) => {
+            switchMap(([prompt, { generatedContent, activeIndex }]) => {
                 this.patchState({ status: ComponentStatus.LOADING, prompt });
 
                 return this.dotAiService.generateContent(prompt).pipe(
                     tapResponse(
                         (response) => {
-                            generatedContent.push({ prompt, content: response });
+                            const newContent = { prompt, content: response };
+                            generatedContent[activeIndex]?.error
+                                ? (generatedContent[activeIndex] = newContent)
+                                : generatedContent.push(newContent);
+
                             this.patchState({
                                 status: ComponentStatus.IDLE,
-                                generatedContent,
+                                generatedContent: [...generatedContent], // like this to cover the scenario when replacing an error.
                                 activeIndex: generatedContent.length - 1
                             });
                         },
                         (error: string) => {
-                            generatedContent.push({ prompt, content: null, error: error });
-                            debugger;
+                            const errorContent = { prompt, content: null, error };
+
+                            generatedContent[activeIndex]?.error
+                                ? (generatedContent[activeIndex] = errorContent)
+                                : generatedContent.push(errorContent);
+
                             this.patchState({
                                 status: ComponentStatus.IDLE,
                                 generatedContent,

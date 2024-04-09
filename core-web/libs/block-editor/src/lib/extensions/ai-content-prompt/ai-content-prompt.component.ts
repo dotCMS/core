@@ -99,6 +99,7 @@ export class AIContentPromptComponent implements OnInit {
 
         // Set the form content based on the active index
         this.store.activeContent$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
+            console.log('activeContent$', data);
             this.form.patchValue({ textPrompt: data?.prompt, generatedText: data?.content });
         });
 

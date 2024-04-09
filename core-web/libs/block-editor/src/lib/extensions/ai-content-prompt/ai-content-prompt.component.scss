@@ -56,8 +56,6 @@ dot-empty-container {
     gap: $spacing-3;
 }
 
-:host ::ng-deep {
-    dot-empty-container .message__icon {
-        color: $red;
-    }
+dot-empty-container ::ng-deep .message__icon {
+    color: $red;
 }

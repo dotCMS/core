@@ -56,7 +56,6 @@
                     icon="pi pi-chevron-right"
                     pButton></button>
             </div>
-
             <textarea
                 class="ai-content__input-text"
                 #inputTextarea
@@ -68,7 +67,9 @@
                 <button
                     [label]="'block-editor.extension.ai-image.insert' | dm"
                     [disabled]="
-                        vm.status === ComponentStatus.LOADING || !vm.generatedContent?.length
+                        vm.status === ComponentStatus.LOADING ||
+                        !vm.generatedContent?.length ||
+                        vm.generatedContent[vm.activeIndex]?.error
                     "
                     (click)="store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)"
                     type="button"
