@@ -1,0 +1,78 @@
+name: Reusable CI Build Test
+on:
+  workflow_call:
+    inputs:
+      artifact-run-id:
+        description: 'The run id of the build to download artifacts from.'
+        default: ${{ github.run_id }}
+        type: string
+jobs:
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    if: |
+      (github.repository == 'dotCMS/core') &&
+      (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup master branch locally without switching current branch
+        if: github.ref != 'refs/heads/master'
+        run: git fetch origin master:master
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'temurin'
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Download Maven Repo
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.artifact-run-id }}
+          name: maven-repo
+          path: ~/.m2/repository
+        continue-on-error: true
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      # download the coverage execution files
+      - name: Download build reports
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v3.0.0
+        with:
+          name: build-reports-test-.*
+          run_id: ${{ inputs.artifact-run-id }}
+          name_is_regexp: true
+          path: dotcms-core/target/build-reports
+          if_no_artifact_found: warn
+      - name: Maven Build No Test
+        env:
+          MAVEN_OPTS: "-Xmx2048m"
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        shell: bash
+        run: |
+          ./mvnw $JVM_TEST_MAVEN_OPTS compile -DskipTests=true -Pcoverage -Dcoverage.report.phase=compile
+          ./mvnw $JVM_TEST_MAVEN_OPTS -Dsonar.log.level=DEBUG org.sonarsource.scanner.maven:sonar-maven-plugin:sonar '-Dcoverage.execution.locations=build-reports/**/*.exec' -Dsonar.projectKey=dotCMS_core_AYSbIemxK43eThAXTlt- -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.token=$SONAR_TOKEN
+      - name: SonarQube Quality Gate check
+        id: sonarqube-quality-gate-check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        continue-on-error: false
+        # Force to fail step after specific time.
+        timeout-minutes: 10
+        with:
+          scanMetadataReportFile: target/sonar/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          MAVEN_OPTS: "-Xmx2048m"
+      - name: "Example show SonarQube Quality Gate Status value"
+        run: echo "The Quality Gate status is ${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}"
