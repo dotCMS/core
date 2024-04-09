@@ -1092,10 +1092,12 @@ describe('EditEmaStore', () => {
             it('should call unlock page service', () => {
                 const dotContentletLockerService = spectator.inject(DotContentletLockerService);
                 const spyUnlock = jest.spyOn(dotContentletLockerService, 'unlock');
+                const spyPatch = jest.spyOn(spectator.service, 'patchState');
 
                 spectator.service.unlockPage('123');
 
                 expect(spyUnlock).toHaveBeenCalledWith('123');
+                expect(spyPatch).toHaveBeenCalled();
             });
 
             it('should not add form to page when the form is dupe and triggers a message', () => {

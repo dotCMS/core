@@ -436,6 +436,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         next: () => {
                             this.patchState((state) => ({
                                 ...state,
+                                editorState: EDITOR_STATE.IDLE,
                                 editorData: {
                                     ...state.editorData,
                                     page: {
@@ -444,8 +445,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     }
                                 }
                             }));
-
-                            this.updateEditorState(EDITOR_STATE.IDLE);
                         },
                         error: () => {
                             this.updateEditorState(EDITOR_STATE.ERROR);
