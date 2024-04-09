@@ -69,6 +69,10 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
             this.createObjectMapUrlContent(pageView.getUrlContent(), pageViewMap);
         }
 
+        if (pageView.getRunningExperiment() != null) {
+            pageViewMap.put("runningExperimentId", pageView.getRunningExperiment().getIdentifier());
+        }
+
         return pageViewMap;
     }
 

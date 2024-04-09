@@ -122,13 +122,6 @@ describe('EditEmaStore', () => {
         });
 
         describe('selectors', () => {
-            it('should return page url', (done) => {
-                spectator.service.url$.subscribe((url) => {
-                    expect(url).toEqual('test-url');
-                    done();
-                });
-            });
-
             it('should return editorState', (done) => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
 
@@ -807,6 +800,13 @@ describe('EditEmaStore', () => {
         });
 
         describe('selectors', () => {
+            it('should return page rendered', (done) => {
+                spectator.service.pageRendered$.subscribe((rendered) => {
+                    expect(rendered).toEqual('<html><body><h1>Hello, World!</h1></body></html>');
+                    done();
+                });
+            });
+
             it('should return editorState', (done) => {
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
