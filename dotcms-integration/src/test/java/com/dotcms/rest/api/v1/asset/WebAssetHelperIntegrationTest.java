@@ -18,7 +18,6 @@ import com.dotcms.rest.api.v1.asset.view.AssetVersionsView;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
-import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -244,17 +243,12 @@ public class WebAssetHelperIntegrationTest {
      */
     @Test
     public void TestLimitedUserHasNoAccessToSubFolders() throws DotDataException, DotSecurityException {
-        //So Folder path is our root folder /foo/bar/
-
-        //But we're going to create a sub-folder /foo/L1/L2/ and give our limited user access to the parent folder only
-        final String folderName = String.format("L1-%s", RandomStringUtils.randomNumeric(5));
-        final Folder L1 = new FolderDataGen().parent(foo).name(folderName).nextPersisted();
-        final String subFolderName = String.format("L2-%s", RandomStringUtils.randomNumeric(5));
-        final Folder L2 = new FolderDataGen().parent(L1).name(subFolderName)
-                .nextPersisted();
-
+        //Create a sub-folder
+        final String folderName = String.format("bar-%s", RandomStringUtils.randomAlphabetic(5));
+        final Folder subBar = new FolderDataGen().parent(bar).name(folderName).nextPersisted();
+        final String subFolderName = String.format("sub-bar-%s", RandomStringUtils.randomAlphabetic(5));
+        new FolderDataGen().site(host).parent(subBar).name(subFolderName).nextPersisted();
         final String folderPath = parentFolderPath();
-
         //Bring in our limited user
         final User chrisPublisherUser = TestUserUtils.getChrisPublisherUser(host);
         //Give him access to the parent folder
@@ -263,10 +257,11 @@ public class WebAssetHelperIntegrationTest {
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         permissionAPI.save(siteReadPermissions, host, APILocator.systemUser(), false);
 
-        //So Chris can access the parent folder but not the sub-folder
-        final Permission readPermissions = new Permission(foo.getPermissionId(),
+        final Permission fooReadPermissions = new Permission(bar.getPermissionId(),
                 APILocator.getRoleAPI().getUserRole(chrisPublisherUser).getId(), PermissionAPI.PERMISSION_READ );
-        permissionAPI.save(readPermissions, foo, APILocator.systemUser(), false);
+        permissionAPI.save(fooReadPermissions,  bar, APILocator.systemUser(), false);
+        //Here we break the chain by not giving him access to the sub-folder bar2
+        permissionAPI.resetPermissionsUnder(bar);
 
         Logger.info(this, "TestGetFolderInfo  ::  " +folderPath );
         WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
@@ -275,7 +270,6 @@ public class WebAssetHelperIntegrationTest {
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
                 .resolve(folderPath, chrisPublisherUser);
 
-        System.out.println("assetAndPath = " + assetAndPath);
         //We should be able to access the parent folder
         //Now request the asset info
         final WebAssetView assetInfo = webAssetHelper.getAssetInfo(assetAndPath,false, chrisPublisherUser);
