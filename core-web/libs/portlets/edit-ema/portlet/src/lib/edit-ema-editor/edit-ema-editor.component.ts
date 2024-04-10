@@ -239,7 +239,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
 
         // In VTL Page if user click in a link in the page, we need to update the URL in the editor
-        this.store.url$
+        this.store.pageRendered$
             .pipe(
                 takeUntil(this.destroy$),
                 filter(() => this.isVTLPage())
@@ -252,16 +252,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
 
                         if (href) {
+                            e.preventDefault();
                             const url = new URL(href);
 
                             // Check if the URL is not external
                             if (url.hostname === window.location.hostname) {
-                                e.preventDefault();
-
                                 this.updateQueryParams({
                                     url: url.pathname
                                 });
+
+                                return;
                             }
+
+                            // Open external links in a new tab
+                            this.window.open(href, '_blank');
                         }
                     });
                 });
