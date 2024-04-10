@@ -6,15 +6,17 @@ import {
     EventEmitter,
     HostBinding,
     Input,
+    OnChanges,
     OnInit,
     Output,
+    SimpleChanges,
     ViewChild,
     inject
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -33,7 +35,22 @@ const ACTIONS_CONTAINER_HEIGHT = 40;
     styleUrls: ['./ema-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EmaContentletToolsComponent implements OnInit {
+export class EmaContentletToolsComponent implements OnInit, OnChanges {
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!changes.contentlet) {
+            return;
+        }
+
+        if (
+            changes.contentlet.currentValue?.payload.contentlet.identifier !==
+            changes.contentlet.previousValue?.payload.contentlet.identifier
+        ) {
+            this.hideMenus();
+        }
+    }
+
+    @ViewChild('menu') menu: Menu;
+    @ViewChild('menuVTL') menuVTL: Menu;
     @ViewChild('dragImage') dragImage: ElementRef;
     private dotMessageService = inject(DotMessageService);
 
@@ -194,6 +211,16 @@ export class EmaContentletToolsComponent implements OnInit {
             top: `${top}px`,
             zIndex: '1'
         };
+    }
+
+    /**
+     * Hide all context menus when the contentlet changes
+     *
+     * @memberof EmaContentletToolsComponent
+     */
+    hideMenus() {
+        this.menu?.hide();
+        this.menuVTL?.hide();
     }
 
     /**

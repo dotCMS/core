@@ -72,6 +72,23 @@ describe('EmaContentletToolsComponent', () => {
             expect(spectator.query(byTestId('drag-image'))).toHaveText('test');
         });
 
+        it('should close menus when contentlet @input was changed', () => {
+            const spyHideMenus = jest.spyOn(spectator.component, 'hideMenus');
+
+            spectator.setInput('contentlet', {
+                ...contentletAreaMock,
+                payload: {
+                    ...contentletAreaMock.payload,
+                    contentlet: {
+                        ...contentletAreaMock.payload.contentlet,
+                        identifier: 'new-identifier'
+                    }
+                }
+            });
+
+            expect(spyHideMenus).toHaveBeenCalled();
+        });
+
         describe('events', () => {
             it('should emit delete on delete button click', () => {
                 const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
