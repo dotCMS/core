@@ -28,14 +28,14 @@
                 </div>
                 <div class="sidebar-card">
                     <div class="sidebar-card__header">
-                        <span> References </span>
+                        <span>{{ 'References' | dm }}</span>
                         <i class="pi pi-eye"></i>
                     </div>
                     <label class="sidebar-card__label">Used in 5 pages</label>
                 </div>
                 <div class="content-history__container">
                     <div class="content-history" pTooltip="Dec 10, 2022" tooltipPosition="bottom">
-                        <label class="content-history__title">Published</label>
+                        <label class="content-history__title">{{ 'Published' | dm }}</label>
                         <label class="content-history__author">{{
                             contentlet.publishUserName || 'W. Warren'
                         }}</label>
@@ -44,14 +44,14 @@
                         }}</label>
                     </div>
                     <div class="content-history" pTooltip="Dec 10, 2022" tooltipPosition="bottom">
-                        <label class="content-history__title">Modified</label>
+                        <label class="content-history__title">{{ 'Modified' | dm }}</label>
                         <label class="content-history__author">{{ contentlet.modUserName }}</label>
                         <label class="content-history__date">{{
                             contentlet.modDate | dotRelativeDate : 'MM/dd/yyyy' : null
                         }}</label>
                     </div>
                     <div class="content-history" pTooltip="Dec 10, 2022" tooltipPosition="bottom">
-                        <label class="content-history__title">Created</label>
+                        <label class="content-history__title">{{ 'Created' | dm }}</label>
                         <label class="content-history__author">{{
                             contentlet.ownerName || 'A. User'
                         }}</label>
@@ -74,25 +74,25 @@
         </div>
         <div class="content-aside__workflow" *ngIf="workflow$ | async as workflow">
             <div class="content-aside__label-item">
-                <dt class="font-bold">{{ 'Workflow' | dm }}</dt>
+                <dt>{{ 'Workflow' | dm }}</dt>
                 <dd data-testId="workflow-name">
                     {{ workflow.scheme?.name }}
                 </dd>
             </div>
             <div class="content-aside__label-item">
-                <dt class="font-bold">{{ 'Step' | dm }}</dt>
+                <dt>{{ 'Step' | dm }}</dt>
                 <dd data-testId="workflow-step">
                     {{ workflow?.step?.name ?? 'New' }}
                 </dd>
             </div>
             <div class="content-aside__label-item">
-                <dt class="font-bold">{{ 'Content Type' | dm }}</dt>
+                <dt>{{ 'Content-Type' | dm }}</dt>
                 <dd data-testId="workflow-step">
                     {{ contentlet.contentType }}
                 </dd>
             </div>
             <div class="content-aside__label-item">
-                <dt class="font-bold">{{ 'Assignee' | dm }}</dt>
+                <dt>{{ 'Assignee' | dm }}</dt>
                 <dd data-testId="workflow-assigned">
                     {{ workflow.task?.assignedTo }}
                 </dd>
