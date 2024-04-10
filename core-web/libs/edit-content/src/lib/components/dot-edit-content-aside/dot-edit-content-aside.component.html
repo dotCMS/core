@@ -34,7 +34,10 @@
                     <label class="sidebar-card__label">Used in 5 pages</label>
                 </div>
                 <div class="content-history__container">
-                    <div class="content-history" pTooltip="Dec 10, 2022" tooltipPosition="bottom">
+                    <div
+                        class="content-history"
+                        [pTooltip]="contentlet.publishDate | date : 'MMM dd, yyyy'"
+                        tooltipPosition="bottom">
                         <label class="content-history__title">{{ 'Published' | dm }}</label>
                         <label class="content-history__author">{{
                             contentlet.publishUserName || 'W. Warren'
@@ -43,14 +46,20 @@
                             contentlet.publishDate | dotRelativeDate : 'MM/dd/yyyy' : null
                         }}</label>
                     </div>
-                    <div class="content-history" pTooltip="Dec 10, 2022" tooltipPosition="bottom">
+                    <div
+                        class="content-history"
+                        [pTooltip]="contentlet.modDate | date : 'MMM dd, yyyy'"
+                        tooltipPosition="bottom">
                         <label class="content-history__title">{{ 'Modified' | dm }}</label>
                         <label class="content-history__author">{{ contentlet.modUserName }}</label>
                         <label class="content-history__date">{{
                             contentlet.modDate | dotRelativeDate : 'MM/dd/yyyy' : null
                         }}</label>
                     </div>
-                    <div class="content-history" pTooltip="Dec 10, 2022" tooltipPosition="bottom">
+                    <div
+                        class="content-history"
+                        [pTooltip]="contentlet.createDate | date : 'MMM dd, yyyy'"
+                        tooltipPosition="bottom">
                         <label class="content-history__title">{{ 'Created' | dm }}</label>
                         <label class="content-history__author">{{
                             contentlet.ownerName || 'A. User'

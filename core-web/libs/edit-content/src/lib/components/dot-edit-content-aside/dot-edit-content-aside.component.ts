@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { AsyncPipe, NgIf, SlicePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -26,8 +26,7 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
     styleUrls: ['./dot-edit-content-aside.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgIf,
-        SlicePipe,
+        CommonModule,
         DotApiLinkComponent,
         DotCopyButtonComponent,
         DotRelativeDatePipe,
@@ -35,7 +34,6 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
         DotMessagePipe,
         ContentletStatusPipe,
         RouterLink,
-        AsyncPipe,
         DotLinkComponent,
         TooltipModule,
         DotRelativeDatePipe
