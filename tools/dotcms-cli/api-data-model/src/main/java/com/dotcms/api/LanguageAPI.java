@@ -47,7 +47,9 @@ public interface LanguageAPI {
     @GET
     @Path("/id/{languageid}")
     @Operation(
-            summary = " Returns the Language that matches the specified id"
+            summary = " Returns the Language that matches the specified id but using a different "
+                    + "view, a reduced one, for pull operations and the generation of the language "
+                    + "files."
     )
     @JsonView(LanguageFileView.class)
     ResponseEntityView<Language> findByIdForPull(@PathParam("languageid") String languageId);
@@ -63,7 +65,9 @@ public interface LanguageAPI {
     @GET
     @Path("/{languageTag}")
     @Operation(
-            summary = " Returns the Language that matches the specified ISO code"
+            summary = " Returns the Language that matches the specified ISO code but using a "
+                    + "different view, a reduced one, for pull operations and the generation of the "
+                    + "language files."
     )
     @JsonView(LanguageFileView.class)
     ResponseEntityView<Language> getFromLanguageIsoCodeForPull(
