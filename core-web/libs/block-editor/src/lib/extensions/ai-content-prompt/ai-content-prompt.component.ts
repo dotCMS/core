@@ -1,12 +1,13 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -43,7 +44,7 @@ interface AIContentForm {
         NgIf,
         AsyncPipe,
         DotEmptyContainerComponent,
-        NgTemplateOutlet
+        ConfirmDialogModule
     ],
     styleUrls: ['./ai-content-prompt.component.scss']
 })
@@ -71,12 +72,22 @@ export class AIContentPromptComponent implements OnInit {
     }
 
     /**
-     * Clears the error at the store on hiding the confirmation dialog.
+     * Confirmation to close the dialog.
      *
      * @return {void}
      */
-    onHideConfirm(): void {
-        this.store.cleanError();
+    closeDialog(): void {
+        this.confirmationService.confirm({
+            key: 'ai-image-prompt',
+            header: this.dotMessageService.get('block-editor.extension.ai.confirmation.header'),
+            message: this.dotMessageService.get('block-editor.extension.ai.confirmation.message'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessageService.get('Discard'),
+            rejectLabel: this.dotMessageService.get('Cancel'),
+            accept: () => {
+                this.store.hideDialog();
+            }
+        });
     }
 
     private setSubscriptions(): void {

@@ -12,28 +12,27 @@
             class="ai-content__form"
             [formGroup]="form"
             (ngSubmit)="store.generateContent(form.value.textPrompt)">
-            <ng-container
-                [ngTemplateOutlet]="
-                    vm.status === ComponentStatus.LOADING
-                        ? skeleton
-                        : vm.generatedContent[vm.activeIndex]?.error
-                        ? errorMessage
-                        : generatedText
-                " />
-            <ng-template #generatedText>
-                <textarea
-                    class="ai-content__generated-text"
-                    #generatedText
-                    *ngIf="vm.status !== ComponentStatus.LOADING; else skeleton"
-                    [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
-                    [readOnly]="true"
-                    formControlName="generatedText"
-                    pInputTextarea>
-                </textarea>
-            </ng-template>
-            <div
-                class="ai-content__pagination"
-                *ngIf="vm.status !== ComponentStatus.LOADING; else paginationSkeleton">
+            @if (vm.status === ComponentStatus.LOADING) {
+            <p-skeleton width="100%" height="22rem" />
+            } @else if (vm.generatedContent[vm.activeIndex]?.error) {
+            <dot-empty-container
+                [hideContactUsLink]="true"
+                [buttonLabel]="'try-again' | dm"
+                [secondaryButton]="true"
+                [configuration]="emptyConfiguration"
+                (buttonAction)="store.generateContent(form.value.textPrompt)" />
+            } @else {
+            <textarea
+                class="ai-content__generated-text"
+                [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
+                [readOnly]="true"
+                formControlName="generatedText"
+                pInputTextarea>
+            </textarea>
+            } @if (vm.status === ComponentStatus.LOADING) {
+            <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
+            } @else{
+            <div class="ai-content__pagination">
                 <button
                     class="p-button-text p-button-sm p-button-rounded"
                     [disabled]="vm.activeIndex === 0 || vm.generatedContent?.length === 0"
@@ -56,6 +55,8 @@
                     icon="pi pi-chevron-right"
                     pButton></button>
             </div>
+            }
+
             <textarea
                 class="ai-content__input-text"
                 #inputTextarea
@@ -67,7 +68,7 @@
                 <button
                     class="p-button-text"
                     [label]="'Cancel' | dm"
-                    (click)="store.hideDialog()"
+                    (click)="closeDialog()"
                     type="button"
                     pButton></button>
                 <button
@@ -110,22 +111,12 @@
                 </button>
             </div>
         </form>
+        <p-confirmDialog
+            [style]="{ width: '500px' }"
+            key="ai-image-prompt"
+            rejectButtonStyleClass="p-button-outlined"
+            acceptIcon="null"
+            rejectIcon="null">
+        </p-confirmDialog>
     </p-dialog>
-
-    <ng-template #skeleton>
-        <p-skeleton width="100%" height="22rem" />
-    </ng-template>
-
-    <ng-template #paginationSkeleton>
-        <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
-    </ng-template>
-
-    <ng-template #errorMessage>
-        <dot-empty-container
-            [hideContactUsLink]="true"
-            [buttonLabel]="'try-again' | dm"
-            [secondaryButton]="true"
-            [configuration]="emptyConfiguration"
-            (buttonAction)="store.generateContent(form.value.textPrompt)" />
-    </ng-template>
 </ng-container>
