@@ -64,18 +64,13 @@ public class LanguageComparator implements ContentComparator<Language> {
     @Override
     public boolean contentEquals(Language localLanguage, Language serverContent) {
 
-        // Validation to make sure the equals method works as expected
-        if (localLanguage.defaultLanguage().isEmpty()) {
-            localLanguage = localLanguage.withDefaultLanguage(false);
-        }
-
-        // Comparing the local and server content in order to determine if we need to update or not the content
+        // Comparing the local and server content in order to determine if we need to update or
+        // not the content
         return equals(localLanguage, serverContent);
     }
 
     /**
-     * Checks if two Language objects are equal based on their language, default language, and ISO
-     * code.
+     * Checks if two Language objects are equal based on their language name and ISO code.
      *
      * @param toCompare the Language object to compare
      * @param another   the Language object to compare against
@@ -93,9 +88,6 @@ public class LanguageComparator implements ContentComparator<Language> {
 
         return Objects.equals(
                 toCompare.language().orElse(""), another.language().orElse("")
-        ) && Objects.equals(
-                toCompare.defaultLanguage().orElse(false),
-                another.defaultLanguage().orElse(false)
         ) && toCompare.isoCode().equalsIgnoreCase(another.isoCode());
     }
 

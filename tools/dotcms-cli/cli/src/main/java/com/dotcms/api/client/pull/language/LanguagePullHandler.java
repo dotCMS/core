@@ -39,10 +39,8 @@ public class LanguagePullHandler extends GeneralPullHandler<Language> {
 
         return String.format(
                 "language: [@|bold,underline,blue %s|@] "
-                        + "defaultLanguage: [@|bold,underline,cyan %b|@] "
                         + "isoCode: [@|bold,yellow %s|@]",
                 language.language().orElse(""),
-                language.defaultLanguage().orElse(false),
                 language.isoCode()
         );
     }

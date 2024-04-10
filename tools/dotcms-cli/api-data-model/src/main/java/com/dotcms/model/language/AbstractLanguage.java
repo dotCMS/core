@@ -1,8 +1,9 @@
 package com.dotcms.model.language;
 
 import com.dotcms.model.annotation.ValueType;
-import com.dotcms.model.views.CommonViews.LanguageExternalView;
 import com.dotcms.model.views.CommonViews.LanguageFileView;
+import com.dotcms.model.views.CommonViews.LanguageReadView;
+import com.dotcms.model.views.CommonViews.LanguageWriteView;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -26,25 +27,25 @@ public interface AbstractLanguage {
         return TYPE;
     }
 
-    @JsonView(LanguageExternalView.class)
+    @JsonView({LanguageReadView.class, LanguageWriteView.class})
     Optional<Long> id();
 
-    @JsonView(LanguageExternalView.class)
+    @JsonView({LanguageReadView.class, LanguageWriteView.class})
     Optional<String> languageCode();
 
-    @JsonView(LanguageExternalView.class)
+    @JsonView({LanguageReadView.class, LanguageWriteView.class})
     Optional<String> countryCode();
 
-    @JsonView({LanguageFileView.class, LanguageExternalView.class})
+    @JsonView({LanguageFileView.class, LanguageReadView.class, LanguageWriteView.class})
     Optional<String> language();
 
-    @JsonView(LanguageExternalView.class)
+    @JsonView({LanguageReadView.class, LanguageWriteView.class})
     Optional<String> country();
 
-    @JsonView(LanguageFileView.class)
+    @JsonView(LanguageReadView.class)
     Optional<Boolean> defaultLanguage();
 
-    @JsonView({LanguageFileView.class, LanguageExternalView.class})
+    @JsonView({LanguageFileView.class, LanguageReadView.class, LanguageWriteView.class})
     String isoCode();
 
 }

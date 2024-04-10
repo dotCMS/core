@@ -54,10 +54,16 @@ public class CommonViews {
     }
 
     /**
-     * The LanguageExternalView interface defines the view used for some server operations as those
-     * server operations require more data than the one displayed in the language file descriptor
+     * The LanguageReadView interface defines the view used for some server read operations
      */
-    public interface LanguageExternalView {
+    public interface LanguageReadView {
+
+    }
+
+    /**
+     * The LanguageWriteView interface defines the view used for some server write operations
+     */
+    public interface LanguageWriteView {
 
     }
 

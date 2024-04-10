@@ -51,6 +51,7 @@ public interface LanguageAPI {
     @Operation(
             summary = " Returns the Language that matches the specified ISO code"
     )
+    @JsonView(LanguageFileView.class)
     ResponseEntityView<Language> getFromLanguageIsoCode(@PathParam("languageTag") String languageIsoCode);
 
     @GET
@@ -73,7 +74,7 @@ public interface LanguageAPI {
     )
     @JsonView(CommonViews.LanguageFileView.class)
     ResponseEntityView<Language> create(
-            @JsonView(CommonViews.LanguageExternalView.class) Language language);
+            @JsonView(CommonViews.LanguageWriteView.class) Language language);
 
     @POST
     @Path("/{languageTag}")
@@ -82,7 +83,7 @@ public interface LanguageAPI {
     )
     @JsonView(CommonViews.LanguageFileView.class)
     ResponseEntityView<Language> create(
-            @JsonView(CommonViews.LanguageExternalView.class)
+            @JsonView(CommonViews.LanguageWriteView.class)
             @PathParam("languageTag") String languageIsoCode);
 
     @PUT
@@ -92,7 +93,7 @@ public interface LanguageAPI {
     )
     @JsonView(CommonViews.LanguageFileView.class)
     ResponseEntityView<Language> update(@PathParam("languageId") String languageId,
-            @JsonView(CommonViews.LanguageExternalView.class) Language language);
+            @JsonView(CommonViews.LanguageWriteView.class) Language language);
 
     @DELETE
     @Path("/{languageId}")

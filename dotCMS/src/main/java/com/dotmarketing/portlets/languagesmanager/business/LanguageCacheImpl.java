@@ -159,17 +159,46 @@ public class LanguageCacheImpl extends LanguageCache {
     	}
         return l != null;
     }
-    
-    public void removeLanguage(Language l){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        long id = l.getId();
-        String idSt = String.valueOf(l.getId());
-        String languageKey = l.getLanguageCode() + "-" + l.getCountryCode();
-        languageKey =  languageKey.toLowerCase();
-        cache.remove(getPrimaryGroup() + id,getPrimaryGroup());
-        cache.remove(getPrimaryGroup() + idSt,getPrimaryGroup());
-        cache.remove(getPrimaryGroup() + languageKey,getPrimaryGroup());
+
+	/**
+	 * Removes the given language from the cache.
+	 *
+	 * @param language the language to be removed from the cache
+	 */
+	public void removeLanguage(Language language) {
+
+		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+
+		// Cleaning up the cached version of the language, it could be different as the one passed
+		// as parameter if, for example, the ISO code was changed
+		final var cachedLanguage = getLanguageById(language.getId());
+		if (cachedLanguage != null) {
+			internalRemove(cachedLanguage);
+		}
+
+		// Cleaning up the language
+		internalRemove(language);
+
 		cache.remove(ALL_LANGUAGES_KEY, getPrimaryGroup());
+	}
+
+	/**
+	 * Removes the language from the cache
+	 *
+	 * @param language the language to remove
+	 */
+	private void internalRemove(Language language) {
+
+		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		
+		long id = language.getId();
+		String idSt = String.valueOf(language.getId());
+		String languageKey = language.getLanguageCode() + "-" + language.getCountryCode();
+		languageKey = languageKey.toLowerCase();
+
+		cache.remove(getPrimaryGroup() + id, getPrimaryGroup());
+		cache.remove(getPrimaryGroup() + idSt, getPrimaryGroup());
+		cache.remove(getPrimaryGroup() + languageKey, getPrimaryGroup());
 	}
 
     public void clearCache(){
