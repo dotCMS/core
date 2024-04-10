@@ -107,12 +107,13 @@ export class DotExperiments {
     private constructor(private readonly config: DotExperimentConfig) {
         // merge default config and the config to the instance
         this.config = { ...DotExperiments.defaultConfig, ...config };
+
         if (!this.config['server']) {
             throw new Error('`server` must be provided and should not be empty!');
         }
 
-        if (!this.config['api-key']) {
-            throw new Error('`api-key` must be provided and should not be empty!');
+        if (!this.config['apiKey']) {
+            throw new Error('`apiKey` must be provided and should not be empty!');
         }
 
         this.logger = new DotLogger(this.config.debug, 'DotExperiment');
@@ -219,6 +220,7 @@ export class DotExperiments {
             navItems.forEach((link) => {
                 const href =
                     getFullUrl(this.currentLocation, link.getAttribute('href') || '') ?? '';
+
                 const variant = this.getVariantFromHref(href);
 
                 if (variant !== null && href !== null) {
@@ -254,10 +256,12 @@ export class DotExperiments {
 
         this.currentLocation = location;
         await this.verifyExperimentData();
+
         const variantAssigned = this.getVariantFromHref(location.href);
 
         if (variantAssigned && variantAssigned.name !== EXPERIMENT_DEFAULT_VARIANT_NAME) {
             const searchParams = new URLSearchParams(location.search);
+
             const currentVariant = searchParams.get(EXPERIMENT_QUERY_PARAM_KEY);
 
             if (currentVariant !== variantAssigned.name) {
@@ -267,7 +271,8 @@ export class DotExperiments {
                     this.logger.log(
                         `Page redirected to ${variantUrl} using the provided redirect function.`
                     );
-
+                    this.logger.timeEnd('Total location changed');
+                    this.logger.groupEnd();
                     redirectFunction(variantUrl);
                 } else {
                     this.logger.log(
@@ -308,10 +313,6 @@ export class DotExperiments {
      * @returns {Variant | null} The variant associated with the URL if it exists, null otherwise.
      */
     public getVariantFromHref(path: string | null): Variant | null {
-        if (!(this.experimentsAssigned && path)) {
-            return null;
-        }
-
         const experiment = this.experimentsAssigned.find((experiment) => {
             const url = getFullUrl(this.currentLocation, path) ?? '';
 
@@ -430,6 +431,7 @@ export class DotExperiments {
             const body = {
                 exclude: this.experimentsAssigned ? getExperimentsIds(this.experimentsAssigned) : []
             };
+
             const response: Response = await fetch(`${this.config.server}/${API_EXPERIMENTS_URL}`, {
                 method: 'POST',
                 headers: {
@@ -441,11 +443,14 @@ export class DotExperiments {
 
             if (!response.ok) {
                 const responseText = await response.text();
+
                 throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`);
             }
 
             const responseJson = await response.json();
+
             const experiments = responseJson?.entity?.experiments;
+
             this.logger.log(`Experiment data get successfully `);
 
             this.persistenceHandler.setFlagExperimentAlreadyChecked();
@@ -482,6 +487,7 @@ export class DotExperiments {
     private async verifyExperimentData(): Promise<void> {
         try {
             let fetchedExperiments: Experiment[] | undefined = undefined;
+
             const storedExperiments: Experiment[] = this.experimentsAssigned
                 ? this.experimentsAssigned
                 : [];
@@ -578,7 +584,7 @@ export class DotExperiments {
         try {
             if (!this.analytics) {
                 this.analytics = jitsuClient({
-                    key: this.config['api-key'],
+                    key: this.config['apiKey'],
                     tracking_host: this.config['server'],
                     log_level: this.config['debug'] ? DEBUG_LEVELS.WARN : DEBUG_LEVELS.NONE
                 });
@@ -617,7 +623,6 @@ export class DotExperiments {
         // trigger the page view event
         if (this.shouldTrackPageView()) {
             this.trackPageView();
-            this.logger.log(`No trackPageView triggered.`);
 
             return;
         }

@@ -18,8 +18,11 @@ describe('Utility ', () => {
 
         it('should return the script element when the experiment script is found', () => {
             const experimentScriptUrl = 'http://example.com/' + EXPERIMENT_SCRIPT_FILE_NAME;
+
             document.body.innerHTML = `<script src="${experimentScriptUrl}"></script>`;
+
             const scriptTag = getExperimentScriptTag();
+
             expect(scriptTag).toBeDefined();
             expect(scriptTag.src).toBe(experimentScriptUrl);
         });
@@ -27,8 +30,10 @@ describe('Utility ', () => {
 
     describe('getDataExperimentAttributes', () => {
         const location: Location = { ...LocationMock, href: 'http:/localhost/' };
+
         it('should return null and warn if data-experiment-api-key is not specified but script is present', () => {
             const experimentScriptUrl = 'http://example.com/' + EXPERIMENT_SCRIPT_FILE_NAME;
+
             document.body.innerHTML = `<script src="${experimentScriptUrl}"></script>`;
 
             try {
@@ -43,8 +48,11 @@ describe('Utility ', () => {
 
         it('should return the experiment attributes if they are present', () => {
             const experimentScriptUrl = 'http://example.com/' + EXPERIMENT_SCRIPT_FILE_NAME;
+
             document.body.innerHTML = `<script src="${experimentScriptUrl}" data-experiment-api-key="testKey" data-experiment-server="http://localhost"></script>`;
+
             const attributes = getDataExperimentAttributes(location);
+
             expect(attributes).toEqual({
                 'api-key': 'testKey',
                 server: 'http://localhost',
@@ -56,10 +64,12 @@ describe('Utility ', () => {
     describe('getScriptDataAttributes', () => {
         it('should return the experiment attributes if they are present', () => {
             const experimentScriptUrl = 'http://example.com/' + EXPERIMENT_SCRIPT_FILE_NAME;
+
             document.body.innerHTML = `<script src="${experimentScriptUrl}" data-experiment-api-key="testKey" data-experiment-server="http://localhost"></script>`;
 
             // eslint-disable-next-line no-restricted-globals
             const attributes = getScriptDataAttributes(location);
+
             expect(attributes).toEqual({
                 'api-key': 'testKey',
                 server: 'http://localhost',
@@ -101,16 +111,20 @@ describe('Utility ', () => {
 
     describe('getFullUrl', () => {
         const href = 'http://localhost/';
+
         const location: Location = { ...LocationMock, href };
 
         it('should return null if absolutePath is null', () => {
             const result = getFullUrl(location, null);
+
             expect(result).toBeNull();
         });
 
         it('should return the same absolutePath if it is a full URL', () => {
             const absolutePath = href + '/test';
+
             const expectedUrl = absolutePath;
+
             const result = getFullUrl(location, absolutePath);
 
             expect(result).toBe(absolutePath);
@@ -119,7 +133,9 @@ describe('Utility ', () => {
 
         it('should return a full URL if absolutePath is a relative path', () => {
             const absolutePath = '/test';
+
             const result = getFullUrl(location, absolutePath);
+
             expect(result).toBe(`${location.origin}${absolutePath}`);
         });
     });

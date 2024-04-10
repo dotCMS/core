@@ -18,12 +18,8 @@ export async function generateMetadata({ params, searchParams }) {
         language_id: searchParams.language_id,
         'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || '',
         mode: searchParams.mode,
+        variantName: searchParams['variantName']
     };
-
-    // Add variantName to requestData if it exists and is not 'DEFAULT'
-    if (searchParams['variantName'] && searchParams['variantName'] !== 'DEFAULT') {
-        requestData.variantName = searchParams['variantName'];
-    }
 
     const data = await client.page.get(requestData);
 
@@ -38,12 +34,8 @@ export default async function Home({ searchParams, params }) {
         language_id: searchParams.language_id,
         'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || '',
         mode: searchParams.mode,
+        variantName: searchParams['variantName']
     };
-
-    // Add variantName to requestData if it exists and is not 'DEFAULT'
-    if (searchParams['variantName'] && searchParams['variantName'] !== 'DEFAULT') {
-        requestData.variantName = searchParams['variantName'];
-    }
 
     const data = await client.page.get(requestData);
 

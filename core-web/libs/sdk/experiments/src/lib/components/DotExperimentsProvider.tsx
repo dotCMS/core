@@ -2,8 +2,7 @@ import { ReactElement, ReactNode, useEffect, useState } from 'react';
 
 import { isInsideEditor } from '@dotcms/client';
 
-import DotExperimentsContext from './DotExperimentsContext';
-
+import DotExperimentsContext from '../contexts/DotExperimentsContext';
 import { DotExperiments } from '../dot-experiments';
 import { DotExperimentConfig } from '../shared/models';
 
@@ -24,18 +23,20 @@ interface DotExperimentsProviderProps {
  * // Your application component
  * function App() {
  *
- * // Other configuration options will be taken from environment variables.
- *  const config = {
- *     'api-key': process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY ,
+ * // Configuration options could be taken from environment variables or can send you own.
+ *  const experimentConfig = {
+ *     apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY ,
  *     server: process.env.NEXT_PUBLIC_DOTCMS_HOST ,
  *     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG,
  *     redirectFn: YourRedirectFunction
  *   };
-
  *
  *   return (
- *     <DotExperimentsProvider config={config}>
- *       <YourDescendantComponent />
+ *     <DotExperimentsProvider config={experimentConfig}>
+ *       <Header>
+ *           <Navigation items={nav} />
+ *         </Header>
+ *       <DotcmsLayout  entity={{...}} config={{...}} />
  *     </DotExperimentsProvider>
  *   );
  * }
@@ -58,8 +59,10 @@ export const DotExperimentsProvider = ({
     // Initialize the DotExperiments instance
     useEffect(() => {
         const insideEditor = isInsideEditor();
+
         if (!insideEditor) {
             const dotExperimentsInstance = DotExperiments.getInstance(config);
+
             dotExperimentsInstance.ready().then(() => {
                 setInstance(dotExperimentsInstance);
             });

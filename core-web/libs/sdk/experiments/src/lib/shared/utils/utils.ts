@@ -32,8 +32,9 @@ export const getExperimentScriptTag = (): HTMLScriptElement => {
  */
 export const getDataExperimentAttributes = (location: Location): DotExperimentConfig | null => {
     const script = getExperimentScriptTag();
+
     const defaultExperimentAttributes: DotExperimentConfig = {
-        'api-key': '',
+        apiKey: '',
         server: location.href,
         debug: false
     };
@@ -53,7 +54,7 @@ export const getDataExperimentAttributes = (location: Location): DotExperimentCo
 
             // Api Key for Analytics App
             if (attr.name === 'data-experiment-api-key') {
-                experimentAttribute = { ...experimentAttribute, 'api-key': attr.value };
+                experimentAttribute = { ...experimentAttribute, apiKey: attr.value };
             }
 
             // Show debug
@@ -113,6 +114,7 @@ export const checkFlagExperimentAlreadyChecked = (): boolean => {
 export const isDataCreateValid = (): boolean => {
     try {
         const timeValidUntil = Number(localStorage.getItem(EXPERIMENT_FETCH_EXPIRE_TIME_KEY));
+
         if (isNaN(timeValidUntil)) {
             return false;
         }
@@ -164,10 +166,12 @@ export const updateUrlWithExperimentVariant = (
     variant: Variant | null
 ): string => {
     const href = typeof location === 'string' ? location : location.href;
+
     const url = new URL(href);
 
     if (variant !== null) {
         const params = url.searchParams;
+
         params.set(EXPERIMENT_QUERY_PARAM_KEY, variant.name);
         url.search = params.toString();
     }

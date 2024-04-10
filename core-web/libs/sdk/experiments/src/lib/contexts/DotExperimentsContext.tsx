@@ -9,24 +9,6 @@ import { DotExperiments } from '../dot-experiments';
  * The context is created with a default value of `null`. It is meant to be provided a real value
  * using the `DotExperimentsProvider` component.
  *
- * @example
- * ```jsx
- * // import the context
- * import DotExperimentsContext from './DotExperimentsContext';
- *
- * // Use in function component
- * function MyComponent() {
- *   const dotExperimentsInstance = React.useContext(DotExperimentsContext);
- *   // Use the dotExperimentsInstance here...
- * }
- *
- * // Or with Class component
- * class MyClassComponent extends React.Component {
- *   static contextType = DotExperimentsContext;
- *   // The instance is now accessible as this.context
- * }
- * ```
- *
  * @see {@link https://reactjs.org/docs/context.html|React Context}
  */
 const DotExperimentsContext = createContext<DotExperiments | null>(null);

@@ -74,6 +74,7 @@ describe('DotExperiments', () => {
 
         it('should instantiate the class when getInstance is called with config', () => {
             const dotExperimentsInstance = DotExperiments.getInstance(configMock);
+
             expect(dotExperimentsInstance).toBeInstanceOf(DotExperiments);
         });
 
@@ -93,6 +94,7 @@ describe('DotExperiments', () => {
 
         it('should return false if the debug inactive', async () => {
             const instance = DotExperiments.getInstance(configMock);
+
             expect(instance.getIsDebugActive()).toBe(false);
         });
 
@@ -109,6 +111,7 @@ describe('DotExperiments', () => {
             });
 
             const instance = DotExperiments.getInstance(config);
+
             const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
 
             expect(spyTrackPageView).not.toHaveBeenCalled();
@@ -135,21 +138,28 @@ describe('DotExperiments', () => {
             );
 
             const instance = DotExperiments.getInstance(config);
+
             await instance.ready();
 
             const EMPTY_URL = '';
+
             const expected1 = new URLSearchParams({});
+
             expect(instance.getVariantAsQueryParam(EMPTY_URL)).toStrictEqual(expected1);
 
             const URL_WITH_EXPERIMENT = '/blog';
+
             const expected2 = new URLSearchParams({
                 [EXPERIMENT_QUERY_PARAM_KEY]:
                     IsUserIncludedResponse.entity.experiments[0].variant.name
             });
+
             expect(instance.getVariantAsQueryParam(URL_WITH_EXPERIMENT)).toStrictEqual(expected2);
 
             const URL_NO_EXPERIMENT = '/destinations';
+
             const expected3 = new URLSearchParams({});
+
             expect(instance.getVariantAsQueryParam(URL_NO_EXPERIMENT)).toStrictEqual(expected3);
         });
     });
@@ -174,10 +184,12 @@ describe('DotExperiments', () => {
             });
 
             const instance = DotExperiments.getInstance(configMock);
+
             const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
 
             await instance.ready().then(() => {
                 const experiments = instance.experiments;
+
                 expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDB);
 
@@ -206,6 +218,7 @@ describe('DotExperiments', () => {
             await instance.locationChanged(LocationMock).then(() => {
                 // get the experiments stored in the indexDB
                 const experiments = instance.experiments;
+
                 expect(experiments.length).toBe(2);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew);
                 expect(spyTrackPageView).toBeCalledTimes(2);
@@ -233,6 +246,7 @@ describe('DotExperiments', () => {
             await instance.locationChanged(location).then(() => {
                 // get the experiments stored in the indexDB
                 const experiments = instance.experiments;
+
                 expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew15DaysLater);
                 expect(spyTrackPageView).toBeCalledTimes(3);

@@ -9,7 +9,7 @@ import { EXPERIMENT_QUERY_PARAM_KEY } from './constants';
  * @property {boolean} debug - Specifies whether to enable debug mode for the experiment.
  */
 export interface DotExperimentConfig {
-    'api-key': string;
+    apiKey: string;
     server: string;
     debug: boolean;
     trackPageView?: boolean;
