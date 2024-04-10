@@ -18,7 +18,6 @@ import {
     DotLanguagesService,
     DotPageLayoutService,
     DotPageRenderService,
-    DotPersonalizeService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
@@ -47,7 +46,6 @@ import { NavigationBarItem } from '../shared/models';
         DotActionUrlService,
         ConfirmationService,
         DotLanguagesService,
-        DotPersonalizeService,
         MessageService,
         DotPageLayoutService,
         DotFavoritePageService,
