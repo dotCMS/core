@@ -213,18 +213,17 @@ public class OSGIResource {
     }
 
     /**
-     * Does the undeploy of a bundle/jar
+     * Does the undeploy of a jar
      *
      * @param request
      * @param response
-     * @param bundleId
      * @param jarName
      * @throws BundleException
      * @throws IOException
      * @return ResponseEntityBooleanView
      */
     @DELETE
-    @Path("/bundle/{bundleId}/jar/{jar}")
+    @Path("/jar/{jar}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -241,13 +240,13 @@ public class OSGIResource {
             })
     public final ResponseEntityBooleanView undeploy(@Context final HttpServletRequest request,
                                                     @Context final HttpServletResponse response,
-                                                    @PathParam ("bundleId") final String bundleId,
                                                     @PathParam ("jar") final String jarName) throws BundleException, IOException {
 
         checkUserPermissions(request, response, "dynamic-plugins");
         Logger.debug(this, ()->"Undeploying OSGI jar " + jarName);
 
         final String sanitizeFileNameJarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
+        final String bundleId = findBundleByJar(sanitizeFileNameJarName);
         final Bundle bundle = findBundleOrThrowNotExist(bundleId);
         final String bundleLocation = bundle.getLocation();
         if (isSystemBundle(bundleLocation)) {
@@ -277,6 +276,24 @@ public class OSGIResource {
 
         Logger.error(this, "Error undeploying OSGI Bundle " + sanitizeFileNameJarName);
         throw new BadRequestException("Error undeploying OSGI Bundle:    " + sanitizeFileNameJarName);
+    }
+
+    private String findBundleByJar(final String sanitizeFileNameJarName) {
+
+        final Bundle[] bundles = OSGIUtil.getInstance().getBundles();
+        for (final Bundle bundle : bundles) {
+            final String bundleLocation = bundle.getLocation();
+            final String separator = bundleLocation.contains(StringPool.FORWARD_SLASH)?
+                    StringPool.FORWARD_SLASH: File.separator;
+            final String jarFile = bundleLocation.contains(separator)
+                    ? bundleLocation.substring(bundleLocation.lastIndexOf(separator) + 1)
+                    : "System";
+
+            if (jarFile.equals(sanitizeFileNameJarName)) {
+                return String.valueOf(bundle.getBundleId());
+            }
+        }
+        return null;
     }
 
     /**
