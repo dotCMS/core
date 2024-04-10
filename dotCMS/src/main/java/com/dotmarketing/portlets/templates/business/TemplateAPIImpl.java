@@ -1327,7 +1327,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 			if (newContainer.getUUID().equals(ContainerUUID.UUID_DEFAULT_VALUE)) {
 				layoutChanges.include(newContainer.getIdentifier(), String.valueOf(maxUUID));
-			} else if (Integer.parseInt(newContainer.getUUID()) != maxUUID) {
+			} else if (!newContainer.getUUID().equals(maxUUID.toString())) {
 				layoutChanges.change(newContainer.getIdentifier(), newContainer.getUUID(), String.valueOf(maxUUID));
 			}
 		});

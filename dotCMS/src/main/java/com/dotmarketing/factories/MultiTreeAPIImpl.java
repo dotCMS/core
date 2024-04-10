@@ -1338,7 +1338,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @NotNull
     private static String getMakValue(LayoutChanges.ContainerChanged changed) {
-        return String.valueOf((Integer.parseInt(changed.getOldInstanceId()) * -1) - 1);
+        return String.valueOf((Long.parseLong(changed.getOldInstanceId()) * -1) - 1);
     }
 
     private static void markMultiTreeToUpdate(final LayoutChanges layoutChanges, final Collection<String> pageIds,
