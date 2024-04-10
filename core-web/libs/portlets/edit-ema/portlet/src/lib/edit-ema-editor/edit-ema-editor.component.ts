@@ -247,9 +247,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe(() => {
                 requestAnimationFrame(() => {
                     this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
+                        console.log('click');
+
                         const href =
                             (e.target as HTMLAnchorElement).href ||
-                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
+                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement)?.href;
 
                         if (href) {
                             e.preventDefault();
@@ -267,6 +269,30 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             // Open external links in a new tab
                             this.window.open(href, '_blank');
                         }
+
+                        const target = e.target as HTMLElement;
+
+                        if (
+                            !target.dataset['mode'] ||
+                            target === target.ownerDocument.activeElement
+                        ) {
+                            console.log('NO INIT');
+
+                            return;
+                        }
+
+                        console.log('INIT INLINE EDITOR');
+
+                        function blurHandler() {
+                            this.contentEditable = 'false';
+                            console.log('blur', this.innerText);
+                            target.removeEventListener('blur', blurHandler);
+                        }
+
+                        target.addEventListener('blur', blurHandler);
+
+                        target.contentEditable = 'true';
+                        target.focus();
                     });
                 });
             });
