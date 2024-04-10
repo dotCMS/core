@@ -36,7 +36,7 @@ public interface AbstractLanguage {
     @JsonView({LanguageReadView.class, LanguageWriteView.class})
     Optional<String> countryCode();
 
-    @JsonView({LanguageFileView.class, LanguageReadView.class, LanguageWriteView.class})
+    @JsonView({LanguageReadView.class, LanguageWriteView.class})
     Optional<String> language();
 
     @JsonView({LanguageReadView.class, LanguageWriteView.class})

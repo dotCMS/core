@@ -115,6 +115,10 @@ public class LanguagePushHandler implements PushHandler<Language> {
                     matchingServerLanguage.get().defaultLanguage());
         }
 
+        if (localLanguage.language().isEmpty() && matchingServerLanguage.isPresent()) {
+            localLanguage = localLanguage.withLanguage(matchingServerLanguage.get().language());
+        }
+
         final String isoCode = localLanguage.isoCode();
         if (localLanguage.languageCode().isEmpty()) {
             localLanguage = localLanguage.withLanguageCode(isoCode.split("-")[0]);

@@ -4,7 +4,6 @@ import com.dotcms.api.client.push.ContentComparator;
 import com.dotcms.model.language.Language;
 import java.io.File;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.enterprise.context.Dependent;
@@ -86,9 +85,7 @@ public class LanguageComparator implements ContentComparator<Language> {
             return false;
         }
 
-        return Objects.equals(
-                toCompare.language().orElse(""), another.language().orElse("")
-        ) && toCompare.isoCode().equalsIgnoreCase(another.isoCode());
+        return toCompare.isoCode().equalsIgnoreCase(another.isoCode());
     }
 
     /**

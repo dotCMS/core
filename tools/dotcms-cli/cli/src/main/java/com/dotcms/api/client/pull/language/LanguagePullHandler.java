@@ -38,9 +38,7 @@ public class LanguagePullHandler extends GeneralPullHandler<Language> {
     public String shortFormat(final Language language, final PullOptions pullOptions) {
 
         return String.format(
-                "language: [@|bold,underline,blue %s|@] "
-                        + "isoCode: [@|bold,yellow %s|@]",
-                language.language().orElse(""),
+                "isoCode: [@|bold,yellow %s|@]",
                 language.isoCode()
         );
     }
