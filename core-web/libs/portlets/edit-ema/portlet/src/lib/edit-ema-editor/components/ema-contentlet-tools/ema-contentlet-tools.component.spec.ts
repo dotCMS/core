@@ -75,6 +75,11 @@ describe('EmaContentletToolsComponent', () => {
         it('should close menus when contentlet @input was changed', () => {
             const spyHideMenus = jest.spyOn(spectator.component, 'hideMenus');
 
+            const hideMenu = jest.spyOn(spectator.component.menu, 'hide');
+            // Open menu
+            spectator.click('[data-testId="menu-add"]');
+
+            //Change contentlet hover
             spectator.setInput('contentlet', {
                 ...contentletAreaMock,
                 payload: {
@@ -87,6 +92,7 @@ describe('EmaContentletToolsComponent', () => {
             });
 
             expect(spyHideMenus).toHaveBeenCalled();
+            expect(hideMenu).toHaveBeenCalled();
         });
 
         describe('events', () => {
