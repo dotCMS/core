@@ -147,7 +147,7 @@ public class LanguageCacheImpl extends LanguageCache {
     	}
         return l != null;
     }
-    
+
     public boolean hasLanguage (String languageCode, String countryCode) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         String languageKey = languageCode + "-" + countryCode;
@@ -168,11 +168,11 @@ public class LanguageCacheImpl extends LanguageCache {
 		// as parameter if, for example, the ISO code was changed
 		final var cachedLanguage = getLanguageById(language.getId());
 		if (cachedLanguage != null) {
-			internalRemove(cachedLanguage);
+			removeFromCache(cachedLanguage);
 		}
 
 		// Cleaning up the language
-		internalRemove(language);
+		removeFromCache(language);
 
 		cache.remove(ALL_LANGUAGES_KEY, getPrimaryGroup());
 	}
@@ -182,7 +182,7 @@ public class LanguageCacheImpl extends LanguageCache {
 	 *
 	 * @param language the language to remove
 	 */
-	private void internalRemove(Language language) {
+	private void removeFromCache(Language language) {
 
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 
