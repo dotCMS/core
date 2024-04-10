@@ -386,7 +386,7 @@ describe('DotEmaInfoDisplayComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('info-text')).innerHTML).toBe(
-                    'editpage.locked-by-contact-administrator'
+                    'editpage.locked-contact-with'
                 );
             });
         });
