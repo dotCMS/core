@@ -57,7 +57,7 @@ describe('DotEditContentAsideComponent', () => {
     });
 
     it('should render aside information data', () => {
-        spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
+        spectator.setInput('contentlet', CONTENT_FORM_DATA_MOCK.contentlet);
         spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
         spectator.detectChanges();
         expect(spectator.query(byTestId('modified-by')).textContent.trim()).toBe('Admin User');
@@ -70,7 +70,7 @@ describe('DotEditContentAsideComponent', () => {
     it('should not render aside information data', () => {
         const CONTENT_WITHOUT_CONTENTLET = { ...CONTENT_FORM_DATA_MOCK };
         delete CONTENT_WITHOUT_CONTENTLET.contentlet;
-        spectator.setInput('contentLet', CONTENT_WITHOUT_CONTENTLET.contentlet);
+        spectator.setInput('contentlet', CONTENT_WITHOUT_CONTENTLET.contentlet);
         spectator.setInput('contentType', CONTENT_WITHOUT_CONTENTLET.contentType.contentType);
         spectator.detectChanges();
 
@@ -80,7 +80,7 @@ describe('DotEditContentAsideComponent', () => {
     });
 
     it('should render aside workflow data', () => {
-        spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
+        spectator.setInput('contentlet', CONTENT_FORM_DATA_MOCK.contentlet);
         spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
         spectator.detectChanges();
 
@@ -93,7 +93,7 @@ describe('DotEditContentAsideComponent', () => {
     });
 
     it('should render New as status when dont have contentlet', () => {
-        spectator.setInput('contentLet', null);
+        spectator.setInput('contentlet', null);
         spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
         spectator.detectChanges();
 

@@ -18,6 +18,10 @@ dd {
     margin: 0;
 }
 
+.content-aside {
+    overflow: auto;
+}
+
 .content-aside,
 .content-aside__section {
     display: block;
@@ -90,6 +94,16 @@ dd {
             padding: $spacing-1;
             border-radius: $border-radius-lg;
             gap: $spacing-0;
+
+            &,
+            label {
+                user-select: none;
+                cursor: pointer;
+            }
+
+            &:hover {
+                background: $color-palette-primary-100;
+            }
         }
 
         .sidebar-card__header {
@@ -174,6 +188,29 @@ dd {
             font-style: normal;
             font-weight: 400;
             line-height: 140%; /* 16.8px */
+        }
+    }
+
+    .content-aside__workflow {
+        display: flex;
+        flex-direction: column;
+        padding: $spacing-1 $spacing-4;
+        align-items: flex-start;
+        gap: $spacing-1;
+        align-self: stretch;
+    }
+
+    .content-aside__label-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: $spacing-3;
+        width: 100%;
+        height: 39px;
+
+        dt,
+        dd {
+            flex: 1 0 0;
         }
     }
 }

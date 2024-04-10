@@ -12,7 +12,7 @@ export class DotRelativeDatePipe implements PipeTransform {
     transform(
         time: string | number = new Date().getTime(),
         format = 'MM/dd/yyyy',
-        daysLimit = 7
+        timeStampAfter = 7
     ): string {
         const isMilliseconds = !isNaN(Number(time));
 
@@ -29,13 +29,12 @@ export class DotRelativeDatePipe implements PipeTransform {
         const finalDate = isMilliseconds ? this.dotFormatDateService.getUTC(cleanDate) : cleanDate;
 
         // Check how many days are between the final date and the current date
-        const showTimeStamp =
-            Math.abs(
-                this.dotFormatDateService.differenceInCalendarDays(
-                    finalDate,
-                    this.dotFormatDateService.getUTC()
-                )
-            ) > daysLimit;
+        const diffTime = this.dotFormatDateService.differenceInCalendarDays(
+            finalDate,
+            this.dotFormatDateService.getUTC()
+        );
+
+        const showTimeStamp = timeStampAfter ? Math.abs(diffTime) > timeStampAfter : false;
 
         return showTimeStamp
             ? this.dotFormatDateService.format(finalDate, format)

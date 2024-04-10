@@ -18,7 +18,9 @@
                     aria-label="Copy ID" />
             </dd>
             <dd class="content-aside__metadata">
-                <div class="sidebar-card">
+                <div
+                    class="sidebar-card"
+                    [routerLink]="'/content-types-angular/edit/' + contentType">
                     <div class="sidebar-card__header">
                         <span>Content Type</span>
                     </div>
@@ -32,20 +34,30 @@
                     <label class="sidebar-card__label">Used in 5 pages</label>
                 </div>
                 <div class="content-history__container">
-                    <div class="content-history">
+                    <div class="content-history" pTooltip="Dec 10, 2022" tooltipPosition="bottom">
                         <label class="content-history__title">Published</label>
-                        <label class="content-history__author">W. Warren</label>
-                        <label class="content-history__date">2 days ago</label>
+                        <label class="content-history__author">{{
+                            contentlet.publishUserName || 'W. Warren'
+                        }}</label>
+                        <label class="content-history__date">{{
+                            contentlet.publishDate | dotRelativeDate : 'MM/dd/yyyy' : null
+                        }}</label>
                     </div>
-                    <div class="content-history">
+                    <div class="content-history" pTooltip="Dec 10, 2022" tooltipPosition="bottom">
                         <label class="content-history__title">Modified</label>
-                        <label class="content-history__author">B. Simmons</label>
-                        <label class="content-history__date">1 week ago</label>
+                        <label class="content-history__author">{{ contentlet.modUserName }}</label>
+                        <label class="content-history__date">{{
+                            contentlet.modDate | dotRelativeDate : 'MM/dd/yyyy' : null
+                        }}</label>
                     </div>
-                    <div class="content-history">
+                    <div class="content-history" pTooltip="Dec 10, 2022" tooltipPosition="bottom">
                         <label class="content-history__title">Created</label>
-                        <label class="content-history__author">A. User</label>
-                        <label class="content-history__date">1 month ago</label>
+                        <label class="content-history__author">{{
+                            contentlet.ownerName || 'A. User'
+                        }}</label>
+                        <label class="content-history__date">{{
+                            contentlet.createDate | dotRelativeDate : 'MM/dd/yyyy' : null
+                        }}</label>
                     </div>
                 </div>
             </dd>
@@ -60,68 +72,31 @@
                 <label>Show All</label>
             </div>
         </div>
+        <div class="content-aside__workflow" *ngIf="workflow$ | async as workflow">
+            <div class="content-aside__label-item">
+                <dt class="font-bold">{{ 'Workflow' | dm }}</dt>
+                <dd data-testId="workflow-name">
+                    {{ workflow.scheme?.name }}
+                </dd>
+            </div>
+            <div class="content-aside__label-item">
+                <dt class="font-bold">{{ 'Step' | dm }}</dt>
+                <dd data-testId="workflow-step">
+                    {{ workflow?.step?.name ?? 'New' }}
+                </dd>
+            </div>
+            <div class="content-aside__label-item">
+                <dt class="font-bold">{{ 'Content Type' | dm }}</dt>
+                <dd data-testId="workflow-step">
+                    {{ contentlet.contentType }}
+                </dd>
+            </div>
+            <div class="content-aside__label-item">
+                <dt class="font-bold">{{ 'Assignee' | dm }}</dt>
+                <dd data-testId="workflow-assigned">
+                    {{ workflow.task?.assignedTo }}
+                </dd>
+            </div>
+        </div>
     </section>
 </aside>
-
-<!-- 
-        <dot-api-link
-            *ngIf="contentLet?.stInode"
-            [href]="'api/v1/contenttype/id/' + contentLet?.stInode"></dot-api-link> -->
-<!-- 
-    <ng-container *ngIf="workflow$ | async as workflow">
-        <div class="edit-content-aside--header">
-            <strong>
-                <i class="pi pi-sitemap"></i>
-                {{ 'Workflow' | dm }}
-            </strong>
-    
-            <dot-link [label]="'History' | dm" href="" icon="pi-history"></dot-link>
-        </div>
-    
-        <dl class="edit-content-aside--item">
-            <dt>{{ 'Assignee' | dm }}</dt>
-            <dd class="font-bold" data-testId="workflow-assigned">
-                {{ workflow.task?.assignedTo }}
-            </dd>
-    
-            <dt>{{ 'Step' | dm }}</dt>
-            <dd class="font-bold" data-testId="workflow-step">
-                <p-chip [label]="workflow?.step?.name ?? 'New'" styleClass="p-chip-sm p-chip-rounded" />
-            </dd>
-    
-            <dt>{{ 'Workflow' | dm }}</dt>
-            <dd class="font-bold" data-testId="workflow-name">
-                {{ workflow.scheme?.name }}
-            </dd>
-        </dl>
-    </ng-container>
-    
-    <dl class="edit-content-aside--item">
-        <dt>{{ 'Content State' | dm }}</dt>
-    
-        <dd>
-            <p-chip
-                *ngIf="contentLet | contentletStatus as status"
-                [styleClass]="'p-chip-sm ' + status.classes"
-                [label]="status.label" />
-        </dd>
-    
-        <dt>{{ 'Modified by' | dm }}</dt>
-        <dd class="font-bold" data-testId="modified-by">
-            <ng-container *ngIf="contentLet">
-                {{ contentLet?.modUserName }}
-            </ng-container>
-        </dd>
-    
-        <dt>{{ 'Last modified' | dm }}</dt>
-        <dd class="font-bold" data-testId="last-modified">
-            <ng-container *ngIf="contentLet">
-                {{ contentLet?.modDate | dotRelativeDate }}
-            </ng-container>
-        </dd>
-    
-        <dt>{{ 'Content Type' | dm }}</dt>
-        <a [routerLink]="'/content-types-angular/edit/' + contentType" data-testId="content-type">{{
-            contentType
-        }}</a>
-    </dl> -->
