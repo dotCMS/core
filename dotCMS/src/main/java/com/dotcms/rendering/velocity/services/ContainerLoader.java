@@ -428,7 +428,7 @@ public class ContainerLoader implements DotLoader {
                                                        final StringBuilder velocityCodeBuilder,
                                                        final List<ContainerStructure> containerContentTypeList,
                                                        final ContentTypeAPI typeAPI) {
-        velocityCodeBuilder.append("<!-- This is the fake contentlet to add -->" +
+        velocityCodeBuilder.append(
                 "<div\n" +
                 "  data-dot-object=\"contentlet\"\n" +
                 "  data-dot-identifier=\"TEMP_EMPTY_CONTENTLET\"\n" +
@@ -452,7 +452,7 @@ public class ContainerLoader implements DotLoader {
         velocityCodeBuilder.append("\"" +
         ",\"identifier\":\""+ this.getDataDotIdentifier(container)  +"\"" +
         ",\"maxContentlets\":\" "+ container.getMaxContentlets() +"\"" +
-        ",\"uuid\":"+ uuid +"}'\n" +
+        ",\"uuid\":\""+ uuid +"\"}'\n" +
         "  style=\"width: 100%; background-color: rgb(236, 240, 253); display: flex; justify-content: center; align-items: center; color: rgb(3, 14, 50); height: 10rem;\"\n" +
     ">\n" +
     "  This container is empty\n" +
