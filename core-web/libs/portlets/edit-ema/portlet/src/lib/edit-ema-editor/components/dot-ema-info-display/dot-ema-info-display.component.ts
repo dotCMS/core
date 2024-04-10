@@ -53,7 +53,7 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
             let message = 'editpage.locked-by';
 
             if (!this.editorData.page.canLock) {
-                message = 'editpage.locked-by-contact-administrator';
+                message = 'editpage.locked-contact-with';
             }
 
             this.options.set({
