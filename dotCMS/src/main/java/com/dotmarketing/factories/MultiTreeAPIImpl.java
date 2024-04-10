@@ -1288,6 +1288,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             removeMultiTrees(layoutChanges, pageIds);
         }
 
+        pageIds.stream().forEach(pageId -> {
+            CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId);
+            CacheLocator.getHTMLPageCache().remove(pageId);
+        });
     }
 
     private static void removeMultiTrees(LayoutChanges layoutChanges, final Collection<String> pageIds) throws DotDataException {
@@ -1305,8 +1309,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             );
         }
 
-        new DotConnect().executeBatch("DELETE FROM multi_tree " +
-                "WHERE parent1 = ? AND parent2 = ? and relation_type = ?", parametersToRemoved);
+        if (!parametersToRemoved.isEmpty()) {
+            new DotConnect().executeBatch("DELETE FROM multi_tree " +
+                    "WHERE parent1 = ? AND parent2 = ? and relation_type = ?", parametersToRemoved);
+        }
     }
 
     private static void updateMarkedMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds)
