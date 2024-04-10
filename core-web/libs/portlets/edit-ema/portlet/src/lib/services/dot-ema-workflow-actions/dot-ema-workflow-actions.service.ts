@@ -61,6 +61,14 @@ export class DotEmaWorkflowActionsService {
         private dotFormatDateService: DotFormatDateService
     ) {}
 
+    /**
+     * Handle the workflow action, open the wizard and fire the action.
+     *
+     * @param {DotCMSWorkflowActionEvent} event
+     * @param {(callbackName: string, args: unknown[]) => void} [embeddedFunction]
+     * @return {*}  {Observable<Partial<WorkflowActionResult>>}
+     * @memberof DotEmaWorkflowActionsService
+     */
     handleWorkflowAction(
         event: DotCMSWorkflowActionEvent,
         embeddedFunction?: (callbackName: string, args: unknown[]) => void
@@ -208,6 +216,14 @@ export class DotEmaWorkflowActionsService {
               }
             : { ...data, contentlet: {} };
     }
+
+    /**
+     * Open the wizard to collect the data needed to execute the workflow action.
+     *
+     * @param {DotCMSWorkflowActionEvent} event
+     * @return {*}  {Observable<DotWorkflowPayload>}
+     * @memberof DotEmaWorkflowActionsService
+     */
     openWizard(event: DotCMSWorkflowActionEvent): Observable<DotWorkflowPayload> {
         const wizardInput = this.setWizardInput(
             event.workflow,
@@ -220,6 +236,14 @@ export class DotEmaWorkflowActionsService {
         );
     }
 
+    /**
+     * Fire the bulk action
+     *
+     * @param {DotCMSWorkflowActionEvent} event
+     * @param {DotWorkflowPayload} [data]
+     * @return {*}  {(Observable<DotActionBulkResult | MessageInfo>)}
+     * @memberof DotEmaWorkflowActionsService
+     */
     fireBulkWorkflowAction(
         event: DotCMSWorkflowActionEvent,
         data?: DotWorkflowPayload
@@ -261,6 +285,14 @@ export class DotEmaWorkflowActionsService {
             : null;
     }
 
+    /**
+     * Fire the action
+     *
+     * @param {DotCMSWorkflowActionEvent} event
+     * @param {DotWorkflowPayload} [data]
+     * @return {*}  {(Observable<DotCMSContentlet | MessageInfo>)}
+     * @memberof DotEmaWorkflowActionsService
+     */
     fireWorkflowAction(
         event: DotCMSWorkflowActionEvent,
         data?: DotWorkflowPayload
@@ -289,10 +321,26 @@ export class DotEmaWorkflowActionsService {
         return inputs.some((input) => input.id === 'pushPublish');
     }
 
+    /**
+     * Check if the action is a bulk action
+     *
+     * @private
+     * @param {DotCMSWorkflowActionEvent} event
+     * @return {*}  {boolean}
+     * @memberof DotEmaWorkflowActionsService
+     */
     private isBulkAction(event: DotCMSWorkflowActionEvent): boolean {
         return !!event.selectedInodes?.length;
     }
 
+    /**
+     * Get the assignable data
+     *
+     * @private
+     * @param {DotCMSWorkflowAction} workflow
+     * @return {*}  {DotAssignableData}
+     * @memberof DotEmaWorkflowActionsService
+     */
     private getAssignableData(workflow: DotCMSWorkflowAction): DotAssignableData {
         return {
             roleId: workflow.nextAssign,
@@ -300,6 +348,14 @@ export class DotEmaWorkflowActionsService {
         };
     }
 
+    /**
+     * Check if the action input is valid
+     *
+     * @private
+     * @param {string} id
+     * @return {*}  {boolean}
+     * @memberof DotEmaWorkflowActionsService
+     */
     private isValidActionInput(id: string): boolean {
         return (
             id === DotActionInputs.ASSIGNABLE ||
@@ -308,6 +364,14 @@ export class DotEmaWorkflowActionsService {
         );
     }
 
+    /**
+     * Merge the comment and assign action inputs
+     *
+     * @private
+     * @param {DotCMSWorkflowAction} workflow
+     * @return {*}  {DotCMSWorkflowInput[]}
+     * @memberof DotEmaWorkflowActionsService
+     */
     private mergeCommentAndAssign(workflow: DotCMSWorkflowAction): DotCMSWorkflowInput[] {
         const body: Record<string, boolean> = {};
         let workflows: DotCMSWorkflowInput[];
@@ -329,6 +393,15 @@ export class DotEmaWorkflowActionsService {
         return workflows;
     }
 
+    /**
+     * Process the bulk data
+     *
+     * @private
+     * @param {DotCMSWorkflowActionEvent} event
+     * @param {DotWorkflowPayload} [data]
+     * @return {*}  {DotActionBulkRequestOptions}
+     * @memberof DotEmaWorkflowActionsService
+     */
     private processBulkData(
         event: DotCMSWorkflowActionEvent,
         data?: DotWorkflowPayload

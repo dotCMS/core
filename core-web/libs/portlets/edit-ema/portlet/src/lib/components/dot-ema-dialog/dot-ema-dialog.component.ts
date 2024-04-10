@@ -17,6 +17,8 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MessageService } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 
+import { take } from 'rxjs/operators';
+
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
@@ -207,6 +209,7 @@ export class DotEmaDialogComponent {
     handleWorkflowEvent(event: DotCMSWorkflowActionEvent) {
         this.workflowActions
             .handleWorkflowAction(event, this.callEmbeddedFunction.bind(this))
+            .pipe(take(1))
             .subscribe(({ callback, args, summary, detail }) => {
                 // We know is an error when we have summary and detail
                 if (summary && detail) {
