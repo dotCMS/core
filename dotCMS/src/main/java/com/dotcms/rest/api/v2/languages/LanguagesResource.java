@@ -434,10 +434,6 @@ public class LanguagesResource {
             newLanguage.setCountryCode(form.getCountryCode());
         }
 
-        if (StringUtils.isSet(form.getLanguage())) {
-            newLanguage.setLanguage(form.getLanguage());
-        }
-
         DotPreconditions.checkArgument(UtilMethods.isSet(newLanguage.getLanguageCode()),
                 "Language Code can't be null or empty");
 
