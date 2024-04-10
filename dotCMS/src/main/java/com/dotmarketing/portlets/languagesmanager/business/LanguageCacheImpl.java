@@ -159,12 +159,7 @@ public class LanguageCacheImpl extends LanguageCache {
     	}
         return l != null;
     }
-
-	/**
-	 * Removes the given language from the cache.
-	 *
-	 * @param language the language to be removed from the cache
-	 */
+	
 	public void removeLanguage(Language language) {
 
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
@@ -190,7 +185,7 @@ public class LanguageCacheImpl extends LanguageCache {
 	private void internalRemove(Language language) {
 
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-		
+
 		long id = language.getId();
 		String idSt = String.valueOf(language.getId());
 		String languageKey = language.getLanguageCode() + "-" + language.getCountryCode();
