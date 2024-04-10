@@ -1,8 +1,12 @@
 package com.dotcms.rest.api.v1.site;
 
+import static com.dotmarketing.util.Logger.debug;
+import static com.dotmarketing.util.Logger.error;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -11,20 +15,19 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
-
-import static com.dotmarketing.util.Logger.debug;
-import static com.dotmarketing.util.Logger.error;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Provides all the utility methods used by the {@link SiteResource}
@@ -171,10 +174,64 @@ public class SiteHelper implements Serializable {
 		return true;
 	}
 
-	private static class SingletonHolder {
-		private static final SiteHelper INSTANCE = new SiteHelper();
+	static SiteView toView(final Host host) throws DotStateException, DotDataException, DotSecurityException{
+		return toView(host, null);
 	}
 
+	static SiteView toView(final Host host, final User user) throws DotStateException, DotDataException, DotSecurityException {
+		final SiteView.Builder builder = SiteView.Builder.builder();
+		builder.withIdentifier(host.getIdentifier())
+				.withInode(host.getInode())
+				.withAliases(host.getAliases())
+				.withSiteName(host.getHostname())
+				.withTagStorage(host.getTagStorage())
+				.withSiteThumbnail(null != host.getHostThumbnail() ? host.getHostThumbnail().getName(): StringPool.BLANK)
+				.withRunDashboard(host.getBoolProperty(SiteResource.RUN_DASHBOARD))
+				.withKeywords(host.getStringProperty(SiteResource.KEYWORDS))
+				.withDescription(host.getStringProperty(SiteResource.DESCRIPTION))
+				.withGoogleMap(host.getStringProperty(SiteResource.GOOGLE_MAP))
+				.withGoogleAnalytics(host.getStringProperty(SiteResource.GOOGLE_ANALYTICS))
+				.withAddThis(host.getStringProperty(SiteResource.ADD_THIS))
+				.withProxyUrlForEditMode(host.getStringProperty(SiteResource.PROXY_EDIT_MODE_URL))
+				.withEmbeddedDashboard(host.getStringProperty(SiteResource.EMBEDDED_DASHBOARD))
+				.withLanguageId(host.getLanguageId())
+				.withIsSystemHost(host.isSystemHost())
+				.withIsDefault(host.isDefault())
+				.withIsArchived(host.isArchived())
+				.withIsLive(host.isLive())
+				.withIsLocked(host.isLocked())
+				.withIsWorking(host.isWorking())
+				.withModDate(host.getModDate())
+				.withModUser(host.getModUser());
+		if(null != user){
+			final List<HostVariable> variablesForHost = getVariablesForHost(host, user);
+			final List<ImmutableSiteVarView> siteVariableViews = variablesForHost.stream()
+					.map(variable -> {
+						ImmutableSiteVarView.Builder siteVarBuilder = ImmutableSiteVarView.builder();
+						return siteVarBuilder.name(variable.getName())
+								.id(variable.getId())
+								.key(variable.getKey())
+								.value(variable.getValue())
+								.build();
+					}).collect(Collectors.toList());
+			builder.withVariables(siteVariableViews);
+		}
+		return builder.build();
+	}
+
+	static List<HostVariable> getVariablesForHost(final Host host, final User user)
+			throws DotDataException, DotSecurityException {
+		if (null == user){
+			return List.of();
+		}
+		return APILocator.getHostVariableAPI()
+				.getVariablesForHost(host.getIdentifier(), user, false);
+	}
+
+	private static class SingletonHolder {
+
+		private static final SiteHelper INSTANCE = new SiteHelper();
+	}
 	/**
 	 * Get the instance.
 	 * @return JsonWebTokenFactory
@@ -399,4 +456,7 @@ public class SiteHelper implements Serializable {
 		this.switchSite(req, defaultSite.getIdentifier());
 		return defaultSite;
 	}
+
+
+
 }

@@ -40,7 +40,6 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -77,6 +76,7 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import static com.dotcms.rest.api.v1.site.SiteHelper.toView;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
@@ -153,7 +153,7 @@ public class SiteResource implements Serializable {
               .init().getUser();
           
             Host currentSite = siteHelper.getCurrentSite(httpServletRequest, user);
-            response = Response.ok( new ResponseEntityView(currentSite) ).build();
+            response = Response.ok( new ResponseEntityView<>(currentSite) ).build();
         } catch (Exception e) {
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
@@ -188,7 +188,7 @@ public class SiteResource implements Serializable {
 
             final Host currentSite = APILocator.getHostAPI().findDefaultHost(user, PageMode.get(httpServletRequest).respectAnonPerms);
             response = Response.ok(
-                        new ResponseEntityView(currentSite)
+                        new ResponseEntityView<>(currentSite)
                     ).build();
         } catch (Exception e) {
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -294,7 +294,7 @@ public class SiteResource implements Serializable {
             }
 
             response = (switchDone) ?
-                    Response.ok(new ResponseEntityView(map("hostSwitched",
+                    Response.ok(new ResponseEntityView<>(map("hostSwitched",
                             switchDone))).build(): // 200
                     Response.status(Response.Status.NOT_FOUND).build();
 
@@ -335,7 +335,7 @@ public class SiteResource implements Serializable {
 
         try {
             final Host host = siteHelper.switchToDefaultHost(request, user);
-            return Response.ok(new ResponseEntityView(host)).build();
+            return Response.ok(new ResponseEntityView<>(host)).build();
 
         } catch (DotSecurityException e) {
             Logger.error(this.getClass(), "Exception on switch site exception message: " + e.getMessage(), e);
@@ -436,7 +436,7 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
         this.siteHelper.publish(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
     }
 
     /**
@@ -479,7 +479,7 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.unpublish(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
     }
 
     /**
@@ -526,7 +526,7 @@ public class SiteResource implements Serializable {
         }
 
         this.archive(user, pageMode, site);
-        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(toView(site))).build();
     }
 
     @WrapInTransaction
@@ -539,7 +539,7 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.archive(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
     }
 
     /**
@@ -582,7 +582,7 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.unarchive(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(toView(site))).build();
     }
 
     /**
@@ -756,7 +756,7 @@ public class SiteResource implements Serializable {
             throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
-        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(toView(site,user))).build();
     }
 
     /**
@@ -804,7 +804,7 @@ public class SiteResource implements Serializable {
             throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, hostname));
         }
 
-        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(toView(site,user))).build();
     }
 
     /**
@@ -858,7 +858,7 @@ public class SiteResource implements Serializable {
         copySitePropertiesFromForm(newSiteForm, newSite);
 
         return Response.ok(new ResponseEntityView<>(
-                this.toView(this.siteHelper.save(newSite, user, pageMode.respectAnonPerms)))).build();
+                toView(this.siteHelper.save(newSite, user, pageMode.respectAnonPerms),user))).build();
     }
 
     /**
@@ -1187,7 +1187,7 @@ public class SiteResource implements Serializable {
         copySitePropertiesFromForm(newSiteForm, site);
 
         return Response.ok(new ResponseEntityView<>(
-                this.toView(this.siteHelper.update(site, user, pageMode.respectAnonPerms)))).build();
+                toView(this.siteHelper.update(site, user, pageMode.respectAnonPerms),user))).build();
     }
 
     /**
@@ -1250,33 +1250,4 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView<>(newSite)).build();
     }
 
-    private SiteView toView (final Host host) throws DotStateException, DotDataException, DotSecurityException {
-
-        return SiteView.Builder.builder()
-                .withIdentifier(host.getIdentifier())
-                .withInode(host.getInode())
-                .withAliases(host.getAliases())
-                .withSiteName(host.getHostname())
-                .withTagStorage(host.getTagStorage())
-                .withSiteThumbnail(null != host.getHostThumbnail() ? host.getHostThumbnail().getName(): StringPool.BLANK)
-                .withRunDashboard(host.getBoolProperty(RUN_DASHBOARD))
-                .withKeywords(host.getStringProperty(KEYWORDS))
-                .withDescription(host.getStringProperty(DESCRIPTION))
-                .withGoogleMap(host.getStringProperty(GOOGLE_MAP))
-                .withGoogleAnalytics(host.getStringProperty(GOOGLE_ANALYTICS))
-                .withAddThis(host.getStringProperty(ADD_THIS))
-                .withProxyUrlForEditMode(host.getStringProperty(PROXY_EDIT_MODE_URL))
-                .withEmbeddedDashboard(host.getStringProperty(EMBEDDED_DASHBOARD))
-                .withLanguageId(host.getLanguageId())
-                .withIsSystemHost(host.isSystemHost())
-                .withIsDefault(host.isDefault())
-                .withIsArchived(host.isArchived())
-                .withIsLive(host.isLive())
-                .withIsLocked(host.isLocked())
-                .withIsWorking(host.isWorking())
-                .withModDate(host.getModDate())
-                .withModUser(host.getModUser())
-                .build();
-
-    }
 } // E:O:F:SiteBrowserResource.
