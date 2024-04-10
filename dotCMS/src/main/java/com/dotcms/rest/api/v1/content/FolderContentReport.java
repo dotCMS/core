@@ -19,6 +19,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -53,9 +54,11 @@ public class FolderContentReport implements ContentReport {
     public List<ContentReportView> generateContentReport(final ContentReportParams params) throws DotDataException, DotSecurityException {
         final String folder = params.extraParam(ContentReportPaginator.FOLDER_PARAM);
         final String siteId = params.extraParam(ContentReportPaginator.SITE_PARAM);
-        final Host site = this.siteAPI.get().find(siteId, params.user(), false);
-        if (null == site || UtilMethods.isNotSet(site.getIdentifier())) {
-            throw new DoesNotExistException("The site with the given ID does not exist: " + siteId);
+        if (Objects.nonNull(siteId)) {
+            final Host site = this.siteAPI.get().find(siteId, params.user(), false);
+            if (null == site || UtilMethods.isNotSet(site.getIdentifier())) {
+                throw new DoesNotExistException("The site with the given ID does not exist: " + siteId);
+            }
         }
         final Optional<Folder> folderOpt = this.resolveFolder(folder, siteId, user);
         if (folderOpt.isEmpty()) {
