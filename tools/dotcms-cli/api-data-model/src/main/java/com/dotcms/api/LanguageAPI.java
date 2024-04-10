@@ -27,7 +27,7 @@ import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tags(
-        value = { @Tag(name = "Language")}
+        value = {@Tag(name = "Language")}
 )
 @RegisterClientHeaders(DotCMSClientHeaders.class)
 @RegisterProvider(DefaultResponseExceptionMapper.class)
@@ -42,9 +42,23 @@ public interface LanguageAPI {
     @Operation(
             summary = " Returns the Language that matches the specified id"
     )
-    @JsonView(LanguageFileView.class)
     ResponseEntityView<Language> findById(@PathParam("languageid") String languageId);
 
+    @GET
+    @Path("/id/{languageid}")
+    @Operation(
+            summary = " Returns the Language that matches the specified id"
+    )
+    @JsonView(LanguageFileView.class)
+    ResponseEntityView<Language> findByIdForPull(@PathParam("languageid") String languageId);
+
+    @GET
+    @Path("/{languageTag}")
+    @Operation(
+            summary = " Returns the Language that matches the specified ISO code"
+    )
+    ResponseEntityView<Language> getFromLanguageIsoCode(
+            @PathParam("languageTag") String languageIsoCode);
 
     @GET
     @Path("/{languageTag}")
@@ -52,7 +66,8 @@ public interface LanguageAPI {
             summary = " Returns the Language that matches the specified ISO code"
     )
     @JsonView(LanguageFileView.class)
-    ResponseEntityView<Language> getFromLanguageIsoCode(@PathParam("languageTag") String languageIsoCode);
+    ResponseEntityView<Language> getFromLanguageIsoCodeForPull(
+            @PathParam("languageTag") String languageIsoCode);
 
     @GET
     @Operation(
