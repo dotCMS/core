@@ -36,19 +36,6 @@ const ACTIONS_CONTAINER_HEIGHT = 40;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmaContentletToolsComponent implements OnInit, OnChanges {
-    ngOnChanges(changes: SimpleChanges): void {
-        if (!changes.contentlet) {
-            return;
-        }
-
-        if (
-            changes.contentlet.currentValue?.payload.contentlet.identifier !==
-            changes.contentlet.previousValue?.payload.contentlet.identifier
-        ) {
-            this.hideMenus();
-        }
-    }
-
     @ViewChild('menu') menu: Menu;
     @ViewChild('menuVTL') menuVTL: Menu;
     @ViewChild('dragImage') dragImage: ElementRef;
@@ -105,6 +92,19 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
     ngOnInit() {
         this.setVtlFiles();
         this.ACTIONS_CONTAINER_WIDTH = this.contentlet.payload.vtlFiles ? 178 : 128;
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!changes.contentlet) {
+            return;
+        }
+
+        if (
+            changes.contentlet.currentValue?.payload.contentlet.identifier !==
+            changes.contentlet.previousValue?.payload.contentlet.identifier
+        ) {
+            this.hideMenus();
+        }
     }
 
     /**
