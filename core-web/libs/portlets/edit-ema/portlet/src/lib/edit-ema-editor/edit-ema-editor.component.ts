@@ -68,56 +68,19 @@ import {
     PositionPayload,
     ClientData,
     SetUrlPayload,
-    ContainerPayload,
-    ContentletPayload,
-    PageContainer,
     VTLFile,
-    ReorderPayload
+    ReorderPayload,
+    PostMessagePayload,
+    ContentletDragPayload,
+    DeletePayload,
+    DraggedPalettePayload,
+    InsertPayloadFromDelete
 } from '../shared/models';
 import {
     areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
 } from '../utils';
-
-interface DeletePayload {
-    payload: ActionPayload;
-    originContainer: ContainerPayload;
-    contentletToMove: ContentletPayload;
-}
-
-interface InsertPayloadFromDelete {
-    payload: ActionPayload;
-    pageContainers: PageContainer[];
-    contentletsId: string[];
-    destinationContainer: ContainerPayload;
-    pivotContentlet: ContentletPayload;
-    positionToInsert: 'before' | 'after';
-}
-
-interface BasePayload {
-    type: 'contentlet' | 'content-type';
-}
-
-interface ContentletDragPayload extends BasePayload {
-    type: 'contentlet';
-    item: {
-        container?: ContainerPayload;
-        contentlet: ContentletPayload;
-    };
-    move: boolean;
-}
-
-// Specific interface when type is 'content-type'
-interface ContentTypeDragPayload extends BasePayload {
-    type: 'content-type';
-    item: {
-        variable: string;
-        name: string;
-    };
-}
-
-type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -681,12 +644,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload:
-                | ActionPayload
-                | SetUrlPayload
-                | Container[]
-                | ClientContentletArea
-                | ReorderPayload;
+            payload: PostMessagePayload;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
