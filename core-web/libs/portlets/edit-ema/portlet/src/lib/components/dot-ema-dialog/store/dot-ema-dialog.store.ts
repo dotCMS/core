@@ -86,7 +86,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     );
 
     /**
-     * This method is called when the user clicks on the edit button
+     * This method is called when we need to open a dialog with a specific URL
      *
      * @memberof DotEmaDialogStore
      */
