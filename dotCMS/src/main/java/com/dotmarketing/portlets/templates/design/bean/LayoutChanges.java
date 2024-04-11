@@ -3,6 +3,9 @@ package com.dotmarketing.portlets.templates.design.bean;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/**
+ * Represents a set of changes apply to a {@link TemplateLayout}
+ */
 public class LayoutChanges {
 
     private Collection<ContainerChanged> changes = new ArrayList<>();

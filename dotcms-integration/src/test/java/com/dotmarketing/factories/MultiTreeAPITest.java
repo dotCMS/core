@@ -1546,10 +1546,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         final Table<String, String, Set<PersonalizedContentlet>> pageMultiTrees = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
 
-        pageMultiTrees.rowKeySet().contains(container.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier());
+        assertTrue(pageMultiTrees.rowKeySet().contains(container.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier()));
     }
 
     /**
@@ -1587,10 +1587,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         final Table<String, String, Set<PersonalizedContentlet>> pageMultiTrees = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
 
-        pageMultiTrees.rowKeySet().contains(container.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier());
+        assertTrue(pageMultiTrees.rowKeySet().contains(container.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier()));
     }
 
     private void createContentAndMultiTree(Container container, FileAssetContainer fileAssetContainer, HTMLPageAsset page) {

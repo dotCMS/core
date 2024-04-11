@@ -127,9 +127,7 @@ class PageForm {
             return this;
         }
 
-
-
-        public PageForm build(){
+        PageForm build(){
             return new PageForm(themeId, title, hostId, layout);
         }
 

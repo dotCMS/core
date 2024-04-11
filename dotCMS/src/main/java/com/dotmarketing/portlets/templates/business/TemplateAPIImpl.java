@@ -94,7 +94,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	private final  HostAPI          hostAPI                = APILocator.getHostAPI();
 	private final  Lazy<Template>   systemTemplate         = Lazy.of(SystemTemplate::new);
 
-	private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+	private final transient MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
 
 
 	@Override
@@ -1259,7 +1259,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 				APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(), user, false)
 				: null;
 
-		if (UtilMethods.isSet(templateFromDB)) {
+		if (templateFromDB != null) {
 			final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
 
 			LayoutChanges changes = getChange(templateLayoutFromDB, layout);

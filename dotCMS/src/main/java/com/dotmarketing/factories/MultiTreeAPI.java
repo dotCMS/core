@@ -520,5 +520,18 @@ public interface MultiTreeAPI {
      */
     List<MultiTree> getMultiTrees(final Variant variant) throws DotDataException;
 
+    /**
+     * After layout changes, this method updates the UUID (relation_type field) of a set of pages in a
+     * MultiTree according to changes in the layout.
+     *
+     * For example, if you have a layout with one instance of a container,
+     * the UUID for this container is initially set to 1. If later you add a second instance on top of the layout,
+     * the UUID of the original instance will change from 1 to 2. Consequently, the MultiTree of the pages using
+     * this layout needs to be updated as well.
+     *
+     * @param layoutChanges
+     * @param pageIds
+     * @throws DotDataException
+     */
     void updateMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds) throws DotDataException;
 }

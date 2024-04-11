@@ -20,7 +20,6 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
@@ -59,7 +58,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * CRUD of Templates
@@ -69,6 +67,7 @@ import java.util.stream.Collectors;
 public class TemplateResource {
 
     private static final String ARCHIVE_PARAM = "archive";
+    public static final String USER = "User ";
     private final PaginationUtil paginationUtil;
     private final WebResource    webResource;
     private final TemplateAPI    templateAPI;
@@ -318,7 +317,7 @@ public class TemplateResource {
         final Template newVersionTemplate = new Template();
         newVersionTemplate.setIdentifier(currentTemplate.getIdentifier());
 
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
+        return Response.ok(new ResponseEntityView<>(this.templateHelper.toTemplateView(
                 this.fillAndSaveDraftTemplate(templateForm, user, host, pageMode, newVersionTemplate), user))).build();
     }
 
@@ -341,8 +340,8 @@ public class TemplateResource {
             template.setDrawedBody(templateForm.getDrawedBody());
             this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
         }
-        
-        ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
+
+        ActivityLogger.logInfo(this.getClass(), "Saved Template", USER + user.getPrimaryKey()
                 + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
 
         return template;
@@ -373,7 +372,7 @@ public class TemplateResource {
 
         this.templateAPI.saveDraftTemplate(template, site, user,pageMode.respectAnonPerms);
 
-        ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
+        ActivityLogger.logInfo(this.getClass(), "Saved Template", USER + user.getPrimaryKey()
                 + "Template: " + template.getTitle(), site.getTitle() != null? site.getTitle():"default");
 
         return template;
@@ -516,7 +515,7 @@ public class TemplateResource {
                 final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
                 if (null != template && InodeUtils.isSet(template.getInode())){
                     this.templateAPI.publishTemplate(template, user, pageMode.respectAnonPerms);
-                    ActivityLogger.logInfo(this.getClass(), "Publish Template Action", "User " +
+                    ActivityLogger.logInfo(this.getClass(), "Publish Template Action", USER +
                             user.getPrimaryKey() + " published template: " + template.getIdentifier());
                     publishedTemplatesCount++;
                 } else {
@@ -575,7 +574,7 @@ public class TemplateResource {
                 final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
                 if (null != template && InodeUtils.isSet(template.getInode())){
                     this.templateAPI.unpublishTemplate(template, user, pageMode.respectAnonPerms);
-                    ActivityLogger.logInfo(this.getClass(), "Unpublish Template Action", "User " +
+                    ActivityLogger.logInfo(this.getClass(), "Unpublish Template Action", USER +
                             user.getPrimaryKey() + " unpublished template: " + template.getIdentifier());
                     unpublishedTemplatesCount++;
                 } else {
@@ -670,7 +669,7 @@ public class TemplateResource {
                 final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
                 if (null != template && InodeUtils.isSet(template.getInode())){
                     this.templateAPI.archive(template, user, pageMode.respectAnonPerms);
-                    ActivityLogger.logInfo(this.getClass(), "Archive Template Action", "User " +
+                    ActivityLogger.logInfo(this.getClass(), "Archive Template Action", USER +
                             user.getPrimaryKey() + " archived template: " + template.getIdentifier());
                     archivedTemplatesCount++;
                 } else {
@@ -729,7 +728,7 @@ public class TemplateResource {
                 final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
                 if (null != template && InodeUtils.isSet(template.getInode())){
                     this.templateAPI.unarchive(template, user);
-                    ActivityLogger.logInfo(this.getClass(), "Unarchive Template Action", "User " +
+                    ActivityLogger.logInfo(this.getClass(), "Unarchive Template Action", USER +
                             user.getPrimaryKey() + " unarchived template: " + template.getIdentifier());
                     unarchivedTemplatesCount++;
                 } else {
@@ -786,7 +785,7 @@ public class TemplateResource {
                 final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
                 if (null != template && InodeUtils.isSet(template.getInode())){
                     this.templateAPI.deleteTemplate(template, user, pageMode.respectAnonPerms);
-                    ActivityLogger.logInfo(this.getClass(), "Delete Template Action", "User " +
+                    ActivityLogger.logInfo(this.getClass(), "Delete Template Action", USER +
                             user.getPrimaryKey() + " deleted template: " + template.getIdentifier());
                     deletedTemplatesCount++;
                 } else {
