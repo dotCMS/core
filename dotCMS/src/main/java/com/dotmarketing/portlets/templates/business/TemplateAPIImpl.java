@@ -1349,6 +1349,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	}
 
 	private static List<ContainerUUID> getContainers(TemplateLayout layout) {
+
+		if (!UtilMethods.isSet(layout)) {
+			return Collections.emptyList();
+		}
+
 		final List<ContainerUUID> bodyContainers = layout.getBody().getRows().stream()
 				.flatMap(row -> row.getColumns().stream())
 				.flatMap(column -> column.getContainers().stream())

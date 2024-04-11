@@ -332,10 +332,16 @@ public class TemplateResource {
         template.setInode(StringPool.BLANK);
         fillTemplate(templateForm, user, host, pageMode.respectAnonPerms, template);
 
-        TemplateLayout templateLayout = this.templateHelper.toTemplateLayout(templateForm.getLayout());
-        template.setDrawed(true);
-        this.templateAPI.saveAndUpdateLayout(template, templateLayout, host, user, pageMode.respectAnonPerms);
-
+        if (null != templateForm.getLayout()) {
+            final TemplateLayout templateLayout = this.templateHelper.toTemplateLayout(templateForm.getLayout());
+            template.setDrawedBody(templateLayout);
+            template.setDrawed(true);
+            this.templateAPI.saveAndUpdateLayout(template, templateLayout, host, user, pageMode.respectAnonPerms);
+        } else {
+            template.setDrawedBody(templateForm.getDrawedBody());
+            this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
+        }
+        
         ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
                 + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
 
