@@ -19,6 +19,7 @@ export enum EDITOR_STATE {
     LOADING = 'loading',
     IDLE = 'idle',
     DRAGGING = 'dragging',
+
     ERROR = 'error'
 }
 
@@ -27,5 +28,6 @@ export enum EDITOR_MODE {
     EDIT_VARIANT = 'edit-variant',
     PREVIEW_VARIANT = 'preview-variant',
     DEVICE = 'device',
-    SOCIAL_MEDIA = 'social-media'
+    SOCIAL_MEDIA = 'social-media',
+    LOCKED = 'locked'
 }

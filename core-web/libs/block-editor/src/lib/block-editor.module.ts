@@ -23,7 +23,6 @@ import { DotAssetSearchComponent, DotFieldRequiredDirective, DotMessagePipe } fr
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
-    AIContentActionsComponent,
     AIImagePromptComponent,
     BubbleFormComponent,
     BubbleLinkFormComponent,
@@ -76,8 +75,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         SuggestionPageComponent,
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
-        FloatingButtonComponent,
-        AIContentActionsComponent
+        FloatingButtonComponent
     ],
     providers: [
         DotUploadFileService,
@@ -102,8 +100,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         ReactiveFormsModule,
         SharedModule,
         BubbleFormComponent,
-        DotBlockEditorComponent,
-        AIContentActionsComponent
+        DotBlockEditorComponent
     ]
 })
 export class BlockEditorModule {}
