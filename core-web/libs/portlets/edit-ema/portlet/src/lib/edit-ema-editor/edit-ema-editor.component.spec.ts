@@ -21,6 +21,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotContentTypeService,
+    DotContentletLockerService,
     DotContentletService,
     DotCopyContentService,
     DotCurrentUserService,
@@ -32,6 +33,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPersonalizeService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
@@ -50,7 +52,8 @@ import {
     URL_MAP_CONTENTLET,
     getRunningExperimentMock,
     getScheduleExperimentMock,
-    getDraftExperimentMock
+    getDraftExperimentMock,
+    DotPersonalizeServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
@@ -187,6 +190,62 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                     get({ language_id }) {
                         // We use the language_id to determine the response, use this to test different behaviors
                         return {
+                            // Locked without unlock permission
+                            8: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    canEdit: true,
+                                    canLock: false,
+                                    isLocked: true,
+                                    lockedByUser: 'user'
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 2,
+                                        language: 'Spanish',
+                                        countryCode: 'ES',
+                                        languageCode: 'es',
+                                        country: 'España'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                containers: dotPageContainerStructureMock
+                            }),
+                            //Locked  with unlock permission
+                            7: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    canEdit: true,
+                                    canLock: true,
+                                    locked: true,
+                                    lockedByName: 'user'
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 2,
+                                        language: 'Spanish',
+                                        countryCode: 'ES',
+                                        languageCode: 'es',
+                                        country: 'España'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                containers: dotPageContainerStructureMock
+                            }),
                             6: of({
                                 page: {
                                     title: 'hello world',
@@ -375,7 +434,17 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 provide: WINDOW,
                 useValue: window
             },
-            mockProvider(DotContentTypeService)
+            {
+                provide: DotPersonalizeService,
+                useValue: new DotPersonalizeServiceMock()
+            },
+            mockProvider(DotContentTypeService),
+            {
+                provide: DotContentletLockerService,
+                useValue: {
+                    unlock: (_inode: string) => of({})
+                }
+            }
         ]
     });
 describe('EditEmaEditorComponent', () => {
@@ -2018,6 +2087,47 @@ describe('EditEmaEditorComponent', () => {
             expect(spectator.query(byTestId('editor-content')).classList).toContain(
                 'editor-content--expanded'
             );
+        });
+    });
+
+    describe('locked', () => {
+        describe('locked with unlock permission', () => {
+            let spectator: SpectatorRouting<EditEmaEditorComponent>;
+            let store: EditEmaStore;
+
+            const createComponent = createRouting({ canEdit: true, canRead: true });
+            beforeEach(() => {
+                spectator = createComponent({
+                    queryParams: { language_id: 7, url: 'page-one' }
+                });
+
+                store = spectator.inject(EditEmaStore, true);
+
+                store.load({
+                    url: 'index',
+                    language_id: '7',
+                    clientHost: '',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should not render components', () => {
+                spectator.detectChanges();
+                expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
+                expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
+            });
+
+            it('should render a banner', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
+            });
+
+            it('should iframe wrapper to be expanded', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('editor-content')).classList).toContain(
+                    'editor-content--expanded'
+                );
+            });
         });
     });
 });

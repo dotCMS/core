@@ -8,7 +8,13 @@ import { Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotExperimentsService,
+    DotLicenseService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotExperimentsServiceMock,
     DotLicenseServiceMock,
@@ -52,6 +58,18 @@ describe('DotEmaInfoDisplayComponent', () => {
                 useValue: {
                     get: (key) => key
                 }
+            },
+            {
+                provide: DotContentletLockerService,
+                useValue: {
+                    unlock: (_inode: string) => of({})
+                }
+            },
+            {
+                provide: LoginService,
+                useValue: {
+                    getCurrentUser: () => of({})
+                }
             }
         ]
     });
@@ -63,7 +81,12 @@ describe('DotEmaInfoDisplayComponent', () => {
                     currentExperiment: getRunningExperimentMock(),
                     editorData: {
                         mode: EDITOR_MODE.DEVICE,
-                        device: { ...mockDotDevices[0], icon: 'someIcon' }
+                        device: { ...mockDotDevices[0], icon: 'someIcon' },
+                        page: {
+                            canLock: true,
+                            isLocked: false,
+                            lockedByUser: ''
+                        }
                     }
                 }
             });
@@ -107,7 +130,12 @@ describe('DotEmaInfoDisplayComponent', () => {
                     mode: EDITOR_MODE.DEVICE,
                     device: { ...mockDotDevices[0], icon: 'someIcon' },
                     variantId: '123',
-                    canEditVariant: true
+                    canEditVariant: true,
+                    page: {
+                        canLock: true,
+                        isLocked: false,
+                        lockedByUser: ''
+                    }
                 });
 
                 spectator.detectChanges();
@@ -130,7 +158,12 @@ describe('DotEmaInfoDisplayComponent', () => {
                     mode: EDITOR_MODE.DEVICE,
                     device: { ...mockDotDevices[0], icon: 'someIcon' },
                     variantId: '123',
-                    canEditVariant: false
+                    canEditVariant: false,
+                    page: {
+                        canLock: true,
+                        isLocked: false,
+                        lockedByUser: ''
+                    }
                 });
 
                 spectator.detectChanges();
@@ -157,7 +190,12 @@ describe('DotEmaInfoDisplayComponent', () => {
                     currentExperiment: getRunningExperimentMock(),
                     editorData: {
                         mode: EDITOR_MODE.SOCIAL_MEDIA,
-                        socialMedia: 'Facebook'
+                        socialMedia: 'Facebook',
+                        page: {
+                            canLock: true,
+                            isLocked: false,
+                            lockedByUser: ''
+                        }
                     }
                 }
             });
@@ -199,7 +237,12 @@ describe('DotEmaInfoDisplayComponent', () => {
                     currentExperiment: getRunningExperimentMock(),
                     editorData: {
                         mode: EDITOR_MODE.EDIT,
-                        canEditPage: false
+                        canEditPage: false,
+                        page: {
+                            canLock: true,
+                            isLocked: false,
+                            lockedByUser: ''
+                        }
                     }
                 }
             });
@@ -221,7 +264,12 @@ describe('DotEmaInfoDisplayComponent', () => {
                     editorData: {
                         mode: EDITOR_MODE.EDIT_VARIANT,
                         canEditPage: true,
-                        canEditVariant: true
+                        canEditVariant: true,
+                        page: {
+                            canLock: true,
+                            isLocked: false,
+                            lockedByUser: ''
+                        }
                     }
                 }
             });
@@ -241,7 +289,12 @@ describe('DotEmaInfoDisplayComponent', () => {
                 spectator.setInput('editorData', {
                     mode: EDITOR_MODE.PREVIEW_VARIANT,
                     canEditPage: true,
-                    canEditVariant: false
+                    canEditVariant: false,
+                    page: {
+                        canLock: true,
+                        isLocked: false,
+                        lockedByUser: ''
+                    }
                 });
 
                 spectator.detectChanges();
@@ -275,6 +328,65 @@ describe('DotEmaInfoDisplayComponent', () => {
                         },
                         queryParamsHandling: 'merge'
                     }
+                );
+            });
+        });
+    });
+
+    describe('locked', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    currentExperiment: getRunningExperimentMock(),
+                    editorData: {
+                        mode: EDITOR_MODE.EDIT_VARIANT,
+                        canEditPage: true,
+                        canEditVariant: true,
+                        page: {
+                            canLock: true,
+                            isLocked: false,
+                            lockedByUser: ''
+                        }
+                    }
+                }
+            });
+        });
+        describe('locked with permission to unlock', () => {
+            it('should show lock icon when page is locked', () => {
+                spectator.setInput('editorData', {
+                    mode: EDITOR_MODE.EDIT_VARIANT,
+                    canEditPage: true,
+                    canEditVariant: true,
+                    page: {
+                        canLock: true,
+                        isLocked: true,
+                        lockedByUser: 'user'
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('info-text')).innerHTML).toBe('editpage.locked-by');
+            });
+        });
+
+        describe('locked without permission to unlock', () => {
+            it('should show lock icon when page is locked', () => {
+                spectator.setInput('editorData', {
+                    mode: EDITOR_MODE.EDIT_VARIANT,
+                    canEditPage: false,
+                    canEditVariant: true,
+                    page: {
+                        canLock: false,
+                        isLocked: true,
+                        lockedByUser: 'user'
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('info-text')).innerHTML).toBe(
+                    'editpage.locked-contact-with'
                 );
             });
         });
