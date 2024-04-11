@@ -146,6 +146,33 @@ function isValidUrl(url: string): boolean {
 export class DotCmsClient {
     private config: ClientConfig;
     private requestOptions!: Omit<RequestInit, 'body' | 'method'>;
+
+    constructor(
+        config: ClientConfig = { dotcmsUrl: '', authToken: '', requestOptions: {}, siteId: '' }
+    ) {
+        if (!config.dotcmsUrl) {
+            throw new Error("Invalid configuration - 'dotcmsUrl' is required");
+        }
+
+        if (!isValidUrl(config.dotcmsUrl)) {
+            throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
+        }
+
+        if (!config.authToken) {
+            throw new Error("Invalid configuration - 'authToken' is required");
+        }
+
+        this.config = config;
+
+        this.requestOptions = {
+            ...this.config.requestOptions,
+            headers: {
+                Authorization: `Bearer ${this.config.authToken}`,
+                ...this.config.requestOptions?.headers
+            }
+        };
+    }
+
     page = {
         /**
          * `page.get` is an asynchronous method of the `DotCmsClient` class that retrieves all the elements of any Page in your dotCMS system in JSON format.
@@ -171,8 +198,6 @@ export class DotCmsClient {
                     queryParamsObj['com.dotmarketing.persona.id'] = String(value);
                 } else if (key === 'mode' && value) {
                     queryParamsObj['mode'] = String(value);
-                } else if (key === 'variantName' && value) {
-                    queryParamsObj['variantName'] = String(value);
                 } else {
                     queryParamsObj[key] = String(value);
                 }
@@ -195,6 +220,7 @@ export class DotCmsClient {
             return response.json();
         }
     };
+
     nav = {
         /**
          * `nav.get` is an asynchronous method of the `DotCmsClient` class that retrieves information about the dotCMS file and folder tree.
@@ -234,32 +260,6 @@ export class DotCmsClient {
             return response.json();
         }
     };
-
-    constructor(
-        config: ClientConfig = { dotcmsUrl: '', authToken: '', requestOptions: {}, siteId: '' }
-    ) {
-        if (!config.dotcmsUrl) {
-            throw new Error("Invalid configuration - 'dotcmsUrl' is required");
-        }
-
-        if (!isValidUrl(config.dotcmsUrl)) {
-            throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
-        }
-
-        if (!config.authToken) {
-            throw new Error("Invalid configuration - 'authToken' is required");
-        }
-
-        this.config = config;
-
-        this.requestOptions = {
-            ...this.config.requestOptions,
-            headers: {
-                Authorization: `Bearer ${this.config.authToken}`,
-                ...this.config.requestOptions?.headers
-            }
-        };
-    }
 
     private validatePageOptions(options: PageApiOptions): void {
         if (!options.path) {

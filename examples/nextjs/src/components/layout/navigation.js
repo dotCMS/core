@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useExperiments } from "@dotcms/experiments";
 
 function Navigation({ items, className }) {
   const searchParams = useSearchParams();
-
-  // Run Experiments detection
-  useExperiments();
 
   return (
     <nav className={className}>

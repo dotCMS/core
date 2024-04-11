@@ -4,6 +4,7 @@ import { isInsideEditor } from '@dotcms/client';
 
 import DotExperimentsContext from '../contexts/DotExperimentsContext';
 import { DotExperiments } from '../dot-experiments';
+import { useExperiments } from '../hooks/useExperiments';
 import { DotExperimentConfig } from '../shared/models';
 
 interface DotExperimentsProviderProps {
@@ -55,6 +56,9 @@ export const DotExperimentsProvider = ({
     config
 }: DotExperimentsProviderProps): ReactElement => {
     const [instance, setInstance] = useState<DotExperiments | null>(null);
+
+    // Run Experiments detection
+    useExperiments(instance);
 
     // Initialize the DotExperiments instance
     useEffect(() => {

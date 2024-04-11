@@ -54,7 +54,7 @@ Object.defineProperty(window, 'location', {
 
 describe('DotExperiments', () => {
     const configMock: DotExperimentConfig = {
-        'api-key': 'yourApiKey',
+        apiKey: 'yourApiKey',
         server: 'http://localhost:8080/',
         debug: false,
         trackPageView: true
@@ -89,7 +89,7 @@ describe('DotExperiments', () => {
             expect(() =>
                 // @ts-ignore
                 DotExperiments.getInstance({ server: 'http://server-test.com', debug: true })
-            ).toThrow('`api-key` must be provided and should not be empty!');
+            ).toThrow('`apiKey` must be provided and should not be empty!');
         });
 
         it('should return false if the debug inactive', async () => {

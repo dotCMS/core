@@ -54,7 +54,7 @@ describe('Utility ', () => {
             const attributes = getDataExperimentAttributes(location);
 
             expect(attributes).toEqual({
-                'api-key': 'testKey',
+                apiKey: 'testKey',
                 server: 'http://localhost',
                 debug: false
             });
@@ -71,7 +71,7 @@ describe('Utility ', () => {
             const attributes = getScriptDataAttributes(location);
 
             expect(attributes).toEqual({
-                'api-key': 'testKey',
+                apiKey: 'testKey',
                 server: 'http://localhost',
                 debug: false
             });

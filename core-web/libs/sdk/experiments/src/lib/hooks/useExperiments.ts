@@ -1,8 +1,8 @@
-import { useContext, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { isInsideEditor } from '@dotcms/client';
 
-import DotExperimentsContext from '../contexts/DotExperimentsContext';
+import { DotExperiments } from '../dot-experiments';
 import { EXPERIMENT_DEFAULT_VARIANT_NAME, EXPERIMENT_QUERY_PARAM_KEY } from '../shared/constants';
 
 /**
@@ -17,8 +17,8 @@ import { EXPERIMENT_DEFAULT_VARIANT_NAME, EXPERIMENT_QUERY_PARAM_KEY } from '../
  *
  * @returns {void}
  */
-export const useExperiments = (): void => {
-    const experimentContext = useContext(DotExperimentsContext);
+export const useExperiments = (instance: DotExperiments | null): void => {
+    // const experimentContext = useContext(DotExperimentsContext);
 
     /**
      * This `useEffect` hook is responsible for tracking location changes when not inside an editor environment, and invoking the
@@ -26,7 +26,7 @@ export const useExperiments = (): void => {
      *
      */
     useEffect(() => {
-        if (!experimentContext || typeof document === 'undefined') {
+        if (!instance || typeof document === 'undefined') {
             return;
         }
 
@@ -35,11 +35,11 @@ export const useExperiments = (): void => {
         if (!insideEditor) {
             const location = typeof window !== 'undefined' ? window.location : undefined;
 
-            if (experimentContext && location) {
-                experimentContext.locationChanged(location, experimentContext.customRedirectFn);
+            if (instance && location) {
+                instance.locationChanged(location, instance.customRedirectFn);
             }
         }
-    }, [experimentContext]);
+    }, [instance]);
 
     /**
      * This effect sets a click handler on the document.
@@ -47,25 +47,21 @@ export const useExperiments = (): void => {
      * additional removing the experiment query param from the URL.
      */
     useEffect(() => {
-        if (!experimentContext) {
+        if (!instance) {
             return;
         }
 
         const customClickHandler = (event: MouseEvent) => {
-            let target = event.target as HTMLAnchorElement;
+            const target = (event.target as HTMLElement).closest('a');
 
-            if (target.tagName.toLowerCase() !== 'a') {
-                if (target.parentElement && target.parentElement.tagName.toLowerCase() === 'a') {
-                    target = target.parentElement as HTMLAnchorElement;
-                } else {
-                    return;
-                }
+            if (!target) {
+                return;
             }
 
             const clickedHref = target.getAttribute('href');
 
             if (clickedHref) {
-                const modifiedUrl = new URL(clickedHref, experimentContext.location.href);
+                const modifiedUrl = new URL(clickedHref, instance.location.href);
 
                 // Remove the experiment query param from the URL
                 modifiedUrl.searchParams.delete(EXPERIMENT_QUERY_PARAM_KEY);
@@ -73,7 +69,7 @@ export const useExperiments = (): void => {
                 event.preventDefault();
 
                 // Get the variant from the href of the clicked anchor
-                const variant = experimentContext.getVariantFromHref(clickedHref);
+                const variant = instance.getVariantFromHref(clickedHref);
 
                 if (variant && variant.name !== EXPERIMENT_DEFAULT_VARIANT_NAME) {
                     // Set the experiment query param in the URL if the variant is not the default one
@@ -81,7 +77,7 @@ export const useExperiments = (): void => {
                 }
 
                 // Redirect to the new URL using the custom redirect function
-                experimentContext.customRedirectFn(modifiedUrl.toString());
+                instance.customRedirectFn(modifiedUrl.toString());
             }
         };
 
@@ -92,5 +88,5 @@ export const useExperiments = (): void => {
             // Remove the click handler when the component is unmounted
             document.removeEventListener('click', customClickHandler);
         };
-    }, [experimentContext]);
+    }, [instance]);
 };
