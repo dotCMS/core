@@ -247,6 +247,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe(() => {
                 requestAnimationFrame(() => {
                     this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
+                        const doc = this.iframe.nativeElement.contentDocument;
+                        const style = doc.createElement('style');
+
+                        style.innerHTML = `
+                        [data-dot-object="container"]:empty {
+                            border: 1px solid red !important;
+                            min-height: 200px;
+                            display: block;
+                        }`;
+
+                        doc.head.appendChild(style);
+
                         const href =
                             (e.target as HTMLAnchorElement).href ||
                             ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;

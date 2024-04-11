@@ -100,8 +100,42 @@ export function listenEditorMessages() {
 export function listenHoveredContentlet() {
     const pointerMoveCallback = (event: PointerEvent) => {
         const target = findContentletElement(event.target as HTMLElement);
+
         if (!target) return;
+
         const { x, y, width, height } = target.getBoundingClientRect();
+
+        if (target.dataset?.['dotObject'] === 'container') {
+            const contentletPayload = {
+                container:
+                    // Here extract dot-container from contentlet if is Headless
+                    // or search in parent container if is VTL
+                    target.dataset?.['dotContainer']
+                        ? JSON.parse(target.dataset?.['dotContainer'])
+                        : getClosestContainerData(target),
+                contentlet: {
+                    identifier: 'TEMP_EMPTY_CONTENTLET',
+                    title: 'TEMP_EMPTY_CONTENTLET',
+                    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
+                    inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
+                    widgetTitle: 'TEMP_EMPTY_CONTENTLET',
+                    onNumberOfPages: 1
+                }
+            };
+
+            postMessageToEditor({
+                action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                payload: {
+                    x,
+                    y,
+                    width,
+                    height,
+                    payload: contentletPayload
+                }
+            });
+
+            return;
+        }
 
         const vtlFiles = findVTLData(target);
         const contentletPayload = {

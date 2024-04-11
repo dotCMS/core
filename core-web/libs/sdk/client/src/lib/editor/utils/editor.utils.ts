@@ -145,6 +145,12 @@ export function findContentletElement(element: HTMLElement | null): HTMLElement 
 
     if (element.dataset && element.dataset?.['dotObject'] === 'contentlet') {
         return element;
+    } else if (
+        element.dataset &&
+        element.dataset?.['dotObject'] === 'container' &&
+        element.children.length === 0
+    ) {
+        return element;
     } else {
         return findContentletElement(element?.['parentElement']);
     }
