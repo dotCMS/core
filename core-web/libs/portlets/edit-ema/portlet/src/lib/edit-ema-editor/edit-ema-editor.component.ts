@@ -635,12 +635,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
                 this.reloadIframe();
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get('message.menu.reordered'),
+                    life: 2000
+                });
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
                     severity: 'error',
-                    summary: this.dotMessageService.get('editpage.menu.order.error.title'),
-                    detail: this.dotMessageService.get('editpage.menu.order.error.message'),
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get(
+                        'error.menu.reorder.user_has_not_permission'
+                    ),
                     life: 2000
                 });
             },
@@ -719,7 +732,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.REORDER_MENU]: () => {
                 const { reorderUrl } = <ReorderPayload>data.payload;
 
-                this.dialog.openDialogOnUrl(reorderUrl, 'Reorder Menu');
+                this.dialog.openDialogOnUrl(
+                    reorderUrl,
+                    this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
+                );
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
