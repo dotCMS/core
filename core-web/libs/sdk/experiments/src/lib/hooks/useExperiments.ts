@@ -18,8 +18,6 @@ import { EXPERIMENT_DEFAULT_VARIANT_NAME, EXPERIMENT_QUERY_PARAM_KEY } from '../
  * @returns {void}
  */
 export const useExperiments = (instance: DotExperiments | null): void => {
-    // const experimentContext = useContext(DotExperimentsContext);
-
     /**
      * This `useEffect` hook is responsible for tracking location changes when not inside an editor environment, and invoking the
      * `locationChanged` method from `experimentContext` with current location and custom redirection function.
