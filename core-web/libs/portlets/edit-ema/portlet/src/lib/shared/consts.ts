@@ -167,7 +167,11 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         inode: '123-i',
         canEdit: true,
         canRead: true,
-        contentType: 'htmlpageasset'
+        contentType: 'htmlpageasset',
+        canLock: true,
+        locked: false,
+        lockedBy: '',
+        lockedByName: ''
     },
     viewAs: {
         language: {

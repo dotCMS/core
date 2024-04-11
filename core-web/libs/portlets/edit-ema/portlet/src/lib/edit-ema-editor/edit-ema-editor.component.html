@@ -10,7 +10,10 @@
         class="editor-content"
         [ngClass]="{
             'editor-content--device': es.editorData.mode === editorMode.DEVICE,
-            'editor-content--expanded': !es.editor.page.canEdit || !es.editorData.canEditVariant,
+            'editor-content--expanded':
+                !es.editor.page.canEdit ||
+                !es.editorData.canEditVariant ||
+                es.editorData.page.isLocked,
             'editor-content--hidden': es.editorData.mode === editorMode.SOCIAL_MEDIA
         }"
         data-testId="editor-content">
@@ -54,7 +57,8 @@
                     !!es.contentletArea &&
                     !es.editorData.device &&
                     es.editor.page.canEdit &&
-                    (es.state === editorState.IDLE || es.state === editorState.DRAGGING)
+                    (es.state === editorState.IDLE || es.state === editorState.DRAGGING) &&
+                    !es.editorData.page.isLocked
                 "
                 [hide]="es.state === editorState.DRAGGING"
                 [contentlet]="es.contentletArea"
@@ -88,7 +92,8 @@
             es.isEnterpriseLicense &&
             (es.editorData.mode === editorMode.EDIT ||
                 es.editorData.mode === editorMode.EDIT_VARIANT) &&
-            es.editor.page.canEdit
+            es.editor.page.canEdit &&
+            !es.editorData.page.isLocked
         "
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
