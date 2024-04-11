@@ -73,7 +73,7 @@ runs:
       if: inputs.build_run_id
       run: |
         mkdir -p docker-context
-        tar -xvf docker-build.tar -C ${ inputs.docker_context }
+        tar -xvf docker-build.tar -C ${{ inputs.docker_context }}
       shell: bash
     - name: Set Common Vars
       shell: bash
@@ -154,7 +154,7 @@ runs:
     - name: Build/Push Docker Image
       uses: docker/build-push-action@v5
       with:
-        context: ${ inputs.docker_context }
+        context: ${{ inputs.docker_context }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ inputs.docker_platforms }}
