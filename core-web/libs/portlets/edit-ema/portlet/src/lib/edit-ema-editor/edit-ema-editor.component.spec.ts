@@ -35,9 +35,17 @@ import {
     DotMessageService,
     DotPersonalizeService,
     DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
+    DotSeoMetaTagsUtilService,
+    DotWorkflowActionsFireService,
+    PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsConfigService,
+    DotcmsEventsService,
+    LoginService
+} from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
@@ -53,6 +61,8 @@ import {
     getRunningExperimentMock,
     getScheduleExperimentMock,
     getDraftExperimentMock,
+    DotcmsConfigServiceMock,
+    DotcmsEventsServiceMock,
     DotPersonalizeServiceMock
 } from '@dotcms/utils-testing';
 
@@ -175,14 +185,41 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ],
         providers: [
-            {
-                provide: DotSeoMetaTagsService,
-                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
-            },
             DotSeoMetaTagsUtilService,
             DialogService,
             DotCopyContentService,
             DotCopyContentModalService,
+            DotWorkflowActionsFireService,
+
+            {
+                provide: DotcmsConfigService,
+                useValue: new DotcmsConfigServiceMock()
+            },
+            {
+                provide: DotcmsEventsService,
+                useValue: new DotcmsEventsServiceMock()
+            },
+            {
+                provide: PushPublishService,
+                useValue: {
+                    getEnvironments() {
+                        return of([
+                            {
+                                id: '123',
+                                name: 'Environment 1'
+                            },
+                            {
+                                id: '456',
+                                name: 'Environment 2'
+                            }
+                        ]);
+                    }
+                }
+            },
+            {
+                provide: DotSeoMetaTagsService,
+                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
+            },
             { provide: ActivatedRoute, useValue: { snapshot: { queryParams: QUERY_PARAMS_MOCK } } },
             {
                 provide: DotPageApiService,
@@ -414,6 +451,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                     }
                 }
             },
+
             {
                 provide: DotDevicesService,
                 useValue: new DotDevicesServiceMock()
