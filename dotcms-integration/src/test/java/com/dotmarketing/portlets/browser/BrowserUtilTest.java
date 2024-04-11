@@ -494,7 +494,7 @@ public class BrowserUtilTest {
                 .languageId(language.getId())
                 .nextPersisted();
 
-        return map(
+        return Map.of(
                 CONTENTLET, contentlet,
                 FIELD, contentType.fields().get(0),
                 HOST, host,

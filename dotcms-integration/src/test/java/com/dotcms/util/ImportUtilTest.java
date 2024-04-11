@@ -1,14 +1,16 @@
 package com.dotcms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -22,13 +24,9 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -40,9 +38,11 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -69,19 +69,34 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.commons.io.FileUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
-import java.util.*;
-import javax.servlet.http.HttpServletRequest;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -1650,7 +1665,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+                    Map.of(relationship, CollectionsUtils.list(childContentlet)),
                     user, false);
 
             //Creating csv to update parent
@@ -1722,7 +1737,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+                    Map.of(relationship, CollectionsUtils.list(childContentlet)),
                     user, false);
 
             //Creating csv to update parent
@@ -1794,7 +1809,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+                    Map.of(relationship, CollectionsUtils.list(childContentlet)),
                     user, false);
 
             //Creating csv to update parent

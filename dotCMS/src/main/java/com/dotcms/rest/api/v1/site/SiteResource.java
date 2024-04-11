@@ -77,8 +77,6 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * This resource provides all the different end-points associated to information
  * and actions that the front-end can perform on the Sites page.
@@ -241,7 +239,7 @@ public class SiteResource implements Serializable {
 
         try {
             response = paginationUtil.getPage(httpServletRequest, user, sanitizedFilter, page, perPage,
-                    map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, showLive,
+                    Map.of(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, showLive,
                             SitePaginator.SYSTEM_PARAMETER_NAME, showSystem));
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -294,7 +292,7 @@ public class SiteResource implements Serializable {
             }
 
             response = (switchDone) ?
-                    Response.ok(new ResponseEntityView(map("hostSwitched",
+                    Response.ok(new ResponseEntityView(Map.of("hostSwitched",
                             switchDone))).build(): // 200
                     Response.status(Response.Status.NOT_FOUND).build();
 

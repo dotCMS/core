@@ -27,7 +27,7 @@ public class LinkAssertionChecker implements AssertionChecker<Link> {
 
             final VersionInfo info =APILocator.getVersionableAPI().getVersionInfo(asset.getIdentifier());
 
-            return map(
+            return Map.of(
                     "id", asset.getIdentifier(),
                     "asset_name", identifier.getAssetName(),
                     "parent_path", identifier.getParentPath(),

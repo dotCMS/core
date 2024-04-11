@@ -123,7 +123,7 @@ public class ContentHelper {
 
             final String sessionId = request!=null && request.getSession(false)!=null? request.getSession().getId() : null;
             final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
-                    CollectionsUtils.map("user", user, "host", host,
+                    Map.of("user", user, "host", host,
                             "contentletMap", contentletMap, "binaryFiles", binaryFiles,
                             "accessingList", Arrays.asList(user.getUserId(),
                                     APILocator.getTempFileAPI().getRequestFingerprint(request), sessionId)));

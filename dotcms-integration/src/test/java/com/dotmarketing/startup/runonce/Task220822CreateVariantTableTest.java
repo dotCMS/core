@@ -21,13 +21,13 @@ import org.junit.Test;
 
 public class Task220822CreateVariantTableTest {
 
-    private final Map<String, String> POSTGRES_EXPECTED = map(
+    private final Map<String, String> POSTGRES_EXPECTED = Map.of(
             "name", "varchar",
             "description", "varchar",
             "archived", "bool"
     );
 
-    private final Map<String, String> MSSQL_EXPECTED = map(
+    private final Map<String, String> MSSQL_EXPECTED = Map.of(
             "name", "nvarchar",
             "description", "nvarchar",
             "archived", "tinyint"

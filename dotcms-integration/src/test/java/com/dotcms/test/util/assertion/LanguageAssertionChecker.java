@@ -20,7 +20,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 public class LanguageAssertionChecker implements AssertionChecker<Language> {
     @Override
     public Map<String, Object> getFileArguments(final Language language, final File file) {
-        return map(
+        return Map.of(
             "id",language.getId(),
             "code", language.getLanguageCode(),
             "country_code", language.getCountryCode(),

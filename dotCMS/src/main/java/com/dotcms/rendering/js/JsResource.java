@@ -530,7 +530,7 @@ public class JsResource {
 
             final JavascriptReader javascriptReader = JavascriptReaderFactory.getJavascriptReader(UtilMethods.isSet(folderName));
             final MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-            final Map<String, Object> contextParams = CollectionsUtils.map(
+            final Map<String, Object> contextParams = Map.of(
                     "pathParam", pathParam,
                     "queryParams", ProxyHashMap.from((Map)queryParams),
                     "bodyMap",  ProxyHashMap.from(toObjectObjectMap(bodyMap)),

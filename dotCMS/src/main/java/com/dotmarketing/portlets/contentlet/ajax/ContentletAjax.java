@@ -2699,13 +2699,13 @@ public class ContentletAjax {
 				final Contentlet contentlet = conAPI.findContentletForLanguage(language.getId(), identifier);
 				if (null != contentlet) {
 					builder.add(
-							map("inode", contentlet.getInode(),
+							Map.of("inode", contentlet.getInode(),
 									"identifier", contentletIdentifier,
 									"languageId", language.getId() + "")
 					);
 				} else {
 					builder.add(
-							map("inode", "",
+							Map.of("inode", "",
 									"identifier", contentletIdentifier,
 									"languageId", language.getId() + "")
 					);

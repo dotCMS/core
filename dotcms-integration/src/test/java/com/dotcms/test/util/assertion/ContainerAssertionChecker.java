@@ -43,7 +43,7 @@ public class ContainerAssertionChecker implements AssertionChecker<Container> {
                     containerParams.getIdentifier(), systemUser, false);
             Container container = isLive ? containerLive : containerWorking;
 
-            Map<String, Object> arguments = map(
+            Map<String, Object> arguments = Map.of(
                     "id", container.getIdentifier(),
                     "asset_name", identifier.getAssetName(),
                     "host_id", identifier.getHostId(),

@@ -302,7 +302,7 @@ public class PublisherQueueJob implements StatefulJob {
 							final String failedAuditUpdate = "failed-remote-group-" + System.currentTimeMillis();
 							final EndpointDetail detail = new EndpointDetail();
 							detail.setStatus(Status.FAILED_TO_PUBLISH.getCode());
-							endpointTrackingMap.put(failedAuditUpdate, map(failedAuditUpdate, detail));
+							endpointTrackingMap.put(failedAuditUpdate, Map.of(failedAuditUpdate, detail));
 							PushPublishLogger.log(this.getClass(), "Status update: Failed to update bundle audit status.");
 						}
 					} else {
@@ -732,7 +732,7 @@ public class PublisherQueueJob implements StatefulJob {
 		endpointDetail.setInfo(errorMsg);
 		// Environment and Endpoint IDs don't matter in this case
 		auditHistory.setEndpointsMap(
-				CollectionsUtils.map(StringPool.BLANK, CollectionsUtils.map(StringPool.BLANK, endpointDetail)));
+				Map.of(StringPool.BLANK, Map.of(StringPool.BLANK, endpointDetail)));
 	}
 
 }

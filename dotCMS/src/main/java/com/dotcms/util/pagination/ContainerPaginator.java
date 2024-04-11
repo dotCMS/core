@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * Handle {@link com.dotmarketing.portlets.containers.model.Container} pagination
  */
@@ -64,7 +62,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
             contentTypeIdOrVar = String.valueOf(extraParams.get(CONTENT_TYPE));
         }
 
-        final Map<String, Object> params = map("title", filter);
+        final Map<String, Object> params = Map.of("title", filter);
 
         String orderByDirection = orderby;
         if (UtilMethods.isSet(direction) && UtilMethods.isSet(orderby)) {

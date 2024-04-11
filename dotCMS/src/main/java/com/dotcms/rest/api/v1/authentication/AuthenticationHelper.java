@@ -64,7 +64,7 @@ class AuthenticationHelper {
             loginAsUser = this.loginService.getLoggedInUser( request );
         }
 
-        return map(AuthenticationResource.USER, principalUser != null ? principalUser.toMap() : null, AuthenticationResource.LOGIN_AS_USER,
+        return Map.of(AuthenticationResource.USER, principalUser != null ? principalUser.toMap() : null, AuthenticationResource.LOGIN_AS_USER,
                 loginAsUser != null ? loginAsUser.toMap() : null);
     }
 }

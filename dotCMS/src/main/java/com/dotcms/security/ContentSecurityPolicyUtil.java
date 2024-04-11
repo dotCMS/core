@@ -88,7 +88,7 @@ public class ContentSecurityPolicyUtil {
     private static String overwriteContentSecurityPolicyConfig;
 
     static {
-        contentSecurityPolicyResolvers = map(
+        contentSecurityPolicyResolvers = Map.of(
                 "{script-src nonce}", new ContentSecurityPolicyResolver(
                         (header) -> calculateNonceHeaderToScript(header),
                         (htmlCode) -> calculateNonceToScript(htmlCode)

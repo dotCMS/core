@@ -819,7 +819,7 @@ public class ExperimentWebAPIImplIntegrationTest {
     public void experimentWithFalseRules() throws DotDataException, DotSecurityException {
         final TargetingCondition targetingCondition = TargetingCondition.builder()
                 .conditionKey("RequestAttributeConditionlet")
-                .values((Map<String, String>) map("comparison", "is", "request-attribute",
+                .values((Map<String, String>) Map.of("comparison", "is", "request-attribute",
                         "testing-attribute", "request-attribute-value", "testing"))
                 .operator(LogicalOperator.AND)
                 .build();
@@ -868,7 +868,7 @@ public class ExperimentWebAPIImplIntegrationTest {
     public void experimentWithTrueRules() throws DotDataException, DotSecurityException {
         final TargetingCondition targetingCondition = TargetingCondition.builder()
                 .conditionKey("RequestAttributeConditionlet")
-                .values((Map<String, String>) map("comparison", "is", "request-attribute",
+                .values((Map<String, String>) Map.of("comparison", "is", "request-attribute",
                         "testing-attribute", "request-attribute-value", "testing"))
                 .operator(LogicalOperator.AND)
                 .build();
@@ -917,7 +917,7 @@ public class ExperimentWebAPIImplIntegrationTest {
     public void severalExperimenstWithTrueRules() throws DotDataException, DotSecurityException {
         final TargetingCondition targetingCondition = TargetingCondition.builder()
                 .conditionKey("RequestAttributeConditionlet")
-                .values((Map<String, String>) map("comparison", "is", "request-attribute",
+                .values((Map<String, String>) Map.of("comparison", "is", "request-attribute",
                         "testing-attribute", "request-attribute-value", "testing"))
                 .operator(LogicalOperator.AND)
                 .build();

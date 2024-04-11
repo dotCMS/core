@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Map;
 
 /**
  * Handles files with extension .js and runs those when accessed
@@ -83,7 +84,7 @@ public class JsServlet extends HttpServlet {
 
             final ScriptEngine engine = ScriptEngineFactory.getInstance().getEngine(ScriptEngineFactory.JAVASCRIPT_ENGINE);
             final Object result       = engine.eval(request, response, reader,
-                    CollectionsUtils.map("mode", mode,
+                    Map.of("mode", mode,
                             "user", user,
                             "uri", currentUri));
 

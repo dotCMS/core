@@ -26,14 +26,12 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -46,7 +44,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -70,12 +67,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -240,7 +233,7 @@ public class UserResource implements Serializable {
 				userMap = userToUpdated.toMap();
 			}
 
-			response = Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
+			response = Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
 					"reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
 		} catch (final UserFirstNameException e) {
 
@@ -345,7 +338,7 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
-		final Map<String, Object> extraParams = CollectionsUtils.map(
+		final Map<String, Object> extraParams = Map.of(
 				UserPaginator.ASSET_INODE_PARAM, assetInode,
 				UserPaginator.PERMISSION_PARAM, permission,
 				UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous,
@@ -414,7 +407,7 @@ public class UserResource implements Serializable {
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
-			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
+			response = Response.ok(new ResponseEntityView(Map.of("loginAs", true))).build();
 		} catch (final NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
@@ -430,7 +423,7 @@ public class UserResource implements Serializable {
 				final User user = initData.getUser();
 				response = Response.ok(new ResponseEntityView<>(
 						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
-						map("loginAs", false))).build();
+						Map.of("loginAs", false))).build();
 			} else {
 				return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 			}
@@ -574,7 +567,7 @@ public class UserResource implements Serializable {
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);
-			response = Response.ok(new ResponseEntityView(map("logoutAs", true))).build();
+			response = Response.ok(new ResponseEntityView(Map.of("logoutAs", true))).build();
 		} catch (final DotSecurityException | DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when attempting to log " +
 							"out as user '%s' by UserID '%s' / Remote IP '%s': %s", currentLoginAsUser.getUserId(),
@@ -702,7 +695,7 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
 
-			return Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
+			return Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 

@@ -1,6 +1,5 @@
 package com.dotcms.enterprise.publishing.remote.handler;
 
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -76,87 +75,87 @@ public class HandlerUtilTest {
     }
 
     private void populateMultitree(String pageIdentifier, List<Map<String, Object>> wrapperMultiTree) {
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "3b538995-b85c-4de6-9c63-cf44acca89d2",
                 "relation_type", "1617389333051", "tree_order", 0));  // 1
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "d469e5bf-209c-4a80-99ab-fe92510a87c2",
                 "relation_type", "1617389333051", "tree_order", 0));  // 2
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "ded6029f-e7af-4acc-b57f-bae252407d30",
                 "relation_type", "1617389333051", "tree_order", 1));  // 3
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "469c77fe-ac29-4e90-932a-2668f455ae0a",
                 "relation_type", "1617389333051", "tree_order", 2)); // 4
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "cfe9c5d2-3518-4e56-bd5b-78cd4af9c70c",
                 "relation_type", "1617389333051", "tree_order", 3)); // 5
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "51104ac9-7b67-48aa-8ffd-0e2b8efb68d7",
                 "relation_type", "1617389333051", "tree_order", 3)); // 6
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "2fdd4348-1237-4532-9dd3-6f1358502bfd",
                 "relation_type", "1617389333051", "tree_order", 4)); // 7
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "1ea68733-a725-4c13-84d1-49b01cf08de7",
                 "relation_type", "1617389333051", "tree_order", 5)); // 8
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "cc433dcc-35af-4da3-8fc6-54aeb413e292",
                 "relation_type", "1617389333051", "tree_order", 5)); // 9
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "696fb981-0e19-41c0-9a90-209437127771",
                 "relation_type", "1617389333051", "tree_order", 6)); // 10
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "cfad3ddd-5812-419f-af96-27532f2b619e",
                 "relation_type", "1617389333051", "tree_order", 6)); // 11
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "3f6ced25-3205-4202-944a-422e176d57a5",
                 "relation_type", "1617389333051", "tree_order", 7)); // 12
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "ef12756b-c875-4b3f-94a9-25b92353ee95",
                 "relation_type", "1617389333051", "tree_order", 7)); // 13
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "7c0a1775-dff2-4221-88df-18b0dd010746",
                 "relation_type", "1617389333051", "tree_order", 8   )); // 14
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "f4089d2d-fc92-44bb-b9cf-c6bb92176cd8",
                 "relation_type", "1617389333051", "tree_order", 9)); // 15
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "0c2b2cac-ac3c-4d7d-90f3-1abb70aaec04",
                 "relation_type", "1617389333051", "tree_order", 10)); // 16
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "81b132ec-b48d-4838-82da-656acd29d176",
                 "relation_type", "1617389333051", "tree_order", 10)); // 17
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "b85fda79-12b6-4046-96aa-ba9b6acebd93",
                 "relation_type", "1617389333051", "tree_order", 11)); // 18
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "304993aa-2a66-4931-afe8-797bf3f7c0dd",
                 "relation_type", "1617389333051", "tree_order", 12)); // 19
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "1020cfa0-9f80-42d7-8baa-2e2e17733e45",
                 "relation_type", "1617389333051", "tree_order", 13)); // 20
-        wrapperMultiTree.add(CollectionsUtils.map("parent1", pageIdentifier,
+        wrapperMultiTree.add(Map.of("parent1", pageIdentifier,
                 "parent2", "77907283-a246-4688-bc93-033b5d683057",
                 "child", "f863ff25-2ee0-43de-aeba-faa7d74edeae",
                 "relation_type", "1617389333051", "tree_order", 14)); // 21

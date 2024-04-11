@@ -59,7 +59,7 @@ public class StrategyResolverImpl implements StrategyResolver {
                 BaseContentType.DOTASSET, () -> new DotAssetViewStrategy(toolBox),
                 BaseContentType.WIDGET, () -> new WidgetViewStrategy(toolBox)
                 ),
-             CollectionsUtils.map(
+             CollectionsUtils.map( // todo: the Map.of is not working on this, need  diff approach
                  CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox),
                  BINARIES_VIEW,   () -> new BinaryViewStrategy(toolBox),
                  IDENTIFIER_VIEW, () -> new IdentifierViewStrategy(toolBox),

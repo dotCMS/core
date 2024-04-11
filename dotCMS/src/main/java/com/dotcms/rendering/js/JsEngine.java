@@ -214,7 +214,7 @@ public class JsEngine implements ScriptEngine {
             return CollectionsUtils.toSerializableMap(resultMap); // we need to do that b.c the context will be close after the return and the resultMap won;t be usable.
         }
 
-        return CollectionsUtils.map("output", eval.asString(), DOT_JSON, dotJSON);
+        return Map.of("output", eval.asString(), DOT_JSON, dotJSON);
     }
 
     private void checkRejected(final Value eval) {

@@ -79,6 +79,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -379,7 +380,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
         Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-        String url = UrlStrategyUtil.getURL(company, map(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
+        String url = UrlStrategyUtil.getURL(company, Map.of(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
                 (fromAngular) ? UserService.ANGULAR_RESET_PASSWORD_URL_STRATEGY : UserService.DEFAULT_RESET_PASSWORD_URL_STRATEGY);
 
         String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);

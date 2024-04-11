@@ -21,7 +21,7 @@ public enum QueryMetadataTypeProvider implements GraphQLTypesProvider {
 
     INSTANCE;
 
-    final Map<String, GraphQLOutputType> pageFields = map(
+    final Map<String, GraphQLOutputType> pageFields = Map.of(
             "totalCount", GraphQLLong,
             "fieldName", GraphQLString);
 

@@ -30,7 +30,7 @@ public class Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables implem
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
-        final Map<String, String> tables = map(
+        final Map<String, String> tables = Map.of(
                 "folders_ir", "fk_folder_ir_ep",
                 "structures_ir", "fk_structure_ir_ep",
                 "htmlpages_ir", "fk_page_ir_ep",

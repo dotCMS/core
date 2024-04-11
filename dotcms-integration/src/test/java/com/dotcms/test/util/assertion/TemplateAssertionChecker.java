@@ -46,7 +46,7 @@ public class TemplateAssertionChecker implements AssertionChecker<Template> {
 
             Template template = isLive ? liveTemplate : workingTemplate;
 
-            return map(
+            return Map.of(
                     "id", template.getIdentifier(),
                     "host_id", identifier.getHostId(),
                     "inode", template.getInode(),

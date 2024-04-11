@@ -40,7 +40,7 @@ public class ExperimentChecker implements AssertionChecker<Experiment>{
                      .filter(experimentVariant -> !DEFAULT_VARIANT.name().equals(experimentVariant.id()))
                      .findFirst()
                      .orElseThrow();
-             return map(
+             return Map.of(
                     "name", experiment.name(),
                     "description", experiment.description().orElseThrow(),
                     "id", experiment.id().orElseThrow(),

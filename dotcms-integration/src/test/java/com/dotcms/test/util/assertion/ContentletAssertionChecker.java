@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,7 +60,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
     @NotNull
     private Map<String, Object> getWorkflowTaskFileArguments(Contentlet contentlet) throws DotDataException {
         final WorkflowTask taskByContentlet = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
-        return map(
+        return Map.of(
                 "id", taskByContentlet.getId(),
                 "title", taskByContentlet.getTitle(),
                 "description", taskByContentlet.getDescription().replaceAll("\"", "&quot;"),
@@ -73,7 +74,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
     private Map<String, Object> getContentletFileArguments(Contentlet contentlet) throws DotDataException, DotSecurityException {
         final Identifier  identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
 
-        final Map<String, Object> map = map(
+        final Map<String, Object> map = new HashMap<>(Map.of(
                 "id", contentlet.getIdentifier(),
                 "inode", contentlet.getInode(),
                 "sort_order", contentlet.getSortOrder(),
@@ -82,7 +83,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
                 "asset_name", identifier.getAssetName(),
                 "parent_path", identifier.getParentPath(),
                 "stInode", contentlet.getMap().get("stInode")
-        );
+        ));
 
         final FileAsset fileAsset = APILocator.getFileAssetAPI()
                 .find(contentlet.getInode(), APILocator.systemUser(), false);

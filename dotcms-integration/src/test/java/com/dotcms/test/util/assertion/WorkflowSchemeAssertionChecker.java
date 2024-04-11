@@ -26,7 +26,7 @@ public class WorkflowSchemeAssertionChecker implements AssertionChecker<Workflow
         try {
             final List<WorkflowStep> steps = APILocator.getWorkflowAPI().findSteps(workflowScheme);
 
-            final Map<String, Object> map = map(
+            final Map<String, Object> map = Map.of(
                     "name", workflowScheme.getName(),
                     "description", workflowScheme.getDescription(),
                     "id", workflowScheme.getId()

@@ -1,17 +1,8 @@
 package com.dotcms.rest.annotation;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.ResourceInfo;
-import javax.ws.rs.ext.Provider;
-
 import com.dotcms.repackage.org.apache.struts.Globals;
-import org.glassfish.jersey.server.ContainerRequest;
-import org.glassfish.jersey.server.internal.routing.UriRoutingContext;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
@@ -19,14 +10,21 @@ import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.portal.util.WebKeys;
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Proxy;
-import java.util.Map;
+import org.glassfish.jersey.server.ContainerRequest;
+import org.glassfish.jersey.server.internal.routing.UriRoutingContext;
+
 import javax.inject.Singleton;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.container.ResourceInfo;
+import javax.ws.rs.ext.Provider;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Proxy;
+import java.util.Map;
 
 /**
  * This filter decorates the headers in addition to apply Request Commander associated to the annotations.
@@ -40,7 +38,7 @@ public class RequestFilter implements ContainerRequestFilter {
     private final HttpServletRequestThreadLocal requestAnnotationThreadLocal;
 
     private final Map<Class, RequestFilterCommand> requestCommands =
-            map(
+            Map.of(
                     InitRequestRequired.class,
                     (final Annotation annotation,
                      final ContainerRequestContext requestContext,

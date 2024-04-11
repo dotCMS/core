@@ -10,14 +10,12 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -66,7 +64,7 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
 
             final ContainerPaginator containerPaginator = new ContainerPaginator();
             final PaginatedArrayList<ContainerView> containersViews = containerPaginator.getItems(user, filter, limit, offset, ORDER_BY,
-                    OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, defaultHost.getIdentifier()));
+                    OrderDirection.ASC, Map.of(ContainerPaginator.HOST_PARAMETER_ID, defaultHost.getIdentifier()));
             containerList = containersViews.stream()
                     .map(containerView -> containerView.getContainer())
                     .collect(Collectors.toList());

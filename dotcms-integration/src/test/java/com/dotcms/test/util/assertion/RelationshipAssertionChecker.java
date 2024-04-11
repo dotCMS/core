@@ -19,7 +19,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 public class RelationshipAssertionChecker implements AssertionChecker<Relationship> {
     @Override
     public Map<String, Object> getFileArguments(final Relationship relationship, File file) {
-        return map(
+        return Map.of(
                 "inode", relationship.getInode(),
                 "parent_inode", relationship.getParentStructure().id(),
                 "child_inode", relationship.getChildStructure().id(),

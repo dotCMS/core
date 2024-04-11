@@ -19,7 +19,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 public class CategoryAssertionChecker implements AssertionChecker<Category> {
     @Override
     public Map<String, Object> getFileArguments(final Category category, File file) {
-        return map(
+        return Map.of(
                 "inode", category.getInode(),
                 "name", category.getCategoryName(),
                 "key", category.getKey(),

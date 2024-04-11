@@ -75,7 +75,7 @@ public class RelationshipsResource {
                               label = cardinality.name();
                           }
 
-                          return map(
+                          return Map.of(
                                   "name", cardinality.name(),
                                   "id", cardinality.ordinal(),
                                   "label", label
@@ -116,7 +116,7 @@ public class RelationshipsResource {
         try {
             final ContentType contentType = contentTypeAPI.find(contentTypeId);
 
-            final Map<String, Object> params = map(RelationshipPaginator.CONTENT_TYPE_PARAM,
+            final Map<String, Object> params = Map.of(RelationshipPaginator.CONTENT_TYPE_PARAM,
                     contentType);
             return paginationUtil.getPage(request, user, null, page, perPage, params);
         } catch (Exception e) {

@@ -73,7 +73,7 @@ public class SimpleFilter implements Filter {
 
     @Override
     public Map<String, Object> asMap(){
-        return map("member", member, "operator", operator.getKey(), "values", values);
+        return Map.of("member", member, "operator", operator.getKey(), "values", values);
     }
 
     public enum Operator {

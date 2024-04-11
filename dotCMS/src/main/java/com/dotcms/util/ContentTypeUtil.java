@@ -22,6 +22,7 @@ import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
@@ -178,7 +179,7 @@ public class ContentTypeUtil {
                 final PortletURL portletURL =
                         new PortletURLImpl(request, PortletID.CONTENT.toString(), contentLayout.getId(), true);
                 portletURL.setWindowState(WindowState.MAXIMIZED);
-                portletURL.setParameters(map(
+                portletURL.setParameters(Map.of(
                         "struts_action", new String[] {strutsAction},
                         "cmd", new String[] {"new"},
                         "referer", new String[] {referrer},
@@ -217,7 +218,7 @@ public class ContentTypeUtil {
                     final User user) throws WindowStateException {
         final PortletURL portletURL = new PortletURLImpl(request, PortletID.CONTENT.toString(), layout.getId(), true);
         portletURL.setWindowState(WindowState.MAXIMIZED);
-        portletURL.setParameters(map(
+        portletURL.setParameters(Map.of(
                         "struts_action", new String[] {"/ext/contentlet/view_contentlets"}, 
                         "cmd", new String[] {"new"}, 
                         "inode", new String[] {""}, 

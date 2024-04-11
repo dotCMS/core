@@ -622,7 +622,7 @@ public class WorkflowResource {
                             (Consumer<Long>) delta -> {
                                 eventBuilder.name("success");
                                 eventBuilder.data(Map.class,
-                                        map("success", delta));
+                                        Map.of("success", delta));
                                 eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
@@ -637,7 +637,7 @@ public class WorkflowResource {
                             (BiConsumer<String, Exception>) (inode, e) -> {
                                 eventBuilder.name("failure");
                                 eventBuilder.data(Map.class,
-                                        map("failure", inode));
+                                        Map.of("failure", inode));
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
                                     eventOutput.write(event);
@@ -2128,7 +2128,7 @@ public class WorkflowResource {
             outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
 
             ResponseUtil.wrapProperty(outputStream, "summary",
-                    objectMapper.writeValueAsString(CollectionsUtils.map("time", stopWatch.getTime(),
+                    objectMapper.writeValueAsString(Map.of("time", stopWatch.getTime(),
                             "affected", futures.size(),
                             "successCount", successCount,
                             "failCount", failCount)));
@@ -2942,7 +2942,7 @@ public class WorkflowResource {
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(
-                    map("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
+                    Map.of("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
                             "permissions", permissions))).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),

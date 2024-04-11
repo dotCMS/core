@@ -54,7 +54,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.ConversionUtils.toInt;
 
 /**
@@ -206,7 +205,7 @@ public class UserResourceHelper implements Serializable {
 		} else {
 			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
-		final Map<String, Object> sessionData = map(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
+		final Map<String, Object> sessionData = Map.of(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
 				loginAsUserId, com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
 	}
@@ -295,7 +294,7 @@ public class UserResourceHelper implements Serializable {
 		} else {
 			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
-		final Map<String, Object> sessionData = map(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+		final Map<String, Object> sessionData = Map.of(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
 	}
 
@@ -339,7 +338,7 @@ public class UserResourceHelper implements Serializable {
 			}
 		}
 
-		Map<String, Object> mapResponse = map("users", userList);
+		Map<String, Object> mapResponse = Map.of("users", userList);
 
 		if (includeUsersCount) {
 			long countUsersByNameOrEmail = userAPI.getCountUsersByNameOrEmail(StringPool.BLANK);

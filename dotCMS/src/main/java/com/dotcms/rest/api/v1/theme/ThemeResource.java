@@ -107,7 +107,7 @@ public class ThemeResource {
         Logger.debug(this,
                 "Getting the themes for the hostId: " + hostId);
 
-        final Map<String, Object> params = map(ThemePaginator.HOST_ID_PARAMETER_NAME, hostId);
+        final Map<String, Object> params = Map.of(ThemePaginator.HOST_ID_PARAMETER_NAME, hostId);
 
         if (UtilMethods.isSet(searchParam)) {
             params.put(ThemePaginator.SEARCH_PARAMETER, searchParam);

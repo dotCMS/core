@@ -348,6 +348,7 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key, final V value) {
         return mapEntries(entry(key, value));
     } // map.
@@ -362,6 +363,7 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2) {
         return mapEntries(entry(key1, value1), entry(key2, value2));
     } // map.
@@ -378,6 +380,7 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3) {
         return mapEntries(entry(key1, value1), entry(key2, value2),
@@ -398,6 +401,7 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4) {
         return mapEntries(entry(key1, value1), entry(key2, value2),
@@ -420,6 +424,7 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5) {
         return mapEntries(entry(key1, value1), entry(key2, value2),
@@ -444,6 +449,7 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
             final K key6, final V value6) {
@@ -472,6 +478,7 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
                                      final K key6, final V value6, final K key7, final V value7) {
@@ -490,6 +497,7 @@ public class CollectionsUtils implements Serializable {
     } // map.
 
 
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
                                      final K key6, final V value6, final K key7, final V value7,
@@ -525,6 +533,7 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
             , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8
@@ -563,6 +572,7 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @Deprecated
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
             , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8

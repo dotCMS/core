@@ -1,8 +1,5 @@
 package com.dotmarketing.startup;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -12,6 +9,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.StringUtils;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -23,7 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotcms.util.CollectionsUtils.getMapValue;
 
 /**
  * Derived classes should avoid use of transactions. MSSQL might have problems
@@ -401,7 +401,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 		 */
 		private void addHandlerEntry(final DbType dbType, final Map<DbType, Map<String, T>> handlersMap, final T handler) {
 			if (!handlersMap.containsKey(dbType)) {
-				Map<String, T> handlerData = map(handler.getConstraintName(), handler);
+				Map<String, T> handlerData = Map.of(handler.getConstraintName(), handler);
 				handlersMap.put(dbType, handlerData);
 			} else {
 				Map<String, T> createOperations = handlersMap.get(dbType);

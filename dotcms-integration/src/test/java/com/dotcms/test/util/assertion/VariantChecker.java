@@ -15,7 +15,7 @@ public class VariantChecker implements AssertionChecker<Variant> {
 
     @Override
     public Map<String, Object> getFileArguments(final Variant variant, final File file) {
-        return map(
+        return Map.of(
                 "name", variant.name(),
                 "description", variant.description().get()
         );

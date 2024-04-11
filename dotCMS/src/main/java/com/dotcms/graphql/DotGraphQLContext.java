@@ -77,7 +77,7 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
     }
 
     public void addFieldCount(final String field, final long count) {
-        this.fieldCountMaps.add(map("fieldName", field, "totalCount", count));
+        this.fieldCountMaps.add(Map.of("fieldName", field, "totalCount", count));
     }
 
     public List<Map<String, Object>> getFieldCountMaps() {

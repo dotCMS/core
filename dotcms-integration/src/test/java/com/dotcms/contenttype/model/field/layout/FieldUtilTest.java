@@ -77,7 +77,7 @@ public class FieldUtilTest {
         final ContentTypeInternationalization contentTypeInternationalization =
                 new ContentTypeInternationalization(languageId, live, systemUser);
 
-        Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
+        Map<String, Object> fieldMap = Map.of("name", fieldName, "variable", fieldName);
 
         Awaitility.await().atMost(20, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
@@ -127,7 +127,7 @@ public class FieldUtilTest {
         final ContentTypeInternationalization contentTypeInternationalization =
                 new ContentTypeInternationalization(languageId, live, null);
 
-        Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
+        Map<String, Object> fieldMap = Map.of("name", fieldName, "variable", fieldName);
         fieldMap  = APILocator.getContentTypeFieldAPI().getFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
 
         assertEquals(languageVariableValue, fieldMap.get("name"));

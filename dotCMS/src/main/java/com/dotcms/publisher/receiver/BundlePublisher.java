@@ -427,7 +427,7 @@ public class BundlePublisher extends Publisher {
             final Map<String, String> assetsDetails = bundlerAssets.stream()
                     .collect(Collectors
                             .toMap(PublishQueueElement::getAsset, PublishQueueElement::getType));
-            return map(ASSET_DETAILS_KEY, assetsDetails, BUNDLER_ASSETS_KEY, bundlerAssets);
+            return Map.of(ASSET_DETAILS_KEY, assetsDetails, BUNDLER_ASSETS_KEY, bundlerAssets);
         }
 
         private Map<String, Object> getAssetsDetailsFromManifest(final File manifestFile) {
@@ -443,7 +443,7 @@ public class BundlePublisher extends Publisher {
                 }
             }
 
-            return map(ASSET_DETAILS_KEY, assetsDetails,
+            return Map.of(ASSET_DETAILS_KEY, assetsDetails,
                     BUNDLER_ASSETS_KEY, csvManifestReader.getPublishQueueElement());
         }
 

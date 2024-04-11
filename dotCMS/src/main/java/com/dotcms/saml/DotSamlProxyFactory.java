@@ -8,7 +8,6 @@ import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.model.KeyFilterable;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.util.Config;
@@ -179,7 +178,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
                         this.samlConfigurationService = samlServiceBuilder.buildSamlConfigurationService();
                         this.samlConfigurationService.initService(
-                                CollectionsUtils.map(SamlConfigurationService.DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY, IDP_FILE_PATH));
+                                Map.of(SamlConfigurationService.DOT_SAML_DEFAULT_PROPERTIES_CONTEXT_MAP_KEY, IDP_FILE_PATH));
                     }
                 }
             } else {

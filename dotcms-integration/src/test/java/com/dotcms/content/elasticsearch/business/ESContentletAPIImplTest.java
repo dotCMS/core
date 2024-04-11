@@ -1,22 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
@@ -27,15 +10,30 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldRelationshipDataGen;
+import com.dotcms.datagen.FieldVariableDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VanityUrlDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -50,7 +48,15 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.VersionableFactoryImpl;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -82,33 +88,8 @@ import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-
-import io.vavr.API;
-import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.http.HttpStatus;
-
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -118,6 +99,43 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author nollymar
@@ -190,7 +208,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
+                    Map.of(relationship, list(commentsContentlet)),
                     null, user, false);
 
 
@@ -616,7 +634,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
+                    Map.of(relationship, list(commentsContentlet)),
                     null, user, false);
 
             CacheLocator.getContentletCache().remove(commentsContentlet);
@@ -705,7 +723,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
+                    Map.of(relationship, list(commentsContentlet)),
                     null, user, false);
 
             //archive parent
@@ -781,7 +799,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
+                    Map.of(relationship, list(commentsContentlet)),
                     null, user, false);
 
             //archive parent
@@ -2312,7 +2330,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         contentlet1Checkout = ContentletDataGen.checkout(newlyContentleLive);
         final Contentlet contentletWorking2 = ContentletDataGen.checkin(contentlet1Checkout);
 
-        return map("LIVE", newlyContentleLive, "WORKING", contentletWorking2);
+        return Map.of("LIVE", newlyContentleLive, "WORKING", contentletWorking2);
     }
 
     private static Contentlet createNewLangVersion(final Language language,
@@ -2424,7 +2442,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .setProperty("title", "Default Version")
                 .nextPersisted();
 
-        ContentletDataGen.createNewVersion(contentlet, variant, map("title", "Variant Version"));
+        ContentletDataGen.createNewVersion(contentlet, variant, Map.of("title", "Variant Version"));
 
         APILocator.getContentletAPI().copyContentToVariant(contentlet, variant.name(),
                 APILocator.systemUser());

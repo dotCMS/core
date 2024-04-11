@@ -235,7 +235,7 @@ public class WorkflowBundler implements IBundler {
 			// action by step
 			for (final WorkflowAction workflowAction : stepActions) {
 
-				actionStepsListMap.add(map(ACTION_ID, workflowAction.getId(),
+				actionStepsListMap.add(Map.of(ACTION_ID, workflowAction.getId(),
 						STEP_ID, workflowStep.getId(),
 						ACTION_ORDER, String.valueOf(actionOrder++)));
 			}

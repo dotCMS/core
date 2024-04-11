@@ -1,17 +1,5 @@
 package com.dotmarketing.portlets.htmlpages.business.render;
 
-import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
@@ -34,7 +22,6 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.model.Experiment;
-
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
@@ -44,13 +31,11 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -71,21 +56,26 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
-
-
 import com.liferay.util.StringPool;
-import java.io.File;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+
+import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTestBase {
 
@@ -2430,7 +2420,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .nextPersistedAndPublish();
 
         final Contentlet widgetWithLabeVariant = ContentletDataGen.createNewVersion(widgetWithLabelDefault, variant_1, language,
-                map("label", "Testing Variant URLMap"));
+                Map.of("label", "Testing Variant URLMap"));
 
         ContentletDataGen.publish(widgetWithLabeVariant);
 
@@ -2571,7 +2561,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .nextPersistedAndPublish();
 
         final Contentlet widgetWithLabeVariant = ContentletDataGen.createNewVersion(widgetWithLabelDefault, variant_1, language,
-                map("label", "Testing Variant URLMap"));
+                Map.of("label", "Testing Variant URLMap"));
 
         ContentletDataGen.publish(widgetWithLabeVariant);
 
@@ -2650,7 +2640,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .nextPersistedAndPublish();
 
         final Contentlet newVersion = ContentletDataGen.createNewVersion(contentlet, variant_1, language,
-                map("title", "Test into Variant"));
+                Map.of("title", "Test into Variant"));
         ContentletDataGen.publish(newVersion);
 
         final HttpServletRequest mockRequest = new MockAttributeRequest(

@@ -40,7 +40,7 @@ public class RemoteAPITokenForm {
     }
 
     public Map<String, Object> getTokenInfo(){
-        return map(
+        return Map.of(
                 "network", token.network,
                 "expirationSeconds", token.expirationSeconds,
                 "claims", token.claims,

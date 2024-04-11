@@ -17,10 +17,10 @@ public class DiffCommandTest extends UnitTestBase {
     @Test
     public void applyDiff_Differentiable() {
 
-        final Map<String, StringDifferentiable> currentObjects = CollectionsUtils.map(
+        final Map<String, StringDifferentiable> currentObjects = Map.of(
                 "one", new StringDifferentiable("one"), "two", new StringDifferentiable("two"),
                 "three", new StringDifferentiable("three"), "four", new StringDifferentiable("four"));
-        final Map<String, StringDifferentiable> newObjects     =  CollectionsUtils.map(
+        final Map<String, StringDifferentiable> newObjects     =  Map.of(
                 "one", new StringDifferentiable("onexxx"),
                 "three", new StringDifferentiable("three"), "four", new StringDifferentiable("fourxxx"),
                 "five", new StringDifferentiable("five"), "six", new StringDifferentiable("six"));
@@ -51,10 +51,10 @@ public class DiffCommandTest extends UnitTestBase {
     @Test
     public void applyDiff_Comparable() {
 
-        final Map<String, String> currentObjects = CollectionsUtils.map(
+        final Map<String, String> currentObjects = Map.of(
                 "one", "one", "two", "two",
                 "three", "three", "four", "four");
-        final Map<String, String> newObjects     =  CollectionsUtils.map(
+        final Map<String, String> newObjects     =  Map.of(
                 "one", "onexxx",
                 "three", "three", "four", "fourxxx",
                 "five", "five", "six", "six");

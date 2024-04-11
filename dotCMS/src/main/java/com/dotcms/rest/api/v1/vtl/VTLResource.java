@@ -505,7 +505,7 @@ public class VTLResource {
 
             final VelocityReader velocityReader = VelocityReaderFactory.getVelocityReader(UtilMethods.isSet(folderName));
 
-            final Map<String, Object> contextParams = CollectionsUtils.map(
+            final Map<String, Object> contextParams = Map.of(
                     "pathParam", pathParam,
                     "queryParams", uriInfo.getQueryParameters(),
                     "bodyMap", bodyMap,

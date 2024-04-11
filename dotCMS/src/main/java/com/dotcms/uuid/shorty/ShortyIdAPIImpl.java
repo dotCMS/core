@@ -28,7 +28,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   private final Map<ShortyInputType, DBEqualsStrategy> dbEqualsStrategyMap =
-          map(
+          Map.of(
                   ShortyInputType.CONTENT,         (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_EQUALS).addParam(shorty).addParam(shorty),
                   ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_EQUALS).addParam(shorty),
                   ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_EQUALS).addParam(shorty),
@@ -36,7 +36,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
              );
 
   private final Map<ShortyInputType, DBLikeStrategy> dbLikeStrategyMap =
-          map(
+          Map.of(
                   ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> {
                     final String sqlUnion = "(" + ShortyIdSql.SELECT_SHORTY_SQL_LIKE + " UNION ALL " + ShortyIdSql.SELECT_SHORTY_SQL_LIKE + ")" + " limit 1";
                     final String deterministicId = uuidIfy.replaceAll("-","");

@@ -75,7 +75,7 @@ public class JsScriptActionlet  extends WorkFlowActionlet {
             final String javascriptCode = javascriptCodeParameter.getValue();
             final String resultKey      = keyParameter.getValue();
             final Object result         = engine.eval(request, response, new StringReader(javascriptCode),
-                    map("workflow", processor, "user", processor.getUser(),
+                    Map.of("workflow", processor, "user", processor.getUser(),
                             "contentlet", processor.getContentlet(), "content", processor.getContentlet()));
 
             this.stop = processor.abort();

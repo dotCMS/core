@@ -213,7 +213,7 @@ public class PaginationUtil {
 												final String orderBy,
 												final OrderDirection direction,
 												final Map<String, Object> extraParams) {
-		final Map<String, Object> params = map(
+		final Map<String, Object> params = Map.of(
 				Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
 				Paginator.ORDER_BY_PARAM_NAME, orderBy,
 				Paginator.ORDER_DIRECTION_PARAM_NAME, direction != null ? direction : OrderDirection.ASC
@@ -248,20 +248,20 @@ public class PaginationUtil {
 		final List<String> links = new ArrayList<>();
 		final String URL_KEY = "URL";
 		final String REL_VALUE_KEY = "relValue";
-		links.add(StringUtil.format(LINK_TEMPLATE, map(
+		links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 				URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), FIRST_PAGE_INDEX, linkHeader.perPage(),
 						linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 				REL_VALUE_KEY, FIRST_REL_VALUE
 		)));
 
 		int lastPage = (int) (Math.ceil((double) linkHeader.totalRecords() / linkHeader.perPage()));
-		links.add(StringUtil.format(LINK_TEMPLATE, map(
+		links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 				URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), lastPage, linkHeader.perPage(),
 						linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 				REL_VALUE_KEY, LAST_REL_VALUE
 		)));
 
-		links.add(StringUtil.format(LINK_TEMPLATE, map(
+		links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 				URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), -1, linkHeader.perPage(),
 						linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 				REL_VALUE_KEY, PAGE_REL_VALUE
@@ -269,7 +269,7 @@ public class PaginationUtil {
 
 		int next = linkHeader.page() + 1;
 		if (next <= lastPage){
-			links.add(StringUtil.format(LINK_TEMPLATE, map(
+			links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 					URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), next, linkHeader.perPage(),
 							linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 					REL_VALUE_KEY, NEXT_REL_VALUE
@@ -278,7 +278,7 @@ public class PaginationUtil {
 
 		int prev = linkHeader.page() - 1;
 		if (prev > 0){
-			links.add(StringUtil.format(LINK_TEMPLATE, map(
+			links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 					URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), prev, linkHeader.perPage(),
 							linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 					REL_VALUE_KEY, PREV_REL_VALUE

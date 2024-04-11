@@ -27,6 +27,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -160,7 +161,7 @@ public class NotificationResource {
                 });
             }
 
-            return Response.ok(new ResponseEntityView(map("totalUnreadNotifications", totalUnreadNotifications,
+            return Response.ok(new ResponseEntityView(Map.of("totalUnreadNotifications", totalUnreadNotifications,
                     "notifications", notificationsResult, "total", notificationsCount)))
                     .header("Content-Range", "items " + offset + "-" + limit + "/" + totalUnreadNotifications)
                     .build(); // 200

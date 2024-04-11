@@ -21,7 +21,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 public class RuleAssertionChecker implements AssertionChecker<Rule> {
     @Override
     public Map<String, Object> getFileArguments(Rule rule, File file) {
-        return map(
+        return Map.of(
             "id", rule.getId(),
             "name", rule.getName(),
             "parent", rule.getParent()

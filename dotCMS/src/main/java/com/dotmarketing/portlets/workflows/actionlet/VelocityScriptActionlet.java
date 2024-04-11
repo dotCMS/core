@@ -75,7 +75,7 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             final String resultKey    = keyParameter.getValue();
             final Reader reader       = new StringReader(script);
             final Object result       = engine.eval(request, response, reader,
-                    CollectionsUtils.map("workflow", processor,
+                    Map.of("workflow", processor,
                             "user", processor.getUser(),
                             "contentlet", processor.getContentlet(),
                             "content", processor.getContentlet()));

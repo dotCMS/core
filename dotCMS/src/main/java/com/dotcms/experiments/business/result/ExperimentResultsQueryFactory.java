@@ -67,7 +67,7 @@ public enum ExperimentResultsQueryFactory {
 
 
     private static Map<MetricType, MetricExperimentResultsQuery> createHelpersMap() {
-        return map(
+        return Map.of(
             MetricType.EXIT_RATE, new ExitRateResultQuery(),
             MetricType.REACH_PAGE, new ReachTargetAfterExperimentPageResultQuery(),
             MetricType.BOUNCE_RATE, new BounceRateResultQuery(),

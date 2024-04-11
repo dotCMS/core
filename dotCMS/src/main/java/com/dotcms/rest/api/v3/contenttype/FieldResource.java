@@ -22,6 +22,7 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -226,7 +227,7 @@ public class FieldResource {
                 this.contentTypeFieldLayoutAPI.deleteField(contentType, fieldsID, user);
 
         return Response.ok(new ResponseEntityView(
-                map(
+                Map.of(
                    "fields", deleteFieldResult.getLayout().getRows(),
                         "deletedIds", deleteFieldResult.getFieldDeletedIds()
                 )

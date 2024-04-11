@@ -1,24 +1,22 @@
 package com.dotcms.rest.api.v1.system;
 
-import java.io.Serializable;
-import java.util.Map;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.annotation.AccessControlAllowOrigin;
+import com.dotcms.rest.annotation.InitRequestRequired;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.annotation.AccessControlAllowOrigin;
-import com.dotcms.rest.annotation.InitRequestRequired;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.CollectionsUtils;
+import java.io.Serializable;
+import java.util.Map;
 
 /**
  * This Jersey end-point provides access to configuration parameters that are
@@ -75,7 +73,7 @@ public class AppContextInitResource implements Serializable {
 		try {
 			final Object configData = this.helper.getConfigurationData(request);
 			// Return all configuration parameters in one response
-			final Map<String, Object> configMap = CollectionsUtils.map(CONFIG, configData);
+			final Map<String, Object> configMap = Map.of(CONFIG, configData);
 
 			return Response.ok(new ResponseEntityView(configMap)).build();
 		} catch (Exception e) {

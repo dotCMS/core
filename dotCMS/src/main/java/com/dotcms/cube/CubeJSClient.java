@@ -1,7 +1,5 @@
 package com.dotcms.cube;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.exception.AnalyticsException;
@@ -89,7 +87,7 @@ public class CubeJSClient {
                 .setMethod(Method.GET)
                 .setHeaders(cubeJsHeaders(accessToken))
                 .setUrl(cubeJsUrl)
-                .setParams(map("query", queryAsString))
+                .setParams(Map.of("query", queryAsString))
                 .setTimeout(4000)
                 .setThrowWhenNot2xx(false)
                 .build();

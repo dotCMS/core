@@ -1,12 +1,5 @@
 package com.dotcms.rest.api.v1.system;
 
-import static com.dotcms.util.CollectionsUtils.entry;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.mapEntries;
-import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT;
-
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -30,6 +23,9 @@ import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+
+import javax.mail.internet.InternetAddress;
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,8 +36,12 @@ import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
-import javax.mail.internet.InternetAddress;
-import javax.servlet.http.HttpServletRequest;
+
+import static com.dotcms.util.CollectionsUtils.entry;
+import static com.dotcms.util.CollectionsUtils.mapEntries;
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
+import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET;
+import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT;
 
 /**
  * A utility class that provides the required dotCMS configuration properties to
@@ -123,11 +123,11 @@ public class ConfigurationHelper implements Serializable {
 			Logger.warn(this.getClass(), "unable to get color:" +e.getMessage());
 		}
 
-		final Map<String, Object> map = map(
+		final Map<String, Object> map = Map.of(
 				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
 				DOTCMS_WEBSOCKET,
-				map(
+				Map.of(
 					DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
 					Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 15000),
 					DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
@@ -141,7 +141,7 @@ public class ConfigurationHelper implements Serializable {
 						this.getRelativeTimeEntry(locale)
 				),
 				LICENSE,
-				map(
+				Map.of(
 						IS_COMMUNITY, LicenseManager.getInstance().isCommunity(),
 						DISPLAY_SERVER_ID, LicenseUtil.getDisplayServerId(),
 						LEVEL_NAME, LicenseUtil.getLevelName(),
@@ -149,20 +149,20 @@ public class ConfigurationHelper implements Serializable {
 
 				),
 				RELEASE_INFO,
-				map(
+				Map.of(
 						VERSION, ReleaseInfo.getVersion(),
 						BUILD_DATE, ReleaseInfo.getBuildDateString()
 				),
 				EMAIL_REGEX, Constants.REG_EX_EMAIL,
 				COLORS,
-				map(
+				Map.of(
 						BACKGROUND_COLOR, backgroundColor,
 						PRIMARY_COLOR, primaryColor,
 						SECONDARY_COLOR, secondaryColor
 				),
 				CLUSTER, clusterMap(user),
 				LOGOS,
-				map(
+				Map.of(
 						LOGIN_SCREEN_LOGO,loginScreenLogo,
 						NAV_BAR_LOGO,navBarLogo
 				)
@@ -181,7 +181,7 @@ public class ConfigurationHelper implements Serializable {
 	 */
 	private Map getTimeZone(final TimeZone timeZone, final Locale locale){
 
-		return CollectionsUtils.map("id", timeZone.getID(), "label",
+		return Map.of("id", timeZone.getID(), "label",
 					timeZone.getDisplayName(locale) + " (" + timeZone
 							.getID() + ")", "offset", timeZone.getRawOffset());
 	}
@@ -198,7 +198,7 @@ public class ConfigurationHelper implements Serializable {
         Arrays.sort(timeZonesIDs);
         for(final String id : timeZonesIDs) {
             final TimeZone timeZone = TimeZone.getTimeZone(id);
-            timeZoneList.add(CollectionsUtils.map("id", timeZone.getID(), "label",
+            timeZoneList.add(Map.of("id", timeZone.getID(), "label",
                     timeZone.getDisplayName(locale) + " (" + timeZone
                             .getID() + ")", "offset", timeZone.getRawOffset()));
         }
@@ -264,12 +264,12 @@ public class ConfigurationHelper implements Serializable {
 	Map<String,String> clusterMap(final User user){
 		final boolean validAuthenticatedUser = null != user && !user.isAnonymousUser() && user.isBackendUser();
 		 if(validAuthenticatedUser){
-			return map(
+			return Map.of(
 					 CLUSTER_ID, getClusterId(),
 					 KEY_DIGEST, keyDigest()
 			 );
 		 } else {
-			 return map(
+			 return Map.of(
 					 CLUSTER_ID, getClusterId()
 			 );
 		 }

@@ -33,7 +33,7 @@ public class HostAssertionChecker implements AssertionChecker<Contentlet> {
         try {
             identifier = APILocator.getIdentifierAPI().find(host.getIdentifier());
 
-            return map(
+            return Map.of(
                     "host_id", host.getIdentifier(),
                     "host_live_inode", contentletVersionInfo.getLiveInode() != null ? contentletVersionInfo.getLiveInode() : "null",
                     "host_working_inode", contentletVersionInfo.getWorkingInode(),

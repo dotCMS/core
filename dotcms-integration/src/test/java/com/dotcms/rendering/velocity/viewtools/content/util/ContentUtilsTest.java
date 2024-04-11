@@ -1,14 +1,5 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
-import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DateField;
@@ -20,11 +11,9 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
-import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.LANGUAGE_TYPE_FILTER;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.PUBLISH_TYPE_FILTER;
@@ -32,7 +21,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -47,23 +35,11 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -71,6 +47,23 @@ import org.junit.runner.RunWith;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author nollymar
@@ -314,7 +307,7 @@ public class ContentUtilsTest {
                     .setPolicy(IndexPolicy.FORCE).next();
 
             parentInEnglish = contentletAPI.checkin(parentInEnglish,
-                    map(relationship, list(childInEnglish, childInSpanish)),
+                    Map.of(relationship, list(childInEnglish, childInSpanish)),
                     null, user, false);
 
             Contentlet parentInSpanish = contentletAPI
@@ -500,7 +493,7 @@ public class ContentUtilsTest {
                     .setPolicy(IndexPolicy.FORCE).next();
 
             parent = contentletAPI.checkin(parent,
-                    map(relationship, list(firstChild, secondChild)),
+                    Map.of(relationship, list(firstChild, secondChild)),
                     null, user, false);
 
             ContentletDataGen.publish(parent);
@@ -612,7 +605,7 @@ public class ContentUtilsTest {
                     .setPolicy(IndexPolicy.FORCE).next();
 
             parentContent = contentletAPI.checkin(parentContent,
-                    map(relationship, list(childContent)),
+                    Map.of(relationship, list(childContent)),
                     null, user, false);
 
             parentContent = ContentletDataGen.publish(parentContent);
@@ -1057,7 +1050,7 @@ public class ContentUtilsTest {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, relatedComments),
+                    Map.of(relationship, relatedComments),
                     null, user, false);
 
             //Pull related content from comment child
@@ -1075,7 +1068,7 @@ public class ContentUtilsTest {
 
             //let's reorder the related content and pull them again
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(relatedComments.get(3), relatedComments.get(1), relatedComments.get(0), relatedComments.get(2))),
+                    Map.of(relationship, list(relatedComments.get(3), relatedComments.get(1), relatedComments.get(0), relatedComments.get(2))),
                     null, user, false);
 
             //now, we pull the related content again. Limit and offset were set to invalid values to make sure that it keeps working as expected
@@ -1160,7 +1153,7 @@ public class ContentUtilsTest {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, relatedComments),
+                    Map.of(relationship, relatedComments),
                     null, user, false);
 
             //Pull related content from comment child

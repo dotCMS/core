@@ -72,7 +72,7 @@ public class LogicalFilter implements Filter {
     public Map<String, Object> asMap() {
         final String logicalOperator = type.name().toLowerCase();
 
-        return map(logicalOperator,
+        return Map.of(logicalOperator,
                 Arrays.stream(filters)
                         .map(filter -> filter.asMap())
                         .collect(Collectors.toList()));

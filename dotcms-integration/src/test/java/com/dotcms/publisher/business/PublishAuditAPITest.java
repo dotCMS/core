@@ -1,12 +1,5 @@
 package com.dotcms.publisher.business;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -21,14 +14,21 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import java.io.Serializable;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class PublishAuditAPITest {
 
@@ -233,7 +233,7 @@ public class PublishAuditAPITest {
         final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
 
         final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
-        publishAuditHistory.setAssets(map(
+        publishAuditHistory.setAssets(Map.of(
                 contentType.id(), PusheableAsset.CONTENT_TYPE.toString(),
                 contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
@@ -280,7 +280,7 @@ public class PublishAuditAPITest {
         final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
 
         final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
-        publishAuditHistory.setAssets(map(
+        publishAuditHistory.setAssets(Map.of(
                 contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_3.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
@@ -330,7 +330,7 @@ public class PublishAuditAPITest {
         final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
 
         final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
-        publishAuditHistory.setAssets(map(
+        publishAuditHistory.setAssets(Map.of(
                 contentType.id(), PusheableAsset.CONTENT_TYPE.toString(),
                 contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),

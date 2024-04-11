@@ -190,12 +190,12 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
         final Relationship relationship = APILocator.getRelationshipAPI()
                 .getRelationshipFromField(field, APILocator.getLoginServiceAPI().getLoggedInUser());
         if (null != relationship){
-          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(
+          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
                   "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType,
                   "isParentField", relationship.getParentStructureInode().equals(field.contentTypeId())
           ));
         } else{
-          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(
+          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
                   "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
           ));
         }

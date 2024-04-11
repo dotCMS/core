@@ -6,7 +6,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -22,6 +21,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
 
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
@@ -95,7 +95,7 @@ public class MenuResourceTest extends IntegrationTestBase {
                 "dev.tools", greatDevTool, englishLanguage.getId(),
                 languageVariableContentType, systemUser);
         APILocator.getLanguageAPI().saveLanguageKeys(englishLanguage,
-                CollectionsUtils.map("dev.tools", greatDevTool), Collections.emptyMap(), Collections.emptySet());
+                Map.of("dev.tools", greatDevTool), Collections.emptyMap(), Collections.emptySet());
         try {
 
             Assert.assertTrue(

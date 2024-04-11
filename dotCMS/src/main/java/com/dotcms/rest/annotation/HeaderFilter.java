@@ -45,7 +45,7 @@ public class HeaderFilter implements ContainerResponseFilter {
 	public static final String EXPIRES_DEFAULT_DATE 		= "Mon, 26 Jul 1997 05:00:00 GMT";
 
 	private final Map<Class, HeaderDecorator> responseHeaderDecorators =
-			map(
+			Map.of(
 					AccessControlAllowOrigin.class,
 					(final Annotation annotation, final MultivaluedMap<String, Object> headers, final ContainerRequestContext requestContext,
 					 final ContainerResponseContext responseContext) -> {

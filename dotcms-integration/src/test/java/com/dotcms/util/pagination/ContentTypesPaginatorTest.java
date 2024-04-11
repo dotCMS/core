@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.liferay.util.StringPool.COMMA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -96,7 +95,7 @@ public class ContentTypesPaginatorTest {
      */
     @Test
     public void test_getItems_WhenFilterEqualsToBaseType_ReturnsAllChildrenContentTypes() {
-        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME,
+        final Map<String, Object> extraParams = Map.of(ContentTypesPaginator.TYPE_PARAMETER_NAME,
                 BaseContentType.FILEASSET.toString());
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
         final PaginatedArrayList<Map<String, Object>> result = paginator
@@ -119,7 +118,7 @@ public class ContentTypesPaginatorTest {
      */
     @Test
     public void test_getItems_WhenFilterEqualsToBaseType_ReturnsAllRelatedContentTypes() {
-        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME, BaseContentType.PERSONA.toString());
+        final Map<String, Object> extraParams = Map.of(ContentTypesPaginator.TYPE_PARAMETER_NAME, BaseContentType.PERSONA.toString());
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
         final PaginatedArrayList<Map<String, Object>> result = paginator
                 .getItems(user, null, -1, 0, "name", OrderDirection.ASC, extraParams);
@@ -334,7 +333,7 @@ public class ContentTypesPaginatorTest {
         final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
         final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
         final Map<String, Object> extraParams =
-                CollectionsUtils.map(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+                Map.of(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
         // Offset and Limit are automatically adjusted by the PaginationUtil class. So, set them up as the class would
         // Get the result page #2, so set this to 3
