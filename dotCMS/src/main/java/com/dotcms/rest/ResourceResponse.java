@@ -158,9 +158,9 @@ public class ResourceResponse {
         return responseError(
                 message,
                 status,
-                Map.of("WWW-Authenticate",
+                new HashMap<>(Map.of("WWW-Authenticate",
                         String.format("Bearer realm=\"example\",error=\"%s\",error_key=\"%s\",error_description=\"\"", errorCode, errorKey)
-                )
+                ))
         );
     }
 

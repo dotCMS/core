@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -176,19 +177,23 @@ public final class ExceptionMapperUtil {
             final StringWriter errors = new StringWriter();
             exception.printStackTrace(new PrintWriter(errors));
 
+            final Map<String, Object> entityMap = new HashMap<>();
+            entityMap.put("message", message);
+            entityMap.put("stacktrace", errors);
             return Response
                     .status(status)
-                    .entity(Map.of("message", message,
-                            "stacktrace", errors))
+                    .entity(entityMap)
                     .header("error-key", key)
                     .header("access-control", getAccessControlHeader(exception))
                     .build();
         }
 
+        final Map<String, Object> entityMap = new HashMap<>();
+        entityMap.put("message", message);
 
         return Response
                 .status(status)
-                .entity(Map.of("message", message))
+                .entity(entityMap)
                 .header("error-key", key)
                 .header("access-control", getAccessControlHeader(exception))
                 .build();

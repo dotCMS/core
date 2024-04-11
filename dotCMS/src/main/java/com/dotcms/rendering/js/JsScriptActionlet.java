@@ -14,6 +14,7 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -75,8 +76,8 @@ public class JsScriptActionlet  extends WorkFlowActionlet {
             final String javascriptCode = javascriptCodeParameter.getValue();
             final String resultKey      = keyParameter.getValue();
             final Object result         = engine.eval(request, response, new StringReader(javascriptCode),
-                    Map.of("workflow", processor, "user", processor.getUser(),
-                            "contentlet", processor.getContentlet(), "content", processor.getContentlet()));
+                    new HashMap<>(Map.of("workflow", processor, "user", processor.getUser(),
+                            "contentlet", processor.getContentlet(), "content", processor.getContentlet())));
 
             this.stop = processor.abort();
             if (Objects.nonNull(result) && Objects.nonNull(resultKey)) {

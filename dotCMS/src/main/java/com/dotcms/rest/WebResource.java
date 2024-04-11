@@ -255,7 +255,7 @@ public  class WebResource {
     @Deprecated
     public InitDataObject init(String userId, String password, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
         AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
-        return initWithMap(Map.of("userid", userId, "pwd", password), request, new EmptyHttpResponse(), access, requiredPortlet);
+        return initWithMap(new HashMap<>(Map.of("userid", userId, "pwd", password)), request, new EmptyHttpResponse(), access, requiredPortlet);
     }
 
     /**
@@ -292,7 +292,7 @@ public  class WebResource {
       
         AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
       
-        return initWithMap(Map.of("userid", userId, "pwd", password), request, response, access, requiredPortlet);
+        return initWithMap(new HashMap<>(Map.of("userid", userId, "pwd", password)), request, response, access, requiredPortlet);
     }
 
     private InitDataObject initWithMap(final Map<String, String> paramsMap,

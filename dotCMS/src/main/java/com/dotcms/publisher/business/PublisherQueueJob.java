@@ -732,7 +732,7 @@ public class PublisherQueueJob implements StatefulJob {
 		endpointDetail.setInfo(errorMsg);
 		// Environment and Endpoint IDs don't matter in this case
 		auditHistory.setEndpointsMap(
-				Map.of(StringPool.BLANK, Map.of(StringPool.BLANK, endpointDetail)));
+				new HashMap<>(Map.of(StringPool.BLANK, Map.of(StringPool.BLANK, endpointDetail))));
 	}
 
 }

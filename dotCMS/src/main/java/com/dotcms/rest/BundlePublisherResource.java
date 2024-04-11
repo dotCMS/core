@@ -21,6 +21,7 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -70,7 +71,7 @@ public class BundlePublisherResource {
 		}
 
 		final ResourceResponse responseResource = new ResourceResponse(
-				Map.of("type", type, "callback", callback));
+				new HashMap<>(Map.of("type", type, "callback", callback)));
 		final String remoteIP = UtilMethods.isSet(request.getRemoteHost())?
 				request.getRemoteHost() : request.getRemoteAddr();
 

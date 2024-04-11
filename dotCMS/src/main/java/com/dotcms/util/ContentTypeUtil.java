@@ -20,6 +20,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -179,13 +181,13 @@ public class ContentTypeUtil {
                 final PortletURL portletURL =
                         new PortletURLImpl(request, PortletID.CONTENT.toString(), contentLayout.getId(), true);
                 portletURL.setWindowState(WindowState.MAXIMIZED);
-                portletURL.setParameters(Map.of(
+                portletURL.setParameters(new HashMap<>(Map.of(
                         "struts_action", new String[] {strutsAction},
                         "cmd", new String[] {"new"},
                         "referer", new String[] {referrer},
                         "inode", new String[] {""},
                         "selectedStructure", new String[] {contentTypeInode},
-                        "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()}));
+                        "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()})));
                 actionUrl = portletURL.toString();
             } else {
                 Logger.info(this, "Layouts are empty for the user: " + user.getUserId());
@@ -218,12 +220,12 @@ public class ContentTypeUtil {
                     final User user) throws WindowStateException {
         final PortletURL portletURL = new PortletURLImpl(request, PortletID.CONTENT.toString(), layout.getId(), true);
         portletURL.setWindowState(WindowState.MAXIMIZED);
-        portletURL.setParameters(Map.of(
-                        "struts_action", new String[] {"/ext/contentlet/view_contentlets"}, 
-                        "cmd", new String[] {"new"}, 
-                        "inode", new String[] {""}, 
-                        "structure_id", new String[] {contentTypeInode}, 
-                        "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()}));
+        portletURL.setParameters(new HashMap<>(Map.of(
+                "struts_action", new String[] {"/ext/contentlet/view_contentlets"},
+                "cmd", new String[] {"new"},
+                "inode", new String[] {""},
+                "structure_id", new String[] {contentTypeInode},
+                "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()})));
         return portletURL.toString();
     }
 

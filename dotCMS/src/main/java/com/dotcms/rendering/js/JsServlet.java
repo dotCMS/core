@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -84,9 +85,9 @@ public class JsServlet extends HttpServlet {
 
             final ScriptEngine engine = ScriptEngineFactory.getInstance().getEngine(ScriptEngineFactory.JAVASCRIPT_ENGINE);
             final Object result       = engine.eval(request, response, reader,
-                    Map.of("mode", mode,
+                    new HashMap<>(Map.of("mode", mode,
                             "user", user,
-                            "uri", currentUri));
+                            "uri", currentUri)));
 
             final String output = result.toString();
             response.getOutputStream().write(output.getBytes());

@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -233,13 +234,13 @@ public class PublishAuditAPITest {
         final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
 
         final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
-        publishAuditHistory.setAssets(Map.of(
+        publishAuditHistory.setAssets(new HashMap<>(Map.of(
                 contentType.id(), PusheableAsset.CONTENT_TYPE.toString(),
                 contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_3.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_4.getIdentifier(), PusheableAsset.CONTENTLET.toString()
-        ));
+        )));
         publishAuditStatus.setStatusPojo(publishAuditHistory);
         publishAuditAPI.insertPublishAuditStatus(publishAuditStatus);
 
@@ -280,12 +281,12 @@ public class PublishAuditAPITest {
         final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
 
         final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
-        publishAuditHistory.setAssets(Map.of(
+        publishAuditHistory.setAssets(new HashMap<>(Map.of(
                 contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_3.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_4.getIdentifier(), PusheableAsset.CONTENTLET.toString()
-        ));
+        )));
         publishAuditStatus.setStatusPojo(publishAuditHistory);
         publishAuditAPI.insertPublishAuditStatus(publishAuditStatus);
 
@@ -330,13 +331,13 @@ public class PublishAuditAPITest {
         final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
 
         final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
-        publishAuditHistory.setAssets(Map.of(
+        publishAuditHistory.setAssets(new HashMap<>(Map.of(
                 contentType.id(), PusheableAsset.CONTENT_TYPE.toString(),
                 contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_3.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
                 contentlet_4.getIdentifier(), PusheableAsset.CONTENTLET.toString()
-        ));
+        )));
         publishAuditStatus.setStatusPojo(publishAuditHistory);
         publishAuditAPI.insertPublishAuditStatus(publishAuditStatus);
 

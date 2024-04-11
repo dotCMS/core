@@ -7,6 +7,7 @@ import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.metrics.timing.TimeMetric;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.Logger;
@@ -87,7 +88,7 @@ public class CubeJSClient {
                 .setMethod(Method.GET)
                 .setHeaders(cubeJsHeaders(accessToken))
                 .setUrl(cubeJsUrl)
-                .setParams(Map.of("query", queryAsString))
+                .setParams(new HashMap<>(Map.of("query", queryAsString)))
                 .setTimeout(4000)
                 .setThrowWhenNot2xx(false)
                 .build();

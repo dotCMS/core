@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -46,7 +47,7 @@ public class VelocityScriptEngine implements ScriptEngine {
             }
         }
 
-        return Map.of("output", evalResult, "dotJSON", context.get("dotJSON"));
+        return new HashMap<>(Map.of("output", evalResult, "dotJSON", context.get("dotJSON")));
     }
 
 }

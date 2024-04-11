@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.cube.filters.Filter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -73,7 +74,7 @@ public class SimpleFilter implements Filter {
 
     @Override
     public Map<String, Object> asMap(){
-        return Map.of("member", member, "operator", operator.getKey(), "values", values);
+        return new HashMap<>(Map.of("member", member, "operator", operator.getKey(), "values", values));
     }
 
     public enum Operator {
