@@ -137,7 +137,7 @@ jobs:
           SLACK_FOOTER: ""
           SLACK_ICON: https://slackmojis.com/emojis/5432-this-is-fine/download
           SLACK_MESSAGE: "Attention <!channel>! Broken build at `${{ github.ref_name }}`.\nPlease check the run at: ${{ steps.workflow-data.outputs.action_run_url }}"
-        if: steps.workflow-data.outputs.status != 'SUCCESS'
+        if: steps.workflow-data.outputs.status != 'SUCCESS' && steps.workflow-data.outputs.branch == 'master'
 
       - name: Prepare Slack Message Payload
         id: prepare-slack-message
