@@ -17,14 +17,24 @@ import {
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowActionsFireService,
+    PushPublishService
 } from '@dotcms/data-access';
-import { LoginService, SiteService, mockSites } from '@dotcms/dotcms-js';
+import {
+    DotcmsConfigService,
+    DotcmsEventsService,
+    LoginService,
+    SiteService,
+    mockSites
+} from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
+    DotcmsConfigServiceMock,
+    DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -72,6 +82,33 @@ describe('DotEmaShellComponent', () => {
             DotActionUrlService,
             DotMessageService,
             DialogService,
+            DotWorkflowActionsFireService,
+
+            {
+                provide: DotcmsConfigService,
+                useValue: new DotcmsConfigServiceMock()
+            },
+            {
+                provide: DotcmsEventsService,
+                useValue: new DotcmsEventsServiceMock()
+            },
+            {
+                provide: PushPublishService,
+                useValue: {
+                    getEnvironments() {
+                        return of([
+                            {
+                                id: '123',
+                                name: 'Environment 1'
+                            },
+                            {
+                                id: '456',
+                                name: 'Environment 2'
+                            }
+                        ]);
+                    }
+                }
+            },
             {
                 provide: DotExperimentsService,
                 useValue: DotExperimentsServiceMock

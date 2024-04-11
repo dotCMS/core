@@ -171,7 +171,7 @@ describe('DotWizardComponent', () => {
             dotWizardService.open(wizardInput);
             fixture.detectChanges();
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            tick(201); // interval time to focus first element.
+            tick(2001); // interval time to focus first element.
             fixture.detectChanges();
             acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
             closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
@@ -320,7 +320,7 @@ describe('DotWizardComponent', () => {
             dotWizardService.open({ steps: [wizardInput.steps[0]], title: '' });
             fixture.detectChanges();
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            tick(1000); // interval time to focus first element.
+            tick(2001); // interval time to focus first element.
             fixture.detectChanges();
             closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
         }));

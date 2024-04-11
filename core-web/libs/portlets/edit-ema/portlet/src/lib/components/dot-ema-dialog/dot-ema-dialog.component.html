@@ -7,6 +7,7 @@
     [maximizable]="true"
     [modal]="true"
     (visibleChange)="resetDialog()"
+    appendTo="body"
     data-testId="dialog"
     styleClass="edit-ema-dialog">
     <ng-container [ngSwitch]="ds.type">
