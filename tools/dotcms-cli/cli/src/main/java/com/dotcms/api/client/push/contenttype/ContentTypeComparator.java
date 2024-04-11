@@ -41,7 +41,7 @@ public class ContentTypeComparator implements ContentComparator<ContentType> {
 
     @ActivateRequestContext
     @Override
-    public Optional<ContentType> localContains(ContentType serverContent, List<File> localFiles,
+    public boolean existMatchingLocalContent(ContentType serverContent, List<File> localFiles,
             List<ContentType> localSites) {
 
         // Compare by identifier first.
@@ -53,7 +53,7 @@ public class ContentTypeComparator implements ContentComparator<ContentType> {
             result = findByVarName(serverContent.variable(), localSites);
         }
 
-        return result;
+        return result.isPresent();
     }
 
     @ActivateRequestContext

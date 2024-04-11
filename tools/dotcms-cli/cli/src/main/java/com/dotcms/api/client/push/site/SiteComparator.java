@@ -43,7 +43,7 @@ public class SiteComparator implements ContentComparator<SiteView> {
 
     @ActivateRequestContext
     @Override
-    public Optional<SiteView> localContains(SiteView serverContent, List<File> localFiles,
+    public boolean existMatchingLocalContent(SiteView serverContent, List<File> localFiles,
             List<SiteView> localSites) {
 
         // Compare by identifier first.
@@ -55,7 +55,7 @@ public class SiteComparator implements ContentComparator<SiteView> {
             result = findBySiteName(serverContent.siteName(), localSites);
         }
 
-        return result;
+        return result.isPresent();
     }
 
     @ActivateRequestContext

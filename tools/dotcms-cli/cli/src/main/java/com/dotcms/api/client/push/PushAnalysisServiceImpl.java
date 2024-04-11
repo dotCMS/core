@@ -162,8 +162,10 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
 
         for (T serverContent : serverContents) {
 
-            var local = comparator.localContains(serverContent, localFiles, localContents);
-            if (local.isEmpty()) {
+            var localMatch = comparator.existMatchingLocalContent(
+                    serverContent, localFiles, localContents
+            );
+            if (!localMatch) {
                 removals.add(
                         PushAnalysisResult.<T>builder().
                                 action(PushAction.REMOVE).

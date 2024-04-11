@@ -44,7 +44,7 @@ public class LanguageComparator implements ContentComparator<Language> {
 
     @ActivateRequestContext
     @Override
-    public Optional<Language> localContains(Language serverContent, List<File> localFiles,
+    public boolean existMatchingLocalContent(Language serverContent, List<File> localFiles,
             List<Language> localLanguages) {
 
         // Compare by ISO code first.
@@ -56,7 +56,20 @@ public class LanguageComparator implements ContentComparator<Language> {
             result = findById(serverContent.id(), localLanguages);
         }
 
-        return result;
+        // If nothing was found let's use the file name as a last resort, this is useful because the
+        // file name is the ISO code, and someone might have changed the ISO code in the json file,
+        // confusing the validation process, processing it as the language does not exist locally
+        // but only in the server.
+        if (result.isEmpty()) {
+            for (var file : localFiles) {
+                if (getFileName(file).equalsIgnoreCase(serverContent.isoCode())) {
+                    // The ISO changed
+                    return true;
+                }
+            }
+        }
+
+        return result.isPresent();
     }
 
     @ActivateRequestContext

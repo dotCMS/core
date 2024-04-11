@@ -37,10 +37,11 @@ public interface ContentComparator<T> {
      * @param serverContent the server content to check for containment
      * @param localFiles    the list of local files representing the local contents
      * @param localContents the list of local contents to search for containment
-     * @return an Optional containing the matching local content if found, or an empty Optional if
-     * not found.
+     * @return true if the server content is contained within the list of local contents, false
+     * otherwise
      */
-    Optional<T> localContains(T serverContent, List<File> localFiles, List<T> localContents);
+    boolean existMatchingLocalContent(T serverContent, List<File> localFiles,
+            List<T> localContents);
 
     /**
      * Checks if the given local content and server content are equal.
