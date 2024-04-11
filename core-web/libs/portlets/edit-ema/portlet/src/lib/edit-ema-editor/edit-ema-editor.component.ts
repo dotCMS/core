@@ -634,8 +634,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
-                this.reloadIframe();
-
                 this.messageService.add({
                     severity: 'success',
                     summary: this.dotMessageService.get(
@@ -643,6 +641,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     ),
                     detail: this.dotMessageService.get('message.menu.reordered'),
                     life: 2000
+                });
+
+                this.store.reload({
+                    params: this.queryParams
                 });
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
