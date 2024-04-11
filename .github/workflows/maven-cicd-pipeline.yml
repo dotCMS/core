@@ -62,7 +62,7 @@ jobs:
           backend=${{ steps.filter.outputs.backend }}
           build=${{ steps.filter.outputs.build }}
           jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
-
+          
           # Check if the commit is to the master branch
           is_master=$(echo ${{ github.ref }} | sed -n 's/refs\/heads\/master/&/p')
           skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
@@ -76,6 +76,7 @@ jobs:
             backend=true
             jvm_unit_test=true
           fi
+
           # The below line ensures that if skip_tests is true, all tests are set to false.
           if [ "$skip_tests" == "true" ]; then
             echo "Skipping tests as per CICD_SKIP_TESTS flag."
@@ -174,12 +175,20 @@ jobs:
           path: ${{ env.DOCKER_BUILD_CONTEXT }}/docker-build.tar
       - name: Save Docker image to a tar file
         run: docker save ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }} > image.tar
-
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
         with:
           name: docker-image
           path: image.tar
+      - name: Core Build Report
+        uses: actions/upload-artifact@v4
+        if: always() && !cancelled()
+        with:
+          name: "build-reports-Initial JDK 11 Build"
+          path: |
+            target/build-reports.json
+            LICENSE
+          retention-days: 2
 
   #
   # Run all JVM Unit Tests in parallel with other tests
@@ -694,7 +703,6 @@ jobs:
           echo "\"pr_title\": $PR_TITLE_JQ," >> workflow-data.json
           echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",' >> workflow-data.json
           echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",' >> workflow-data.json
-          
           
           echo '"build_reports": [' >> workflow-data.json
           total_reports=$(find /tmp/build-step-reports/build-reports-*/target -name build-report.json 2>/dev/null | wc -l)
