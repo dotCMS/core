@@ -1,22 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { RouterLink } from '@angular/router';
-
-import { ChipModule } from 'primeng/chip';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
-import {
-    DotApiLinkComponent,
-    DotCopyButtonComponent,
-    DotLinkComponent,
-    DotMessagePipe,
-    DotRelativeDatePipe
-} from '@dotcms/ui';
+import { DotApiLinkComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
+import { DotContentAsideInformationComponent } from './components/dot-content-aside-metadata/dot-content-aside-information.component';
 import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
-
-import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
 
 @Component({
     selector: 'dot-edit-content-aside',
@@ -27,15 +16,9 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
     imports: [
         CommonModule,
         DotApiLinkComponent,
-        DotCopyButtonComponent,
         DotRelativeDatePipe,
-        ChipModule,
         DotMessagePipe,
-        ContentletStatusPipe,
-        RouterLink,
-        DotLinkComponent,
-        TooltipModule,
-        DotRelativeDatePipe,
+        DotContentAsideInformationComponent,
         DotContentAsideWorkflowComponent
     ]
 })

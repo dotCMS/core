@@ -3,78 +3,10 @@
         <div class="content-aside__header">
             <label aria-label="Information">{{ 'Information' | dm }}</label>
         </div>
-        <div class="content-aside__information">
-            <dd class="content-aside__status">
-                @if(contentlet | contentletStatus; as status) {
-                <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
-                } @if(contentlet?.inode; as inode) {
-                <dot-copy-button
-                    [copy]="inode"
-                    [tooltipText]="'ID: ' + inode"
-                    [label]="'ID: ' + (inode | slice : -10)"
-                    data-testId="inode"
-                    aria-label="Copy ID" />
-                }
-            </dd>
-            <dd class="content-aside__metadata">
-                <div
-                    class="sidebar-card"
-                    [routerLink]="'/content-types-angular/edit/' + contentType.name">
-                    <div class="sidebar-card__header">
-                        <span>{{ 'Content-Type' | dm }}</span>
-                    </div>
-                    <label class="sidebar-card__label">{{ contentType.name }}</label>
-                </div>
-                <div class="sidebar-card">
-                    <div class="sidebar-card__header">
-                        <span>{{ 'References' | dm }}</span>
-                        <i class="pi pi-eye"></i>
-                    </div>
-                    <label class="sidebar-card__label">Used in 5 pages</label>
-                </div>
-                <div class="content-history__container">
-                    @if(contentlet?.publishDate) {
-                    <div
-                        class="content-history"
-                        [pTooltip]="contentlet?.publishDate | date : 'MMM dd, yyyy'"
-                        tooltipPosition="bottom">
-                        <label class="content-history__title">{{ 'Published' | dm }}</label>
-                        <label class="content-history__author">{{
-                            contentlet?.publishUserName || 'W. Warren'
-                        }}</label>
-                        <label class="content-history__date">{{
-                            contentlet?.publishDate | dotRelativeDate : 'MM/dd/yyyy' : null
-                        }}</label>
-                    </div>
-                    } @if(contentlet?.modDate) {
-                    <div
-                        class="content-history"
-                        [pTooltip]="contentlet?.modDate | date : 'MMM dd, yyyy'"
-                        tooltipPosition="bottom">
-                        <label class="content-history__title">{{ 'Modified' | dm }}</label>
-                        <label class="content-history__author">{{
-                            contentlet?.modUserName || '&mdash;&mdash;'
-                        }}</label>
-                        <label class="content-history__date">{{
-                            contentlet?.modDate | dotRelativeDate : 'MM/dd/yyyy' : null
-                        }}</label>
-                    </div>
-                    }
-                    <div
-                        class="content-history"
-                        [pTooltip]="contentlet?.createDate | date : 'MMM dd, yyyy'"
-                        tooltipPosition="bottom">
-                        <label class="content-history__title">{{ 'Created' | dm }}</label>
-                        <label class="content-history__author">{{
-                            contentlet?.ownerName || 'A. User'
-                        }}</label>
-                        <label class="content-history__date">{{
-                            contentlet?.createDate | dotRelativeDate : 'MM/dd/yyyy' : null
-                        }}</label>
-                    </div>
-                </div>
-            </dd>
-        </div>
+        <dot-content-aside-information
+            [contentlet]="contentlet"
+            [contentType]="contentType.name"
+            data-testId="information" />
     </section>
 
     <section class="content-aside__section">
