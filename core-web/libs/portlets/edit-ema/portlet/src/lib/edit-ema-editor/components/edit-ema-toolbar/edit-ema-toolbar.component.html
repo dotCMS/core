@@ -68,6 +68,15 @@
                 *ngIf="es.editorData.mode === editorMode.EDIT"
                 [inode]="es.editor.page.inode"
                 (newPage)="handleNewPage($event)" />
+
+            @if(es.editorData.page.isLocked && es.editorData.page.canLock) {
+            <p-button
+                [label]="'Unlock' | dm"
+                [loading]="es.state === editorState.LOADING"
+                (click)="unlockPage(es.editor.page.inode)"
+                styleClass="p-button-sm"
+                data-testId="unlock-button"></p-button>
+            }
         </div>
     </p-toolbar>
     <dot-ema-info-display
