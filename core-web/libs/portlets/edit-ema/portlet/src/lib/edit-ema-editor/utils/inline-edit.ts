@@ -76,6 +76,7 @@ export function handleInlineEdit(e: MouseEvent): void {
     e.stopPropagation();
     e.preventDefault();
 
+    // TODO: Implement the dialog to edit here or all pages
     // if(isInMultiplePages(target)) {
     //     window.contentletEvents.next({
     //         name: "showCopyModal",
