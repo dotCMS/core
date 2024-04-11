@@ -150,5 +150,11 @@ function handleInlineEditEvents(editor) {
             e.stopImmediatePropagation();
             ed.destroy(false);
         }
+
+        // TODO: Implement the save in the new editor
+        // window.contentletEvents.next({
+        //     name: "inlineEdit",
+        //     data,
+        // });
     });
 }
