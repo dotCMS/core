@@ -5,26 +5,25 @@
         </div>
         <div class="content-aside__information">
             <dd class="content-aside__status">
-                <p-chip
-                    *ngIf="contentlet | contentletStatus as status"
-                    [styleClass]="'p-chip-sm ' + status.classes"
-                    [label]="status.label" />
-
+                @if(contentlet | contentletStatus; as status) {
+                <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
+                } @if(contentlet?.inode; as inode) {
                 <dot-copy-button
-                    [copy]="contentlet?.inode"
-                    [tooltipText]="'ID: ' + contentlet?.inode"
-                    [label]="'ID: ' + (contentlet?.inode | slice : -10)"
+                    [copy]="inode"
+                    [tooltipText]="'ID: ' + inode"
+                    [label]="'ID: ' + (inode | slice : -10)"
                     data-testId="inode"
                     aria-label="Copy ID" />
+                }
             </dd>
             <dd class="content-aside__metadata">
                 <div
                     class="sidebar-card"
-                    [routerLink]="'/content-types-angular/edit/' + contentType">
+                    [routerLink]="'/content-types-angular/edit/' + contentType.name">
                     <div class="sidebar-card__header">
-                        <span>Content Type</span>
+                        <span>{{ 'Content-Type' | dm }}</span>
                     </div>
-                    <label class="sidebar-card__label">{{ contentlet.contentType }}</label>
+                    <label class="sidebar-card__label">{{ contentType.name }}</label>
                 </div>
                 <div class="sidebar-card">
                     <div class="sidebar-card__header">
@@ -34,38 +33,43 @@
                     <label class="sidebar-card__label">Used in 5 pages</label>
                 </div>
                 <div class="content-history__container">
+                    @if(contentlet?.publishDate) {
                     <div
                         class="content-history"
-                        [pTooltip]="contentlet.publishDate | date : 'MMM dd, yyyy'"
+                        [pTooltip]="contentlet?.publishDate | date : 'MMM dd, yyyy'"
                         tooltipPosition="bottom">
                         <label class="content-history__title">{{ 'Published' | dm }}</label>
                         <label class="content-history__author">{{
-                            contentlet.publishUserName || 'W. Warren'
+                            contentlet?.publishUserName || 'W. Warren'
                         }}</label>
                         <label class="content-history__date">{{
-                            contentlet.publishDate | dotRelativeDate : 'MM/dd/yyyy' : null
+                            contentlet?.publishDate | dotRelativeDate : 'MM/dd/yyyy' : null
                         }}</label>
                     </div>
+                    } @if(contentlet?.modDate) {
                     <div
                         class="content-history"
-                        [pTooltip]="contentlet.modDate | date : 'MMM dd, yyyy'"
+                        [pTooltip]="contentlet?.modDate | date : 'MMM dd, yyyy'"
                         tooltipPosition="bottom">
                         <label class="content-history__title">{{ 'Modified' | dm }}</label>
-                        <label class="content-history__author">{{ contentlet.modUserName }}</label>
+                        <label class="content-history__author">{{
+                            contentlet?.modUserName || '&mdash;&mdash;'
+                        }}</label>
                         <label class="content-history__date">{{
-                            contentlet.modDate | dotRelativeDate : 'MM/dd/yyyy' : null
+                            contentlet?.modDate | dotRelativeDate : 'MM/dd/yyyy' : null
                         }}</label>
                     </div>
+                    }
                     <div
                         class="content-history"
-                        [pTooltip]="contentlet.createDate | date : 'MMM dd, yyyy'"
+                        [pTooltip]="contentlet?.createDate | date : 'MMM dd, yyyy'"
                         tooltipPosition="bottom">
                         <label class="content-history__title">{{ 'Created' | dm }}</label>
                         <label class="content-history__author">{{
-                            contentlet.ownerName || 'A. User'
+                            contentlet?.ownerName || 'A. User'
                         }}</label>
                         <label class="content-history__date">{{
-                            contentlet.createDate | dotRelativeDate : 'MM/dd/yyyy' : null
+                            contentlet?.createDate | dotRelativeDate : 'MM/dd/yyyy' : null
                         }}</label>
                     </div>
                 </div>
@@ -78,34 +82,12 @@
             <label aria-label="Workflow">{{ 'Workflow' | dm }}</label>
             <div class="content-aside__icon">
                 <i class="pi pi-history"></i>
-                <label>Show All</label>
+                <label>{{ 'show-all' | dm }}</label>
             </div>
         </div>
-        <div class="content-aside__workflow" *ngIf="workflow$ | async as workflow">
-            <div class="content-aside__label-item">
-                <dt>{{ 'Workflow' | dm }}</dt>
-                <dd data-testId="workflow-name">
-                    {{ workflow.scheme?.name }}
-                </dd>
-            </div>
-            <div class="content-aside__label-item">
-                <dt>{{ 'Step' | dm }}</dt>
-                <dd data-testId="workflow-step">
-                    {{ workflow?.step?.name ?? 'New' }}
-                </dd>
-            </div>
-            <div class="content-aside__label-item">
-                <dt>{{ 'Content-Type' | dm }}</dt>
-                <dd data-testId="workflow-step">
-                    {{ contentlet.contentType }}
-                </dd>
-            </div>
-            <div class="content-aside__label-item">
-                <dt>{{ 'Assignee' | dm }}</dt>
-                <dd data-testId="workflow-assigned">
-                    {{ workflow.task?.assignedTo }}
-                </dd>
-            </div>
-        </div>
+        <dot-content-aside-workflow
+            [inode]="contentlet?.inode"
+            [contentType]="contentType"
+            data-testId="workflow" />
     </section>
 </aside>

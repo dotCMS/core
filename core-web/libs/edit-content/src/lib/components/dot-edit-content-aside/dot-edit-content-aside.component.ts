@@ -1,14 +1,11 @@
-import { Observable, of } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ChipModule } from 'primeng/chip';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotWorkflowService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
@@ -16,6 +13,8 @@ import {
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
+
+import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
 
 import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
 
@@ -36,21 +35,11 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
         RouterLink,
         DotLinkComponent,
         TooltipModule,
-        DotRelativeDatePipe
-    ],
-    providers: [DotWorkflowService]
+        DotRelativeDatePipe,
+        DotContentAsideWorkflowComponent
+    ]
 })
-export class DotEditContentAsideComponent implements OnInit {
+export class DotEditContentAsideComponent {
     @Input() contentlet!: DotCMSContentlet;
-    @Input() contentType!: string;
-
-    private readonly workflowService = inject(DotWorkflowService);
-
-    workflow$!: Observable<DotCMSWorkflowStatus>;
-
-    ngOnInit() {
-        this.workflow$ = this.contentlet?.inode
-            ? this.workflowService.getWorkflowStatus(this.contentlet.inode)
-            : of({ scheme: null, step: null, task: null });
-    }
+    @Input() contentType!: DotCMSContentType;
 }
