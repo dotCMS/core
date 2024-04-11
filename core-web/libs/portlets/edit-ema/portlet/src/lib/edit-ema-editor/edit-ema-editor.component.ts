@@ -1,146 +1,3 @@
-const INLINE_TINYMCE_SCRIPTS = `
-    function handleInlineEditEvents(editor) {
-        editor.on("focus blur", (e) => {
-            const { target: ed, type: eventType } = e;
-
-            const content = ed.getContent();
-            const dataset = ed.targetElm.dataset;
-            const element = ed.targetElm;
-            const container = ed.bodyElement.closest('[data-dot-object="container"]');
-            const data = {
-                dataset,
-                innerHTML: content,
-                element,
-                eventType,
-                isNotDirty: ed.isNotDirty,
-            }
-
-            // For full editor we are adding pointer-events: none to all it children, 
-            // this is the way we can capture the click to init in the editor itself, after the editor 
-            // is initialized and clicked we set the pointer-events: auto so users can use the editor as intended.
-            if (eventType === "focus" && dataset.mode) {
-                container.classList.add("inline-editing")
-                ed.bodyElement.classList.add("active");
-            }
-
-            if (eventType === "blur" && ed.bodyElement.classList.contains("active")) {
-                container.classList.remove("inline-editing")
-                ed.bodyElement.classList.remove("active");
-            }
-
-            if (eventType === "blur") {
-                e.stopImmediatePropagation();
-                ed.destroy(false);
-            }
-        });
-    }
-
-    const defaultConfig = {
-        menubar: false,
-        inline: true,
-        valid_styles: {
-            "*": "font-size,font-family,color,text-decoration,text-align",
-        },
-        powerpaste_word_import: "clean",
-        powerpaste_html_import: "clean",
-        setup: (editor) => handleInlineEditEvents(editor)
-    };
-
-    const tinyMCEConfig = {
-    minimal: {
-        plugins: ["link", "autolink"],
-        toolbar: "bold italic underline | link",
-        valid_elements: "strong,em,span[style],a[href]",
-        content_css: ["//fonts.googleapis.com/css?family=Lato:300,300i,400,400i"],
-        ...defaultConfig,
-    },
-    full: {
-        plugins: ["link", "lists", "autolink", "hr", "charmap"],
-        style_formats: [
-        { title: "Paragraph", format: "p" },
-        { title: "Header 1", format: "h1" },
-        { title: "Header 2", format: "h2" },
-        { title: "Header 3", format: "h3" },
-        { title: "Header 4", format: "h4" },
-        { title: "Header 5", format: "h5" },
-        { title: "Header 6", format: "h6" },
-        { title: "Pre", format: "pre" },
-        { title: "Code", format: "code" },
-        ],
-        toolbar: [
-        "styleselect | undo redo | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignfull | numlist bullist outdent indent | hr charmap removeformat | link",
-        ],
-        ...defaultConfig,
-    },
-    };
-
-    document.addEventListener("click", function (event) {
-        const { target } = event;
-        const { dataset } = target;
-
-        // if the mode is falsy we do not initialize tinymce.
-        if (!dataset.mode) {
-            return;
-        }
-
-        event?.stopPropagation();
-        event?.preventDefault();
-
-        if(isInMultiplePages(target)) {
-            window.contentletEvents.next({
-                name: "showCopyModal",
-                data: showCopyModalData(target)
-            });
-
-            return;
-        };
-
-        initEdit(target);
-    });
-
-    // Register this function into the windows (?) so we can call it from the Angular
-    function initEdit(editorElement) {
-        console.log('INIT EDIT', editorElement);
-        
-        const { dataset } = editorElement;
-        const dataSelector =
-            '[data-inode="' +
-            dataset.inode +
-            '"][data-field-name="' +
-            dataset.fieldName +
-            '"]';
-
-        console.log('DATA SELECTOR', dataSelector);
-        
-
-        tinymce
-        .init({
-            ...tinyMCEConfig[dataset.mode || 'minimal'],
-            selector: dataSelector,
-        })
-        .then(([ed]) => {
-            ed?.editorCommands.execCommand("mceFocus");
-        });
-    }
-
-    function isInMultiplePages(editorElement) {
-        const contentlet = editorElement.closest('[data-dot-object="contentlet"]');
-        return Number(contentlet.dataset.dotOnNumberOfPages || 0) > 1;
-    }
-
-    function showCopyModalData(element) {
-        const container = element.closest('[data-dot-object="container"]');
-        const contentlet = element.closest('[data-dot-object="contentlet"]');
-
-        return {
-            container,
-            contentlet,
-            selector: "[data-mode]",
-            initEdit
-        }
-    }
-`;
-
 import { Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -200,6 +57,7 @@ import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { EmaDragItem, ClientContentletArea, Container } from './components/ema-page-dropzone/types';
+import { handleInlineEdit, handleInternalNav, injectInlineEdit } from './utils/inline-edit';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
@@ -390,63 +248,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe(() => {
                 requestAnimationFrame(() => {
                     const doc = this.iframe.nativeElement.contentDocument;
+                    const win = this.iframe.nativeElement.contentWindow;
 
-                    if (!doc.querySelector('script[data-inline="true"]')) {
-                        console.log('ADD TINY');
+                    injectInlineEdit(doc);
 
-                        const script1 = doc.createElement('script');
-                        script1.text = INLINE_TINYMCE_SCRIPTS;
-
-                        const script = doc.createElement('script');
-                        script.dataset.inline = 'true';
-                        script.src = '/html/js/tinymce/js/tinymce/tinymce.min.js';
-
-                        const style = doc.createElement('style');
-                        style.innerHTML = `
-                            [data-inode][data-field-name][data-mode] {
-                                cursor: text;
-                                border: 1px solid #53c2f9 !important;
-                                display: block;
-                            }
-                        `;
-
-                        doc.body.appendChild(script);
-                        doc.body.appendChild(script1);
-                        doc.body.appendChild(style);
-                    }
-
-                    this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
-                        const href =
-                            (e.target as HTMLAnchorElement).href ||
-                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement)?.href;
-
-                        if (href) {
-                            e.preventDefault();
-                            const url = new URL(href);
-
-                            // Check if the URL is not external
-                            if (url.hostname === window.location.hostname) {
-                                this.updateQueryParams({
-                                    url: url.pathname
-                                });
-
-                                return;
-                            }
-
-                            // Open external links in a new tab
-                            this.window.open(href, '_blank');
-                        }
-
-                        // function blurHandler() {
-                        //     this.contentEditable = 'false';
-                        //     console.log('blur', this.innerText);
-                        //     target.removeEventListener('blur', blurHandler);
-                        // }
-
-                        // target.addEventListener('blur', blurHandler);
-
-                        // target.contentEditable = 'true';
-                        // target.focus();
+                    win.addEventListener('click', (e) => {
+                        handleInternalNav(e);
+                        handleInlineEdit(e);
                     });
                 });
             });

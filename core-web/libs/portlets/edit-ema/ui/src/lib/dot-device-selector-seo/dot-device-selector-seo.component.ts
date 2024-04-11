@@ -205,8 +205,6 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         if (value) {
             const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
 
-            console.log(value);
-
             this.previewUrl = `${frontEndUrl}${
                 frontEndUrl.indexOf('?') != -1 ? '&' : '?'
             }disabledNavigateMode=true&mode=LIVE_MODE`;
