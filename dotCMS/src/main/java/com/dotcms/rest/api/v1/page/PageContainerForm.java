@@ -11,7 +11,6 @@ import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This class contains all the Contentlets that make up an HTML Page. It provides the list of Containers in it, and the
@@ -118,8 +117,7 @@ public class PageContainerForm {
         }
 
         public List<String> getContentIds() {
-            return contentIds.stream().filter(contentletId -> !contentletId.equals("TEMP_EMPTY_CONTENTLET"))
-                    .collect(Collectors.toList());
+            return contentIds;
         }
 
         public void addContentId(final String contentId) {
