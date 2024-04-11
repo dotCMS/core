@@ -918,8 +918,6 @@ function getMouseXY() {
 }
 
 function triggerCustomEvent(name, data) {
-  console.log("I'M UPDATED");
-
   var customEvent = document.createEvent("CustomEvent");
   customEvent.initCustomEvent("ng-event", false, false, {
     name: name,

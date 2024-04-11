@@ -646,6 +646,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.reload({
                     params: this.queryParams
                 });
+                this.dialog.resetDialog();
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
