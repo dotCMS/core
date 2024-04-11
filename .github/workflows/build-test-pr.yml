@@ -40,11 +40,11 @@ jobs:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
   sonar:
     name: PR SonarQube
-    needs: [ test ]
+    needs: [ initialize,build ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/reusable-sonarqube.yml
   finalize:
     name: Finalize
     if: always()
-    needs: [ sonar ]
+    needs: [ sonar,test ]
     uses: ./.github/workflows/reusable-finalize.yml

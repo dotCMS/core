@@ -65,7 +65,7 @@ jobs:
       branch: ${{ github.ref }}
 
   deployment:
-    needs: [ initialize,build-cli,test ]
+    needs: [ initialize,build-cli,sonar,test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/reusable-deployment.yml
     with:
