@@ -186,6 +186,10 @@ export class DotEmaDialogComponent {
         this.store.loadingIframe(title);
     }
 
+    openDialogOnUrl(url: string, title: string) {
+        this.store.openDialogOnURL({ url, title });
+    }
+
     /**
      * Iframe load event
      *

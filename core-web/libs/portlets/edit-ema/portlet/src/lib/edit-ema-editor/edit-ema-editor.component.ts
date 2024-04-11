@@ -71,7 +71,8 @@ import {
     ContainerPayload,
     ContentletPayload,
     PageContainer,
-    VTLFile
+    VTLFile,
+    ReorderPayload
 } from '../shared/models';
 import {
     areContainersEquals,
@@ -248,8 +249,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 requestAnimationFrame(() => {
                     this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
                         const href =
-                            (e.target as HTMLAnchorElement).href ||
-                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
+                            (e.target as HTMLAnchorElement)?.href ||
+                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement)?.href;
 
                         if (href) {
                             e.preventDefault();
@@ -650,7 +651,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea;
+            payload:
+                | ActionPayload
+                | SetUrlPayload
+                | Container[]
+                | ClientContentletArea
+                | ReorderPayload;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -695,6 +701,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
                 );
+            },
+            [CUSTOMER_ACTIONS.REORDER_MENU]: () => {
+                const { reorderUrl } = <ReorderPayload>data.payload;
+
+                this.dialog.openDialogOnUrl(reorderUrl, 'Reorder Menu');
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */

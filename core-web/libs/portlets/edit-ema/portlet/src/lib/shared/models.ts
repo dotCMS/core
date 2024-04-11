@@ -20,6 +20,10 @@ export interface PositionPayload extends ClientData {
     position?: 'before' | 'after';
 }
 
+export interface ReorderPayload {
+    reorderUrl: string;
+}
+
 export interface ActionPayload extends PositionPayload {
     language_id: string;
     pageContainers: PageContainer[];
