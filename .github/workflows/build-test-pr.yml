@@ -43,6 +43,9 @@ jobs:
     needs: [ initialize,build ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/reusable-sonarqube.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
   finalize:
     name: Finalize
     if: always()

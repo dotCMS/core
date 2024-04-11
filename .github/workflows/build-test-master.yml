@@ -52,6 +52,9 @@ jobs:
     uses: ./.github/workflows/reusable-sonarqube.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
     #
     # Run CLI build artifacts
     #

@@ -6,6 +6,12 @@ on:
         description: 'The run id of the build to download artifacts from.'
         default: ${{ github.run_id }}
         type: string
+    secrets:
+      SONAR_TOKEN:
+        required: true
+      SONAR_HOST_URL:
+        required: true
+
 jobs:
   sonarqube:
     name: SonarQube Scan
