@@ -129,7 +129,7 @@ runs:
       uses: docker/metadata-action@v5
       with:
         images: |
-          ${ inputs.image_name }
+          ${{ inputs.image_name }}
         tags: ${{ env.FULL_TAGS_OUTPUT }}
       if: success()
 
