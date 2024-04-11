@@ -11,7 +11,6 @@ jobs:
     name: SonarQube Scan
     runs-on: ubuntu-latest
     if: |
-      (github.repository == 'dotCMS/core') &&
       (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +19,7 @@ jobs:
       - name: Setup master branch locally without switching current branch
         if: github.ref != 'refs/heads/master'
         run: git fetch origin master:master
+        continue-on-error: ${{ github.repository != 'dotCMS/core' }}
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -65,7 +65,7 @@ jobs:
       - name: SonarQube Quality Gate check
         id: sonarqube-quality-gate-check
         uses: sonarsource/sonarqube-quality-gate-action@master
-        continue-on-error: false
+        continue-on-error: ${{ github.repository != 'dotCMS/core' }}
         # Force to fail step after specific time.
         timeout-minutes: 10
         with:
