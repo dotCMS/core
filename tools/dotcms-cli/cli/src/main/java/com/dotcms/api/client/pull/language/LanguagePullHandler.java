@@ -1,7 +1,7 @@
 package com.dotcms.api.client.pull.language;
 
 import com.dotcms.api.client.pull.GeneralPullHandler;
-import com.dotcms.api.client.util.NameUtil;
+import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
@@ -31,7 +31,7 @@ public class LanguagePullHandler extends GeneralPullHandler<Language> {
 
     @Override
     public String fileName(final Language language) {
-        return NameUtil.languageFileName(language);
+        return NamingUtils.languageFileName(language);
     }
 
     @Override

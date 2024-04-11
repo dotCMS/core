@@ -3,7 +3,7 @@ package com.dotcms.api.client.push.language;
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.PushHandler;
-import com.dotcms.api.client.util.NameUtil;
+import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.model.language.Language;
 import java.io.File;
 import java.util.Map;
@@ -30,7 +30,7 @@ public class LanguagePushHandler implements PushHandler<Language> {
 
     @Override
     public String fileName(final Language language) {
-        return NameUtil.languageFileName(language);
+        return NamingUtils.languageFileName(language);
     }
 
     @Override

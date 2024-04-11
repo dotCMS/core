@@ -5,12 +5,12 @@ import com.dotcms.model.language.Language;
 import com.dotcms.model.site.SiteView;
 
 /**
- * The NameUtil class provides utility methods for generating file names based on different
+ * The NamingUtils class provides utility methods for generating file names based on different
  * objects.
  */
-public class NameUtil {
+public class NamingUtils {
 
-    private NameUtil() {
+    private NamingUtils() {
         //Hide public constructor
     }
 

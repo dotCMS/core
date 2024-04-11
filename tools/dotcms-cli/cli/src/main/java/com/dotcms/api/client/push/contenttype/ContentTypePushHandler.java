@@ -3,7 +3,7 @@ package com.dotcms.api.client.push.contenttype;
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.PushHandler;
-import com.dotcms.api.client.util.NameUtil;
+import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest.Builder;
 import com.dotcms.model.contenttype.SaveContentTypeRequest;
@@ -35,7 +35,7 @@ public class ContentTypePushHandler implements PushHandler<ContentType> {
 
     @Override
     public String fileName(final ContentType contentType) {
-        return NameUtil.contentTypeFileName(contentType);
+        return NamingUtils.contentTypeFileName(contentType);
     }
 
     @Override
