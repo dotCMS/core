@@ -124,9 +124,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                         label: 'editema.editor.navbar.layout',
                         href: 'layout',
                         isDisabled: isLayoutDisabled,
-                        tooltip: isLayoutDisabled
-                            ? 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                            : null
+                        tooltip: templateDrawed
+                            ? null
+                            : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
                     },
                     {
                         icon: 'pi-sliders-h',
