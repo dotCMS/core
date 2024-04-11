@@ -632,6 +632,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.dialog.resetDialog();
                     }
                 });
+            },
+            [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
+                this.reloadIframe();
+            },
+            [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: this.dotMessageService.get('editpage.menu.order.error.title'),
+                    detail: this.dotMessageService.get('editpage.menu.order.error.message'),
+                    life: 2000
+                });
+            },
+            [NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER]: () => {
+                this.dialog.resetDialog();
             }
         })[detail.name];
     }

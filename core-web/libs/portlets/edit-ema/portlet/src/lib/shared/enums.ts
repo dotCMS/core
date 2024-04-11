@@ -10,7 +10,10 @@ export enum NG_CUSTOM_EVENTS {
     CONTENT_SEARCH_SELECT = 'select-contentlet',
     CREATE_CONTENTLET = 'create-contentlet-from-edit-page',
     SAVE_PAGE = 'save-page',
-    FORM_SELECTED = 'form-selected'
+    FORM_SELECTED = 'form-selected',
+    SAVE_MENU_ORDER = 'save-menu-order',
+    ERROR_SAVING_MENU_ORDER = 'error-saving-menu-order',
+    CANCEL_SAVING_MENU_ORDER = 'cancel-save-menu-order'
 }
 
 // The current state of the editor
