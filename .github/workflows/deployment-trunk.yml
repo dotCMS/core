@@ -183,7 +183,7 @@ jobs:
           artifactory-repo-username: ${{ secrets.EE_REPO_USERNAME }}
           artifactory-repo-password: ${{ secrets.EE_REPO_PASSWORD }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          build-run-id: ${{ needs.deploy_check.outputs.run_id }}
+          build-run-id: ${{ github.run_id }}
           commit-id: ${{ needs.deploy_check.outputs.build_sha }}
 
       - name: Create artifact with commit id

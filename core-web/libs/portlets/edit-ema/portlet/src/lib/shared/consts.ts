@@ -24,6 +24,10 @@ export const EDIT_MODE = 'EDIT_MODE';
 
 export const WINDOW = new InjectionToken<Window>('WindowToken');
 
+export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
+
+export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
+
 export const DEFAULT_PERSONA: DotPersona = {
     hostFolder: 'SYSTEM_HOST',
     inode: '',

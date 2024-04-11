@@ -13,7 +13,8 @@ export enum NG_CUSTOM_EVENTS {
     FORM_SELECTED = 'form-selected',
     SAVE_MENU_ORDER = 'save-menu-order',
     ERROR_SAVING_MENU_ORDER = 'error-saving-menu-order',
-    CANCEL_SAVING_MENU_ORDER = 'cancel-save-menu-order'
+    CANCEL_SAVING_MENU_ORDER = 'cancel-save-menu-order',
+    OPEN_WIZARD = 'workflow-wizard'
 }
 
 // The current state of the editor

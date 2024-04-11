@@ -2,7 +2,7 @@ name: CICD Reports
 run-name: Reports - ${{ github.event.workflow_run.name }}
 on:
   workflow_run:
-    workflows: ['Maven CICD Pipeline'] 
+    workflows: ['Maven CICD Pipeline']
     types: [completed]
 
 permissions:
@@ -17,6 +17,7 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+
       - name: Download Workflow Data
         id: data-download
         uses: dawidd6/action-download-artifact@v2
@@ -45,6 +46,7 @@ jobs:
           then
             echo "::warn title=Artifact 'workflow-data' missing::Expected artifact 'workflow-data' does not exist for pull_request event."
           else
+            jq . workflow-data.json
             json=$(jq -c '.' workflow-data.json)
             trigger_event_name=$(echo $json | jq -r '.trigger_event_name // "null"')
             status=$(echo $json | jq -r '.aggregate_status // "null"')
@@ -65,6 +67,7 @@ jobs:
             branch_url="https://github.com/$source_repository/tree/$branch"
             commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
             test_results_url="https://github.com/$source_repository/pull/${pr_number}/checks"
+            
             if [[ -z "${{ steps.test-reporter.outputs.conclusion }}" ]]; then
               test_conclusion="Not Run"
               test_passed=0
@@ -78,7 +81,6 @@ jobs:
               test_skipped=${{ steps.test-reporter.outputs.skipped }}
               test_elapsed=${{ steps.test-reporter.outputs.time }}
             fi
-            
             
             if [[ "$status" == "SUCCESS" ]]; then
               echo "status_icon=✅" >> $GITHUB_OUTPUT
@@ -95,7 +97,6 @@ jobs:
             else 
                echo "report_type=$trigger_event_name" >> $GITHUB_OUTPUT
             fi
-            
           
             echo "json=$json" >> $GITHUB_OUTPUT
             echo "trigger_event_name=$trigger_event_name" >> $GITHUB_OUTPUT
@@ -123,8 +124,20 @@ jobs:
             echo "test_failed=$test_failed" >> $GITHUB_OUTPUT
             echo "test_skipped=$test_skipped" >> $GITHUB_OUTPUT
             echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
-          
           fi
+          
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2.3.0
+        env:
+          SLACK_WEBHOOK: ${{ secrets.MASTER_BUILD_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_TITLE: "Broken build!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://slackmojis.com/emojis/5432-this-is-fine/download
+          SLACK_MESSAGE: "Attention <!channel>! Broken build at `${{ github.ref_name }}`.\nPlease check the run at: ${{ steps.workflow-data.outputs.action_run_url }}"
+        if: steps.workflow-data.outputs.status != 'SUCCESS'
 
       - name: Prepare Slack Message Payload
         id: prepare-slack-message
@@ -206,6 +219,7 @@ jobs:
           )
           echo "payload=$(echo $payload | jq -c .)" >> $GITHUB_OUTPUT
           echo "payload=$payload"
+
       - name: Post to Slack
         if: steps.workflow-data.outputs.has-json == 'true' && github.repository == 'dotcms/core'
         uses: slackapi/slack-github-action@v1.24.0
