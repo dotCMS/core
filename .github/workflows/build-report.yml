@@ -10,6 +10,10 @@ on:
         description: 'The run id of the build to report on'
         type: string
         default: "${{ github.run_id }}"
+      slack-failure:
+        description: 'Indicates if the workflow should post to slack on failure'
+        type: boolean
+        default: false
 permissions:
   checks: write
 
@@ -154,7 +158,7 @@ jobs:
           SLACK_FOOTER: ""
           SLACK_ICON: https://slackmojis.com/emojis/5432-this-is-fine/download
           SLACK_MESSAGE: "Attention <!channel>! Broken build at `${{ github.ref_name }}`.\nPlease check the run at: ${{ steps.workflow-data.outputs.action_run_url }}"
-        if: steps.workflow-data.outputs.status != 'SUCCESS' && steps.workflow-data.outputs.branch == 'master'
+        if: steps.workflow-data.outputs.status != 'SUCCESS' && inputs.post-failure && github.repository == 'dotcms/core'
 
       - name: Prepare Slack Message Payload
         id: prepare-slack-message

@@ -88,3 +88,5 @@ jobs:
     if: always()
     needs: [ finalize ]
     uses: ./.github/workflows/build-report.yml
+    with:
+      slack-failure: true
