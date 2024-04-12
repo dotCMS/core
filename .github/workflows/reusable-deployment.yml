@@ -25,9 +25,6 @@ on:
         DOCKER_TOKEN:
           required: false
           description: 'Docker.io token'
-        GITHUB_TOKEN:
-          required: false
-          description: 'github token'
         EE_REPO_USERNAME:
           required: false
           description: 'Artifactory username'
