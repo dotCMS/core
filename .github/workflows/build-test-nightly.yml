@@ -62,6 +62,13 @@ jobs:
       snapshot: true
       latest: true
       deploy-dev-image: true
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
   finalize:
     name: Finalize
     if: always()
@@ -74,3 +81,6 @@ jobs:
     if: always()
     needs: [ finalize ]
     uses: ./.github/workflows/build-report.yml
+    secrets:
+      DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

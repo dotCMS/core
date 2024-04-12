@@ -18,6 +18,25 @@ on:
       deploy-dev-image:
         default: false
         type: boolean
+    secrets:
+        DOCKER_USERNAME:
+          required: false
+          description: 'Docker.io username'
+        DOCKER_TOKEN:
+          required: false
+          description: 'Docker.io token'
+        GITHUB_TOKEN:
+          required: false
+          description: 'github token'
+        EE_REPO_USERNAME:
+          required: false
+          description: 'Artifactory username'
+        EE_REPO_PASSWORD:
+          required: false
+          description: 'Artifactory password'
+        DEVELOPERS_SLACK_WEBHOOK:
+          required: false
+          description: 'Slack webhook for developers'
 jobs:
   deployment:
     runs-on: ubuntu-latest
