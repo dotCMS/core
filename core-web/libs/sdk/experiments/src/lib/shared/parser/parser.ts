@@ -46,18 +46,20 @@ export const parseDataForAnalytics = (
  * @returns {boolean} -The function returns a Boolean value.
  */
 export const verifyRegex = (regexToCheck: string | null, href: string): boolean => {
-    if (regexToCheck === null) {
+    if (regexToCheck === null || href === null) {
         return false;
     }
 
     try {
         const regexExp = new RegExp(regexToCheck);
+
         const url = new URL(href);
+
         const sanitizedHref = `${url.origin}${url.pathname.toLowerCase()}${url.search}`;
 
         return regexExp.test(sanitizedHref);
     } catch (error) {
-        console.warn(`The regex ${regexToCheck} it is not a valid regex to check`);
+        console.warn(`The regex ${regexToCheck} it is not a valid regex to check. ${error}`);
 
         return false;
     }
