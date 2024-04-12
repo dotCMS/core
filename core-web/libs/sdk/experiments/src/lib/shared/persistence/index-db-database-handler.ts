@@ -79,11 +79,13 @@ export class IndexDBDatabaseHandler {
             const transaction = db.transaction([this.config.db_store], 'readwrite');
 
             const store = transaction.objectStore(this.config.db_store);
+
             const clearRequest = store.clear();
 
             clearRequest.onerror = () => reject(clearRequest.error);
             clearRequest.onsuccess = () => {
                 const request = store.put(data, this.config.db_key_path);
+
                 request.onsuccess = () => resolve(request.result);
                 request.onerror = () => reject(request.error);
             };
@@ -101,7 +103,9 @@ export class IndexDBDatabaseHandler {
 
         return await new Promise((resolve, reject) => {
             const transaction = db.transaction([this.config.db_store], 'readonly');
+
             const store = transaction.objectStore(this.config.db_store);
+
             const request = store.get(this.config.db_key_path);
 
             request.onsuccess = () => resolve(request.result as T);
@@ -120,7 +124,9 @@ export class IndexDBDatabaseHandler {
 
         return await new Promise((resolve, reject) => {
             const transaction = db.transaction([this.config.db_store], 'readwrite');
+
             const store = transaction.objectStore(this.config.db_store);
+
             const request = store.clear();
 
             request.onsuccess = () => resolve();
@@ -145,6 +151,7 @@ export class IndexDBDatabaseHandler {
      */
     setFetchExpiredTime(): void {
         const expireTime = Date.now() + LOCAL_STORAGE_TIME_DURATION_MILLISECONDS;
+
         localStorage.setItem(EXPERIMENT_FETCH_EXPIRE_TIME_KEY, expireTime.toString());
     }
 
@@ -156,6 +163,7 @@ export class IndexDBDatabaseHandler {
     private getOnErrorMessage(error: DOMException | null): string {
         let errorMessage =
             'A database error occurred while using IndexedDB. Your browser may not support IndexedDB or IndexedDB might not be enabled.';
+
         if (error) {
             errorMessage += error.name ? ` Error Name: ${error.name}` : '';
             errorMessage += error.message ? ` Error Message: ${error.message}` : '';
@@ -186,11 +194,13 @@ export class IndexDBDatabaseHandler {
 
             request.onerror = (event) => {
                 const errorMsj = this.getOnErrorMessage((event.target as IDBRequest).error);
+
                 reject(errorMsj);
             };
 
             request.onsuccess = (event: Event) => {
                 const db = this.getRequestResult(event);
+
                 resolve(db);
             };
         });

@@ -84,6 +84,11 @@ export interface EditorData {
     canEditVariant?: boolean;
     canEditPage?: boolean;
     variantId?: string;
+    page?: {
+        isLocked: boolean;
+        canLock: boolean;
+        lockedByUser: string;
+    };
 }
 
 export interface EditEmaState {
@@ -96,4 +101,15 @@ export interface EditEmaState {
     contentletArea: ContentletArea;
     editorData: EditorData;
     currentExperiment?: DotExperiment;
+}
+
+export interface MessageInfo {
+    summary: string;
+    detail: string;
+}
+
+export interface WorkflowActionResult extends MessageInfo {
+    workflowName: string;
+    callback: string;
+    args: unknown[];
 }
