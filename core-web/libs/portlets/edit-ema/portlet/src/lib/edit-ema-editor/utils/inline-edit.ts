@@ -77,14 +77,24 @@ export function handleInlineEdit(e: MouseEvent): void {
     e.preventDefault();
 
     // TODO: Implement the dialog to edit here or all pages
-    // if(isInMultiplePages(target)) {
-    //     window.contentletEvents.next({
-    //         name: "showCopyModal",
-    //         data: showCopyModalData(target)
-    //     });
+    if (isInMultiplePages(target)) {
+        //     //     window.contentletEvents.next({
+        //     //         name: "showCopyModal",
+        //     //         data: showCopyModalData(target)
+        //     //     });
 
-    //     return;
-    // };
+        window.parent.postMessage(
+            {
+                action: 'copy-contentlet-inline-editing',
+                payload: {
+                    target: {...target}
+                }
+            },
+            '*'
+        );
+
+        return;
+    }
 
     initEditor(target);
 }
@@ -128,7 +138,7 @@ function initEditor(editorElement: HTMLElement) {
 }
 
 function handleInlineEditEvents(editor) {
-    editor.on('focus blur', (e) => {
+    editor.on('blur', (e) => {
         const { target: ed, type: eventType } = e;
 
         const dataset = ed.targetElm.dataset;
@@ -147,15 +157,57 @@ function handleInlineEditEvents(editor) {
             ed.bodyElement.classList.remove('active');
         }
 
-        if (eventType === 'blur') {
-            e.stopImmediatePropagation();
-            ed.destroy(false);
-        }
+        // if (eventType === 'blur') {
+        //     e.stopImmediatePropagation();
+        //     ed.destroy(false);
+        // }
+
+        // const customEvent = document.createEvent('CustomEvent');
+        // customEvent.initCustomEvent('inline-edit', true, true, {
+        //     name: 'save-page',
+        //     payload: ed.targetElm
+        // });
+
+        const content = ed.getContent();
+        const element = ed.target;
+        const data = {
+            dataset: { ...dataset },
+            innerHTML: content,
+            element,
+            eventType,
+            isNotDirty: ed.isNotDirty
+        };
 
         // TODO: Implement the save in the new editor
         // window.contentletEvents.next({
         //     name: "inlineEdit",
         //     data,
         // });
+
+        // const customEvent = new CustomEvent("ng-event", {
+        //     detail: {
+        //         name: 'save-page',
+        //         payload: data
+        //     }
+        // });
+
+        // document.dispatchEvent(customEvent);
+        console.log(ed);
+
+        if (!ed.isNotDirty) {
+            window.parent.postMessage(
+                {
+                    action: 'update-contentlet',
+                    payload: data
+                },
+                '*'
+            );
+        }
     });
+}
+
+function isInMultiplePages(editorElement) {
+    const contentlet = editorElement.closest('[data-dot-object="contentlet"]');
+
+    return Number(contentlet.dataset.dotOnNumberOfPages || 0) > 1;
 }

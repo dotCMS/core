@@ -850,6 +850,7 @@ export class DotEditContentHtmlService {
                     const element = (
                         selector ? contentlet.querySelector(selector) : contentlet
                     ) as HTMLElement;
+                    console.log({ selector, contentlet, element });
                     initEdit(element);
                 });
             },

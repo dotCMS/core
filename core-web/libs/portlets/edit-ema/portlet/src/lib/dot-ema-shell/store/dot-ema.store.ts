@@ -89,6 +89,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
 
+    readonly isEnterpriseLicense$ = this.select((state) => state.isEnterpriseLicense);
+
+    readonly vtlIframePage$ = this.select(this.pageRendered$, this.isEnterpriseLicense$, (rendered, isEnterprise) => ({
+        rendered, isEnterprise
+    }))
+
     readonly code$ = this.select((state) => state.editor.page.rendered);
 
     readonly stateLoad$ = this.select((state) => state.editorState);
@@ -97,7 +103,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
 
-    readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
+    readonly templateDrawed$ = this.select((state) => state.editor.template?.drawed);
 
     readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
         return {
@@ -333,6 +339,33 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             )
         );
     });
+
+    readonly updateInlineEditedContentlet = this.effect((payload$: Observable<{contentlet: {body: string, inode:string}}>) => {
+        return payload$.pipe(
+            switchMap((contentlet) => {
+                return this.dotPageApiService.saveContentlet(contentlet).pipe(
+                    tapResponse(
+                        () => {
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: this.dotMessageService.get('editpage.content.update.success'),
+                                life: 2000
+                            });
+                        },
+                        (e) => {
+                            console.error(e);
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: this.dotMessageService.get('editpage.content.update.error'),
+                                life: 2000
+                            });
+                        }
+                    )
+                );
+            })
+        );
+    
+    })
 
     /**
      * Saves data to a page but gets the new form identifier first.

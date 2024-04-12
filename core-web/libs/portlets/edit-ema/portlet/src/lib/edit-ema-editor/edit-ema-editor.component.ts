@@ -240,22 +240,33 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
 
         // In VTL Page if user click in a link in the page, we need to update the URL in the editor
-        this.store.pageRendered$
+        this.store.vtlIframePage$
             .pipe(
                 takeUntil(this.destroy$),
                 filter(() => this.isVTLPage())
             )
-            .subscribe(() => {
+            .subscribe(({ isEnterprise }) => {
                 requestAnimationFrame(() => {
                     const doc = this.iframe.nativeElement.contentDocument;
                     const win = this.iframe.nativeElement.contentWindow;
 
-                    injectInlineEdit(doc);
+                    if (isEnterprise) {
+                        injectInlineEdit(doc);
+                    }
 
-                    win.addEventListener('click', (e) => {
-                        handleInternalNav(e);
-                        handleInlineEdit(e);
-                    });
+                    fromEvent(win, 'click')
+                        // .pipe(tap((e) => console.log(e)))
+                        .subscribe((e: MouseEvent) => {
+                            handleInternalNav(e);
+                            if (isEnterprise) {
+                                handleInlineEdit(e);
+                            }
+                        });
+
+                    // win.addEventListener('click', (e) => {
+                    //     handleInternalNav(e);
+                    //     handleInlineEdit(e);
+                    // });
                 });
             });
 
@@ -535,6 +546,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     protected handleNgEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
+        console.log('handleNgEvent');
         const { detail } = event;
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
@@ -564,6 +576,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
+                console.log({ event, payload });
+
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
 
                 if (shouldReloadPage) {
@@ -638,7 +652,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea;
+            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea | any; //TODO: Type this later
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -683,6 +697,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
                 );
+            },
+
+            'copy-contentlet-inline-editing': () => {
+                console.log(data.payload);
+            },
+            'update-contentlet': () => {
+                console.log(data.payload);
+                this.store.updateInlineEditedContentlet({
+                    contentlet: {
+                        inode: data.payload.dataset['inode'],
+                        body: data.payload.innerHTML
+                    }
+                });
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
