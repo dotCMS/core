@@ -32,8 +32,9 @@ export const getExperimentScriptTag = (): HTMLScriptElement => {
  */
 export const getDataExperimentAttributes = (location: Location): DotExperimentConfig | null => {
     const script = getExperimentScriptTag();
+
     const defaultExperimentAttributes: DotExperimentConfig = {
-        'api-key': '',
+        apiKey: '',
         server: location.href,
         debug: false
     };
@@ -53,7 +54,7 @@ export const getDataExperimentAttributes = (location: Location): DotExperimentCo
 
             // Api Key for Analytics App
             if (attr.name === 'data-experiment-api-key') {
-                experimentAttribute = { ...experimentAttribute, 'api-key': attr.value };
+                experimentAttribute = { ...experimentAttribute, apiKey: attr.value };
             }
 
             // Show debug
@@ -94,19 +95,6 @@ export const getScriptDataAttributes = (location: Location): DotExperimentConfig
 };
 
 /**
- * Logger is a function that logs a message to the console with a prefix.
- *
- * @param {string} msg - The message to be logged.
- * @param isDebug
- * @returns {void}
- */
-export const dotLogger = (msg: string, isDebug?: boolean): void => {
-    if (isDebug !== false) {
-        console.warn(`[dotCMS Experiments] ${msg}`);
-    }
-};
-
-/**
  * Checks the flag indicating whether the experiment has already been checked.
  *
  * @function checkFlagExperimentAlreadyChecked
@@ -126,6 +114,7 @@ export const checkFlagExperimentAlreadyChecked = (): boolean => {
 export const isDataCreateValid = (): boolean => {
     try {
         const timeValidUntil = Number(localStorage.getItem(EXPERIMENT_FETCH_EXPIRE_TIME_KEY));
+
         if (isNaN(timeValidUntil)) {
             return false;
         }
@@ -174,13 +163,15 @@ const isFullUrl = (url: string): boolean => {
  */
 export const updateUrlWithExperimentVariant = (
     location: Location | string,
-    variant: Variant
+    variant: Variant | null
 ): string => {
     const href = typeof location === 'string' ? location : location.href;
+
     const url = new URL(href);
 
     if (variant !== null) {
         const params = url.searchParams;
+
         params.set(EXPERIMENT_QUERY_PARAM_KEY, variant.name);
         url.search = params.toString();
     }
@@ -202,3 +193,11 @@ export const objectsAreEqual = (obj1: Experiment[], obj2: Experiment[]): boolean
 
     return JSON.stringify(obj1) === JSON.stringify(obj2);
 };
+
+/**
+ * A function to redirect the user to a new URL.
+ *
+ * @param {string} href - The URL to redirect to.
+ * @returns {void}
+ */
+export const defaultRedirectFn = (href: string) => (window.location.href = href);

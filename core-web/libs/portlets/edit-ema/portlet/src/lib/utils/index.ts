@@ -156,9 +156,9 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
  * @param {string} url
  * @return {*}  {string}
  */
-export function sanitizeURL(url: string): string {
+export function sanitizeURL(url?: string): string {
     return url
-        .replace(/^\/|\/$/g, '') // Remove slashes from the beginning and end of the url
+        ?.replace(/(^\/)|(\/$)/g, '') // Remove slashes from the beginning and end of the url
         .split('/')
         .filter((part, i) => {
             return !i || part !== 'index'; // Filter the index from the url if it is at the last position
@@ -213,4 +213,15 @@ export function createPageApiUrlWithQueryParams(
     }).toString();
 
     return queryParams.length ? `${url}?${queryParams}` : url;
+}
+
+/**
+ * Check if the variant is the default one
+ *
+ * @export
+ * @param {string} [variant]
+ * @return {*}  {boolean}
+ */
+export function getIsDefaultVariant(variant?: string): boolean {
+    return !variant || variant === DEFAULT_VARIANT_ID;
 }
