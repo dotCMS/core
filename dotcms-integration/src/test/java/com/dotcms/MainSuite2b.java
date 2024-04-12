@@ -93,6 +93,7 @@ import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
+import com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
@@ -331,7 +332,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240111AddInodeAndIdentifierLeftIndexesTest.class,
         AnnouncementsHelperIntegrationTest.class,
         RemoteAnnouncementsLoaderIntegrationTest.class,
-        Task240112AddMetadataColumnToStructureTableTest.class
+        Task240112AddMetadataColumnToStructureTableTest.class,
+        HTMLPageAssetRenderedAPIImplIntegrationTest.class
 })
 
 public class MainSuite2b {
