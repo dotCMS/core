@@ -19,3 +19,9 @@
 dot-ai-image-prompt-gallery {
     margin-bottom: $spacing-3;
 }
+
+.dot-ai-image__buttons {
+    display: flex;
+    gap: $spacing-1;
+    justify-content: flex-end;
+}
