@@ -81,5 +81,5 @@ jobs:
     needs: [ finalize ]
     uses: ./.github/workflows/build-report.yml
     secrets:
-      DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+      MASTER_BUILD_SLACK_WEBHOOK: ${{ secrets.MASTER_BUILD_SLACK_WEBHOOK }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
