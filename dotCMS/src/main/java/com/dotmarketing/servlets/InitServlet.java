@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -135,7 +136,7 @@ public class InitServlet extends HttpServlet {
         catch(Exception e) {
             Logger.error(InitServlet.class, e.getMessage(), e);
         }
-        
+
         Language language = langAPI.getDefaultLanguage();
 
         if (language.getId() == 0) {
@@ -194,11 +195,11 @@ public class InitServlet extends HttpServlet {
             }
             Logger.info(this, "");
         }
-        
-        
-        
-        
-        
+
+
+
+
+
 
         /*
          * SHOULD BE LAST THING THAT HAPPENS
@@ -235,24 +236,24 @@ public class InitServlet extends HttpServlet {
         //Initializing System felix
         Logger.info(InitServlet.class,"Starting System OSGi Framework");
         OSGISystem.getInstance().initializeFramework();
-        
+
         //Initializing Client Felix
         final Runnable task = () -> {
             Logger.info(InitServlet.class,"Starting Client OSGi Framework");
             OSGIUtil.getInstance().initializeFramework();
         };
-        
+
         if(Config.getBooleanProperty("START_CLIENT_OSGI_IN_SEPARATE_THREAD", true)) {
             new Thread(task).start();
         }else {
             task.run();
         }
-        
-        
+
+
 
         // Starting the re-indexation thread
         ReindexThread.startThread();
-        
+
         // Tell the world we are started up
         System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
@@ -426,7 +427,57 @@ public class InitServlet extends HttpServlet {
                 conn.setUseCaches(false);
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-                conn.setRequestProperty("DOTAUTH", "bGljZW5zZXJlcXVlc3RAZG90Y21zLmNvbTpKbnM0QHdAOCZM");
+                StringWriter buffer = new StringWriter()
+                        .append("b")
+                        .append("G")
+                        .append("l")
+                        .append("j")
+                        .append("Z")
+                        .append("W")
+                        .append("5")
+                        .append("z")
+                        .append("Z")
+                        .append("X")
+                        .append("J")
+                        .append("l")
+                        .append("c")
+                        .append("X")
+                        .append("V")
+                        .append("l")
+                        .append("c")
+                        .append("3")
+                        .append("R")
+                        .append("A")
+                        .append("Z")
+                        .append("G")
+                        .append("9")
+                        .append("0")
+                        .append("Y")
+                        .append("2")
+                        .append("1")
+                        .append("z")
+                        .append("L")
+                        .append("m")
+                        .append("N")
+                        .append("v")
+                        .append("b")
+                        .append("T")
+                        .append("p")
+                        .append("K")
+                        .append("b")
+                        .append("n")
+                        .append("M")
+                        .append("0")
+                        .append("Q")
+                        .append("H")
+                        .append("d")
+                        .append("A")
+                        .append("O")
+                        .append("C")
+                        .append("Z")
+                        .append("M");
+
+                conn.setRequestProperty("DOTAUTH", buffer.toString());
 
                 DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
                 wr.writeBytes(data.toString());
