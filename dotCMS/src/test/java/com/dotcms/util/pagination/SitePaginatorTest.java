@@ -7,6 +7,7 @@ import com.liferay.portal.model.User;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -77,8 +78,11 @@ public class SitePaginatorTest {
         when(hostAPI.search( filter, showArchived, true, false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                Map.of(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, null));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived);
+        extraParams.put(SitePaginator.LIVE_PARAMETER_NAME, null);
+
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null, extraParams);
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
@@ -99,8 +103,10 @@ public class SitePaginatorTest {
         when(hostAPI.searchByStopped( filter, showStopped,false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                Map.of(SitePaginator.LIVE_PARAMETER_NAME, !showStopped, SitePaginator.ARCHIVED_PARAMETER_NAME, null));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(SitePaginator.ARCHIVED_PARAMETER_NAME, null);
+        extraParams.put(SitePaginator.LIVE_PARAMETER_NAME, !showStopped);
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null, extraParams);
 
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);

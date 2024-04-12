@@ -91,6 +91,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -136,12 +137,16 @@ public class DependencyBundlerTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        excludeSystemFolder = Map.of(EXCLUDE_SYSTEM_FOLDER_HOST,
+        final Map<String, List<ManifestItem>> excludeSystemFolderMap = new HashMap<>();
+        excludeSystemFolderMap.put(EXCLUDE_SYSTEM_FOLDER_HOST,
                 list(APILocator.getFolderAPI().findSystemFolder()));
+        excludeSystemFolder = excludeSystemFolderMap;
 
-        excludeSystemFolderAndSystemHost = Map.of(
+        final Map<String, List<ManifestItem>> excludeSystemFolderAndSystemHostMap = new HashMap<>();
+        excludeSystemFolderAndSystemHostMap.put(
                 EXCLUDE_SYSTEM_FOLDER_HOST, list(APILocator.getFolderAPI().findSystemFolder(),
                         APILocator.getHostAPI().findSystemHost()));
+        excludeSystemFolderAndSystemHost = excludeSystemFolderAndSystemHostMap;
 
         filterDescriptorAllDependencies = new FilterDescriptorDataGen().next();
         filterDescriptorNotDependencies = new FilterDescriptorDataGen()
@@ -230,8 +235,10 @@ public class DependencyBundlerTest {
         mainContentlet.setInode("");
         contentletAPI.checkin(mainContentlet, APILocator.systemUser(), false);
 
-        final Map<ManifestItem, Collection<ManifestItem>> dependencies = Map.of(mainContentlet, list(site, language,
-                contentType, referencedContentlet), referencedContentlet, list(language, referencedContentType));
+        final Map<ManifestItem, Collection<ManifestItem>> dependencies = new HashMap<>();
+
+        dependencies.put(mainContentlet, list(site, language, contentType, referencedContentlet));
+        dependencies.put(referencedContentlet, list(language, referencedContentType));
 
         return list(new TestData(mainContentlet, dependencies, excludeSystemFolderAndSystemHost,
                 filterDescriptorAllDependencies, "Content with Story Block and another content within"));
@@ -263,10 +270,9 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
 
-        final Map<ManifestItem, Collection<ManifestItem>> dependencies = Map.of(
-                content, list(host, language, contentType, relationship),
-                contentletChild, list(language, contentTypeChild)
-        );
+        final Map<ManifestItem, Collection<ManifestItem>> dependencies = new HashMap<>();
+        dependencies.put(content, list(host, language, contentType, relationship));
+        dependencies.put(contentletChild, list(language, contentTypeChild));
 
         dependencies.putAll(contentTypeWithDependencies.dependenciesToAssert);
         dependencies.get(relationship).add(contentletChild);
@@ -288,7 +294,9 @@ public class DependencyBundlerTest {
         final List<Relationship> relationshipsWithFolder = APILocator.getRelationshipAPI().byContentType(contentTypeWithFolder);
         final Relationship relationshipWithFolder = relationshipsWithFolder.get(0);
 
-        final Map<ManifestItem, Collection<ManifestItem>> dependenciesWithFolder = Map.of(
+        final Map<ManifestItem, Collection<ManifestItem>> dependenciesWithFolder = new HashMap<>();
+
+        dependenciesWithFolder.put(
                 contentWithFolder, list(folder, folder.getHost(), language, contentTypeWithFolder, relationshipWithFolder)
         );
         dependenciesWithFolder.putAll(contentTypeWithDependenciesWithFolder.dependenciesToAssert);
@@ -359,7 +367,9 @@ public class DependencyBundlerTest {
 
         final ContentType folderContentType = new StructureTransformer(folderStructure).from();
 
-        final Map<ManifestItem, Collection<ManifestItem>> dependencies = Map.of(
+        final Map<ManifestItem, Collection<ManifestItem>> dependencies = new HashMap<>();
+
+        dependencies.put(
                 folder, list(host, folderContentType, contentType, subFolder, parentFolder));
         dependencies.putAll(contentTypeWithDependencies.dependenciesToAssert);
         dependencies.putAll(subFolderWithDependencies.dependenciesToAssert);
@@ -402,8 +412,8 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
 
-        final Map<ManifestItem, Collection<ManifestItem>> dependencies =
-                Map.of(containerWithContentType, list(host, contentType));
+        final Map<ManifestItem, Collection<ManifestItem>> dependencies = new HashMap<>();
+        dependencies.put(containerWithContentType, list(host, contentType));
         dependencies.putAll(contentTypeWithDependencies.dependenciesToAssert);
 
         return list(
@@ -433,10 +443,10 @@ public class DependencyBundlerTest {
                 .drawedBody(templateLayout)
                 .nextPersisted();
 
-        final Map<ManifestItem, Collection<ManifestItem>> templateIncludes = Map.of(
-                template, list(host, container),
-                container, list(contentType)
-        );
+        final Map<ManifestItem, Collection<ManifestItem>> templateIncludes = new HashMap<>();
+
+        templateIncludes.put(template, list(host, container));
+        templateIncludes.put(container, list(contentType));
         templateIncludes.putAll(contentTypeWithDependencies.dependenciesToAssert);
 
         return list(
@@ -749,7 +759,7 @@ public class DependencyBundlerTest {
                         filterDescriptorAllDependencies, "Contentlet with Relationship and filterDescriptorAllDependencies"),
                 new TestData(contentletWithRelationship, Map.of(contentTypeParent, list(relationship), contentletWithRelationship, list(relationship)), contentletWithRelationshipExcludes, filterDescriptorNotDependencies, "Contentlet with Relationship and filterDescriptorNotDependencies"),
                 new TestData(contentletWithRelationship, Map.of(contentletWithRelationship, list(host, contentTypeParent, language, relationship), contentTypeParent, list(systemWorkflowScheme, relationship), relationship, list(contentTypeChild)),
-                        map(FILTER_EXCLUDE_REASON, list(), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)),
+                        Map.of(FILTER_EXCLUDE_REASON, list(), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)),
                         filterDescriptorNotRelationship, "Contentlet with Relationship and filterDescriptorNotRelationship"),
                 new TestData(contentletWithRelationship, Map.of(contentletWithRelationship, list(relationship), contentTypeParent, list(relationship)), contentletWithRelationshipExcludes,
                         filterDescriptorNotDependenciesRelationship, "Contentlet with Relationship and filterDescriptorNotDependenciesRelationship"),
