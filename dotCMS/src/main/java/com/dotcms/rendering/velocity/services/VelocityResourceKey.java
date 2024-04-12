@@ -9,7 +9,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -64,8 +63,7 @@ public class VelocityResourceKey implements Serializable {
         return getHTMLPageFilePath(asset.getIdentifier(), mode, language, asset.getVariantId());
     }
 
-    public static String getHTMLPageFilePath(String id,
-                                             PageMode mode, long language, String variantId) {
+    public static String getHTMLPageFilePath(String id, PageMode mode, long language, String variantId) {
         return "/" + mode.name() + "/" + id + StringPool.UNDERLINE + language +
                 StringPool.UNDERLINE +  variantId + "." + VelocityType.HTMLPAGE.fileExtension;
     }
@@ -96,21 +94,6 @@ public class VelocityResourceKey implements Serializable {
         this.type = VelocityType.resolveVelocityType(filePath);
         this.id2 = pathArry.length > 4 ? pathArry[3] : null;
         this.cacheKey = cacheKey();
-
-    }
-
-    @VisibleForTesting
-    protected VelocityResourceKey(final String path, final String language, final String id1, final String id2,
-                                  final String variant, final VelocityType type, final PageMode mode, final String cacheKey) {
-
-        this.path = path;
-        this.language = language;
-        this.id1 = id1;
-        this.id2 = id2;
-        this.variant = variant;
-        this.type = type;
-        this.mode = mode;
-        this.cacheKey = cacheKey;
 
     }
 
