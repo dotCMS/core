@@ -35,17 +35,19 @@ export function Container({ containerRef }: ContainerProps) {
         uuid
     };
 
-    const emptyContainerStyle = {
-        width: '100%',
-        backgroundColor: '#ECF0FD',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        color: '#030E32',
-        height: '10rem'
-    };
+    const containerStyles = contentlets.length
+        ? undefined
+        : {
+              width: '100%',
+              backgroundColor: '#ECF0FD',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: '#030E32',
+              height: '10rem'
+          };
 
-    const renderContentlets = contentlets.map((contentlet) => {
+    const ContainerChildren = contentlets.map((contentlet) => {
         const Component = components[contentlet.contentType] || NoContent;
 
         return isInsideEditor ? (
@@ -72,11 +74,11 @@ export function Container({ containerRef }: ContainerProps) {
             data-dot-identifier={path ?? identifier}
             data-max-contentlets={maxContentlets}
             data-uuid={uuid}
-            style={!contentlets.length ? emptyContainerStyle : undefined}>
-            {renderContentlets.length ? renderContentlets : 'This container is empty.'}
+            style={containerStyles}>
+            {ContainerChildren.length ? ContainerChildren : 'This container is empty.'}
         </div>
     ) : (
         // eslint-disable-next-line react/jsx-no-useless-fragment
-        <>{renderContentlets}</>
+        <>{ContainerChildren}</>
     );
 }
