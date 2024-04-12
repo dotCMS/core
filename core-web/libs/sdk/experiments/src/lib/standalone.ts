@@ -1,6 +1,6 @@
-import { EXPERIMENT_WINDOWS_KEY } from './constants';
 import { DotExperiments } from './dot-experiments';
-import { getScriptDataAttributes } from './utils/utils';
+import { EXPERIMENT_WINDOWS_KEY } from './shared/constants';
+import { getScriptDataAttributes } from './shared/utils/utils';
 
 declare global {
     interface Window {
@@ -18,6 +18,7 @@ if (window) {
     // TODO: make this file buildable by task and publish to dotCMS/src/main/webapp/html
     try {
         const dataAttributes = getScriptDataAttributes(window.location);
+
         if (dataAttributes) {
             window[EXPERIMENT_WINDOWS_KEY] = DotExperiments.getInstance({ ...dataAttributes });
         }
