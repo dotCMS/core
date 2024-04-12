@@ -1,32 +1,68 @@
 # @dotcms/experiments
 
-`@dotcms/experiments` is the official dotCMS JavaScript library to helps add A/B Testing to Single Page Applications (SPAs). It handles user assignment to different variants of a page and tracks.
+`@dotcms/experiments` is the official dotCMS JavaScript library that helps add A/B testing to Single Page Applications (SPAs). It handles user assignments to different variants of a page and tracks their interactions.
 
 ## Features
 
--   WIP
+This library facilitates the integration of A/B testing into your SPA by providing robust features for managing user experiences and tracking interactions:
+
+- **User Assignment to Experiments**: Automatically assigns users to different experimental variants, ensuring diverse user experiences and reliable test data.
+- **Link Verification for Redirection**: Checks links to ensure users are redirected to their assigned experiment variant, maintaining the integrity of the testing process.
+- **Automatic PageView Event Sending**: Automatically sends PageView events to DotCMS Analytics, enabling real-time tracking of user engagement and experiment effectiveness.
+
+
 
 ## Installation
-
-Install the package via npm:
+You can install the package via npm or Yarn:
 
 ```bash
 npm install @dotcms/experiments
 ```
-
 Or using Yarn:
 
 ```bash
 yarn add @dotcms/experiments
 ```
 
-## Usage
 
-WIP
+## Components
 
-## API Reference
+### `DotExperimentsProvider`
+This component utilizes React's Context API to provide DotExperiments instances to its descendants, facilitating access to A/B testing features throughout your application.
 
-WIP
+#### Props
+-   **config**: Configuration object for DotCMS Analytics integration.
+    -   **apiKey**: Your API key from the DotCMS Analytics app.
+    -   **server**: The URL of your DotCMS instance.
+    -   **redirectFn**: The redirect function to use when assigning users to experiment variants.
+
+#### Usage
+
+```javascript
+import { DotExperimentsProvider } from "@dotcms/experiments";
+import { useRouter } from 'next/router';
+
+const { replace } = useRouter();
+
+const experimentConfig = {
+  apiKey: 'your-api-key-from-dotcms-analytics-app',
+  server: 'https://your-dotcms-instance.com',
+  redirectFn: replace // Use replace from useRouter in Next.js
+};
+
+return (
+  <DotExperimentsProvider config={experimentConfig}>
+  
+    <Header>
+      <Navigation />
+    </Header>
+    <DotcmsLayout />
+    <Footer />
+    
+  </DotExperimentsProvider>
+);
+```
+
 
 ## Contributing
 
