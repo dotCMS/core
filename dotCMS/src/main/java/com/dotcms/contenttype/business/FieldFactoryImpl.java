@@ -102,13 +102,13 @@ public class FieldFactoryImpl implements FieldFactory {
   }
 
   @Override
-  public Field byContentTypeFieldVar(final ContentType type, final String var) throws DotDataException {
+  public Field byContentTypeFieldVar(final ContentType type, final String velocityVarName) throws DotDataException {
     checkNotNull(type, "Content Type cannot be null");
-    final Field field = type.fieldMap().get(var);
+    final Field field = type.fieldMap().get(velocityVarName);
 
     if(field==null) {
       throw new NotFoundInDbException(String.format("Field Variable '%s' in Content Type " +
-              "'%s' [ %s ] was not found", var, type.name(), type.id()));
+              "'%s' [ %s ] was not found", velocityVarName, type.name(), type.id()));
     }
 
     return field;
