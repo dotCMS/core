@@ -530,7 +530,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 				for (final ContentType sourceContentType : sourceContentTypes) {
 					final CopyContentTypeBean.Builder builder = new CopyContentTypeBean.Builder()
 							.sourceContentType(sourceContentType)
-							.icon("event_note")
+							.icon(sourceContentType.icon())
 							.name(sourceContentType.name())
 							.folder(sourceContentType.folder())
 							.host(destinationSite.getIdentifier());
