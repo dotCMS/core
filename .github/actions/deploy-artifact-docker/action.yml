@@ -70,11 +70,10 @@ runs:
         github-token: ${{ inputs.github_token }}
     - name: Setup Context
       id: setup-context
-      if: inputs.build_run_id
       env:
         CONTEXT_TMP_PATH: /tmp/docker-context
       run: |
-        if [ "${{ inputs.docker_context}}" != "" ]; then
+        if [ "${{ inputs.docker_context }}" != "" ]; then
             echo "using provided docker context ${{ inputs.docker_context }}"
             echo "docker_context=docker/${{ inputs.docker_context }}" >> $GITHUB_OUTPUT
         else
