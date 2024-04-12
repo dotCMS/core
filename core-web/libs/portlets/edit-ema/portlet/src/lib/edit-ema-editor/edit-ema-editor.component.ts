@@ -213,7 +213,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
                         const href =
                             (e.target as HTMLAnchorElement)?.href ||
-                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement)?.href;
+                            (e.target as HTMLElement).closest('a')?.href;
 
                         if (href) {
                             e.preventDefault();
