@@ -73,7 +73,7 @@ export function Container({ containerRef }: ContainerProps) {
             data-dot-accept-types={acceptTypes}
             data-dot-identifier={path ?? identifier}
             data-max-contentlets={maxContentlets}
-            data-uuid={uuid}
+            data-dot-uuid={uuid}
             style={containerStyles}>
             {ContainerChildren.length ? ContainerChildren : 'This container is empty.'}
         </div>
