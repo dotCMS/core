@@ -14,6 +14,7 @@ import {
 import { Experiment, ExperimentParsed } from '../models';
 
 const assignedExperiments: Experiment[] = IsUserIncludedResponse.entity.experiments;
+
 const experimentMock = IsUserIncludedResponse.entity.experiments[0];
 
 describe('Parsers', () => {
@@ -36,6 +37,7 @@ describe('Parsers', () => {
             };
 
             const location: Location = { ...LocationMock, href: expectedURL };
+
             const parsedData: ExperimentParsed = parseDataForAnalytics(
                 assignedExperiments,
                 location
@@ -46,6 +48,7 @@ describe('Parsers', () => {
 
         it('returns `isExperimentPage` false and `isTargetPage` true when location is /destinations', () => {
             const expectedURL = 'http://localhost/destinations';
+
             const expectedExperimentsParsed: ExperimentParsed = {
                 href: expectedURL,
                 experiments: [
@@ -61,6 +64,7 @@ describe('Parsers', () => {
             };
 
             const location: Location = { ...LocationMock, href: expectedURL };
+
             const parsedData: ExperimentParsed = parseDataForAnalytics(
                 assignedExperiments,
                 location
@@ -71,6 +75,7 @@ describe('Parsers', () => {
 
         it('returns `isExperimentPage` false and `isTargetPage` false when location is /other-url', () => {
             const expectedURL = 'http://localhost/other-url';
+
             const expectedExperimentsParsed: ExperimentParsed = {
                 href: expectedURL,
                 experiments: [
@@ -86,6 +91,7 @@ describe('Parsers', () => {
             };
 
             const location: Location = { ...LocationMock, href: expectedURL };
+
             const parsedData: ExperimentParsed = parseDataForAnalytics(
                 assignedExperiments,
                 location
@@ -97,6 +103,7 @@ describe('Parsers', () => {
 
     describe('parseData For Store', () => {
         const mockNow = jest.spyOn(Date, 'now');
+
         mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
 
         beforeEach(() => {
@@ -106,6 +113,7 @@ describe('Parsers', () => {
         it('should handle case where only NEW data is available', () => {
             // First request, expire in now + experiment.lookBackWindow.expireMillis
             const newData: Experiment[] | undefined = IsUserIncludedResponse.entity.experiments;
+
             const dataFromIndexDB: Experiment[] | undefined = undefined;
 
             const parsedData = parseData(newData, dataFromIndexDB);
@@ -118,6 +126,7 @@ describe('Parsers', () => {
             //No new request, not touch anything if not expired
 
             const newData: Experiment[] | undefined = undefined;
+
             const dataFromIndexDB: Experiment[] | undefined = MockDataStoredIndexDB;
 
             const parsedData = parseData(newData, dataFromIndexDB);
@@ -130,9 +139,11 @@ describe('Parsers', () => {
             //new request, stored data + new data. No delete anything only 5 days passed, 2 to store
 
             const nowPlus5Days = MOCK_CURRENT_TIMESTAMP + TIME_5_DAYS_MILLISECONDS;
+
             mockNow.mockImplementation(() => nowPlus5Days);
 
             const newData: Experiment[] | undefined = NewIsUserIncludedResponse.entity.experiments;
+
             const dataFromIndexDB: Experiment[] | undefined = MockDataStoredIndexDB;
 
             const parsedData = parseData(newData, dataFromIndexDB);
@@ -146,9 +157,11 @@ describe('Parsers', () => {
             // no new request, 15 days later, so expireTime is 15 days from MOCK_CURRENT_TIMESTAMP
             // 1st experiment expired, so only 1 to store
             const now15Days = MOCK_CURRENT_TIMESTAMP + TIME_15_DAYS_MILLISECONDS;
+
             mockNow.mockImplementation(() => now15Days);
 
             const newData: Experiment[] | undefined = undefined;
+
             const dataFromIndexDB: Experiment[] | undefined = MockDataStoredIndexDBWithNew;
 
             const parsedData = parseData(newData, dataFromIndexDB);
