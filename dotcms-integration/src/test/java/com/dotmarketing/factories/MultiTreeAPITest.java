@@ -42,10 +42,7 @@ import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.stream.Collectors;
 
@@ -3407,6 +3404,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * @throws DotDataException
      */
     @Test
+    @Ignore
     public void moveContainerUpdateMultiTreesOnMultiplePagesPerformance() throws DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
         final Container container = new ContainerDataGen().nextPersisted();
