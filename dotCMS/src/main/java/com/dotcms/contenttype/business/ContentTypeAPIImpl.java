@@ -525,7 +525,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
     final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType)
             .name(copyContentTypeBean.getName())
-            .description("Copy - " + sourceContentType.description())
             .fixed(false)
             .system(false)
             .id(null)
@@ -549,7 +548,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
 
     if (null != destinationSite && UtilMethods.isSet(destinationSite.getIdentifier())) {
+      // If the CT is being copied to another Site, more properties must be copied as well
       builder.siteName(destinationSite.getHostname());
+      builder.description(sourceContentType.description());
+      builder.detailPage(sourceContentType.detailPage());
+      builder.urlMapPattern(sourceContentType.urlMapPattern());
+      builder.metadata(sourceContentType.metadata());
     }
 
     Logger.debug(this, ()->"Creating the content type: " + copyContentTypeBean.getName()
