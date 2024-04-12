@@ -64,6 +64,11 @@
             "library": {
                 "unitTestRunner": "jest"
             }
+        },
+        "@nx/react": {
+            "library": {
+                "unitTestRunner": "jest"
+            }
         }
     },
     "$schema": "./node_modules/nx/schemas/nx-schema.json",

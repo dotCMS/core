@@ -1,4 +1,5 @@
-import { dotcmsClient } from '@dotcms/client';
+import { dotcmsClient } from "@dotcms/client";
+import { MyPage } from "@/components/my-page";
 
 const client = dotcmsClient.init({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
@@ -10,15 +11,17 @@ const client = dotcmsClient.init({
     }
 });
 
-import { MyPage } from '@/components/my-page';
-
 export async function generateMetadata({ params, searchParams }) {
-    const data = await client.page.get({
+
+    const requestData = {
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
         'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || '',
-        mode: searchParams.mode
-    });
+        mode: searchParams.mode,
+        variantName: searchParams['variantName']
+    };
+
+    const data = await client.page.get(requestData);
 
     return {
         title: data.entity.page.friendlyName || data.entity.page.title
@@ -26,12 +29,15 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 export default async function Home({ searchParams, params }) {
-    const data = await client.page.get({
+    const requestData = {
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
-        personaId: searchParams['com.dotmarketing.persona.id'] || '',
-        mode: searchParams.mode
-    });
+        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || '',
+        mode: searchParams.mode,
+        variantName: searchParams['variantName']
+    };
+
+    const data = await client.page.get(requestData);
 
     const nav = await client.nav.get({
         path: '/',

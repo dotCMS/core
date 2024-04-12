@@ -261,139 +261,128 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
             }
 
-            // on edit mode, takes in consideration the case where the contentlet list is empty, in that scenario we need to add a temp contentlet, otherwise the container will not be editable, cannot add contentlets
-            if (mode == PageMode.EDIT_MODE) {
-                velocityCodeBuilder.append("#if(!$CONTENTLETS || $CONTENTLETS.size() == 0)");
-                addTempFakeContentletToEmptyContainer(container, uuid, velocityCodeBuilder, containerContentTypeList, typeAPI);
-                velocityCodeBuilder.append("#else");
-            }
-
             // FOR LOOP
-                velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
 
-                  velocityCodeBuilder.append("#set($dotContentMap=$dotcontent.load($contentletId))");
-                  velocityCodeBuilder.append("#set($_show_working_=false)");
+            velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
 
-                //Time-machine block begin
-                  velocityCodeBuilder.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
+              velocityCodeBuilder.append("#set($dotContentMap=$dotcontent.load($contentletId))");
+              velocityCodeBuilder.append("#set($_show_working_=false)");
 
-                      velocityCodeBuilder.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
-                      velocityCodeBuilder.append("#set($_ident=$webapi.findIdentifierById($contentletId))");
-                      // if the content has expired we rewrite the identifier so it isn't loaded
-                      velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
-                      velocityCodeBuilder.append("#set($contentletId='')");
-                      velocityCodeBuilder.append("#end");
+            //Time-machine block begin
+              velocityCodeBuilder.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
 
-                      // if the content should be published then force to show the working version
-                      velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && ($_tmdate.equals($_ident.sysPublishDate) || $_tmdate.after($_ident.sysPublishDate)))");
-                      velocityCodeBuilder.append("#set($_show_working_=true)");
-                      velocityCodeBuilder.append("#end");
-
-                      velocityCodeBuilder.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
-                        .append("#set($contentletId='')") // working contentlet still not published
-                      .append("#end");
-
-                      velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
-                        .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
-                      .append("#end");
-
-                //end of time-machine block
+                  velocityCodeBuilder.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
+                  velocityCodeBuilder.append("#set($_ident=$webapi.findIdentifierById($contentletId))");
+                  // if the content has expired we rewrite the identifier so it isn't loaded
+                  velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
+                  velocityCodeBuilder.append("#set($contentletId='')");
                   velocityCodeBuilder.append("#end");
 
-                    velocityCodeBuilder.append("#set($CONTENT_INODE = '')");
-                    velocityCodeBuilder.append("#set($CONTENT_BASE_TYPE = '')");
-                    velocityCodeBuilder.append("#set($CONTENT_LANGUAGE = '')");
-                    velocityCodeBuilder.append("#set($ContentletTitle = '')");
-                    velocityCodeBuilder.append("#set($CONTENT_TYPE_ID = '')");
-                    velocityCodeBuilder.append("#set($CONTENT_TYPE = '')");
-                    velocityCodeBuilder.append("#set($CONTENT_VARIANT = '')");
-                    velocityCodeBuilder.append("#set($ON_NUMBER_OF_PAGES = '')");
+                  // if the content should be published then force to show the working version
+                  velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && ($_tmdate.equals($_ident.sysPublishDate) || $_tmdate.after($_ident.sysPublishDate)))");
+                  velocityCodeBuilder.append("#set($_show_working_=true)");
+                  velocityCodeBuilder.append("#end");
 
-                    // read in the content
-                    velocityCodeBuilder.append("#if($contentletId != '')");
-                    velocityCodeBuilder.append("#contentDetail($contentletId)");
-                    velocityCodeBuilder.append("#end");
+                  velocityCodeBuilder.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
+                    .append("#set($contentletId='')") // working contentlet still not published
+                  .append("#end");
 
-                    velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
+                  velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
+                    .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
+                  .append("#end");
 
-                    if (mode == PageMode.EDIT_MODE) {
-                        velocityCodeBuilder.append("<div")
-                            .append(" data-dot-object=")
-                            .append("\"contentlet\"")
-                            .append(" data-dot-on-number-of-pages=")
-                            .append("\"$ON_NUMBER_OF_PAGES\"")
-                            .append(" data-dot-inode=")
-                            .append("\"$CONTENT_INODE\"")
-                            .append(" data-dot-identifier=")
-                            .append("\"$contentletId\"")
-                            .append(" data-dot-type=")
-                            .append("\"$CONTENT_TYPE\"")
-                            .append(" data-dot-variant=")
-                            .append("\"$CONTENT_VARIANT\"")
-                            .append(" data-dot-basetype=")
-                            .append("\"$CONTENT_BASE_TYPE\"")
-                            .append(" data-dot-lang=")
-                            .append("\"$CONTENT_LANGUAGE\"")
-                            .append(" data-dot-title=")
-                            .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
-                            .append(" data-dot-can-edit=")
-                            .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, true)\"")
-                            .append(" data-dot-content-type-id=")
-                            .append("\"$CONTENT_TYPE_ID\"")
-                            .append(" data-dot-has-page-lang-version=")
-                            .append("\"$HAVE_A_VERSION\"")
-                            .append(">");
-                    }
+            //end of time-machine block
+              velocityCodeBuilder.append("#end");
 
+                velocityCodeBuilder.append("#set($CONTENT_INODE = '')");
+                velocityCodeBuilder.append("#set($CONTENT_BASE_TYPE = '')");
+                velocityCodeBuilder.append("#set($CONTENT_LANGUAGE = '')");
+                velocityCodeBuilder.append("#set($ContentletTitle = '')");
+                velocityCodeBuilder.append("#set($CONTENT_TYPE_ID = '')");
+                velocityCodeBuilder.append("#set($CONTENT_TYPE = '')");
+                velocityCodeBuilder.append("#set($CONTENT_VARIANT = '')");
+                velocityCodeBuilder.append("#set($ON_NUMBER_OF_PAGES = '')");
+                
+                // read in the content
+                velocityCodeBuilder.append("#if($contentletId != '')");
+                velocityCodeBuilder.append("#contentDetail($contentletId)");
+                velocityCodeBuilder.append("#end");
 
-                    // if content exists in language
-                    velocityCodeBuilder.append("#if($HAVE_A_VERSION)");
+                velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
 
-                        // ##Checking permission to see content
-                        if (mode.showLive) {
-                            velocityCodeBuilder.append("#if($_show_working_ || $contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
-                        }
-
-                            // ### START BODY ###
-                            velocityCodeBuilder.append("#if($isWidget==true)").append("$widgetCode");
-                            velocityCodeBuilder.append("#elseif($isForm==true)").append("$formCode");
-                            velocityCodeBuilder.append("#else");
-
-                                for (int i = 0; i < containerContentTypeList.size(); i++) {
-                                    ContainerStructure cs = containerContentTypeList.get(i);
-                                    String ifelse = (i == 0) ? "if" : "elseif";
-                                    velocityCodeBuilder.append("#").append(ifelse)
-                                            .append("($ContentletStructure ==\"")
-                                            .append(cs.getStructureId()).append("\")");
-                                    velocityCodeBuilder.append(cs.getCode());
-                                }
-                                if (containerContentTypeList.size() > 0) {
-                                    velocityCodeBuilder.append("#end");
-                                }
-
-                            // ### END BODY ###
-                            velocityCodeBuilder.append("#end");
-
-                        if (mode.showLive) {
-                            velocityCodeBuilder.append("#end");
-                        }
-
-                    // end if content exists in language
-                    velocityCodeBuilder.append("#end");
-
-                   // end content dot-data-content
                 if (mode == PageMode.EDIT_MODE) {
-                    velocityCodeBuilder.append("</div>");
+                    velocityCodeBuilder.append("<div")
+                        .append(" data-dot-object=")
+                        .append("\"contentlet\"")
+                        .append(" data-dot-on-number-of-pages=")
+                        .append("\"$ON_NUMBER_OF_PAGES\"")
+                        .append(" data-dot-inode=")
+                        .append("\"$CONTENT_INODE\"")
+                        .append(" data-dot-identifier=")
+                        .append("\"$contentletId\"")
+                        .append(" data-dot-type=")
+                        .append("\"$CONTENT_TYPE\"")
+                        .append(" data-dot-variant=")
+                        .append("\"$CONTENT_VARIANT\"")
+                        .append(" data-dot-basetype=")
+                        .append("\"$CONTENT_BASE_TYPE\"")
+                        .append(" data-dot-lang=")
+                        .append("\"$CONTENT_LANGUAGE\"")
+                        .append(" data-dot-title=")
+                        .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
+                        .append(" data-dot-can-edit=")
+                        .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, true)\"")
+                        .append(" data-dot-content-type-id=")
+                        .append("\"$CONTENT_TYPE_ID\"")
+                        .append(" data-dot-has-page-lang-version=")
+                        .append("\"$HAVE_A_VERSION\"")
+                        .append(">");
                 }
+                
 
-                velocityCodeBuilder.append("#set($dotContentMap='')");
-                    // ##End of foreach loop
+                // if content exists in language 
+                velocityCodeBuilder.append("#if($HAVE_A_VERSION)");
+                
+                    // ##Checking permission to see content
+                    if (mode.showLive) {
+                        velocityCodeBuilder.append("#if($_show_working_ || $contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
+                    }
+                    
+                        // ### START BODY ###
+                        velocityCodeBuilder.append("#if($isWidget==true)").append("$widgetCode");
+                        velocityCodeBuilder.append("#elseif($isForm==true)").append("$formCode");
+                        velocityCodeBuilder.append("#else");
+
+                            for (int i = 0; i < containerContentTypeList.size(); i++) {
+                                ContainerStructure cs = containerContentTypeList.get(i);
+                                String ifelse = (i == 0) ? "if" : "elseif";
+                                velocityCodeBuilder.append("#").append(ifelse)
+                                        .append("($ContentletStructure ==\"")
+                                        .append(cs.getStructureId()).append("\")");
+                                velocityCodeBuilder.append(cs.getCode());
+                            }
+                            if (containerContentTypeList.size() > 0) {
+                                velocityCodeBuilder.append("#end");
+                            }
+                            
+                        // ### END BODY ###
+                        velocityCodeBuilder.append("#end");
+        
+                    if (mode.showLive) {
+                        velocityCodeBuilder.append("#end");
+                    }
+                    
+                // end if content exists in language 
                 velocityCodeBuilder.append("#end");
 
+               // end content dot-data-content
             if (mode == PageMode.EDIT_MODE) {
-                //end here the else for the fake/temp contentlet
-                velocityCodeBuilder.append("#end");
+                velocityCodeBuilder.append("</div>");
             }
+
+            velocityCodeBuilder.append("#set($dotContentMap='')");
+                // ##End of foreach loop
+            velocityCodeBuilder.append("#end");
                 
             // end content dot-data-container
             if (mode == PageMode.EDIT_MODE) {
@@ -423,41 +412,9 @@ public class ContainerLoader implements DotLoader {
         return writeOutVelocity(filePath, velocityCodeBuilder.toString());
     }
 
-    private void addTempFakeContentletToEmptyContainer(final Container container,
-                                                       final String uuid,
-                                                       final StringBuilder velocityCodeBuilder,
-                                                       final List<ContainerStructure> containerContentTypeList,
-                                                       final ContentTypeAPI typeAPI) {
-        velocityCodeBuilder.append("<!-- This is the fake contentlet to add -->" +
-                "<div\n" +
-                "  data-dot-object=\"contentlet\"\n" +
-                "  data-dot-identifier=\"TEMP_EMPTY_CONTENTLET\"\n" +
-                "  data-dot-title=\"TEMP_EMPTY_CONTENTLET\"\n" +
-                "  data-dot-inode=\"TEMPY_EMPTY_CONTENTLET_INODE\"\n" +
-                "  data-dot-type=\"TEMP_EMPTY_CONTENTLET_TYPE\"\n" +
-                "  data-dot-container='{" +
-                    "\"acceptTypes\":\"");
-        for (final ContainerStructure containerContentType : containerContentTypeList) {
 
-            try {
-                final ContentType contentType = typeAPI.find(containerContentType.getStructureId());
-                velocityCodeBuilder.append(contentType.variable());
-                velocityCodeBuilder.append(",");
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.warn(this.getClass(), "unable to find content type:" + containerContentType);
-            }
-        }
 
-        velocityCodeBuilder.append("WIDGET,FORM");
-        velocityCodeBuilder.append("\"" +
-        ",\"identifier\":\""+ this.getDataDotIdentifier(container)  +"\"" +
-        ",\"maxContentlets\":\" "+ container.getMaxContentlets() +"\"" +
-        ",\"uuid\":"+ uuid +"}'\n" +
-        "  style=\"width: 100%; background-color: rgb(236, 240, 253); display: flex; justify-content: center; align-items: center; color: rgb(3, 14, 50); height: 10rem;\"\n" +
-    ">\n" +
-    "  This container is empty\n" +
-    "</div>");
-    }
+
 
 
 }
