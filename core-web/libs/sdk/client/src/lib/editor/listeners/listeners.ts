@@ -105,37 +105,25 @@ export function listenHoveredContentlet() {
 
         const { x, y, width, height } = target.getBoundingClientRect();
 
-        if (target.dataset?.['dotObject'] === 'container') {
-            const contentletPayload = {
-                container:
-                    // Here extract dot-container from contentlet if is Headless
-                    // or search in parent container if is VTL
-                    target.dataset?.['dotContainer']
-                        ? JSON.parse(target.dataset?.['dotContainer'])
-                        : getClosestContainerData(target),
-                contentlet: {
-                    identifier: 'TEMP_EMPTY_CONTENTLET',
-                    title: 'TEMP_EMPTY_CONTENTLET',
-                    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
-                    inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
-                    widgetTitle: 'TEMP_EMPTY_CONTENTLET',
-                    onNumberOfPages: 1
-                }
-            };
+        const isEmptyContainer = target.dataset?.['dotObject'] === 'container';
 
-            postMessageToEditor({
-                action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                payload: {
-                    x,
-                    y,
-                    width,
-                    height,
-                    payload: contentletPayload
-                }
-            });
+        const contentletForEmptyContainer = {
+            identifier: 'TEMP_EMPTY_CONTENTLET',
+            title: 'TEMP_EMPTY_CONTENTLET',
+            contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
+            inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
+            widgetTitle: 'TEMP_EMPTY_CONTENTLET',
+            onNumberOfPages: 1
+        };
 
-            return;
-        }
+        const contentlet = {
+            identifier: target.dataset?.['dotIdentifier'],
+            title: target.dataset?.['dotTitle'],
+            inode: target.dataset?.['dotInode'],
+            contentType: target.dataset?.['dotType'],
+            widgetTitle: target.dataset?.['dotWidgetTitle'],
+            onNumberOfPages: target.dataset?.['dotOnNumberOfPages']
+        };
 
         const vtlFiles = findVTLData(target);
         const contentletPayload = {
@@ -145,13 +133,7 @@ export function listenHoveredContentlet() {
                 target.dataset?.['dotContainer']
                     ? JSON.parse(target.dataset?.['dotContainer'])
                     : getClosestContainerData(target),
-            contentlet: {
-                identifier: target.dataset?.['dotIdentifier'],
-                title: target.dataset?.['dotTitle'],
-                inode: target.dataset?.['dotInode'],
-                contentType: target.dataset?.['dotType'],
-                onNumberOfPages: target.dataset?.['dotOnNumberOfPages']
-            },
+            contentlet: isEmptyContainer ? contentletForEmptyContainer : contentlet,
             vtlFiles
         };
 

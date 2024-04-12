@@ -45,14 +45,17 @@ export class EmaPageDropzoneComponent {
      * @param {DragEvent} event
      * @memberof EmaPageDropzoneComponent
      */
-    onDrop(event: DragEvent): void {
+    onDrop(event: DragEvent, isEmptyContainer = false): void {
         const target = event.target as HTMLDivElement;
+
         const data: ClientData = JSON.parse(target.dataset.payload);
         const isTop = this.isTop(event);
 
+        const insertPosition = isTop ? 'before' : 'after';
+
         const payload = <PositionPayload>{
             ...data,
-            position: isTop ? 'before' : 'after'
+            position: isEmptyContainer ? undefined : insertPosition
         };
 
         this.place.emit(payload);

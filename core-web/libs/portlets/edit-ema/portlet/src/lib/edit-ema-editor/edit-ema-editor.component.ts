@@ -246,40 +246,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 requestAnimationFrame(() => {
-                    this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
-                        const doc = this.iframe.nativeElement.contentDocument;
-                        const style = doc.createElement('style');
+                    // This gets destroy when the iframe reloads
+                    fromEvent(this.iframe.nativeElement.contentWindow, 'click')
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe((e) => {
+                            const href =
+                                (e.target as HTMLAnchorElement)?.href ||
+                                (e.target as HTMLElement).closest('a')?.href;
 
-                        style.innerHTML = `
-                        [data-dot-object="container"]:empty {
-                            border: 1px solid red !important;
-                            min-height: 200px;
-                            display: block;
-                        }`;
+                            if (href) {
+                                e.preventDefault();
+                                const url = new URL(href);
 
-                        doc.head.appendChild(style);
+                                // Check if the URL is not external
+                                if (url.hostname === window.location.hostname) {
+                                    this.updateQueryParams({
+                                        url: url.pathname
+                                    });
 
-                        const href =
-                            (e.target as HTMLAnchorElement).href ||
-                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
+                                    return;
+                                }
 
-                        if (href) {
-                            e.preventDefault();
-                            const url = new URL(href);
-
-                            // Check if the URL is not external
-                            if (url.hostname === window.location.hostname) {
-                                this.updateQueryParams({
-                                    url: url.pathname
-                                });
-
-                                return;
+                                // Open external links in a new tab
+                                this.window.open(href, '_blank');
                             }
-
-                            // Open external links in a new tab
-                            this.window.open(href, '_blank');
-                        }
-                    });
+                        });
                 });
             });
 
@@ -331,11 +322,56 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    addEditorPageScript(rendered: string) {
+    addEditorPageScript(rendered: string): string {
         const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
-        const updatedRendered = rendered?.replace('</body>', scriptString + '</body>');
+        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
+    }
+
+    /**
+     * Add custom styles to the rendered content
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addCustomStyles(rendered: string): string {
+        const styles = ` <style>
+        .container-notes {
+            opacity: 0;
+        }
+
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
+        }
+        </style>
+        `;
+
+        return rendered.replace('</head>', styles + '</head>');
+    }
+
+    /**
+     * This method is used to map the rendered content with the callbacks
+     *
+     * @private
+     * @param {string} rendered
+     * @param {((r: string) => string)[]} callbacks
+     * @return {*}  {string}
+     * @memberof EditEmaEditorComponent
+     */
+    private mapVTLRendered(rendered: string, callbacks: ((r: string) => string)[]): string {
+        return callbacks.reduce((acc, cb) => cb(acc), rendered);
     }
 
     ngOnDestroy(): void {
@@ -546,8 +582,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const doc = this.iframe?.nativeElement.contentDocument;
 
             if (doc) {
+                const newFile = this.mapVTLRendered(code, [
+                    this.addEditorPageScript.bind(this),
+                    this.addCustomStyles.bind(this)
+                ]);
+
                 doc.open();
-                doc.write(this.addEditorPageScript(code));
+                doc.write(this.addEditorPageScript(newFile));
                 doc.close();
 
                 this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
