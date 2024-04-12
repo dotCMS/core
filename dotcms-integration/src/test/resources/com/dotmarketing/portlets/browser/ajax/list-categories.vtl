@@ -1,0 +1,18 @@
+#set($cats = $categories.getChildrenCategories($categories.getCategoryByKey('{{rootCategoryKey}}')))
+<div>Category list:</div>
+<ul>
+#foreach($item in $cats)
+    #set($desiredCategoryName = $item.categoryName)
+    #set($categoryFound = false)
+
+    #foreach($contentletCategoryName in $workflow.contentletDependencies.categories)
+        #if($contentletCategoryName.categoryName == $desiredCategoryName)
+            #set($categoryFound = true)
+            #break
+        #end
+    #end
+    #if($categoryFound)
+        <li>$desiredCategoryName</li>
+    #end
+#end
+</ul>

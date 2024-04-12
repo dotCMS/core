@@ -23,6 +23,7 @@ import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.rendering.js.JsScriptActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -62,6 +63,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -70,6 +72,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
@@ -3238,8 +3241,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final ConcurrentMap<String,Object> context,
 			final int sleep) {
 
-		ContentletDependencies.Builder dependenciesBuilder = new ContentletDependencies.Builder();
-		dependenciesBuilder = dependenciesBuilder
+		ContentletDependencies.Builder dependenciesBuilder = new ContentletDependencies.Builder()
 				.respectAnonymousPermissions(false)
 				.generateSystemEvent(false)
 				.modUser(user)
@@ -3251,8 +3253,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// additional params applied through the builder
 			dependenciesBuilder = applyAdditionalParams(additionalParamsBean, dependenciesBuilder);
 		}
-
-		final ContentletDependencies dependencies = dependenciesBuilder.build();
 
 		for (Contentlet contentlet : contentlets) {
 			try {
@@ -3272,6 +3272,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							contentlet.setProperty(entry.getKey(), entry.getValue());
 						}
 					}
+
+					final Optional<List<Category>> categories = MapToContentletPopulator.
+							INSTANCE.fetchCategories(contentlet, user, false);
+
+					final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+							.getAllRelationships(contentlet.getInode(), user, false);
+
+					final ContentletDependencies dependencies = dependenciesBuilder
+							.categories(categories.orElse(null))
+							.relationships(contentletRelationships)
+							.build();
 
 					fireBulkActionTask(action, contentlet, dependencies, successConsumer,
 							failConsumer, context);

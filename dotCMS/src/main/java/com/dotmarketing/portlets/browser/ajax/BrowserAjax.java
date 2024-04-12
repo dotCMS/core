@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -35,10 +36,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -50,12 +54,14 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
@@ -663,17 +669,19 @@ public class BrowserAjax {
 
 	public Map<String, Object> saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId, String wfPublishDate,
 			String wfPublishTime, String wfExpireDate, String wfExpireTime, String wfNeverExpire, String whereToSend, String forcePush, String pathToMove) throws  DotSecurityException, ServletException{
-		WebContext ctx = WebContextFactory.get();
-        User user = getUser(ctx.getHttpServletRequest());
-		Contentlet contentlet = null;
-		Map<String, Object> result = new HashMap<>();
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
+
+		final WebContext ctx = WebContextFactory.get();
+        final HttpServletRequest request = ctx.getHttpServletRequest();
+		final User user = getUser(request);
+		final boolean respectAnonPerms = PageMode.get(request).respectAnonPerms;
+		final Map<String, Object> result = new HashMap<>();
+		final WorkflowAPI wapi = APILocator.getWorkflowAPI();
 		try {
 			WorkflowAction action = wapi.findAction(wfActionId, user);
 			if (action == null) {
 				throw new ServletException("No such workflow action");
 			}
-			contentlet = APILocator.getContentletAPI().find(wfConId, user, false);
+			final Contentlet contentlet = APILocator.getContentletAPI().find(wfConId, user, false);
 			contentlet.setStringProperty("wfActionId", action.getId());
 			contentlet.setStringProperty("wfActionComments", wfActionComments);
 			contentlet.setStringProperty("wfActionAssign", wfActionAssign);
@@ -690,7 +698,22 @@ public class BrowserAjax {
 			}
 			contentlet.setTags();
 
-			wapi.fireWorkflowNoCheckin(contentlet, user);
+			final Optional<List<Category>> categories = MapToContentletPopulator.
+					INSTANCE.fetchCategories(contentlet, user, respectAnonPerms);
+
+			final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+					.getAllRelationships(contentlet.getInode(), user, respectAnonPerms);
+
+			final ContentletDependencies.Builder contentletDependencies =
+					new ContentletDependencies.Builder()
+							.respectAnonymousPermissions(respectAnonPerms)
+							.modUser(user)
+							.workflowActionId(action.getId())
+							.relationships(contentletRelationships)
+							.categories(categories.orElse(null))
+							.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+
+			wapi.fireContentWorkflow(contentlet, contentletDependencies.build());
 
 			result.put("status", "success");
 			result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Workflow-executed")));

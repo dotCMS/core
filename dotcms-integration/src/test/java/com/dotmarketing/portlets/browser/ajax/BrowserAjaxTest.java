@@ -1,13 +1,21 @@
 package com.dotmarketing.portlets.browser.ajax;
 
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.ThreadUtilsTest;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -16,21 +24,39 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
+import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,7 +73,7 @@ import static org.mockito.Mockito.when;
  * @author Jose Castro
  * @since Apr 18th, 2023
  */
-public class BrowserAjaxTest {
+public class BrowserAjaxTest extends BaseWorkflowIntegrationTest {
 
     private static Host testSite = null;
     private static Folder parentFolderOne = null;
@@ -72,6 +98,7 @@ public class BrowserAjaxTest {
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
         final long time = System.currentTimeMillis();
         testSite = new SiteDataGen().name("browserajaxtest." + time).nextPersisted();
 
@@ -361,4 +388,237 @@ public class BrowserAjaxTest {
         assertTrue(hosts.stream().anyMatch(host -> host.get("identifier").equals(APILocator.systemHost().getIdentifier())) && loggedInUser.getFirstName().equals(user.getFirstName()) );
         setUpDwrContext(APILocator.getUserAPI().getSystemUser());
     }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#saveFileAction(String,String,String,String,String,String,String,String,String,String,String,String,String)}</li>
+     *     <li><b>Given Scenario: The user is able to execute a workflow action</b> </li>
+     *     <li><b>Expected Result:The action should be executed successfully </b> </li>
+     * </ul>
+     * @throws Exception An error occurred trying to execute the workflow action.
+     */
+    @Test
+    public void testExecuteWorkflowAction() throws Exception {
+
+        WorkflowScheme workflowScheme = null;
+        Category rootCategory = null;
+        ContentType contentType = null;
+        Contentlet testContent = null;
+        try {
+            setUpDwrContext(APILocator.getUserAPI().getSystemUser());
+
+            // creates the test categories
+            final Category childCategory1 = createTestCategory(
+                    "BrowserAjaxWorkflowTestChildCat1", 1).next();
+            final Category childCategory2 = createTestCategory(
+                    "BrowserAjaxWorkflowTestChildCat2", 2).next();
+            rootCategory = createTestCategory(
+                    "BrowserAjaxWorkflowTestRootCat", 0)
+                    .children(childCategory1, childCategory2).nextPersisted();
+
+            // creates the workflow scheme and actions
+            final String schemeName = "BrowserAjaxTestScheme" + UUIDGenerator.generateUuid();
+            final CreateSchemeStepActionResult schemeStepFirstActionResult =
+                    createSchemeStepActionActionlet(
+                        schemeName, "step1", "action1",
+                        SaveContentAsDraftActionlet.class);
+            workflowScheme = schemeStepFirstActionResult.getScheme();
+            final WorkflowStep workflowStep = schemeStepFirstActionResult.getStep();
+            final WorkflowAction saveDraftAction = schemeStepFirstActionResult.getAction();
+
+            final CreateSchemeStepActionResult schemeStepVelocityActionResult =
+                    createActionActionlet(workflowScheme.getId(),
+                        workflowStep.getId(), "action2",
+                        VelocityScriptActionlet.class);
+
+            saveActionletScriptCode(schemeStepVelocityActionResult, rootCategory);
+
+            final String veloctiyActionId = schemeStepVelocityActionResult.getAction().getId();
+            addActionletToAction(veloctiyActionId, SaveContentActionlet.class, 1);
+
+            // creates content type with categories
+            contentType = createTestTypeWithCategories(
+                    "BrowserAjaxWorkflowTestType" + System.currentTimeMillis(),
+                    workflowScheme.getId(),
+                    rootCategory.getInode());
+
+            // create test content
+            testContent = createTestContentletWithCategories(contentType,
+                    new ArrayList<>(List.of(childCategory1, childCategory2)),
+                    saveDraftAction.getId());
+
+            // execute the workflow action
+            final String contentId = testContent.getInode();
+            final BrowserAjax browserAjax = new BrowserAjax();
+            final Map<String, Object> resultMap = browserAjax.saveFileAction(
+                    "", "", veloctiyActionId, "", contentId,
+                    "", "", "", "", "",
+                    "", "", "");
+
+            assertNotNull(resultMap);
+            assertEquals("success", resultMap.get("status"));
+
+            // Check that result code in contentlet contains category names
+            final Contentlet resultContent = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(
+                    testContent.getIdentifier());
+            assertNotNull(resultContent);
+            final Object resultObj = resultContent.get ("result");
+            assertNotNull(resultObj);
+            final Map<?, ?> resultCodeMap = (Map<?, ?>) resultObj;
+            final Object outputCodeObj = resultCodeMap.get("output");
+            assertNotNull(outputCodeObj);
+            final String resultCode = outputCodeObj.toString();
+
+            assertTrue(resultCode.contains(childCategory1.getCategoryName()));
+            assertTrue(resultCode.contains(childCategory2.getCategoryName()));
+
+        } finally {
+            if (null != testContent) {
+                ContentletDataGen.remove(testContent);
+            }
+            if (null != contentType) {
+                ContentTypeDataGen.remove(contentType);
+            }
+            if (null != rootCategory) {
+                APILocator.getCategoryAPI().delete(
+                        rootCategory, APILocator.systemUser(), false);
+            }
+            if (null != workflowScheme) {
+                cleanScheme(workflowScheme);
+            }
+        }
+    }
+
+    /**
+     * Creates a workflow scheme, with a step, an action and a velocity actionlet.
+     *
+     * @param schemeStepActionResult The result of creating the scheme step.
+     * @param rootCategory The root category.
+     * @throws Exception An error occurred trying to create the scheme step.
+     */
+    private void saveActionletScriptCode(
+            final CreateSchemeStepActionResult schemeStepActionResult,
+            final Category rootCategory)
+            throws Exception {
+
+        final String code = FileUtil.read(ConfigTestHelper.getPathToTestResource(
+                "com/dotmarketing/portlets/browser/ajax/list-categories.vtl"))
+                .replace("{{rootCategoryKey}}", rootCategory.getKey());
+
+        final WorkflowActionClass workflowActionClass = schemeStepActionResult.getActionClass();
+        final List<WorkflowActionClassParameter> params = new ArrayList<>();
+        final User user = APILocator.systemUser();
+
+        final WorkflowActionClassParameter parameter = new WorkflowActionClassParameter();
+        parameter.setActionClassId(workflowActionClass.getId());
+        parameter.setKey("script");
+        parameter.setValue(code);
+        params.add(parameter);
+
+        final WorkflowActionClassParameter parameterResult = new WorkflowActionClassParameter();
+        parameterResult.setActionClassId(workflowActionClass.getId());
+        parameterResult.setKey("resultKey");
+        parameterResult.setValue("result");
+        params.add(parameterResult);
+
+        APILocator.getWorkflowAPI().saveWorkflowActionClassParameters(params, user);
+
+    }
+
+    /**
+     * Creates a test category.
+     * @param categoryNamePrefix The prefix for the category name.
+     * @param sortOrder The sort order for the category.
+     * @return The category data generator.
+     */
+    private CategoryDataGen createTestCategory(
+            final String categoryNamePrefix, final int sortOrder) {
+        final String categoryName = categoryNamePrefix + System.currentTimeMillis();
+        final String categoryKey = categoryName.toLowerCase().replace("\\s", "");
+
+        return new CategoryDataGen().setCategoryName(categoryName)
+                .setKey(categoryKey).setCategoryVelocityVarName(categoryKey)
+                .setSortOrder(sortOrder);
+
+    }
+
+    /**
+     * Creates a content type with categories and assigns it to a workflow scheme.
+     * @param contentTypeName The name of the content type.
+     * @param workflowSchemeId The ID of the workflow scheme.
+     * @param categoryId The ID of the root category.
+     * @return The created content type.
+     * @throws Exception An error occurred trying to create the content type.
+     */
+    private ContentType createTestTypeWithCategories(
+            final String contentTypeName, final String workflowSchemeId, final String categoryId)
+            throws Exception {
+
+        // Create content type
+        ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .baseContentType(BaseContentType.CONTENT)
+                .workflowId(workflowSchemeId)
+                .nextPersisted();
+
+        // Add fields to the contentType
+        final Field titleField =
+                FieldBuilder.builder(TextField.class).name("Title")
+                        .contentTypeId(contentType.id())
+                        .variable("title")
+                        .indexed(true)
+                        .required(true)
+                        .dataType(DataTypes.TEXT).build();
+
+        final Field categoryField =
+                FieldBuilder.builder(CategoryField.class).name("TestCategory")
+                        .contentTypeId(contentType.id())
+                        .indexed(true)
+                        .required(true)
+                        .values(categoryId).build();
+
+        final Field resultField =
+                FieldBuilder.builder(KeyValueField.class).name("Result")
+                        .contentTypeId(contentType.id())
+                        .variable("result")
+                        .required(false)
+                        .indexed(false)
+                        .build();
+
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(
+                contentType, List.of(titleField, categoryField, resultField));
+
+        return contentType;
+
+    }
+
+    /**
+     * Creates a test contentlet with categories.
+     * @param contentType The content type.
+     * @param categoryList The list of categories.
+     * @param actionId The ID of the action to be executed.
+     * @return The created contentlet.
+     * @throws Exception An error occurred trying to create the contentlet.
+     */
+    private Contentlet createTestContentletWithCategories(
+            final ContentType contentType, final List<Category> categoryList,
+            final String actionId) throws Exception {
+
+        final Contentlet testContent = new ContentletDataGen(contentType.id())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setProperty("title", "BrowserAjaxWorkflowTestContent" + System.currentTimeMillis())
+                .next();
+        return APILocator.getWorkflowAPI().fireContentWorkflow(testContent,
+            new ContentletDependencies.Builder()
+                    .modUser(APILocator.getUserAPI().getSystemUser())
+                    .respectAnonymousPermissions(false)
+                    .workflowActionId(actionId)
+                    .categories(categoryList)
+                    .indexPolicy(IndexPolicy.FORCE)
+                    .indexPolicyDependencies(IndexPolicy.FORCE)
+                    .build());
+
+    }
+
 }

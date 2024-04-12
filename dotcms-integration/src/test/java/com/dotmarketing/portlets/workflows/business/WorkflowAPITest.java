@@ -1,18 +1,22 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
@@ -23,9 +27,12 @@ import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowActionClassDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.rest.api.v1.workflow.ActionFail;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.workflow.form.AdditionalParamsBean;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -40,6 +47,7 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -61,6 +69,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -77,6 +86,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -91,8 +101,13 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
 import static com.dotmarketing.portlets.workflows.model.WorkflowState.ARCHIVED;
@@ -327,6 +342,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
 
         HostAPI hostAPI = APILocator.getHostAPI();
 
@@ -4661,6 +4677,203 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertTrue(comments1.get(0).createdDate().after(comments1.get(1).createdDate()) );
         //the comment 1 should be the first one
         assertEquals("comment test 1", comments1.get(0).commentDescription());
+    }
+
+    /**
+     * Test workflow bulk action including velocity code to get categories
+     */
+    @Test
+    public void executeVelocityBulkActionIncludingCategories() throws Exception {
+
+        Category rootCategory = null;
+        WorkflowScheme workflowScheme = null;
+        ContentType testContentType = null;
+        Contentlet contentlet = null;
+        try {
+            // creates the test categories
+            final Category childCategory1 = createTestCategory(
+                    "VelocityBulkActionTestChildCat1", 1).next();
+            final Category childCategory2 = createTestCategory(
+                    "VelocityBulkActionTesTestChildCat2", 2).next();
+            rootCategory = createTestCategory(
+                    "VelocityBulkActionTesTestRootCat", 0)
+                    .children(childCategory1, childCategory2).nextPersisted();
+            final String rootCategoryId = rootCategory.getInode();
+
+            // creates the test workflow scheme
+            final String workflowSchemeName = "VelocityBulkActionTestScheme" + System.currentTimeMillis();
+            workflowScheme = addWorkflowScheme(workflowSchemeName);
+            final WorkflowStep workflowStep = addWorkflowStep(
+                    "testStep", 1, false, false,
+                    workflowScheme.getId());
+            final WorkflowAction saveAction = addWorkflowAction(
+                    "testSaveAction", 1,
+                    workflowStep.getId(), workflowStep.getId(), anyWhoEdit,
+                    workflowScheme.getId());
+            addSubActionClass(SAVE_AS_DRAFT_SUBACTION, saveAction.getId(),
+                    SaveContentAsDraftActionlet.class, 0);
+
+            final WorkflowAction velocityAction = addWorkflowAction(
+                    "testVelocityAction", 2,
+                    workflowStep.getId(), workflowStep.getId(), anyWhoEdit,
+                    workflowScheme.getId());
+            final WorkflowActionClass velocitySubAction = addSubActionClass(
+                    "VelocityAction", velocityAction.getId(),
+                    VelocityScriptActionlet.class, 1);
+            addSubActionClass(SAVE_CONTENT_SUBACTION, velocityAction.getId(),
+                    SaveContentActionlet.class, 2);
+            saveActionletScriptCode(velocitySubAction, rootCategory);
+
+            // creates the test content type
+            testContentType = insertContentType(
+                    "BulkActionWithCategoriesTestType",
+                    BaseContentType.CONTENT);
+            final Field categoryField = FieldBuilder.builder(CategoryField.class)
+                    .contentTypeId(testContentType.id())
+                    .name("TestCategory")
+                    .variable("testCategory")
+                    .required(true)
+                    .indexed(true)
+                    .sortOrder(2)
+                    .values(rootCategoryId)
+                    .build();
+            final Field resultField = FieldBuilder.builder(KeyValueField.class)
+                    .contentTypeId(testContentType.id())
+                    .name("result")
+                    .variable("result")
+                    .required(false)
+                    .indexed(false)
+                    .sortOrder(3)
+                    .build();
+            fieldAPI.saveFields(List.of(categoryField, resultField), user);
+
+            final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+            workflowAPI.saveSchemeIdsForContentType(testContentType,
+                    Stream.of(
+                            systemWorkflow.getId(),
+                            workflowScheme.getId()
+                    ).collect(Collectors.toSet())
+            );
+
+            // creates the test content
+            contentlet = createTestContentletWithCategories(
+                    testContentType,
+                    new ArrayList<>(List.of(childCategory1, childCategory2)),
+                    saveAction.getId());
+
+            final List<Contentlet> contentlets = new ArrayList<>();
+            contentlets.add(contentlet);
+
+            // execute the bulk action
+            final AtomicLong successCount = new AtomicLong(0);
+            final List<ActionFail> fails = new ArrayList<>();
+            final AdditionalParamsBean additionalParams = new AdditionalParamsBean(
+                    null, null, new HashMap<>());
+            final ConcurrentMap<String, Object> actionCtx = new ConcurrentHashMap<>();
+            workflowAPI.fireBulkActionTasks(velocityAction,
+                    user, contentlets, additionalParams,
+                    successCount::addAndGet, (inode, e) -> {
+                        fails.add(ActionFail.newInstance(user, inode, e));
+                    }, actionCtx, WorkflowAPIImpl.BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT);
+
+            // verify the results
+            assertEquals(1, successCount.get());
+            assertEquals(0, fails.size());
+
+            // verify the categories
+            final Contentlet resultContent = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(
+                            contentlet.getIdentifier());
+            assertNotNull(resultContent);
+            final Object resultObj = resultContent.get ("result");
+            assertNotNull(resultObj);
+            final Map<?, ?> resultCodeMap = (Map<?, ?>) resultObj;
+            final Object outputCodeObj = resultCodeMap.get("output");
+            assertNotNull(outputCodeObj);
+            final String resultCode = outputCodeObj.toString();
+
+            assertTrue(resultCode.contains(childCategory1.getCategoryName()));
+            assertTrue(resultCode.contains(childCategory2.getCategoryName()));
+
+        } finally {
+
+            if (contentlet != null) {
+                ContentletDataGen.remove(contentlet);
+            }
+            if (testContentType != null) {
+                ContentTypeDataGen.remove(testContentType);
+            }
+            if (workflowScheme != null) {
+                workflowAPI.archive(workflowScheme, user);
+                workflowAPI.deleteScheme(workflowScheme, user);
+            }
+            if (rootCategory != null) {
+                APILocator.getCategoryAPI().delete(
+                        rootCategory, user, false);
+            }
+
+        }
+
+    }
+
+    /**
+     * Creates a test category
+     */
+    private CategoryDataGen createTestCategory(
+            final String categoryNamePrefix, final int sortOrder) {
+        final String categoryName = categoryNamePrefix + System.currentTimeMillis();
+        final String categoryKey = categoryName.toLowerCase().replace("\\s", "");
+
+        return new CategoryDataGen().setCategoryName(categoryName)
+                .setKey(categoryKey).setCategoryVelocityVarName(categoryKey)
+                .setSortOrder(sortOrder);
+
+    }
+
+    /**
+     * Creates a test contentlet with categories
+     */
+    private Contentlet createTestContentletWithCategories(
+            final ContentType contentType, final List<Category> categoryList,
+            final String actionId) throws Exception {
+
+        final Contentlet testContent = new ContentletDataGen(contentType.id())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setProperty("title", "BrowserAjaxWorkflowTestContent" + System.currentTimeMillis())
+                .setProperty(Contentlet.WORKFLOW_ACTION_KEY, actionId)
+                .next();
+        return contentletAPI.checkin(testContent, user, false,
+                categoryList);
+
+    }
+
+    /**
+     * Adds the script code to the actionlet
+     */
+    private void saveActionletScriptCode(
+            final WorkflowActionClass workflowActionClass, final Category rootCategory)
+            throws Exception {
+
+        final String code = FileUtil.read(ConfigTestHelper.getPathToTestResource(
+                        "com/dotmarketing/portlets/browser/ajax/list-categories.vtl"))
+                .replace("{{rootCategoryKey}}", rootCategory.getKey());
+
+        final List<WorkflowActionClassParameter> params = new ArrayList<>();
+
+        final WorkflowActionClassParameter parameter = new WorkflowActionClassParameter();
+        parameter.setActionClassId(workflowActionClass.getId());
+        parameter.setKey("script");
+        parameter.setValue(code);
+        params.add(parameter);
+
+        final WorkflowActionClassParameter parameterResult = new WorkflowActionClassParameter();
+        parameterResult.setActionClassId(workflowActionClass.getId());
+        parameterResult.setKey("resultKey");
+        parameterResult.setValue("result");
+        params.add(parameterResult);
+
+        workflowAPI.saveWorkflowActionClassParameters(params, user);
+
     }
 
 }
