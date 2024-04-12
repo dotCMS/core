@@ -73,29 +73,35 @@ export class EmaPageDropzoneComponent {
      * @param {DragEvent} event
      * @memberof EmaPageDropzoneComponent
      */
-    onDragover(event: DragEvent): void {
+    onDragover(event: DragEvent, isEmptyContainer = false): void {
         event.stopPropagation();
         event.preventDefault();
 
         const target = event.target as HTMLDivElement;
-        const { type = '' } = target.dataset;
-
-        if (type !== 'contentlet') {
-            return;
-        }
 
         const parentReact = this.el.nativeElement.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
         const isTop = this.isTop(event);
 
-        this.pointerPosition = {
-            left: `${targetRect.left - parentReact.left}px`,
-            width: `${targetRect.width}px`,
-            opacity: '1',
-            top: isTop
-                ? `${targetRect.top - parentReact.top}px`
-                : `${targetRect.top - parentReact.top + targetRect.height}px`
-        };
+        if (!isEmptyContainer) {
+            this.pointerPosition = {
+                left: `${targetRect.left - parentReact.left}px`,
+                width: `${targetRect.width}px`,
+                opacity: '1',
+                top: isTop
+                    ? `${targetRect.top - parentReact.top}px`
+                    : `${targetRect.top - parentReact.top + targetRect.height}px`,
+                height: '3px'
+            };
+        } else {
+            this.pointerPosition = {
+                left: `${targetRect.left - parentReact.left}px`,
+                width: `${targetRect.width}px`,
+                opacity: '0.1',
+                top: `${targetRect.top - parentReact.top}px`,
+                height: `${targetRect.height}px`
+            };
+        }
     }
 
     private isTop(event: DragEvent): boolean {

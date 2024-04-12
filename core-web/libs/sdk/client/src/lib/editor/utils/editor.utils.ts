@@ -133,7 +133,7 @@ export function getClosestContainerData(element: Element) {
  * @param {(HTMLElement | null)} element
  * @return {*}
  */
-export function findContentletElement(element: HTMLElement | null): HTMLElement | null {
+export function findDotElement(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
     if (
@@ -143,16 +143,16 @@ export function findContentletElement(element: HTMLElement | null): HTMLElement 
         return element;
     }
 
-    return findContentletElement(element?.['parentElement']);
+    return findDotElement(element?.['parentElement']);
 }
 
-export function findVTLElement(element: HTMLElement | null): HTMLElement | null {
+export function findDotVTLElement(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
     if (element.dataset && element.dataset?.['dotObject'] === 'vtl-file') {
         return element;
     } else {
-        return findContentletElement(element?.['parentElement']);
+        return findDotElement(element?.['parentElement']);
     }
 }
 

@@ -2,8 +2,8 @@
     *ngFor="let container of containers"
     [ngStyle]="container | dotPosition"
     [attr.data-payload]="container.payload"
-    (drop)="container.contentlets.length < 1 ? onDrop($event, true) : null"
-    (dragover)="container.contentlets.length < 1 ? onDragover($event) : null"
+    (drop)="!container.contentlets.length ? onDrop($event, true) : null"
+    (dragover)="!container.contentlets.length ? onDragover($event, true) : null"
     data-type="container">
     <div
         *ngFor="let contentlet of container.contentlets"
