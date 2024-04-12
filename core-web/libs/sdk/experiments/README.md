@@ -1,10 +1,8 @@
 # @dotcms/experiments
 
-`@dotcms/experiments` is the official dotCMS JavaScript library that helps add A/B testing to Single Page Applications (SPAs). It handles user assignments to different variants of a page and tracks their interactions.
+`@dotcms/experiments` is the official dotCMS JavaScript library that helps add A/B testing to your webapps. It handle user assignments to different variants of a page and tracks their interactions.
 
 ## Features
-
-This library facilitates the integration of A/B testing into your SPA by providing robust features for managing user experiences and tracking interactions:
 
 - **User Assignment to Experiments**: Automatically assigns users to different experimental variants, ensuring diverse user experiences and reliable test data.
 - **Link Verification for Redirection**: Checks links to ensure users are redirected to their assigned experiment variant, maintaining the integrity of the testing process.
@@ -28,7 +26,7 @@ yarn add @dotcms/experiments
 ## Components
 
 ### `DotExperimentsProvider`
-This component utilizes React's Context API to provide DotExperiments instances to its descendants, facilitating access to A/B testing features throughout your application.
+This component utilizes React's Context API to provide DotExperiments instances to its descendants, facilitating access to A/B testing features throughout your webapps.
 
 #### Props
 -   **config**: Configuration object for DotCMS Analytics integration.
@@ -62,6 +60,21 @@ return (
   </DotExperimentsProvider>
 );
 ```
+
+## How A/B Testing Works with @dotcms/experiments
+
+The A/B testing process with `@dotcms/experiments` is designed to be straightforward and automatic:
+
+1. **Experiment Assignment**: When a user visits a page that includes an experiment, the library first checks if the user has been assigned to an experiment variant. If not, it queries DotCMS Analytics to determine if there are active experiments and assigns the user to the appropriate variant.
+
+2. **Page Redirection**: If the user's assigned variant differs from the current page, the library automatically redirects the user to the correct variant page. This ensures that the user experiences the variant they have been assigned to.
+
+3. **Tracking Pageviews**: After redirection or upon visiting the page, the library sends a pageview event to DotCMS Analytics. This data is used to determine the effectiveness of each variant, ultimately helping to identify which variant performs better in the A/B test.
+
+
+## Learn More About A/B Testing with DotCMS
+
+For more detailed information on A/B testing features and capabilities, visit the DotCMS A/B testing and experiments page: [DotCMS A/B Testing Experiments](https://www.dotcms.com/product/ab-testing-experiments).
 
 
 ## Contributing
