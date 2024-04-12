@@ -3452,8 +3452,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds);
         long end = System.currentTimeMillis();
 
-        assertEquals(0, (end - start));
-        assertTrue((end - start) < 200);
+        assertTrue((end - start) < 100);
     }
 
     /**

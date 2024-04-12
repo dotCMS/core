@@ -422,7 +422,7 @@ public class PageResource {
                     e.getClass().getCanonicalName(), request, form);
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-        } 
+        }
 
         return res;
     }
