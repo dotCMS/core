@@ -14,6 +14,14 @@ on:
         description: 'Indicates if the workflow should post to slack on failure'
         type: boolean
         default: false
+    secrets:
+        SLACK_BOT_TOKEN:
+          description: 'Slack Bot Token'
+          required: false
+        MASTER_BUILD_SLACK_WEBHOOK:
+          required: false
+          description: 'Slack Webhook'
+
 permissions:
   checks: write
 
