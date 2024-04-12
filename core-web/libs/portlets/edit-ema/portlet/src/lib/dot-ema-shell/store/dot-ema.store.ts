@@ -8,7 +8,13 @@ import { MessageService } from 'primeng/api';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotExperimentsService,
+    DotLicenseService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotContainerMap,
     DotDevice,
@@ -17,6 +23,10 @@ import {
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
 
+import {
+    Container,
+    ContentletArea
+} from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import {
     DotPageApiParams,
     DotPageApiResponse,
@@ -74,7 +84,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         private readonly dotLicenseService: DotLicenseService,
         private readonly messageService: MessageService,
         private readonly dotMessageService: DotMessageService,
-        private readonly dotExperimentsService: DotExperimentsService
+        private readonly dotExperimentsService: DotExperimentsService,
+        private readonly dotContentletLockerService: DotContentletLockerService,
+        private readonly loginService: LoginService
     ) {
         super();
     }
@@ -82,6 +94,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     /*******************
      * Selectors
      *******************/
+
+    readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
 
     readonly code$ = this.select((state) => state.editor.page.rendered);
 
@@ -117,6 +131,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         const iframeURL = state.clientHost ? `${state.clientHost}/${pageURL}` : '';
 
         return {
+            bounds: state.bounds,
+            contentletArea: state.contentletArea,
             clientHost: state.clientHost,
             favoritePageURL,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
@@ -201,14 +217,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         pageData: this.dotPageApiService.get(params),
                         licenseData: this.dotLicenseService
                             .isEnterprise()
-                            .pipe(take(1), shareReplay())
+                            .pipe(take(1), shareReplay()),
+                        currentUser: this.loginService.getCurrentUser()
                     }).pipe(
                         tap({
                             error: ({ status }: HttpErrorResponse) => {
                                 this.createEmptyState({ canEdit: false, canRead: false }, status);
                             }
                         }),
-                        switchMap(({ pageData, licenseData }) =>
+                        switchMap(({ pageData, licenseData, currentUser }) =>
                             this.dotExperimentsService.getById(params.experimentId ?? '').pipe(
                                 tap({
                                     next: (experiment) => {
@@ -226,10 +243,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                         const canEditVariant =
                                             isDefaultVariant || !editingBlockedByExperiment;
 
-                                        const mode = this.getInitialEditorMode(
+                                        const isLocked =
+                                            pageData.page.locked &&
+                                            pageData.page.lockedBy !== currentUser.userId;
+
+                                        const mode = this.getInitialEditorMode({
                                             isDefaultVariant,
-                                            canEditVariant
-                                        );
+                                            canEditVariant,
+                                            isLocked
+                                        });
 
                                         return this.setState({
                                             currentExperiment: experiment,
@@ -237,11 +259,18 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                             editor: pageData,
                                             isEnterpriseLicense: licenseData,
                                             editorState: EDITOR_STATE.IDLE,
+                                            bounds: [],
+                                            contentletArea: null,
                                             editorData: {
                                                 mode,
                                                 canEditVariant,
                                                 canEditPage: pageData.page.canEdit,
-                                                variantId: params.variantName
+                                                variantId: params.variantName,
+                                                page: {
+                                                    isLocked,
+                                                    canLock: pageData.page.canLock,
+                                                    lockedByUser: pageData.page.lockedByName
+                                                }
                                             }
                                         });
                                     },
@@ -398,6 +427,35 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
+    readonly unlockPage = this.effect((inode$: Observable<string>) => {
+        return inode$.pipe(
+            tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
+            switchMap((inode) =>
+                this.dotContentletLockerService.unlock(inode).pipe(
+                    tapResponse({
+                        next: () => {
+                            this.patchState((state) => ({
+                                ...state,
+                                editorState: EDITOR_STATE.IDLE,
+                                editorData: {
+                                    ...state.editorData,
+                                    page: {
+                                        ...state.editorData.page,
+                                        isLocked: false
+                                    },
+                                    mode: EDITOR_MODE.EDIT
+                                }
+                            }));
+                        },
+                        error: () => {
+                            this.updateEditorState(EDITOR_STATE.ERROR);
+                        }
+                    })
+                )
+            )
+        );
+    });
+
     private createPageURL(params: DotPageApiParams): string {
         const url = sanitizeURL(params.url);
 
@@ -468,6 +526,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         };
     });
 
+    readonly setBounds = this.updater((state, bounds: Container[]) => ({
+        ...state,
+        bounds: bounds
+    }));
+
+    readonly setContentletArea = this.updater((state, contentletArea: ContentletArea) => ({
+        ...state,
+        contentletArea
+    }));
+
     /**
      * Create the url to add a page to favorites
      *
@@ -522,6 +590,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     private createEmptyState(permissions: { canEdit: boolean; canRead: boolean }, error?: number) {
         this.setState({
+            bounds: [],
+            contentletArea: null,
             editor: {
                 page: {
                     title: '',
@@ -598,7 +668,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     };
 
-    private getInitialEditorMode(isDefaultVariant: boolean, canEditVariant: boolean): EDITOR_MODE {
+    private getInitialEditorMode({
+        isDefaultVariant,
+        canEditVariant,
+        isLocked
+    }: {
+        isDefaultVariant: boolean;
+        canEditVariant: boolean;
+        isLocked: boolean;
+    }): EDITOR_MODE {
+        if (isLocked) {
+            return EDITOR_MODE.LOCKED;
+        }
+
         if (isDefaultVariant) {
             return EDITOR_MODE.EDIT;
         } else if (canEditVariant) {

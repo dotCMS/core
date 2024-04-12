@@ -1,27 +1,43 @@
 import { Observable } from 'rxjs';
 
+import { AsyncPipe, NgIf } from '@angular/common';
 import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SkeletonModule } from 'primeng/skeleton';
 
 import { delay, filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotValidators } from '@dotcms/ui';
+import { DotMessagePipe, DotValidators } from '@dotcms/ui';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
 interface AIContentForm {
     textPrompt: FormControl<string>;
+    generatedText: FormControl<string>;
 }
 
 @Component({
     selector: 'dot-ai-content-prompt',
-
+    standalone: true,
     templateUrl: './ai-content-prompt.component.html',
+    imports: [
+        DialogModule,
+        ReactiveFormsModule,
+        InputTextareaModule,
+        DotMessagePipe,
+        ButtonModule,
+        SkeletonModule,
+        NgIf,
+        AsyncPipe
+    ],
     styleUrls: ['./ai-content-prompt.component.scss']
 })
 export class AIContentPromptComponent implements OnInit {
@@ -29,11 +45,12 @@ export class AIContentPromptComponent implements OnInit {
     vm$: Observable<AiContentPromptState> = this.store.vm$;
     readonly ComponentStatus = ComponentStatus;
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
-        textPrompt: new FormControl('', [Validators.required, DotValidators.noWhitespace])
+        textPrompt: new FormControl('', [Validators.required, DotValidators.noWhitespace]),
+        generatedText: new FormControl('')
     });
     confirmationService = inject(ConfirmationService);
     dotMessageService = inject(DotMessageService);
-    submitButtonLabel = `block-editor.extension.ai-image.generate`;
+    submitButtonLabel: string;
     private destroyRef = inject(DestroyRef);
 
     @ViewChild('inputTextarea') private inputTextarea: ElementRef<HTMLTextAreaElement>;
@@ -64,17 +81,19 @@ export class AIContentPromptComponent implements OnInit {
                 this.inputTextarea.nativeElement.focus();
             });
 
-        // Disable the form and change the submit button label when the status is loading
-        this.vm$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
-            if (state.status === ComponentStatus.LOADING) {
-                this.form.disable();
-                this.submitButtonLabel = 'block-editor.extension.ai-image.generating';
-            } else {
-                this.form.enable();
-                this.submitButtonLabel = state.content
-                    ? 'block-editor.extension.ai-image.regenerate'
-                    : 'block-editor.extension.ai-image.generate';
-            }
+        // Disable form and set the submit button label based on the status.
+        this.store.status$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((status) => {
+            this.form[status === ComponentStatus.LOADING ? 'disable' : 'enable']();
+        });
+
+        // Set the form content based on the active index
+        this.store.activeContent$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
+            this.form.patchValue({ textPrompt: data?.prompt, generatedText: data?.content });
+        });
+
+        // Set the submit button label
+        this.store.submitLabel$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((label) => {
+            this.submitButtonLabel = label;
         });
     }
 }

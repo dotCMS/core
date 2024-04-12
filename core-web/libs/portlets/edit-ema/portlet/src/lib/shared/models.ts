@@ -2,6 +2,7 @@ import { DotDevice, DotExperiment } from '@dotcms/dotcms-models';
 
 import { EDITOR_MODE, EDITOR_STATE } from './enums';
 
+import { Container, ContentletArea } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
 
 export interface VTLFile {
@@ -83,6 +84,11 @@ export interface EditorData {
     canEditVariant?: boolean;
     canEditPage?: boolean;
     variantId?: string;
+    page?: {
+        isLocked: boolean;
+        canLock: boolean;
+        lockedByUser: string;
+    };
 }
 
 export interface EditEmaState {
@@ -91,6 +97,19 @@ export interface EditEmaState {
     editor: DotPageApiResponse;
     isEnterpriseLicense: boolean;
     editorState: EDITOR_STATE;
+    bounds: Container[];
+    contentletArea: ContentletArea;
     editorData: EditorData;
     currentExperiment?: DotExperiment;
+}
+
+export interface MessageInfo {
+    summary: string;
+    detail: string;
+}
+
+export interface WorkflowActionResult extends MessageInfo {
+    workflowName: string;
+    callback: string;
+    args: unknown[];
 }
