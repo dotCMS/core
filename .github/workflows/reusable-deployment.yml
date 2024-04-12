@@ -50,7 +50,7 @@ jobs:
         with:
           image_name: dotcms/dotcms-dev
           docker_platforms: linux/amd64,linux/arm64
-          docker_context: docker/dev-env
+          docker_context: dev-env
           commit_id: ${{ github.sha }}
           ref: ${{ inputs.environment }}
           snapshot: ${{ inputs.snapshot }}
