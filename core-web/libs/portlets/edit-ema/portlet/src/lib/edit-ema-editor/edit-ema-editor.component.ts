@@ -56,18 +56,26 @@ import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
-import { EmaDragItem, ClientContentletArea, Container } from './components/ema-page-dropzone/types';
 import {
-    handleInlineEdit,
-    handleInternalNav,
-    initEditor,
-    injectInlineEdit,
-    replaceContentletONCopy
+    EmaDragItem,
+    ClientContentletArea,
+    Container,
+    CopyContentletPayload,
+    UpdatedContentlet,
+    ContentletDataset
+} from './components/ema-page-dropzone/types';
+import {
+    // handleInlineEdit,
+    handleInternalNav
+    // initEditor,
+    // injectInlineEdit,
+    // replaceContentletONCopy
 } from './utils/inline-edit';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiParams } from '../services/dot-page-api.service';
+import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import {
@@ -172,6 +180,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
+    private readonly inlineEditingService = inject(InlineEditService);
 
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
@@ -253,11 +262,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(({ isEnterprise }) => {
                 requestAnimationFrame(() => {
-                    const doc = this.iframe.nativeElement.contentDocument;
+                    // const doc = this.iframe.nativeElement.contentDocument;
                     const win = this.iframe.nativeElement.contentWindow;
 
                     if (isEnterprise) {
-                        injectInlineEdit(doc);
+                        this.inlineEditingService.injectInlineEdit(this.iframe);
                     }
 
                     fromEvent(win, 'click')
@@ -265,14 +274,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         .subscribe((e: MouseEvent) => {
                             handleInternalNav(e);
                             if (isEnterprise) {
-                                handleInlineEdit(e, this.iframe.nativeElement.contentWindow);
+                                this.inlineEditingService.handleInlineEdit(e);
                             }
                         });
-
-                    // win.addEventListener('click', (e) => {
-                    //     handleInternalNav(e);
-                    //     handleInlineEdit(e);
-                    // });
                 });
             });
 
@@ -655,7 +659,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea | any; //TODO: Type this later
+            payload:
+                | ActionPayload
+                | SetUrlPayload
+                | Container[]
+                | ClientContentletArea
+                // | CopyContentletPayload
+                | UpdatedContentlet
+                | any; //TODO: Type this later
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -703,62 +714,51 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
 
             'copy-contentlet-inline-editing': () => {
+                const payload = <{ dataset: ContentletDataset }>data.payload;
+
                 this.dotCopyContentModalService
                     .open()
                     .pipe(
                         switchMap(({ shouldCopy }) => {
                             if (!shouldCopy) {
-                                return of(data.payload);
+                                return of(payload);
                             }
 
                             return this.handleCopyContent();
                         })
-                        // switchMap((res) => {
-                        //     if (!res.payload) {
-                        //         this.store.reload({ params: this.queryParams });
-                        //     }
-
-                        //     return res;
-                        // })
                     )
-                    .subscribe((res: any) => {
-                        // this.dialog.editContentlet(contentlet);
-                        console.log({ res, data });
+                    .subscribe((res: DotCMSContentlet) => {
                         const updatedDataset = {
-                            inode: res.inode || res.dataset.inode,
-                            fieldName: data.payload.dataset.fieldName,
-                            mode: data.payload.dataset.mode,
-                            language: data.payload.dataset.language
+                            inode: res.inode || payload.dataset.inode,
+                            fieldName: payload.dataset.fieldName,
+                            mode: payload.dataset.mode,
+                            language: payload.dataset.language
                         };
-                        console.log(updatedDataset);
+
                         if (!res.dataset) {
+                            // Al agregar un contentlet después, esto falla.
+                            this.inlineEditingService.replaceContentletONCopy({
+                                oldInode: payload.dataset.inode,
+                                newInode: res.inode
+                            });
                             // this.store.reload({
                             //     params: this.queryParams,
-                            //     whenReloaded: () =>
-                            //         initEditor(
-                            //             updatedDataset,
-                            //             this.iframe.nativeElement.contentWindow
-                            //         )
-                            // });
-                            console.log('Copy content!');
-                            replaceContentletONCopy({
-                                oldInode: data.payload.dataset.inode,
-                                newInode: res.inode,
-                                iframeWindow: this.iframe.nativeElement.contentWindow
-                            });
+                            //     whenReloaded: () => {
+                            //         this.inlineEditingService.initEditor(updatedDataset)
+                            //         console.log("Called initEditor");
+                            //     }
+                            // })
                         }
 
-                        console.log(updatedDataset);
-
-                        initEditor(updatedDataset, this.iframe.nativeElement.contentWindow);
+                        this.inlineEditingService.initEditor(updatedDataset);
                     });
             },
             'update-contentlet': () => {
-                console.log(data.payload);
+                const payload = <UpdatedContentlet>data.payload;
                 this.store.updateInlineEditedContentlet({
                     contentlet: {
-                        inode: data.payload.dataset['inode'],
-                        body: data.payload.innerHTML
+                        inode: payload.dataset['inode'],
+                        body: payload.innerHTML
                     }
                 });
             },

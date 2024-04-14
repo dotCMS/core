@@ -47,3 +47,24 @@ export interface Row {
 }
 
 export type EmaPageDropzoneItem = Row | Column | Container | ContentletArea;
+
+export interface CopyContentletPayload {
+    fieldName: string;
+    inode: string;
+    language: string;
+    mode: string;
+}
+
+export interface ContentletDataset {
+    language: string;
+    mode: string;
+    inode: string;
+    fieldName: string;
+}
+
+export interface UpdatedContentlet {
+    dataset: ContentletDataset;
+    innerHTML: string;
+    eventType: string;
+    isNotDirty: boolean;
+}

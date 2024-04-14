@@ -175,7 +175,10 @@ export class DotPageApiService {
         return apiUrl + queryParams.toString();
     }
 
-    saveContentlet({contentlet}: {contentlet: {body: string, inode: string}}) {
-        return this.http.put(`/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`, {contentlet})
+    saveContentlet({ contentlet }: { contentlet: { body: string; inode: string } }) {
+        return this.http.put(
+            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
+            { contentlet }
+        );
     }
 }

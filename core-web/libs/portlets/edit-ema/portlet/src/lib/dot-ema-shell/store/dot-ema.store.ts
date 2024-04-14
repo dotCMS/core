@@ -91,9 +91,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly isEnterpriseLicense$ = this.select((state) => state.isEnterpriseLicense);
 
-    readonly vtlIframePage$ = this.select(this.pageRendered$, this.isEnterpriseLicense$, (rendered, isEnterprise) => ({
-        rendered, isEnterprise
-    }))
+    readonly vtlIframePage$ = this.select(
+        this.pageRendered$,
+        this.isEnterpriseLicense$,
+        (rendered, isEnterprise) => ({
+            rendered,
+            isEnterprise
+        })
+    );
 
     readonly code$ = this.select((state) => state.editor.page.rendered);
 
@@ -340,32 +345,37 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     });
 
-    readonly updateInlineEditedContentlet = this.effect((payload$: Observable<{contentlet: {body: string, inode:string}}>) => {
-        return payload$.pipe(
-            switchMap((contentlet) => {
-                return this.dotPageApiService.saveContentlet(contentlet).pipe(
-                    tapResponse(
-                        () => {
-                            this.messageService.add({
-                                severity: 'success',
-                                summary: this.dotMessageService.get('editpage.content.update.success'),
-                                life: 2000
-                            });
-                        },
-                        (e) => {
-                            console.error(e);
-                            this.messageService.add({
-                                severity: 'error',
-                                summary: this.dotMessageService.get('editpage.content.update.error'),
-                                life: 2000
-                            });
-                        }
-                    )
-                );
-            })
-        );
-    
-    })
+    readonly updateInlineEditedContentlet = this.effect(
+        (payload$: Observable<{ contentlet: { body: string; inode: string } }>) => {
+            return payload$.pipe(
+                switchMap((contentlet) => {
+                    return this.dotPageApiService.saveContentlet(contentlet).pipe(
+                        tapResponse(
+                            () => {
+                                this.messageService.add({
+                                    severity: 'success',
+                                    summary: this.dotMessageService.get(
+                                        'editpage.content.update.success'
+                                    ),
+                                    life: 2000
+                                });
+                            },
+                            (e) => {
+                                console.error(e);
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: this.dotMessageService.get(
+                                        'editpage.content.update.error'
+                                    ),
+                                    life: 2000
+                                });
+                            }
+                        )
+                    );
+                })
+            );
+        }
+    );
 
     /**
      * Saves data to a page but gets the new form identifier first.
