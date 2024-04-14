@@ -64,7 +64,7 @@ export function injectInlineEdit(doc: Document): void {
     }
 }
 
-export function handleInlineEdit(e: MouseEvent): void {
+export function handleInlineEdit(e: MouseEvent, iframeWindow: Window): void {
     const target = e.target as HTMLElement;
     const { dataset } = target;
 
@@ -82,12 +82,13 @@ export function handleInlineEdit(e: MouseEvent): void {
         //     //         name: "showCopyModal",
         //     //         data: showCopyModalData(target)
         //     //     });
+        // console.log('inode original: ', dataset.inode);
 
         window.parent.postMessage(
             {
                 action: 'copy-contentlet-inline-editing',
                 payload: {
-                    target: {...target}
+                    dataset: { ...dataset }
                 }
             },
             '*'
@@ -96,7 +97,7 @@ export function handleInlineEdit(e: MouseEvent): void {
         return;
     }
 
-    initEditor(target);
+    initEditor(dataset, iframeWindow);
 }
 
 export function handleInternalNav(e: MouseEvent) {
@@ -122,10 +123,16 @@ export function handleInternalNav(e: MouseEvent) {
     }
 }
 
-function initEditor(editorElement: HTMLElement) {
-    const { dataset } = editorElement;
+export function initEditor(dataset: { [key: string]: string }, iframeWindow: Window) {
+    // const { dataset } = editorElement;
+    const element = iframeWindow.document.querySelector(`[data-dot-inode='${dataset.inode}}']`);
+    console.log('Called initEditor, inode actual: ', { dataset, inode: dataset.inode, element });
+
     const dataSelector = `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`;
-    const iframeWindow = editorElement.ownerDocument.defaultView;
+    // const dataSelector = `[data-inode="${dataset.inode}"]`;
+    // const iframeWindow = window //;editorElement.ownerDocument.defaultView;
+
+    console.log(iframeWindow.tinymce);
 
     iframeWindow.tinymce
         .init({
@@ -133,8 +140,38 @@ function initEditor(editorElement: HTMLElement) {
             selector: dataSelector
         })
         .then(([ed]) => {
+            console.log('post init', ed);
             ed?.editorCommands.execCommand('mceFocus');
         });
+}
+
+export function replaceContentletONCopy({
+    oldInode,
+    newInode,
+    iframeWindow
+}: {
+    oldInode: string;
+    newInode: string;
+    iframeWindow: Window;
+}) {
+    // Buscar el elemento con data-inode igual a '1'
+    console.log({ oldInode, newInode });
+    const contentlet = iframeWindow.document.querySelector(`[data-dot-inode='${oldInode}']`);
+
+    // Verificar si se encontró el elemento
+    if (contentlet) {
+        // Sobrescribir el valor del atributo data-inode
+        contentlet.setAttribute('data-dot-inode', newInode);
+        contentlet.setAttribute('data-dot-on-number-of-pages', '1');
+
+        const editorElement = contentlet.querySelector('[data-inode]');
+        editorElement?.setAttribute('data-inode', newInode);
+        console.log('Se ha actualizado el valor del atributo data-dot-inode.');
+    } else {
+        console.log(
+            `No se encontró ningún elemento con el atributo data-inode igual a ${oldInode}`
+        );
+    }
 }
 
 function handleInlineEditEvents(editor) {

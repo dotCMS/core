@@ -57,7 +57,13 @@ import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { EmaDragItem, ClientContentletArea, Container } from './components/ema-page-dropzone/types';
-import { handleInlineEdit, handleInternalNav, injectInlineEdit } from './utils/inline-edit';
+import {
+    handleInlineEdit,
+    handleInternalNav,
+    initEditor,
+    injectInlineEdit,
+    replaceContentletONCopy
+} from './utils/inline-edit';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
@@ -259,7 +265,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         .subscribe((e: MouseEvent) => {
                             handleInternalNav(e);
                             if (isEnterprise) {
-                                handleInlineEdit(e);
+                                handleInlineEdit(e, this.iframe.nativeElement.contentWindow);
                             }
                         });
 
@@ -546,7 +552,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     protected handleNgEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
-        console.log('handleNgEvent');
         const { detail } = event;
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
@@ -576,8 +581,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
-                console.log({ event, payload });
-
                 const { shouldReloadPage, contentletIdentifier } = detail.payload;
 
                 if (shouldReloadPage) {
@@ -700,7 +703,55 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
 
             'copy-contentlet-inline-editing': () => {
-                console.log(data.payload);
+                this.dotCopyContentModalService
+                    .open()
+                    .pipe(
+                        switchMap(({ shouldCopy }) => {
+                            if (!shouldCopy) {
+                                return of(data.payload);
+                            }
+
+                            return this.handleCopyContent();
+                        })
+                        // switchMap((res) => {
+                        //     if (!res.payload) {
+                        //         this.store.reload({ params: this.queryParams });
+                        //     }
+
+                        //     return res;
+                        // })
+                    )
+                    .subscribe((res: any) => {
+                        // this.dialog.editContentlet(contentlet);
+                        console.log({ res, data });
+                        const updatedDataset = {
+                            inode: res.inode || res.dataset.inode,
+                            fieldName: data.payload.dataset.fieldName,
+                            mode: data.payload.dataset.mode,
+                            language: data.payload.dataset.language
+                        };
+                        console.log(updatedDataset);
+                        if (!res.dataset) {
+                            // this.store.reload({
+                            //     params: this.queryParams,
+                            //     whenReloaded: () =>
+                            //         initEditor(
+                            //             updatedDataset,
+                            //             this.iframe.nativeElement.contentWindow
+                            //         )
+                            // });
+                            console.log('Copy content!');
+                            replaceContentletONCopy({
+                                oldInode: data.payload.dataset.inode,
+                                newInode: res.inode,
+                                iframeWindow: this.iframe.nativeElement.contentWindow
+                            });
+                        }
+
+                        console.log(updatedDataset);
+
+                        initEditor(updatedDataset, this.iframe.nativeElement.contentWindow);
+                    });
             },
             'update-contentlet': () => {
                 console.log(data.payload);
