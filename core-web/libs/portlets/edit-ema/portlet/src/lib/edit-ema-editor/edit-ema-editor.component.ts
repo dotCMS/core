@@ -664,9 +664,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 | SetUrlPayload
                 | Container[]
                 | ClientContentletArea
-                // | CopyContentletPayload
                 | UpdatedContentlet
-                | any; //TODO: Type this later
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -728,6 +726,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         })
                     )
                     .subscribe((res: DotCMSContentlet) => {
+                        console.log("contentlet: ",res);
                         const updatedDataset = {
                             inode: res.inode || payload.dataset.inode,
                             fieldName: payload.dataset.fieldName,
@@ -737,20 +736,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                         if (!res.dataset) {
                             // Al agregar un contentlet después, esto falla.
-                            this.inlineEditingService.replaceContentletONCopy({
-                                oldInode: payload.dataset.inode,
-                                newInode: res.inode
-                            });
-                            // this.store.reload({
-                            //     params: this.queryParams,
-                            //     whenReloaded: () => {
-                            //         this.inlineEditingService.initEditor(updatedDataset)
-                            //         console.log("Called initEditor");
-                            //     }
-                            // })
+                            // this.inlineEditingService.replaceContentletONCopy({
+                            //     oldInode: payload.dataset.inode,
+                            //     newInode: res.inode,
+                            //     newIdentifier: res.identifier
+                            // });
+                            this.store.reload({
+                                params: this.queryParams,
+                                whenReloaded: () => {
+                                    setTimeout(() => {                                        
+                                        this.inlineEditingService.initEditor(updatedDataset)
+                                        console.log("Called initEditor");
+                                    }, 1000);
+                                }
+                            })
                         }
 
-                        this.inlineEditingService.initEditor(updatedDataset);
+                        // this.inlineEditingService.initEditor(updatedDataset);
                     });
             },
             'update-contentlet': () => {

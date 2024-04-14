@@ -109,6 +109,7 @@ export class InlineEditService {
         //     inode: dataset.inode,
         //     element
         // });
+        // debugger;
 
         const dataSelector = `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`;
         // const dataSelector = `[data-inode="${dataset.inode}"]`;
@@ -126,7 +127,7 @@ export class InlineEditService {
             });
     }
 
-    replaceContentletONCopy({ oldInode, newInode }: { oldInode: string; newInode: string }) {
+    replaceContentletONCopy({ oldInode, newInode, newIdentifier }: { oldInode: string; newInode: string; newIdentifier: string }) {
         const contentlet = this.iframeWindow().document.querySelector(
             `[data-dot-inode='${oldInode}']`
         );
@@ -135,6 +136,7 @@ export class InlineEditService {
         }
 
         contentlet.setAttribute('data-dot-inode', newInode);
+        contentlet.setAttribute('data-dot-identifier', newIdentifier);
         contentlet.setAttribute('data-dot-on-number-of-pages', '1');
 
         const editorElement = contentlet.querySelector('[data-inode]');
