@@ -137,7 +137,7 @@ public class HostFactoryImpl implements HostFactory {
 
     // query that Exact matches should be at the top of the search results.
     private static final String PRIORITIZE_EXACT_MATCHES =
-            "ORDER BY length(%s),  " + POSTGRES_SITENAME_COLUMN;
+            " ORDER BY length(%s),  " + POSTGRES_SITENAME_COLUMN;
 
     /**
      * Default class constructor.
