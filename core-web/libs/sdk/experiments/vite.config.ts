@@ -14,16 +14,11 @@ export default defineConfig({
             entryRoot: 'src',
             tsConfigFilePath: path.join(__dirname, 'tsconfig.lib.json'),
             skipDiagnostics: true
-        }),
-        dts({
-            entryRoot: 'src',
-            tsConfigFilePath: path.join(__dirname, 'tsconfig.lib.json'),
-            skipDiagnostics: true
         })
     ],
 
-    // Configuration for building your library.
-    // See: https://vitejs.dev/guide/build.html#library-mode
+    // Configuration for building the DotExperiment as IIFE file to use in
+    // plain HTML or other projects.
     build: {
         outDir: '../../../dist/libs/sdk/experiments',
         reportCompressedSize: true,
@@ -33,7 +28,6 @@ export default defineConfig({
         },
         minify: 'terser',
         lib: {
-            // Could also be a dictionary or array of multiple entry points.
             entry: 'src/lib/standalone.ts',
             name: 'DotExperiment',
             fileName: 'dot-experiments.min',

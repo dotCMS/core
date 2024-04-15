@@ -54,14 +54,19 @@ runs:
       with:
         servers: '[{ "id": "dotcms-libs", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }, { "id": "dotcms-libs-snapshot", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }]'
 
-    - name: 'Deploy CLI Artifacts'
-      run: |
-        JVM_TEST_MAVEN_OPTS="-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-        ./mvnw -ntp \
-          ${JVM_TEST_MAVEN_OPTS} \
-          -Dprod=true \
-          -DskipTests=true \
-          -DskipITs=true \
-          deploy \
-          -pl :dotcms-cli
-      shell: bash
+#    Cannot just deploy the CLI artifacts as the CLI is not a standalone artifact We should deploy all the artifacts not just cli
+#    We should create a separate deploy-artifact-artifactory action that will deploy all the artifacts or the monorepo as a whole
+#    deploy target will rebuild and package the artifacts we can download the maven github artifact and call the maven-deploy-plugin directly
+#    or through a profile.
+
+#  - name: 'Deploy CLI Artifacts'
+#      run: |
+#        JVM_TEST_MAVEN_OPTS="-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+#        ./mvnw -ntp \
+#          ${JVM_TEST_MAVEN_OPTS} \
+#          -Dprod=true \
+#          -DskipTests=true \
+#          -DskipITs=true \
+#          deploy \
+#          -pl :dotcms-cli
+#      shell: bash
