@@ -69,6 +69,7 @@ export function Container({ containerRef }: ContainerProps) {
 
     return isInsideEditor ? (
         <div
+            data-testid="dot-container"
             data-dot-object="container"
             data-dot-accept-types={acceptTypes}
             data-dot-identifier={path ?? identifier}
