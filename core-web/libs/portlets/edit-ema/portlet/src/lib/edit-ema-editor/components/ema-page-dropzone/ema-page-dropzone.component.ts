@@ -15,6 +15,8 @@ import { DotErrorPipe } from './pipes/error/dot-error.pipe';
 import { DotPositionPipe } from './pipes/position/dot-position.pipe';
 import { EmaDragItem, Container } from './types';
 
+import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
+import { EDITOR_STATE } from '../../../shared/enums';
 import { PositionPayload, ClientData } from '../../../shared/models';
 
 const POINTER_INITIAL_POSITION = {
@@ -41,13 +43,15 @@ export class EmaPageDropzoneComponent {
 
     private readonly el = inject(ElementRef);
 
+    private readonly store = inject(EditEmaStore);
+
     /**
      * Emit place event and reset pointer position
      *
      * @param {DragEvent} event
      * @memberof EmaPageDropzoneComponent
      */
-    onDrop(event: DragEvent, isEmptyContainer = false): void {
+    onDrop(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
 
         const data: ClientData = JSON.parse(target.dataset.payload);
@@ -57,7 +61,7 @@ export class EmaPageDropzoneComponent {
 
         const payload = <PositionPayload>{
             ...data,
-            position: isEmptyContainer ? undefined : insertPosition
+            position: insertPosition
         };
 
         this.place.emit(payload);
@@ -72,6 +76,16 @@ export class EmaPageDropzoneComponent {
      */
     onDropEmptyContainer(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
+        this.pointerPosition = POINTER_INITIAL_POSITION;
+
+        // If the target doesn't have a payload, then we have an error zone and we should not emit the event
+        // We should also reset the editor to IDLE
+
+        if (!target?.dataset?.payload) {
+            this.store.updateEditorState(EDITOR_STATE.IDLE);
+
+            return;
+        }
 
         const data: ClientData = JSON.parse(target.dataset.payload);
 
@@ -80,7 +94,6 @@ export class EmaPageDropzoneComponent {
         };
 
         this.place.emit(payload);
-        this.pointerPosition = POINTER_INITIAL_POSITION;
     }
 
     /**

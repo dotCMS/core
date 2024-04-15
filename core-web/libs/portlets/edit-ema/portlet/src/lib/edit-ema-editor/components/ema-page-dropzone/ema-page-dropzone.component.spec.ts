@@ -9,6 +9,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { EmaPageDropzoneComponent } from './ema-page-dropzone.component';
 import { Container } from './types';
 
+import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
 import { ClientData } from '../../../shared/models';
 
 const ACTION_MOCK: ClientData = {
@@ -82,11 +83,18 @@ const messageServiceMock = new MockDotMessageService({
 describe('EmaPageDropzoneComponent', () => {
     let spectator: Spectator<EmaPageDropzoneComponent>;
     let dotMessageService: DotMessageService;
+    let emaStore: EditEmaStore;
 
     const createComponent = createComponentFactory({
         component: EmaPageDropzoneComponent,
         imports: [CommonModule, HttpClientTestingModule],
         providers: [
+            {
+                provide: EditEmaStore,
+                useValue: {
+                    updateEditorState: jest.fn()
+                }
+            },
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
@@ -102,6 +110,7 @@ describe('EmaPageDropzoneComponent', () => {
             }
         });
         dotMessageService = spectator.inject(DotMessageService, true);
+        emaStore = spectator.inject(EditEmaStore);
     });
 
     it('should render containers, and contentlets based on input', () => {
@@ -491,6 +500,7 @@ describe('EmaPageDropzoneComponent', () => {
             it('should not emit place event when the contentType is not accepted in the container', () => {
                 const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
                 jest.spyOn(spectator.component.place, 'emit');
+                const updateEditorStateSpy = jest.spyOn(emaStore, 'updateEditorState');
 
                 spectator.setInput('item', {
                     ...ITEM_MOCK,
@@ -499,7 +509,7 @@ describe('EmaPageDropzoneComponent', () => {
                 spectator.setInput('containers', BOUNDS_EMPTY_CONTAINER_MOCK);
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler('div.drop-zone_error', 'drop', {
+                spectator.triggerEventHandler('div[data-type="container"]', 'drop', {
                     target: {}
                 });
 
@@ -519,6 +529,7 @@ describe('EmaPageDropzoneComponent', () => {
                     'edit.ema.page.dropzone.invalid.contentlet.type',
                     'NOT_ACCEPTED_CONTENT_TYPE'
                 );
+                expect(updateEditorStateSpy).toHaveBeenCalled();
             });
 
             it('should set pointer on drag over', () => {
