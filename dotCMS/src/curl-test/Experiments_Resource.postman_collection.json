@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "c234271c-cb31-4b51-9b3e-c1324a990e10",
+		"_postman_id": "febce044-5b03-4b0a-b96f-ea323a65b22f",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "30436704"
@@ -13979,6 +13979,406 @@
 				}
 			],
 			"description": "Steps:\n\n1. Create one drawed Templates with:\n    \n\nName: should_have_same_template_to_LIVE_and_working_1\n\nBody: Add the SYSTEM_CONTAINER with a with of 12\n\nPublish it.\n\n2\\. Create a Page with DEFAULT lang and using the \"should_have_same_template_to_LIVE_and_working_1\" template\n\n3\\. Render the Page in LIVE and PREVIEW MODE and check that the layout have the SYSTEM_CONTAINER with a width of 12.\n\n4\\. Change the page's Template to \"should_have_same_template_to_LIVE_and_working_2\" and just save.\n\n6\\. Render both Page version and check that now the results is \"Template 2\" for both."
+		},
+		{
+			"name": "Running Experiment on Render Page",
+			"item": [
+				{
+					"name": "Create page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"running_experiment_on_render_page_id\", jsonData.entity.identifier);",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"running_experiment_on_render_page\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"running_experiment_on_render_page\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render Page before Running Experiment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.expect(jsonData.entity.runningExperimentId).to.be.undefined;",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/running_experiment_on_render_page?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=PREVIEW_MODE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"running_experiment_on_render_page"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "PREVIEW_MODE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createDraftExperiment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"running_experiment_on_render_page_experiment_id\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"running_experiment_on_render_page_experiment_short_id\", jsonData.entity.id.substring(0, 11).replace('-', ''));",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pageId\": \"{{running_experiment_on_render_page_id}}\",\n    \"name\": \"Experiment running_experiment_on_render_page 1\",\n    \"description\": \"Expriment to test the running Experiment attibute on the render End point\" ,\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								""
+							]
+						},
+						"description": "Create a new Experiment named \"Add/Remove content Experiment\" with the page created in the previous request."
+					},
+					"response": []
+				},
+				{
+					"name": "addVariantToExperiment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"V1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/{{running_experiment_on_render_page_experiment_id}}/variants",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								"{{running_experiment_on_render_page_experiment_id}}",
+								"variants"
+							]
+						},
+						"description": "Create a new variant into the previous created experiment"
+					},
+					"response": []
+				},
+				{
+					"name": "Starting Experiment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/{{running_experiment_on_render_page_experiment_id}}/_start",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								"{{running_experiment_on_render_page_experiment_id}}",
+								"_start"
+							]
+						},
+						"description": "Create a new Experiment named \"Add/Remove content Experiment\" with the page created in the previous request."
+					},
+					"response": []
+				},
+				{
+					"name": "Render Page after Running Experiment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var experimentId = pm.variables.get(\"running_experiment_on_render_page_experiment_id\");",
+									"pm.expect(jsonData.entity.runningExperimentId).to.be.eq(experimentId);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/running_experiment_on_render_page?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=PREVIEW_MODE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"running_experiment_on_render_page"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "PREVIEW_MODE"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"variable": [
@@ -14188,6 +14588,18 @@
 		},
 		{
 			"key": "spanish_content_experimentShortId",
+			"value": ""
+		},
+		{
+			"key": "running_experiment_on_render_page_id",
+			"value": ""
+		},
+		{
+			"key": "running_experiment_on_render_page_experiment_id",
+			"value": ""
+		},
+		{
+			"key": "running_experiment_on_render_page_experiment_short_id",
 			"value": ""
 		}
 	]
