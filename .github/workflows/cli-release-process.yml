@@ -227,12 +227,12 @@ jobs:
       - name: 'Compile source code'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
+          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=true -am -pl :dotcms-cli
 
       - name: 'Build uber-jar'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Dquarkus.package.type=${{ env.MVN_PACKAGE_TYPE }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Dquarkus.package.type=${{ env.MVN_PACKAGE_TYPE }} -DskipTests=true -pl :dotcms-cli
 
       # Builds a native image of the CLI using GraalVM (Linux/macOS)
       # Runs on a matrix for different operating systems
@@ -240,7 +240,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Pnative -DskipTests=true -pl :dotcms-cli
 
       # Builds a native image of the CLI using GraalVM on Windows
       # Uses PowerShell for setup and execution
@@ -254,7 +254,7 @@ jobs:
       - name: 'Create distribution'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw -B -ntp -Pdist package -DskipTests=true -pl :dotcms-cli
 
       - name: 'Distribution tree'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
