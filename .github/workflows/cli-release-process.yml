@@ -7,7 +7,8 @@ on:
     inputs:
       version:
         description: 'Release version'
-        required: true
+        default: '1.0.0-SNAPSHOT'
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
