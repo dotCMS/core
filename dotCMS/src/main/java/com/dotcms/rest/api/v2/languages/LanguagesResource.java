@@ -7,17 +7,15 @@ import static com.dotmarketing.util.WebKeys.*;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
+import com.dotcms.rest.PaginationContext;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.I18NForm;
-import com.dotcms.rest.api.v1.languages.LanguageTransform;
-import com.dotcms.rest.api.v1.languages.RestLanguage;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
@@ -30,6 +28,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.dotmarketing.quartz.job.DefaultLanguageTransferAssetJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -47,10 +46,10 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -67,7 +66,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
- * Language end point
+ * Language endpoint for the v2 API
  */
 @Path("/v2/languages")
 public class LanguagesResource {
@@ -387,6 +386,7 @@ public class LanguagesResource {
         final Language language1 = APILocator.getLanguageAPI().getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
         if(UtilMethods.isSet(language1)) {
             //Language Keys
+            //TODO: Update this to use the new API
             final Map mapLanguageKeys = APILocator.getLanguageAPI()
                     .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
                             Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
@@ -409,6 +409,29 @@ public class LanguagesResource {
 
         return Response.ok(new ResponseEntityView(result)).build();
     }
+
+    @GET
+    @Path("/variables")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public LanguageVariablePageView getAllLanguageVariables(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @BeanParam final PaginationContext paginationContext) throws DotDataException {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+
+        return new LanguageVariablesHelper().view(paginationContext,
+                initData.getUser());
+    }
+
 
     private Language saveOrUpdateLanguage(final String languageId, final LanguageForm form)
             throws AlreadyExistException {

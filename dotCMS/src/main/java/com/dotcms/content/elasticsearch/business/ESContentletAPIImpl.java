@@ -1050,6 +1050,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
         }
 
+        invalidateLanguageVariableCache(contentlet);
 
         /*
         Triggers a local system event when this contentlet commit listener is executed,
@@ -3577,7 +3578,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
         }
-
+        invalidateLanguageVariableCache(contentlet);
         HibernateUtil.addCommitListener(
                 () -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
         HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(
@@ -4042,6 +4043,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.cleanFileAssetCache(contentlet, user, false);
         }
 
+        invalidateLanguageVariableCache(contentlet);
+
         new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
         CacheLocator.getContentletCache().remove(contentlet.getInode());
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
@@ -4056,6 +4059,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.getHost(), contentlet.getFolder(),
                     contentlet.getLanguageId());
         }
+    }
+
+    /**
+     * Invalidate the language variable cache if the contentlet is a language variable.
+     * @param contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private static void invalidateLanguageVariableCache(final Contentlet contentlet) {
+       try {
+           if (contentlet.isLanguageVariable()) {
+                APILocator.getLanguageVariableAPI().invalidateLanguageVariablesCache(contentlet);
+           }
+       } catch (Exception e) {
+           Logger.error(ESContentletAPIImpl.class, "Error invalidating Lang Variable Cache", e);
+       }
     }
 
     private void cleanFileAssetCache(final Contentlet contentlet, final User user,
@@ -4279,7 +4298,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         new ContentletLoader().invalidate(contentlet);
         CacheLocator.getContentletCache().remove(contentlet.getInode());
         publishRelatedHtmlPages(contentlet);
-
+        invalidateLanguageVariableCache(contentlet);
         HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet),
                 1000);
         HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(
@@ -5644,6 +5663,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 tagAPI.updateTagReferences(contentlet.getIdentifier(), oldTagStorageId,
                         newTagStorageId);
             }
+
+            invalidateLanguageVariableCache(contentlet);
 
             flushMenuCacheIfNeeded(contentlet, workingContentlet, isNewContent, systemUser);
 

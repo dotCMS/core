@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import java.util.List;
 
 import com.dotmarketing.business.Cachable;
@@ -39,11 +40,14 @@ public abstract class LanguageCache implements Cachable{
 	public abstract String[] getGroups();
     
     public abstract String getPrimaryGroup();
-    
+
+    @Deprecated(since = "24.04", forRemoval = true)
     protected abstract List<LanguageKey> getLanguageKeys(String langCode, String countryCode) throws DotCacheException;
 
+    @Deprecated(since = "24.04", forRemoval = true)
     protected abstract void removeLanguageKeys(String langCode, String countryCode);
 
+    @Deprecated(since = "24.04", forRemoval = true)
     protected abstract void setLanguageKeys(String langCode, String countryCode, List<LanguageKey> keys);
 
     public abstract List<Language> getLanguages()  ;
@@ -55,4 +59,18 @@ public abstract class LanguageCache implements Cachable{
      * will NOT clear the individual languages already in cache.
      */
     public abstract void clearLanguages();
+
+    /**
+     * Removes all the language variables stored under the language is
+     * @param languageId the language id to remove
+     */
+    public abstract void clearVarsByLang(final long languageId);
+
+    public abstract void clearVariables();
+
+    public abstract void putVars(long languageId, List<LanguageVariable> vars,  int limit, int offset,
+            String orderBy);
+
+    public abstract List<LanguageVariable> getVars(final long languageId, final int limit, final int offset,
+            String orderBy);
 }

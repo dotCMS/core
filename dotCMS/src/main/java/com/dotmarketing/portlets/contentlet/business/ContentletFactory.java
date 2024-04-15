@@ -210,6 +210,24 @@ public abstract class ContentletFactory {
             int limit, int offset) throws DotDataException, DotStateException, DotSecurityException;
 
 	/**
+	 * Returns all Contentlets for a specific structure using pagination This is useful when you
+	 * want to get all contentlets for a structure, but you want to filter by a specific language id
+	 * e.g All contetlets of type Language Variable in english
+	 *
+	 * @param contentType
+	 * @param languageId
+	 * @param limit
+	 * @param offset
+	 * @param sortBy
+	 * @param working
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	public abstract List<Contentlet> findByContentTypeAndLanguage(ContentType contentType, long languageId, int limit, int offset,
+			String sortBy, boolean working) throws DotDataException, DotStateException;
+
+	/**
 	 * select count contentlet by ContentType
 	 *
 	 * @param contentType

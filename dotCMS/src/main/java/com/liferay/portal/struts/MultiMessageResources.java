@@ -52,6 +52,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Brian Wing Shun Chan
  * @version $Revision: 1.6 $
  */
+@Deprecated(since = "24.04")
 public class MultiMessageResources extends PropertyMessageResources {
 
     private static final Log _log = LogFactory.getLog(MultiMessageResources.class);

@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.apps;
+package com.dotcms.rest;
 
 import com.dotcms.util.PaginationUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;

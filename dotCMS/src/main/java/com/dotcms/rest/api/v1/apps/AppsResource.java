@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.apps;
 import static com.dotcms.rest.ResponseEntityView.OK;
 
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.PaginationContext;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;

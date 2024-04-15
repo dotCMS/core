@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
+import com.dotcms.rest.PaginationContext;
 import com.dotmarketing.util.json.JSONException;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;

@@ -14,12 +14,21 @@ public class DefaultKeyValue extends Contentlet implements KeyValue {
 
 	private static final long serialVersionUID = 1L;
 
+	public DefaultKeyValue() {
+		super();
+	}
+
+	public DefaultKeyValue(final String key, final String value) {
+		super();
+		this.setStringProperty(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR, key);
+		this.setStringProperty(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR, value);
+	}
+
 	@Override
 	public String getKey() {
 		return getStringProperty(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR);
 	}
 
-	@Override
 	public void setKey(String key) {
 		setStringProperty(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR, key);
 	}
@@ -29,7 +38,6 @@ public class DefaultKeyValue extends Contentlet implements KeyValue {
 		return getStringProperty(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR);
 	}
 
-	@Override
 	public void setValue(String value) {
 		setStringProperty(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR, value);
 	}

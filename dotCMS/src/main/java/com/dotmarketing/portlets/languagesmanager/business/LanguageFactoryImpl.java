@@ -565,6 +565,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		return list;
 	}
 
+	@Deprecated(since = "24.04")
 	@Override
 	protected void createLanguageFiles(final Language lang) {
 		String langCodeAndCountryCode = lang.getLanguageCode() + "_" + lang.getCountryCode();

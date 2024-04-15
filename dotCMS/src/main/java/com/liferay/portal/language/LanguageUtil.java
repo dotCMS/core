@@ -308,6 +308,7 @@ public class LanguageUtil {
 	 * @param locale locale to search the messages
 	 * @return
 	 */
+	@Deprecated(since="24.04")
 	public static Map getAllMessagesByLocale(final Locale locale){
     	return MultiMessageResources.class.cast(WebAppPool.get(PublicCompanyFactory.getDefaultCompanyId(), Globals.MESSAGES_KEY)).getMessages(locale);
 	}

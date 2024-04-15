@@ -29,6 +29,7 @@ import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
 
+@Deprecated(since = "24.04")
 public class LanguageAjax {
 
 	public LanguageAPI langAPI = APILocator.getLanguageAPI();

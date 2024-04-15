@@ -4,6 +4,7 @@ import java.util.Comparator;
 
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 
+@Deprecated(since = "24.04")
 public class LanguageKeyComparator implements Comparator<LanguageKey> {
 
 	public int compare(LanguageKey o1, LanguageKey o2) {

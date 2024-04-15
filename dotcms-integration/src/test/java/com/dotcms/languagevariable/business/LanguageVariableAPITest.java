@@ -10,21 +10,28 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.LanguageVariableDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -368,6 +375,63 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
             language.setLanguage(PORTUGAL_LANGUAGE_NAME);
             APILocator.getLanguageAPI().saveLanguage(language);
         }
+    }
+
+    /**
+     * Given scenario: 1. Create 3 languages 2. Create 3 language variables for each language 3. Find
+     * all language variables for each language 4. Unpublish all language variables 5. Find all language variables for each language
+     * Expected: 1. No language variables should be found as they all have been unpublished
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findLanguageVariablesThenUnpublishTest() throws DotDataException, DotSecurityException {
+
+        final LanguageCache languageCache = CacheLocator.getLanguageCache();
+        languageCache.clearVariables();
+        final List<LanguageVariable> vars = languageCache.getVars(1, -1, -1, null);
+        Assert.assertTrue(vars.isEmpty());
+
+        LanguageDataGen languageDataGen = new LanguageDataGen();
+        final List<Language> languages = List.of(
+                languageDataGen.nextPersisted(),
+                languageDataGen.nextPersisted(),
+                languageDataGen.nextPersisted()
+        );
+
+        List<Contentlet> contentlets = new ArrayList<>();
+        LanguageVariableDataGen languageVariableDataGen = new LanguageVariableDataGen();
+        for (Language language : languages) {
+            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key1").value("value1").nextPersistedAndPublish());
+            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key2").value("value2").nextPersistedAndPublish());
+            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key3").value("value3").nextPersistedAndPublish());
+        }
+
+        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+
+        for (Language language:languages) {
+            final List<LanguageVariable> languageVariables = languageVariableAPI.findLanguageVariables(language.getId(), -1, -1, null);
+            Assert.assertTrue(languageVariables.size() >= 3);
+            for (LanguageVariable variable : languageVariables) {
+                Assert.assertEquals(language.getId(), variable.getLanguageId());
+            }
+        }
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        for (Contentlet contentlet: contentlets) {
+           contentletAPI.unpublish(contentlet, systemUser,false);
+        }
+
+        for (Language language:languages) {
+            final List<LanguageVariable> languageVariables = languageVariableAPI.findLanguageVariables(language.getId(), -1, -1, null);
+            for (LanguageVariable variable : languageVariables) {
+                Assert.assertFalse(containsInode(contentlets, variable.getInode()));
+            }
+        }
+    }
+
+    boolean containsInode(final List<Contentlet> contentlets, final String inode) {
+        return contentlets.stream().anyMatch(contentlet -> contentlet.getInode().equals(inode));
     }
 
 }

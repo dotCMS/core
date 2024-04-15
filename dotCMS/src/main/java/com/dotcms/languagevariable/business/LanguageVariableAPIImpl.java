@@ -1,20 +1,33 @@
 package com.dotcms.languagevariable.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.MultilinguableFallback;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.model.KeyValue;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
+import com.dotmarketing.portlets.languagesmanager.model.LangVariableImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Implementation class for the {@link LanguageVariableAPI}.
@@ -25,6 +38,14 @@ import java.util.List;
  *
  */
 public class LanguageVariableAPIImpl implements LanguageVariableAPI {
+
+  Lazy<ContentType> langVarContentType = Lazy.of(() -> {
+    try {
+      return APILocator.getContentTypeAPI(APILocator.systemUser()).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+    } catch (DotDataException | DotSecurityException e) {
+      throw new IllegalStateException("Can't seem to find a content-type for LangVars! ",e);
+    }
+  });
 
   private final KeyValueAPI keyValueAPI;
   private final LanguageAPI languageAPI;
@@ -119,5 +140,45 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
 
     return (null != keyValue) ? keyValue.getValue() : null;
   }
+
+  @CloseDBIfOpened
+  @Override
+  public List<LanguageVariable> findLanguageVariables(final long langId, final int limit,
+            final int offset,
+            final String orderBy)
+            throws DotDataException {
+      final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
+      final ContentType contentType = langVarContentType.get();
+      final LanguageCache languageCache = CacheLocator.getLanguageCache();
+      final List<LanguageVariable> cacheVars = languageCache.getVars(langId, limit, offset, orderBy);
+      if (cacheVars != null && !cacheVars.isEmpty()) {
+        return cacheVars;
+      }
+      //We bring non-archived live contentlets
+      final List<Contentlet> byContentTypeAndLanguage = contentletFactory.findByContentTypeAndLanguage(
+              contentType, langId, limit, offset, orderBy, false);
+      final ImmutableList<LanguageVariable> languageVariables = byContentTypeAndLanguage.stream()
+              .map(fromContentlet()).filter(Objects::nonNull)
+              .collect(CollectionsUtils.toImmutableList());
+
+      languageCache.putVars(langId, languageVariables, limit, offset, orderBy);
+      return languageVariables;
+    }
+
+   private Function<Contentlet, LanguageVariable> fromContentlet() {
+      return contentlet -> {
+        try {
+          return LangVariableImpl.fromContentlet(contentlet);
+        } catch (DotSecurityException e) {
+          Logger.warn(this, e.getMessage(), e);
+          return null;
+        }
+      };
+    }
+
+    public void invalidateLanguageVariablesCache(final Contentlet contentlet) {
+      final LanguageCache languageCache = CacheLocator.getLanguageCache();
+           languageCache.clearVarsByLang(contentlet.getLanguageId());
+    }
 
 }

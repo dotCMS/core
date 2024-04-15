@@ -3,6 +3,8 @@ package com.dotcms.languagevariable.business;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.liferay.portal.model.User;
 import java.util.List;
 
@@ -125,4 +127,21 @@ public interface LanguageVariableAPI {
     public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key, final long languageId, final User user, final int limit)
             throws DotDataException, DotSecurityException;
 
+
+    /**
+     * Returns a list of {@link LanguageVariable} that the key starts with the specified key and
+     * languageId.
+     *
+     * @param langId  - The ID of the language that the variable was created for.
+     * @param limit   - Size of the list.
+     * @param offset  - The offset of the list.
+     * @param orderBy
+     * @return List of {@link LanguageVariable}
+     * @throws DotDataException - If there is an error retrieving the list of Language Variables.
+     */
+    List<LanguageVariable> findLanguageVariables(final long langId, final int limit, final int offset,
+            String orderBy) throws DotDataException;
+
+
+    void invalidateLanguageVariablesCache(Contentlet contentlet);
 }

@@ -204,6 +204,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return factory.hasLanguage(languageCode, countryCode);
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
     @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode) {
@@ -212,6 +213,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return list;
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
     @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode, final String countryCode) {
@@ -220,6 +222,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return list;
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
     @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final Language lang) {
@@ -233,6 +236,8 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return ImmutableList.copyOf(list);
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
+	@CloseDBIfOpened
 	@Override
     @WrapInTransaction
 	public void createLanguageFiles(final Language lang) {
@@ -241,6 +246,7 @@ public class LanguageAPIImpl implements LanguageAPI {
         Logger.debug(this, "Created language file for lang: " + lang);
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
 	@WrapInTransaction
 	@Override
 	public void saveLanguageKeys(final Language lang, final Map<String, String> generalKeysIncoming,
@@ -281,7 +287,8 @@ public class LanguageAPIImpl implements LanguageAPI {
           Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
         }
 	}
-	
+
+  @Deprecated(since = "24.04", forRemoval = true)
   @CloseDBIfOpened
   @Override
   public Map<String, String> getStringsAsMap(final Locale locale, final Collection<String> keys) {
@@ -315,6 +322,7 @@ public class LanguageAPIImpl implements LanguageAPI {
         return (UtilMethods.isNotSet(value) || value.equals(key)) ? this.getStringFromPropertiesFile(new Locale( lang.getLanguageCode(), countryCode ), key) : value;
     }
 
+	@Deprecated(since = "24.04", forRemoval = true)
     private String getStringFromPropertiesFile (final Locale locale, final String key) {
         String value = null;
         try {
