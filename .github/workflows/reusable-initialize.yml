@@ -56,7 +56,6 @@ jobs:
           #workflow: build-test-merge_group.yml
           workflow_search: true # artifacts can come from merge_group build. Cannot specify a list of workflows without multiple calls
           commit: ${{ github.sha }}
-          branch: ${{ github.ref }} # should only pull from the same branch
           workflow_conclusion: success
           search_artifacts: true 
           dry_run: true
