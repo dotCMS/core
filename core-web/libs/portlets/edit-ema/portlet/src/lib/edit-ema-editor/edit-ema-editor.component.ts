@@ -322,7 +322,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    addEditorPageScript(rendered: string): string {
+    addEditorPageScript(rendered = ''): string {
         const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
         const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
@@ -336,7 +336,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    addCustomStyles(rendered: string): string {
+    addCustomStyles(rendered = ''): string {
         const styles = ` <style>
         .container-notes {
             opacity: 0;
