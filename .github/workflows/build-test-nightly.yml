@@ -21,8 +21,8 @@ jobs:
     name: Initialize
     uses: ./.github/workflows/reusable-initialize.yml
     with:
-      reuse-previous-build: ${{ inputs.reuse-previous-build }} # false unless set manually on workflow_dispatch
-      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts }} # false unless set manually on workflow_dispatch
+      reuse-previous-build: ${{ inputs.reuse-previous-build || false }} # false unless set manually on workflow_dispatch
+      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || false }} # false unless set manually on workflow_dispatch
   build:
     name: Nightly Build
     needs: [ initialize ]
@@ -62,6 +62,12 @@ jobs:
       snapshot: true
       latest: true
       deploy-dev-image: true
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
   finalize:
     name: Finalize
     if: always()
@@ -74,3 +80,6 @@ jobs:
     if: always()
     needs: [ finalize ]
     uses: ./.github/workflows/build-report.yml
+    secrets:
+      MASTER_BUILD_SLACK_WEBHOOK: ${{ secrets.MASTER_BUILD_SLACK_WEBHOOK }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
