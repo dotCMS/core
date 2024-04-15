@@ -2,8 +2,25 @@ name: CICD Reports
 run-name: Reports - ${{ github.event.workflow_run.name }}
 on:
   workflow_run:
-    workflows: ['Maven CICD Pipeline']
+    workflows: ['PR Check','Merge Group Check']
     types: [completed]
+  workflow_call:
+    inputs:
+      run-id:
+        description: 'The run id of the build to report on'
+        type: string
+        default: "${{ github.run_id }}"
+      slack-failure:
+        description: 'Indicates if the workflow should post to slack on failure'
+        type: boolean
+        default: false
+    secrets:
+        SLACK_BOT_TOKEN:
+          description: 'Slack Bot Token'
+          required: false
+        MASTER_BUILD_SLACK_WEBHOOK:
+          required: false
+          description: 'Slack Webhook'
 
 permissions:
   checks: write
@@ -11,30 +28,39 @@ permissions:
 jobs:
   report:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion != 'skipped'
     steps:
       - name: Log GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-
+      - uses: actions/checkout@v4
       - name: Download Workflow Data
         id: data-download
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v3.1.4
         with:
           name: 'workflow-data'
-          workflow: ${{ github.event.workflow.id }}
-          run_id: ${{ github.event.workflow_run.id }}
+          run_id: ${{ github.event.workflow_run.id || inputs.run-id }}
           if_no_artifact_found: warn
-
-      - uses: dorny/test-reporter@v1
+      - name: Download build reports
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v3.1.4
+        with:
+          name: build-reports-test-.*
+          name_is_regexp: true
+          path: /tmp/build-reports-test
+          run_id: ${{ github.event.workflow_run.id || inputs.run-id }}
+          if_no_artifact_found: warn
+      - uses: phoenix-actions/test-reporting@v14
         id: test-reporter
         if: steps.data-download.outputs.found_artifact == 'true'
         continue-on-error: true
         with:
-          artifact: /^build-reports-test-(.*)/        # artifact name
-          name: 'MVN Test Report $1'               # Name of the check run which will be created
-          path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
+          output-to: 'checks'
+          #artifact: /^build-reports-test-(.*)/        # artifact name uses runid from caller event is workflow_run
+          #name: 'MVN Test Report $1'               # Name of the check run which will be created
+          name: 'Test Report'
+          path: '/tmp/build-reports-test/**/target/**/TEST-*.xml'
+          #path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
           reporter: java-junit            # Format of test results
           fail-on-error: true
           list-tests: 'failed'
@@ -67,12 +93,11 @@ jobs:
             branch_url="https://github.com/$source_repository/tree/$branch"
             commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
             test_results_url="https://github.com/$source_repository/pull/${pr_number}/checks"
-            
             if [[ -z "${{ steps.test-reporter.outputs.conclusion }}" ]]; then
               test_conclusion="Not Run"
               test_passed=0
               test_failed=0
-              test_skipped=9
+              test_skipped=0
               test_elapsed=0
             else
               test_conclusion=${{ steps.test-reporter.outputs.conclusion }}
@@ -80,8 +105,10 @@ jobs:
               test_failed=${{ steps.test-reporter.outputs.failed }}
               test_skipped=${{ steps.test-reporter.outputs.skipped }}
               test_elapsed=${{ steps.test-reporter.outputs.time }}
+              test_results_url=${{ steps.test-reporter.outputs.runHtmlUrl }}
             fi
-            
+          
+          
             if [[ "$status" == "SUCCESS" ]]; then
               echo "status_icon=✅" >> $GITHUB_OUTPUT
             else
@@ -98,9 +125,10 @@ jobs:
                echo "report_type=$trigger_event_name" >> $GITHUB_OUTPUT
             fi
           
+          
             echo "json=$json" >> $GITHUB_OUTPUT
             echo "trigger_event_name=$trigger_event_name" >> $GITHUB_OUTPUT
-            echo "has-json=true" >> $GITHUB_OUTPUT
+            echo "has_json=true" >> $GITHUB_OUTPUT
             echo "status=$status" >> $GITHUB_OUTPUT
             echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
             echo "pr_author=$pr_author" >> $GITHUB_OUTPUT
@@ -124,8 +152,9 @@ jobs:
             echo "test_failed=$test_failed" >> $GITHUB_OUTPUT
             echo "test_skipped=$test_skipped" >> $GITHUB_OUTPUT
             echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
-          fi
           
+          fi
+
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2.3.0
         env:
@@ -137,7 +166,7 @@ jobs:
           SLACK_FOOTER: ""
           SLACK_ICON: https://slackmojis.com/emojis/5432-this-is-fine/download
           SLACK_MESSAGE: "Attention <!channel>! Broken build at `${{ github.ref_name }}`.\nPlease check the run at: ${{ steps.workflow-data.outputs.action_run_url }}"
-        if: steps.workflow-data.outputs.status != 'SUCCESS' && steps.workflow-data.outputs.branch == 'master'
+        if: steps.workflow-data.outputs.status != 'SUCCESS' && inputs.post-failure && github.repository == 'dotcms/core'
 
       - name: Prepare Slack Message Payload
         id: prepare-slack-message
@@ -219,9 +248,8 @@ jobs:
           )
           echo "payload=$(echo $payload | jq -c .)" >> $GITHUB_OUTPUT
           echo "payload=$payload"
-
       - name: Post to Slack
-        if: steps.workflow-data.outputs.has-json == 'true' && github.repository == 'dotcms/core'
+        if: steps.workflow-data.outputs.has_json == 'true' && github.repository == 'dotcms/core'
         uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}

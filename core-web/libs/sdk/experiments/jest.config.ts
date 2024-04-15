@@ -3,9 +3,9 @@ export default {
     displayName: 'sdk-experiments',
     preset: '../../../jest.preset.js',
     transform: {
-        '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }]
+        '^(?!.*\\.(js|jsx|ts|tsx|css|json)$)': '@nrwl/react/plugins/jest',
+        '^.+\\.[tj]sx?$': ['babel-jest', { presets: ['@nrwl/react/babel'] }]
     },
-    moduleFileExtensions: ['ts', 'js', 'html'],
-    coverageDirectory: '../../../coverage/libs/sdk/experiments',
-    testEnvironment: 'jsdom'
+    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+    coverageDirectory: '../../../coverage/libs/sdk/experiments'
 };
