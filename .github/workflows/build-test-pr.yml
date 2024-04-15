@@ -51,3 +51,6 @@ jobs:
     if: always()
     needs: [ sonar,test ]
     uses: ./.github/workflows/reusable-finalize.yml
+    with:
+      set-cancelled: cancelled()
+      set-failure: failure()

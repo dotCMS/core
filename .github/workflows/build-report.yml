@@ -10,17 +10,14 @@ on:
         description: 'The run id of the build to report on'
         type: string
         default: "${{ github.run_id }}"
-      slack-failure:
-        description: 'Indicates if the workflow should post to slack on failure'
+      slack-only-on-failure:
+        description: 'Indicates if the slack notification should only be sent on failure'
         type: boolean
-        default: false
+        default: true
     secrets:
         SLACK_BOT_TOKEN:
           description: 'Slack Bot Token'
           required: false
-        MASTER_BUILD_SLACK_WEBHOOK:
-          required: false
-          description: 'Slack Webhook'
 
 permissions:
   checks: write
@@ -111,6 +108,8 @@ jobs:
           
             if [[ "$status" == "SUCCESS" ]]; then
               echo "status_icon=✅" >> $GITHUB_OUTPUT
+            elif [[ "$status" == "CANCELLED" ]]; then
+              echo "status_icon=🚫" >> $GITHUB_OUTPUT
             else
               echo "status_icon=❌" >> $GITHUB_OUTPUT
             fi
@@ -249,7 +248,7 @@ jobs:
           echo "payload=$(echo $payload | jq -c .)" >> $GITHUB_OUTPUT
           echo "payload=$payload"
       - name: Post to Slack
-        if: steps.workflow-data.outputs.has_json == 'true' && github.repository == 'dotcms/core'
+        if: steps.workflow-data.outputs.has_json == 'true' && github.repository == 'dotcms/core' && ( steps.workflow-data.outputs.status != 'FAILURE' || !inputs.slack-only-on-failure )
         uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}

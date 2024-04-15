@@ -13,8 +13,10 @@ The action accepts the following inputs:
 - `commit_id`: The commit id that triggered the build. This is required.
 - `image_name`: The name of the image to build. e.g 'dotcms/dotcms'
 - `ref`: The the branch or tag that triggered the build e.g. the docker environment name "trunk", "nightly" if "release" then the name will not be used in the tag.
+- `docker-use-ref`: If true, the ref will be used in the tag if this is false then version must be specified
 - `docker_tag`: The docker tag to use for the image. This is required.
 - `latest` : If true, the image will be tagged as latest, usually reserved for the agile release e.g. dotcms/dotcms:latest
+- `version`: The release version of the image to tag for snapshot builds this is unset and ref is used.
 - `do_deploy`: Actually do the final deploy, set to false for testing. Default is 'true'.
 - `docker_io_username`: Docker.io username.
 - `docker_io_token`: Docker.io token.

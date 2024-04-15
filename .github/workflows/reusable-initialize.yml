@@ -57,7 +57,7 @@ jobs:
           workflow_search: true # artifacts can come from merge_group build. Cannot specify a list of workflows without multiple calls
           commit: ${{ github.sha }}
           workflow_conclusion: success
-          search_artifacts: true 
+          search_artifacts: true
           dry_run: true
           name: maven-repo # If using the same branch for different environments artifact names must be unique
           path: .

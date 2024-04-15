@@ -5,6 +5,12 @@ on:
       artifact-run-id:
         default: ${{ github.run_id }}
         type: string
+      set-failure:
+        required: true
+        type: boolean
+      set-cancelled:
+        required: true
+        type: boolean
 jobs:
   prepare-report-data:
     name: Prepare Report Data
@@ -26,7 +32,9 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
+          
           AGGREGATE_STATUS="SUCCESS"
+          
           jobs_status="${{ toJson(needs) }}"
           echo "job status=${jobs_status}"
           while IFS=" " read -r key result; do
@@ -120,6 +128,15 @@ jobs:
           fi
           
           echo '],' >> workflow-data.json
+          if [[ "$AGGREGATE_STATUS" == "SUCCESS" ]]; then
+            if [ ${{ inputs.set-cancelled }} == true ]; then
+              echo "Setting cancelled status from job status"
+              AGGREGATE_STATUS="CANCELLED"
+            elif [ ${{ inputs.set-failure }} == true ]; then
+              echo "Setting failure status from job status"
+              AGGREGATE_STATUS="FAILURE"
+            fi
+          fi
           echo '"aggregate_status": "'$AGGREGATE_STATUS'"' >> workflow-data.json
           if [[ "$AGGREGATE_STATUS" != "SUCCESS" ]]; then
             echo ',' >> workflow-data.json
@@ -128,7 +145,7 @@ jobs:
             echo '"first_fail_error": "'$FIRST_FAIL_ERROR'"' >> workflow-data.json
           fi
           echo '}' >> workflow-data.json
-          
+         
           echo "aggregate_status=${AGGREGATE_STATUS}" >> $GITHUB_OUTPUT
       - name: Upload workflow data
         uses: actions/upload-artifact@v4
@@ -145,6 +162,6 @@ jobs:
       - name: Check Final Status
         run: |
           if [ "${{ needs.prepare-report-data.outputs.aggregate_status }}" != "SUCCESS" ]; then
-            echo "One or more jobs failed!"
+            echo "One or more jobs failed or cancelled!"
             exit 1
           fi
