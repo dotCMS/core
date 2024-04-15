@@ -1,8 +1,13 @@
 package com.dotmarketing.business;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.liferay.portal.model.User;
 import java.util.List;
 
 import com.dotmarketing.beans.Permission;
+import java.util.Optional;
+import javax.validation.constraints.NotNull;
 
 //This interface should have default package access
 public abstract class PermissionCache implements Cachable{
@@ -16,4 +21,15 @@ public abstract class PermissionCache implements Cachable{
 
 	abstract protected void remove(String key);
 
+	public abstract Optional<Boolean> doesUserHavePermission(Permissionable permissionable,
+			int permissionType,
+			User userIn,
+			boolean respectFrontendRoles,
+			Contentlet contentlet) throws DotDataException;
+
+	public abstract void putUserHavePermission(@NotNull Permissionable permissionable,
+			int permissionType,
+			@NotNull User userIn,
+			boolean respectFrontendRoles,
+			@NotNull Contentlet contentlet, boolean hasPermission) throws DotDataException;
 }
