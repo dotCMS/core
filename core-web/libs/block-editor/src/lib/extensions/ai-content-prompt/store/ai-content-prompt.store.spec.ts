@@ -38,7 +38,6 @@ describe('AiContentPromptStore', () => {
             selectedContent: '',
             activeIndex: null,
             status: ComponentStatus.INIT,
-            error: '',
             showDialog: false,
             submitLabel: 'block-editor.extension.ai-image.generate'
         };

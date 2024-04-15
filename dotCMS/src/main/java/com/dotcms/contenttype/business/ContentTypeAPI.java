@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -294,6 +295,54 @@ public interface ContentTypeAPI {
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
   ContentType copyFrom(CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site.
+   *
+   * @param copyContentTypeBean The {@link CopyContentTypeBean} object containing the data of the
+   *                            Content Type being copied.
+   * @param destinationSite     The {@link Host} object representing the Site where the Content
+   *                            Type will be saved.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it.
+   *
+   * @param copyContentTypeBean The {@link CopyContentTypeBean} object containing the data of the
+   *                            Content Type being copied.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site. Additionally,
+   * the Workflow Schemes being used by the original Content Type will be assigned to the copied
+   * Content Type.
+   *
+   * @param copyContentTypeBean The {@link CopyContentTypeBean} object containing the data of the
+   *                            Content Type being copied.
+   * @param destinationSite     The {@link Host} object representing the Site where the Content
+   *                            Type will be saved.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException;
 
   /**
    * Saves a new Content Type.
