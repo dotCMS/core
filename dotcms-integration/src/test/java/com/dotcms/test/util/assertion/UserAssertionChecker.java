@@ -3,18 +3,15 @@ package com.dotcms.test.util.assertion;
 import com.liferay.portal.model.User;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 public class UserAssertionChecker implements AssertionChecker<User> {
 
     @Override
     public Map<String, Object> getFileArguments(User asset, File file) {
 
-        return map(
-
-        );
+        return new HashMap<>();
     }
 
     @Override

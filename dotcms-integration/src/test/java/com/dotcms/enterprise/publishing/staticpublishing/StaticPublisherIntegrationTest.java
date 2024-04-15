@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,7 +65,6 @@ import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherI
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingFileAsset;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingPage;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
@@ -343,20 +343,19 @@ public class StaticPublisherIntegrationTest {
 
         final File expectedFile = FileTestUtil.getFileInResources(
                 "/bundlers-test/page/page.html.xml");
-        final Map<String, Object>  arguments = map(
-                "id", page.getIdentifier(),
-                "inode", page.getInode(),
-                "lang", page.getLanguageId(),
-                "template", page.getTemplateId(),
-                "folder_inode", page.getFolder(),
-                "host", page.getHost(),
-                "friendly_name", page.getFriendlyName(),
-                "title", page.getTitle(),
-                "url", page.getPageUrl(),
-                "content_type_inode", page.getContentTypeId(),
-                "asset_name", identifier.getAssetName()
-        );
+        final Map<String, Object>  arguments = new HashMap<>();
 
+        arguments.put("id", page.getIdentifier());
+        arguments.put("inode", page.getInode());
+        arguments.put("lang", page.getLanguageId());
+        arguments.put("template", page.getTemplateId());
+        arguments.put("folder_inode", page.getFolder());
+        arguments.put("host", page.getHost());
+        arguments.put("friendly_name", page.getFriendlyName());
+        arguments.put("title", page.getTitle());
+        arguments.put("url", page.getPageUrl());
+        arguments.put("content_type_inode", page.getContentTypeId());
+        arguments.put("asset_name", identifier.getAssetName());
         arguments.put("parent_path", identifier.getParentPath());
 
         final List<String> toRemove = getXMLFileToRemove();

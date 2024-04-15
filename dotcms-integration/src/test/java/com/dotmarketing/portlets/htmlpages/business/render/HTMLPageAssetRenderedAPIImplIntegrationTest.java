@@ -67,11 +67,11 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -2451,7 +2451,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .languageId(language.getId())
                 .nextPersistedAndPublish();
 
-        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, map());
+        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, new HashMap<>());
         ContentletDataGen.publish(pageVariant);
 
         new MultiTreeDataGen()
@@ -2592,7 +2592,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .languageId(language.getId())
                 .nextPersistedAndPublish();
 
-        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, map());
+        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, new HashMap<>());
         ContentletDataGen.publish(pageVariant);
 
         new MultiTreeDataGen()

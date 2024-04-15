@@ -4,6 +4,8 @@ import com.dotcms.util.CollectionsUtils;
 
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
 import com.google.common.collect.ImmutableMap;
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -18,7 +20,7 @@ import java.util.function.Function;
  */
 public class SimpleMapAppContext implements AppContext {
 
-    private final Map context = CollectionsUtils.map();
+    private final Map context = new HashMap();
 
     @Override
     public <T> T getAttribute(String attributeName) {

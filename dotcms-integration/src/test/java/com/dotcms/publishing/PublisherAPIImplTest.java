@@ -112,6 +112,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +120,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.set;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static org.junit.Assert.assertEquals;
@@ -397,14 +397,14 @@ public class PublisherAPIImplTest {
     private static TestAsset getUser() {
         final User user = new UserDataGen().nextPersisted();
         return new TestAsset(user,
-                map(),
+                new HashMap<>(),
                 "/bundlers-test/user/user.user.xml", false);
     }
 
     private static TestAsset getLanguageWithDependencies() {
         final Language language = new LanguageDataGen().nextPersisted();
 
-        return new TestAsset(language, map(), "/bundlers-test/language/language.language.xml");
+        return new TestAsset(language, new HashMap<>(), "/bundlers-test/language/language.language.xml");
     }
 
     private static TestAsset getHostWithDependencies() {
@@ -468,7 +468,7 @@ public class PublisherAPIImplTest {
                 .nextPersisted();
 
 
-        return new TestAsset(workflowScheme, map(), "/bundlers-test/workflow/workflow_with_steps_and_action.workflow.xml");
+        return new TestAsset(workflowScheme, new HashMap<>(), "/bundlers-test/workflow/workflow_with_steps_and_action.workflow.xml");
     }
 
     private static TestAsset getFolderWithDependencies() throws DotDataException, DotSecurityException {

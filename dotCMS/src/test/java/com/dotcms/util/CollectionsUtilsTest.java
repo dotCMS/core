@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import static com.dotcms.util.CollectionsUtils.Merge;
 import static com.dotcms.util.CollectionsUtils.groupByKey;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.partition;
 import static com.dotcms.util.CollectionsUtils.set;
 import static org.junit.Assert.assertArrayEquals;
@@ -310,7 +309,7 @@ public class CollectionsUtilsTest extends UnitTestBase {
         assertTrue(set4.contains(3.1f));
         assertTrue(set4.contains(3.2f));
 
-        final Map<String, Integer> map1 = map();
+        final Map<String, Integer> map1 = new HashMap<>();
         assertNotNull(map1);
         assertTrue(0 == map1.size());
 

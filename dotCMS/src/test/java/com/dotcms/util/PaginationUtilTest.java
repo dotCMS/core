@@ -14,10 +14,10 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -64,7 +64,7 @@ public class PaginationUtilTest {
 
         when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( items );
 
-        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, new HashMap<>());
 
 
         final Collection entity = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -150,7 +150,7 @@ public class PaginationUtilTest {
 
         when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( items );
 
-        paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+        paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, new HashMap<>());
 
         verify(paginator).getItems(user, perPage, offset, params);
     }
@@ -183,7 +183,7 @@ public class PaginationUtilTest {
 
         when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( null );
 
-        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, new HashMap<>());
 
         verify(paginator).getItems(user, perPage, offset, params);
 

@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Contentlet}
@@ -48,7 +47,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
            } else   if (fileName.endsWith(ContentBundler.CONTENT_WORKFLOW_EXTENSION)) {
                return getWorkflowTaskFileArguments(contentlet);
            } else {
-               return map();
+               return new HashMap<>();
            }
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);

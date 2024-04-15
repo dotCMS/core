@@ -125,7 +125,6 @@ import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -2150,13 +2149,13 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final Contentlet contentletLanguage3DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1DefaultVariant.getIdentifier());
@@ -2209,17 +2208,17 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 contentletLanguage3Live);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang1SpecificVariant);
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang2SpecificVariant);
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang3SpecificVariant);
 
@@ -2283,13 +2282,13 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final Contentlet contentletLanguage3DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1DefaultVariant.getIdentifier());

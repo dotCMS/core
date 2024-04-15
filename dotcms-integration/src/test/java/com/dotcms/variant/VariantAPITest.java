@@ -46,13 +46,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1164,7 +1164,7 @@ public class VariantAPITest {
         final Template template = new TemplateDataGen().withContainer(container.getIdentifier()).nextPersisted();
 
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
-        ContentletDataGen.createNewVersion(htmlPageAsset, variant, map());
+        ContentletDataGen.createNewVersion(htmlPageAsset, variant, new HashMap<>());
 
         new MultiTreeDataGen()
                 .setContainer(container)

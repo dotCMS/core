@@ -29,10 +29,10 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -123,7 +123,7 @@ public class CheckinContentActionletTest {
     public void tryToUnlockContentlet (final TestCase testCase) throws DotSecurityException, DotDataException {
 
         final WorkflowProcessor workflowProcessor = mock(WorkflowProcessor.class);
-        final Map<String, WorkflowActionClassParameter> params = map();
+        final Map<String, WorkflowActionClassParameter> params = new HashMap<>();
 
         final ContentletDependencies contentletDependencies = mock(ContentletDependencies.class);
 

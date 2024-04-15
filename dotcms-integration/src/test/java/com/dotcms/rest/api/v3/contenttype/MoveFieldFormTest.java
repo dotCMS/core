@@ -8,7 +8,6 @@ import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,6 +16,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -78,83 +78,89 @@ public class MoveFieldFormTest {
     final List<Map<String, Object>> createTestFields (final String contentTypeId) {
 
         final List<Map<String, Object>> fieldList = new ArrayList<>();
-        final Map<String, Object> rowField = CollectionsUtils.map("clazz" , "com.dotcms.contenttype.model.field.ImmutableRowField",
-                "contentTypeId", contentTypeId,
-                "dataType" , "SYSTEM",
-                "fieldContentTypeProperties", Collections.emptyList(),
-                "fieldType", "Row",
-                "fieldTypeLabel", "Row",
-                "fieldVariables", Collections.emptyList(),
-                "fixed", Boolean.FALSE,
-                "iDate", Long.valueOf(1584647620000l),
-                "id","a2d05a0b-5f4d-449d-9ca2-1117ab1ab086",
-                "indexed",  Boolean.FALSE,
-                "listed", Boolean.FALSE,
-                "modDate", Long.valueOf(1584647620000l),
-                "name", "fields-0",
-                "readOnly",Boolean.FALSE,
-                "required", Boolean.FALSE,
-                "searchable", Boolean.FALSE,
-                "sortOrder", Integer.valueOf(0),
-                "unique", Boolean.FALSE,
-                "variable", "fields0");
 
-        final Map<String, Object> columnField = CollectionsUtils.map("clazz" , "com.dotcms.contenttype.model.field.ImmutableColumnField",
-                "contentTypeId", contentTypeId,
-                "dataType" , "SYSTEM",
-                "fieldContentTypeProperties", Collections.emptyList(),
-                "fieldType", "Column",
-                "fieldTypeLabel", "Column",
-                "fieldVariables", Collections.emptyList(),
-                "fixed", Boolean.FALSE,
-                "iDate", Long.valueOf(1584647620000l),
-                "id","a2d05a0b-5f4d-449d-9ca2-1117ab1ab086",
-                "indexed",  Boolean.FALSE,
-                "listed", Boolean.FALSE,
-                "modDate", Long.valueOf(1584647620000l),
-                "name", "fields-1",
-                "readOnly",Boolean.FALSE,
-                "required", Boolean.FALSE,
-                "searchable", Boolean.FALSE,
-                "sortOrder", Integer.valueOf(0),
-                "unique", Boolean.FALSE,
-                "variable", "fields1");
+        final Map<String, Object> rowField = new HashMap<>();
+        rowField.put("clazz" , "com.dotcms.contenttype.model.field.ImmutableRowField");
+        rowField.put("contentTypeId", contentTypeId);
+        rowField.put("dataType" , "SYSTEM");
+        rowField.put("fieldContentTypeProperties", Collections.emptyList());
+        rowField.put("fieldType", "Row");
+        rowField.put("fieldTypeLabel", "Row");
+        rowField.put("fieldVariables", Collections.emptyList());
+        rowField.put("fixed", Boolean.FALSE);
+        rowField.put("iDate", Long.valueOf(1584647620000l));
+        rowField.put("id","a2d05a0b-5f4d-449d-9ca2-1117ab1ab086");
+        rowField.put("indexed",  Boolean.FALSE);
+        rowField.put("listed", Boolean.FALSE);
+        rowField.put("modDate", Long.valueOf(1584647620000l));
+        rowField.put("name", "fields-0");
+        rowField.put("readOnly",Boolean.FALSE);
+        rowField.put("required", Boolean.FALSE);
+        rowField.put("searchable", Boolean.FALSE);
+        rowField.put("sortOrder", Integer.valueOf(0));
+        rowField.put("unique", Boolean.FALSE);
+        rowField.put("variable", "fields0");
 
-        final Map<String, Object> textField = CollectionsUtils.map("clazz" , "com.dotcms.contenttype.model.field.ImmutableTextField",
-                "name", "text",
-                "dataType" , "TEXT",
-                "regexCheck", "",
-                "defaultValue", "",
-                "hint", "",
-                "required", Boolean.FALSE,
-                "searchable", Boolean.FALSE,
-                "indexed", Boolean.FALSE,
-                "listed", Boolean.FALSE,
-                "unique", Boolean.FALSE);
+        final Map<String, Object> columnField = new HashMap<>();
+        columnField.put("clazz" , "com.dotcms.contenttype.model.field.ImmutableColumnField");
+        columnField.put("contentTypeId", contentTypeId);
+        columnField.put("dataType" , "SYSTEM");
+        columnField.put("fieldContentTypeProperties", Collections.emptyList());
+        columnField.put("fieldType", "Column");
+        columnField.put("fieldTypeLabel", "Column");
+        columnField.put("fieldVariables", Collections.emptyList());
+        columnField.put("fixed", Boolean.FALSE);
+        columnField.put("iDate", Long.valueOf(1584647620000l));
+        columnField.put("id","a2d05a0b-5f4d-449d-9ca2-1117ab1ab086");
+        columnField.put("indexed",  Boolean.FALSE);
+        columnField.put("listed", Boolean.FALSE);
+        columnField.put("modDate", Long.valueOf(1584647620000l));
+        columnField.put("name", "fields-1");
+        columnField.put("readOnly",Boolean.FALSE);
+        columnField.put("required", Boolean.FALSE);
+        columnField.put("searchable", Boolean.FALSE);
+        columnField.put("sortOrder", Integer.valueOf(0));
+        columnField.put("unique", Boolean.FALSE);
+        columnField.put("variable", "fields1");
 
-        final Map<String, Object> textDecimalField = CollectionsUtils.map("clazz" , "com.dotcms.contenttype.model.field.ImmutableTextField",
-                "name", "decimal",
-                "dataType" , "FLOAT",
-                "regexCheck", "",
-                "defaultValue", "",
-                "hint", "",
-                "required", Boolean.FALSE,
-                "searchable", Boolean.FALSE,
-                "indexed", Boolean.FALSE,
-                "listed", Boolean.FALSE,
-                "unique", Boolean.FALSE);
+        final Map<String, Object> textField = new HashMap<>();
+        textField.put("clazz" , "com.dotcms.contenttype.model.field.ImmutableTextField");
+        textField.put("name", "text");
+        textField.put("dataType" , "TEXT");
+        textField.put("regexCheck", "");
+        textField.put("defaultValue", "");
+        textField.put("hint", "");
+        textField.put("required", Boolean.FALSE);
+        textField.put("searchable", Boolean.FALSE);
+        textField.put("indexed", Boolean.FALSE);
+        textField.put("listed", Boolean.FALSE);
+        textField.put("unique", Boolean.FALSE);
 
-        final Map<String, Object> textNumberField = CollectionsUtils.map("clazz" , "com.dotcms.contenttype.model.field.ImmutableTextField",
-                "name", "number",
-                "dataType" , "INTEGER",
-                "regexCheck", "",
-                "defaultValue", "",
-                "hint", "",
-                "required", Boolean.FALSE,
-                "searchable", Boolean.FALSE,
-                "indexed", Boolean.FALSE,
-                "listed", Boolean.FALSE,
-                "unique", Boolean.FALSE);
+        final Map<String, Object> textDecimalField = new HashMap<>();
+        textDecimalField.put("clazz" , "com.dotcms.contenttype.model.field.ImmutableTextField");
+        textDecimalField.put("name", "decimal");
+        textDecimalField.put("dataType" , "FLOAT");
+        textDecimalField.put("regexCheck", "");
+        textDecimalField.put("defaultValue", "");
+        textDecimalField.put("hint", "");
+        textDecimalField.put("required", Boolean.FALSE);
+        textDecimalField.put("searchable", Boolean.FALSE);
+        textDecimalField.put("indexed", Boolean.FALSE);
+        textDecimalField.put("listed", Boolean.FALSE);
+        textDecimalField.put("unique", Boolean.FALSE);
+
+        final Map<String, Object> textNumberField = new HashMap<>();
+        textNumberField.put("clazz" , "com.dotcms.contenttype.model.field.ImmutableTextField");
+        textNumberField.put("name", "number");
+        textNumberField.put("dataType" , "INTEGER");
+        textNumberField.put("regexCheck", "");
+        textNumberField.put("defaultValue", "");
+        textNumberField.put("hint", "");
+        textNumberField.put("required", Boolean.FALSE);
+        textNumberField.put("searchable", Boolean.FALSE);
+        textNumberField.put("indexed", Boolean.FALSE);
+        textNumberField.put("listed", Boolean.FALSE);
+        textNumberField.put("unique", Boolean.FALSE);
 
         fieldList.add(rowField);
         fieldList.add(columnField);

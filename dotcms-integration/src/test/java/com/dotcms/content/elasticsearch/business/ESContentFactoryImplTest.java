@@ -57,6 +57,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,6 @@ import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_
 import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS_DEFAULT;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -1315,13 +1315,13 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final Contentlet contentletLanguage3DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1DefaultVariant.getIdentifier());
@@ -1380,17 +1380,17 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 contentletLanguage3Live);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang1SpecificVariant);
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang2SpecificVariant);
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang3SpecificVariant);
 
