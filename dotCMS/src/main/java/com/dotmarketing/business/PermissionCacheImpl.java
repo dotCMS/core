@@ -6,10 +6,16 @@
  */
 package com.dotmarketing.business;
 
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.liferay.portal.model.User;
 import java.util.List;
 
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.util.Logger;
+import java.util.Optional;
+import javax.validation.constraints.NotNull;
 
 /**
  * 
@@ -22,9 +28,9 @@ public class PermissionCacheImpl extends PermissionCache {
 	private DotCacheAdministrator cache;
 	
 	private String primaryGroup = "PermissionCache";
-
+	private String shortLivedGroup = "PermissionShortLived";
 	// region's name for the cache
-    private String[] groupNames = {primaryGroup};
+    private String[] groupNames = {primaryGroup,shortLivedGroup};
 
 	protected PermissionCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
@@ -85,6 +91,52 @@ public class PermissionCacheImpl extends PermissionCache {
     public String getPrimaryGroup() {
     	return primaryGroup;
     }
+	@Override
+	public Optional<Boolean> doesUserHavePermission(final Permissionable permissionable,
+			final int permissionType,
+			final User userIn,
+			final boolean respectFrontendRoles,
+			final Contentlet contentlet) throws DotDataException {
+
+		if (DbConnectionFactory.inTransaction()) {
+			return Optional.empty();
+		}
+
+		final String key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
+
+		return Optional.ofNullable((Boolean) cache.getNoThrow(key,shortLivedGroup));
+
+	}
+	@Override
+	public void putUserHavePermission(@NotNull final Permissionable permissionable,
+			final int permissionType,
+			@NotNull final User userIn,
+			final boolean respectFrontendRoles,
+			@NotNull final Contentlet contentlet, boolean hasPermission) throws DotDataException {
+
+		if (DbConnectionFactory.inTransaction()) {
+			return;
+		}
+
+		final String key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
+
+		cache.put(key, hasPermission, shortLivedGroup);
+
+	}
+
+	private String shortLivedKey(@NotNull final Permissionable permissionable,
+			final int permissionType,
+			@NotNull final User userIn,
+			final boolean respectFrontendRoles,
+			@NotNull final Contentlet contentlet) throws DotDataException {
+
+
+		return permissionable.getPermissionId() + permissionType + userIn.getUserId() + respectFrontendRoles + contentlet.getIdentifier() + contentlet.getModDate().getTime();
+
+
+
+
+	}
 
 
 }

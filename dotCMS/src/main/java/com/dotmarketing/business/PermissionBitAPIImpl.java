@@ -275,9 +275,31 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return doesUserHavePermission(permissionable, permissionType, userIn, respectFrontendRoles, null);
 	}
 
+
 	@CloseDBIfOpened
 	@Override
 	public boolean doesUserHavePermission(final Permissionable permissionable,
+			final int permissionType,
+			final User userIn,
+			final boolean respectFrontendRoles,
+			final Contentlet contentlet) throws DotDataException {
+
+		Optional<Boolean> cachedPermission = CacheLocator.getPermissionCache().doesUserHavePermission(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
+		if (cachedPermission.isPresent() ) {
+			return cachedPermission.get();
+		}
+
+		boolean hasPermission = _doesUserHavePermissionInternal(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
+
+		CacheLocator.getPermissionCache().putUserHavePermission(permissionable, permissionType, userIn, respectFrontendRoles, contentlet, hasPermission);
+		return hasPermission;
+
+	}
+
+
+
+	@CloseDBIfOpened
+	public boolean _doesUserHavePermissionInternal(final Permissionable permissionable,
 										  final int permissionType,
 										  final User userIn,
 										  final boolean respectFrontendRoles,
