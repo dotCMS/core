@@ -74,8 +74,6 @@ jobs:
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       environment: trunk
-      snapshot: true
-      latest: true
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
