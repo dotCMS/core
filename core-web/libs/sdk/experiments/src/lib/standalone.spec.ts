@@ -1,6 +1,6 @@
-import { EXPERIMENT_WINDOWS_KEY } from './constants';
 import { DotExperiments } from './dot-experiments';
-import { getScriptDataAttributes } from './utils/utils';
+import { EXPERIMENT_WINDOWS_KEY } from './shared/constants';
+import { getScriptDataAttributes } from './shared/utils/utils';
 
 declare global {
     interface Window {
@@ -8,7 +8,7 @@ declare global {
     }
 }
 
-jest.mock('./utils/utils', () => ({
+jest.mock('./shared/utils/utils', () => ({
     getScriptDataAttributes: jest.fn().mockReturnValue({ server: 'http://localhost' }),
     Logger: jest.fn()
 }));

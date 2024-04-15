@@ -11,6 +11,12 @@ inputs:
     default: 'DOCKER.IO'
   build_run_id:
     description: 'The run id of the build to pull the artifact from'
+    required: false
+  docker_context:
+    description: 'The path to the docker context to build the image from'
+    required: false
+  image_name:
+    description: 'The name of the image to build'
     required: true
   commit_id:
     description: 'The commit id that triggered the build'
@@ -43,6 +49,10 @@ inputs:
   github_token:
     description: 'github token'
     required: true
+  build_args:
+    description: 'Build arguments to pass to the Docker build'
+    required: false
+    default: ''
 outputs:
   tags:
     description: "The tags that were used to build the image"
@@ -50,16 +60,31 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - run: echo 'GitHub context'
-      shell: bash
     - name: Download Docker Build Context
       uses: actions/download-artifact@v4
+      if: inputs.build_run_id # Only download the artifact if a build run id is provided
       with:
         name: docker-build-context
         path: ${{ github.workspace }}
         run-id: ${{ inputs.build_run_id }}
         github-token: ${{ inputs.github_token }}
+    - name: Setup Context
+      id: setup-context
+      env:
+        CONTEXT_TMP_PATH: /tmp/docker-context
+      run: |
+        if [ "${{ inputs.docker_context }}" != "" ]; then
+            echo "using provided docker context ${{ inputs.docker_context }}"
+            echo "docker_context=docker/${{ inputs.docker_context }}" >> $GITHUB_OUTPUT
+        else
+            echo "using artifact docker context"
+            rm -rf ${CONTEXT_TMP_PATH}
+            mkdir -p ${CONTEXT_TMP_PATH}
+            tar -xvf docker-build.tar -C ${CONTEXT_TMP_PATH}
+            echo "docker_context=${CONTEXT_TMP_PATH}" >> $GITHUB_OUTPUT
+        fi
 
+      shell: bash
     - name: Set Common Vars
       shell: bash
       id: set-common-vars
@@ -73,7 +98,7 @@ runs:
         else
           tag_prefix="${REF}_"
         fi
-    
+        
         # Now use environment variables instead of GitHub Actions expressions
         if [ "$SNAPSHOT" = "true" ] && [ "$LATEST" = "true" ]; then
           latest_snapshot="true"
@@ -114,7 +139,7 @@ runs:
       uses: docker/metadata-action@v5
       with:
         images: |
-          dotcms/dotcms
+          ${{ inputs.image_name }}
         tags: ${{ env.FULL_TAGS_OUTPUT }}
       if: success()
 
@@ -134,16 +159,12 @@ runs:
         driver-opts: |
           image=moby/buildkit:v0.12.2
 
-    - name: Setup Context
-      run: |
-        mkdir -p docker-context
-        tar -xvf docker-build.tar -C docker-context
-      shell: bash
+
 
     - name: Build/Push Docker Image
       uses: docker/build-push-action@v5
       with:
-        context: ./docker-context
+        context: ${{ steps.setup-context.outputs.docker_context }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ inputs.docker_platforms }}
@@ -151,3 +172,4 @@ runs:
         push: ${{ inputs.do_deploy }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        build-args: ${{ inputs.build_args }}

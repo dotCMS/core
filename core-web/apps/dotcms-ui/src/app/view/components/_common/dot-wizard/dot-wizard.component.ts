@@ -6,7 +6,6 @@ import {
     ComponentRef,
     Input,
     OnDestroy,
-    OnInit,
     QueryList,
     Type,
     ViewChild,
@@ -35,7 +34,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss']
 })
-export class DotWizardComponent implements OnInit, OnDestroy {
+export class DotWizardComponent implements OnDestroy {
     wizardData: { [key: string]: string };
     dialogActions: DotDialogActions;
     transform = '';
@@ -58,9 +57,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
         private componentFactoryResolver: ComponentFactoryResolver,
         private dotMessageService: DotMessageService,
         private dotWizardService: DotWizardService
-    ) {}
-
-    ngOnInit() {
+    ) {
         this.dotWizardService.showDialog$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
             this.data = data;
             // need to wait to render the dotContainerReference.
@@ -68,7 +65,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
                 this.loadComponents();
                 this.setDialogActions();
                 this.focusFistFormElement();
-            }, 0);
+            }, 1000);
         });
     }
 

@@ -4,6 +4,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.CopyContentTypeBean;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -137,6 +138,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
+ * This Integration Test verifies that the {@link ContentletAPI} is working as expected.
+ *
  * @author nollymar
  */
 public class ESContentletAPIImplTest extends IntegrationTestBase {
@@ -2802,7 +2805,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(textOver255Chars,vanityURLCheckout.getForwardTo());
     }
 
-    /*
+    /**
      * Method to test: {@link ESContentletAPIImpl#copyContentlet(Contentlet, User, boolean)}
      * Given Scenario:
      * Unable to copy a contentlet with Host/Folder field. Error is thrown when the field name is "Host"
@@ -2830,4 +2833,70 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertNotEquals(respCont.getIdentifier(), contentlet.getIdentifier());
         assertEquals(respCont.getHost(), APILocator.systemHost().getIdentifier());
     }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link ContentletAPI#copyContentlet(Contentlet, ContentType, Host, Folder, User, String, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Two test Sites are created. For Site #1, a source Content Type
+     *     will be created, and it will be copied to Site #2. Then, a Contentlet of the source
+     *     Content Type will be created, and it will be copied over to Content Type #2 and Site #2.
+     *     In summary, the API method copies a contentlet of a given type from one Site, to a copy
+     *     of such a type to anotherSite.</li>
+     *     <li><b>Expected Result: </b>In the end, the test Contentlet of Type #1 in Site #1 must be
+     *     copied over to Site #2 with a type that belongs to the copied Type #2. This is basically
+     *     what happens when you copy a Site, and choose to copy both Content Types and Contentlets
+     *     from the source Site.</li>
+     * </ul>
+     */
+    @Test
+    public void copyContentletToAnotherContentTypeAndSite() throws DotDataException, DotSecurityException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final long currentTime = System.currentTimeMillis();
+        final String sourceSiteName = "sourcesite" + currentTime +".com";
+        final String copiedSiteName = "copiedsite" + currentTime + ".com";
+        final String titleFieldName = "title";
+        final String titleFieldValue = "This is the title of the test Contentlet";
+        final String defaultIcon = "event_note";
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Host sourceSite = new SiteDataGen().name(sourceSiteName).nextPersisted();
+        final Host copiedSite = new SiteDataGen().name(copiedSiteName).nextPersisted();
+
+        final List<Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().name("Title").velocityVarName(titleFieldName).next());
+        final ContentType sourceContentType = new ContentTypeDataGen()
+                .host(sourceSite).description("This is a description of my test Content Type")
+                .fields(fields)
+                .nextPersisted();
+
+        final CopyContentTypeBean.Builder builder = new CopyContentTypeBean.Builder()
+                .sourceContentType(sourceContentType).icon(defaultIcon).name(sourceContentType.name() + " - " + copiedSite.getHostname() + " COPY")
+                .folder(sourceContentType.folder()).host(copiedSite.getIdentifier());
+        final ContentType copiedContentType = contentTypeAPI.copyFromAndDependencies(builder.build(), copiedSite);
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(sourceContentType);
+        contentletDataGen.setProperty(titleFieldName, titleFieldValue);
+        contentletDataGen.setProperty("host", sourceSite.getIdentifier());
+        final Contentlet sourceContentlet = contentletDataGen.nextPersisted();
+
+        final Contentlet copiedContentlet = contentletAPI.copyContentlet(sourceContentlet,
+                copiedContentType, copiedSite, null, user, null, false);
+
+        // ╔══════════════╗
+        // ║  Assertions  ║
+        // ╚══════════════╝
+        assertNotNull("The source Contentlet cannot be null", sourceContentlet);
+        assertNotNull("The copied Contentlet cannot be null", copiedContentlet);
+        assertEquals("The 'title' property in both Contentlets MUST be the same", sourceContentlet.getStringProperty(titleFieldName), copiedContentlet.getStringProperty(titleFieldName));
+        assertEquals("The Site ID that the source Contentlet lives in MUST match the source Site ID", sourceContentlet.getHost(), sourceSite.getIdentifier());
+        assertEquals("The Site ID that the copied Contentlet lives in MUST match the copied Site ID", copiedContentlet.getHost(), copiedSite.getIdentifier());
+        assertNotEquals("The Content Type in the source and copied Contentlets MUST be different because a new Content Type was passed down during the copy process", sourceContentlet.getContentTypeId(), copiedContentlet.getContentTypeId());
+        assertNotEquals("The Site ID from the source and copied Contentlets MUST be different because a new Site was passed down during the copy process", sourceContentlet.getHost(), copiedContentlet.getHost());
+    }
+
 }
