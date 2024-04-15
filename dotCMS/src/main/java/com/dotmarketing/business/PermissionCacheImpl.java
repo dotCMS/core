@@ -104,15 +104,17 @@ public class PermissionCacheImpl extends PermissionCache {
 			return Optional.empty();
 		}
 		if (UtilMethods.isEmpty(() -> permissionable.getPermissionId()) ||
-				UtilMethods.isEmpty(() -> userIn.getUserId()) ||
-				UtilMethods.isEmpty(() -> contentlet.getIdentifier())
+				UtilMethods.isEmpty(() -> userIn.getUserId())
 		) {
 			return Optional.empty();
 		}
 
-		final String key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
+		final Optional<String> key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
+		if(key.isEmpty()) {
+			return Optional.empty();
+		}
 
-		return Optional.ofNullable((Boolean) cache.getNoThrow(key, shortLivedGroup));
+		return Optional.ofNullable((Boolean) cache.getNoThrow(key.get(), shortLivedGroup));
 
 	}
 
@@ -123,32 +125,39 @@ public class PermissionCacheImpl extends PermissionCache {
 			final boolean respectFrontendRoles,
 			@NotNull final Contentlet contentlet, boolean hasPermission) throws DotDataException {
 
-		if (DbConnectionFactory.inTransaction()) {
-			return;
-		}
-		if (UtilMethods.isEmpty(() -> permissionable.getPermissionId()) ||
-				UtilMethods.isEmpty(() -> userIn.getUserId()) ||
-				UtilMethods.isEmpty(() -> contentlet.getIdentifier())
-		) {
-			return;
-		}
 
-		final String key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
-
-		cache.put(key, hasPermission, shortLivedGroup);
+		final Optional<String> key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
+		if(key.isPresent()) {
+			cache.put(key.get(), hasPermission, shortLivedGroup);
+		}
 
 	}
 
-	private String shortLivedKey(@NotNull final Permissionable permissionable,
+	/**
+	 * If no key is returned, it means that the object should not be cached.
+	 * @param permissionable
+	 * @param permissionType
+	 * @param userIn
+	 * @param respectFrontendRoles
+	 * @param contentlet
+	 * @return
+	 * @throws DotDataException
+	 */
+	private Optional<String> shortLivedKey(@NotNull final Permissionable permissionable,
 			final int permissionType,
 			@NotNull final User userIn,
 			final boolean respectFrontendRoles,
 			@NotNull final Contentlet contentlet) throws DotDataException {
 
+		if (DbConnectionFactory.inTransaction() ||
+				UtilMethods.isEmpty(() -> permissionable.getPermissionId()) ||
+				UtilMethods.isEmpty(() -> userIn.getUserId())
+		) {
+			return Optional.empty();
+		}
 
-		return permissionable.getPermissionId() + permissionType + userIn.getUserId() + respectFrontendRoles + contentlet.getIdentifier() + contentlet.getModDate().getTime();
-
-
+		return Optional.of(permissionable.getPermissionId() + permissionType + userIn.getUserId() + respectFrontendRoles + (
+				contentlet != null ? contentlet.getIdentifier() : ""));
 
 
 	}
