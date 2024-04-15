@@ -19,8 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * This upgrade task will adds the personalization column to the multitree and will remove the pk and adds a new one include the personalization as part of it.
  *

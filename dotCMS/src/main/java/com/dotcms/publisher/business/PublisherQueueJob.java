@@ -1,7 +1,5 @@
 package com.dotcms.publisher.business;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -24,12 +22,9 @@ import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
-import com.dotcms.publishing.output.BundleOutput;
-import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.rest.RestClientBuilder;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -40,6 +35,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.StringPool;
+import org.apache.logging.log4j.ThreadContext;
+import org.jetbrains.annotations.NotNull;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.WebTarget;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -47,15 +51,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
-
-import com.liferay.util.StringPool;
-import org.apache.logging.log4j.ThreadContext;
-import org.jetbrains.annotations.NotNull;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
 
 /**
  * This job is in charge of auditing and triggering the push publishing process

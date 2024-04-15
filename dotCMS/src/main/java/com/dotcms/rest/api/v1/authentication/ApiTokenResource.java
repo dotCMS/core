@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static java.util.Collections.EMPTY_MAP;
 
 /**

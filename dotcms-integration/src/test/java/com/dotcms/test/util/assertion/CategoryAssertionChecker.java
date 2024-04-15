@@ -7,11 +7,9 @@ import com.dotmarketing.portlets.categories.model.Category;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Category}

@@ -21,7 +21,6 @@ import java.util.Objects;
 
 import static com.dotcms.rendering.util.ActionletUtil.getRequest;
 import static com.dotcms.rendering.util.ActionletUtil.getResponse;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Js Script Actionlet allows to execute custom script in a workflow action

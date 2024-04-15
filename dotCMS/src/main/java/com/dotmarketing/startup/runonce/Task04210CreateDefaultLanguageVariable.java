@@ -1,13 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.business.WrapInTransaction;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.KeyValueContentType;
@@ -16,6 +9,13 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.liferay.util.StringPool;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This upgrade task create the default Language Variable Content Type for existing dotCMS installs.

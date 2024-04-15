@@ -1,16 +1,5 @@
 package com.dotmarketing.beans;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.publisher.util.PusheableAsset;
-import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Map;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
@@ -23,7 +12,11 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.portal.model.User;
+
+import java.util.Map;
 
 /**
  *
@@ -289,4 +282,3 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 		return getType();
 	}
 }
-    

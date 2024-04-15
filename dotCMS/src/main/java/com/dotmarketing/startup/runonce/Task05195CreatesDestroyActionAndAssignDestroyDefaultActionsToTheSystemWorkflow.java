@@ -14,8 +14,6 @@ import com.liferay.util.StringPool;
 
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * This upgrade task set to the system workflow the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#DESTROY} default actions
  * @author jsanca

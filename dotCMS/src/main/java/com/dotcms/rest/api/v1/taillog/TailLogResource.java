@@ -34,8 +34,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * This resource provides the endpoint used by the LogViewer functionality to display backend server logs
  * @author nollymarlonga

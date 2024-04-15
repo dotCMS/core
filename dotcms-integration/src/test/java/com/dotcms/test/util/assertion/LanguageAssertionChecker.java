@@ -3,16 +3,13 @@ package com.dotcms.test.util.assertion;
 import com.dotcms.enterprise.publishing.remote.bundler.FileBundlerTestUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Language}

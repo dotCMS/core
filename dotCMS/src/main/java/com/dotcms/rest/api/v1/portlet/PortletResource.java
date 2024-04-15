@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
 
 /**

@@ -107,7 +107,6 @@ import java.util.stream.Stream;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotSame;

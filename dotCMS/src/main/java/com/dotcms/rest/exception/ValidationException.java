@@ -6,9 +6,6 @@ import com.dotcms.rest.api.Validated;
 
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Response.Status;
-
-import static com.dotcms.util.CollectionsUtils.map;
 public class ValidationException extends BadRequestException {
 
     private static final long serialVersionUID = 1L;

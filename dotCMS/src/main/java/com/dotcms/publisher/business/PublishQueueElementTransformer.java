@@ -20,7 +20,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.dotcms.publisher.ajax.RemotePublishAjaxAction.ADD_ALL_CATEGORIES_TO_BUNDLE_KEY;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Util class to transform {@link PublishQueueElement} into Map

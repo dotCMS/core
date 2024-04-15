@@ -35,7 +35,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
 
 

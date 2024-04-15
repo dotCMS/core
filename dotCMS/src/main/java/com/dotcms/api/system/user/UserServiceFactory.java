@@ -33,7 +33,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.ConversionUtils.toBoolean;
 import static com.dotcms.util.ConversionUtils.toInt;
 

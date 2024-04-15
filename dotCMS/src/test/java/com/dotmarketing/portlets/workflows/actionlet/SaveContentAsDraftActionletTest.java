@@ -24,7 +24,11 @@ import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class SaveContentAsDraftActionletTest {

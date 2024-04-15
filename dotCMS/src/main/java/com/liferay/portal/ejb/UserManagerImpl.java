@@ -60,7 +60,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
-import com.liferay.portlet.admin.ejb.AdminConfigManagerUtil;
 import com.liferay.portlet.admin.model.EmailConfig;
 import com.liferay.portlet.admin.model.UserConfig;
 import com.liferay.util.Encryptor;
@@ -80,8 +79,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This manager provides interaction with {@link User} objects in terms of authentication,

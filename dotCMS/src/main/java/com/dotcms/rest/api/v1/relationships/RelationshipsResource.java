@@ -30,7 +30,6 @@ import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 /**

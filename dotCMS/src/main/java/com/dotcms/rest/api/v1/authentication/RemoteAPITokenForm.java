@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 @JsonDeserialize(builder = RemoteAPITokenForm.Builder.class)
 public class RemoteAPITokenForm {
     private TokenInfo token;

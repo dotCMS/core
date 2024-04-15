@@ -1,9 +1,5 @@
 package com.dotcms.uuid.shorty;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
@@ -14,6 +10,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Implementation class for the {@link ShortyIdAPI}.

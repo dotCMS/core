@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 
 public class CubeJSClientTest {

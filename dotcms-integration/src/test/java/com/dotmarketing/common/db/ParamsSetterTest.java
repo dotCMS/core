@@ -1,7 +1,5 @@
 package com.dotmarketing.common.db;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -14,15 +12,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.util.UUIDGenerator;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class ParamsSetterTest extends BaseWorkflowIntegrationTest {
 

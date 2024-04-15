@@ -1,11 +1,8 @@
 package com.dotcms.test.util.assertion;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.experiments.model.Experiment;
 import com.dotcms.variant.model.Variant;
+
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 
 /**

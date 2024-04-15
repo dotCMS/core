@@ -42,8 +42,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}
  * @author jsanca

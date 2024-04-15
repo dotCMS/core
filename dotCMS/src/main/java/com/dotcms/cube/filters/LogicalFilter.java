@@ -1,8 +1,7 @@
 package com.dotcms.cube.filters;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.cube.filters.SimpleFilter.Operator;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;

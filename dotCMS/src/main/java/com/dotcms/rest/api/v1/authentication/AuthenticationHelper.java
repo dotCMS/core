@@ -14,8 +14,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * {@link AuthenticationResource}'s helper
  */

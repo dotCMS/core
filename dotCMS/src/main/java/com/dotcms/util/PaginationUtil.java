@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 

@@ -24,12 +24,14 @@ import java.net.ConnectException;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.junit.Assert.assertEquals;
 
 public class FieldAPIImplTest {
     private static PermissionAPI perAPI;

@@ -13,8 +13,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * This upgrade task will creates the workflow_action_mappings and unique index for it.
  *

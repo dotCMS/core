@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.workflows.util;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -25,7 +23,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 

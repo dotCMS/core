@@ -36,7 +36,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.mapAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

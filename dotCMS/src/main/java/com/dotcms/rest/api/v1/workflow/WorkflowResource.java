@@ -154,7 +154,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.FAIL_ACTION_CALLBACK;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_ACTION_CALLBACK;

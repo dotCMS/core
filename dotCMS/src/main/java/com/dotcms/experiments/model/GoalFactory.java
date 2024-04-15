@@ -1,10 +1,9 @@
 package com.dotcms.experiments.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.experiments.model.Goal.GoalType;
+
 import java.util.Map;
 import java.util.function.Function;
 

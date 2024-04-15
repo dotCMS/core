@@ -7,30 +7,26 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
-import com.dotcms.datagen.*;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-
 import com.dotcms.datagen.ContentTypeDataGen;
-
+import com.dotcms.datagen.PermissionUtilTest;
 import com.dotcms.integrationtestutil.content.ContentUtils;
-
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
-import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 
 public class FieldUtilTest {
 

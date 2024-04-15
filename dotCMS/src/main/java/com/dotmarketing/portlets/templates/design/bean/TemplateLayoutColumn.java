@@ -10,8 +10,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * Created by Jonathan Gamba
  * Date: 10/25/12

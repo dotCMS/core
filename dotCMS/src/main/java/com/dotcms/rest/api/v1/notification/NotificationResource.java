@@ -1,9 +1,5 @@
 package com.dotcms.rest.api.v1.notification;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.ConversionUtils.toLong;
-
 import com.dotcms.notifications.NotificationConverter;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.UserNotificationPair;
@@ -26,8 +22,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import java.util.List;
-import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -39,6 +34,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.ConversionUtils.toLong;
 
 
 

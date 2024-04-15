@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
 

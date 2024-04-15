@@ -7,8 +7,6 @@ import com.dotmarketing.startup.StartupTask;
 
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * Remove the foreign key with the publishing_end_point table to all the Integrity Resolver tables and rename the column
  * endpoint_id to remote IP, Also change the endpoint_id column size.

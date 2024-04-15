@@ -1,23 +1,22 @@
 package com.dotmarketing.startup.runonce;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static graphql.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
-import graphql.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static graphql.Assert.assertTrue;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 
 public class Task220822CreateVariantTableTest {
 
