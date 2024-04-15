@@ -377,7 +377,8 @@ describe('EmaPageDropzoneComponent', () => {
                 left: '100px',
                 opacity: '1',
                 top: '200px',
-                width: '100px'
+                width: '100px',
+                height: '3px'
             });
 
             expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
