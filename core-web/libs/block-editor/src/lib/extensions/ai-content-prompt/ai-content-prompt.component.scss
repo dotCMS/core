@@ -28,7 +28,8 @@ form {
     }
 }
 
-.ai-content__generated-text {
+.ai-content__generated-text,
+dot-empty-container {
     height: 22rem;
 }
 
@@ -45,7 +46,6 @@ form {
 
 .ai-content__buttons {
     display: flex;
-    justify-content: flex-end;
     gap: $spacing-1;
 }
 
@@ -53,4 +53,8 @@ form {
     display: flex;
     flex-direction: column;
     gap: $spacing-3;
+}
+
+dot-empty-container ::ng-deep .message__icon {
+    color: $red;
 }

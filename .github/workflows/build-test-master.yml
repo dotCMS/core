@@ -76,6 +76,13 @@ jobs:
       environment: trunk
       snapshot: true
       latest: true
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+
   finalize:
     name: Finalize
     if: always()
@@ -90,3 +97,7 @@ jobs:
     uses: ./.github/workflows/build-report.yml
     with:
       slack-failure: true
+    secrets:
+      MASTER_BUILD_SLACK_WEBHOOK: ${{ secrets.MASTER_BUILD_SLACK_WEBHOOK }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
