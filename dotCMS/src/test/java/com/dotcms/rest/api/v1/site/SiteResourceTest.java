@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -186,7 +187,7 @@ public class SiteResourceTest extends UnitTestBase {
 
         Config.CONTEXT = context;
         try {
-            Map<String, Object> sessionAttributes = Map.of(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
+            Map<String, Object> sessionAttributes = new HashMap<>(Map.of(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock"));
 
             when(initDataObject.getUser()).thenReturn(user);
             when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
