@@ -284,6 +284,29 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			final boolean respectFrontendRoles,
 			final Contentlet contentlet) throws DotDataException {
 
+
+
+		final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+		if (user.getUserId().equals(APILocator.systemUser().getUserId()) || user.isAdmin()){
+			return true;
+		}
+
+
+		if (permissionable == null) {
+			Logger.warn(this, "Permissionable object is null");
+			throw new NullPointerException("Permissionable object is null");
+		}
+
+		if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			return false;
+		}
+
 		Optional<Boolean> cachedPermission = CacheLocator.getPermissionCache().doesUserHavePermission(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
 		if (cachedPermission.isPresent() ) {
 			return cachedPermission.get();
@@ -301,32 +324,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@CloseDBIfOpened
 	public boolean _doesUserHavePermissionInternal(final Permissionable permissionable,
 										  final int permissionType,
-										  final User userIn,
+										  final User user,
 										  final boolean respectFrontendRoles,
 										  final Contentlet contentlet) throws DotDataException {
-	    final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-        if (user.getUserId().equals(APILocator.systemUser().getUserId())){
-            return true;
-        }
-        
-        if (user.isAdmin()) {
-            return true;
-        }
-        
-        if (permissionable == null) {
-            Logger.warn(this, "Permissionable object is null");
-            throw new NullPointerException("Permissionable object is null");
-        }
-        
-        if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
-            Logger.debug(
-				this.getClass(),
-				"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
-            Logger.debug(
-				this.getClass(),
-				"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
-            return false;
-        }
+
 
         // short circuit for UserProxy
         if (permissionable instanceof UserProxy) {

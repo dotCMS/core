@@ -9,6 +9,7 @@ package com.dotmarketing.business;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.List;
 
@@ -18,15 +19,15 @@ import java.util.Optional;
 import javax.validation.constraints.NotNull;
 
 /**
- * 
+ *
  * @author salvador & david
  * @author Carlos Rivas
  * @author Jason Tesser
  */
 public class PermissionCacheImpl extends PermissionCache {
-	
+
 	private DotCacheAdministrator cache;
-	
+
 	private String primaryGroup = "PermissionCache";
 	private String shortLivedGroup = "PermissionShortLived";
 	// region's name for the cache
@@ -82,7 +83,7 @@ public class PermissionCacheImpl extends PermissionCache {
 	        cache.remove(key,primaryGroup);
     	}catch (Exception e) {
 			Logger.debug(this,e.getMessage(), e);
-		} 
+		}
 
     }
     public String[] getGroups() {
@@ -91,6 +92,7 @@ public class PermissionCacheImpl extends PermissionCache {
     public String getPrimaryGroup() {
     	return primaryGroup;
     }
+
 	@Override
 	public Optional<Boolean> doesUserHavePermission(final Permissionable permissionable,
 			final int permissionType,
@@ -101,12 +103,19 @@ public class PermissionCacheImpl extends PermissionCache {
 		if (DbConnectionFactory.inTransaction()) {
 			return Optional.empty();
 		}
+		if (UtilMethods.isEmpty(() -> permissionable.getPermissionId()) ||
+				UtilMethods.isEmpty(() -> userIn.getUserId()) ||
+				UtilMethods.isEmpty(() -> contentlet.getIdentifier())
+		) {
+			return Optional.empty();
+		}
 
 		final String key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
 
-		return Optional.ofNullable((Boolean) cache.getNoThrow(key,shortLivedGroup));
+		return Optional.ofNullable((Boolean) cache.getNoThrow(key, shortLivedGroup));
 
 	}
+
 	@Override
 	public void putUserHavePermission(@NotNull final Permissionable permissionable,
 			final int permissionType,
@@ -115,6 +124,12 @@ public class PermissionCacheImpl extends PermissionCache {
 			@NotNull final Contentlet contentlet, boolean hasPermission) throws DotDataException {
 
 		if (DbConnectionFactory.inTransaction()) {
+			return;
+		}
+		if (UtilMethods.isEmpty(() -> permissionable.getPermissionId()) ||
+				UtilMethods.isEmpty(() -> userIn.getUserId()) ||
+				UtilMethods.isEmpty(() -> contentlet.getIdentifier())
+		) {
 			return;
 		}
 
