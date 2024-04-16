@@ -39,6 +39,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ inputs.artifact-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           name: maven-repo
           path: ~/.m2/repository
         continue-on-error: true
