@@ -31,6 +31,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -96,7 +97,7 @@ public class ThemeResource {
         Logger.debug(this,
                 "Getting the themes for the hostId: " + hostId);
 
-        final Map<String, Object> params = Map.of(ThemePaginator.HOST_ID_PARAMETER_NAME, hostId);
+        final Map<String, Object> params = new HashMap<>(Map.of(ThemePaginator.HOST_ID_PARAMETER_NAME, hostId));
 
         if (UtilMethods.isSet(searchParam)) {
             params.put(ThemePaginator.SEARCH_PARAMETER, searchParam);

@@ -221,15 +221,15 @@ public class PublisherAPIImplTest {
 
         final Template variantTemplate = APILocator.getTemplateAPI().systemTemplate();
         final Contentlet pageNewVersion = ContentletDataGen.createNewVersion(experimentPage, variant,
-                Map.of(HTMLPageAssetAPI.TEMPLATE_FIELD,
-                        variantTemplate.getIdentifier()));
+                new HashMap<>(Map.of(HTMLPageAssetAPI.TEMPLATE_FIELD,
+                        variantTemplate.getIdentifier())));
         ContentletDataGen.publish(pageNewVersion);
 
         return new TestAsset(experiment,
-                Map.of(
+                new HashMap<>(Map.of(
                         experiment, list(variant, experimentPage, pageNewVersion),
                         experimentPage, list(host, template, pageContentType, language)
-                ),
+                )),
                 "/bundlers-test/experiment/experiment.json", true, true);
     }
 
@@ -258,16 +258,16 @@ public class PublisherAPIImplTest {
 
         final Template variantTemplate = new TemplateDataGen().host(host).nextPersisted();
         final Contentlet pageNewVersion = ContentletDataGen.createNewVersion(experimentPage, variant,
-                Map.of(HTMLPageAssetAPI.TEMPLATE_FIELD,
-                        variantTemplate.getIdentifier()));
+                new HashMap<>(Map.of(HTMLPageAssetAPI.TEMPLATE_FIELD,
+                        variantTemplate.getIdentifier())));
         ContentletDataGen.publish(pageNewVersion);
 
         return new TestAsset(experiment,
-                Map.of(
+                new HashMap<>(Map.of(
                         experiment, list(variant, experimentPage, pageNewVersion),
                         variant, list(variantTemplate),
                         experimentPage, list(host, template, variantTemplate, pageContentType, language, variantTemplate)
-                ),
+                )),
                 "/bundlers-test/experiment/experiment.json", true);
     }
 
@@ -310,12 +310,12 @@ public class PublisherAPIImplTest {
                 .nextPersisted();
 
         return new TestAsset(experiment,
-                Map.of(
+                new HashMap<>(Map.of(
                         experiment, list(variant, experimentPage, contentlet),
                         contentlet, list(languageToContentlet, contentType),
                         experimentPage, list(host, template, pageContentType, language),
                         contentType, list(host)
-                ),
+                )),
                 "/bundlers-test/experiment/experiment.json", true);
     }
 
@@ -341,10 +341,10 @@ public class PublisherAPIImplTest {
                 .orElseThrow();
 
         return new TestAsset(experiment,
-                    Map.of(
+                    new HashMap<>(Map.of(
                             experiment, list(variant, experimentPage),
                             experimentPage, list(host, template, pageContentType, language)
-                    ),
+                    )),
                     "/bundlers-test/experiment/experiment.json", true);
     }
 
@@ -374,10 +374,10 @@ public class PublisherAPIImplTest {
                 .findSystemWorkflowScheme();
 
         return new TestAsset(workingVersion,
-                Map.of(
+                new HashMap<>(Map.of(
                         workingVersion, list(host, contentType, defaultLanguage),
                         contentType, list(systemWorkflowScheme)
-                ),
+                )),
                 set(liveVersion),
                 "/bundlers-test/contentlet/contentlet/contentlet.content.xml");
     }
@@ -390,7 +390,7 @@ public class PublisherAPIImplTest {
         final Rule ruleWithPage = new RuleDataGen().page(htmlPageAsset).host(host).nextPersisted();
 
         return new TestAsset(ruleWithPage,
-                Map.of(ruleWithPage, list(host)),
+                new HashMap<>(Map.of(ruleWithPage, list(host))),
                 "/bundlers-test/rule/rule.rule.xml", false);
     }
 
@@ -436,12 +436,12 @@ public class PublisherAPIImplTest {
 
 
             return new TestAsset(host,
-                    Map.of(
+                    new HashMap<>(Map.of(
                             host, list(template, container, contentlet, containerContentType, contentType, folder, rule),
                             contentlet,list(contentType, language),
                             container,list(containerContentType),
                             folder, list(folderContentType)
-                    ),
+                    )),
                     "/bundlers-test/host/host.host.xml");
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -457,7 +457,7 @@ public class PublisherAPIImplTest {
                 .hostId(host.getIdentifier())
                 .nextPersisted();
 
-        return new TestAsset(link, Map.of(link, list(host, folder)), "/bundlers-test/link/link.link.xml");
+        return new TestAsset(link, new HashMap<>(Map.of(link, list(host, folder))), "/bundlers-test/link/link.link.xml");
     }
 
     private static TestAsset getWorkflowWithDependencies() {
@@ -510,7 +510,7 @@ public class PublisherAPIImplTest {
         final ContentType fileAssetContentType = contentlet.getContentType();
 
         return new TestAsset(folderWithDependencies,
-                Map.of(
+                new HashMap<>(Map.of(
                         folderWithDependencies,
                         list(host, parentFolder, contentlet, folderContentType, link, subFolder, contentType),
                         contentlet, list(language, fileAssetContentType),
@@ -518,7 +518,7 @@ public class PublisherAPIImplTest {
                         subFolder, list(contentlet_2),
                         contentType, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme()),
                         folderContentType, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme())
-                ),
+                )),
                 "/bundlers-test/folder/folder.folder.xml");
     }
 
@@ -552,11 +552,11 @@ public class PublisherAPIImplTest {
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
         return new TestAsset(templateWithTemplateLayout,
-                Map.of(
+                new HashMap<>(Map.of(
                         templateWithTemplateLayout, list(host, container_1, container_2, contentType),
                         container_1, list(contentType),
                         contentType, list(systemWorkflowScheme)
-                ),
+                )),
                 "/bundlers-test/template/template.template.xml");
     }
 
@@ -586,10 +586,10 @@ public class PublisherAPIImplTest {
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         return new TestAsset(contentType,
-                Map.of(
+                new HashMap<>(Map.of(
                         contentType, list(host, workflowScheme, relationship, category, systemWorkflowScheme),
                         relationship, list(contentTypeChild)
-                ),
+                )),
                 "/bundlers-test/content_types/content_types_with_category_and_relationship.contentType.json");
     }
 
@@ -606,10 +606,10 @@ public class PublisherAPIImplTest {
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
         return new TestAsset(containerWithContentType,
-                Map.of(
+                new HashMap<>(Map.of(
                         containerWithContentType, list(host, contentType),
                         contentType, list(systemWorkflowScheme)
-                ),
+                )),
                 "/bundlers-test/container/container.containers.container.xml");
     }
 
@@ -673,7 +673,7 @@ public class PublisherAPIImplTest {
 
             final List<ManifestItem> manifestItems = topLevelCategories.stream()
                     .map(category -> (ManifestItem) category).collect(Collectors.toList());
-            manifestLines.addDependencies(Map.of((Category) testAsset.asset, manifestItems));
+            manifestLines.addDependencies(new HashMap<>(Map.of((Category) testAsset.asset, manifestItems)));
 
             for (Category topLevel : topLevelCategories) {
                 dependencies.add(topLevel);
@@ -687,7 +687,7 @@ public class PublisherAPIImplTest {
 
                 final List<ManifestItem> childManifestItems = children.stream()
                         .map(category -> (ManifestItem) category).collect(Collectors.toList());
-                manifestLines.addDependencies(Map.of(topLevel, childManifestItems));
+                manifestLines.addDependencies(new HashMap<>(Map.of(topLevel, childManifestItems)));
             }
 
             dependencies.addAll(APILocator.getCategoryAPI().findAll(APILocator.systemUser(), true));
@@ -697,9 +697,9 @@ public class PublisherAPIImplTest {
 
         if (!Rule.class.isInstance(testAsset.asset) && !User.class.isInstance(testAsset.asset)) {
             if (!Category.class.isInstance(testAsset.asset)) {
-                manifestLines.addExcludes(Map.of("Excluded System Folder/Host/Container/Template",
+                manifestLines.addExcludes(new HashMap<>(Map.of("Excluded System Folder/Host/Container/Template",
                         list(APILocator.getHostAPI().findSystemHost(),
-                                APILocator.getFolderAPI().findSystemFolder())));
+                                APILocator.getFolderAPI().findSystemFolder()))));
 
                 addLanguageVariableManifestItem(
                         manifestLines,
@@ -713,8 +713,8 @@ public class PublisherAPIImplTest {
             final File manifestFile = new File(manifestFilePath);
 
             if (testAsset.addExcludeForSystemTemplate()) {
-                manifestLines.addExcludes(Map.of("Excluded System Folder/Host/Container/Template",
-                        list(APILocator.getTemplateAPI().systemTemplate())));
+                manifestLines.addExcludes(new HashMap<>(Map.of("Excluded System Folder/Host/Container/Template",
+                        list(APILocator.getTemplateAPI().systemTemplate()))));
             }
 
             assertManifestFile(manifestFile, manifestLines);

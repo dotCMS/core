@@ -28,6 +28,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
@@ -115,8 +116,8 @@ public class RelationshipsResource {
         try {
             final ContentType contentType = contentTypeAPI.find(contentTypeId);
 
-            final Map<String, Object> params = Map.of(RelationshipPaginator.CONTENT_TYPE_PARAM,
-                    contentType);
+            final Map<String, Object> params = new HashMap<>(Map.of(RelationshipPaginator.CONTENT_TYPE_PARAM,
+                    contentType));
             return paginationUtil.getPage(request, user, null, page, perPage, params);
         } catch (Exception e) {
 

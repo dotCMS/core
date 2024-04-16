@@ -154,10 +154,13 @@ public class SelectedExperiment implements Serializable {
         }
 
         public Map<String, String> regexs() {
-            return Map.of(
-                "isExperimentPage", redirectPattern,
-                   "isTargetPage", targetPagePattern
-            );
+
+            final Map<String, String> regexs = new HashMap();
+
+            regexs.put("isExperimentPage", redirectPattern);
+            regexs.put("isTargetPage", targetPagePattern);
+
+            return regexs;
         }
     }
 

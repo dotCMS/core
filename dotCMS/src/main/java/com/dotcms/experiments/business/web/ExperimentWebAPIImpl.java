@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -265,7 +266,8 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .map(experiment -> "'" + experiment.id().get() + "'")
                     .collect(Collectors.joining(","));
 
-            final Map<String, String> subStringToReplace = Map.of(
+            final Map<String, String> subStringToReplace = new HashMap<>();
+            subStringToReplace.put(
                     "${running_experiments_list}", runningExperimentsId
             );
 
@@ -275,10 +277,9 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     private String replaceIntoHTMLCode(final String htmlCode, final Host host,
             final HttpServletRequest request) {
 
-        final Map<String, String> subStringToReplace = Map.of(
-                "${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(host),
-                "${site}", getLocalServerName(request)
-        );
+        final Map<String, String> subStringToReplace = new HashMap<>();
+        subStringToReplace.put("${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(host));
+        subStringToReplace.put("${site}", getLocalServerName(request));
 
         return replace(htmlCode, subStringToReplace);
     }
