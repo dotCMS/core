@@ -34,4 +34,4 @@ jobs:
     needs: [ initialize, build, test ]
     uses: ./.github/workflows/reusable-finalize.yml
     with:
-      dependent-jobs: "initialize, build, test"
+      needsData: ${{ toJson(needs) }}

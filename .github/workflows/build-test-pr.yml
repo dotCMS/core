@@ -52,4 +52,4 @@ jobs:
     needs: [ initialize, build, test, sonar ]
     uses: ./.github/workflows/reusable-finalize.yml
     with:
-      dependent-jobs: "initialize, build, test, sonar"
+      needsData: ${{ toJson(needs) }}

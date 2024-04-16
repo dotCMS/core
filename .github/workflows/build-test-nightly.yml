@@ -73,7 +73,7 @@ jobs:
     uses: ./.github/workflows/reusable-finalize.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-      dependent-jobs: "initialize, build, build-cli, test, deployment"
+      needsData: ${{ toJson(needs) }}
   report:
     name: Report
     if: always()
