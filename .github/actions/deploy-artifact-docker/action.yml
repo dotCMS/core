@@ -24,6 +24,13 @@ inputs:
   ref:
     description: 'The branch or type of build to tag the image with'
     required: true
+  docker-use-ref:
+    description: 'The branch or type of build to tag the image with'
+    required: false
+    default: 'true'
+  version:
+    description: 'The version or tag to apply to the image unless building a snapshot'
+    required: false
   latest:
     description: 'If true, the image will be tagged as latest, usually reserved for the agile release e.g. dotcms/dotcms:latest'
     default: 'false'
@@ -88,16 +95,41 @@ runs:
       env:
         LATEST: ${{ inputs.latest }}
         REF: ${{ inputs.ref }}
+        USE_REF: ${{ inputs.docker-use-ref }}
+        VERSION: ${{ inputs.version }}
       run: |
-        if [ "$REF" = "release" ]; then
-          tag_prefix=""
+        
+        # Set defaults for flags
+        enable_latest=false
+        RESULT=""
+        
+        # Determine REF_TO_USE based on USE_REF
+        REF_TO_USE=""
+        if [[ "$USE_REF" == "true" && -n "$REF" ]]; then
+          REF_TO_USE="$REF"
+        fi
+        
+        # Determine RESULT based on REF_TO_USE and VERSION
+        if [[ -n "$REF_TO_USE" && -n "$VERSION" ]]; then
+          RESULT="${REF_TO_USE}_${VERSION}"
+        elif [[ -n "$REF_TO_USE" ]]; then
+          RESULT="$REF_TO_USE"
+        elif [[ -n "$VERSION" ]]; then
+          RESULT="$VERSION"
         else
-          tag_prefix="${REF}_"
+          echo "ERROR: No version or ref provided"
+          exit 1
+        fi
+        
+        # Conditional for setting latest version flag
+        if [[ -n "$VERSION" && "$USE_REF" != "true" && "$LATEST" == "true" ]]; then
+          enable_latest=true
         fi
         
         echo "FULL_TAGS_OUTPUT<<EOF" >> $GITHUB_ENV
-          echo "type=raw,value=${tag_prefix}{{sha}},enable=true" >> $GITHUB_ENV
-          echo "type=raw,value=${tag_prefix}latest,enable=$LATEST" >> $GITHUB_ENV
+          echo "type=raw,value=${RESULT}_{{sha}},enable=true" >> $GITHUB_ENV
+          echo "type=raw,value=${RESULT},enable=true" >> $GITHUB_ENV
+          echo "type=raw,value=latest,enable=${enable_latest}" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
     - name: Docker.io login
