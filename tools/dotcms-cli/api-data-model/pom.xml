@@ -109,6 +109,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-devtools-registry-client</artifactId>
         </dependency>
