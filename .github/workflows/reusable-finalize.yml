@@ -32,26 +32,10 @@ jobs:
           
           echo 'Received JSON: ${{ inputs.needsData }}'
           
-          echo '${{ inputs.needsData }}' > needsData.json
-          if jq 'to_entries[] | select(.value.result == "cancelled")' needsData.json; then
-            echo "Some jobs were cancelled."
-            cancelled=true
-          else
-            echo "No jobs were cancelled."
-          fi
-    
-          if jq 'to_entries[] | select(.value.result == "failure")' needsData.json; then
-            echo "Some jobs failed."
-            failure=true
-          else
-            echo "No jobs failed."
-          fi
-          
-          
           AGGREGATE_STATUS="SUCCESS"
           
-          jobs_status="${{ toJson(needs) }}"
-          echo "job status=${jobs_status}"
+          jobs_status="${{ inputs.needsData }}"
+          echo 'job status=${jobs_status}'
           while IFS=" " read -r key result; do
             key=$(echo $key | tr -d ' {')
             result=$(echo $result | tr -d ',')
@@ -59,10 +43,10 @@ jobs:
             echo "Job: $key, Result: $result"
           
             if [[ $result == "cancelled" ]]; then
-              AGGREGATE_STATUS="CANCELLED"
+              cancelled="true"
               break
             elif [[ $result == "failure" ]]; then
-              AGGREGATE_STATUS="FAILURE"
+              failure=true
             fi
           done < <(echo "$jobs_status" | awk -F': ' '/result:/ {print $1,$2}')
           
@@ -147,7 +131,7 @@ jobs:
             if [[ "$cancelled" == "true" ]]; then
               echo "Setting cancelled status from job status"
               AGGREGATE_STATUS="CANCELLED"
-            elif [[ "failure" == "true" ]]; then
+            elif [[ "$failure" == "true" ]]; then
               echo "Setting failure status from job status"
               AGGREGATE_STATUS="FAILURE"
             fi
