@@ -966,7 +966,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     canUserWritePage || canUserWriteContent
                         ? this.dotMessageService.get('Edit')
                         : this.dotMessageService.get('View'),
-                command: () => this.dotRouterService.goToEditContentlet(item.inode)
+                command: () => {
+                    this.dotRouterService.goToEditContentlet(item.inode);
+                }
             });
         }
 
