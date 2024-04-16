@@ -28,28 +28,25 @@ jobs:
         id: prepare-workflow-data
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          NEEDS_DATA: ${{ inputs.needsData }}
         run: |
+        
+          # Check for 'cancelled' and 'failure' results
+          cancelled=false
+          failure=false
           
-          echo 'Received JSON: ${{ inputs.needsData }}'
+          # Using jq to parse the JSON and check the conditions
+          if echo "$NEEDS_DATA" | jq 'any(.[]; .result == "cancelled")'; then
+            cancelled=true
+          elif echo "NEEDS_DATA" | jq 'any(.[]; .result == "failure")'; then
+            failure=true
+          fi
+
+          # Output the results
+          echo "Cancelled: $cancelled"
+          echo "Failure: $failure"
           
           AGGREGATE_STATUS="SUCCESS"
-          
-          jobs_status="${{ inputs.needsData }}"
-          echo 'job status=${jobs_status}'
-          while IFS=" " read -r key result; do
-            key=$(echo $key | tr -d ' {')
-            result=$(echo $result | tr -d ',')
-          
-            echo "Job: $key, Result: $result"
-          
-            if [[ $result == "cancelled" ]]; then
-              cancelled="true"
-              break
-            elif [[ $result == "failure" ]]; then
-              failure=true
-            fi
-          done < <(echo "$jobs_status" | awk -F': ' '/result:/ {print $1,$2}')
-          
           FIRST_FAIL_STEP=""
           FIRST_FAIL_MODULE=""
           
