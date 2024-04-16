@@ -15,7 +15,6 @@
         <src.dir>${project.basedir}/src/main/java</src.dir>
         <test.src.dir>${project.basedir}/src/test/java</test.src.dir>
         <version.spotless.plugin>2.36.0</version.spotless.plugin>
-        <jackson.version>2.16.1</jackson.version>
         <batik.version>1.16</batik.version>
         <glowroot.version>0.13.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
