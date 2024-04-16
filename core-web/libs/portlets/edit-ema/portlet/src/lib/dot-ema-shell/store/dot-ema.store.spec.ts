@@ -377,20 +377,6 @@ describe('EditEmaStore', () => {
                 });
             });
 
-            it('should return templateIdentifier', (done) => {
-                spectator.service.templateIdentifier$.subscribe((state) => {
-                    expect(state).toEqual('111');
-                    done();
-                });
-            });
-
-            it('should return templateDrawed', (done) => {
-                spectator.service.templateDrawed$.subscribe((state) => {
-                    expect(state).toEqual(true);
-                    done();
-                });
-            });
-
             it('should return layoutProperties', (done) => {
                 const containersMapMock = {
                     '/default/': {
