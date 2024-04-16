@@ -5,12 +5,9 @@ on:
       artifact-run-id:
         default: ${{ github.run_id }}
         type: string
-      set-failure:
+      dependent-jobs:
         required: true
-        type: boolean
-      set-cancelled:
-        required: true
-        type: boolean
+        type: string
 jobs:
   prepare-report-data:
     name: Prepare Report Data
@@ -32,6 +29,24 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
+         
+          cancelled=false
+          failed=false
+          jobs="${{ inputs.dependent-jobs }}"
+          IFS=', ' read -r -a job_array <<< "$jobs"
+          for job in "${job_array[@]}"; do
+            result=$(echo ${{ needs[job].result }})
+            if [[ "$result" == "failure" ]]; then
+              echo "Job $job failed."
+              failed=true
+            elif [[ "$result" == "cancelled" ]]; then
+              echo "Job $job was cancelled."
+              cancelled=true
+            else
+              echo "Job $job succeeded."
+            fi
+          done
+        
           
           AGGREGATE_STATUS="SUCCESS"
           
@@ -129,16 +144,16 @@ jobs:
           
           echo '],' >> workflow-data.json
           if [[ "$AGGREGATE_STATUS" == "SUCCESS" ]]; then
-            if [ ${{ inputs.set-cancelled }} == true ]; then
+            if [[ "$canclled" == "true" ]]; then
               echo "Setting cancelled status from job status"
               AGGREGATE_STATUS="CANCELLED"
-            elif [ ${{ inputs.set-failure }} == true ]; then
+            elif [[ "$failed" == "true" ]]; then
               echo "Setting failure status from job status"
               AGGREGATE_STATUS="FAILURE"
             fi
           fi
           echo '"aggregate_status": "'$AGGREGATE_STATUS'"' >> workflow-data.json
-          if [[ "$AGGREGATE_STATUS" != "SUCCESS" ]]; then
+          if [[ "$AGGREGATE_STATUS" == "FAILED" ]]; then
             echo ',' >> workflow-data.json
             echo '"first_fail_step": "'$FIRST_FAIL_STEP'",' >> workflow-data.json
             echo '"first_fail_module": "'$FIRST_FAIL_MODULE'",' >> workflow-data.json

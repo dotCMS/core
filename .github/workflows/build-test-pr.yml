@@ -49,8 +49,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ sonar,test ]
+    needs: [ initialize, build, test, sonar ]
     uses: ./.github/workflows/reusable-finalize.yml
     with:
-      set-cancelled: cancelled()
-      set-failure: failure()
+      dependent-jobs: "initialize, build, test, sonar"

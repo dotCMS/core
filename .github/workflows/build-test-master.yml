@@ -84,12 +84,11 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize,sonar,deployment ]
+    needs: [ initialize, build, build-cli, test, sonar, deployment]
     uses: ./.github/workflows/reusable-finalize.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-      set-cancelled: cancelled()
-      set-failure: failure()
+      dependent-jobs: "initialize, build, build-cli, test, sonar, deployment"
   report:
     name: Report
     if: always()

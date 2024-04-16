@@ -31,8 +31,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ test ]
+    needs: [ initialize, build, test ]
     uses: ./.github/workflows/reusable-finalize.yml
     with:
-      set-cancelled: cancelled()
-      set-failure: failure()
+      dependent-jobs: "initialize, build, test"
