@@ -23,6 +23,7 @@ jobs:
           path: /tmp/build-step-reports
           pattern: build-reports-*
           merge-multiple: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ inputs.artifact-run-id }}
       - name: Prepare workflow data
         id: prepare-workflow-data
