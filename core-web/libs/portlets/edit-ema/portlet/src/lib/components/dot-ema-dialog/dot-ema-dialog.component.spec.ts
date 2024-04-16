@@ -325,5 +325,16 @@ describe('DotEmaDialogComponent', () => {
 
             expect(resetSpy).toHaveBeenCalled();
         });
+
+        it("should trigger openDialogOnURL in the store when it's a URL", () => {
+            const openDialogOnURLSpy = jest.spyOn(storeSpy, 'openDialogOnURL');
+
+            component.openDialogOnUrl('https://demo.dotcms.com/jsp.jsp', 'test');
+
+            expect(openDialogOnURLSpy).toHaveBeenCalledWith({
+                title: 'test',
+                url: 'https://demo.dotcms.com/jsp.jsp'
+            });
+        });
     });
 });

@@ -5,6 +5,10 @@ import { DotCreateContentletComponent } from '@components/dot-contentlet-editor/
 import { DotCreateContentletResolver } from '@components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.resolver.service';
 
 import { DotPagesComponent } from './dot-pages.component';
+import {
+    newEditContentForContentTypeGuard,
+    newEditContentForContentletGuard
+} from './guards/dot-pages.guard';
 
 const routes: Routes = [
     {
@@ -17,12 +21,14 @@ const routes: Routes = [
                         (m) => m.DotPortletDetailModule
                     ),
                 path: ':asset',
+                canActivate: [newEditContentForContentletGuard],
                 data: {
                     reuseRoute: false
                 }
             },
             {
                 path: 'new/:contentType',
+                canActivate: [newEditContentForContentTypeGuard],
                 component: DotCreateContentletComponent,
                 resolve: {
                     url: DotCreateContentletResolver
