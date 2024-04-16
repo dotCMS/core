@@ -10,7 +10,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
-import com.dotcms.rest.PaginationContext;
+import com.dotcms.rest.api.v1.apps.PaginationContext;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -28,7 +28,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
-import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.dotmarketing.quartz.job.DefaultLanguageTransferAssetJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -415,7 +414,7 @@ public class LanguagesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public LanguageVariablePageView getAllLanguageVariables(
+    public Response getAllLanguageVariables(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @BeanParam final PaginationContext paginationContext) throws DotDataException {
@@ -428,8 +427,9 @@ public class LanguagesResource {
                         .rejectWhenNoUser(true)
                         .init();
 
-        return new LanguageVariablesHelper().view(paginationContext,
-                initData.getUser());
+        final LanguageVariablePageView view = new LanguageVariablesHelper()
+                .view(paginationContext, initData.getUser());
+        return Response.ok(new ResponseEntityView<>(view)).build();
     }
 
 

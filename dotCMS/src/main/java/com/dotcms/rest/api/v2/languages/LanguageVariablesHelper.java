@@ -1,22 +1,28 @@
 package com.dotcms.rest.api.v2.languages;
 
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.rest.PaginationContext;
+import com.dotcms.rest.api.v1.apps.PaginationContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class LanguageVariablesHelper {
+
+    static final int FIRST_PAGE_INDEX = 1;
+    static final int PER_PAGE_DEFAULT = 10;
 
     private final LanguageVariableAPI languageVariableAPI;
 
     private final LanguageAPI languageAPI;
+
 
     public LanguageVariablesHelper(LanguageVariableAPI languageVariableAPI, LanguageAPI languageAPI) {
         this.languageVariableAPI = languageVariableAPI;
@@ -29,17 +35,28 @@ public class LanguageVariablesHelper {
 
     LanguageVariablePageView view(final PaginationContext context, final User user)
             throws DotDataException {
-        String orderBy = "contentlet.contentlet_as_json->'fields'->'key'->'value'";
 
+        final int offset =  context.getPage();
+        final int limit = context.getPerPage();
+
+        String orderBy = "c.contentlet_as_json->'fields'->'key'->'value'";
         //LangVarKey-> languageCode -> LanguageVariable.Value
         Map<String, Map<String,LanguageVariableView>> table = new HashMap<>();
+        final List<Language> allLanguages = languageAPI.getLanguages();
 
-        final List<Language> languages = languageAPI.getLanguages();
-        for (final Language language : languages) {
-            final List<LanguageVariable> variables = languageVariableAPI.findLanguageVariables(language.getId(), context.getPage(), context.getPerPage(), orderBy);
-            buildVariablesTable(table, language, variables, languages);
+        final List<LanguageVariable> variablesPage = languageVariableAPI.findLanguageVariables(offset, limit, orderBy);
+
+        Map<Long, List<LanguageVariable>> variableByLanguageMap = variablesPage.stream()
+                .collect(Collectors.groupingBy(LanguageVariable::getLanguageId));
+
+        for (final Language language : allLanguages) {
+            final long languageId = language.getId();
+            Logger.debug(this, "Processing language: " + languageId + " with tag : " + language + " offset: " + offset + " limit: " + limit);
+            final List<LanguageVariable> languageVariables = variableByLanguageMap.get(languageId);
+            if(null != languageVariables) {
+               buildVariablesTable(table, language, languageVariables, allLanguages);
+            }
         }
-
         return ImmutableLanguageVariablePageView.builder().variables(table).build();
     }
 

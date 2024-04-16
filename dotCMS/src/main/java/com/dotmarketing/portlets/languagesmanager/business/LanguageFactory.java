@@ -140,8 +140,7 @@ public abstract class LanguageFactory {
 	 * 
 	 * @param lang
 	 */
-    @Deprecated(since = "24.04")
-    protected abstract void createLanguageFiles(Language lang);
+	protected abstract void createLanguageFiles(Language lang);
 
 	/**
 	 * 

@@ -216,16 +216,35 @@ public abstract class ContentletFactory {
 	 *
 	 * @param contentType
 	 * @param languageId
-	 * @param limit
 	 * @param offset
+	 * @param limit
 	 * @param sortBy
 	 * @param working
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public abstract List<Contentlet> findByContentTypeAndLanguage(ContentType contentType, long languageId, int limit, int offset,
+	public abstract List<Contentlet> findByContentTypeAndLanguage(ContentType contentType, long languageId,
+			int offset, int limit,
 			String sortBy, boolean working) throws DotDataException, DotStateException;
+
+
+	/**
+	 * Returns all Contentlets for a specific structure using pagination
+	 * This pagination is based on the contentlet identifier because we need to return all versions for different languages at once
+	 * meaning we need to return all live|working version for all languages
+	 * @param contentType
+	 * @param offset
+	 * @param limit
+	 * @param orderBy
+	 * @param working
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	public abstract List<Contentlet> findByContentType(final ContentType contentType,
+			final int offset, final int limit,
+			final String orderBy, final boolean working) throws DotDataException, DotStateException;
 
 	/**
 	 * select count contentlet by ContentType

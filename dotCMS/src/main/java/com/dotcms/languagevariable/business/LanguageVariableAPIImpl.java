@@ -143,27 +143,48 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
 
   @CloseDBIfOpened
   @Override
-  public List<LanguageVariable> findLanguageVariables(final long langId, final int limit,
-            final int offset,
-            final String orderBy)
+  public List<LanguageVariable> findLanguageVariables(final long langId, final int offset, final int limit,
+          final String orderBy)
             throws DotDataException {
       final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
       final ContentType contentType = langVarContentType.get();
       final LanguageCache languageCache = CacheLocator.getLanguageCache();
-      final List<LanguageVariable> cacheVars = languageCache.getVars(langId, limit, offset, orderBy);
+      final List<LanguageVariable> cacheVars = languageCache.getVars(langId, offset, limit, orderBy);
       if (cacheVars != null && !cacheVars.isEmpty()) {
-        return cacheVars;
+          return cacheVars;
       }
       //We bring non-archived live contentlets
       final List<Contentlet> byContentTypeAndLanguage = contentletFactory.findByContentTypeAndLanguage(
-              contentType, langId, limit, offset, orderBy, false);
+              contentType, langId, offset, limit, orderBy, false);
       final ImmutableList<LanguageVariable> languageVariables = byContentTypeAndLanguage.stream()
               .map(fromContentlet()).filter(Objects::nonNull)
               .collect(CollectionsUtils.toImmutableList());
 
-      languageCache.putVars(langId, languageVariables, limit, offset, orderBy);
+      languageCache.putVars(langId, languageVariables, offset, limit, orderBy);
       return languageVariables;
     }
+
+  public List<LanguageVariable> findLanguageVariables(final int offset, final int limit,
+          final String orderBy)
+          throws DotDataException {
+    final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
+    final ContentType contentType = langVarContentType.get();
+    final LanguageCache languageCache = CacheLocator.getLanguageCache();
+    //final List<LanguageVariable> cacheVars = languageCache.getVars(langId, offset, limit, orderBy);
+    //if (cacheVars != null && !cacheVars.isEmpty()) {
+    //  return cacheVars;
+    //}
+    //We bring non-archived live contentlets
+    final List<Contentlet> byContentTypeAndLanguage = contentletFactory.findByContentType(
+            contentType, offset, limit, orderBy, false);
+    final ImmutableList<LanguageVariable> languageVariables = byContentTypeAndLanguage.stream()
+            .map(fromContentlet()).filter(Objects::nonNull)
+            .collect(CollectionsUtils.toImmutableList());
+
+    //languageCache.putVars(langId, languageVariables, offset, limit, orderBy);
+    return languageVariables;
+  }
+
 
    private Function<Contentlet, LanguageVariable> fromContentlet() {
       return contentlet -> {

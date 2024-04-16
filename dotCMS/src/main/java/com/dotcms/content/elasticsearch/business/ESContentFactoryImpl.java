@@ -75,6 +75,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -1156,7 +1157,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
-    public List<Contentlet> findByContentTypeAndLanguage(final ContentType contentType, final long languageId, final int limit, final int offset,
+    public List<Contentlet> findByContentTypeAndLanguage(final ContentType contentType, final long languageId,
+            final int offset, final int limit,
             final String sortBy, final boolean working) throws DotDataException, DotStateException {
         final DotConnect dotConnect = new DotConnect();
 
@@ -1185,6 +1187,50 @@ public class ESContentFactoryImpl extends ContentletFactory {
             dotConnect.setMaxRows(limit);
         }
 
+        List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
+                (dotConnect.loadObjectResults()).asList();
+
+        contentlets.forEach(contentlet ->contentletCache
+                .add(String.valueOf(contentlet.getInode()), contentlet));
+
+        return contentlets;
+    }
+
+
+    public List<Contentlet> findByContentType(final ContentType contentType,
+            final int offset, final int limit,
+            final String orderBy, final boolean working) throws DotDataException, DotStateException {
+
+       final DotConnect dotConnect = new DotConnect();
+       String workingOrLiveNode = "working_inode";
+       if(!working) {
+           workingOrLiveNode = "live_inode";
+       }
+
+       final String orderByClause = StringUtils.isNotEmpty(orderBy) ?  " order by "+ orderBy : StringPool.BLANK;
+
+       final String select = "select c.*, inode.owner  "
+                + " from contentlet c "
+                + " inner join ( "
+                + "  select distinct contentlet.identifier "
+                + "   from contentlet, contentlet_version_info, inode "
+                + "  where "
+                + "   contentlet.structure_inode = '"+contentType.inode()+"' "
+                + "   and contentlet_version_info.identifier = contentlet.identifier "
+               +  "   and contentlet_version_info." +workingOrLiveNode+"= contentlet.inode "
+                + "   and contentlet.inode = inode.inode  "
+                + "   and contentlet_version_info.deleted = 'false' offset "+offset+" limit "+limit+"  "
+                + ") con_ident on c.identifier = con_ident.identifier "
+                + " inner join ( "
+                + "   select cvi.* from contentlet_version_info cvi  "
+                + " ) cc on cc."+workingOrLiveNode+" = c.inode "
+                + " join ("
+                + "  select i.* from inode i "
+                + " ) inode on inode.inode = c.inode "
+                +  orderByClause
+                ;
+
+        dotConnect.setSQL(select);
         List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
                 (dotConnect.loadObjectResults()).asList();
 

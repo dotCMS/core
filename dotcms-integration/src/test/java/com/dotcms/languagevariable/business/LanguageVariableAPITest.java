@@ -410,7 +410,8 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
 
         for (Language language:languages) {
-            final List<LanguageVariable> languageVariables = languageVariableAPI.findLanguageVariables(language.getId(), -1, -1, null);
+            final List<LanguageVariable> languageVariables = languageVariableAPI.findLanguageVariables(language.getId(),
+                    -1, -1, null);
             Assert.assertTrue(languageVariables.size() >= 3);
             for (LanguageVariable variable : languageVariables) {
                 Assert.assertEquals(language.getId(), variable.getLanguageId());
@@ -423,7 +424,8 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         }
 
         for (Language language:languages) {
-            final List<LanguageVariable> languageVariables = languageVariableAPI.findLanguageVariables(language.getId(), -1, -1, null);
+            final List<LanguageVariable> languageVariables = languageVariableAPI.findLanguageVariables(language.getId(),
+                    -1, -1, null);
             for (LanguageVariable variable : languageVariables) {
                 Assert.assertFalse(containsInode(contentlets, variable.getInode()));
             }

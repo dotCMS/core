@@ -133,15 +133,27 @@ public interface LanguageVariableAPI {
      * languageId.
      *
      * @param langId  - The ID of the language that the variable was created for.
-     * @param limit   - Size of the list.
      * @param offset  - The offset of the list.
+     * @param limit   - Size of the list.
      * @param orderBy
      * @return List of {@link LanguageVariable}
      * @throws DotDataException - If there is an error retrieving the list of Language Variables.
      */
-    List<LanguageVariable> findLanguageVariables(final long langId, final int limit, final int offset,
+    List<LanguageVariable> findLanguageVariables(final long langId, final int offset, final int limit,
             String orderBy) throws DotDataException;
 
+
+    /**
+     * Returns a list of {@link LanguageVariable} that the key starts with the specified key and
+     * @param offset - The offset of the list.
+     * @param limit - Size of the list.
+     * @param orderBy - The order by clause.
+     * @return List of {@link LanguageVariable}
+     * @throws DotDataException - If there is an error retrieving the list of Language Variables.
+     */
+    List<LanguageVariable> findLanguageVariables(final int offset, final int limit,
+            final String orderBy)
+            throws DotDataException;
 
     void invalidateLanguageVariablesCache(Contentlet contentlet);
 }

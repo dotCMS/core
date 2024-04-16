@@ -229,4 +229,25 @@ public class ContentletFactoryTest extends ContentletBaseTest {
         Assert.assertEquals(1, byContentTypeAndLanguage.size());
         Assert.assertEquals(contentlet.getInode(), byContentTypeAndLanguage.get(0).getInode());
     }
+
+    @Test
+    public void testFindContentlet() throws DotDataException, DotSecurityException {
+        final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen();
+        final ContentType contentType = contentTypeDataGen.name("any").nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        //Create some content
+        for(int i = 0; i < 10; i++) {
+            final Contentlet contentlet = contentletDataGen.languageId(language.getId())
+                    .nextPersistedAndPublish();
+            Assert.assertNotNull(contentlet.getInode());
+        }
+        final List<Contentlet> live = contentletFactory.findByContentType(contentType, 0, 10, null, false);
+        Assert.assertEquals(10, live.size());
+
+        final List<Contentlet> working = contentletFactory.findByContentType(contentType, 0, 10, null, true);
+        Assert.assertEquals(10, working.size());
+
+    }
+
 }
