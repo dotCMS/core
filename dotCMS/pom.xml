@@ -15,7 +15,7 @@
         <src.dir>${project.basedir}/src/main/java</src.dir>
         <test.src.dir>${project.basedir}/src/test/java</test.src.dir>
         <version.spotless.plugin>2.36.0</version.spotless.plugin>
-        <jackson.version>2.13.4</jackson.version>
+        <jackson.version>2.16.1</jackson.version>
         <batik.version>1.16</batik.version>
         <glowroot.version>0.13.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
@@ -724,6 +724,12 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
 
@@ -812,6 +818,11 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-guava</artifactId>
