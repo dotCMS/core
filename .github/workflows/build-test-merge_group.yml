@@ -33,3 +33,5 @@ jobs:
     if: always()
     needs: [ test ]
     uses: ./.github/workflows/reusable-finalize.yml
+    with:
+      needsData: ${{ toJson(needs) }}
