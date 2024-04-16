@@ -180,8 +180,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorMode = EDITOR_MODE;
     readonly experimentStatus = DotExperimentStatus;
 
-    dragItem: EmaDragItem;
-
     get queryParams(): DotPageApiParams {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
     }
@@ -329,9 +327,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     moveContentlet(item: ActionPayload) {
-        // Make this a store method
-
-        this.dragItem = {
+        this.store.setDragItem({
             baseType: 'CONTENT',
             contentType: item.contentlet.contentType,
             draggedPayload: {
@@ -342,8 +338,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 },
                 move: true
             }
-        };
-        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+        });
 
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
@@ -369,7 +364,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         // Make this a store method
 
-        this.dragItem = {
+        this.store.setDragItem({
             baseType: item.baseType,
             contentType: item.contentType,
             draggedPayload: {
@@ -377,8 +372,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 type: dataset.type,
                 move: false
             }
-        };
-        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+        });
 
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
@@ -405,7 +399,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}  {void}
      * @memberof EditEmaEditorComponent
      */
-    onPlaceItem(positionPayload: PositionPayload): void {
+    onPlaceItem(positionPayload: PositionPayload, dragItem: EmaDragItem): void {
         // When you move the dragItem to the store, you can get it here from params
 
         let payload = this.getPageSavePayload(positionPayload);
@@ -414,8 +408,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const pivotContentlet = payload.contentlet;
         const positionToInsert = positionPayload.position;
 
-        if (this.dragItem.draggedPayload.type === 'contentlet') {
-            const draggedPayload = this.dragItem.draggedPayload;
+        if (dragItem.draggedPayload.type === 'contentlet') {
+            const draggedPayload = dragItem.draggedPayload;
             const originContainer = draggedPayload.item.container;
             const contentletToMove = draggedPayload.item.contentlet;
 
@@ -460,7 +454,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.dialog.createContentletFromPalette({ ...this.dragItem.draggedPayload.item, payload });
+        this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
     }
 
     /**
@@ -810,10 +804,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     protected resetDragProperties() {
-        this.dragItem = null;
-
-        this.store.setContentletArea(null);
-        this.store.setBounds([]);
+        this.store.resetDragProperties();
     }
 
     /**

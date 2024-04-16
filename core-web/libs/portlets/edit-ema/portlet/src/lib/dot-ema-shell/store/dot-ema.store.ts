@@ -25,7 +25,8 @@ import {
 
 import {
     Container,
-    ContentletArea
+    ContentletArea,
+    EmaDragItem
 } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import {
     DotPageApiParams,
@@ -136,6 +137,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (state) => state.editorState ?? EDITOR_STATE.LOADING
     );
     private readonly currentExperiment$ = this.select((state) => state.currentExperiment);
+    private readonly dragItem$ = this.select((state) => state.dragItem);
     private readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
     private readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
     private readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
@@ -207,6 +209,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         this.iframeURL$,
         this.isEnterpriseLicense$,
         this.pageURL$,
+        this.dragItem$,
         (
             bounds,
             clientHost,
@@ -218,7 +221,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             favoritePageURL,
             iframeURL,
             isEnterpriseLicense,
-            pageURL
+            pageURL,
+            dragItem
         ) => {
             return {
                 apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
@@ -237,7 +241,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 favoritePageURL,
                 iframeURL,
                 isEnterpriseLicense,
-                state: currentState
+                state: currentState,
+                dragItem
             };
         }
     );
@@ -527,6 +532,23 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 )
             )
         );
+    });
+
+    readonly setDragItem = this.updater((state, dragItem: EmaDragItem) => {
+        return {
+            ...state,
+            dragItem,
+            editorState: EDITOR_STATE.DRAGGING
+        };
+    });
+
+    readonly resetDragProperties = this.updater((state) => {
+        return {
+            ...state,
+            dragItem: undefined,
+            bounds: [],
+            contentletArea: undefined
+        };
     });
 
     private createPageURL(state: EditEmaState): string {

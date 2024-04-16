@@ -75,13 +75,12 @@
                 *ngIf="
                     es.editorData.canEditVariant &&
                     !!es.bounds.length &&
-                    !!dragItem &&
                     !es.editorData.device &&
                     es.state === editorState.DRAGGING
                 "
                 [containers]="es.bounds"
-                [item]="dragItem"
-                (place)="onPlaceItem($event)"
+                [item]="es.dragItem"
+                (place)="onPlaceItem($event, es.dragItem)"
                 data-testId="dropzone" />
         </div>
     </div>
