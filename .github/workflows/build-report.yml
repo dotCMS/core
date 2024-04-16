@@ -154,19 +154,6 @@ jobs:
           
           fi
 
-      - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2.3.0
-        env:
-          SLACK_WEBHOOK: ${{ secrets.MASTER_BUILD_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotBot
-          SLACK_TITLE: "Broken build!"
-          SLACK_MSG_AUTHOR: " "
-          MSG_MINIMAL: true
-          SLACK_FOOTER: ""
-          SLACK_ICON: https://slackmojis.com/emojis/5432-this-is-fine/download
-          SLACK_MESSAGE: "Attention <!channel>! Broken build at `${{ github.ref_name }}`.\nPlease check the run at: ${{ steps.workflow-data.outputs.action_run_url }}"
-        if: steps.workflow-data.outputs.status != 'SUCCESS' && inputs.post-failure && github.repository == 'dotcms/core'
-
       - name: Prepare Slack Message Payload
         id: prepare-slack-message
         run: |
