@@ -190,7 +190,7 @@
     #end
 #end
 
-#macro(newOrderMenu)
+#macro(sortNavigation)
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
         #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
 
