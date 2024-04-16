@@ -1250,6 +1250,18 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		return FactoryLocator.getTemplateFactory().getPages(templateId);
 	}
 
+	/**
+	 * Default implementation for {@link TemplateAPI#saveAndUpdateLayout(Template, TemplateLayout, Host, User, boolean)}
+	 *
+	 * @param template
+	 * @param layout
+	 * @param site
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	@Override
 	public Template saveAndUpdateLayout(final Template template, final TemplateLayout layout, final Host site,
 										final User user, final boolean respectFrontendRoles)
@@ -1278,6 +1290,35 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		return saveTemplate(template, site, user, respectFrontendRoles);
 	}
 
+	/**
+	 * Recalculate the UUID for the layout, it means if the layout is something like
+	 *
+	 * <code>
+	 * Row 1:
+	 * 	Column 1:
+	 * 		Container A UUID = 2
+	 * 	Column 2:
+	 * 		Container A UUID = -1
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A UUID= 1
+	 * </code>
+	 * The UUID are not in the right sequential order so this method is going to return the follow:
+	 *
+	 * <code>
+	 * Row 1:
+	 * 	Column 1:
+	 * 		Container A UUID = 1
+	 * 	Column 2:
+	 * 		Container A UUID = 2
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A UUID= 3
+	 * </code>
+	 *
+	 * @param layout
+	 * @return
+	 */
 	private TemplateLayout reOrder(final TemplateLayout layout) {
 		final List<ContainerUUID> containers = getContainers(layout);
 
@@ -1300,18 +1341,80 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		return layout;
 	}
 
+	/**
+	 * Return all the changes between the OldLayout and the newLayout, for example if we have
+	 *
+	 * oldLayout:
+	 * <code>
+	 * Row 1:
+	 * 	Column 1:
+	 * 		Container A UUID = 1
+	 * 	Column 2:
+	 * 		Container A UUID = 2
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A UUID= 3
+	 * </code>
+	 *
+	 * And newLayout is
+	 *
+	 * <code>
+	 * Row 1:
+	 *   Column 1:
+	 *     Container A UUID = -1
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A UUID= 3
+	 * Row 3:
+	 * 	Column 1:
+	 * 		Container A UUID = 1
+	 * </code>
+	 * A -1 UUID means that this is a new Container, with the 2 layouts of the example this method is going to return:
+	 *
+	 * <code>
+	 * Row 1:
+	 *   Column 1:
+	 *     Container A OLD_UUID = (IS NEW) NEW_UUID = 1
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A OLD_UUID = 3  NEW_UUID = 2 (WAS MOVED)
+	 * Row 3:
+	 * 	Column 1:
+	 * 		Container OLD_UUID = 1  NEW_UUID = 3 (WAS MOVED)
+	 *
+	 * 	finally:
+	 *
+	 * 	Container OLD_UUID = 2  (WAS DELETED)
+	 * </code>
+	 * @param oldLayout
+	 * @param newLayout
+	 * @return
+	 */
 	private LayoutChanges getChange(final TemplateLayout oldLayout, final TemplateLayout newLayout) {
-		final LayoutChanges layoutChanges = new LayoutChanges();
+		final LayoutChanges.Builder builder = new LayoutChanges.Builder();
 
 		final List<ContainerUUID> newContainers = getContainers(newLayout);
 
-		addMoveAndNewChanges(newContainers, layoutChanges);
-		addRemoveChanges(oldLayout, newContainers, layoutChanges);
+		addMoveAndNewChanges(newContainers, builder);
+		addRemoveChanges(oldLayout, newContainers, builder);
 
-		return layoutChanges;
+		return builder.build();
 	}
 
-	private static void addMoveAndNewChanges(List<ContainerUUID> newContainers, LayoutChanges layoutChanges) {
+	/**
+	 * Add Move/Include changes inside the LayoutChanges.Builder, following these rules:
+	 *
+	 * - The ContainersUUID must be in sequential order. If not:
+	 * If the UUID of the Container is -1, a new included change is added to the LayoutChange.Builder.
+	 * The oldUUID is the UUID that should be according to its order in newContainers.
+	 *
+	 * If the UUID is not in the right order, a new move change is added to the LayoutChange.Builder.
+	 * The oldUUID is the UUID that has the ContainerUUID, and the newUUID is the UUID that should be according to its order in newContainers.
+	 *
+	 * @param newContainers
+	 * @param builder
+	 */
+	private static void addMoveAndNewChanges(List<ContainerUUID> newContainers, LayoutChanges.Builder builder) {
 		final Map<String,Integer> uuidByContainer = new HashMap<>();
 
 		newContainers.stream().forEach(newContainer -> {
@@ -1326,14 +1429,25 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 			uuidByContainer.put(newContainer.getIdentifier(), maxUUID);
 
 			if (newContainer.getUUID().equals(ContainerUUID.UUID_DEFAULT_VALUE)) {
-				layoutChanges.include(newContainer.getIdentifier(), String.valueOf(maxUUID));
+				builder.include(newContainer.getIdentifier(), String.valueOf(maxUUID));
 			} else if (!newContainer.getUUID().equals(maxUUID.toString())) {
-				layoutChanges.change(newContainer.getIdentifier(), newContainer.getUUID(), String.valueOf(maxUUID));
+				builder.change(newContainer.getIdentifier(), newContainer.getUUID(), String.valueOf(maxUUID));
 			}
 		});
 	}
 
-	private static void addRemoveChanges(TemplateLayout oldLayout, List<ContainerUUID> newContainers, LayoutChanges layoutChanges) {
+	/**
+	 * Add Removed changes inside the LayoutChanges.Builder, following these rules:
+	 *
+	 * - The ContainersUUID must be in sequential order. If not:
+	 * If the sequential order has a blank spot then, a new removed change is added to the LayoutChange.Builder.
+	 * The oldUUID is the UUID that should be according to its order in newContainers.
+	 *
+	 * @param newContainers
+	 * @param builder
+	 */
+	private static void addRemoveChanges(TemplateLayout oldLayout, List<ContainerUUID> newContainers,
+										 LayoutChanges.Builder builder) {
 		final List<ContainerUUID> oldContainers = getContainers(oldLayout);
 
 		oldContainers.stream().forEach(oldContainer -> {
@@ -1343,11 +1457,16 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 					.findFirst();
 
 			if (!newContainer.isPresent()) {
-				layoutChanges.remove(oldContainer.getIdentifier(), oldContainer.getUUID());
+				builder.remove(oldContainer.getIdentifier(), oldContainer.getUUID());
 			}
 		});
 	}
 
+	/**
+	 * Get all the {@link ContainerUUID} from the {@link TemplateLayout}
+	 * @param layout
+	 * @return
+	 */
 	private static List<ContainerUUID> getContainers(TemplateLayout layout) {
 
 		if (!UtilMethods.isSet(layout)) {

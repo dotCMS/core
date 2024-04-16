@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import com.dotcms.rest.api.v1.workflow.SchemesAndSchemesContentTypeView;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -10,20 +12,59 @@ public class LayoutChanges {
 
     private Collection<ContainerChanged> changes = new ArrayList<>();
 
-    public void change(final String containerId, final String oldIntanceId, final String newIntanceId) {
-        changes.add(new ContainerChanged(containerId, oldIntanceId, newIntanceId));
+    private LayoutChanges(Builder builder) {
+        this.changes = builder.changes;
     }
 
+    /**
+     * Get all the changes
+     * @return
+     */
     public Collection<ContainerChanged> getAll() {
         return changes;
     }
 
-    public void remove(final String containerId, final String oldIntanceId) {
-        changes.add(new ContainerChanged(containerId, oldIntanceId, ContainerUUID.UUID_DEFAULT_VALUE));
-    }
+    public static class Builder {
 
-    public void include(final String containerId, final String newIntanceId) {
-        changes.add(new ContainerChanged(containerId, ContainerUUID.UUID_DEFAULT_VALUE, newIntanceId));
+        private Collection<ContainerChanged> changes = new ArrayList<>();
+
+        /**
+         * Add a move change on the set, it means a Container was moved from a old UUID to a new UUID
+         *
+         * @param containerId  Container's ID
+         * @param oldIntanceId Old UUID
+         * @param newIntanceId New UUID
+         */
+        public Builder change(final String containerId, final String oldIntanceId, final String newIntanceId) {
+            changes.add(new ContainerChanged(containerId, oldIntanceId, newIntanceId));
+            return this;
+        }
+
+
+        /**
+         * Add a remove change on the set, it means a Container was removed from the Layout
+         *
+         * @param containerId  Container's ID
+         * @param oldIntanceId Old UUID
+         */
+        public Builder remove(final String containerId, final String oldIntanceId) {
+            changes.add(new ContainerChanged(containerId, oldIntanceId, ContainerUUID.UUID_DEFAULT_VALUE));
+            return this;
+        }
+
+        /**
+         * Add a included change on the set, it means that a Container was removed from the Layout
+         *
+         * @param containerId
+         * @param newIntanceId
+         */
+        public Builder include(final String containerId, final String newIntanceId) {
+            changes.add(new ContainerChanged(containerId, ContainerUUID.UUID_DEFAULT_VALUE, newIntanceId));
+            return this;
+        }
+        public LayoutChanges build() {
+            return new LayoutChanges(this);
+        }
     }
 
     public static class ContainerChanged {

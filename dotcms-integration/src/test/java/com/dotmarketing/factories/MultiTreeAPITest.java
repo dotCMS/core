@@ -2954,11 +2954,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         createMultiTrees(page, container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
 
-        final LayoutChanges layoutChanges = new LayoutChanges();
-        layoutChanges.change(container.getIdentifier(), "4", "1");
-        layoutChanges.change(container.getIdentifier(), "1", "2");
-        layoutChanges.change(container.getIdentifier(), "2", "3");
-        layoutChanges.change(container.getIdentifier(), "3", "4");
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container.getIdentifier(), "4", "1")
+            .change(container.getIdentifier(), "1", "2")
+            .change(container.getIdentifier(), "2", "3")
+            .change(container.getIdentifier(), "3", "4")
+            .build();
 
         APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
 
@@ -3046,9 +3047,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         createMultiTrees(page, container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
 
-        final LayoutChanges layoutChanges = new LayoutChanges();
-        layoutChanges.change(container.getIdentifier(), "2", "3");
-        layoutChanges.change(container.getIdentifier(), "3", "2");
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container.getIdentifier(), "2", "3")
+            .change(container.getIdentifier(), "3", "2")
+            .build();
 
         APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
 
@@ -3136,11 +3138,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         createMultiTrees(page, container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
 
-        final LayoutChanges layoutChanges = new LayoutChanges();
-        layoutChanges.remove(container.getIdentifier(), "1");
-        layoutChanges.change(container.getIdentifier(), "2", "1");
-        layoutChanges.change(container.getIdentifier(), "3", "2");
-        layoutChanges.change(container.getIdentifier(), "4", "3");
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .remove(container.getIdentifier(), "1")
+            .change(container.getIdentifier(), "2", "1")
+            .change(container.getIdentifier(), "3", "2")
+            .change(container.getIdentifier(), "4", "3")
+            .build();
 
         APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
 
@@ -3315,11 +3318,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .drawedBody(templateLayout)
                 .nextPersisted();
 
-        final LayoutChanges layoutChanges = new LayoutChanges();
-        layoutChanges.change(container.getIdentifier(), "4", "1");
-        layoutChanges.change(container.getIdentifier(), "1", "2");
-        layoutChanges.change(container.getIdentifier(), "2", "3");
-        layoutChanges.change(container.getIdentifier(), "3", "4");
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container.getIdentifier(), "4", "1")
+            .change(container.getIdentifier(), "1", "2")
+            .change(container.getIdentifier(), "2", "3")
+            .change(container.getIdentifier(), "3", "4")
+            .build();
 
         final int pagesNumber = 20;
         final HTMLPageAsset[] pages = new HTMLPageAsset[pagesNumber];
@@ -3426,11 +3430,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .drawedBody(templateLayout)
                 .nextPersisted();
 
-        final LayoutChanges layoutChanges = new LayoutChanges();
-        layoutChanges.change(container.getIdentifier(), "4", "1");
-        layoutChanges.change(container.getIdentifier(), "1", "2");
-        layoutChanges.change(container.getIdentifier(), "2", "3");
-        layoutChanges.change(container.getIdentifier(), "3", "4");
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container.getIdentifier(), "4", "1")
+            .change(container.getIdentifier(), "1", "2")
+            .change(container.getIdentifier(), "2", "3")
+            .change(container.getIdentifier(), "3", "4")
+            .build();
 
         final int pagesNumber = 100;
         final HTMLPageAsset[] pages = new HTMLPageAsset[pagesNumber];
@@ -3511,11 +3516,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .sorted(String::compareTo)
                 .collect(Collectors.toList());
 
-        final LayoutChanges layoutChanges = new LayoutChanges();
-        layoutChanges.remove(container.getIdentifier(), "1");
-        layoutChanges.change(container.getIdentifier(), "2", "1");
-        layoutChanges.change(container.getIdentifier(), "3", "2");
-        layoutChanges.change(container.getIdentifier(), "4", "3");
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .remove(container.getIdentifier(), "1")
+            .change(container.getIdentifier(), "2", "1")
+            .change(container.getIdentifier(), "3", "2")
+            .change(container.getIdentifier(), "4", "3")
+            .build();
 
         APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds);
 
@@ -3652,9 +3658,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setContentlet(contentlet_4)
                 .nextPersisted();
 
-        final LayoutChanges layoutChanges = new LayoutChanges();
-        layoutChanges.change(container_1.getIdentifier(), "2", "1");
-        layoutChanges.change(container_1.getIdentifier(), "1", "2");
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container_1.getIdentifier(), "2", "1")
+            .change(container_1.getIdentifier(), "1", "2")
+             .build();
 
         APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
 
@@ -3764,9 +3771,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setContentlet(contentlet_5)
                 .nextPersisted();
 
-        final LayoutChanges layoutChanges = new LayoutChanges();
-        layoutChanges.remove(container_1.getIdentifier(), "1");
-        layoutChanges.change(container_1.getIdentifier(), "2", "1");
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .remove(container_1.getIdentifier(), "1")
+            .change(container_1.getIdentifier(), "2", "1")
+            .build();
 
         APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
 
@@ -3883,9 +3891,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .sorted(String::compareTo)
                 .collect(Collectors.toList());
 
-        final LayoutChanges layoutChanges = new LayoutChanges();
-        layoutChanges.remove(container_1.getIdentifier(), "1");
-        layoutChanges.change(container_1.getIdentifier(), "2", "1");
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .remove(container_1.getIdentifier(), "1")
+            .change(container_1.getIdentifier(), "2", "1")
+            .build();
 
         APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds);
 
@@ -3978,11 +3987,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
             createMultiTrees(page, container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
 
-            final LayoutChanges layoutChanges = new LayoutChanges();
-            layoutChanges.remove(container.getIdentifier(), "1");
-            layoutChanges.change(container.getIdentifier(), "2", "1");
-            layoutChanges.change(container.getIdentifier(), "3", "2");
-            layoutChanges.change(container.getIdentifier(), "4", "3");
+            final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+                .remove(container.getIdentifier(), "1")
+                .change(container.getIdentifier(), "2", "1")
+                .change(container.getIdentifier(), "3", "2")
+                .change(container.getIdentifier(), "4", "3")
+                .build();
 
             APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
 
@@ -4089,11 +4099,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     .nextPersisted();
 
 
-            final LayoutChanges layoutChanges = new LayoutChanges();
-            layoutChanges.remove(container.getIdentifier(), "1");
-            layoutChanges.change(container.getIdentifier(), "2", "1");
-            layoutChanges.change(container.getIdentifier(), "3", "2");
-            layoutChanges.change(container.getIdentifier(), "4", "3");
+            final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+                .remove(container.getIdentifier(), "1")
+                .change(container.getIdentifier(), "2", "1")
+                .change(container.getIdentifier(), "3", "2")
+                .change(container.getIdentifier(), "4", "3")
+                .build();
 
             APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
 
