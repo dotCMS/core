@@ -266,7 +266,7 @@ public class ConfigurationHelper implements Serializable {
 		final boolean validAuthenticatedUser = null != user && !user.isAnonymousUser() && user.isBackendUser();
 		final Map<String,String> clusterMap = new HashMap<>();
 		 if(validAuthenticatedUser){
-			 clusterMap.put(CLUSTER_ID, getClusterId())
+			 clusterMap.put(CLUSTER_ID, getClusterId());
 			 clusterMap.put(KEY_DIGEST, keyDigest());
 		 } else {
 			 clusterMap.put(
