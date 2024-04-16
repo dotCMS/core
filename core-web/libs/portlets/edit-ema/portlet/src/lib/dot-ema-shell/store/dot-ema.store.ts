@@ -95,75 +95,152 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * Selectors
      *******************/
 
-    readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
+    readonly clientHost$ = this.select((state) => state.clientHost);
 
-    readonly code$ = this.select((state) => state.editor.page.rendered);
-
-    readonly stateLoad$ = this.select((state) => state.editorState);
-
-    readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
-
-    readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
-
-    readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
-
-    readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
-        return {
-            state,
-            code
-        };
-    });
-
-    readonly editorState$ = this.select((state) => {
-        const pageURL = this.createPageURL({
-            url: state.editor.page.pageURI,
-            language_id: state.editor.viewAs.language.id.toString(),
-            'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
-            variantName: state.editorData.variantId
-        });
-
-        const favoritePageURL = this.createFavoritePagesURL({
+    private readonly stateLoad$ = this.select((state) => state.editorState);
+    private readonly code$ = this.select((state) => state.editor.page.rendered);
+    private readonly pageURL$ = this.select((state) => this.createPageURL(state));
+    private readonly favoritePageURL$ = this.select((state) =>
+        this.createFavoritePagesURL({
             languageId: state.editor.viewAs.language.id,
             pageURI: state.editor.page.pageURI,
             siteId: state.editor.site.identifier
-        });
-
-        const iframeURL = state.clientHost ? `${state.clientHost}/${pageURL}` : '';
-
-        return {
-            bounds: state.bounds,
-            contentletArea: state.contentletArea,
-            clientHost: state.clientHost,
-            favoritePageURL,
-            apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-            iframeURL,
-            editor: {
-                ...state.editor,
-                viewAs: {
-                    ...state.editor.viewAs,
-                    persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
+        })
+    );
+    private readonly iframeURL$ = this.select(
+        this.clientHost$,
+        this.pageURL$,
+        (clientHost, pageURL) => (clientHost ? `${clientHost}/${pageURL}` : '')
+    );
+    private readonly bounds$ = this.select((state) => state.bounds);
+    private readonly contentletArea$: Observable<ContentletArea> = this.select(
+        (state) => state.contentletArea,
+        {
+            equal: (prev, curr) => {
+                if (!prev) {
+                    return false;
                 }
-            },
-            isEnterpriseLicense: state.isEnterpriseLicense,
-            state: state.editorState ?? EDITOR_STATE.LOADING,
-            editorData: state.editorData,
-            currentExperiment: state.currentExperiment
-        };
-    });
 
-    readonly clientHost$ = this.select((state) => state.clientHost);
+                if (prev.x === curr?.x && prev.y === curr?.y) {
+                    return true;
+                }
 
+                return false;
+            }
+        }
+    );
+
+    private readonly editor$ = this.select((state) => state.editor);
+    private readonly isEnterpriseLicense$ = this.select((state) => state.isEnterpriseLicense);
+    private readonly currentState$ = this.select(
+        (state) => state.editorState ?? EDITOR_STATE.LOADING
+    );
+    private readonly currentExperiment$ = this.select((state) => state.currentExperiment);
+    private readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
+    private readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
+    private readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
+    private readonly page$ = this.select((state) => state.editor.page);
+    private readonly siteId$ = this.select((state) => state.editor.site.identifier);
+    private readonly languageId$ = this.select((state) => state.editor.viewAs.language.id);
+    private readonly currentUrl$ = this.select(
+        (state) => '/' + sanitizeURL(state.editor.page.pageURI)
+    );
+    private readonly error$ = this.select((state) => state.error);
     /**
      * Before this was layoutProperties, but are separate to "temp" selector.
      * And then is merged with templateIdentifier in layoutProperties$.
      * This is to try avoid extra-calls on the select, and avoid memory leaks
      */
-    private readonly layoutProps$ = this.select((state) => ({
-        layout: state.editor.layout,
-        themeId: state.editor.template.theme,
-        pageId: state.editor.page.identifier,
-        containersMap: this.mapContainers(state.editor.containers)
+    private readonly layout$ = this.select((state) => state.editor.layout);
+    private readonly themeId$ = this.select((state) => state.editor.template.theme);
+    private readonly pageId$ = this.select((state) => state.editor.page.identifier);
+    private readonly containersMap$ = this.select((state) =>
+        this.mapContainers(state.editor.containers)
+    );
+    private readonly layoutProps$ = this.select(
+        this.layout$,
+        this.themeId$,
+        this.pageId$,
+        this.containersMap$,
+        (layout, themeId, pageId, containersMap) => ({ layout, themeId, pageId, containersMap })
+    );
+
+    private readonly containers$ = this.select((state) =>
+        this.getPageContainers(state.editor.containers)
+    );
+    private readonly personaTag$ = this.select((state) => state.editor.viewAs.persona?.keyTag);
+    private readonly personalization$ = this.select((state) =>
+        getPersonalization(state.editor.viewAs.persona)
+    );
+    private readonly shellProps$ = this.select(
+        this.page$,
+        this.siteId$,
+        this.languageId$,
+        this.currentUrl$,
+        this.clientHost$,
+        this.error$,
+        (page, siteId, languageId, currentUrl, host, error) => ({
+            page,
+            siteId,
+            languageId,
+            currentUrl,
+            host,
+            error
+        })
+    );
+
+    readonly editorData$ = this.select((state) => state.editorData);
+    readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
+    readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => ({
+        state,
+        code
     }));
+    readonly editorState$ = this.select(
+        this.bounds$,
+        this.clientHost$,
+        this.contentletArea$,
+        this.currentExperiment$,
+        this.currentState$,
+        this.editor$,
+        this.editorData$,
+        this.favoritePageURL$,
+        this.iframeURL$,
+        this.isEnterpriseLicense$,
+        this.pageURL$,
+        (
+            bounds,
+            clientHost,
+            contentletArea,
+            currentExperiment,
+            currentState,
+            editor,
+            editorData,
+            favoritePageURL,
+            iframeURL,
+            isEnterpriseLicense,
+            pageURL
+        ) => {
+            return {
+                apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
+                bounds: bounds,
+                clientHost: clientHost,
+                contentletArea: contentletArea,
+                currentExperiment,
+                editorData,
+                editor: {
+                    ...editor,
+                    viewAs: {
+                        ...editor.viewAs,
+                        persona: editor.viewAs.persona ?? DEFAULT_PERSONA
+                    }
+                },
+                favoritePageURL,
+                iframeURL,
+                isEnterpriseLicense,
+                state: currentState
+            };
+        }
+    );
 
     readonly layoutProperties$ = this.select(
         this.layoutProps$,
@@ -175,15 +252,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         })
     );
 
-    readonly shellProps$ = this.select((state) => ({
-        page: state.editor.page,
-        siteId: state.editor.site.identifier,
-        languageId: state.editor.viewAs.language.id,
-        currentUrl: '/' + sanitizeURL(state.editor.page.pageURI),
-        host: state.clientHost,
-        error: state.error
-    }));
-
     readonly shellProperties$ = this.select(
         this.shellProps$,
         this.templateDrawed$,
@@ -191,17 +259,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     );
 
     // This data is needed to save the page on CRUD operation
-    readonly pageData$ = this.select((state) => {
-        const containers = this.getPageContainers(state.editor.containers);
-
-        return {
-            containers,
-            id: state.editor.page.identifier,
-            languageId: state.editor.viewAs.language.id,
-            personaTag: state.editor.viewAs.persona?.keyTag,
-            personalization: getPersonalization(state.editor.viewAs.persona)
-        };
-    });
+    readonly pageData$ = this.select(
+        this.containers$,
+        this.pageId$,
+        this.languageId$,
+        this.personaTag$,
+        this.personalization$,
+        (containers, id, languageId, personaTag, personalization) => {
+            return {
+                containers,
+                id,
+                languageId,
+                personaTag,
+                personalization
+            };
+        }
+    );
 
     /**
      * Concurrently loads page and license data to updat the state.
@@ -456,7 +529,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     });
 
-    private createPageURL(params: DotPageApiParams): string {
+    private createPageURL(state: EditEmaState): string {
+        const params = {
+            url: state.editor.page.pageURI,
+            language_id: state.editor.viewAs.language.id.toString(),
+            'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
+            variantName: state.editorData.variantId
+        };
+
         const url = sanitizeURL(params.url);
 
         return createPageApiUrlWithQueryParams(url, params);
@@ -552,8 +632,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private createFavoritePagesURL(params: {
         languageId: number;
         pageURI: string;
-        deviceInode?: string;
-        siteId?: string;
+        siteId: string;
     }): string {
         const { languageId, pageURI, siteId } = params;
 

@@ -1,6 +1,7 @@
 package com.dotcms.api.client.pull.contenttype;
 
 import com.dotcms.api.client.pull.GeneralPullHandler;
+import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.pull.PullOptions;
 import java.text.SimpleDateFormat;
@@ -32,7 +33,7 @@ public class ContentTypePullHandler extends GeneralPullHandler<ContentType> {
 
     @Override
     public String fileName(final ContentType contentType) {
-        return contentType.variable();
+        return NamingUtils.contentTypeFileName(contentType);
     }
 
     @Override
