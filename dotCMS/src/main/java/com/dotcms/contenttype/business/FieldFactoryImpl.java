@@ -32,6 +32,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.time.DateUtils;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -43,8 +45,15 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.time.DateUtils;
 
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
+/**
+ * This class provides a SQL-based implementation for the {@link FieldFactory} interface.
+ *
+ * @author Will Ezell
+ * @since Jun 29th, 2016
+ */
 public class FieldFactoryImpl implements FieldFactory {
 
   //List of reserved field variables
@@ -93,11 +102,13 @@ public class FieldFactoryImpl implements FieldFactory {
   }
 
   @Override
-  public Field byContentTypeFieldVar(ContentType type, String var) throws DotDataException {
-    Field field = type.fieldMap().get(var);
+  public Field byContentTypeFieldVar(final ContentType type, final String velocityVarName) throws DotDataException {
+    checkNotNull(type, "Content Type cannot be null");
+    final Field field = type.fieldMap().get(velocityVarName);
 
     if(field==null) {
-      throw new NotFoundInDbException("Field variable with var:" + var + " not found");
+      throw new NotFoundInDbException(String.format("Field Variable '%s' in Content Type " +
+              "'%s' [ %s ] was not found", velocityVarName, type.name(), type.id()));
     }
 
     return field;

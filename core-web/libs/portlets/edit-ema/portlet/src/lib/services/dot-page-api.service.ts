@@ -26,6 +26,10 @@ export interface DotPageApiResponse {
         inode: string;
         canEdit: boolean;
         canRead: boolean;
+        canLock?: boolean;
+        locked?: boolean;
+        lockedBy?: string;
+        lockedByName?: string;
         pageURI: string;
         rendered?: string;
         contentType: string;

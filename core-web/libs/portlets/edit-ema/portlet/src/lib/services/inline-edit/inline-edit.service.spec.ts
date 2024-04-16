@@ -65,7 +65,7 @@ describe('InlineEditService', () => {
 
         spectator.service.setTargetInlineMCEDataset(dataset);
 
-        expect(spectator.service['inlineEditingTargetDataset']()).toEqual(dataset);
+        expect(spectator.service['$inlineEditingTargetDataset']()).toEqual(dataset);
     });
 
     it('should set iframe window', () => {
@@ -73,6 +73,6 @@ describe('InlineEditService', () => {
 
         spectator.service.setIframeWindow(iframeWindowMock);
 
-        expect(spectator.service['iframeWindow']()).toBe(iframeWindowMock);
+        expect(spectator.service['$iframeWindow']()).toBe(iframeWindowMock);
     });
 });

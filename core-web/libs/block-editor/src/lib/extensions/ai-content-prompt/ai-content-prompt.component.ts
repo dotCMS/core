@@ -7,6 +7,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -15,7 +16,12 @@ import { delay, filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotValidators } from '@dotcms/ui';
+import {
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    DotValidators,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
@@ -36,7 +42,9 @@ interface AIContentForm {
         ButtonModule,
         SkeletonModule,
         NgIf,
-        AsyncPipe
+        AsyncPipe,
+        DotEmptyContainerComponent,
+        ConfirmDialogModule
     ],
     styleUrls: ['./ai-content-prompt.component.scss']
 })
@@ -52,6 +60,10 @@ export class AIContentPromptComponent implements OnInit {
     dotMessageService = inject(DotMessageService);
     submitButtonLabel: string;
     private destroyRef = inject(DestroyRef);
+    emptyConfiguration: PrincipalConfiguration = {
+        title: this.dotMessageService.get('block-editor.extension.ai-content.error'),
+        icon: 'pi-exclamation-triangle'
+    };
 
     @ViewChild('inputTextarea') private inputTextarea: ElementRef<HTMLTextAreaElement>;
 
@@ -60,12 +72,22 @@ export class AIContentPromptComponent implements OnInit {
     }
 
     /**
-     * Clears the error at the store on hiding the confirmation dialog.
+     * Confirmation to close the dialog.
      *
      * @return {void}
      */
-    onHideConfirm(): void {
-        this.store.cleanError();
+    closeDialog(): void {
+        this.confirmationService.confirm({
+            key: 'ai-image-prompt',
+            header: this.dotMessageService.get('block-editor.extension.ai.confirmation.header'),
+            message: this.dotMessageService.get('block-editor.extension.ai.confirmation.message'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessageService.get('Discard'),
+            rejectLabel: this.dotMessageService.get('Cancel'),
+            accept: () => {
+                this.store.hideDialog();
+            }
+        });
     }
 
     private setSubscriptions(): void {

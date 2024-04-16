@@ -6,20 +6,27 @@ import {
     EXPERIMENT_ALREADY_CHECKED_KEY,
     EXPERIMENT_DB_KEY_PATH,
     EXPERIMENT_DB_STORE_NAME,
+    EXPERIMENT_DEFAULT_VARIANT_NAME,
     EXPERIMENT_QUERY_PARAM_KEY,
     PAGE_VIEW_EVENT_NAME
-} from './constants';
-import { DotExperimentConfig, Experiment, Variant } from './models';
-import { getExperimentsIds, parseData, parseDataForAnalytics, verifyRegex } from './parser/parser';
-import { IndexDBDatabaseHandler } from './persistence/index-db-database-handler';
-import { DotLogger } from './utils/DotLogger';
+} from './shared/constants';
+import { DotExperimentConfig, Experiment, Variant } from './shared/models';
+import {
+    getExperimentsIds,
+    parseData,
+    parseDataForAnalytics,
+    verifyRegex
+} from './shared/parser/parser';
+import { IndexDBDatabaseHandler } from './shared/persistence/index-db-database-handler';
+import { DotLogger } from './shared/utils/DotLogger';
 import {
     checkFlagExperimentAlreadyChecked,
+    defaultRedirectFn,
     getFullUrl,
     isDataCreateValid,
     objectsAreEqual,
     updateUrlWithExperimentVariant
-} from './utils/utils';
+} from './shared/utils/utils';
 
 /**
  * `DotExperiments` is a Typescript class to handles all operations related to fetching, storing, parsing, and navigating
@@ -87,24 +94,58 @@ export class DotExperiments {
      * Represents the current location.
      * @private
      */
+    // eslint-disable-next-line no-restricted-globals
     private currentLocation: Location = location;
+
+    /**
+     * Represents the previous location.
+     *
+     * @type {string}
+     */
+    private prevLocation = '';
 
     private constructor(private readonly config: DotExperimentConfig) {
         // merge default config and the config to the instance
         this.config = { ...DotExperiments.defaultConfig, ...config };
+
         if (!this.config['server']) {
             throw new Error('`server` must be provided and should not be empty!');
         }
 
-        if (!this.config['api-key']) {
-            throw new Error('`api-key` must be provided and should not be empty!');
+        if (!this.config['apiKey']) {
+            throw new Error('`apiKey` must be provided and should not be empty!');
         }
 
         this.logger = new DotLogger(this.config.debug, 'DotExperiment');
     }
 
+    /**
+     * Retrieves the array of experiments assigned to an instance of the class.
+     *
+     * @return {Experiment[]} An array containing the experiments assigned to the instance.
+     */
     public get experiments(): Experiment[] {
         return this.experimentsAssigned;
+    }
+
+    /**
+     * Returns a custom redirect function. If a custom redirect function is not configured,
+     * the default redirect function will be used.
+     *
+     * @return {function} A function that accepts a URL string parameter and performs a redirect.
+     *                    If no parameter is provided, the function will not perform any action.
+     */
+    public get customRedirectFn(): (url: string) => void {
+        return this.config.redirectFn ?? defaultRedirectFn;
+    }
+
+    /**
+     * Retrieves the current location.
+     *
+     * @returns {Location} The current location.
+     */
+    public get location(): Location {
+        return this.currentLocation;
     }
 
     /**
@@ -122,11 +163,13 @@ export class DotExperiments {
 
             DotExperiments.instance = new DotExperiments(config);
             DotExperiments.instance.initialize();
-        }
 
-        DotExperiments.instance.logger.log(
-            'Instance created with configuration: ' + JSON.stringify(config)
-        );
+            DotExperiments.instance.logger.log(
+                'Instance created with configuration: ' + JSON.stringify(config)
+            );
+        } else {
+            DotExperiments.instance.logger.log('Instance of DotExperiments already exist');
+        }
 
         return DotExperiments.instance;
     }
@@ -177,7 +220,8 @@ export class DotExperiments {
             navItems.forEach((link) => {
                 const href =
                     getFullUrl(this.currentLocation, link.getAttribute('href') || '') ?? '';
-                const variant = this.getVariant(href);
+
+                const variant = this.getVariantFromHref(href);
 
                 if (variant !== null && href !== null) {
                     link.href = updateUrlWithExperimentVariant(href, variant);
@@ -207,23 +251,35 @@ export class DotExperiments {
         location: Location,
         redirectFunction?: (url: string) => void
     ): Promise<void> {
+        this.logger.group('Location Changed Process');
+        this.logger.time('Total location changed');
+
         this.currentLocation = location;
         await this.verifyExperimentData();
-        const variantAssigned = this.getVariant(location.href);
 
-        if (variantAssigned) {
+        const variantAssigned = this.getVariantFromHref(location.href);
+
+        if (variantAssigned && variantAssigned.name !== EXPERIMENT_DEFAULT_VARIANT_NAME) {
             const searchParams = new URLSearchParams(location.search);
+
             const currentVariant = searchParams.get(EXPERIMENT_QUERY_PARAM_KEY);
 
             if (currentVariant !== variantAssigned.name) {
                 const variantUrl = updateUrlWithExperimentVariant(location, variantAssigned);
-                this.logger.log(`Redirecting to the variant URL: ${variantUrl}`);
 
                 if (redirectFunction) {
+                    this.logger.log(
+                        `Page redirected to ${variantUrl} using the provided redirect function.`
+                    );
+                    this.logger.timeEnd('Total location changed');
+                    this.logger.groupEnd();
                     redirectFunction(variantUrl);
                 } else {
-                    this.logger.log(`Page redirected to ${variantUrl}`);
-                    window.location.href = variantUrl;
+                    this.logger.log(
+                        `Page redirected to ${variantUrl} using the default redirect function.`
+                    );
+
+                    defaultRedirectFn(variantUrl);
                 }
             } else {
                 this.logger.log(`No redirection needed.`);
@@ -231,6 +287,9 @@ export class DotExperiments {
         } else {
             this.logger.log(`No experiment variant matched for the current location.`);
         }
+
+        this.logger.timeEnd('Total location changed');
+        this.logger.groupEnd();
     }
 
     /**
@@ -240,6 +299,74 @@ export class DotExperiments {
      */
     public trackPageView(): void {
         this.track(PAGE_VIEW_EVENT_NAME);
+        this.prevLocation = this.currentLocation.href;
+    }
+
+    /**
+     * This method is used to retrieve the variant associated with a given URL.
+     *
+     * It checks if the URL is part of an experiment by verifying it against an experiment's regex. If the URL matches the regex of an experiment,
+     * it returns the variant attached to that experiment; otherwise, it returns null.
+     *
+     * @param {string | null} path - The URL to check for a variant. This should be the path of the URL.
+     *
+     * @returns {Variant | null} The variant associated with the URL if it exists, null otherwise.
+     */
+    public getVariantFromHref(path: string | null): Variant | null {
+        const experiment = this.experimentsAssigned.find((experiment) => {
+            const url = getFullUrl(this.currentLocation, path) ?? '';
+
+            return verifyRegex(experiment.regexs.isExperimentPage, url);
+        });
+
+        return experiment?.variant || null;
+    }
+
+    /**
+     * Returns the experiment variant name as a URL search parameter.
+     *
+     * @param {string|null} path - The path to the current page.
+     * @returns {URLSearchParams} - The URL search parameters containing the experiment variant name.
+     */
+    public getVariantAsQueryParam(path: string | null): URLSearchParams {
+        let params: Record<string, string> = {};
+
+        if (this.experimentsAssigned && path) {
+            const experiment = this.experimentsAssigned.find((experiment) => {
+                const url = getFullUrl(this.currentLocation, path) ?? '';
+
+                return verifyRegex(experiment.regexs.isExperimentPage, url);
+            });
+
+            if (experiment && experiment.variant.name !== EXPERIMENT_DEFAULT_VARIANT_NAME) {
+                params = { [EXPERIMENT_QUERY_PARAM_KEY]: experiment.variant.name };
+            }
+        }
+
+        return new URLSearchParams(params);
+    }
+
+    /**
+     * Determines whether a page view should be tracked.
+     *
+     * @private
+     * @returns {boolean} True if a page view should be tracked, otherwise false.
+     */
+    private shouldTrackPageView(): boolean {
+        if (!this.config.trackPageView) {
+            return false;
+        }
+
+        // If the previous location is the same as the current location, we don't need to track the page view
+        if (this.prevLocation === this.currentLocation.href) {
+            this.logger.log(
+                `No shouldTrackPageView, preview location is the same as current location.`
+            );
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -290,28 +417,6 @@ export class DotExperiments {
     }
 
     /**
-     * This method is used to retrieve the variant associated with a given URL.
-     *
-     * It checks if the URL is part of an experiment by verifying it against an experiment's regex. If the URL matches the regex of an experiment,
-     * it returns the variant attached to that experiment; otherwise, it returns null.
-     *
-     * @param {string | null} path - The URL to check for a variant. This should be the path of the URL.
-     *
-     * @returns {Variant | null} The variant associated with the URL if it exists, null otherwise.
-     */
-    private getVariant(path: string | null): Variant | null {
-        if (this.experimentsAssigned && path) {
-            const experiment = this.experimentsAssigned.find((experiment) => {
-                return verifyRegex(experiment.regexs.isExperimentPage, path);
-            });
-
-            return experiment ? experiment.variant : null;
-        }
-
-        return null;
-    }
-
-    /**
      * Fetches experiments from the server.
      *
      * @private
@@ -326,7 +431,8 @@ export class DotExperiments {
             const body = {
                 exclude: this.experimentsAssigned ? getExperimentsIds(this.experimentsAssigned) : []
             };
-            const response: Response = await fetch(`${this.config.server}${API_EXPERIMENTS_URL}`, {
+
+            const response: Response = await fetch(`${this.config.server}/${API_EXPERIMENTS_URL}`, {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
@@ -337,11 +443,14 @@ export class DotExperiments {
 
             if (!response.ok) {
                 const responseText = await response.text();
+
                 throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`);
             }
 
             const responseJson = await response.json();
+
             const experiments = responseJson?.entity?.experiments;
+
             this.logger.log(`Experiment data get successfully `);
 
             this.persistenceHandler.setFlagExperimentAlreadyChecked();
@@ -378,6 +487,7 @@ export class DotExperiments {
     private async verifyExperimentData(): Promise<void> {
         try {
             let fetchedExperiments: Experiment[] | undefined = undefined;
+
             const storedExperiments: Experiment[] = this.experimentsAssigned
                 ? this.experimentsAssigned
                 : [];
@@ -474,7 +584,7 @@ export class DotExperiments {
         try {
             if (!this.analytics) {
                 this.analytics = jitsuClient({
-                    key: this.config['api-key'],
+                    key: this.config['apiKey'],
                     tracking_host: this.config['server'],
                     log_level: this.config['debug'] ? DEBUG_LEVELS.WARN : DEBUG_LEVELS.NONE
                 });
@@ -511,8 +621,10 @@ export class DotExperiments {
         }
 
         // trigger the page view event
-        if (this.config.trackPageView) {
+        if (this.shouldTrackPageView()) {
             this.trackPageView();
+
+            return;
         }
     }
 

@@ -7,6 +7,7 @@ import com.dotcms.rest.MapToContentletPopulator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.DuplicateUserIdException;
 import com.liferay.portal.NoSuchUserException;
@@ -40,6 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 public class UserHelper {
 
     private final UserAPI userAPI;
+    public static final int MAX_FIELD_LENGTH = 100;
 
     private static class SingletonHolder {
         private static final UserHelper INSTANCE = new UserHelper();
@@ -200,4 +202,15 @@ public class UserHelper {
         }
     }
 
+    public static void validateMaximumLength(final String firstName, final String lastName, final String email) throws DotDataException {
+        if (UtilMethods.exceedsMaxLength(firstName, MAX_FIELD_LENGTH)) {
+            throw new DotDataException("Length of First Name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+        }
+        if (UtilMethods.exceedsMaxLength(lastName, MAX_FIELD_LENGTH)) {
+            throw new DotDataException("Length of Last Name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+        }
+        if (UtilMethods.exceedsMaxLength(email, MAX_FIELD_LENGTH)) {
+            throw new DotDataException("Length of Email Address provided exceeds the maximum limit "+ MAX_FIELD_LENGTH);
+        }
+    }
 }

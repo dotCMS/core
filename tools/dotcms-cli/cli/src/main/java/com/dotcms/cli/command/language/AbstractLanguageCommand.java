@@ -32,14 +32,9 @@ public abstract class AbstractLanguageCommand {
 
     String shortFormat(final Language language) {
         return String.format(
-                "language: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] code: [@|bold,underline,green %s|@] country:[@|bold,yellow %s|@] countryCode: [@|bold,yellow %s|@] isoCode: [@|bold,yellow %s|@]",
-                language.language().orElse(""),
+                "id: [@|bold,underline,cyan %s|@] isoCode: [@|bold,yellow %s|@]",
                 language.id().get(),
-                language.languageCode().get(),
-                language.country().orElse(""),
-                language.countryCode().orElse(""),
                 language.isoCode()
-
         );
     }
 
