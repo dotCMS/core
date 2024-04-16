@@ -27,7 +27,7 @@ import { PositionPayload, ClientData } from '../../../shared/models';
 })
 export class EmaPageDropzoneComponent {
     @Input() containers: Container[] = [];
-    @Input() item: EmaDragItem;
+    @Input() dragItem: EmaDragItem;
     @Output() place = new EventEmitter<PositionPayload>();
 
     pointerPosition: Record<string, string> = {

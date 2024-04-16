@@ -136,7 +136,11 @@ export interface InsertPayloadFromDelete {
 }
 
 export interface BasePayload {
-    type: 'contentlet' | 'content-type';
+    type: 'contentlet' | 'content-type' | 'temp';
+}
+
+export interface TempDragPayload extends BasePayload {
+    type: 'temp';
 }
 
 export interface ContentletDragPayload extends BasePayload {
@@ -172,4 +176,4 @@ export interface ContentTypeDragPayload extends BasePayload {
     };
 }
 
-export type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
+export type DraggedPayload = ContentletDragPayload | ContentTypeDragPayload | TempDragPayload;

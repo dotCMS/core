@@ -82,7 +82,7 @@ describe('EmaPageDropzoneComponent', () => {
         spectator = createComponent({
             props: {
                 containers: [],
-                item: ITEM_MOCK
+                dragItem: ITEM_MOCK
             }
         });
         dotMessageService = spectator.inject(DotMessageService, true);

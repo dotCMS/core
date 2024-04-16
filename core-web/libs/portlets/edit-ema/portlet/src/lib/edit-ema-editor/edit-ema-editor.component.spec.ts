@@ -1767,7 +1767,7 @@ describe('EditEmaEditorComponent', () => {
                     By.css('[data-testId="dropzone"]')
                 );
 
-                expect(dropZoneComponent.item).toEqual({
+                expect(dropZoneComponent.dragItem).toEqual({
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });
@@ -2038,7 +2038,7 @@ describe('EditEmaEditorComponent', () => {
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
                 expect(dropZone.containers).toBe(BOUNDS_MOCK);
-                expect(dropZone.item).toEqual({
+                expect(dropZone.dragItem).toEqual({
                     contentType: 'File',
                     baseType: 'CONTENT'
                 });
@@ -2071,7 +2071,7 @@ describe('EditEmaEditorComponent', () => {
                     By.css('[data-testId="dropzone"]')
                 );
 
-                expect(dropZone.item).toEqual({
+                expect(dropZone.dragItem).toEqual({
                     contentType: 'Banner',
                     baseType: 'CONTENT'
                 });

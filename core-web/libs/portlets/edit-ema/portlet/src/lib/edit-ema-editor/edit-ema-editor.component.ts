@@ -131,6 +131,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotContentletService = inject(DotContentletService);
 
     readonly editorState$ = this.store.editorState$;
+    readonly dragItem$ = this.store.dragItem$;
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
@@ -191,7 +192,53 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.handleReloadContent();
+        this.handleDragEvents();
 
+        fromEvent(this.window, 'message')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((event: MessageEvent) => {
+                this.handlePostMessage(event)?.();
+            });
+
+        // In VTL Page if user click in a link in the page, we need to update the URL in the editor
+        this.store.pageRendered$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter(() => this.isVTLPage())
+            )
+            .subscribe(() => {
+                requestAnimationFrame(() => {
+                    this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
+                        const href =
+                            (e.target as HTMLAnchorElement).href ||
+                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
+
+                        if (href) {
+                            e.preventDefault();
+                            const url = new URL(href);
+
+                            // Check if the URL is not external
+                            if (url.hostname === window.location.hostname) {
+                                this.updateQueryParams({
+                                    url: url.pathname
+                                });
+
+                                return;
+                            }
+
+                            // Open external links in a new tab
+                            this.window.open(href, '_blank');
+                        }
+                    });
+                });
+            });
+
+        // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
+        // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
+        // this.store.updateEditorState(EDITOR_STATE.LOADING);
+    }
+
+    handleDragEvents() {
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
@@ -243,48 +290,63 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
             });
 
-        fromEvent(this.window, 'message')
+        fromEvent(this.window, 'dragover')
             .pipe(takeUntil(this.destroy$))
-            .subscribe((event: MessageEvent) => {
-                this.handlePostMessage(event)?.();
+            .subscribe((event: DragEvent) => {
+                event.preventDefault(); // Prevent file opening
             });
 
-        // In VTL Page if user click in a link in the page, we need to update the URL in the editor
-        this.store.pageRendered$
+        fromEvent(this.window, 'drop')
             .pipe(
                 takeUntil(this.destroy$),
-                filter(() => this.isVTLPage())
+                switchMap((event) =>
+                    this.dragItem$.pipe(
+                        take(1),
+                        filter((dragItem) => dragItem.draggedPayload.type === 'temp'),
+                        map(() => event)
+                    )
+                )
             )
-            .subscribe(() => {
-                requestAnimationFrame(() => {
-                    this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
-                        const href =
-                            (e.target as HTMLAnchorElement).href ||
-                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
-
-                        if (href) {
-                            e.preventDefault();
-                            const url = new URL(href);
-
-                            // Check if the URL is not external
-                            if (url.hostname === window.location.hostname) {
-                                this.updateQueryParams({
-                                    url: url.pathname
-                                });
-
-                                return;
-                            }
-
-                            // Open external links in a new tab
-                            this.window.open(href, '_blank');
-                        }
-                    });
-                });
+            .subscribe((event: DragEvent) => {
+                event.preventDefault(); // Prevent file opening
+                this.store.updateEditorState(EDITOR_STATE.IDLE);
             });
 
-        // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
-        // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
-        // this.store.updateEditorState(EDITOR_STATE.LOADING);
+        fromEvent(this.window, 'dragleave')
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((event: DragEvent) => !event.x && !event.y) // Just reset when is out of the window
+            )
+            .subscribe(() => {
+                // event.preventDefault(); // Prevent file opening
+                this.store.updateEditorState(EDITOR_STATE.IDLE);
+            });
+
+        fromEvent(this.window, 'dragenter')
+            .pipe(
+                takeUntil(this.destroy$),
+                switchMap((event) =>
+                    this.dragItem$.pipe(
+                        take(1),
+                        filter((dragItem) => !dragItem),
+                        map(() => event)
+                    )
+                )
+            )
+            .subscribe(() => {
+                this.store.setDragItem({
+                    baseType: 'Image',
+                    contentType: 'Image',
+                    draggedPayload: {
+                        type: 'temp'
+                    }
+                });
+
+                this.iframe.nativeElement.contentWindow?.postMessage(
+                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+                    this.host
+                );
+            });
     }
 
     /**
@@ -422,11 +484,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
 
             return;
+        } else if (dragItem.draggedPayload.type === 'content-type') {
+            this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
+        } else if (dragItem.draggedPayload.type === 'temp') {
+            console.warn('Not implemented yet');
         }
-
-        this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
     }
-
     /**
      * Delete contentlet
      *

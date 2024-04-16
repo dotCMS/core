@@ -97,6 +97,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *******************/
 
     readonly clientHost$ = this.select((state) => state.clientHost);
+    readonly dragItem$ = this.select((state) => state.dragItem);
 
     private readonly stateLoad$ = this.select((state) => state.editorState);
     private readonly code$ = this.select((state) => state.editor.page.rendered);
@@ -137,7 +138,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (state) => state.editorState ?? EDITOR_STATE.LOADING
     );
     private readonly currentExperiment$ = this.select((state) => state.currentExperiment);
-    private readonly dragItem$ = this.select((state) => state.dragItem);
     private readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
     private readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
     private readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
