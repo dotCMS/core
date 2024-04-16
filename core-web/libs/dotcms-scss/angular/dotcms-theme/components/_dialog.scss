@@ -53,7 +53,8 @@
     gap: $spacing-3;
     background: $white;
     color: $black;
-    padding: 0 $spacing-6 $spacing-6 $spacing-6;
+    padding: $spacing-4;
+    padding-top: 0;
     word-break: break-all;
 }
 

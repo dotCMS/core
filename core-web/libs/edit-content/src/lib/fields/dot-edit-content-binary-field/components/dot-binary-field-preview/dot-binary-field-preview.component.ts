@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import {
     CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
@@ -6,18 +7,21 @@ import {
     EventEmitter,
     Input,
     OnChanges,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { DialogModule } from 'primeng/dialog';
+import { DividerModule } from 'primeng/divider';
 
 import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
 import {
     DotTempFileThumbnailComponent,
     DotFileSizeFormatPipe,
     DotMessagePipe,
-    DotSpinnerModule
+    DotSpinnerModule,
+    DotCopyButtonComponent
 } from '@dotcms/ui';
 
 export enum EDITABLE_FILE {
@@ -34,9 +38,11 @@ export enum EDITABLE_FILE {
         ButtonModule,
         DotTempFileThumbnailComponent,
         DotSpinnerModule,
-        OverlayPanelModule,
+        DialogModule,
+        DividerModule,
         DotMessagePipe,
-        DotFileSizeFormatPipe
+        DotFileSizeFormatPipe,
+        DotCopyButtonComponent
     ],
     templateUrl: './dot-binary-field-preview.component.html',
     styleUrls: ['./dot-binary-field-preview.component.scss'],
@@ -52,7 +58,12 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     @Output() editFile: EventEmitter<void> = new EventEmitter();
     @Output() removeFile: EventEmitter<void> = new EventEmitter();
 
-    isEditable = false;
+    visibility = false;
+
+    private httpClient = inject(HttpClient);
+
+    protected isEditable = false;
+    protected readonly baseHost = window.location.origin;
 
     get content(): string {
         return this.tempFile?.content || this.contentlet?.content;

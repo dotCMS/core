@@ -36,6 +36,10 @@
                 <i class="pi pi-file"></i>
                 <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
             </div>
+            <div class="preview-metadata preview-metadata__link" (click)="visibility = !visibility">
+                <i class="pi pi-info-circle"></i>
+                <span>{{ 'Information' | dm }}</span>
+            </div>
         </div>
     </ng-template>
 
@@ -64,7 +68,7 @@
             data-testId="edit-button-responsive"
             icon="pi pi-pencil"></p-button>
         <p-button
-            (click)="op.toggle($event)"
+            (click)="visibility = !visibility"
             styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
             data-testId="infor-button-responsive"
             icon="pi pi-info"></p-button>
@@ -76,16 +80,53 @@
     </div>
 </div>
 
-<p-overlayPanel #op>
-    <div class="preview-metadata__responsive">
-        <span class="preview-metadata_header">{{ metadata.name }}</span>
-        <div *ngIf="metadata.width && metadata.height">
-            {{ 'dot.binary.field.file.dimension' | dm }}:
-            <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
-        </div>
-        <div *ngIf="metadata.fileSize">
-            {{ 'dot.binary.field.file.size' | dm }}:
-            <span>{{ metadata.fileSize }} Bytes</span>
+<p-dialog
+    [(visible)]="visibility"
+    [header]="'Backplates Snow Landscape.MP4'"
+    [appendTo]="'body'"
+    [style]="{ width: '582px' }">
+    <div class="preview-resource__item">
+        <span class="preview-source__title">{{ 'File Link' | dm }}:</span>
+        <div class="preview-resource__link">
+            <a
+                href="https://dotcms-qa-Its2203.dotcms.site/dA/c4b531da88/company_logo.png?language_id=1"
+                target="_blank"
+                >https://dotcms-qa-Its2203.dotcms.site/dA/c4b531da88/company_logo.png?language_id=1</a
+            >
+            <dot-copy-button
+                [copy]="
+                    'https://dotcms-qa-Its2203.dotcms.site/dA/c4b531da88/company_logo.png?language_id=1'
+                " />
         </div>
     </div>
-</p-overlayPanel>
+    <p-divider></p-divider>
+    <div class="preview-resource__item">
+        <span class="preview-source__title">{{ 'Resource Link' | dm }}:</span>
+        <div class="preview-resource__link">
+            <a href="/company_logo.png?language_id=1" target="_blank"
+                >/company_logo.png?language_id=1</a
+            >
+            <dot-copy-button [copy]="'/company_logo.png?language_id=1'" />
+        </div>
+    </div>
+    <p-divider></p-divider>
+    <div class="preview-resource__item">
+        <span class="preview-source__title">{{ 'Version Link' | dm }}:</span>
+        <div class="preview-resource__link">
+            <a href="/dA/deb9555fba/fileAsset/company_logo.png" target="_blank"
+                >/dA/deb9555fba/fileAsset/company_logo.png</a
+            >
+            <dot-copy-button [copy]="'/dA/deb9555fba/fileAsset/company_logo.png'" />
+        </div>
+    </div>
+    <p-divider></p-divider>
+    <div class="preview-resource__item">
+        <span class="preview-source__title">{{ 'Id Path' | dm }}:</span>
+        <div class="preview-resource__link">
+            <a href="/dA/c4b531da88/fileAsset/company_logo.png?language_id=1" target="_blank"
+                >/dA/c4b531da88/fileAsset/company_logo.png?language_id=1</a
+            >
+            <dot-copy-button [copy]="'/dA/c4b531da88/fileAsset/company_logo.png?language_id=1'" />
+        </div>
+    </div>
+</p-dialog>

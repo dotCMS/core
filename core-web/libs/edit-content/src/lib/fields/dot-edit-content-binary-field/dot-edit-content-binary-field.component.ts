@@ -151,7 +151,7 @@ export class DotEditContentBinaryFieldComponent
         return this.DotBinaryFieldValidatorService.accept;
     }
 
-    private get variable(): string {
+    get variable(): string {
         return this.contentTypeField().variable;
     }
 
