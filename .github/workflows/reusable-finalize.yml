@@ -31,14 +31,20 @@ jobs:
         run: |
           
           echo "Received JSON: ${{ inputs.needsData }}"
-         
-          echo '${{ inputs.needsData }}' > needsData.json
-          if jq '.jobs | to_entries[] | select(.value.result == "cancelled")' needsData.json; then
-            echo "Some jobs were cancelled"
+          
+          echo "${{ inputs.needsData }}" > needsData.json
+          if jq 'to_entries[] | select(.value.result == "cancelled")' needsData.json; then
+            echo "Some jobs were cancelled."
             cancelled=true
-          elif jq '.jobs | to_entries[] | select(.value.result == "failure")' needsData.json; then
-            echo "Some jobs were failure"
+          else
+            echo "No jobs were cancelled."
+          fi
+    
+          if jq 'to_entries[] | select(.value.result == "failure")' needsData.json; then
+            echo "Some jobs failed."
             failure=true
+          else
+            echo "No jobs failed."
           fi
           
           
