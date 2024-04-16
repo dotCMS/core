@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -123,15 +124,15 @@ public class ConfigurationHelper implements Serializable {
 			Logger.warn(this.getClass(), "unable to get color:" +e.getMessage());
 		}
 
-		final Map<String, Object> map = Map.of(
+		final Map<String, Object> map = new HashMap<>(Map.of(
 				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
 				DOTCMS_WEBSOCKET,
 				Map.of(
-					DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
-					Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 15000),
-					DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
-					Boolean.valueOf(Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false))
+						DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
+						Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 15000),
+						DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
+						Boolean.valueOf(Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false))
 				),
 				I18N_MESSAGES_MAP,
 				mapEntries(
@@ -166,7 +167,7 @@ public class ConfigurationHelper implements Serializable {
 						LOGIN_SCREEN_LOGO,loginScreenLogo,
 						NAV_BAR_LOGO,navBarLogo
 				)
-		);
+		));
 
 	    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());
 	    map.put(TIMEZONES, getTimeZones(locale));
@@ -263,16 +264,17 @@ public class ConfigurationHelper implements Serializable {
 	 */
 	Map<String,String> clusterMap(final User user){
 		final boolean validAuthenticatedUser = null != user && !user.isAnonymousUser() && user.isBackendUser();
+		final Map<String,String> clusterMap = new HashMap<>();
 		 if(validAuthenticatedUser){
-			return Map.of(
-					 CLUSTER_ID, getClusterId(),
-					 KEY_DIGEST, keyDigest()
-			 );
+			 clusterMap.put(CLUSTER_ID, getClusterId())
+			 clusterMap.put(KEY_DIGEST, keyDigest());
 		 } else {
-			 return Map.of(
+			 clusterMap.put(
 					 CLUSTER_ID, getClusterId()
 			 );
 		 }
+
+		 return clusterMap;
 	}
 
 	/**

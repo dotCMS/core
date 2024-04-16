@@ -212,11 +212,10 @@ public class PaginationUtil {
 												final String orderBy,
 												final OrderDirection direction,
 												final Map<String, Object> extraParams) {
-		final Map<String, Object> params = new HashMap<>(Map.of(
-				Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
-				Paginator.ORDER_BY_PARAM_NAME, orderBy,
-				Paginator.ORDER_DIRECTION_PARAM_NAME, direction != null ? direction : OrderDirection.ASC
-		));
+		final Map<String, Object> params = new HashMap<>();
+		params.put(Paginator.DEFAULT_FILTER_PARAM_NAME, filter);
+		params.put(Paginator.ORDER_BY_PARAM_NAME, orderBy);
+		params.put(Paginator.ORDER_DIRECTION_PARAM_NAME, direction != null ? direction : OrderDirection.ASC);
 
 		if (extraParams != null) {
 			for (final Map.Entry<String, Object> paramEntry : extraParams.entrySet()) {
