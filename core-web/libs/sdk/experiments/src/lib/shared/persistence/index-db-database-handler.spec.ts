@@ -34,12 +34,15 @@ beforeAll(() => {
 describe('IndexedDB tests', () => {
     it('saveData successfully saves data to the store', async () => {
         const key = await persistDatabaseHandler.persistData(IsUserIncludedResponse.entity);
+
         expect(key).toBe(EXPERIMENT_DB_KEY_PATH);
     });
 
     it('getDataByKey successfully retrieves data from the store', async () => {
         await persistDatabaseHandler.persistData(IsUserIncludedResponse.entity);
+
         const data = await persistDatabaseHandler.getData();
+
         expect(data).toEqual(IsUserIncludedResponse.entity);
     });
 });

@@ -77,7 +77,6 @@ import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
 import com.dotcms.publishing.manifest.ManifestUtilTest;
 import com.dotcms.rendering.js.JsEngineTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
-import com.dotcms.rendering.velocity.services.ContainerLoaderTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
 import com.dotcms.rendering.velocity.viewtools.FileToolTest;
@@ -623,8 +622,7 @@ import org.junit.runners.Suite.SuiteClasses;
         JsEngineTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
         Task240112AddMetadataColumnToStructureTableTest.class,
-        Task240306MigrateLegacyLanguageVariablesTest.class,
-        ContainerLoaderTest.class,
+        Task240306MigrateLegacyLanguageVariablesTest.class
 })
 
 public class MainSuite {

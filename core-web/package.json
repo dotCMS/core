@@ -203,7 +203,7 @@
         "@types/webpack": "4.41.21",
         "@typescript-eslint/eslint-plugin": "6.21.0",
         "@typescript-eslint/parser": "6.21.0",
-        "babel-jest": "28.1.1",
+        "babel-jest": "^28.1.1",
         "babel-loader": "^8.2.1",
         "codelyzer": "^6.0.2",
         "cypress": "^6.0.1",

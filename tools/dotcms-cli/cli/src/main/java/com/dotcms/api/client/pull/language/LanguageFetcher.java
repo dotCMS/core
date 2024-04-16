@@ -7,7 +7,6 @@ import com.dotcms.model.language.Language;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -27,7 +26,7 @@ public class LanguageFetcher implements ContentFetcher<Language>, Serializable {
     public List<Language> fetch(final boolean failFast, final Map<String, Object> customOptions) {
 
         final var languageAPI = clientFactory.getClient(LanguageAPI.class);
-        return languageAPI.list().entity();
+        return languageAPI.listForPull().entity();
     }
 
     @ActivateRequestContext
@@ -39,12 +38,12 @@ public class LanguageFetcher implements ContentFetcher<Language>, Serializable {
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
 
         if (StringUtils.isNumeric(languageIsoOrId)) {
-            language = languageAPI.findById(languageIsoOrId).entity();
+            language = languageAPI.findByIdForPull(languageIsoOrId).entity();
         } else {
-            language = languageAPI.getFromLanguageIsoCode(languageIsoOrId).entity();
+            language = languageAPI.getFromLanguageIsoCodeForPull(languageIsoOrId).entity();
         }
-        final Optional<Long> id = language.id();
-        if (id.isPresent() && id.get() > 0) {
+        final String isoCode = language.isoCode();
+        if (!StringUtils.isEmpty(isoCode)) {
             return language;
         }
 
