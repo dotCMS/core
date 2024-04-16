@@ -30,9 +30,9 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           
-          echo "Received JSON: ${{ inputs.needsData }}"
+          echo 'Received JSON: ${{ inputs.needsData }}'
           
-          echo "${{ inputs.needsData }}" > needsData.json
+          echo '${{ inputs.needsData }}' > needsData.json
           if jq 'to_entries[] | select(.value.result == "cancelled")' needsData.json; then
             echo "Some jobs were cancelled."
             cancelled=true
