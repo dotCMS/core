@@ -210,28 +210,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 requestAnimationFrame(() => {
-                    this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
-                        const href =
-                            (e.target as HTMLAnchorElement)?.href ||
-                            (e.target as HTMLElement).closest('a')?.href;
+                    // This gets destroy when the iframe reloads
+                    fromEvent(this.iframe.nativeElement.contentWindow, 'click')
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe((e) => {
+                            const href =
+                                (e.target as HTMLAnchorElement)?.href ||
+                                (e.target as HTMLElement).closest('a')?.href;
 
-                        if (href) {
-                            e.preventDefault();
-                            const url = new URL(href);
+                            if (href) {
+                                e.preventDefault();
+                                const url = new URL(href);
 
-                            // Check if the URL is not external
-                            if (url.hostname === window.location.hostname) {
-                                this.updateQueryParams({
-                                    url: url.pathname
-                                });
+                                // Check if the URL is not external
+                                if (url.hostname === window.location.hostname) {
+                                    this.updateQueryParams({
+                                        url: url.pathname
+                                    });
 
-                                return;
+                                    return;
+                                }
+
+                                // Open external links in a new tab
+                                this.window.open(href, '_blank');
                             }
-
-                            // Open external links in a new tab
-                            this.window.open(href, '_blank');
-                        }
-                    });
+                        });
                 });
             });
 
@@ -397,11 +400,56 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    addEditorPageScript(rendered: string) {
+    addEditorPageScript(rendered = ''): string {
         const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
-        const updatedRendered = rendered?.replace('</body>', scriptString + '</body>');
+        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
+    }
+
+    /**
+     * Add custom styles to the rendered content
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addCustomStyles(rendered = ''): string {
+        const styles = `<style>
+
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
+        }
+        </style>
+        `;
+
+        return rendered.replace('</head>', styles + '</head>');
+    }
+
+    /**
+     * Inject the editor page script and styles to the VTL content
+     *
+     * @private
+     * @param {string} rendered
+     * @return {*}  {string}
+     * @memberof EditEmaEditorComponent
+     */
+    private inyectCodeToVTL(rendered: string): string {
+        let newFile = this.addEditorPageScript(rendered);
+
+        newFile = this.addCustomStyles(newFile);
+
+        return newFile;
     }
 
     ngOnDestroy(): void {
@@ -537,8 +585,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const doc = this.iframe?.nativeElement.contentDocument;
 
             if (doc) {
+                const newFile = this.inyectCodeToVTL(code);
+
                 doc.open();
-                doc.write(this.addEditorPageScript(code));
+                doc.write(newFile);
                 doc.close();
 
                 this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
