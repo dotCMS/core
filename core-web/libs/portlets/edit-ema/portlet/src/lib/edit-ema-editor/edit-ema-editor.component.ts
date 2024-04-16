@@ -338,9 +338,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     addCustomStyles(rendered = ''): string {
         const styles = `<style>
-        .container-notes {
-            opacity: 0;
-        }
 
         [data-dot-object="container"]:empty {
             width: 100%;
@@ -362,16 +359,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * This method is used to map the rendered content with the callbacks
+     * Inject the editor page script and styles to the VTL content
      *
      * @private
      * @param {string} rendered
-     * @param {((r: string) => string)[]} callbacks
      * @return {*}  {string}
      * @memberof EditEmaEditorComponent
      */
-    private mapVTLRendered(rendered: string, callbacks: ((r: string) => string)[]): string {
-        return callbacks.reduce((acc, cb) => cb(acc), rendered);
+    private inyectCodeToVTL(rendered: string): string {
+        let newFile = this.addEditorPageScript(rendered);
+
+        newFile = this.addCustomStyles(newFile);
+
+        return newFile;
     }
 
     ngOnDestroy(): void {
@@ -582,13 +582,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const doc = this.iframe?.nativeElement.contentDocument;
 
             if (doc) {
-                const newFile = this.mapVTLRendered(code, [
-                    this.addEditorPageScript.bind(this),
-                    this.addCustomStyles.bind(this)
-                ]);
+                const newFile = this.inyectCodeToVTL(code);
 
                 doc.open();
-                doc.write(this.addEditorPageScript(newFile));
+                doc.write(newFile);
                 doc.close();
 
                 this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
