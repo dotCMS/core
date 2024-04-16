@@ -3,6 +3,7 @@ import { DotDevice, DotExperiment } from '@dotcms/dotcms-models';
 import { EDITOR_MODE, EDITOR_STATE } from './enums';
 
 import {
+    ClientContentletArea,
     Container,
     ContentletArea,
     EmaDragItem
@@ -22,6 +23,10 @@ export interface ClientData {
 
 export interface PositionPayload extends ClientData {
     position?: 'before' | 'after';
+}
+
+export interface ReorderPayload {
+    reorderUrl: string;
 }
 
 export interface ActionPayload extends PositionPayload {
@@ -119,6 +124,13 @@ export interface WorkflowActionResult extends MessageInfo {
     callback: string;
     args: unknown[];
 }
+
+export type PostMessagePayload =
+    | ActionPayload
+    | SetUrlPayload
+    | Container[]
+    | ClientContentletArea
+    | ReorderPayload;
 
 export interface DeletePayload {
     payload: ActionPayload;

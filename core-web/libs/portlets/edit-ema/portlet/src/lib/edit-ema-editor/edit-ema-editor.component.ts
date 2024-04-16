@@ -74,7 +74,9 @@ import {
     InsertPayloadFromDelete,
     DragDataset,
     DragDatasetItem,
-    ContentTypeDragPayload
+    ContentTypeDragPayload,
+    PostMessagePayload,
+    ReorderPayload
 } from '../shared/models';
 import {
     areContainersEquals,
@@ -210,8 +212,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 requestAnimationFrame(() => {
                     this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
                         const href =
-                            (e.target as HTMLAnchorElement).href ||
-                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
+                            (e.target as HTMLAnchorElement)?.href ||
+                            (e.target as HTMLElement).closest('a')?.href;
 
                         if (href) {
                             e.preventDefault();
@@ -632,6 +634,36 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.dialog.resetDialog();
                     }
                 });
+            },
+            [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get('message.menu.reordered'),
+                    life: 2000
+                });
+
+                this.store.reload({
+                    params: this.queryParams
+                });
+                this.dialog.resetDialog();
+            },
+            [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get(
+                        'error.menu.reorder.user_has_not_permission'
+                    ),
+                    life: 2000
+                });
+            },
+            [NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER]: () => {
+                this.dialog.resetDialog();
             }
         })[detail.name];
     }
@@ -651,7 +683,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea;
+            payload: PostMessagePayload;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -695,6 +727,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.iframe?.nativeElement?.contentWindow.postMessage(
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
+                );
+            },
+            [CUSTOMER_ACTIONS.REORDER_MENU]: () => {
+                const { reorderUrl } = <ReorderPayload>data.payload;
+
+                this.dialog.openDialogOnUrl(
+                    reorderUrl,
+                    this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
