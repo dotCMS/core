@@ -60,10 +60,6 @@ public abstract class LanguageCache implements Cachable{
      */
     public abstract void clearLanguages();
 
-    /**
-     * Removes all the language variables stored under the language is
-     * @param languageId the language id to remove
-     */
     public abstract void clearVarsByLang(final long languageId);
 
     public abstract void clearVariables();
@@ -73,4 +69,7 @@ public abstract class LanguageCache implements Cachable{
 
     public abstract List<LanguageVariable> getVars(final long languageId, final int limit, final int offset,
             String orderBy);
+
+    public abstract void clearDefaultLanguage();
+
 }

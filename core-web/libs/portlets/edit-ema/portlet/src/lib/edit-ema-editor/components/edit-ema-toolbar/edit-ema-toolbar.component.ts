@@ -74,6 +74,7 @@ export class EditEmaToolbarComponent {
     private readonly activatedRouter = inject(ActivatedRoute);
 
     readonly editorState$ = this.store.editorState$;
+    readonly editorState = EDITOR_STATE;
     readonly editorMode = EDITOR_MODE;
     readonly experimentStatus = DotExperimentStatus;
 
@@ -213,6 +214,16 @@ export class EditEmaToolbarComponent {
         if (this.shouldReload(params)) {
             this.updateQueryParams(params);
         }
+    }
+
+    /**
+     * Unlocks a page with the specified inode.
+     *
+     * @param {string} inode
+     * @memberof EditEmaToolbarComponent
+     */
+    unlockPage(inode: string) {
+        this.store.unlockPage(inode);
     }
 
     private updateQueryParams(params: Params) {

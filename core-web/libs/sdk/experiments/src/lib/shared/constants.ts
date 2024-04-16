@@ -6,6 +6,14 @@
 export const EXPERIMENT_WINDOWS_KEY = 'dotExperiment';
 
 /**
+ * The default variant name for an experiment.
+ *
+ * @type {string}
+ * @constant
+ */
+export const EXPERIMENT_DEFAULT_VARIANT_NAME = 'DEFAULT';
+
+/**
  * The key used to store or retrieve the information in the SessionStore
  *
  * @constant {string}
