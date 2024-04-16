@@ -5,39 +5,49 @@ import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.util.OpenAIRequest;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.Map;
 
 public class OpenAIChatServiceImpl implements OpenAIChatService {
-    final AppConfig config;
+    private final AppConfig config;
 
-    public OpenAIChatServiceImpl(AppConfig appConfig) {
-
-        this.config=appConfig;
+    public OpenAIChatServiceImpl(final AppConfig appConfig) {
+        this.config = appConfig;
     }
 
     @Override
-    public JSONObject sendTextPrompt(String textPrompt) {
-        JSONObject newPrompt = new JSONObject();
+    public JSONObject sendRawRequest(final JSONObject prompt) {
+        prompt.putIfAbsent("model", config.getModel());
+        prompt.putIfAbsent("temperature", config.getConfigFloat(AppKeys.COMPLETION_TEMPERATURE));
+
+        if (UtilMethods.isEmpty(prompt.optString("messages"))) {
+            prompt.put(
+                    "messages",
+                    List.of(
+                            Map.of("role", "system", "content", config.getRolePrompt()),
+                            Map.of("role", "user", "content", prompt.getString("prompt"))
+                    ));
+        }
+
+        prompt.remove("prompt");
+
+        return new JSONObject(doRequest(config.getApiUrl(), "POST", config.getApiKey(), prompt));
+    }
+
+    @Override
+    public JSONObject sendTextPrompt(final String textPrompt) {
+        final JSONObject newPrompt = new JSONObject();
         newPrompt.put("prompt", textPrompt);
         return sendRawRequest(newPrompt);
     }
 
-    @Override
-    public JSONObject sendRawRequest(JSONObject prompt) {
-        prompt.putIfAbsent("model",config.getModel());
-        prompt.putIfAbsent("temperature",config.getConfigFloat(AppKeys.COMPLETION_TEMPERATURE));
-
-        if(UtilMethods.isEmpty(prompt.optString("messages"))){
-            List messages = List.of(
-                    Map.of("role","system", "content", config.getRolePrompt()),
-                    Map.of("role","user", "content", prompt.getString("prompt"))
-            );
-            prompt.put("messages", messages);
-        }
-
-        prompt.remove("prompt");
-        return new JSONObject(OpenAIRequest.doRequest(config.getApiUrl(),"POST",config.getApiKey(),prompt));
+    @VisibleForTesting
+    String doRequest(final String urlIn,
+                     final String method,
+                     final String openAiAPIKey,
+                     final JSONObject json) {
+        return OpenAIRequest.doRequest(urlIn, method, openAiAPIKey, json);
     }
 }
