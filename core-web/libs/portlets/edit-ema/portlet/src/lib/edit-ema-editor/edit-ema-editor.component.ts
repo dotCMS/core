@@ -246,17 +246,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.handlePostMessage(event)?.();
             });
 
-        this.store.inlineEditingState$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter(({ mode, state }) => {
-                    return state === EDITOR_STATE.IDLE && mode === EDITOR_MODE.INLINE_EDITING;
-                })
-            )
-            .subscribe(() => {
-                this.inlineEditingService.initEditor();
-            });
-
         // In VTL Page if user click in a link in the page, we need to update the URL in the editor
         this.store.vtlIframePage$
             .pipe(
@@ -276,26 +265,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     fromEvent(win, 'click').subscribe((e: MouseEvent) => {
                         this.handleInternalNav(e);
 
-                        const { dataset } = e.target as HTMLElement;
-                        if (isEnterprise && dataset.mode) {
-                            // //Maybe remove this later.
-                            // e.stopPropagation();
-                            // e.preventDefault();
-                            this.inlineEditingService.handleInlineEdit(
-                                dataset as unknown as InlineEditingContentletDataset
-                            );
-                            this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
-                            // this.inlineEditingService.handleInlineEdit(e);
+                        if (isEnterprise) {
+                            this.handleInlineEditing(e);
                         }
                     });
                 });
             });
-
-        // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
-        // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
-        // this.store.updateEditorState(EDITOR_STATE.LOADING);
     }
 
+    /**
+     * Handles internal navigation by preventing the default behavior of the click event,
+     * updating the query parameters, and opening external links in a new tab.
+     *
+     * @param e - The MouseEvent object representing the click event.
+     */
     handleInternalNav(e: MouseEvent) {
         const href =
             (e.target as HTMLAnchorElement).href ||
@@ -317,6 +300,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             // Open external links in a new tab
             this.window.open(href, '_blank');
         }
+    }
+
+    /**
+     * Handles the inline editing functionality triggered by a mouse event.
+     * @param e - The mouse event that triggered the inline editing.
+     */
+    handleInlineEditing(e: MouseEvent) {
+        const { dataset } = e.target as HTMLElement;
+        if (!dataset.mode) {
+            return;
+        }
+
+        this.inlineEditingService.handleInlineEdit(
+            dataset as unknown as InlineEditingContentletDataset
+        );
+        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
     }
 
     /**
@@ -351,8 +350,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {string} clientHost
      * @memberof EditEmaEditorComponent
      */
-    onIframePageLoad() {
+    onIframePageLoad(editorMode: EDITOR_MODE) {
         this.store.updateEditorState(EDITOR_STATE.IDLE);
+
+        //The iframe is loaded after copy contentlet to inline editing.
+        if (editorMode === EDITOR_MODE.INLINE_EDITING) {
+            this.inlineEditingService.initEditor();
+        }
     }
 
     /**
@@ -770,20 +774,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                         this.inlineEditingService.setTargetInlineMCEDataset(updatedDataset);
                         if (!res.dataset) {
-                            // Se copió el contentlet. Se debe recargar la página para actualizar los containers.
                             this.store.reload({
                                 params: this.queryParams,
                                 whenReloaded: () => {
-                                    setTimeout(() => {
-                                        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
-                                    }, 100);
+                                    this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
                                 }
                             });
 
                             return;
                         }
 
-                        // this.inlineEditingService.setTargetInlineMCEDataset(updatedDataset);
                         this.inlineEditingService.initEditor();
                         this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
                     });

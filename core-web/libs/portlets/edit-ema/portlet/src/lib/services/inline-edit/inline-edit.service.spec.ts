@@ -26,16 +26,6 @@ describe('InlineEditService', () => {
         expect(style).toBeTruthy();
     });
 
-    // it('should handle inline edit events', () => {
-    //     const editorMock = {
-    //         on: jest.fn()
-    //     };
-
-    //     spectator.service.handleInlineEditEvents(editorMock);
-
-    //     expect(editorMock.on).toHaveBeenCalledWith('blur', jest.any(Function));
-    // });
-
     it('should check if contentlet is in multiple pages', () => {
         const dataset: InlineEditingContentletDataset = {
             inode: '123',
@@ -85,6 +75,4 @@ describe('InlineEditService', () => {
 
         expect(spectator.service['iframeWindow']()).toBe(iframeWindowMock);
     });
-
-    // Add more tests for other methods here
 });

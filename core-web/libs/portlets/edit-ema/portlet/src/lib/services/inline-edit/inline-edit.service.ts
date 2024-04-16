@@ -12,8 +12,8 @@ declare global {
     providedIn: 'root'
 })
 export class InlineEditService {
-    private iframeWindow = signal<Window | null>(null);
-    private inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
+    private $iframeWindow = signal<Window | null>(null);
+    private $inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
 
     private DEFAULT_TINYMCE_CONFIG = {
         menubar: false,
@@ -54,9 +54,15 @@ export class InlineEditService {
         }
     };
 
+    /**
+     * Injects the inline edit functionality into the specified iframe.
+     *
+     * @param {ElementRef<HTMLIFrameElement>} iframe - The ElementRef of the HTMLIFrameElement to inject the inline edit into.
+     * @memberof InlineEditService
+     */
     injectInlineEdit(iframe: ElementRef<HTMLIFrameElement>): void {
         const doc = iframe.nativeElement.contentDocument;
-        this.iframeWindow.set(iframe.nativeElement.contentWindow);
+        this.$iframeWindow.set(iframe.nativeElement.contentWindow);
 
         if (!doc.querySelector('script[data-inline="true"]')) {
             const script = doc.createElement('script');
@@ -77,28 +83,22 @@ export class InlineEditService {
         }
     }
 
+    /**
+     * Handles the inline editing of a contentlet dataset.
+     * If the dataset is part of multiple pages, it sends a message to the parent window to copy the contentlet for inline editing.
+     * Otherwise, it initializes the editor.
+     *
+     * @param dataset - The contentlet dataset to be edited inline.
+     */
     handleInlineEdit(dataset: InlineEditingContentletDataset): void {
-        // const { target } = this.targetTinyMCE();
-        // const { dataset } = target;
+        this.$inlineEditingTargetDataset.set(dataset);
 
-        // // if the mode is falsy we do not initialize tinymce.
-        // if (!dataset.mode) {
-        //     return;
-        // }
-
-        // console.log(dataset);
-
-        // this.targetTinyMCE().stopPropagation();
-        // this.targetTinyMCE().preventDefault();
-
-        this.inlineEditingTargetDataset.set(dataset);
-
-        if (this.isInMultiplePages(this.inlineEditingTargetDataset())) {
+        if (this.isInMultiplePages(this.$inlineEditingTargetDataset())) {
             window.parent.postMessage(
                 {
                     action: 'copy-contentlet-inline-editing',
                     payload: {
-                        dataset: { ...this.inlineEditingTargetDataset() }
+                        dataset: { ...this.$inlineEditingTargetDataset() }
                     }
                 },
                 '*'
@@ -110,12 +110,15 @@ export class InlineEditService {
         this.initEditor();
     }
 
+    /**
+     * Initializes the editor for inline editing.
+     */
     initEditor() {
-        const dataset = this.inlineEditingTargetDataset();
+        const dataset = this.$inlineEditingTargetDataset();
 
         const dataSelector = `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`;
 
-        this.iframeWindow()
+        this.$iframeWindow()
             .tinymce.init({
                 ...this.TINYCME_CONFIG[dataset.mode || 'minimal'],
                 selector: dataSelector
@@ -125,35 +128,14 @@ export class InlineEditService {
             });
     }
 
-    replaceContentletONCopy({
-        oldInode,
-        newInode,
-        newIdentifier
-    }: {
-        oldInode: string;
-        newInode: string;
-        newIdentifier: string;
-    }) {
-        const contentlet = this.iframeWindow().document.querySelector(
-            `[data-dot-inode='${oldInode}']`
-        );
-        if (!contentlet) {
-            return;
-        }
-
-        contentlet.setAttribute('data-dot-inode', newInode);
-        contentlet.setAttribute('data-dot-identifier', newIdentifier);
-        contentlet.setAttribute('data-dot-on-number-of-pages', '1');
-
-        const editorElement = contentlet.querySelector('[data-inode]');
-        editorElement?.setAttribute('data-inode', newInode);
-    }
-
+    /**
+     * Handles inline edit events for the editor.
+     *
+     * @param {Editor} editor - The editor instance.
+     */
     handleInlineEditEvents(editor) {
         editor.on('blur', (e) => {
             const { target: ed, type: eventType } = e;
-            // console.log(e);
-
             const dataset = ed.targetElm.dataset;
             const container = ed.bodyElement.closest('[data-dot-object="container"]');
 
@@ -170,16 +152,6 @@ export class InlineEditService {
                 ed.bodyElement.classList.remove('active');
             }
 
-            // if (eventType === 'blur') {
-            //     e.stopImmediatePropagation();
-            //     ed.destroy(false);
-            // }
-
-            // ed.destroy();
-
-            // window.tinymce.remove(target.id);
-            // this.iframeWindow()?.tinymce.remove(target.id);
-
             const content = ed.getContent();
             const element = ed.target;
             const data = {
@@ -190,8 +162,6 @@ export class InlineEditService {
                 isNotDirty: ed.isNotDirty
             };
 
-            // if (eventType === 'blur' && !ed.isNotDirty) {
-            //To save the contentlet
             window.parent.postMessage(
                 {
                     action: 'update-contentlet-inline-editing',
@@ -199,17 +169,6 @@ export class InlineEditService {
                 },
                 '*'
             );
-            // }
-
-            // if (eventType === 'blur' && ed.isNotDirty) {
-            //     window.parent.postMessage(
-            //         {
-            //             action: 'update-contentlet-inline-editing',
-            //             payload: null
-            //         },
-            //         '*'
-            //     );
-            // }
 
             if (eventType === 'blur') {
                 e.stopImmediatePropagation();
@@ -218,8 +177,14 @@ export class InlineEditService {
         });
     }
 
+    /**
+     * Checks if the given contentlet dataset is present in multiple pages.
+     *
+     * @param dataset - The dataset containing the contentlet information.
+     * @returns A boolean indicating whether the contentlet is present in multiple pages.
+     */
     isInMultiplePages(dataset: InlineEditingContentletDataset) {
-        const targetElement = this.iframeWindow().document.querySelector(
+        const targetElement = this.$iframeWindow().document.querySelector(
             `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`
         );
 
@@ -229,10 +194,10 @@ export class InlineEditService {
     }
 
     setTargetInlineMCEDataset(dataset: InlineEditingContentletDataset) {
-        this.inlineEditingTargetDataset.set(dataset);
+        this.$inlineEditingTargetDataset.set(dataset);
     }
 
     setIframeWindow(iframeWindow: Window) {
-        this.iframeWindow.set(iframeWindow);
+        this.$iframeWindow.set(iframeWindow);
     }
 }
