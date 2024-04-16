@@ -4,6 +4,7 @@ import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.ContentComparator;
 import com.dotcms.contenttype.model.type.ContentType;
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 import javax.enterprise.context.Dependent;
@@ -23,8 +24,8 @@ public class ContentTypeComparator implements ContentComparator<ContentType> {
 
     @ActivateRequestContext
     @Override
-    public Optional<ContentType> findMatchingServerContent(ContentType localContentType,
-            List<ContentType> serverContents) {
+    public Optional<ContentType> findMatchingServerContent(File localFile,
+            ContentType localContentType, List<ContentType> serverContents) {
 
         // Compare by identifier first.
         var result = findById(localContentType.id(), serverContents);
@@ -40,7 +41,7 @@ public class ContentTypeComparator implements ContentComparator<ContentType> {
 
     @ActivateRequestContext
     @Override
-    public Optional<ContentType> localContains(ContentType serverContent,
+    public boolean existMatchingLocalContent(ContentType serverContent, List<File> localFiles,
             List<ContentType> localSites) {
 
         // Compare by identifier first.
@@ -52,7 +53,7 @@ public class ContentTypeComparator implements ContentComparator<ContentType> {
             result = findByVarName(serverContent.variable(), localSites);
         }
 
-        return result;
+        return result.isPresent();
     }
 
     @ActivateRequestContext
