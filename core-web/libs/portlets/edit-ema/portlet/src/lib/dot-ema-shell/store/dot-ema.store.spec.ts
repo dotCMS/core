@@ -69,7 +69,8 @@ describe('EditEmaStore', () => {
                             return of({});
                         },
                         save: jest.fn(),
-                        getFormIndetifier: jest.fn()
+                        getFormIndetifier: jest.fn(),
+                        saveContentlet: jest.fn()
                     }
                 },
                 {
@@ -735,6 +736,27 @@ describe('EditEmaStore', () => {
                     detail: 'editpage.content.add.already.message',
                     life: 2000
                 });
+            });
+
+            it('should update inline edited contentlet', () => {
+                const payload = {
+                    contentlet: {
+                        body: '',
+                        inode: '123'
+                    }
+                };
+                const dotPageApiService = spectator.inject(DotPageApiService);
+                jest.spyOn(dotPageApiService, 'saveContentlet').mockReturnValue(of({}));
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+                spectator.service.updateInlineEditedContentlet(payload);
+
+                expect(dotPageApiService.saveContentlet).toHaveBeenCalledWith(payload);
             });
         });
     });

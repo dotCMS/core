@@ -359,7 +359,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     ),
                                     life: 2000
                                 });
-                                this.setEditorMode(EDITOR_MODE.INLINE_EDITING);
+                                this.setEditorMode(EDITOR_MODE.EDIT);
                             },
                             (e) => {
                                 console.error(e);
