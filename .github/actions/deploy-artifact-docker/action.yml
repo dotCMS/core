@@ -106,7 +106,7 @@ runs:
         # Determine REF_TO_USE based on USE_REF
         REF_TO_USE=""
         if [[ "$USE_REF" == "true" && -n "$REF" ]]; then
-        REF_TO_USE="$REF"
+          REF_TO_USE="$REF"
         fi
         
         # Determine RESULT based on REF_TO_USE and VERSION
