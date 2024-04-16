@@ -2,7 +2,6 @@ package com.dotcms;
 
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
-import com.dotcms.rendering.velocity.services.ContainerLoaderTest;
 import com.dotcms.storage.Chainable404StorageCacheTest;
 import com.dotcms.storage.FileStorageAPITest;
 import com.dotmarketing.common.db.DotConnectTest;
@@ -79,8 +78,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class,
         QuartzUtilsTest.class,
         DotConnectTest.class,
-        com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
-        ContainerLoaderTest.class
+        com.dotcms.contenttype.model.field.layout.FieldUtilTest.class
 })
 
 public class MainSuite1b {

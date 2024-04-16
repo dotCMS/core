@@ -29,5 +29,9 @@
         .pi.warning {
             color: $color-alert-yellow;
         }
+
+        span {
+            text-wrap: nowrap;
+        }
     }
 }

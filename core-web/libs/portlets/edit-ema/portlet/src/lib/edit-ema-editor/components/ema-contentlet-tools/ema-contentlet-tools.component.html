@@ -9,7 +9,7 @@
     (click)="setPositionFlag('after'); menu.toggle($event)"
     data-testId="add-bottom-button"
     icon="pi pi-plus"></p-button>
-<p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
+<p-menu #menu [model]="items" [popup]="true" appendTo="body" data-testId="menu-add"></p-menu>
 
 <div
     class="actions"

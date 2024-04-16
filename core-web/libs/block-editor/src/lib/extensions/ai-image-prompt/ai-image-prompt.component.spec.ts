@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
+import { ConfirmationService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
 import { AIImagePromptComponent } from './ai-image-prompt.component';
@@ -17,6 +18,7 @@ import {
 describe('AIImagePromptComponent', () => {
     let spectator: Spectator<AIImagePromptComponent>;
     let store: DotAiImagePromptStore;
+    let confirmationService: ConfirmationService;
 
     const imagesMock: DotGeneratedAIImage[] = [
         { name: 'image1', url: 'image_url' },
@@ -48,6 +50,7 @@ describe('AIImagePromptComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         store = spectator.inject(DotAiImagePromptStore);
+        confirmationService = spectator.inject(ConfirmationService);
     });
 
     it('should hide dialog', () => {
@@ -82,5 +85,13 @@ describe('AIImagePromptComponent', () => {
         const dialog = spectator.query(Dialog);
         dialog.onHide.emit('true');
         expect(store.cleanError).toHaveBeenCalled();
+    });
+
+    it('should call confirm dialog when try to close dialog', () => {
+        const closeBtn = spectator.query(byTestId('close-btn'));
+        jest.spyOn(confirmationService, 'confirm');
+
+        spectator.click(closeBtn);
+        expect(confirmationService.confirm).toHaveBeenCalled();
     });
 });
