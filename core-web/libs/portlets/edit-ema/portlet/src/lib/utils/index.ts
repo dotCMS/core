@@ -98,8 +98,7 @@ export function areContainersEquals(
 ): boolean {
     return (
         currentContainer.identifier === containerToFind.identifier &&
-        //TODO: Remove toString.
-        currentContainer.uuid === containerToFind.uuid.toString()
+        currentContainer.uuid === containerToFind.uuid
     );
 }
 
