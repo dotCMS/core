@@ -75,6 +75,7 @@
 
     .content-history {
         display: flex;
+        height: 100%;
         padding: $spacing-1;
         flex-direction: column;
         align-items: flex-start;
@@ -84,6 +85,16 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        user-select: none;
+
+        &,
+        & > * {
+            cursor: pointer;
+        }
+
+        &:hover {
+            background: $color-palette-primary-100;
+        }
 
         label {
             width: 100%;

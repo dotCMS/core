@@ -1,13 +1,16 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-import { DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 
 /*
  * Custom Pipe that returns the relative date.
  */
 @Pipe({ name: 'dotRelativeDate', standalone: true })
 export class DotRelativeDatePipe implements PipeTransform {
-    constructor(private dotFormatDateService: DotFormatDateService) {}
+    constructor(
+        private dotFormatDateService: DotFormatDateService,
+        private readonly dotMessageService: DotMessageService
+    ) {}
 
     transform(
         time: string | number = new Date().getTime(),
@@ -35,6 +38,10 @@ export class DotRelativeDatePipe implements PipeTransform {
         );
 
         const showTimeStamp = timeStampAfter ? Math.abs(diffTime) > timeStampAfter : false;
+
+        if (diffTime === 0 && !showTimeStamp) {
+            return this.dotMessageService.get('Now');
+        }
 
         return showTimeStamp
             ? this.dotFormatDateService.format(finalDate, format)
