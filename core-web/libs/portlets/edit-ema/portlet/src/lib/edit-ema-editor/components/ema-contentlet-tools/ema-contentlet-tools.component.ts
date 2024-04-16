@@ -101,7 +101,9 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
 
         if (
             changes.contentlet.currentValue?.payload.contentlet.identifier !==
-            changes.contentlet.previousValue?.payload.contentlet.identifier
+                changes.contentlet.previousValue?.payload.contentlet.identifier ||
+            changes.contentlet.currentValue?.payload.container.uuid !==
+                changes.contentlet.previousValue?.payload.container.uuid
         ) {
             this.hideMenus();
         }
