@@ -71,7 +71,10 @@ import {
     VTLFile,
     ContentletDragPayload,
     DeletePayload,
-    InsertPayloadFromDelete
+    InsertPayloadFromDelete,
+    DragDataset,
+    DragDatasetItem,
+    ContentTypeDragPayload
 } from '../shared/models';
 import {
     areContainersEquals,
@@ -189,14 +192,56 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.handleReloadContent();
 
-        // fromEvent(this.window, 'dragover')
-        //     .pipe(takeUntil(this.destroy$))
-        //     .subscribe((event: DragEvent) => {
-        //         event.preventDefault();
-        //         console.log(event);
+        fromEvent(this.window, 'dragstart')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((event: DragEvent) => {
+                const dataset = (event.target as HTMLDivElement).dataset as unknown as DragDataset;
 
-        //         this.store.updateEditorState(EDITOR_STATE.DRAGGING);
-        //     });
+                const parsedItem = JSON.parse(dataset.item) as DragDatasetItem;
+
+                const { contentType, contentlet, container, move } = parsedItem;
+
+                if (dataset.type === 'content-type') {
+                    this.store.setDragItem({
+                        baseType: contentType.baseType,
+                        contentType: contentType.variable,
+                        draggedPayload: {
+                            item: {
+                                variable: contentType.variable,
+                                name: contentType.name
+                            },
+                            type: dataset.type,
+                            move
+                        } as ContentTypeDragPayload
+                    });
+                } else {
+                    this.store.setDragItem({
+                        baseType: contentlet.baseType,
+                        contentType: contentlet.contentType,
+                        draggedPayload: {
+                            item: {
+                                contentlet,
+                                container
+                            },
+                            type: dataset.type,
+                            move
+                        } as ContentletDragPayload
+                    });
+                }
+
+                this.iframe.nativeElement.contentWindow?.postMessage(
+                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+                    this.host
+                );
+            });
+
+        fromEvent(this.window, 'dragend')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((event: DragEvent) => {
+                if (event.dataTransfer.dropEffect === 'none') {
+                    this.store.updateEditorState(EDITOR_STATE.IDLE);
+                }
+            });
 
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
@@ -317,78 +362,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.updateQueryParams({
             language_id
         });
-    }
-
-    /**
-     * Move contentlet to a new position
-     *
-     * @param {ActionPayload} item
-     * @memberof EditEmaEditorComponent
-     */
-    moveContentlet(item: ActionPayload) {
-        this.store.setDragItem({
-            baseType: 'CONTENT',
-            contentType: item.contentlet.contentType,
-            draggedPayload: {
-                type: 'contentlet',
-                item: {
-                    container: item.container,
-                    contentlet: item.contentlet
-                },
-                move: true
-            }
-        });
-
-        this.iframe.nativeElement.contentWindow?.postMessage(
-            NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-            this.host
-        );
-    }
-
-    /**
-     * Handle palette start drag event
-     *
-     * @param {DragEvent} event
-     * @memberof EditEmaEditorComponent
-     */
-    onDragStart(event: DragEvent) {
-        const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
-            ContentletDragPayload,
-            'type'
-        > & {
-            item: string;
-        };
-
-        // See if you can determinate the type of the item and with that create one pipeline of drag and drop
-
-        const item = JSON.parse(dataset.item);
-
-        this.store.setDragItem({
-            baseType: item.baseType,
-            contentType: item.contentType,
-            draggedPayload: {
-                item,
-                type: dataset.type,
-                move: false
-            }
-        });
-
-        this.iframe.nativeElement.contentWindow?.postMessage(
-            NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-            this.host
-        );
-    }
-
-    /**
-     * Reset rows when user stop dragging
-     *
-     * @memberof EditEmaEditorComponent
-     */
-    onDragEnd(event: DragEvent) {
-        // If the dropEffect is none then the user didn't drop the item in the dropzone
-        if (event.dataTransfer.dropEffect === 'none') {
-            this.store.updateEditorState(EDITOR_STATE.IDLE);
-        }
     }
 
     /**

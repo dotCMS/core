@@ -63,7 +63,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: contentletAreaMock
+                        contentletArea: contentletAreaMock
                     }
                 }))
         );
@@ -254,7 +254,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             width: 180
                         }
@@ -290,7 +290,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             width: 180,
                             payload: {
@@ -323,7 +323,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             payload: {
                                 ...contentletAreaMock.payload,

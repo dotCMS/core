@@ -53,6 +53,7 @@ export interface ContentletPayload {
     inode: string;
     title: string;
     contentType: string;
+    baseType?: string;
     onNumberOfPages?: number;
 }
 
@@ -143,6 +144,21 @@ export interface ContentletDragPayload extends BasePayload {
     item: {
         container?: ContainerPayload;
         contentlet: ContentletPayload;
+    };
+    move: boolean;
+}
+
+export interface DragDataset extends BasePayload {
+    item: string;
+}
+
+export interface DragDatasetItem {
+    container?: ContainerPayload;
+    contentlet?: ContentletPayload;
+    contentType?: {
+        variable: string;
+        name: string;
+        baseType: string;
     };
     move: boolean;
 }

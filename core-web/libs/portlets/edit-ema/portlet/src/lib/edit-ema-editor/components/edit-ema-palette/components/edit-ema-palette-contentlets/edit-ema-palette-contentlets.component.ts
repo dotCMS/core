@@ -47,8 +47,6 @@ export class EditEmaPaletteContentletsComponent implements OnInit, OnDestroy {
     @Input() contentlets;
     @Input() paletteStatus: EditEmaPaletteStoreStatus;
 
-    @Output() dragStart = new EventEmitter();
-    @Output() dragEnd = new EventEmitter();
     @Output() paginate = new EventEmitter();
     @Output() showContentTypes = new EventEmitter();
     @Output() search = new EventEmitter<string>();

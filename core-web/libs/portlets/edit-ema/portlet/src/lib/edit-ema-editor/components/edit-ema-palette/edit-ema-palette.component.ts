@@ -4,11 +4,9 @@ import { AsyncPipe, NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
     Input,
     OnDestroy,
     OnInit,
-    Output,
     inject
 } from '@angular/core';
 
@@ -37,9 +35,6 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     @Input() languageId: number;
     @Input() containers: DotPageContainerStructure;
 
-    @Output() dragStart = new EventEmitter();
-    @Output() dragEnd = new EventEmitter();
-
     private readonly store = inject(DotPaletteStore);
     private destroy$ = new Subject<void>();
 
@@ -49,22 +44,6 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.store.loadAllowedContentTypes({ containers: this.containers });
-    }
-
-    /**
-     * Event handler for the drag start event.
-     * @param event The drag event.
-     */
-    onDragStart(event: DragEvent) {
-        this.dragStart.emit(event);
-    }
-
-    /**
-     * Handles the drag end event.
-     * @param event The drag event.
-     */
-    onDragEnd(event: DragEvent) {
-        this.dragEnd.emit(event);
     }
 
     /**

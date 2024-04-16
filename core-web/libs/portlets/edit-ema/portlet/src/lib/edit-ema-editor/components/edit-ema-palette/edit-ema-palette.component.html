@@ -5,9 +5,7 @@
         [filter]="vm.contenttypes.filter"
         [paletteStatus]="vm.status"
         (search)="loadContentTypes($event, vm.allowedTypes)"
-        (showContentlets)="showContentletsFromContentType($event)"
-        (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)" />
+        (showContentlets)="showContentletsFromContentType($event)" />
 
     <dot-edit-ema-palette-contentlets
         *ngIf="vm.currentPaletteType === PALETTE_TYPES_ENUM.CONTENTLET"
@@ -15,7 +13,5 @@
         [paletteStatus]="vm.status"
         (paginate)="onPaginate($event)"
         (search)="loadContentlets($event, vm.currentContentType)"
-        (showContentTypes)="showContentTypes()"
-        (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)" />
+        (showContentTypes)="showContentTypes()" />
 </ng-container>
