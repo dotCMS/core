@@ -15,6 +15,9 @@ on:
       deploy-dev-image:
         default: false
         type: boolean
+      publish-npm-package:
+        default: false
+        type: boolean
     secrets:
         DOCKER_USERNAME:
           required: false
@@ -31,6 +34,9 @@ on:
         DEVELOPERS_SLACK_WEBHOOK:
           required: false
           description: 'Slack webhook for developers'
+        NPM_TOKEN:
+          required: false
+          description: 'NPM token'
 jobs:
   deployment:
     runs-on: ubuntu-latest
@@ -99,3 +105,14 @@ jobs:
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
           SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *master* with tags: [${{ steps.docker_build.outputs.tags }}] :docker:"
+
+  publish:
+    name: Publish
+    if: inputs.publish-npm-package
+    needs: [ deployment ]
+    uses: ./.github/workflows/cli-npm-build.yml
+    secrets:
+      npm-token: ${{ secrets.NPM_TOKEN }}
+    permissions:
+      contents: read
+      packages: write
