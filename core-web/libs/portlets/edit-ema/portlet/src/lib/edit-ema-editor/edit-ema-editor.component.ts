@@ -337,7 +337,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addCustomStyles(rendered = ''): string {
-        const styles = ` <style>
+        const styles = `<style>
         .container-notes {
             opacity: 0;
         }
