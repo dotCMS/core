@@ -26,6 +26,11 @@ export enum CUSTOMER_ACTIONS {
      */
     PING_EDITOR = 'ping-editor',
 
+    /**
+     * Tell the editor to trigger a menu reorder
+     */
+    REORDER_MENU = 'reorder-menu',
+
     NOOP = 'noop'
 }
 
