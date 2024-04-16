@@ -55,4 +55,10 @@ public abstract class LanguageCache implements Cachable{
      * will NOT clear the individual languages already in cache.
      */
     public abstract void clearLanguages();
+
+    /**
+     * Removes the default language stored under the key DEFAULT_LANGUAGE
+     */
+    public abstract void clearDefaultLanguage();
+
 }
