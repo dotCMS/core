@@ -239,6 +239,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     handleDragEvents() {
+        // We cannot listen to dragstart for temp items because the dragstart event is not triggered
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
@@ -282,6 +283,35 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 );
             });
 
+        fromEvent(this.window, 'dragenter')
+            .pipe(
+                takeUntil(this.destroy$),
+
+                // This is triggered everytime the user enters an element, I just want to trigger it when we don't have a drag item
+                switchMap((event) =>
+                    this.dragItem$.pipe(
+                        take(1),
+                        filter((dragItem) => !dragItem),
+                        map(() => event)
+                    )
+                )
+            )
+            .subscribe(() => {
+                // Set the temp item to be dragged, which is the outsider file
+                this.store.setDragItem({
+                    baseType: 'Image',
+                    contentType: 'Image',
+                    draggedPayload: {
+                        type: 'temp'
+                    }
+                });
+
+                this.iframe.nativeElement.contentWindow?.postMessage(
+                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+                    this.host
+                );
+            });
+
         fromEvent(this.window, 'dragend')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
@@ -302,14 +332,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 switchMap((event) =>
                     this.dragItem$.pipe(
                         take(1),
-                        filter((dragItem) => dragItem.draggedPayload.type === 'temp'),
+                        filter((dragItem) => dragItem.draggedPayload.type === 'temp'), // I just want to trigger this when is a temp item
                         map(() => event)
                     )
                 )
             )
             .subscribe((event: DragEvent) => {
                 event.preventDefault(); // Prevent file opening
-                this.store.updateEditorState(EDITOR_STATE.IDLE);
+                this.store.updateEditorState(EDITOR_STATE.IDLE); // I will probably delete this when I process the image
             });
 
         fromEvent(this.window, 'dragleave')
@@ -318,34 +348,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((event: DragEvent) => !event.x && !event.y) // Just reset when is out of the window
             )
             .subscribe(() => {
-                // event.preventDefault(); // Prevent file opening
                 this.store.updateEditorState(EDITOR_STATE.IDLE);
-            });
-
-        fromEvent(this.window, 'dragenter')
-            .pipe(
-                takeUntil(this.destroy$),
-                switchMap((event) =>
-                    this.dragItem$.pipe(
-                        take(1),
-                        filter((dragItem) => !dragItem),
-                        map(() => event)
-                    )
-                )
-            )
-            .subscribe(() => {
-                this.store.setDragItem({
-                    baseType: 'Image',
-                    contentType: 'Image',
-                    draggedPayload: {
-                        type: 'temp'
-                    }
-                });
-
-                this.iframe.nativeElement.contentWindow?.postMessage(
-                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-                    this.host
-                );
             });
     }
 
