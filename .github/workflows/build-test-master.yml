@@ -84,18 +84,16 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize,sonar,deployment ]
+    needs: [ initialize, build, build-cli, test, sonar, deployment]
     uses: ./.github/workflows/reusable-finalize.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      needsData: ${{ toJson(needs) }}
   report:
     name: Report
     if: always()
     needs: [ finalize ]
     uses: ./.github/workflows/build-report.yml
-    with:
-      slack-failure: true
     secrets:
-      MASTER_BUILD_SLACK_WEBHOOK: ${{ secrets.MASTER_BUILD_SLACK_WEBHOOK }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
