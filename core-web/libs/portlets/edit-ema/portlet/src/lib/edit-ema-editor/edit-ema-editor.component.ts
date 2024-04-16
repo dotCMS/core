@@ -194,7 +194,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         //     .subscribe((event: DragEvent) => {
         //         event.preventDefault();
         //         console.log(event);
-        //         console.log('YOU ARE DRAGGING BOIIII');
 
         //         this.store.updateEditorState(EDITOR_STATE.DRAGGING);
         //     });
@@ -360,9 +359,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             item: string;
         };
 
-        const item = JSON.parse(dataset.item);
+        // See if you can determinate the type of the item and with that create one pipeline of drag and drop
 
-        // Make this a store method
+        const item = JSON.parse(dataset.item);
 
         this.store.setDragItem({
             baseType: item.baseType,
@@ -400,8 +399,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onPlaceItem(positionPayload: PositionPayload, dragItem: EmaDragItem): void {
-        // When you move the dragItem to the store, you can get it here from params
-
         let payload = this.getPageSavePayload(positionPayload);
 
         const destinationContainer = payload.container;
