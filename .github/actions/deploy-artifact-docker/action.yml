@@ -24,11 +24,8 @@ inputs:
   ref:
     description: 'The branch or type of build to tag the image with'
     required: true
-  snapshot:
-    description: 'tag the image as a snapshot'
-    default: 'false'
   latest:
-    description: 'Tag the image as latest'
+    description: 'If true, the image will be tagged as latest, usually reserved for the agile release e.g. dotcms/dotcms:latest'
     default: 'false'
   do_deploy:
     description: 'Actually do the final deploy, set to false for testing'
@@ -89,7 +86,6 @@ runs:
       shell: bash
       id: set-common-vars
       env:
-        SNAPSHOT: ${{ inputs.snapshot }}
         LATEST: ${{ inputs.latest }}
         REF: ${{ inputs.ref }}
       run: |
@@ -99,18 +95,9 @@ runs:
           tag_prefix="${REF}_"
         fi
         
-        # Now use environment variables instead of GitHub Actions expressions
-        if [ "$SNAPSHOT" = "true" ] && [ "$LATEST" = "true" ]; then
-          latest_snapshot="true"
-        else
-          latest_snapshot="false"
-        fi
-        
         echo "FULL_TAGS_OUTPUT<<EOF" >> $GITHUB_ENV
           echo "type=raw,value=${tag_prefix}{{sha}},enable=true" >> $GITHUB_ENV
           echo "type=raw,value=${tag_prefix}latest,enable=$LATEST" >> $GITHUB_ENV
-          echo "type=raw,value=${tag_prefix}SNAPSHOT,enable=$SNAPSHOT" >> $GITHUB_ENV
-          echo "type=raw,value=${tag_prefix}latest_SNAPSHOT,enable=${latest_snapshot}" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
     - name: Docker.io login
