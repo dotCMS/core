@@ -60,17 +60,9 @@ import {
     EmaDragItem,
     ClientContentletArea,
     Container,
-    CopyContentletPayload,
     UpdatedContentlet,
-    ContentletDataset
+    InlineEditingContentletDataset
 } from './components/ema-page-dropzone/types';
-import {
-    // handleInlineEdit,
-    handleInternalNav
-    // initEditor,
-    // injectInlineEdit,
-    // replaceContentletONCopy
-} from './utils/inline-edit';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
@@ -254,6 +246,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.handlePostMessage(event)?.();
             });
 
+        this.store.inlineEditingState$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter(({ mode, state }) => {
+                    return state === EDITOR_STATE.IDLE && mode === EDITOR_MODE.INLINE_EDITING;
+                })
+            )
+            .subscribe(() => {
+                this.inlineEditingService.initEditor();
+            });
+
         // In VTL Page if user click in a link in the page, we need to update the URL in the editor
         this.store.vtlIframePage$
             .pipe(
@@ -264,25 +267,56 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 requestAnimationFrame(() => {
                     // const doc = this.iframe.nativeElement.contentDocument;
                     const win = this.iframe.nativeElement.contentWindow;
+                    this.inlineEditingService.setIframeWindow(win);
 
                     if (isEnterprise) {
                         this.inlineEditingService.injectInlineEdit(this.iframe);
                     }
 
-                    fromEvent(win, 'click')
-                        // .pipe(tap((e) => console.log(e)))
-                        .subscribe((e: MouseEvent) => {
-                            handleInternalNav(e);
-                            if (isEnterprise) {
-                                this.inlineEditingService.handleInlineEdit(e);
-                            }
-                        });
+                    fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+                        this.handleInternalNav(e);
+
+                        const { dataset } = e.target as HTMLElement;
+                        if (isEnterprise && dataset.mode) {
+                            // //Maybe remove this later.
+                            // e.stopPropagation();
+                            // e.preventDefault();
+                            this.inlineEditingService.handleInlineEdit(
+                                dataset as unknown as InlineEditingContentletDataset
+                            );
+                            this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
+                            // this.inlineEditingService.handleInlineEdit(e);
+                        }
+                    });
                 });
             });
 
         // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
         // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
         // this.store.updateEditorState(EDITOR_STATE.LOADING);
+    }
+
+    handleInternalNav(e: MouseEvent) {
+        const href =
+            (e.target as HTMLAnchorElement).href ||
+            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement)?.href;
+
+        if (href) {
+            e.preventDefault();
+            const url = new URL(href);
+
+            // Check if the URL is not external
+            if (url.hostname === window.location.hostname) {
+                this.updateQueryParams({
+                    url: url.pathname
+                });
+
+                return;
+            }
+
+            // Open external links in a new tab
+            this.window.open(href, '_blank');
+        }
     }
 
     /**
@@ -664,7 +698,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 | SetUrlPayload
                 | Container[]
                 | ClientContentletArea
-                | UpdatedContentlet
+                | UpdatedContentlet;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -711,8 +745,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 );
             },
 
-            'copy-contentlet-inline-editing': () => {
-                const payload = <{ dataset: ContentletDataset }>data.payload;
+            [CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: () => {
+                this.store.setEditorMode(EDITOR_MODE.EDIT);
+                const payload = <{ dataset: InlineEditingContentletDataset }>data.payload;
 
                 this.dotCopyContentModalService
                     .open()
@@ -726,7 +761,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         })
                     )
                     .subscribe((res: DotCMSContentlet) => {
-                        console.log("contentlet: ",res);
                         const updatedDataset = {
                             inode: res.inode || payload.dataset.inode,
                             fieldName: payload.dataset.fieldName,
@@ -734,29 +768,35 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             language: payload.dataset.language
                         };
 
+                        this.inlineEditingService.setTargetInlineMCEDataset(updatedDataset);
                         if (!res.dataset) {
-                            // Al agregar un contentlet después, esto falla.
-                            // this.inlineEditingService.replaceContentletONCopy({
-                            //     oldInode: payload.dataset.inode,
-                            //     newInode: res.inode,
-                            //     newIdentifier: res.identifier
-                            // });
+                            // Se copió el contentlet. Se debe recargar la página para actualizar los containers.
                             this.store.reload({
                                 params: this.queryParams,
                                 whenReloaded: () => {
-                                    setTimeout(() => {                                        
-                                        this.inlineEditingService.initEditor(updatedDataset)
-                                        console.log("Called initEditor");
-                                    }, 1000);
+                                    setTimeout(() => {
+                                        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
+                                    }, 100);
                                 }
-                            })
+                            });
+
+                            return;
                         }
 
-                        // this.inlineEditingService.initEditor(updatedDataset);
+                        // this.inlineEditingService.setTargetInlineMCEDataset(updatedDataset);
+                        this.inlineEditingService.initEditor();
+                        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
                     });
             },
-            'update-contentlet': () => {
+            [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
                 const payload = <UpdatedContentlet>data.payload;
+
+                if (!payload) {
+                    this.store.setEditorMode(EDITOR_MODE.EDIT);
+
+                    return;
+                }
+
                 this.store.updateInlineEditedContentlet({
                     contentlet: {
                         inode: payload.dataset['inode'],

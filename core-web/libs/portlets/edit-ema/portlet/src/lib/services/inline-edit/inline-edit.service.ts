@@ -1,5 +1,7 @@
 import { ElementRef, Injectable, signal } from '@angular/core';
 
+import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
+
 declare global {
     interface Window {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,6 +13,7 @@ declare global {
 })
 export class InlineEditService {
     private iframeWindow = signal<Window | null>(null);
+    private inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
 
     private DEFAULT_TINYMCE_CONFIG = {
         menubar: false,
@@ -74,24 +77,28 @@ export class InlineEditService {
         }
     }
 
-    handleInlineEdit(e: MouseEvent): void {
-        const target = e.target as HTMLElement;
-        const { dataset } = target;
+    handleInlineEdit(dataset: InlineEditingContentletDataset): void {
+        // const { target } = this.targetTinyMCE();
+        // const { dataset } = target;
 
-        // if the mode is falsy we do not initialize tinymce.
-        if (!dataset.mode) {
-            return;
-        }
+        // // if the mode is falsy we do not initialize tinymce.
+        // if (!dataset.mode) {
+        //     return;
+        // }
 
-        e.stopPropagation();
-        e.preventDefault();
+        // console.log(dataset);
 
-        if (this.isInMultiplePages(target)) {
+        // this.targetTinyMCE().stopPropagation();
+        // this.targetTinyMCE().preventDefault();
+
+        this.inlineEditingTargetDataset.set(dataset);
+
+        if (this.isInMultiplePages(this.inlineEditingTargetDataset())) {
             window.parent.postMessage(
                 {
                     action: 'copy-contentlet-inline-editing',
                     payload: {
-                        dataset: { ...dataset }
+                        dataset: { ...this.inlineEditingTargetDataset() }
                     }
                 },
                 '*'
@@ -100,22 +107,13 @@ export class InlineEditService {
             return;
         }
 
-        this.initEditor(dataset);
+        this.initEditor();
     }
 
-    initEditor(dataset: { [key: string]: string }) {
-        // console.log('Called initEditor, inode actual: ', {
-        //     dataset,
-        //     inode: dataset.inode,
-        //     element
-        // });
-        // debugger;
+    initEditor() {
+        const dataset = this.inlineEditingTargetDataset();
 
         const dataSelector = `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`;
-        // const dataSelector = `[data-inode="${dataset.inode}"]`;
-        // const iframeWindow = window //;editorElement.ownerDocument.defaultView;
-
-        // console.log(this.iframeWindow().tinymce);
 
         this.iframeWindow()
             .tinymce.init({
@@ -127,7 +125,15 @@ export class InlineEditService {
             });
     }
 
-    replaceContentletONCopy({ oldInode, newInode, newIdentifier }: { oldInode: string; newInode: string; newIdentifier: string }) {
+    replaceContentletONCopy({
+        oldInode,
+        newInode,
+        newIdentifier
+    }: {
+        oldInode: string;
+        newInode: string;
+        newIdentifier: string;
+    }) {
         const contentlet = this.iframeWindow().document.querySelector(
             `[data-dot-inode='${oldInode}']`
         );
@@ -184,31 +190,49 @@ export class InlineEditService {
                 isNotDirty: ed.isNotDirty
             };
 
+            // if (eventType === 'blur' && !ed.isNotDirty) {
+            //To save the contentlet
+            window.parent.postMessage(
+                {
+                    action: 'update-contentlet-inline-editing',
+                    payload: eventType === 'blur' && !ed.isNotDirty ? data : null
+                },
+                '*'
+            );
+            // }
 
-            if (eventType === 'blur' && !ed.isNotDirty) {
-                
-                
-                //To save the contentlet
-                window.parent.postMessage(
-                    {
-                        action: 'update-contentlet',
-                        payload: data
-                    },
-                    '*'
-                );
-            }
+            // if (eventType === 'blur' && ed.isNotDirty) {
+            //     window.parent.postMessage(
+            //         {
+            //             action: 'update-contentlet-inline-editing',
+            //             payload: null
+            //         },
+            //         '*'
+            //     );
+            // }
 
             if (eventType === 'blur') {
                 e.stopImmediatePropagation();
                 ed.destroy(false);
             }
-
         });
     }
 
-    isInMultiplePages(editorElement) {
-        const contentlet = editorElement.closest('[data-dot-object="contentlet"]');
+    isInMultiplePages(dataset: InlineEditingContentletDataset) {
+        const targetElement = this.iframeWindow().document.querySelector(
+            `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`
+        );
+
+        const contentlet = targetElement.closest('[data-dot-object="contentlet"]') as HTMLElement;
 
         return Number(contentlet.dataset.dotOnNumberOfPages || 0) > 1;
+    }
+
+    setTargetInlineMCEDataset(dataset: InlineEditingContentletDataset) {
+        this.inlineEditingTargetDataset.set(dataset);
+    }
+
+    setIframeWindow(iframeWindow: Window) {
+        this.iframeWindow.set(iframeWindow);
     }
 }

@@ -1,85 +1,90 @@
-import { TestBed } from '@angular/core/testing';
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-// import { ElementRef } from '@angular/core';
+import { ElementRef } from '@angular/core';
+
 import { InlineEditService } from './inline-edit.service';
 
+import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
+
 describe('InlineEditService', () => {
-    let service: InlineEditService;
+    let spectator: SpectatorService<InlineEditService>;
+    const createService = createServiceFactory(InlineEditService);
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({});
-        service = TestBed.inject(InlineEditService);
+    beforeEach(() => (spectator = createService()));
+
+    it('should inject inline edit', () => {
+        const iframe = document.createElement('iframe');
+        document.body.appendChild(iframe);
+        const iframeElement = new ElementRef<HTMLIFrameElement>(iframe);
+
+        spectator.service.injectInlineEdit(iframeElement);
+
+        const script = iframe.contentDocument.querySelector('script[data-inline="true"]');
+        const style = iframe.contentDocument.querySelector('style');
+
+        expect(script).toBeTruthy();
+        expect(style).toBeTruthy();
     });
-
-    it('should be created', () => {
-        expect(service).toBeTruthy();
-    });
-
-    // it('should inject inline edit', () => {
-    //     const iframe = {
-    //         nativeElement: {
-    //             contentDocument: document,
-    //             contentWindow: window
-    //         }
-    //     } as ElementRef<HTMLIFrameElement>;
-
-    //     service.injectInlineEdit(iframe);
-
-    //     const script = document.querySelector('script[data-inline="true"]');
-    //     const style = document.querySelector('style[data-inode][data-field-name][data-mode]');
-
-    //     expect(script).toBeTruthy();
-    //     expect(style).toBeTruthy();
-    // });
-
-    // it('should handle inline edit', () => {
-    //     const event = new MouseEvent('click');
-    //     const target = document.createElement('div');
-    //     target.dataset.mode = 'minimal';
-    //     event.target = target;
-
-    //     service.handleInlineEdit(event);
-
-    //     // Add your assertions here
-    // });
-
-    // it('should replace contentlet on copy', () => {
-    //     const oldInode = 'old-inode';
-    //     const newInode = 'new-inode';
-
-    //     const contentlet = document.createElement('div');
-    //     contentlet.dataset.dotInode = oldInode;
-
-    //     const editorElement = document.createElement('div');
-    //     editorElement.dataset.inode = oldInode;
-    //     contentlet.appendChild(editorElement);
-
-    //     document.body.appendChild(contentlet);
-
-    //     service.replaceContentletONCopy({ oldInode, newInode });
-
-    //     expect(contentlet.dataset.dotInode).toBe(newInode);
-    //     expect(editorElement.dataset.inode).toBe(newInode);
-    // });
 
     // it('should handle inline edit events', () => {
-    //     const editor = {
+    //     const editorMock = {
     //         on: jest.fn()
     //     };
 
-    //     service.handleInlineEditEvents(editor);
+    //     spectator.service.handleInlineEditEvents(editorMock);
 
-    //     // Add your assertions here
+    //     expect(editorMock.on).toHaveBeenCalledWith('blur', jest.any(Function));
     // });
 
-    // it('should check if editor element is in multiple pages', () => {
-    //     const editorElement = document.createElement('div');
-    //     const contentlet = document.createElement('div');
-    //     contentlet.dataset.dotOnNumberOfPages = '2';
-    //     contentlet.appendChild(editorElement);
+    it('should check if contentlet is in multiple pages', () => {
+        const dataset: InlineEditingContentletDataset = {
+            inode: '123',
+            fieldName: 'content',
+            language: '',
+            mode: 'full'
+        };
 
-    //     const result = service.isInMultiplePages(editorElement);
+        const iframe = document.createElement('iframe');
+        document.body.appendChild(iframe);
 
-    //     expect(result).toBe(true);
-    // });
+        const targetElementMock = iframe.contentDocument.createElement('div');
+        targetElementMock.setAttribute('data-inode', dataset.inode);
+        targetElementMock.setAttribute('data-field-name', dataset.fieldName);
+
+        const contentletMock = iframe.contentDocument.createElement('div');
+        contentletMock.setAttribute('data-dot-object', 'contentlet');
+        contentletMock.setAttribute('data-dot-on-number-of-pages', '2');
+        contentletMock.appendChild(targetElementMock);
+
+        iframe.contentDocument.body.appendChild(contentletMock);
+
+        spectator.service.setIframeWindow(iframe.contentWindow);
+
+        const isInMultiplePages = spectator.service.isInMultiplePages(dataset);
+
+        expect(isInMultiplePages).toBe(true);
+    });
+
+    it('should set target inline MCE dataset', () => {
+        const dataset: InlineEditingContentletDataset = {
+            inode: '123',
+            fieldName: 'content',
+            language: '',
+            mode: 'full'
+        };
+
+        spectator.service.setTargetInlineMCEDataset(dataset);
+
+        expect(spectator.service['inlineEditingTargetDataset']()).toEqual(dataset);
+    });
+
+    it('should set iframe window', () => {
+        const iframeWindowMock = window;
+
+        spectator.service.setIframeWindow(iframeWindowMock);
+
+        expect(spectator.service['iframeWindow']()).toBe(iframeWindowMock);
+    });
+
+    // Add more tests for other methods here
 });

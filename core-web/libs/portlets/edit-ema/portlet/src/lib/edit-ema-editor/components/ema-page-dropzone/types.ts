@@ -55,7 +55,7 @@ export interface CopyContentletPayload {
     mode: string;
 }
 
-export interface ContentletDataset {
+export interface InlineEditingContentletDataset {
     language: string;
     mode: string;
     inode: string;
@@ -63,7 +63,7 @@ export interface ContentletDataset {
 }
 
 export interface UpdatedContentlet {
-    dataset: ContentletDataset;
+    dataset: InlineEditingContentletDataset;
     innerHTML: string;
     eventType: string;
     isNotDirty: boolean;

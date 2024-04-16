@@ -87,7 +87,8 @@
             es.editorData.canEditVariant &&
             es.isEnterpriseLicense &&
             (es.editorData.mode === editorMode.EDIT ||
-                es.editorData.mode === editorMode.EDIT_VARIANT) &&
+                es.editorData.mode === editorMode.EDIT_VARIANT ||
+                es.editorData.mode === editorMode.INLINE_EDITING) &&
             es.editor.page.canEdit
         "
         [languageId]="es.editor.viewAs.language.id"

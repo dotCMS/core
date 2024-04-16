@@ -89,6 +89,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
 
+    readonly editorMode$ = this.select((state) => state.editorData.mode);
+
     readonly isEnterpriseLicense$ = this.select((state) => state.isEnterpriseLicense);
 
     readonly vtlIframePage$ = this.select(
@@ -109,6 +111,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
 
     readonly templateDrawed$ = this.select((state) => state.editor.template?.drawed);
+
+    readonly inlineEditingState$ = this.select(
+        this.editorMode$,
+        this.stateLoad$,
+        (mode, state) => ({ state, mode })
+    );
 
     readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
         return {
@@ -359,6 +367,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     ),
                                     life: 2000
                                 });
+                                this.setEditorMode(EDITOR_MODE.INLINE_EDITING);
                             },
                             (e) => {
                                 console.error(e);
@@ -529,6 +538,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly setContentletArea = this.updater((state, contentletArea: ContentletArea) => ({
         ...state,
         contentletArea
+    }));
+
+    readonly setEditorMode = this.updater((state, mode: EDITOR_MODE) => ({
+        ...state,
+        editorData: {
+            ...state.editorData,
+            mode
+        }
     }));
 
     /**

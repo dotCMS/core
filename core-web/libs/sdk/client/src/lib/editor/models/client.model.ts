@@ -26,6 +26,9 @@ export enum CUSTOMER_ACTIONS {
      */
     PING_EDITOR = 'ping-editor',
 
+    COPY_CONTENTLET_INLINE_EDITING = 'copy-contentlet-inline-editing',
+
+    UPDATE_CONTENTLET_INLINE_EDITING = 'update-contentlet-inline-editing',
     NOOP = 'noop'
 }
 
