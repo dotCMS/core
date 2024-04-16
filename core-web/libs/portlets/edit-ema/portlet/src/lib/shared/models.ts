@@ -113,3 +113,42 @@ export interface WorkflowActionResult extends MessageInfo {
     callback: string;
     args: unknown[];
 }
+
+export interface DeletePayload {
+    payload: ActionPayload;
+    originContainer: ContainerPayload;
+    contentletToMove: ContentletPayload;
+}
+
+export interface InsertPayloadFromDelete {
+    payload: ActionPayload;
+    pageContainers: PageContainer[];
+    contentletsId: string[];
+    destinationContainer: ContainerPayload;
+    pivotContentlet: ContentletPayload;
+    positionToInsert: 'before' | 'after';
+}
+
+export interface BasePayload {
+    type: 'contentlet' | 'content-type';
+}
+
+export interface ContentletDragPayload extends BasePayload {
+    type: 'contentlet';
+    item: {
+        container?: ContainerPayload;
+        contentlet: ContentletPayload;
+    };
+    move: boolean;
+}
+
+// Specific  interface when type is 'content-type'
+export interface ContentTypeDragPayload extends BasePayload {
+    type: 'content-type';
+    item: {
+        variable: string;
+        name: string;
+    };
+}
+
+export type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;

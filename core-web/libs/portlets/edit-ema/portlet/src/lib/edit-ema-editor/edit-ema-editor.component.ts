@@ -68,55 +68,16 @@ import {
     PositionPayload,
     ClientData,
     SetUrlPayload,
-    ContainerPayload,
-    ContentletPayload,
-    PageContainer,
-    VTLFile
+    VTLFile,
+    ContentletDragPayload,
+    DeletePayload,
+    InsertPayloadFromDelete
 } from '../shared/models';
 import {
     areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
 } from '../utils';
-
-interface DeletePayload {
-    payload: ActionPayload;
-    originContainer: ContainerPayload;
-    contentletToMove: ContentletPayload;
-}
-
-interface InsertPayloadFromDelete {
-    payload: ActionPayload;
-    pageContainers: PageContainer[];
-    contentletsId: string[];
-    destinationContainer: ContainerPayload;
-    pivotContentlet: ContentletPayload;
-    positionToInsert: 'before' | 'after';
-}
-
-interface BasePayload {
-    type: 'contentlet' | 'content-type';
-}
-
-interface ContentletDragPayload extends BasePayload {
-    type: 'contentlet';
-    item: {
-        container?: ContainerPayload;
-        contentlet: ContentletPayload;
-    };
-    move: boolean;
-}
-
-// Specific interface when type is 'content-type'
-interface ContentTypeDragPayload extends BasePayload {
-    type: 'content-type';
-    item: {
-        variable: string;
-        name: string;
-    };
-}
-
-type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -219,8 +180,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorMode = EDITOR_MODE;
     readonly experimentStatus = DotExperimentStatus;
 
-    protected draggedPayload: DraggedPalettePayload;
-
     dragItem: EmaDragItem;
 
     get queryParams(): DotPageApiParams {
@@ -231,6 +190,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.handleReloadContent();
+
+        // fromEvent(this.window, 'dragover')
+        //     .pipe(takeUntil(this.destroy$))
+        //     .subscribe((event: DragEvent) => {
+        //         event.preventDefault();
+        //         console.log(event);
+        //         console.log('YOU ARE DRAGGING BOIIII');
+
+        //         this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+        //     });
 
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
@@ -360,21 +329,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     moveContentlet(item: ActionPayload) {
-        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
-
-        this.draggedPayload = {
-            type: 'contentlet',
-            item: {
-                container: item.container,
-                contentlet: item.contentlet
-            },
-            move: true
-        };
+        // Make this a store method
 
         this.dragItem = {
             baseType: 'CONTENT',
-            contentType: item.contentlet.contentType
+            contentType: item.contentlet.contentType,
+            draggedPayload: {
+                type: 'contentlet',
+                item: {
+                    container: item.container,
+                    contentlet: item.contentlet
+                },
+                move: true
+            }
         };
+        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
 
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
@@ -389,8 +358,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onDragStart(event: DragEvent) {
-        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
-
         const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
             ContentletDragPayload,
             'type'
@@ -400,16 +367,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         const item = JSON.parse(dataset.item);
 
+        // Make this a store method
+
         this.dragItem = {
             baseType: item.baseType,
-            contentType: item.contentType
+            contentType: item.contentType,
+            draggedPayload: {
+                item,
+                type: dataset.type,
+                move: false
+            }
         };
-
-        this.draggedPayload = {
-            type: dataset.type,
-            item,
-            move: false
-        };
+        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
 
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
@@ -437,14 +406,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onPlaceItem(positionPayload: PositionPayload): void {
+        // When you move the dragItem to the store, you can get it here from params
+
         let payload = this.getPageSavePayload(positionPayload);
 
         const destinationContainer = payload.container;
         const pivotContentlet = payload.contentlet;
         const positionToInsert = positionPayload.position;
 
-        if (this.draggedPayload.type === 'contentlet') {
-            const draggedPayload = this.draggedPayload;
+        if (this.dragItem.draggedPayload.type === 'contentlet') {
+            const draggedPayload = this.dragItem.draggedPayload;
             const originContainer = draggedPayload.item.container;
             const contentletToMove = draggedPayload.item.contentlet;
 
@@ -489,7 +460,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.dialog.createContentletFromPalette({ ...this.draggedPayload.item, payload });
+        this.dialog.createContentletFromPalette({ ...this.dragItem.draggedPayload.item, payload });
     }
 
     /**
@@ -839,7 +810,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     protected resetDragProperties() {
-        this.draggedPayload = undefined;
         this.dragItem = null;
 
         this.store.setContentletArea(null);
