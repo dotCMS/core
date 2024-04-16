@@ -255,6 +255,17 @@ export class DotEmaDialogComponent {
     }
 
     /**
+     * Open dialog on URL
+     *
+     * @param {string} url
+     * @param {string} title
+     * @memberof DotEmaDialogComponent
+     */
+    openDialogOnUrl(url: string, title: string) {
+        this.store.openDialogOnURL({ url, title });
+    }
+
+    /**
      * Iframe load event
      *
      * @protected

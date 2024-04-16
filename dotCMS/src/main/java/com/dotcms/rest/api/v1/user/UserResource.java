@@ -14,7 +14,6 @@ import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.UserPaginator;
@@ -64,11 +63,13 @@ import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -306,7 +307,7 @@ public class UserResource implements Serializable {
 	 * @param page             The results page or offset, for pagination purposes.
 	 * @param perPage          The size of the results page, for pagination purposes.
 	 * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
-	 *                         check {@link SQLUtil#ORDERBY_WHITELIST}.
+	 *                         check {@link SQLUtil #ORDERBY_WHITELIST(private method in SQLUtil)}.
 	 * @param direction        The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
 	 * @param includeAnonymous If the Anonymous User must be included in the results, set this to {@code true}.
 	 * @param includeDefault   If the Default User must be included in the results, set this to {@code true}.
@@ -338,13 +339,13 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
-		final Map<String, Object> extraParams = Map.of(
+		final Map<String, Object> extraParams = new HashMap<>(Map.of(
 				UserPaginator.ASSET_INODE_PARAM, assetInode,
 				UserPaginator.PERMISSION_PARAM, permission,
 				UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous,
 				UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault,
 				UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy
-		);
+		));
 		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		final User user = initData.getUser();
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
@@ -614,12 +615,12 @@ public class UserResource implements Serializable {
 		try {
 			checkUserLoginAsRole(initData.getUser());
 			final List<Role> roles = List.of(roleAPI.loadBackEndUserRole());
-			final Map<String, Object> extraParams = Map.of(
+			final Map<String, Object> extraParams = new HashMap<>(Map.of(
 					UserPaginator.ROLES_PARAM, roles,
 					UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, false,
 					UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, false,
 					UserPaginator.REMOVE_CURRENT_USER_PARAM, true,
-					UserPaginator.REQUEST_PASSWORD_PARAM, true);
+					UserPaginator.REQUEST_PASSWORD_PARAM, true));
 			response = this.paginationUtil.getPage( httpServletRequest, user, filter, page, perPage, extraParams);
 		} catch (final Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -709,6 +710,7 @@ public class UserResource implements Serializable {
 
 		final String userId = UtilMethods.isSet(createUserForm.getUserId())?
 				createUserForm.getUserId(): "userId-" + UUIDUtil.uuid();
+		validateMaximumLength(createUserForm.getFirstName(),createUserForm.getLastName(),createUserForm.getEmail());
 		final User user = this.userAPI.createUser(userId, createUserForm.getEmail());
 
 		user.setFirstName(createUserForm.getFirstName());
