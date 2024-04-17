@@ -109,3 +109,12 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
+      - name: build-classes # required for sonarqube
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "build-classes-Initial Artifact Build"
+          path: |
+            **/target/classes/**/*.class
+            LICENSE
+          retention-days: 2

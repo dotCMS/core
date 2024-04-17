@@ -75,6 +75,7 @@ import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
 /**
@@ -313,7 +314,7 @@ public class UserResource implements Serializable {
 	 * @param page             The results page or offset, for pagination purposes.
 	 * @param perPage          The size of the results page, for pagination purposes.
 	 * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
-	 *                         check {@link SQLUtil#ORDERBY_WHITELIST}.
+	 *                         check {@link SQLUtil #ORDERBY_WHITELIST(private method in SQLUtil)}.
 	 * @param direction        The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
 	 * @param includeAnonymous If the Anonymous User must be included in the results, set this to {@code true}.
 	 * @param includeDefault   If the Default User must be included in the results, set this to {@code true}.
@@ -716,6 +717,7 @@ public class UserResource implements Serializable {
 
 		final String userId = UtilMethods.isSet(createUserForm.getUserId())?
 				createUserForm.getUserId(): "userId-" + UUIDUtil.uuid();
+		validateMaximumLength(createUserForm.getFirstName(),createUserForm.getLastName(),createUserForm.getEmail());
 		final User user = this.userAPI.createUser(userId, createUserForm.getEmail());
 
 		user.setFirstName(createUserForm.getFirstName());

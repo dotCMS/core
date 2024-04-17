@@ -68,55 +68,19 @@ import {
     PositionPayload,
     ClientData,
     SetUrlPayload,
-    ContainerPayload,
-    ContentletPayload,
-    PageContainer,
-    VTLFile
+    VTLFile,
+    ReorderPayload,
+    PostMessagePayload,
+    ContentletDragPayload,
+    DeletePayload,
+    DraggedPalettePayload,
+    InsertPayloadFromDelete
 } from '../shared/models';
 import {
     areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
 } from '../utils';
-
-interface DeletePayload {
-    payload: ActionPayload;
-    originContainer: ContainerPayload;
-    contentletToMove: ContentletPayload;
-}
-
-interface InsertPayloadFromDelete {
-    payload: ActionPayload;
-    pageContainers: PageContainer[];
-    contentletsId: string[];
-    destinationContainer: ContainerPayload;
-    pivotContentlet: ContentletPayload;
-    positionToInsert: 'before' | 'after';
-}
-
-interface BasePayload {
-    type: 'contentlet' | 'content-type';
-}
-
-interface ContentletDragPayload extends BasePayload {
-    type: 'contentlet';
-    item: {
-        container?: ContainerPayload;
-        contentlet: ContentletPayload;
-    };
-    move: boolean;
-}
-
-// Specific interface when type is 'content-type'
-interface ContentTypeDragPayload extends BasePayload {
-    type: 'content-type';
-    item: {
-        variable: string;
-        name: string;
-    };
-}
-
-type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -246,28 +210,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 requestAnimationFrame(() => {
-                    this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
-                        const href =
-                            (e.target as HTMLAnchorElement).href ||
-                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
+                    // This gets destroy when the iframe reloads
+                    fromEvent(this.iframe.nativeElement.contentWindow, 'click')
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe((e) => {
+                            const href =
+                                (e.target as HTMLAnchorElement)?.href ||
+                                (e.target as HTMLElement).closest('a')?.href;
 
-                        if (href) {
-                            e.preventDefault();
-                            const url = new URL(href);
+                            if (href) {
+                                e.preventDefault();
+                                const url = new URL(href);
 
-                            // Check if the URL is not external
-                            if (url.hostname === window.location.hostname) {
-                                this.updateQueryParams({
-                                    url: url.pathname
-                                });
+                                // Check if the URL is not external
+                                if (url.hostname === window.location.hostname) {
+                                    this.updateQueryParams({
+                                        url: url.pathname
+                                    });
 
-                                return;
+                                    return;
+                                }
+
+                                // Open external links in a new tab
+                                this.window.open(href, '_blank');
                             }
-
-                            // Open external links in a new tab
-                            this.window.open(href, '_blank');
-                        }
-                    });
+                        });
                 });
             });
 
@@ -319,11 +286,56 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    addEditorPageScript(rendered: string) {
+    addEditorPageScript(rendered = ''): string {
         const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
-        const updatedRendered = rendered?.replace('</body>', scriptString + '</body>');
+        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
+    }
+
+    /**
+     * Add custom styles to the rendered content
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addCustomStyles(rendered = ''): string {
+        const styles = `<style>
+
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
+        }
+        </style>
+        `;
+
+        return rendered.replace('</head>', styles + '</head>');
+    }
+
+    /**
+     * Inject the editor page script and styles to the VTL content
+     *
+     * @private
+     * @param {string} rendered
+     * @return {*}  {string}
+     * @memberof EditEmaEditorComponent
+     */
+    private inyectCodeToVTL(rendered: string): string {
+        let newFile = this.addEditorPageScript(rendered);
+
+        newFile = this.addCustomStyles(newFile);
+
+        return newFile;
     }
 
     ngOnDestroy(): void {
@@ -534,8 +546,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const doc = this.iframe?.nativeElement.contentDocument;
 
             if (doc) {
+                const newFile = this.inyectCodeToVTL(code);
+
                 doc.open();
-                doc.write(this.addEditorPageScript(code));
+                doc.write(newFile);
                 doc.close();
 
                 this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
@@ -631,6 +645,36 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.dialog.resetDialog();
                     }
                 });
+            },
+            [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get('message.menu.reordered'),
+                    life: 2000
+                });
+
+                this.store.reload({
+                    params: this.queryParams
+                });
+                this.dialog.resetDialog();
+            },
+            [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get(
+                        'error.menu.reorder.user_has_not_permission'
+                    ),
+                    life: 2000
+                });
+            },
+            [NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER]: () => {
+                this.dialog.resetDialog();
             }
         })[detail.name];
     }
@@ -650,7 +694,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea;
+            payload: PostMessagePayload;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -694,6 +738,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.iframe?.nativeElement?.contentWindow.postMessage(
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
+                );
+            },
+            [CUSTOMER_ACTIONS.REORDER_MENU]: () => {
+                const { reorderUrl } = <ReorderPayload>data.payload;
+
+                this.dialog.openDialogOnUrl(
+                    reorderUrl,
+                    this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
