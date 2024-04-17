@@ -84,51 +84,42 @@
 
 <p-dialog
     [(visible)]="visibility"
-    [header]="'Backplates Snow Landscape.MP4'"
+    [header]="title"
     [appendTo]="'body'"
     [style]="{ width: '582px' }">
     <div class="preview-resource__item">
         <span class="preview-source__title">{{ 'File Link' | dm }}:</span>
         <div class="preview-resource__link">
-            <a
-                href="https://dotcms-qa-Its2203.dotcms.site/dA/c4b531da88/company_logo.png?language_id=1"
-                target="_blank"
-                >https://dotcms-qa-Its2203.dotcms.site/dA/c4b531da88/company_logo.png?language_id=1</a
+            <a [href]="resourceLinks().configuredImageURL" target="_blank"
+                >{{ baseHost }}{{ resourceLinks().configuredImageURL }}</a
             >
-            <dot-copy-button
-                [copy]="
-                    'https://dotcms-qa-Its2203.dotcms.site/dA/c4b531da88/company_logo.png?language_id=1'
-                " />
+            <dot-copy-button [copy]="baseHost + resourceLinks().configuredImageURL" />
         </div>
     </div>
     <p-divider></p-divider>
     <div class="preview-resource__item">
         <span class="preview-source__title">{{ 'Resource Link' | dm }}:</span>
         <div class="preview-resource__link">
-            <a href="/company_logo.png?language_id=1" target="_blank"
-                >/company_logo.png?language_id=1</a
-            >
-            <dot-copy-button [copy]="'/company_logo.png?language_id=1'" />
+            <a [href]="resourceLinks().text" target="_blank">{{ resourceLinks().text }}</a>
+            <dot-copy-button [copy]="resourceLinks().text" />
         </div>
     </div>
     <p-divider></p-divider>
     <div class="preview-resource__item">
         <span class="preview-source__title">{{ 'Version Link' | dm }}:</span>
         <div class="preview-resource__link">
-            <a href="/dA/deb9555fba/fileAsset/company_logo.png" target="_blank"
-                >/dA/deb9555fba/fileAsset/company_logo.png</a
-            >
-            <dot-copy-button [copy]="'/dA/deb9555fba/fileAsset/company_logo.png'" />
+            <a [href]="resourceLinks().versionPath" target="_blank">{{
+                resourceLinks().versionPath
+            }}</a>
+            <dot-copy-button [copy]="'resourceLinks().versionPath'" />
         </div>
     </div>
     <p-divider></p-divider>
     <div class="preview-resource__item">
         <span class="preview-source__title">{{ 'Id Path' | dm }}:</span>
         <div class="preview-resource__link">
-            <a href="/dA/c4b531da88/fileAsset/company_logo.png?language_id=1" target="_blank"
-                >/dA/c4b531da88/fileAsset/company_logo.png?language_id=1</a
-            >
-            <dot-copy-button [copy]="'/dA/c4b531da88/fileAsset/company_logo.png?language_id=1'" />
+            <a [href]="resourceLinks().idPath" target="_blank">{{ resourceLinks().idPath }}</a>
+            <dot-copy-button [copy]="resourceLinks().idPath" />
         </div>
     </div>
 </p-dialog>

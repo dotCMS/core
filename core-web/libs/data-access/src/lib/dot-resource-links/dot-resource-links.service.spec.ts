@@ -28,7 +28,7 @@ describe('DotResourceLinksService', () => {
         });
 
         const req = spectator.expectOne(
-            `/api/v1/content/resourcelinks/field/${props.fieldVariable}?identifier${props.inodeOrIdentifier}`,
+            `/api/v1/content/resourcelinks/field/${props.fieldVariable}?identifier=${props.inodeOrIdentifier}`,
             HttpMethod.GET
         );
 

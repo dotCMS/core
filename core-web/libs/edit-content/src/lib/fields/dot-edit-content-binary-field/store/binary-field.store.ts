@@ -181,11 +181,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             return contentlet$.pipe(
                 tap(() => this.setUploading()),
                 switchMap((contentlet) => {
-                    const {
-                        contentType: mimeType,
-                        editableAsText,
-                        name
-                    } = getFileMetadata(contentlet);
+                    const { contentType, editableAsText, name } = getFileMetadata(contentlet);
                     const { fileAssetVersion, fieldVariable } = contentlet;
                     const contentURL = fileAssetVersion || contentlet[`${fieldVariable}Version`];
                     const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
@@ -195,7 +191,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                             (content = '') => {
                                 this.setContentlet({
                                     ...contentlet,
-                                    mimeType,
+                                    mimeType: contentType,
                                     name,
                                     content
                                 });
@@ -203,8 +199,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                             () => {
                                 this.setContentlet({
                                     ...contentlet,
-                                    name,
-                                    mimeType
+                                    mimeType: contentType,
+                                    name
                                 });
                             }
                         )

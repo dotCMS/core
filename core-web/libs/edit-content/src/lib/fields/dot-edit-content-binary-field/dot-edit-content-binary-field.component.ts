@@ -100,7 +100,6 @@ export class DotEditContentBinaryFieldComponent
 {
     contentTypeField = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
     @Input() contentlet: DotCMSContentlet;
-
     @Input() imageEditor = false;
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;

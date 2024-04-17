@@ -6,7 +6,10 @@ import {
     EventEmitter,
     Input,
     OnChanges,
+    OnInit,
     Output,
+    SimpleChanges,
+    inject,
     signal
 } from '@angular/core';
 
@@ -14,6 +17,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 
+import { DotResourceLinks, DotResourceLinksService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
 import {
     DotTempFileThumbnailComponent,
@@ -22,6 +26,8 @@ import {
     DotSpinnerModule,
     DotCopyButtonComponent
 } from '@dotcms/ui';
+
+import { getFileMetadata } from '../../utils/binary-field-utils';
 
 export enum EDITABLE_FILE {
     image = 'image',
@@ -48,38 +54,51 @@ export enum EDITABLE_FILE {
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class DotBinaryFieldPreviewComponent implements OnChanges {
+export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     @Input() contentlet: DotCMSContentlet;
     @Input() tempFile: DotCMSTempFile;
     @Input() editableImage: boolean;
+    @Input() fieldVariable: string;
 
     @Output() editImage: EventEmitter<void> = new EventEmitter();
     @Output() editFile: EventEmitter<void> = new EventEmitter();
     @Output() removeFile: EventEmitter<void> = new EventEmitter();
 
-    visibility = false;
-
-    protected content = signal<string>('');
+    protected visibility = false;
     protected isEditable = false;
+    protected readonly content = signal<string>('');
     protected readonly baseHost = window.location.origin;
 
+    private readonly dotResourceLinksService = inject(DotResourceLinksService);
+
     get metadata(): DotFileMetadata {
-        return this.tempFile?.metadata || this.contentletMetadata;
+        return this.tempFile?.metadata || getFileMetadata(this.contentlet);
     }
 
     get title(): string {
         return this.contentlet?.fileName || this.metadata.name;
     }
 
-    get contentletMetadata(): DotFileMetadata {
-        const { metaData = '', fieldVariable = '' } = this.contentlet;
+    protected readonly resourceLinks = signal<DotResourceLinks>(null);
 
-        return metaData || this.contentlet[`${fieldVariable}MetaData`];
+    ngOnInit() {
+        this.content.set(this.contentlet?.content);
+        this.isEditable = this.metadata.editableAsText || this.isEditableImage();
+
+        if (this.contentlet) {
+            this.dotResourceLinksService
+                .getFileSourceLinks({
+                    fieldVariable: this.fieldVariable,
+                    inodeOrIdentifier: this.contentlet.identifier
+                })
+                .subscribe((resourceLinks) => this.resourceLinks.set(resourceLinks));
+        }
     }
 
-    ngOnChanges(): void {
-        this.setIsEditable();
-        this.content.set(this.tempFile?.content || this.contentlet?.content);
+    ngOnChanges({ tempFile }: SimpleChanges): void {
+        if (tempFile.currentValue) {
+            this.content.set(tempFile.currentValue.content);
+        }
     }
 
     /**
@@ -98,8 +117,14 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
         this.editImage.emit();
     }
 
-    private setIsEditable() {
-        this.isEditable =
-            this.metadata.editableAsText || (this.metadata.isImage && this.editableImage);
+    /**
+     * Emits event to remove the file
+     *
+     * @private
+     * @return {*}  {boolean}
+     * @memberof DotBinaryFieldPreviewComponent
+     */
+    private isEditableImage(): boolean {
+        return this.metadata.isImage && this.editableImage;
     }
 }

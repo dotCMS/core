@@ -37,7 +37,7 @@ export class DotResourceLinksService {
         inodeOrIdentifier
     }: DotSourceLinksProps): Observable<DotResourceLinks> {
         return this.httpClient
-            .get(`${this.basePath}/${fieldVariable}?identifier${inodeOrIdentifier}`)
+            .get(`${this.basePath}/${fieldVariable}?identifier=${inodeOrIdentifier}`)
             .pipe(pluck('entity'));
     }
 }
