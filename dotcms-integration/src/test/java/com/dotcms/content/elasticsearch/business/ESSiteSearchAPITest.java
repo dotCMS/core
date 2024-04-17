@@ -1,10 +1,9 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotmarketing.sitesearch.business.SiteSearchAPI.ES_SITE_SEARCH_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -35,6 +34,7 @@ public class ESSiteSearchAPITest {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
 
         siteSearchAPI = APILocator.getSiteSearchAPI();
         indexAPI = APILocator.getESIndexAPI();
@@ -192,5 +192,44 @@ public class ESSiteSearchAPITest {
         //validate if the new default index is the first in list
         assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(defIndex));
         assertEquals(defIndex, indices.get(0));
+    }
+
+
+    /**
+     * Method to test: {@link SiteSearchAPI#deleteOldSiteSearchIndices()}
+     * Given Scenario: Create 4 site search indices, with the following criteria:
+     *     - Index 1 = from a year ago, with alias
+     *     - Index 2 = from a year ago, without alias, default one
+     *     - Index 3 = from a year ago, without alias
+     *     - Index 4 = from today, without alias
+     * ExpectedResult: Index 3 should be removed
+     */
+    @Test
+    public void test_deleteOldSiteSearchIndices() throws IOException, DotDataException {
+        final String timestamp = String.valueOf(new Date().getTime());
+        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_20230101000000", "Index1_deleteTest", 1);
+        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_20230201000000", "", 1);
+        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_20230301000000", "", 1);
+        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_" + timestamp, "", 1);
+
+        //set index as default
+        siteSearchAPI.activateIndex(ES_SITE_SEARCH_NAME + "_20230201000000");
+
+        //load all indices and check that all 4 indices are there
+        List<String> indices = siteSearchAPI.listIndices();
+        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_20230101000000"));
+        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_20230201000000"));
+        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_20230301000000"));
+        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_" + timestamp));
+        final int originalSizeOfIndices = indices.size();
+
+        //Delete Old Indices
+        siteSearchAPI.deleteOldSiteSearchIndices();
+
+        //load all indices and check that the index from 20230301 is not there
+        indices = siteSearchAPI.listIndices();
+        assertFalse(indices.contains(ES_SITE_SEARCH_NAME + "_20230301000000"));
+        assertNotEquals(originalSizeOfIndices, indices.size());
+
     }
 }
