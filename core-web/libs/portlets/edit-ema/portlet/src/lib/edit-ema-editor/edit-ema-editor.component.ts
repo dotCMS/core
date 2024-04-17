@@ -218,7 +218,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(({ isEnterprise, mode }) => {
                 requestAnimationFrame(() => {
-                    // const doc = this.iframe.nativeElement.contentDocument;
                     const win = this.iframe.nativeElement.contentWindow;
                     this.inlineEditingService.setIframeWindow(win);
 
@@ -245,8 +244,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     handleInternalNav(e: MouseEvent) {
         const href =
-            (e.target as HTMLAnchorElement).href ||
-            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement)?.href;
+            (e.target as HTMLAnchorElement)?.href ||
+            (e.target as HTMLElement)?.closest('a')?.getAttribute('href');
 
         if (href) {
             e.preventDefault();
