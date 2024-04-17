@@ -205,4 +205,21 @@ describe('DotEmaDialogStoreService', () => {
             done();
         });
     });
+
+    it('should update the state to show dialog with a specific URL', (done) => {
+        spectator.service.openDialogOnURL({
+            url: 'https://demo.dotcms.com/jsp.jsp',
+            title: 'test'
+        });
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state).toEqual({
+                url: 'https://demo.dotcms.com/jsp.jsp',
+                status: DialogStatus.LOADING,
+                header: 'test',
+                type: 'content'
+            });
+            done();
+        });
+    });
 });

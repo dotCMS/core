@@ -9,7 +9,7 @@
     (click)="setPositionFlag('after'); menu.toggle($event)"
     data-testId="add-bottom-button"
     icon="pi pi-plus"></p-button>
-<p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
+<p-menu #menu [model]="items" [popup]="true" appendTo="body" data-testId="menu-add"></p-menu>
 
 <div
     class="actions"
@@ -17,14 +17,14 @@
     [ngStyle]="getActionPosition()"
     data-testId="actions">
     @if (contentlet.payload.vtlFiles?.length) {
+    <p-menu #menuVTL [model]="vtlFiles" [popup]="true" appendTo="body" />
     <p-button
         (click)="menuVTL.toggle($event)"
         data-testId="edit-vtl-button"
         styleClass="p-button-rounded p-button-raised"
         icon="pi pi-code" />
-    <p-menu #menuVTL [model]="vtlFiles" [popup]="true" appendTo="body" />
-
     }
+
     <p-button
         (dragstart)="dragStart($event, contentlet.payload)"
         (dragend)="dragEnd($event)"

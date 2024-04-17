@@ -4,6 +4,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.util.pagination.ContentReportPaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -18,6 +19,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -51,10 +53,16 @@ public class FolderContentReport implements ContentReport {
     @Override
     public List<ContentReportView> generateContentReport(final ContentReportParams params) throws DotDataException, DotSecurityException {
         final String folder = params.extraParam(ContentReportPaginator.FOLDER_PARAM);
-        final String site = params.extraParam(ContentReportPaginator.SITE_PARAM);
-        final Optional<Folder> folderOpt = this.resolveFolder(folder, site, user);
+        final String siteId = params.extraParam(ContentReportPaginator.SITE_PARAM);
+        if (Objects.nonNull(siteId)) {
+            final Host site = this.siteAPI.get().find(siteId, params.user(), false);
+            if (null == site || UtilMethods.isNotSet(site.getIdentifier())) {
+                throw new DoesNotExistException("The site with the given ID does not exist: " + siteId);
+            }
+        }
+        final Optional<Folder> folderOpt = this.resolveFolder(folder, siteId, user);
         if (folderOpt.isEmpty()) {
-            return List.of();
+            throw new DoesNotExistException("The folder with the given ID or path does not exist: " + folder);
         }
         final List<Map<String, Object>> contentReport =
                 this.folderAPI.get().getContentReport(folderOpt.get(), params.orderBy(),

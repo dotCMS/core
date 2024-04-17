@@ -26,6 +26,7 @@ import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { filter } from 'rxjs/operators';
 
@@ -46,6 +47,7 @@ import { PromptType } from '../../ai-image-prompt.models';
     imports: [
         ButtonModule,
         AccordionModule,
+        TooltipModule,
         RadioButtonModule,
         ReactiveFormsModule,
         FormsModule,
@@ -86,6 +88,7 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     promptLabel = 'block-editor.extension.ai-image.prompt';
     submitButtonLabel = 'block-editor.extension.ai-image.generate';
     requiredPrompt = true;
+    tooltipText: string = null;
 
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
@@ -125,6 +128,10 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
     copyToClipboard(): void {
         navigator.clipboard.writeText(this.aiProcessedPrompt);
+        this.tooltipText = this.dotMessageService.get('Copied');
+        setTimeout(() => {
+            this.tooltipText = null;
+        }, 1000);
     }
 
     private initForm(): void {
