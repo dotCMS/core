@@ -116,8 +116,9 @@ public class RelationshipsResource {
         try {
             final ContentType contentType = contentTypeAPI.find(contentTypeId);
 
-            final Map<String, Object> params = new HashMap<>(Map.of(RelationshipPaginator.CONTENT_TYPE_PARAM,
-                    contentType));
+            final Map<String, Object> params = new HashMap<>();
+            params.put(RelationshipPaginator.CONTENT_TYPE_PARAM,
+                    contentType);
             return paginationUtil.getPage(request, user, null, page, perPage, params);
         } catch (Exception e) {
 

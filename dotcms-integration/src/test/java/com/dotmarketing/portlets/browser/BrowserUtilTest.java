@@ -32,6 +32,7 @@ import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -492,14 +493,14 @@ public class BrowserUtilTest {
                 .languageId(language.getId())
                 .nextPersisted();
 
-        return Map.of(
+        return new HashMap<>(Map.of(
                 CONTENTLET, contentlet,
                 FIELD, contentType.fields().get(0),
                 HOST, host,
                 FOLDER, folder,
                 LANGUAGE, language,
                 CONTENT_TYPE, contentType
-        );
+        ));
     }
 
     private Map<String, Object> createContentletWithImageFieldAndValue()
