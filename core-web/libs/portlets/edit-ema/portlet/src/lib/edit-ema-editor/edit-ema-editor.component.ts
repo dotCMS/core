@@ -301,11 +301,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     )
                 )
             )
-            .subscribe(() => {
+            .subscribe((_event: DragEvent) => {
                 // Set the temp item to be dragged, which is the outsider file
+
                 this.store.setDragItem({
-                    baseType: 'Image',
-                    contentType: 'Image',
+                    baseType: 'dotAsset',
+                    contentType: 'dotAsset',
                     draggedPayload: {
                         type: 'temp'
                     }
@@ -344,6 +345,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe((event: DragEvent) => {
                 event.preventDefault(); // Prevent file opening
+
                 this.store.updateEditorState(EDITOR_STATE.IDLE); // I will probably delete this when I process the image
             });
 

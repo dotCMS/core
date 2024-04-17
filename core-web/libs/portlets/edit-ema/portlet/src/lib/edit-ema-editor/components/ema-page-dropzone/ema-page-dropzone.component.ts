@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -9,6 +11,10 @@ import {
     inject
 } from '@angular/core';
 
+import { switchMap } from 'rxjs/operators';
+
+import { DotTempFileUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotErrorPipe } from './pipes/error/dot-error.pipe';
@@ -30,6 +36,7 @@ const POINTER_INITIAL_POSITION = {
     selector: 'dot-ema-page-dropzone',
     standalone: true,
     imports: [CommonModule, DotPositionPipe, DotErrorPipe, DotMessagePipe],
+    providers: [DotTempFileUploadService],
     templateUrl: './ema-page-dropzone.component.html',
     styleUrls: ['./ema-page-dropzone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -42,6 +49,8 @@ export class EmaPageDropzoneComponent {
     pointerPosition: Record<string, string> = POINTER_INITIAL_POSITION;
 
     private readonly el = inject(ElementRef);
+    private readonly tempFileUploadService = inject(DotTempFileUploadService);
+    private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
 
     private readonly store = inject(EditEmaStore);
 
@@ -54,18 +63,33 @@ export class EmaPageDropzoneComponent {
     onDrop(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
 
+        const file = event.dataTransfer.files[0];
+
         const data: ClientData = JSON.parse(target.dataset.payload);
         const isTop = this.isTop(event);
 
-        const insertPosition = isTop ? 'before' : 'after';
+        if (file) {
+            // I need to publish the temp file to use it.
+            this.uploadTempFile(file).subscribe((_tempFile: DotCMSContentlet) => {
+                const payload = <PositionPayload>{
+                    ...data,
+                    position: isTop ? 'before' : 'after'
+                };
 
-        const payload = <PositionPayload>{
-            ...data,
-            position: insertPosition
-        };
+                // i need the code for empty container to continue.
 
-        this.place.emit(payload);
-        this.pointerPosition = POINTER_INITIAL_POSITION;
+                this.place.emit(payload);
+                this.pointerPosition = POINTER_INITIAL_POSITION;
+            });
+        } else {
+            const payload = <PositionPayload>{
+                ...data,
+                position: isTop ? 'before' : 'after'
+            };
+
+            this.place.emit(payload);
+            this.pointerPosition = POINTER_INITIAL_POSITION;
+        }
     }
 
     /**
@@ -161,5 +185,26 @@ export class EmaPageDropzoneComponent {
         const mouseY = event.clientY;
 
         return mouseY < targetRect.top + targetRect.height / 2;
+    }
+
+    private uploadTempFile(file: File): Observable<DotCMSContentlet | string> {
+        return this.tempFileUploadService.upload(file).pipe(
+            switchMap(([{ id, image }]: DotCMSTempFile[]) => {
+                if (!image) {
+                    // return throwError(
+                    //     this.dotMessageService.get(
+                    //         'templates.properties.form.thumbnail.error.invalid.url'
+                    //     )
+                    // );
+                }
+
+                return this.dotWorkflowActionsFireService.publishContentletAndWaitForIndex<DotCMSContentlet>(
+                    'dotAsset',
+                    {
+                        asset: id
+                    }
+                );
+            })
+        );
     }
 }
