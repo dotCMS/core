@@ -22,7 +22,7 @@ describe('DotResourceLinksService', () => {
             versionPath: 'testVersionPath'
         };
 
-        spectator.service.getFileSourceLinks(props).subscribe((resp) => {
+        spectator.service.getFileResourceLinks(props).subscribe((resp) => {
             expect(resp).toEqual(response);
             done();
         });

@@ -58,6 +58,7 @@ export enum EDITABLE_FILE {
         DotFileSizeFormatPipe,
         DotCopyButtonComponent
     ],
+    providers: [DotResourceLinksService],
     templateUrl: './dot-binary-field-preview.component.html',
     styleUrls: ['./dot-binary-field-preview.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -98,17 +99,15 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     }
 
     ngOnInit() {
-        if (!this.contentlet) {
-            return;
-        }
-
-        this.content.set(this.contentlet?.content);
         this.isEditable = this.metadata.editableAsText || this.isEditableImage();
-        this.fetchSourceLinks();
+        if (this.contentlet) {
+            this.content.set(this.contentlet?.content);
+            this.fetchResourceLinks();
+        }
     }
 
     ngOnChanges({ tempFile }: SimpleChanges): void {
-        if (tempFile.currentValue) {
+        if (tempFile?.currentValue) {
             this.content.set(tempFile.currentValue.content);
         }
     }
@@ -135,9 +134,9 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
      * @private
      * @memberof DotBinaryFieldPreviewComponent
      */
-    private fetchSourceLinks(): void {
+    private fetchResourceLinks(): void {
         this.dotResourceLinksService
-            .getFileSourceLinks({
+            .getFileResourceLinks({
                 fieldVariable: this.fieldVariable,
                 inodeOrIdentifier: this.contentlet.identifier
             })

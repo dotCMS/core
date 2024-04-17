@@ -38,12 +38,19 @@
                 <i class="pi pi-file"></i>
                 <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
             </div>
-            <div class="preview-metadata preview-metadata__link" (click)="visibility = !visibility">
+            <div
+                class="preview-metadata preview-metadata__link"
+                *ngIf="contentlet"
+                (click)="visibility = !visibility"
+                data-testId="info-btn">
                 <i class="pi pi-info-circle"></i>
                 <span>{{ 'Information' | dm }}</span>
             </div>
-
-            <a class="preview-metadata preview-metadata__link" [href]="downloadLink">
+            <a
+                class="preview-metadata preview-metadata__link"
+                *ngIf="contentlet"
+                [href]="downloadLink"
+                data-testId="download-btn">
                 <i class="pi pi-download"></i>
                 <span>{{ 'Download' | dm }}</span>
             </a>
@@ -89,6 +96,9 @@
 
 <p-dialog
     [(visible)]="visibility"
+    [closeOnEscape]="true"
+    [dismissableMask]="true"
+    [modal]="true"
     [header]="title"
     [appendTo]="'body'"
     [style]="{ maxWidth: '582px', width: '100%' }">
@@ -108,7 +118,7 @@
 
     @for(sourceLink of this.resourceLinks(); track $index; let last = $last) { @if(sourceLink.show)
     {
-    <div class="file-info__item">
+    <div class="file-info__item" [attr.data-testId]="'resource-link-' + sourceLink.key">
         <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
         <div class="file-info__link">
             <a [href]="sourceLink.value" target="_blank">{{ sourceLink.value }}</a>
@@ -116,7 +126,7 @@
         </div>
     </div>
     } } @empty { @for(item of [1,2,3,4]; track $index;) {
-    <div class="file-info__item">
+    <div class="file-info__item file-info__loading">
         <p-skeleton height="1.5rem" width="4rem" />
         <div class="file-info__link">
             <p-skeleton class="file-info__link" height="20px" width="100%" />

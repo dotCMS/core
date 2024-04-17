@@ -32,7 +32,7 @@ export class DotResourceLinksService {
      * @return {*}  {Observable<DotResourceLinks>}
      * @memberof DotResourceLinksService
      */
-    getFileSourceLinks({
+    getFileResourceLinks({
         fieldVariable,
         inodeOrIdentifier
     }: DotSourceLinksProps): Observable<DotResourceLinks> {
