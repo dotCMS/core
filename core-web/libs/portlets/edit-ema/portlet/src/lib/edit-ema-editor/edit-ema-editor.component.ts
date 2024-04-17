@@ -254,7 +254,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
-                event.preventDefault();
                 const dataset = (event.target as HTMLDivElement).dataset as unknown as DragDataset;
 
                 const parsedItem = JSON.parse(dataset.item) as DragDatasetItem;

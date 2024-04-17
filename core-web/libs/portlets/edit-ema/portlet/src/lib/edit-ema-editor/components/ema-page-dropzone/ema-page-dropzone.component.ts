@@ -46,12 +46,16 @@ export class EmaPageDropzoneComponent {
      * @memberof EmaPageDropzoneComponent
      */
     onDragover(event: DragEvent): void {
-        this.calculatePosition(event);
-
         const target = event.target as HTMLDivElement;
 
-        const { empty } = target.dataset;
+        const { empty, dropzone } = target.dataset;
 
+        // We can dragover the error zone
+        if (dropzone !== 'true') {
+            return;
+        }
+
+        this.calculatePosition(event);
         const parentRect = this.el.nativeElement.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
 

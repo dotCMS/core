@@ -37,7 +37,8 @@
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
-                    pointerEvents: es.state === editorState.DRAGGING ? 'none' : 'auto',
+                    pointerEvents:
+                        es.state === editorState.DRAGGING && es.bounds.length ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
                 (load)="onIframePageLoad()"
