@@ -250,7 +250,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     handleDragEvents() {
-        // We cannot listen to dragstart for temp items because the dragstart event is not triggered
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
@@ -315,6 +314,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     dragItem: EmaDragItem;
                     event: DragEvent & { fromElement: HTMLElement }; // For some reason the fromElement is not in the DragEvent type
                 }) => {
+                    event.preventDefault();
                     // Set the temp item to be dragged, which is the outsider file if there is not a drag item
                     if (!dragItem) {
                         this.store.setDragItem({
@@ -404,7 +404,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((event: DragEvent) => !event.x && !event.y && !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
-                this.store.setBounds([]);
+                // This cleans the bounds to hide the dropzone, but I need to activate the pointer events again in the iframe
+                // So right now if you drag a file from the OS and leave the editor will be blocked
+                this.store.setBounds([]); // I dont want to lose reference of the draggedItem, because we can leave the window dragging a contentlet/contentType
             });
     }
 
