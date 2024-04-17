@@ -99,6 +99,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     private readonly stateLoad$ = this.select((state) => state.editorState);
     private readonly code$ = this.select((state) => state.editor.page.rendered);
+    private readonly editorMode$ = this.select((state) => state.editorData.mode);
     private readonly pageURL$ = this.select((state) => this.createPageURL(state));
     private readonly favoritePageURL$ = this.select((state) =>
         this.createFavoritePagesURL({
@@ -198,9 +199,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly vtlIframePage$ = this.select(
         this.pageRendered$,
         this.isEnterpriseLicense$,
-        (rendered, isEnterprise) => ({
+        this.editorMode$,
+        (rendered, isEnterprise, mode) => ({
             rendered,
-            isEnterprise
+            isEnterprise,
+            mode
         })
     );
     readonly editorState$ = this.select(

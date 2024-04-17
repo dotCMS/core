@@ -216,20 +216,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 takeUntil(this.destroy$),
                 filter(() => this.isVTLPage())
             )
-            .subscribe(({ isEnterprise }) => {
+            .subscribe(({ isEnterprise, mode }) => {
                 requestAnimationFrame(() => {
                     // const doc = this.iframe.nativeElement.contentDocument;
                     const win = this.iframe.nativeElement.contentWindow;
                     this.inlineEditingService.setIframeWindow(win);
 
-                    if (isEnterprise) {
+                    if (isEnterprise && mode !== EDITOR_MODE.LOCKED) {
                         this.inlineEditingService.injectInlineEdit(this.iframe);
                     }
 
                     fromEvent(win, 'click').subscribe((e: MouseEvent) => {
                         this.handleInternalNav(e);
 
-                        if (isEnterprise) {
+                        if (isEnterprise && mode !== EDITOR_MODE.LOCKED) {
                             this.handleInlineEditing(e);
                         }
                     });
@@ -809,19 +809,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         };
 
                         this.inlineEditingService.setTargetInlineMCEDataset(updatedDataset);
+                        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
                         if (res) {
                             this.store.reload({
-                                params: this.queryParams,
-                                whenReloaded: () => {
-                                    this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
-                                }
+                                params: this.queryParams
                             });
 
                             return;
                         }
 
                         this.inlineEditingService.initEditor();
-                        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
                     });
             },
             [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
