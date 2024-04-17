@@ -15,7 +15,7 @@ import {
     UI_MESSAGE_KEYS,
     UiMessageI
 } from '../interfaces/index';
-import { getUiMessage } from '../utils/binary-field-utils';
+import { getFileMetadata, getUiMessage } from '../utils/binary-field-utils';
 
 export interface BinaryFieldState {
     contentlet: DotCMSContentlet;
@@ -84,6 +84,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
         ...state,
         tempFile,
+        contentlet: null,
         status: BinaryFieldStatus.PREVIEW,
         value: tempFile?.id
     }));
@@ -180,9 +181,12 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             return contentlet$.pipe(
                 tap(() => this.setUploading()),
                 switchMap((contentlet) => {
-                    const { fileAssetVersion, metaData, fieldVariable } = contentlet;
-                    const metadata = metaData || contentlet[`${fieldVariable}MetaData`];
-                    const { contentType: mimeType, editableAsText, name } = metadata || {};
+                    const {
+                        contentType: mimeType,
+                        editableAsText,
+                        name
+                    } = getFileMetadata(contentlet);
+                    const { fileAssetVersion, fieldVariable } = contentlet;
                     const contentURL = fileAssetVersion || contentlet[`${fieldVariable}Version`];
                     const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
 

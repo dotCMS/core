@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import {
     CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
@@ -8,7 +7,7 @@ import {
     Input,
     OnChanges,
     Output,
-    inject
+    signal
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -60,14 +59,9 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
 
     visibility = false;
 
-    private httpClient = inject(HttpClient);
-
+    protected content = signal<string>('');
     protected isEditable = false;
     protected readonly baseHost = window.location.origin;
-
-    get content(): string {
-        return this.tempFile?.content || this.contentlet?.content;
-    }
 
     get metadata(): DotFileMetadata {
         return this.tempFile?.metadata || this.contentletMetadata;
@@ -83,16 +77,9 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
         return metaData || this.contentlet[`${fieldVariable}MetaData`];
     }
 
-    get objectFit(): string {
-        if (this.metadata?.height > this.metadata?.width) {
-            return 'contain';
-        }
-
-        return 'cover';
-    }
-
     ngOnChanges(): void {
         this.setIsEditable();
+        this.content.set(this.tempFile?.content || this.contentlet?.content);
     }
 
     /**
