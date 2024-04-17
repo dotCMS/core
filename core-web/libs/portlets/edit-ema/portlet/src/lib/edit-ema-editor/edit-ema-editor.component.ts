@@ -794,22 +794,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     .pipe(
                         switchMap(({ shouldCopy }) => {
                             if (!shouldCopy) {
-                                return of(payload);
+                                return of(null);
                             }
 
                             return this.handleCopyContent();
                         })
                     )
-                    .subscribe((res: DotCMSContentlet) => {
+                    .subscribe((res: DotCMSContentlet | null) => {
                         const updatedDataset = {
-                            inode: res.inode || payload.dataset.inode,
+                            inode: res?.inode || payload.dataset.inode,
                             fieldName: payload.dataset.fieldName,
                             mode: payload.dataset.mode,
                             language: payload.dataset.language
                         };
 
                         this.inlineEditingService.setTargetInlineMCEDataset(updatedDataset);
-                        if (!res.dataset) {
+                        if (res) {
                             this.store.reload({
                                 params: this.queryParams,
                                 whenReloaded: () => {
