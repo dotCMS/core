@@ -70,8 +70,10 @@ public class BundlePublisherResource {
 			throw new InvalidLicenseException("License required");
 		}
 
-		final ResourceResponse responseResource = new ResourceResponse(
-				new HashMap<>(Map.of("type", type, "callback", callback)));
+		final Map<String, String> paramsMap = new HashMap<>();
+		paramsMap.put("type", type);
+		paramsMap.put("callback", callback);
+		final ResourceResponse responseResource = new ResourceResponse(paramsMap);
 		final String remoteIP = UtilMethods.isSet(request.getRemoteHost())?
 				request.getRemoteHost() : request.getRemoteAddr();
 
