@@ -42,6 +42,11 @@
                 <i class="pi pi-info-circle"></i>
                 <span>{{ 'Information' | dm }}</span>
             </div>
+
+            <a class="preview-metadata preview-metadata__link" [href]="downloadLink">
+                <i class="pi pi-download"></i>
+                <span>{{ 'Download' | dm }}</span>
+            </a>
         </div>
     </ng-template>
 
@@ -86,40 +91,37 @@
     [(visible)]="visibility"
     [header]="title"
     [appendTo]="'body'"
-    [style]="{ width: '582px' }">
-    <div class="preview-resource__item">
-        <span class="preview-source__title">{{ 'File Link' | dm }}:</span>
-        <div class="preview-resource__link">
-            <a [href]="resourceLinks().configuredImageURL" target="_blank"
-                >{{ baseHost }}{{ resourceLinks().configuredImageURL }}</a
-            >
-            <dot-copy-button [copy]="baseHost + resourceLinks().configuredImageURL" />
+    [style]="{ maxWidth: '582px', width: '100%' }">
+    <div class="file-info__item">
+        <span class="file-info__title">{{ 'Size' | dm }}:</span>
+        <div class="file-info__link">
+            <div class="file-info__size">
+                <i class="pi pi-arrows-alt"></i>
+                <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
+            </div>
+            <div class="file-info__size">
+                <i class="pi pi-file"></i>
+                <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
+            </div>
         </div>
     </div>
-    <p-divider></p-divider>
-    <div class="preview-resource__item">
-        <span class="preview-source__title">{{ 'Resource Link' | dm }}:</span>
-        <div class="preview-resource__link">
-            <a [href]="resourceLinks().text" target="_blank">{{ resourceLinks().text }}</a>
-            <dot-copy-button [copy]="resourceLinks().text" />
+
+    @for(sourceLink of this.resourceLinks(); track $index; let last = $last) { @if(sourceLink.show)
+    {
+    <div class="file-info__item">
+        <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
+        <div class="file-info__link">
+            <a [href]="sourceLink.value" target="_blank">{{ sourceLink.value }}</a>
+            <dot-copy-button [copy]="sourceLink.value" />
         </div>
     </div>
-    <p-divider></p-divider>
-    <div class="preview-resource__item">
-        <span class="preview-source__title">{{ 'Version Link' | dm }}:</span>
-        <div class="preview-resource__link">
-            <a [href]="resourceLinks().versionPath" target="_blank">{{
-                resourceLinks().versionPath
-            }}</a>
-            <dot-copy-button [copy]="'resourceLinks().versionPath'" />
+    } } @empty { @for(item of [1,2,3,4]; track $index;) {
+    <div class="file-info__item">
+        <p-skeleton height="1.5rem" width="4rem" />
+        <div class="file-info__link">
+            <p-skeleton class="file-info__link" height="20px" width="100%" />
+            <p-skeleton size="20px" />
         </div>
     </div>
-    <p-divider></p-divider>
-    <div class="preview-resource__item">
-        <span class="preview-source__title">{{ 'Id Path' | dm }}:</span>
-        <div class="preview-resource__link">
-            <a [href]="resourceLinks().idPath" target="_blank">{{ resourceLinks().idPath }}</a>
-            <dot-copy-button [copy]="resourceLinks().idPath" />
-        </div>
-    </div>
+    } }
 </p-dialog>

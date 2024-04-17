@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
     CUSTOM_ELEMENTS_SCHEMA,
@@ -15,10 +17,17 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DividerModule } from 'primeng/divider';
+import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotResourceLinks, DotResourceLinksService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
+import { catchError } from 'rxjs/operators';
+
+import { DotResourceLinksService } from '@dotcms/data-access';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSTempFile,
+    DotFileMetadata
+} from '@dotcms/dotcms-models';
 import {
     DotTempFileThumbnailComponent,
     DotFileSizeFormatPipe,
@@ -41,10 +50,10 @@ export enum EDITABLE_FILE {
     imports: [
         CommonModule,
         ButtonModule,
+        SkeletonModule,
         DotTempFileThumbnailComponent,
         DotSpinnerModule,
         DialogModule,
-        DividerModule,
         DotMessagePipe,
         DotFileSizeFormatPipe,
         DotCopyButtonComponent
@@ -67,8 +76,13 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     protected visibility = false;
     protected isEditable = false;
     protected readonly content = signal<string>('');
-    protected readonly baseHost = window.location.origin;
-
+    protected readonly resourceLinks = signal<
+        {
+            key: string;
+            value: string;
+            show: boolean;
+        }[]
+    >([]);
     private readonly dotResourceLinksService = inject(DotResourceLinksService);
 
     get metadata(): DotFileMetadata {
@@ -79,20 +93,18 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
         return this.contentlet?.fileName || this.metadata.name;
     }
 
-    protected readonly resourceLinks = signal<DotResourceLinks>(null);
+    get downloadLink(): string {
+        return `/contentAsset/raw-data/${this.contentlet.inode}/${this.fieldVariable}?byInode=true&force_download=true`;
+    }
 
     ngOnInit() {
+        if (!this.contentlet) {
+            return;
+        }
+
         this.content.set(this.contentlet?.content);
         this.isEditable = this.metadata.editableAsText || this.isEditableImage();
-
-        if (this.contentlet) {
-            this.dotResourceLinksService
-                .getFileSourceLinks({
-                    fieldVariable: this.fieldVariable,
-                    inodeOrIdentifier: this.contentlet.identifier
-                })
-                .subscribe((resourceLinks) => this.resourceLinks.set(resourceLinks));
-        }
+        this.fetchSourceLinks();
     }
 
     ngOnChanges({ tempFile }: SimpleChanges): void {
@@ -115,6 +127,58 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
         }
 
         this.editImage.emit();
+    }
+
+    /**
+     * fetch the source links for the file
+     *
+     * @private
+     * @memberof DotBinaryFieldPreviewComponent
+     */
+    private fetchSourceLinks(): void {
+        this.dotResourceLinksService
+            .getFileSourceLinks({
+                fieldVariable: this.fieldVariable,
+                inodeOrIdentifier: this.contentlet.identifier
+            })
+            .pipe(
+                catchError(() => {
+                    return of({
+                        configuredImageURL: '',
+                        text: '',
+                        versionPath: '',
+                        idPath: ''
+                    });
+                })
+            )
+            .subscribe(({ configuredImageURL, text, versionPath, idPath }) => {
+                const fileLink = configuredImageURL
+                    ? `${window.location.origin}${configuredImageURL}`
+                    : '';
+
+                this.resourceLinks.set([
+                    {
+                        key: 'FileLink',
+                        value: fileLink,
+                        show: true
+                    },
+                    {
+                        key: 'Resource-Link',
+                        value: text,
+                        show: this.contentlet.baseType === DotCMSBaseTypesContentTypes.FILEASSET
+                    },
+                    {
+                        key: 'VersionPath',
+                        value: versionPath,
+                        show: true
+                    },
+                    {
+                        key: 'IdPath',
+                        value: idPath,
+                        show: true
+                    }
+                ]);
+            });
     }
 
     /**
