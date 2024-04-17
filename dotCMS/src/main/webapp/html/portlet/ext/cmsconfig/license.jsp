@@ -428,8 +428,8 @@
         margin-top: 1.5rem;
         display: flex;
         gap: 1rem;
-        justify-content: right;}
-    .license-manager-licensePack{}
+        justify-content: right;
+     }
 </style>
 
 <form name="trialLicenseForm" id="trialLicenseForm" method="POST" target="trialRequestWindow" action="https://dotcms.com/licensing/request-a-license-3/">
