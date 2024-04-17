@@ -43,6 +43,13 @@ jobs:
           name: maven-repo
           path: ~/.m2/repository
         continue-on-error: true
+      - name: Download Build Classes
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.artifact-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: "build-classes-Initial Artifact Build"
+        continue-on-error: true
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
