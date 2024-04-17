@@ -43,6 +43,13 @@ jobs:
           name: maven-repo
           path: ~/.m2/repository
         continue-on-error: true
+      - name: Download Build Classes
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.artifact-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: "build-classes-Initial Artifact Build"
+        continue-on-error: true
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
@@ -66,8 +73,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         shell: bash
         run: |
-          ./mvnw $JVM_TEST_MAVEN_OPTS compile -DskipTests=true -Pcoverage -Dcoverage.report.phase=compile
-          ./mvnw $JVM_TEST_MAVEN_OPTS -Dsonar.log.level=DEBUG org.sonarsource.scanner.maven:sonar-maven-plugin:sonar '-Dcoverage.execution.locations=build-reports/**/*.exec' -Dsonar.projectKey=dotCMS_core_AYSbIemxK43eThAXTlt- -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.token=$SONAR_TOKEN
+          ./mvnw $JVM_TEST_MAVEN_OPTS -Dsonar.log.level=DEBUG org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=dotCMS_core_AYSbIemxK43eThAXTlt- -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.token=$SONAR_TOKEN
       - name: SonarQube Quality Gate check
         id: sonarqube-quality-gate-check
         uses: sonarsource/sonarqube-quality-gate-action@master
