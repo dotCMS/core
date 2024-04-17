@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,11 +25,11 @@ public class WorkflowSchemeAssertionChecker implements AssertionChecker<Workflow
         try {
             final List<WorkflowStep> steps = APILocator.getWorkflowAPI().findSteps(workflowScheme);
 
-            final Map<String, Object> map = Map.of(
+            final Map<String, Object> map = new HashMap<>(Map.of(
                     "name", workflowScheme.getName(),
                     "description", workflowScheme.getDescription(),
                     "id", workflowScheme.getId()
-            );
+            ));
 
             if (!steps.isEmpty()) {
                 final WorkflowStep workflowStep = steps.get(0);
