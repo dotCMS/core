@@ -11,12 +11,14 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { delay, filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
+    DotClipboardDirective,
     DotEmptyContainerComponent,
     DotMessagePipe,
     DotValidators,
@@ -40,11 +42,13 @@ interface AIContentForm {
         InputTextareaModule,
         DotMessagePipe,
         ButtonModule,
+        TooltipModule,
         SkeletonModule,
         NgIf,
         AsyncPipe,
         DotEmptyContainerComponent,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        DotClipboardDirective
     ],
     styleUrls: ['./ai-content-prompt.component.scss']
 })

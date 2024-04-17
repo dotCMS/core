@@ -26,9 +26,11 @@
                 class="ai-content__generated-text"
                 [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
                 [readOnly]="true"
+                dotClipboard
                 formControlName="generatedText"
                 pInputTextarea>
             </textarea>
+
             } @if (vm.status === ComponentStatus.LOADING) {
             <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
             } @else{
