@@ -156,6 +156,7 @@ import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVers
 import com.dotmarketing.startup.runonce.Task240102AlterVarcharLengthOfRelationTypeTest;
 import com.dotmarketing.startup.runonce.Task240111AddInodeAndIdentifierLeftIndexesTest;
 import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTableTest;
+import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
@@ -333,6 +334,7 @@ import org.junit.runners.Suite.SuiteClasses;
         AnnouncementsHelperIntegrationTest.class,
         RemoteAnnouncementsLoaderIntegrationTest.class,
         Task240112AddMetadataColumnToStructureTableTest.class,
+        Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         HTMLPageAssetRenderedAPIImplIntegrationTest.class
 })
 
