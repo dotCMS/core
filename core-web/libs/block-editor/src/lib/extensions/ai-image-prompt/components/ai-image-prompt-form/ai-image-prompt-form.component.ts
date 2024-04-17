@@ -31,7 +31,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotMessagePipe, DotValidators } from '@dotcms/ui';
+import {
+    DotClipboardDirective,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotValidators
+} from '@dotcms/ui';
 
 import {
     AIImagePrompt,
@@ -55,7 +60,8 @@ import { PromptType } from '../../ai-image-prompt.models';
         NgIf,
         InputTextareaModule,
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        DotClipboardDirective
     ],
     styleUrls: ['./ai-image-prompt-form.component.scss']
 })
