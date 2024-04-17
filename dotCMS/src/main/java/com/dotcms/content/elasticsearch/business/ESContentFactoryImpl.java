@@ -1207,7 +1207,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
            workingOrLiveNode = "live_inode";
        }
 
-       final String orderByClause = StringUtils.isNotEmpty(orderBy) ?  " order by "+ orderBy : StringPool.BLANK;
+       final String orderByClause = StringUtils.isNotEmpty(orderBy) ? ", " + orderBy : StringPool.BLANK;
 
        final String select = "select c.*, inode.owner  "
                 + " from contentlet c "
@@ -1219,7 +1219,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 + "   and contentlet_version_info.identifier = contentlet.identifier "
                +  "   and contentlet_version_info." +workingOrLiveNode+"= contentlet.inode "
                 + "   and contentlet.inode = inode.inode  "
-                + "   and contentlet_version_info.deleted = 'false' offset "+offset+" limit "+limit+"  "
+                + "   and contentlet_version_info.deleted = 'false' "
+               + "    order by contentlet.identifier "
+               + "    offset "+offset+" limit "+limit+"  "
                 + ") con_ident on c.identifier = con_ident.identifier "
                 + " inner join ( "
                 + "   select cvi.* from contentlet_version_info cvi  "
@@ -1227,7 +1229,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 + " join ("
                 + "  select i.* from inode i "
                 + " ) inode on inode.inode = c.inode "
-                +  orderByClause
+                + " order by c.identifier " + orderByClause
                 ;
 
         dotConnect.setSQL(select);

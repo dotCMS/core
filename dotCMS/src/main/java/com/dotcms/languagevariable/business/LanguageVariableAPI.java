@@ -4,9 +4,11 @@ import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Provides access to Language Variable objects in the system, which allow you to associate a key to
@@ -135,11 +137,11 @@ public interface LanguageVariableAPI {
      * @param langId  - The ID of the language that the variable was created for.
      * @param offset  - The offset of the list.
      * @param limit   - Size of the list.
-     * @param orderBy
+     * @param orderBy - The order by clause.
      * @return List of {@link LanguageVariable}
      * @throws DotDataException - If there is an error retrieving the list of Language Variables.
      */
-    List<LanguageVariable> findLanguageVariables(final long langId, final int offset, final int limit,
+    List<LanguageVariable> findVariables(final long langId, final int offset, final int limit,
             String orderBy) throws DotDataException;
 
 
@@ -151,8 +153,8 @@ public interface LanguageVariableAPI {
      * @return List of {@link LanguageVariable}
      * @throws DotDataException - If there is an error retrieving the list of Language Variables.
      */
-    List<LanguageVariable> findLanguageVariables(final int offset, final int limit,
-            final String orderBy)
+    Map<Long, List<LanguageVariable>> findVariablesForPagination(final int offset, final int limit,
+            final String orderBy, final List<Language> languages)
             throws DotDataException;
 
     void invalidateLanguageVariablesCache(Contentlet contentlet);

@@ -1,8 +1,9 @@
 package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.dotmarketing.util.WebKeys.*;
+import static com.dotmarketing.util.WebKeys.CONTENT_SELECTED_LANGUAGE;
+import static com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE;
+import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
 
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
@@ -10,7 +11,6 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
-import com.dotcms.rest.api.v1.apps.PaginationContext;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;

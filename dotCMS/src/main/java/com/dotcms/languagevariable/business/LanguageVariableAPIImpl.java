@@ -23,11 +23,16 @@ import com.dotmarketing.util.UtilMethods;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link LanguageVariableAPI}.
@@ -143,7 +148,7 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
 
   @CloseDBIfOpened
   @Override
-  public List<LanguageVariable> findLanguageVariables(final long langId, final int offset, final int limit,
+  public List<LanguageVariable> findVariables(final long langId, final int offset, final int limit,
           final String orderBy)
             throws DotDataException {
       final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
@@ -164,27 +169,25 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
       return languageVariables;
     }
 
-  public List<LanguageVariable> findLanguageVariables(final int offset, final int limit,
-          final String orderBy)
+  @CloseDBIfOpened
+  @Override
+  public Map<Long, List<LanguageVariable>> findVariablesForPagination(final int offset, final int limit,
+          final String orderBy, final List<Language> languages)
           throws DotDataException {
     final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
     final ContentType contentType = langVarContentType.get();
-    final LanguageCache languageCache = CacheLocator.getLanguageCache();
-    //final List<LanguageVariable> cacheVars = languageCache.getVars(langId, offset, limit, orderBy);
-    //if (cacheVars != null && !cacheVars.isEmpty()) {
-    //  return cacheVars;
-    //}
+
     //We bring non-archived live contentlets
     final List<Contentlet> byContentTypeAndLanguage = contentletFactory.findByContentType(
             contentType, offset, limit, orderBy, false);
-    final ImmutableList<LanguageVariable> languageVariables = byContentTypeAndLanguage.stream()
+
+    final List<LanguageVariable> fetchedVariables = byContentTypeAndLanguage.stream()
             .map(fromContentlet()).filter(Objects::nonNull)
             .collect(CollectionsUtils.toImmutableList());
 
-    //languageCache.putVars(langId, languageVariables, offset, limit, orderBy);
-    return languageVariables;
+    return fetchedVariables.stream()
+           .collect(Collectors.groupingBy(LanguageVariable::getLanguageId));
   }
-
 
    private Function<Contentlet, LanguageVariable> fromContentlet() {
       return contentlet -> {
