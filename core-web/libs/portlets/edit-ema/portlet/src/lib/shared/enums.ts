@@ -22,7 +22,6 @@ export enum EDITOR_STATE {
     LOADING = 'loading',
     IDLE = 'idle',
     DRAGGING = 'dragging',
-
     ERROR = 'error'
 }
 

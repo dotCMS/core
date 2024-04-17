@@ -120,8 +120,6 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
 
     dragStart(event: DragEvent): void {
         event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
-
-        // this.moveStart.emit(payload);
     }
 
     /**

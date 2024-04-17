@@ -1,29 +1,18 @@
-import { Observable } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
-    EventEmitter,
     Input,
-    Output,
-    inject
+    inject,
+    signal
 } from '@angular/core';
 
-import { switchMap } from 'rxjs/operators';
-
-import { DotTempFileUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotErrorPipe } from './pipes/error/dot-error.pipe';
 import { DotPositionPipe } from './pipes/position/dot-position.pipe';
 import { EmaDragItem, Container } from './types';
-
-import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
-import { EDITOR_STATE } from '../../../shared/enums';
-import { PositionPayload, ClientData } from '../../../shared/models';
 
 const POINTER_INITIAL_POSITION = {
     left: '0',
@@ -36,7 +25,6 @@ const POINTER_INITIAL_POSITION = {
     selector: 'dot-ema-page-dropzone',
     standalone: true,
     imports: [CommonModule, DotPositionPipe, DotErrorPipe, DotMessagePipe],
-    providers: [DotTempFileUploadService],
     templateUrl: './ema-page-dropzone.component.html',
     styleUrls: ['./ema-page-dropzone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -44,81 +32,12 @@ const POINTER_INITIAL_POSITION = {
 export class EmaPageDropzoneComponent {
     @Input() containers: Container[] = [];
     @Input() dragItem: EmaDragItem;
-    @Output() place = new EventEmitter<PositionPayload>();
 
     pointerPosition: Record<string, string> = POINTER_INITIAL_POSITION;
 
     private readonly el = inject(ElementRef);
-    private readonly tempFileUploadService = inject(DotTempFileUploadService);
-    private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
 
-    private readonly store = inject(EditEmaStore);
-
-    /**
-     * Emit place event and reset pointer position
-     *
-     * @param {DragEvent} event
-     * @memberof EmaPageDropzoneComponent
-     */
-    onDrop(event: DragEvent): void {
-        const target = event.target as HTMLDivElement;
-
-        const file = event.dataTransfer.files[0];
-
-        const data: ClientData = JSON.parse(target.dataset.payload);
-        const isTop = this.isTop(event);
-
-        if (file) {
-            // I need to publish the temp file to use it.
-            this.uploadTempFile(file).subscribe((_tempFile: DotCMSContentlet) => {
-                const payload = <PositionPayload>{
-                    ...data,
-                    position: isTop ? 'before' : 'after'
-                };
-
-                // i need the code for empty container to continue.
-
-                this.place.emit(payload);
-                this.pointerPosition = POINTER_INITIAL_POSITION;
-            });
-        } else {
-            const payload = <PositionPayload>{
-                ...data,
-                position: isTop ? 'before' : 'after'
-            };
-
-            this.place.emit(payload);
-            this.pointerPosition = POINTER_INITIAL_POSITION;
-        }
-    }
-
-    /**
-     * Emit place event and reset pointer position
-     *
-     * @param {DragEvent} event
-     * @memberof EmaPageDropzoneComponent
-     */
-    onDropEmptyContainer(event: DragEvent): void {
-        const target = event.target as HTMLDivElement;
-        this.pointerPosition = POINTER_INITIAL_POSITION;
-
-        // If the target doesn't have a payload, then we have an error zone and we should not emit the event
-        // We should also reset the editor to IDLE
-
-        if (!target?.dataset?.payload) {
-            this.store.updateEditorState(EDITOR_STATE.IDLE);
-
-            return;
-        }
-
-        const data: ClientData = JSON.parse(target.dataset.payload);
-
-        const payload = <PositionPayload>{
-            ...data
-        };
-
-        this.place.emit(payload);
-    }
+    protected readonly position = signal('');
 
     /**
      * Set the pointer position
@@ -127,47 +46,32 @@ export class EmaPageDropzoneComponent {
      * @memberof EmaPageDropzoneComponent
      */
     onDragover(event: DragEvent): void {
-        event.stopPropagation();
-        event.preventDefault();
+        this.calculatePosition(event);
 
         const target = event.target as HTMLDivElement;
 
-        const parentReact = this.el.nativeElement.getBoundingClientRect();
-        const targetRect = target.getBoundingClientRect();
-        const isTop = this.isTop(event);
+        const { empty } = target.dataset;
 
-        this.pointerPosition = {
-            left: `${targetRect.left - parentReact.left}px`,
-            width: `${targetRect.width}px`,
-            opacity: '1',
-            top: isTop
-                ? `${targetRect.top - parentReact.top}px`
-                : `${targetRect.top - parentReact.top + targetRect.height}px`,
-            height: '3px'
-        };
-    }
-
-    /**
-     * Set the pointer position
-     *
-     * @param {DragEvent} event
-     * @memberof EmaPageDropzoneComponent
-     */
-    onDragoverEmptyContainer(event: DragEvent): void {
-        event.stopPropagation();
-        event.preventDefault();
-
-        const target = event.target as HTMLDivElement;
-
-        const parentReact = this.el.nativeElement.getBoundingClientRect();
+        const parentRect = this.el.nativeElement.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
 
+        const isEmpty = empty === 'true';
+
+        const opacity = isEmpty ? '0.1' : '1';
+        const height = isEmpty ? `${targetRect.height}px` : '3px';
+        const top = this.getTop({
+            targetRect,
+            parentRect,
+            isEmpty,
+            position: this.position()
+        });
+
         this.pointerPosition = {
-            left: `${targetRect.left - parentReact.left}px`,
+            left: `${targetRect.left - parentRect.left}px`,
             width: `${targetRect.width}px`,
-            opacity: '0.1',
-            top: `${targetRect.top - parentReact.top}px`,
-            height: `${targetRect.height}px`
+            opacity,
+            top,
+            height
         };
     }
 
@@ -179,32 +83,32 @@ export class EmaPageDropzoneComponent {
      * @return {*}  {boolean}
      * @memberof EmaPageDropzoneComponent
      */
-    private isTop(event: DragEvent): boolean {
+    private calculatePosition(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
         const targetRect = target.getBoundingClientRect();
         const mouseY = event.clientY;
+        const isTop = mouseY < targetRect.top + targetRect.height / 2;
 
-        return mouseY < targetRect.top + targetRect.height / 2;
+        this.position.set(isTop ? 'before' : 'after');
     }
 
-    private uploadTempFile(file: File): Observable<DotCMSContentlet | string> {
-        return this.tempFileUploadService.upload(file).pipe(
-            switchMap(([{ id, image }]: DotCMSTempFile[]) => {
-                if (!image) {
-                    // return throwError(
-                    //     this.dotMessageService.get(
-                    //         'templates.properties.form.thumbnail.error.invalid.url'
-                    //     )
-                    // );
-                }
-
-                return this.dotWorkflowActionsFireService.publishContentletAndWaitForIndex<DotCMSContentlet>(
-                    'dotAsset',
-                    {
-                        asset: id
-                    }
-                );
-            })
-        );
+    private getTop({
+        targetRect,
+        parentRect,
+        isEmpty,
+        position
+    }: {
+        targetRect: DOMRect;
+        isEmpty: boolean;
+        position: string;
+        parentRect: DOMRect;
+    }) {
+        if (isEmpty) {
+            return `${targetRect.top - parentRect.top}px`;
+        } else {
+            return position === 'before'
+                ? `${targetRect.top - parentRect.top}px`
+                : `${targetRect.top - parentRect.top + targetRect.height}px`;
+        }
     }
 }

@@ -18,6 +18,7 @@ export interface VTLFile {
 export interface ClientData {
     contentlet?: ContentletPayload;
     container: ContainerPayload;
+    newContentlet?: ContentletPayload;
     vtlFiles?: VTLFile[];
 }
 

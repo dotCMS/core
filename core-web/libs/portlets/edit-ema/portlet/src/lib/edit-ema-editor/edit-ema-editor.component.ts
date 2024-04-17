@@ -34,10 +34,13 @@ import {
     DotHttpErrorManagerService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
-    DotContentletService
+    DotContentletService,
+    DotTempFileUploadService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
+    DotCMSTempFile,
     DotExperimentStatus,
     DotTreeNode,
     SeoMetaTags,
@@ -110,7 +113,8 @@ import {
         DotCopyContentModalService,
         DotCopyContentService,
         DotHttpErrorManagerService,
-        DotContentletService
+        DotContentletService,
+        DotTempFileUploadService
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
@@ -131,6 +135,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
+    private readonly tempFileUploadService = inject(DotTempFileUploadService);
+    private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
 
     readonly editorState$ = this.store.editorState$;
     readonly dragItem$ = this.store.dragItem$;
@@ -248,6 +254,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
+                event.preventDefault();
                 const dataset = (event.target as HTMLDivElement).dataset as unknown as DragDataset;
 
                 const parsedItem = JSON.parse(dataset.item) as DragDatasetItem;
@@ -291,32 +298,44 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragenter')
             .pipe(
                 takeUntil(this.destroy$),
-
-                // This is triggered everytime the user enters an element, I just want to trigger it when we don't have a drag item
                 switchMap((event) =>
                     this.dragItem$.pipe(
                         take(1),
-                        filter((dragItem) => !dragItem),
-                        map(() => event)
+                        map((dragItem) => ({
+                            event,
+                            dragItem
+                        }))
                     )
                 )
             )
-            .subscribe((_event: DragEvent) => {
-                // Set the temp item to be dragged, which is the outsider file
-
-                this.store.setDragItem({
-                    baseType: 'dotAsset',
-                    contentType: 'dotAsset',
-                    draggedPayload: {
-                        type: 'temp'
+            .subscribe(
+                ({
+                    dragItem,
+                    event
+                }: {
+                    dragItem: EmaDragItem;
+                    event: DragEvent & { fromElement: HTMLElement }; // For some reason the fromElement is not in the DragEvent type
+                }) => {
+                    // Set the temp item to be dragged, which is the outsider file if there is not a drag item
+                    if (!dragItem) {
+                        this.store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
                     }
-                });
 
-                this.iframe.nativeElement.contentWindow?.postMessage(
-                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-                    this.host
-                );
-            });
+                    if (!event.fromElement) {
+                        // I just want the bounds if we are entering the window not every element
+                        this.iframe.nativeElement.contentWindow?.postMessage(
+                            NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+                            this.host
+                        );
+                    }
+                }
+            );
 
         fromEvent(this.window, 'dragend')
             .pipe(takeUntil(this.destroy$))
@@ -338,24 +357,55 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 switchMap((event) =>
                     this.dragItem$.pipe(
                         take(1),
-                        filter((dragItem) => dragItem.draggedPayload.type === 'temp'), // I just want to trigger this when is a temp item
-                        map(() => event)
+                        map((dragItem) => ({
+                            event,
+                            dragItem
+                        }))
                     )
                 )
             )
-            .subscribe((event: DragEvent) => {
-                event.preventDefault(); // Prevent file opening
+            .subscribe(({ event, dragItem }: { event: DragEvent; dragItem: EmaDragItem }) => {
+                event.preventDefault();
+                const target = event.target as HTMLDivElement;
 
-                this.store.updateEditorState(EDITOR_STATE.IDLE); // I will probably delete this when I process the image
+                const { position, payload, dropzone } = target.dataset;
+
+                // If we drop in a container that is not a dropzone, we just reset the editor state
+                if (dropzone !== 'true') {
+                    this.store.updateEditorState(EDITOR_STATE.IDLE);
+
+                    return;
+                }
+
+                const data: ClientData = JSON.parse(payload);
+
+                const file = event.dataTransfer.files[0];
+
+                if (file) {
+                    // I need to publish the temp file to use it.
+                    this.handleFileUpload({
+                        file,
+                        data,
+                        position,
+                        dragItem
+                    });
+                } else {
+                    const positionPayload = <PositionPayload>{
+                        position,
+                        ...data
+                    };
+
+                    this.placeItem(positionPayload, dragItem);
+                }
             });
 
         fromEvent(this.window, 'dragleave')
             .pipe(
                 takeUntil(this.destroy$),
-                filter((event: DragEvent) => !event.x && !event.y) // Just reset when is out of the window
+                filter((event: DragEvent) => !event.x && !event.y && !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
-                this.store.updateEditorState(EDITOR_STATE.IDLE);
+                this.store.setBounds([]);
             });
     }
 
@@ -488,7 +538,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}  {void}
      * @memberof EditEmaEditorComponent
      */
-    onPlaceItem(positionPayload: PositionPayload, dragItem: EmaDragItem): void {
+    placeItem(positionPayload: PositionPayload, dragItem: EmaDragItem): void {
         let payload = this.getPageSavePayload(positionPayload);
 
         const destinationContainer = payload.container;
@@ -542,7 +592,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         } else if (dragItem.draggedPayload.type === 'content-type') {
             this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
         } else if (dragItem.draggedPayload.type === 'temp') {
-            console.warn('Not implemented yet');
+            const { pageContainers, didInsert } = insertContentletInContainer({
+                ...payload,
+                newContentletId: payload.newContentlet.identifier
+            });
+
+            if (!didInsert) {
+                this.handleDuplicatedContentlet();
+
+                return;
+            }
+
+            this.store.savePage({
+                pageContainers,
+                pageId: payload.pageId,
+                params: this.queryParams
+            });
         }
     }
     /**
@@ -1044,5 +1109,69 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.updateEditorState(EDITOR_STATE.ERROR);
 
         return this.dotHttpErrorManagerService.handle(error).pipe(map(() => null));
+    }
+
+    private handleFileUpload({
+        data,
+        position,
+        file,
+        dragItem
+    }: {
+        data: ClientData;
+        position?: string;
+        file: File;
+        dragItem: EmaDragItem;
+    }) {
+        this.tempFileUploadService
+            .upload(file)
+            .pipe(
+                tap(() => {
+                    this.messageService.add({
+                        severity: 'info',
+                        summary: 'Temporal File',
+                        detail: `Uploading ${file.name}`,
+                        life: 3000
+                    });
+                }),
+                switchMap(([{ id, image }]: DotCMSTempFile[]) => {
+                    if (!image) {
+                        // return throwError(
+                        //     this.dotMessageService.get(
+                        //         'templates.properties.form.thumbnail.error.invalid.url'
+                        //     )
+                        // );
+                    }
+
+                    return this.dotWorkflowActionsFireService
+                        .publishContentletAndWaitForIndex<DotCMSContentlet>('dotAsset', {
+                            asset: id
+                        })
+                        .pipe(
+                            tap(() => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get('Workflow Action'),
+                                    detail: `Publishing ${file.name}`,
+                                    life: 3000
+                                });
+                            })
+                        );
+                })
+            )
+            .subscribe((contentlet) => {
+                const payload = {
+                    ...data,
+                    position,
+                    newContentlet: {
+                        identifier: contentlet.identifier,
+                        inode: contentlet.inode,
+                        title: contentlet.title,
+                        contentType: contentlet.contentType,
+                        baseType: contentlet.baseType
+                    }
+                } as ActionPayload;
+
+                this.placeItem(payload, dragItem);
+            });
     }
 }
