@@ -17,14 +17,14 @@
     [ngStyle]="getActionPosition()"
     data-testId="actions">
     @if (contentlet.payload.vtlFiles?.length) {
+    <p-menu #menuVTL [model]="vtlFiles" [popup]="true" appendTo="body" />
     <p-button
         (click)="menuVTL.toggle($event)"
         data-testId="edit-vtl-button"
         styleClass="p-button-rounded p-button-raised"
         icon="pi pi-code" />
-    <p-menu #menuVTL [model]="vtlFiles" [popup]="true" appendTo="body" />
-
     }
+
     <p-button
         (dragstart)="dragStart($event, contentlet.payload)"
         (dragend)="dragEnd($event)"

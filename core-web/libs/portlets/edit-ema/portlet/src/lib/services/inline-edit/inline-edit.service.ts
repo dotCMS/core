@@ -78,8 +78,8 @@ export class InlineEditService {
             }
         `;
 
-            doc.body.appendChild(script);
-            doc.body.appendChild(style);
+            doc.body?.appendChild(script);
+            doc.body?.appendChild(style);
         }
     }
 

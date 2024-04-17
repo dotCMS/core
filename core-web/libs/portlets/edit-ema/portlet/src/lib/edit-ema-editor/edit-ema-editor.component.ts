@@ -330,11 +330,56 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    addEditorPageScript(rendered: string) {
+    addEditorPageScript(rendered = ''): string {
         const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
-        const updatedRendered = rendered?.replace('</body>', scriptString + '</body>');
+        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
+    }
+
+    /**
+     * Add custom styles to the rendered content
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addCustomStyles(rendered = ''): string {
+        const styles = `<style>
+
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
+        }
+        </style>
+        `;
+
+        return rendered.replace('</head>', styles + '</head>');
+    }
+
+    /**
+     * Inject the editor page script and styles to the VTL content
+     *
+     * @private
+     * @param {string} rendered
+     * @return {*}  {string}
+     * @memberof EditEmaEditorComponent
+     */
+    private inyectCodeToVTL(rendered: string): string {
+        let newFile = this.addEditorPageScript(rendered);
+
+        newFile = this.addCustomStyles(newFile);
+
+        return newFile;
     }
 
     ngOnDestroy(): void {
@@ -545,8 +590,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const doc = this.iframe?.nativeElement.contentDocument;
 
             if (doc) {
+                const newFile = this.inyectCodeToVTL(code);
+
                 doc.open();
-                doc.write(this.addEditorPageScript(code));
+                doc.write(newFile);
                 doc.close();
 
                 this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
