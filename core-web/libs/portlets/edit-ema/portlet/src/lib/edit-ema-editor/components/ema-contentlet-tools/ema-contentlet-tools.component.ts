@@ -9,6 +9,7 @@ import {
     OnChanges,
     OnInit,
     Output,
+    SimpleChange,
     SimpleChanges,
     ViewChild,
     inject
@@ -99,10 +100,7 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
             return;
         }
 
-        if (
-            changes.contentlet.currentValue?.payload.contentlet.identifier !==
-            changes.contentlet.previousValue?.payload.contentlet.identifier
-        ) {
+        if (this.hasContentletOrContainerChanged(changes.contentlet)) {
             this.hideMenus();
         }
     }
@@ -211,6 +209,25 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
             top: `${top}px`,
             zIndex: '1'
         };
+    }
+
+    /**
+     * Check if Contentlet or Container are changed
+     *
+     * @private
+     * @param {SimpleChange} contentletChange
+     * @return {*}  {boolean}
+     * @memberof EmaContentletToolsComponent
+     */
+    private hasContentletOrContainerChanged(contentletChange: SimpleChange): boolean {
+        const currentValue = contentletChange.currentValue?.payload;
+        const previousValue = contentletChange.previousValue?.payload;
+
+        const hasIdentifierChanged =
+            currentValue?.contentlet.identifier !== previousValue?.contentlet.identifier;
+        const hasUUIDChanged = currentValue?.container.uuid !== previousValue?.container.uuid;
+
+        return hasIdentifierChanged || hasUUIDChanged;
     }
 
     /**
