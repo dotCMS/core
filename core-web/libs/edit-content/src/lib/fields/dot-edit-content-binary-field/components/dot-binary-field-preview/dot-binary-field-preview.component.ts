@@ -44,6 +44,12 @@ export enum EDITABLE_FILE {
     unknown = 'unknown'
 }
 
+interface dotPreviewResourceLink {
+    key: string;
+    value: string;
+    show: boolean;
+}
+
 @Component({
     selector: 'dot-binary-field-preview',
     standalone: true,
@@ -77,13 +83,7 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     protected visibility = false;
     protected isEditable = false;
     protected readonly content = signal<string>('');
-    protected readonly resourceLinks = signal<
-        {
-            key: string;
-            value: string;
-            show: boolean;
-        }[]
-    >([]);
+    protected readonly resourceLinks = signal<dotPreviewResourceLink[]>([]);
     private readonly dotResourceLinksService = inject(DotResourceLinksService);
 
     get metadata(): DotFileMetadata {
