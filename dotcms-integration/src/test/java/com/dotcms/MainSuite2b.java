@@ -170,10 +170,10 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
-        HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
+        Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
+        HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
