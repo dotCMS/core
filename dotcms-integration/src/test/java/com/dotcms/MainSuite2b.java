@@ -170,6 +170,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
+        HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
@@ -333,9 +335,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240111AddInodeAndIdentifierLeftIndexesTest.class,
         AnnouncementsHelperIntegrationTest.class,
         RemoteAnnouncementsLoaderIntegrationTest.class,
-        Task240112AddMetadataColumnToStructureTableTest.class,
-        Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
-        HTMLPageAssetRenderedAPIImplIntegrationTest.class
+        Task240112AddMetadataColumnToStructureTableTest.class
 })
 
 public class MainSuite2b {
