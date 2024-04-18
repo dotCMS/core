@@ -36,6 +36,11 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>${version.snakeyaml}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
