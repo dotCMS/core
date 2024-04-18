@@ -253,6 +253,17 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
+    readonly editorToolbarData$ = this.select(this.editorState$, (editorState) => ({
+        ...editorState,
+        showWorkflowActions:
+            editorState.editorData.mode === EDITOR_MODE.EDIT ||
+            editorState.editorData.mode === EDITOR_MODE.INLINE_EDITING,
+        showInfoDisplay:
+            !editorState.editorData.canEditPage ||
+            (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
+                editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING)
+    }));
+
     readonly layoutProperties$ = this.select(
         this.layoutProps$,
         this.templateIdentifier$,
