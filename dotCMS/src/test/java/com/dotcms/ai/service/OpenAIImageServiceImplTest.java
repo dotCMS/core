@@ -52,7 +52,7 @@ public class OpenAIImageServiceImplTest {
      * Scenario: Send a request with a valid JSON object
      * Given a valid JSON object
      * When the sendRequest method is called
-     * Then the JSON object should contain the keys "prompt", "model", "size", and "n"
+     * Then the JSON object should contain the keys "originalPrompt", "value", "url", "tempFileName", and "response"
      */
     @Test
     public void test_sendRequest() throws Exception {
@@ -220,7 +220,7 @@ public class OpenAIImageServiceImplTest {
             }
 
             @Override
-            AIImageRequestDTO.Builder getDtoOBuilder() {
+            AIImageRequestDTO.Builder getDtoBuilder() {
                 return dtoBuilder;
             }
         };

@@ -106,7 +106,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
 
     @Override
     public JSONObject sendTextPrompt(final String textPrompt) {
-        return sendRequest(getDtoOBuilder().prompt(textPrompt).build());
+        return sendRequest(getDtoBuilder().prompt(textPrompt).build());
     }
 
     private JSONObject createTempFile(final JSONObject imageResponse) {
@@ -196,7 +196,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
     }
 
     @VisibleForTesting
-    AIImageRequestDTO.Builder getDtoOBuilder() {
+    AIImageRequestDTO.Builder getDtoBuilder() {
         return new AIImageRequestDTO.Builder();
     }
 
