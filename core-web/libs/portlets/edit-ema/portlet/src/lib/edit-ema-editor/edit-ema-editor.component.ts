@@ -296,6 +296,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragenter')
             .pipe(
                 takeUntil(this.destroy$),
+                // For some reason the fromElement is not in the DragEvent type
+                filter((event: DragEvent & { fromElement: HTMLElement }) => !event.fromElement), // I just want to trigger this when we are dragging from the outside
                 switchMap((event) =>
                     this.dragItem$.pipe(
                         take(1),
@@ -306,35 +308,27 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     )
                 )
             )
-            .subscribe(
-                ({
-                    dragItem,
-                    event
-                }: {
-                    dragItem: EmaDragItem;
-                    event: DragEvent & { fromElement: HTMLElement }; // For some reason the fromElement is not in the DragEvent type
-                }) => {
-                    event.preventDefault();
-                    // Set the temp item to be dragged, which is the outsider file if there is not a drag item
-                    if (!dragItem) {
-                        this.store.setDragItem({
-                            baseType: 'dotAsset',
-                            contentType: 'dotAsset',
-                            draggedPayload: {
-                                type: 'temp'
-                            }
-                        });
-                    }
-
-                    if (!event.fromElement) {
-                        // I just want the bounds if we are entering the window not every element
-                        this.iframe.nativeElement.contentWindow?.postMessage(
-                            NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-                            this.host
-                        );
-                    }
+            .subscribe(({ dragItem, event }: { dragItem: EmaDragItem; event: DragEvent }) => {
+                event.preventDefault();
+                // Set the temp item to be dragged, which is the outsider file if there is not a drag item
+                if (!dragItem) {
+                    this.store.setDragItem({
+                        baseType: 'dotAsset',
+                        contentType: 'dotAsset',
+                        draggedPayload: {
+                            type: 'temp'
+                        }
+                    });
+                } else {
+                    // if there is a dragItem then the state should be OUT_OF_BOUNDS
+                    this.store.updateEditorState(EDITOR_STATE.DRAGGING);
                 }
-            );
+
+                this.iframe.nativeElement.contentWindow?.postMessage(
+                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+                    this.host
+                );
+            });
 
         fromEvent(this.window, 'dragend')
             .pipe(takeUntil(this.destroy$))
@@ -404,10 +398,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((event: DragEvent) => !event.x && !event.y && !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
-                // This cleans the bounds to hide the dropzone, but I need to activate the pointer events again in the iframe
-                // So right now if you drag a file from the OS and leave the editor will be blocked
-                this.store.setBounds([]); // I dont want to lose reference of the draggedItem, because we can leave the window dragging a contentlet/contentType
+                // I need to do this to hide the dropzone but maintain the current dragItem
+
+                this.store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // If you dragout of the window and is a file of SO, we need to reset the editor
             });
+    }
+
+    /**
+     * Reset the editor when the state is out of bounds
+     *
+     * @param {EDITOR_STATE} editorState
+     * @memberof EditEmaEditorComponent
+     */
+    resetEditorState(editorState: EDITOR_STATE) {
+        if (editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
+            this.store.updateEditorState(EDITOR_STATE.IDLE);
+        }
     }
 
     /**
