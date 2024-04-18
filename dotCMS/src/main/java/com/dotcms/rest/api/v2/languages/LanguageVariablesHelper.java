@@ -8,18 +8,14 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class LanguageVariablesHelper {
-
-    static final int FIRST_PAGE_INDEX = 1;
-    static final int PER_PAGE_DEFAULT = 10;
 
     private final LanguageVariableAPI languageVariableAPI;
 
@@ -40,52 +36,45 @@ public class LanguageVariablesHelper {
 
         final int offset =  context.getPage();
         final int limit = context.getPerPage();
-
-        String orderBy = "c.contentlet_as_json->'fields'->'key'->'value'";
+        final String orderBy = LanguageVariableAPI.ORDER_BY_KEY;
         //LangVarKey-> languageCode -> LanguageVariable.Value
-        Map<String, Map<String,LanguageVariableView>> table = new TreeMap<>(Collections.reverseOrder());
+        final LinkedHashMap<String, Map<String,LanguageVariableView>> table = new LinkedHashMap<>();
         final List<Language> allLanguages = languageAPI.getLanguages().stream()
                 .sorted(Comparator.comparing(Language::getLanguage))
                 .collect(Collectors.toList());
-        final Map<Long, List<LanguageVariable>> variablesByLanguageMap = languageVariableAPI.findVariablesForPagination(offset, limit, orderBy, allLanguages);
-        for (final Language language : allLanguages) {
-            final long languageId = language.getId();
-            Logger.debug(this, "Processing language: " + languageId + " with tag : " + language + " offset: " + offset + " limit: " + limit);
-            final List<LanguageVariable> variables = variablesByLanguageMap.get(languageId);
-            if(null != variables) {
-                variables.forEach(v -> Logger.info(this,   "Lang:: " +languageId+ " LanguageVariable: " + v.getKey() + " , " + v.getValue())  );
-                variables.sort(Comparator.comparing(LanguageVariable::getKey));
-                buildVariablesTable(table, language, variables, allLanguages);
-            }
-        }
-        return ImmutableLanguageVariablePageView.builder().variables(table).build();
+        final int count = languageVariableAPI.countLiveVariables();
+        final Map<String, List<LanguageVariable>> variablesByLanguageMap = languageVariableAPI.findVariablesForPagination(offset, limit, orderBy, allLanguages);
+        variablesByLanguageMap.forEach((key,variables) -> buildVariablesTable(key, variables, allLanguages, table));
+        table.forEach((k,v) -> Logger.debug(this, "Key: " + k ));
+        return ImmutableLanguageVariablePageView.builder().variables(table).total(count).build();
     }
 
 
-    void buildVariablesTable(Map<String, Map<String, LanguageVariableView>> table, Language current,
-            List<LanguageVariable> variables, List<Language> languages) {
+    void buildVariablesTable(final String key, final List<LanguageVariable> variables, final List<Language> languages, final Map<String, Map<String, LanguageVariableView>> table) {
 
-        for (LanguageVariable variable : variables) {
-            final String key = variable.getKey();
             table.compute(key, (k, v) -> {
+
+                final Map<Long, LanguageVariable> byLangIdMap = variables.stream()
+                        .collect(Collectors.toMap(LanguageVariable::getLanguageId, Function.identity()));
+
                 if (v == null) {
-                    v = new HashMap<>();
-                    //seed the table with all languages
-                    for (Language language : languages) {
-                        v.put(language.getIsoCode(), null);
-                    }
+                    v = new LinkedHashMap<>(languages.size());
                 }
-                v.put(current.getIsoCode(),
-                        ImmutableLanguageVariableView.builder()
-                                .inode(variable.getInode())
-                                .identifier(variable.getIdentifier())
-                                .key(variable.getKey())
-                                .value(variable.getValue())
-                                .build());
+                for(Language current:languages){
+                    final LanguageVariable variable = byLangIdMap.get(current.getId());
+                    if(variable == null){
+                        continue;
+                    }
+                    v.put(current.getIsoCode(),
+                            ImmutableLanguageVariableView.builder()
+                                    .inode(variable.getInode())
+                                    .identifier(variable.getIdentifier())
+                                    .key(variable.getKey())
+                                    .value(variable.getValue())
+                                    .build());
+                }
                 return v;
             });
-        }
-
     }
 
 

@@ -20,17 +20,14 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -146,32 +143,55 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
     return (null != keyValue) ? keyValue.getValue() : null;
   }
 
+  @Override
+  public List<LanguageVariable> findAllVariables() throws DotDataException{
+       final List<Language> languages = languageAPI.getLanguages();
+         return languages.stream()
+                .map(Language::getId)
+                .map(langId -> {
+                     try {
+                          return findVariables(langId);
+                     } catch (DotDataException e) {
+                          Logger.error(this, e.getMessage(), e);
+                          return List.<LanguageVariable>of();
+                     }
+                })
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * @param langId - The ID of the language that the variable was created for.
+   * @return
+   * @throws DotDataException
+   */
   @CloseDBIfOpened
   @Override
-  public List<LanguageVariable> findVariables(final long langId, final int offset, final int limit,
-          final String orderBy)
+  public List<LanguageVariable> findVariables(final long langId)
             throws DotDataException {
       final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
       final ContentType contentType = langVarContentType.get();
       final LanguageCache languageCache = CacheLocator.getLanguageCache();
-      final List<LanguageVariable> cacheVars = languageCache.getVars(langId, offset, limit, orderBy);
+      final List<LanguageVariable> cacheVars = languageCache.getVars(langId);
       if (cacheVars != null && !cacheVars.isEmpty()) {
           return cacheVars;
       }
-      //We bring non-archived live contentlets
+    //We bring non-archived live contentlets
       final List<Contentlet> byContentTypeAndLanguage = contentletFactory.findByContentTypeAndLanguage(
-              contentType, langId, offset, limit, orderBy, false);
+              contentType, langId, 0, 0, LanguageVariableAPI.ORDER_BY_KEY, false);
       final ImmutableList<LanguageVariable> languageVariables = byContentTypeAndLanguage.stream()
               .map(fromContentlet()).filter(Objects::nonNull)
               .collect(CollectionsUtils.toImmutableList());
 
-      languageCache.putVars(langId, languageVariables, offset, limit, orderBy);
+      languageCache.putVars(langId, languageVariables);
       return languageVariables;
     }
 
   @CloseDBIfOpened
   @Override
-  public Map<Long, List<LanguageVariable>> findVariablesForPagination(final int offset, final int limit,
+  public Map<String, List<LanguageVariable>> findVariablesForPagination(final int offset, final int limit,
           final String orderBy, final List<Language> languages)
           throws DotDataException {
     final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
@@ -186,8 +206,16 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
             .collect(CollectionsUtils.toImmutableList());
 
     return fetchedVariables.stream()
-           .collect(Collectors.groupingBy(LanguageVariable::getLanguageId));
+           .collect(Collectors.groupingBy(LanguageVariable::getKey, LinkedHashMap::new, Collectors.toList()));
   }
+
+  @CloseDBIfOpened
+  @Override
+  public int countLiveVariables() {
+      final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
+      final ContentType contentType = langVarContentType.get();
+      return contentletFactory.countByTypeWorkingOrLive(contentType, false);
+    }
 
    private Function<Contentlet, LanguageVariable> fromContentlet() {
       return contentlet -> {

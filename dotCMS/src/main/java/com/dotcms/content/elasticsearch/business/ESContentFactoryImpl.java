@@ -233,6 +233,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             "bool24", "bool25"};
 
     private static final int MAX_FIELDS_ALLOWED = 25;
+    public static final String ORDER_BY = " order by ";
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
@@ -1178,7 +1179,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         select += " and contentlet_version_info.deleted = 'false'";
 
         if (UtilMethods.isSet(sortBy)) {
-            select += " order by " + sortBy;
+            select += ORDER_BY + sortBy;
         }
         dotConnect.setSQL(select);
 
@@ -1197,6 +1198,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 
+    @Override
     public List<Contentlet> findByContentType(final ContentType contentType,
             final int offset, final int limit,
             final String orderBy, final boolean working) throws DotDataException, DotStateException {
@@ -1209,27 +1211,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
        final String orderByClause = StringUtils.isNotEmpty(orderBy) ? ", " + orderBy : StringPool.BLANK;
 
-       final String select = "select c.*, inode.owner  "
-                + " from contentlet c "
+       final String select = "select contentlet.*, inode.owner  "
+                + " from contentlet  "
                 + " inner join ( "
-                + "  select distinct contentlet.identifier "
-                + "   from contentlet, contentlet_version_info, inode "
+                + "  select distinct c.identifier "
+                + "   from contentlet c, contentlet_version_info vi, inode i "
                 + "  where "
-                + "   contentlet.structure_inode = '"+contentType.inode()+"' "
-                + "   and contentlet_version_info.identifier = contentlet.identifier "
-               +  "   and contentlet_version_info." +workingOrLiveNode+"= contentlet.inode "
-                + "   and contentlet.inode = inode.inode  "
-                + "   and contentlet_version_info.deleted = 'false' "
-               + "    order by contentlet.identifier "
+                + "   c.structure_inode = '"+contentType.inode()+"' "
+                + "   and vi.identifier = c.identifier "
+               +  "   and vi." +workingOrLiveNode+"= c.inode "
+                + "   and c.inode = i.inode  "
+                + "   and vi.deleted = 'false' "
+               + "    order by c.identifier "
                + "    offset "+offset+" limit "+limit+"  "
-                + ") con_ident on c.identifier = con_ident.identifier "
+                + ") con_ident on contentlet.identifier = con_ident.identifier "
                 + " inner join ( "
                 + "   select cvi.* from contentlet_version_info cvi  "
-                + " ) cc on cc."+workingOrLiveNode+" = c.inode "
+                + " ) cc on cc."+workingOrLiveNode+" = contentlet.inode "
                 + " join ("
                 + "  select i.* from inode i "
-                + " ) inode on inode.inode = c.inode "
-                + " order by c.identifier " + orderByClause
+                + " ) inode on inode.inode = contentlet.inode "
+                + " order by contentlet.identifier " + orderByClause
                 ;
 
         dotConnect.setSQL(select);
@@ -1242,6 +1244,23 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return contentlets;
     }
 
+    @Override
+    public int countByTypeWorkingOrLive(final ContentType contentType, final boolean working) {
+        final DotConnect dotConnect = new DotConnect();
+        String workingOrLiveNode = "working_inode";
+        if(!working) {
+            workingOrLiveNode = "live_inode";
+        }
+        dotConnect.setSQL("select count(distinct contentlet.identifier) as x "
+                + " from contentlet, contentlet_version_info, inode "
+                + " where contentlet.structure_inode = ? "
+                + " and contentlet_version_info.identifier = contentlet.identifier "
+                + " and contentlet_version_info."+workingOrLiveNode+"= contentlet.inode "
+                + " and contentlet.inode = inode.inode "
+                + " and contentlet_version_info.deleted = 'false' ");
+        dotConnect.addParam(contentType.inode());
+        return dotConnect.getInt("x");
+    }
 
     @Override
     public int countByType(ContentType contentType, boolean includeAllVersion){
@@ -1488,7 +1507,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             final int limit = 500;
 
             dotConnect = new DotConnect();
-            dotConnect.setSQL("select * " + query + " order by " + field.getFieldContentlet());
+            dotConnect.setSQL("select * " + query + ORDER_BY + field.getFieldContentlet());
             dotConnect.setMaxRows(limit);
             for (int offset = 0; offset < count; offset+=limit) {
                 if (offset > 0)
@@ -1543,7 +1562,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 .append(" JOIN contentlet_version_info contentletvi ON (contentlet.identifier=contentletvi.identifier) ")
                 .append(" where multi_tree.parent1 = ? and multi_tree.parent2 = ? and ")
                 .append(condition.toString())
-                .append(" order by ")
+                .append(ORDER_BY)
                 .append(orderby);
 
         final DotConnect dotConnect = new DotConnect();

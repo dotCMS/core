@@ -385,7 +385,6 @@ public class LanguagesResource {
         final Language language1 = APILocator.getLanguageAPI().getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
         if(UtilMethods.isSet(language1)) {
             //Language Keys
-            //TODO: Update this to use the new API
             final Map mapLanguageKeys = APILocator.getLanguageAPI()
                     .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
                             Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
@@ -414,7 +413,7 @@ public class LanguagesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response getAllLanguageVariables(
+    public Response getVariables(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @BeanParam final PaginationContext paginationContext) throws DotDataException {
@@ -423,6 +422,7 @@ public class LanguagesResource {
                 new WebResource.InitBuilder(webResource)
                         .requiredBackendUser(true)
                         .requiredFrontendUser(false)
+                        .requireAdmin(true)
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
                         .init();

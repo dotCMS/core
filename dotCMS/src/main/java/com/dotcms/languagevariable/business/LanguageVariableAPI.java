@@ -130,19 +130,26 @@ public interface LanguageVariableAPI {
             throws DotDataException, DotSecurityException;
 
 
+    String ORDER_BY_KEY = "contentlet.contentlet_as_json->'fields'->'key'->'value'";
+
     /**
-     * Returns a list of {@link LanguageVariable} that the key starts with the specified key and
-     * languageId.
+     * Returns a list of {@link LanguageVariable} With all live language variables in the system.
+     * The results os this method are stored in cache.
+     * @return List of {@link LanguageVariable}
+     * @throws DotDataException
+     */
+    List<LanguageVariable> findAllVariables() throws DotDataException;
+
+    /**
+     * Returns a list of {@link LanguageVariable} per language Identifier. The results are stored in
+     * cache per language. If no offset or limit is provided, the method will return all the
+     * variables for the specified language.
      *
-     * @param langId  - The ID of the language that the variable was created for.
-     * @param offset  - The offset of the list.
-     * @param limit   - Size of the list.
-     * @param orderBy - The order by clause.
+     * @param langId - The ID of the language that the variable was created for.
      * @return List of {@link LanguageVariable}
      * @throws DotDataException - If there is an error retrieving the list of Language Variables.
      */
-    List<LanguageVariable> findVariables(final long langId, final int offset, final int limit,
-            String orderBy) throws DotDataException;
+    List<LanguageVariable> findVariables(final long langId) throws DotDataException;
 
 
     /**
@@ -153,9 +160,16 @@ public interface LanguageVariableAPI {
      * @return List of {@link LanguageVariable}
      * @throws DotDataException - If there is an error retrieving the list of Language Variables.
      */
-    Map<Long, List<LanguageVariable>> findVariablesForPagination(final int offset, final int limit,
+    Map<String, List<LanguageVariable>> findVariablesForPagination(final int offset, final int limit,
             final String orderBy, final List<Language> languages)
             throws DotDataException;
+
+    /**
+     * Count content Variables
+     * @return
+     * @throws DotDataException
+     */
+    int countLiveVariables() throws DotDataException;
 
     void invalidateLanguageVariablesCache(Contentlet contentlet);
 }

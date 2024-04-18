@@ -69,9 +69,7 @@ public abstract class LanguageCache implements Cachable{
 
     public abstract void clearVariables();
 
-    public abstract void putVars(long languageId, List<LanguageVariable> vars,  int limit, int offset,
-            String orderBy);
+    public abstract void putVars(long languageId, List<LanguageVariable> vars);
 
-    public abstract List<LanguageVariable> getVars(final long languageId, final int limit, final int offset,
-            String orderBy);
+    public abstract List<LanguageVariable> getVars(final long languageId);
 }

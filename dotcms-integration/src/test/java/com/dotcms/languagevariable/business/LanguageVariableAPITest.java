@@ -389,9 +389,9 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
 
         final LanguageCache languageCache = CacheLocator.getLanguageCache();
         languageCache.clearVariables();
-        final List<LanguageVariable> vars = languageCache.getVars(1, -1, -1, null);
+        final List<LanguageVariable> vars = languageCache.getVars(1);
         Assert.assertTrue(vars.isEmpty());
-
+        //Let's create 3 languages and 3 language variables for each language
         LanguageDataGen languageDataGen = new LanguageDataGen();
         final List<Language> languages = List.of(
                 languageDataGen.nextPersisted(),
@@ -401,6 +401,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
 
         List<Contentlet> contentlets = new ArrayList<>();
         LanguageVariableDataGen languageVariableDataGen = new LanguageVariableDataGen();
+        //Contentlets are created and published
         for (Language language : languages) {
             contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key1").value("value1").nextPersistedAndPublish());
             contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key2").value("value2").nextPersistedAndPublish());
@@ -408,28 +409,35 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         }
 
         final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-
+        //Now let's see if the API can find all the variables
         for (Language language:languages) {
-            final List<LanguageVariable> languageVariables = languageVariableAPI.findVariables(language.getId(),
-                    -1, -1, null);
+            final List<LanguageVariable> languageVariables = languageVariableAPI.findVariables(language.getId());
             Assert.assertTrue(languageVariables.size() >= 3);
             for (LanguageVariable variable : languageVariables) {
                 Assert.assertEquals(language.getId(), variable.getLanguageId());
             }
         }
-
+        //Now let's unpublish all the content
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         for (Contentlet contentlet: contentlets) {
            contentletAPI.unpublish(contentlet, systemUser,false);
         }
 
-        for (Language language:languages) {
-            final List<LanguageVariable> languageVariables = languageVariableAPI.findVariables(language.getId(),
-                    -1, -1, null);
-            for (LanguageVariable variable : languageVariables) {
-                Assert.assertFalse(containsInode(contentlets, variable.getInode()));
-            }
+       // Now let's see if the API can find all the variables
+        final List<LanguageVariable> languageVariables = languageVariableAPI.findAllVariables();
+        for (LanguageVariable variable : languageVariables) {
+            Assert.assertFalse(containsInode(contentlets, variable.getInode()));
         }
+        //Now Republish content and make sure the content comes back
+        for (Contentlet contentlet: contentlets) {
+            contentletAPI.publish(contentlet, systemUser,false);
+        }
+        final List<LanguageVariable> republished = languageVariableAPI.findAllVariables();
+        Assert.assertFalse(republished.isEmpty());
+        for (LanguageVariable variable : republished) {
+            Assert.assertTrue(containsInode(contentlets, variable.getInode()));
+        }
+
     }
 
     boolean containsInode(final List<Contentlet> contentlets, final String inode) {

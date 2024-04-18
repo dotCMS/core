@@ -244,9 +244,11 @@ public class ContentletFactoryTest extends ContentletBaseTest {
         }
         final List<Contentlet> live = contentletFactory.findByContentType(contentType, 0, 10, null, false);
         Assert.assertEquals(10, live.size());
+        Assert.assertEquals(10, contentletFactory.countByTypeWorkingOrLive(contentType, false));
 
         final List<Contentlet> working = contentletFactory.findByContentType(contentType, 0, 10, null, true);
         Assert.assertEquals(10, working.size());
+        Assert.assertEquals(10, contentletFactory.countByTypeWorkingOrLive(contentType, true));
 
     }
 

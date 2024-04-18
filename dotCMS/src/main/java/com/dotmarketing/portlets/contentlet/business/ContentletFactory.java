@@ -246,6 +246,11 @@ public abstract class ContentletFactory {
 			final int offset, final int limit,
 			final String orderBy, final boolean working) throws DotDataException, DotStateException;
 
+	/*
+	 * Returns all Contentlets for a specific structure using pagination
+	 */
+	public abstract int countByTypeWorkingOrLive(final ContentType contentType, final boolean working);
+
 	/**
 	 * select count contentlet by ContentType
 	 *

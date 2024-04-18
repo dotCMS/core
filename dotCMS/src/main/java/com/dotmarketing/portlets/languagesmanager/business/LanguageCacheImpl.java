@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
-import com.liferay.util.StringPool;
 import java.util.List;
 
 import com.dotmarketing.business.CacheLocator;
@@ -21,6 +20,9 @@ public class LanguageCacheImpl extends LanguageCache {
 	private static final String LANG_404_STR = "LANG__404";
 	static final String ALL_LANGUAGES_KEY="ALL_LANGUAGES_KEY";
 	static final String DEFAULT_LANGUAGE = "DEFAULT_LANGUAGE";
+
+	private static final String  LANG_VARIABLES_CACHE = "LanguageVariablesCacheImpl";
+
 	public static Language LANG_404 = new Language(-1,
 			LANG_404_STR, LANG_404_STR, LANG_404_STR,
 			LANG_404_STR);
@@ -246,13 +248,20 @@ public class LanguageCacheImpl extends LanguageCache {
 
 	/**
 	 * This method is used to clear the cache for a specific language
-	 * @param languageId
+	 * @param languageId the language id to clear the cache for
 	 */
 	public void clearVarsByLang(final long languageId){
 		final String group = getSecondaryGroup();
 		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		final Object perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
+		if (perLangCache == null) {
+			return;
+		}
+		@SuppressWarnings("unchecked")
+		final ConcurrentMap<String,List<LanguageVariable>> langVarCache = (ConcurrentMap<String,List<LanguageVariable>>) perLangCache;
 		final String languageIdStr = String.valueOf(languageId);
-		cache.remove(languageIdStr, group);
+		langVarCache.remove(languageIdStr);
+		Logger.info(this, "Language Variables for language with id: " + languageId + " have been removed from cache.");
 	}
 
 	public void clearVariables(){
@@ -261,50 +270,44 @@ public class LanguageCacheImpl extends LanguageCache {
 		cache.flushGroup(group);
 	}
 
-	String craftKey(final long languageId, final int limit, final int offset, final String orderBy){
-		final int offsetVal = offset >= 0 ? offset : -1;
-		final int limitVal = limit > 0 ? limit : -1;
-		return String.format("LanguageVariable::lang:%d::limit:%s::offset%s::orderBy:%s", languageId, limitVal, offsetVal, orderBy);
-	}
+
 
 	@Override
-	public void putVars(final long languageId, final List<LanguageVariable> vars, final int limit, final int offset,
-			String orderBy){
+	public void putVars(final long languageId, final List<LanguageVariable> vars){
+		final String languageIdStr = String.valueOf(languageId);
 		final String group = getSecondaryGroup();
 		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-		final String languageIdStr = String.valueOf(languageId);
-		final String key = craftKey(languageId, limit, offset, orderBy);
-
-		Object  perLangCache = cache.getNoThrow(languageIdStr, group);
+		Object perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
 		if (perLangCache == null) {
 			// A map of LanguageVariables is stored per language
-			cache.put(languageIdStr, new ConcurrentHashMap<String,List<LanguageVariable>>(), group);
-			perLangCache = cache.getNoThrow(languageIdStr, group);
+			cache.put(LANG_VARIABLES_CACHE, new ConcurrentHashMap<String,List<LanguageVariable>>(), group);
+			perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
 		}
 		@SuppressWarnings("unchecked")
 		final ConcurrentMap<String,List<LanguageVariable>> langVarCache = (ConcurrentMap<String,List<LanguageVariable>>) perLangCache;
 		//Now we use the crafted (specific) key to store the list of LanguageVariables
 		//So that if we want to invalidate only the list of LanguageVariables for a specific language it is possible
-		langVarCache.put(key, vars);
-		cache.put(key, langVarCache, group);
+		langVarCache.put(languageIdStr, vars);
+		cache.put(languageIdStr, langVarCache, group);
 	}
 
-	public List<LanguageVariable> getVars(final long languageId, final int limit, final int offset,
-		final String orderBy){
+	public List<LanguageVariable> getVars(final long languageId){
 		final String group = getSecondaryGroup();
 		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 		final String languageIdStr = String.valueOf(languageId);
-
-		final String key = craftKey(languageId, limit, offset, orderBy);
 		// A map of LanguageVariables is stored per language
-		Object  perLangCache = cache.getNoThrow(languageIdStr, group);
+		Object  perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
 		if (perLangCache == null) {
 			return List.of();
 		}
 		@SuppressWarnings("unchecked")
 		final ConcurrentMap<String,List<LanguageVariable>> langVarCache = (ConcurrentMap<String,List<LanguageVariable>>) perLangCache;
 		//Now we use the crafted (specific) key to access the list of LanguageVariables
-		return langVarCache.get(key);
+		final List<LanguageVariable> variables = langVarCache.get(languageIdStr);
+		if (variables == null) {
+			return List.of();
+		}
+		return variables;
 	}
 
 }
