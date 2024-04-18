@@ -1782,6 +1782,29 @@ describe('EditEmaEditorComponent', () => {
                 expect(confirmDialog.getAttribute('acceptIcon')).toBe('hidden');
                 expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
             });
+
+            it('should show the dialogs when we can edit a variant', () => {
+                const componentsToHide = ['dialog', 'confirm-dialog']; // Test id of components that should hide when entering preview modes
+
+                spectator.detectChanges();
+
+                spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
+
+                spectator.detectChanges();
+                store.load({
+                    url: 'index',
+                    language_id: '5',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    variantName: 'hello-there',
+                    experimentId: 'i have a variant'
+                });
+
+                spectator.detectChanges();
+
+                componentsToHide.forEach((testId) => {
+                    expect(spectator.query(byTestId(testId))).not.toBeNull();
+                });
+            });
         });
 
         describe('move contentlet', () => {
