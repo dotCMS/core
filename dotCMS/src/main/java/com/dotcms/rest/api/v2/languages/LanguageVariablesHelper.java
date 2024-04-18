@@ -22,16 +22,16 @@ public class LanguageVariablesHelper {
     private final LanguageAPI languageAPI;
 
 
-    public LanguageVariablesHelper(LanguageVariableAPI languageVariableAPI, LanguageAPI languageAPI) {
+     LanguageVariablesHelper(LanguageVariableAPI languageVariableAPI, LanguageAPI languageAPI) {
         this.languageVariableAPI = languageVariableAPI;
         this.languageAPI = languageAPI;
     }
 
-    public LanguageVariablesHelper () {
+     LanguageVariablesHelper () {
        this(APILocator.getLanguageVariableAPI(), APILocator.getLanguageAPI());
     }
 
-    LanguageVariablePageView view(final PaginationContext context, final User user)
+     LanguageVariablePageView view(final PaginationContext context, final User user)
             throws DotDataException {
 
         final int offset =  context.getPage();
