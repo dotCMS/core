@@ -339,13 +339,13 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
-		final Map<String, Object> extraParams = new HashMap<>(Map.of(
-				UserPaginator.ASSET_INODE_PARAM, assetInode,
-				UserPaginator.PERMISSION_PARAM, permission,
-				UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous,
-				UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault,
-				UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy
-		));
+		final Map<String, Object> extraParams = new HashMap<>();
+		extraParams.put(UserPaginator.ASSET_INODE_PARAM, assetInode);
+		extraParams.put(UserPaginator.PERMISSION_PARAM, permission);
+		extraParams.put(UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous);
+		extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
+		extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
+
 		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		final User user = initData.getUser();
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
