@@ -448,7 +448,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     });
 
-    readonly updateInlineEditedContentlet = this.effect(
+    readonly saveFromInlineEditedContentlet = this.effect(
         (payload$: Observable<{ contentlet: { body: string; inode: string } }>) => {
             return payload$.pipe(
                 switchMap((contentlet) => {

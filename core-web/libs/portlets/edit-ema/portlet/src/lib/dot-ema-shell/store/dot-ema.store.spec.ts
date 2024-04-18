@@ -853,7 +853,7 @@ describe('EditEmaStore', () => {
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '123'
                 });
-                spectator.service.updateInlineEditedContentlet(payload);
+                spectator.service.saveFromInlineEditedContentlet(payload);
 
                 expect(dotPageApiService.saveContentlet).toHaveBeenCalledWith(payload);
             });

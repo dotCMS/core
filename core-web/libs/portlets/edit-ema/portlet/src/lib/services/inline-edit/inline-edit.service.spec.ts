@@ -50,7 +50,7 @@ describe('InlineEditService', () => {
 
         spectator.service.setIframeWindow(iframe.contentWindow);
 
-        const isInMultiplePages = spectator.service.isInMultiplePages(dataset);
+        const isInMultiplePages = spectator.service['isInMultiplePages'](dataset);
 
         expect(isInMultiplePages).toBe(true);
     });

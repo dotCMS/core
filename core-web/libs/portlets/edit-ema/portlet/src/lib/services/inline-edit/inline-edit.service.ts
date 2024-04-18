@@ -15,7 +15,7 @@ export class InlineEditService {
     private $iframeWindow = signal<Window | null>(null);
     private $inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
 
-    private DEFAULT_TINYMCE_CONFIG = {
+    private readonly DEFAULT_TINYMCE_CONFIG = {
         menubar: false,
         inline: true,
         valid_styles: {
@@ -26,7 +26,7 @@ export class InlineEditService {
         setup: this.handleInlineEditEvents
     };
 
-    private TINYCME_CONFIG = {
+    private readonly TINYCME_CONFIG = {
         minimal: {
             plugins: ['link', 'autolink'],
             toolbar: 'bold italic underline | link',
@@ -133,7 +133,7 @@ export class InlineEditService {
      *
      * @param {Editor} editor - The editor instance.
      */
-    handleInlineEditEvents(editor) {
+    private handleInlineEditEvents(editor) {
         editor.on('blur', (e) => {
             const { target: ed, type: eventType } = e;
             const dataset = ed.targetElm.dataset;
@@ -183,7 +183,7 @@ export class InlineEditService {
      * @param dataset - The dataset containing the contentlet information.
      * @returns A boolean indicating whether the contentlet is present in multiple pages.
      */
-    isInMultiplePages(dataset: InlineEditingContentletDataset) {
+    private isInMultiplePages(dataset: InlineEditingContentletDataset) {
         const targetElement = this.$iframeWindow().document.querySelector(
             `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`
         );
