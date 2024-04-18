@@ -357,8 +357,10 @@ jobs:
       # Determines the NPM package version and tag
       # Distinguishes between snapshots and releases
       - name: 'Dynamic configuration of NPM package Version and Tag'
+        env:
+          RELEASE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
         run: |
-          MVN_PACKAGE_VERSION=$(echo ${{ github.event.inputs.version }} | tr '[:lower:]' '[:upper:]')
+          MVN_PACKAGE_VERSION=$(echo ${{ env.RELEASE_VERSION }} | tr '[:lower:]' '[:upper:]')
           PACKAGE_FULL_NAME=${{ env.NPM_PACKAGE_SCOPE }}/${{ env.NPM_PACKAGE_NAME }}
 
           # Check if the npm package exists
