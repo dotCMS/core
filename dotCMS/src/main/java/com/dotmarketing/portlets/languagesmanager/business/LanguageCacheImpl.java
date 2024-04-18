@@ -21,7 +21,7 @@ public class LanguageCacheImpl extends LanguageCache {
 	static final String ALL_LANGUAGES_KEY="ALL_LANGUAGES_KEY";
 	static final String DEFAULT_LANGUAGE = "DEFAULT_LANGUAGE";
 
-	private static final String  LANG_VARIABLES_CACHE = "LanguageVariablesCacheImpl";
+	private static final String  LANG_VARIABLES_CACHE = "LanguageVariablesCache";
 
 	public static Language LANG_404 = new Language(-1,
 			LANG_404_STR, LANG_404_STR, LANG_404_STR,
@@ -219,7 +219,7 @@ public class LanguageCacheImpl extends LanguageCache {
     }
 
 	public String getSecondaryGroup() {
-		return "LanguageVariablesCacheImpl";
+		return "LanguageVariablesCacheGroup";
 	}
 
 	@Deprecated(since = "24.04", forRemoval = true)
