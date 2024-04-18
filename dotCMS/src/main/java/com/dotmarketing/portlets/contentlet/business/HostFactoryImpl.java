@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
+import static com.dotmarketing.db.DbConnectionFactory.getDBTrue;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -32,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
@@ -42,8 +46,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -55,9 +57,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
-import static com.dotmarketing.db.DbConnectionFactory.getDBTrue;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
 /**
  * SQL-based implementation class for {@link HostFactory}.
@@ -70,6 +70,7 @@ public class HostFactoryImpl implements HostFactory {
 
     private final HostCache siteCache;
     private ContentletFactory contentFactory;
+    private HostVariableFactory siteVariableFactory;
     private ContentletAPI contentletAPI;
 
     private final String WHERE = " WHERE ";
@@ -157,6 +158,20 @@ public class HostFactoryImpl implements HostFactory {
             this.contentFactory = FactoryLocator.getContentletFactory();
         }
         return this.contentFactory;
+    }
+
+    /**
+     * Lazy initialization of the Host Variable Factory service. This helps prevent startup issues
+     * when several factories or APIs are initialized during the initialization phase of the Host
+     * Factory.
+     *
+     * @return An instance of the {@link HostVariableFactory} service.
+     */
+    protected HostVariableFactory getHostVariableFactory() {
+        if (null == this.siteVariableFactory) {
+            this.siteVariableFactory = FactoryLocator.getHostVariableFactory();
+        }
+        return this.siteVariableFactory;
     }
 
     /**
@@ -485,27 +500,35 @@ public class HostFactoryImpl implements HostFactory {
         Logger.info(this, "======================================================================");
         final DotConnect dc = new DotConnect();
 
+        final int steps = 15;
+
         final MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
         final List<Link> links = linkAPI.findLinks(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
-        Logger.info(this, String.format("-> (Step 1/14) Deleting %d Menu Links from Site '%s'", links.size(), site.getHostname()));
+        Logger.info(this,
+                String.format("-> (Step 1/%d) Deleting %d Menu Links from Site '%s'", steps,
+                        links.size(), site.getHostname()));
         for (final Link link : links) {
             linkAPI.delete(link, user, respectFrontendRoles);
         }
 
-        Logger.info(this, String.format("-> (Step 2/14) Deleting all Contentlets from Site '%s'", site.getHostname()));
+        Logger.info(this, String.format("-> (Step 2/%d) Deleting all Contentlets from Site '%s'",
+                steps, site.getHostname()));
         final ContentletAPI contentAPI = APILocator.getContentletAPI();
         contentAPI.deleteByHost(site, APILocator.systemUser(), respectFrontendRoles);
 
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         final List<Folder> folders = folderAPI.findFoldersByHost(site, user, respectFrontendRoles);
-        Logger.info(this, String.format("-> (Step 3/14) Deleting %d Folders from Site '%s'", folders.size(), site.getHostname()));
+        Logger.info(this,
+                String.format("-> (Step 3/%d) Deleting %d Folders from Site '%s'", steps,
+                        folders.size(), site.getHostname()));
         for (final Folder folder : folders) {
             folderAPI.delete(folder, user, respectFrontendRoles);
         }
 
         final TemplateAPI templateAPI = APILocator.getTemplateAPI();
         final List<Template> templates = templateAPI.findTemplatesAssignedTo(site, true);
-        Logger.info(this, String.format("-> (Step 4/14) Deleting %d Templates from Site '%s'", templates.size(), site.getHostname()));
+        Logger.info(this, String.format("-> (Step 4/%d) Deleting %d Templates from Site '%s'",
+                steps, templates.size(), site.getHostname()));
         for (final Template template : templates) {
             dc.setSQL("delete from template_containers where template_id = ?");
             dc.addParam(template.getIdentifier());
@@ -522,14 +545,16 @@ public class HostFactoryImpl implements HostFactory {
                 .offset(0)
                 .limit(-1).build();
         final List<Container> containers = containerAPI.findContainers(user, searchParams);
-        Logger.info(this, String.format("-> (Step 5/14) Deleting %d Containers from Site '%s'", containers.size(), site.getHostname()));
+        Logger.info(this, String.format("-> (Step 5/%d) Deleting %d Containers from Site '%s'",
+                steps, containers.size(), site.getHostname()));
         for (final Container container : containers) {
             containerAPI.delete(container, user, respectFrontendRoles);
         }
 
         final List<ContentType> types = APILocator.getContentTypeAPI(user, respectFrontendRoles)
                 .search(" host = '" + site.getIdentifier() + "'");
-        Logger.info(this, String.format("-> (Step 6/14) Deleting %d Content Types from Site '%s'", types.size(), site.getHostname()));
+        Logger.info(this, String.format("-> (Step 6/%d) Deleting %d Content Types from Site '%s'",
+                steps, types.size(), site.getHostname()));
         for (final ContentType type : types) {
             final List<Contentlet> contentsByType = contentAPI.findByStructure(new StructureTransformer(type)
                     .asStructure(), APILocator.systemUser(), false, 0, 0);
@@ -544,8 +569,9 @@ public class HostFactoryImpl implements HostFactory {
             if (!type.system() && !type.defaultType()) {
                 contentTypeAPI.deleteSync(type);
             } else {
-                Logger.info(this, String.format("---> (Step 6/14) Content Type '%s' cannot be deleted, and must be moved to SYSTEM_HOST",
-                        type.variable()));
+                Logger.info(this, String.format(
+                        "---> (Step 6/%d) Content Type '%s' cannot be deleted, and must be moved to SYSTEM_HOST",
+                        steps, type.variable()));
                 //If we can not delete it we need to change the host to SYSTEM_HOST
                 final ContentType clonedContentType = ContentTypeBuilder.builder(type)
                         .host(findSystemHost(user, false).getIdentifier()).build();
@@ -554,13 +580,15 @@ public class HostFactoryImpl implements HostFactory {
         }
 
         // wipe bad old containers
-        Logger.info(this, String.format("-> (Step 7/14) Deleting invalid Containers from Site '%s'", site.getHostname()));
+        Logger.info(this, String.format("-> (Step 7/%d) Deleting invalid Containers from Site '%s'",
+                steps, site.getHostname()));
         dc.setSQL("delete from container_structures where exists (select * from identifier where host_inode=? and container_structures.container_id=id)");
         dc.addParam(site.getIdentifier());
         dc.loadResult();
 
-        Logger.info(this, String.format("-> (Step 8/14) Deleting all remaining Containers, Templates, and Links from Site " +
-                "'%s'", site.getHostname()));
+        Logger.info(this, String.format(
+                "-> (Step 8/%d) Deleting all remaining Containers, Templates, and Links from Site "
+                        + "'%s'", steps, site.getHostname()));
         final Inode.Type[] assets = {Inode.Type.CONTAINERS, Inode.Type.TEMPLATE, Inode.Type.LINKS};
         for (final Inode.Type asset : assets) {
             dc.setSQL("select inode from "+asset.getTableName()+" where exists (select * from identifier where host_inode=? and id="+asset.getTableName()+".identifier)");
@@ -577,37 +605,52 @@ public class HostFactoryImpl implements HostFactory {
             }
         }
 
-        Logger.info(this, String.format("-> (Step 9/14) Deleting all Tags from Site '%s'", site.getHostname()));
+        Logger.info(this, String.format("-> (Step 9/%d) Deleting all Tags from Site '%s'",
+                steps, site.getHostname()));
         APILocator.getTagAPI().deleteTagsByHostId(site.getIdentifier());
 
         // Double-check that ALL contentlets are effectively removed before using dotConnect to kill bad identifiers
         final List<Contentlet> remainingContenlets = contentAPI
                 .findContentletsByHost(site, user, respectFrontendRoles);
-        Logger.info(this, String.format("-> (Step 10/14) Deleting (double-checking) %d Contentlets from Site " +
-                "'%s'", UtilMethods.isSet(remainingContenlets) ? remainingContenlets.size() : 0, site.getHostname()));
+        Logger.info(this, String.format(
+                "-> (Step 10/%d) Deleting (double-checking) %d Contentlets from Site " +
+                        "'%s'", steps,
+                UtilMethods.isSet(remainingContenlets) ? remainingContenlets.size() : 0,
+                site.getHostname()));
         if (UtilMethods.isSet(remainingContenlets)) {
             contentAPI.deleteByHost(site, user, respectFrontendRoles);
         }
 
         // kill bad identifiers pointing to the site
-        Logger.info(this, String.format("-> (Step 11/14) Deleting all invalid Identifiers from Site '%s'", site.getHostname()));
+        Logger.info(this,
+                String.format("-> (Step 11/%d) Deleting all invalid Identifiers from Site '%s'",
+                        steps, site.getHostname()));
         dc.setSQL("delete from identifier where host_inode=?");
         dc.addParam(site.getIdentifier());
         dc.loadResult();
 
-        Logger.info(this, String.format("-> (Step 12/14) Deleting the Site '%s' itself", site.getHostname()));
+        Logger.info(this,
+                String.format("-> (Step 12/%d) Deleting the Site '%s' itself", steps,
+                        site.getHostname()));
         final Contentlet siteAsContent = contentAPI.find(site.getInode(), user, respectFrontendRoles);
         contentAPI.delete(siteAsContent, user, respectFrontendRoles);
 
         try {
-            Logger.info(this, String.format("-> (Step 13/14) Deleting all Secrets from Site '%s'", site.getHostname()));
+            Logger.info(this, String.format("-> (Step 13/%d) Deleting all Secrets from Site '%s'",
+                    steps, site.getHostname()));
             APILocator.getAppsAPI().removeSecretsForSite(site, APILocator.systemUser());
         } catch (final Exception e) {
             Logger.warn(HostAPIImpl.class, String.format("An error occurred when removing secrets for Site " +
                     "'%s': %s", site, ExceptionUtil.getErrorMessage(e)), e);
         }
 
-        Logger.info(this, String.format("-> (Step 14/14) Flushing all caches after deleting Site '%s'", site.getHostname()));
+        Logger.info(this, String.format("-> (Step 14/%d) Deleting site variables from Site '%s'",
+                steps, site.getHostname()));
+        getHostVariableFactory().deleteAllVariablesForSite(site.getIdentifier());
+
+        Logger.info(this,
+                String.format("-> (Step 15/%d) Flushing all caches after deleting Site '%s'",
+                        steps, site.getHostname()));
         flushAllCaches(site);
 
         Logger.info(this, "======================================================================");

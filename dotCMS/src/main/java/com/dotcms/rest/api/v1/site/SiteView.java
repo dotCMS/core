@@ -51,7 +51,7 @@ public class SiteView {
 
     private final  String modUser;
 
-    private final List<ImmutableSiteVarView> variables;
+    private final List<SimpleSiteVarView> variables;
 
     private SiteView(Builder builder) {
         identifier = builder.identifier;
@@ -172,7 +172,7 @@ public class SiteView {
         return modUser;
     }
 
-    public List<ImmutableSiteVarView> getVariables() {
+    public List<SimpleSiteVarView> getVariables() {
         return variables;
     }
 
@@ -200,7 +200,7 @@ public class SiteView {
         private boolean isWorking;
         private Date modDate;
         private String modUser;
-        private List<ImmutableSiteVarView> variables;
+        private List<SimpleSiteVarView> variables;
 
         private Builder() {
         }
@@ -324,7 +324,7 @@ public class SiteView {
             return this;
         }
 
-        public Builder withVariables(List<ImmutableSiteVarView> val) {
+        public Builder withVariables(List<SimpleSiteVarView> val) {
             variables = val;
             return this;
         }

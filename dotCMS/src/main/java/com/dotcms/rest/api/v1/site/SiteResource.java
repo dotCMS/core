@@ -525,8 +525,7 @@ public class SiteResource implements Serializable {
             throw new DotStateException(String.format("Site '%s' is the default site. It can't be archived", site));
         }
 
-        this.archive(user, pageMode, site);
-        return Response.ok(new ResponseEntityView<>(toView(site))).build();
+        return this.archive(user, pageMode, site);
     }
 
     @WrapInTransaction
@@ -828,7 +827,7 @@ public class SiteResource implements Serializable {
     public Response createNewSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
                                   final SiteForm newSiteForm)
-            throws DotDataException, DotSecurityException, AlreadyExistException {
+            throws DotDataException, DotSecurityException, AlreadyExistException, LanguageException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -858,7 +857,10 @@ public class SiteResource implements Serializable {
         copySitePropertiesFromForm(newSiteForm, newSite);
 
         return Response.ok(new ResponseEntityView<>(
-                toView(this.siteHelper.save(newSite, user, pageMode.respectAnonPerms),user))).build();
+                this.siteHelper.save(
+                        newSite, newSiteForm.getVariables(), user, pageMode.respectAnonPerms
+                )
+        )).build();
     }
 
     /**
@@ -977,38 +979,35 @@ public class SiteResource implements Serializable {
         final String name   = UtilMethods.escapeDoubleQuotes(siteVariableForm.getName().trim());
         final String siteId = siteVariableForm.getSiteId();
 
-        if (!UtilMethods.isSet(key)) {
+        // Getting all the existing variables for the host
+        final List<HostVariable> existingVariables = APILocator.getHostVariableAPI().
+                getVariablesForHost(siteId, user, pageMode.respectAnonPerms);
 
-            throw new IllegalArgumentException(LanguageUtil.get(user, "message.hostvariables.key.required"));
-        }
-
-        if (RegEX.contains(key, "[^A-Za-z0-9]")) {
-
-            throw new IllegalArgumentException(LanguageUtil.get(user, "message.hostvariables.exist.error.regex"));
-        }
-
-        final List<HostVariable> variables = APILocator.getHostVariableAPI().getVariablesForHost(siteId, user, pageMode.respectAnonPerms);
         HostVariable siteVariable = null;
 
-        for (final HostVariable next : variables) {
-
-            if (next.getKey().equals(key) && !next.getId().equals(id)) {
-
-                throw new IllegalArgumentException(LanguageUtil.get(user, "message.hostvariables.exist.error.key"));
+        // Verify if the variable already exists by id
+        if (UtilMethods.isSet(id)) {
+            for (final HostVariable next : existingVariables) {
+                if (next.getId().equals(id)) {
+                    siteVariable = next;
+                    break;
+                }
             }
-
-            if(UtilMethods.isSet(id) && next.getId().equals(id)) {
-
-                siteVariable = next;
+        } else {
+            // Verify if the variable already exists by key
+            for (final HostVariable next : existingVariables) {
+                if (UtilMethods.isSet(key) && next.getKey().equalsIgnoreCase(key)) {
+                    siteVariable = next;
+                    break;
+                }
             }
         }
 
         if (null == siteVariable) {
-
             siteVariable = new HostVariable();
+            siteVariable.setId(id);
         }
 
-        siteVariable.setId(id);
         siteVariable.setHostId(siteId);
         siteVariable.setName(name);
         siteVariable.setKey(key);
@@ -1016,6 +1015,11 @@ public class SiteResource implements Serializable {
         siteVariable.setLastModifierId(user.getUserId());
         siteVariable.setLastModDate(new Date());
 
+        // Validate the Site Variable
+        siteHelper.validateVariable(siteVariable, user);
+        siteHelper.validateVariableAlreadyExist(siteVariable, existingVariables, user);
+
+        // Saving the Site Variable
         APILocator.getHostVariableAPI().save(siteVariable, user, pageMode.respectAnonPerms);
 
         return Response.ok(new ResponseHostVariableEntityView(siteVariable)).build();
@@ -1142,7 +1146,7 @@ public class SiteResource implements Serializable {
                                   @Context final HttpServletResponse httpServletResponse,
                                   @QueryParam("id") final String  siteIdentifier,
                                   final SiteForm newSiteForm)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException, LanguageException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -1187,7 +1191,10 @@ public class SiteResource implements Serializable {
         copySitePropertiesFromForm(newSiteForm, site);
 
         return Response.ok(new ResponseEntityView<>(
-                toView(this.siteHelper.update(site, user, pageMode.respectAnonPerms),user))).build();
+                this.siteHelper.update(
+                        site, newSiteForm.getVariables(), user, pageMode.respectAnonPerms
+                )
+        )).build();
     }
 
     /**
