@@ -186,7 +186,7 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
      * @memberof DotBinaryFieldPreviewComponent
      */
     downloadAsset(): void {
-        window.open(this.downloadLink, '_blank');
+        window.open(this.downloadLink, '_self');
     }
 
     /**
