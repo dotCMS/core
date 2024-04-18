@@ -1240,7 +1240,7 @@ public class TemplateResourceTest {
                 templateFromDaBaseBeforeUpdate.getDrawedBody());
         assertTrue(templateLayoutBeforeUpdate.existsContainer(container, uuid));
 
-        //Thread.sleep(10000);
+        //Thread.sleep(100xxzzzxxxxzzxzxzxzxzzxzzxzz00);
         templateResource.save(request, response, templateForm);
 
         final Template templateFromDaBaseAfterUpdate = APILocator.getTemplateAPI()
