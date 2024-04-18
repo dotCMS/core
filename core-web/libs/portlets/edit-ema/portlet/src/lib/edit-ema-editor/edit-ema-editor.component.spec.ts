@@ -765,6 +765,126 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
+                describe('reorder navigation', () => {
+                    it('should open a dialog to reorder the navigation', () => {
+                        window.dispatchEvent(
+                            new MessageEvent('message', {
+                                origin: HOST,
+                                data: {
+                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    payload: {
+                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                    }
+                                }
+                            })
+                        );
+
+                        spectator.detectComponentChanges();
+
+                        const dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        const pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+                    });
+
+                    it('should reload the page after saving the new navigation order', () => {
+                        const reloadSpy = jest.spyOn(store, 'reload');
+                        const messageSpy = jest.spyOn(messageService, 'add');
+                        const dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.SAVE_MENU_ORDER
+                                }
+                            })
+                        });
+
+                        expect(reloadSpy).toHaveBeenCalledWith({
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        });
+
+                        expect(messageSpy).toHaveBeenCalledWith({
+                            severity: 'success',
+                            summary: 'editpage.content.contentlet.menu.reorder.title',
+                            detail: 'message.menu.reordered',
+                            life: 2000
+                        });
+
+                        const pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                    });
+
+                    it('should advice the users when they can not save the new order', () => {
+                        const messageSpy = jest.spyOn(messageService, 'add');
+                        const dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER
+                                }
+                            })
+                        });
+
+                        expect(messageSpy).toHaveBeenCalledWith({
+                            severity: 'error',
+                            summary: 'editpage.content.contentlet.menu.reorder.title',
+                            detail: 'error.menu.reorder.user_has_not_permission',
+                            life: 2000
+                        });
+                    });
+
+                    it('should close the dialog if the users cancel the reorder action', () => {
+                        window.dispatchEvent(
+                            new MessageEvent('message', {
+                                origin: HOST,
+                                data: {
+                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    payload: {
+                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                    }
+                                }
+                            })
+                        );
+
+                        spectator.detectComponentChanges();
+
+                        let dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        let pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+
+                        dialog = spectator.debugElement.query(By.css("[data-testId='ema-dialog']"));
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER
+                                }
+                            })
+                        });
+
+                        pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                    });
+                });
+
                 xdescribe('reload', () => {
                     let spyContentlet: jest.SpyInstance;
                     let spyDialog: jest.SpyInstance;

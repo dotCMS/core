@@ -85,8 +85,6 @@ export interface DotPagesState {
     pages?: DotPagesInfo;
     pageTypes?: DotCMSContentType[];
     portletStatus: ComponentStatus;
-    isContentEditor2Enabled: boolean;
-    availableContentTypes: string[];
 }
 
 export interface DotSessionStorageFilter {
@@ -128,14 +126,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         (state) =>
             state.pages.status === ComponentStatus.LOADING ||
             state.pages.status === ComponentStatus.INIT
-    );
-
-    readonly isContentEditor2Enabled$: Observable<boolean> = this.select(
-        (state) => state.isContentEditor2Enabled
-    );
-
-    readonly availableContentTypes$: Observable<string[]> = this.select(
-        (state) => state.availableContentTypes
     );
 
     readonly isPortletLoading$: Observable<boolean> = this.select(
@@ -330,9 +320,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 header: this.dotMessageService.get('create.page'),
                                 width: '58rem',
                                 data: {
-                                    pageTypes,
-                                    isContentEditor2Enabled: this.get().isContentEditor2Enabled,
-                                    availableContentTypes: this.get().availableContentTypes
+                                    pageTypes
                                 }
                             });
                         },
@@ -412,8 +400,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         this.languageIdValue$,
         this.showArchivedValue$,
         this.pageTypes$,
-        this.isContentEditor2Enabled$,
-        this.availableContentTypes$,
         (
             {
                 favoritePages,
@@ -432,9 +418,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             keywordValue,
             languageIdValue,
             showArchivedValue,
-            pageTypes,
-            isContentEditor2Enabled,
-            availableContentTypes
+            pageTypes
         ) => ({
             favoritePages,
             isEnterprise,
@@ -451,9 +435,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             keywordValue,
             languageIdValue,
             showArchivedValue,
-            pageTypes,
-            isContentEditor2Enabled,
-            availableContentTypes
+            pageTypes
         })
     );
 
@@ -515,9 +497,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         isEnterprise,
                         environments,
                         filterParams,
-                        collapsedParam,
-                        isContentEditor2Enabled,
-                        availableContentTypes
+                        collapsedParam
                     ]: [
                         ESContent,
                         DotCurrentUser,
@@ -525,9 +505,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         boolean,
                         boolean,
                         DotSessionStorageFilter,
-                        boolean,
-                        boolean,
-                        string[]
+                        boolean
                     ]) => {
                         return this.dotCurrentUser
                             .getUserPermissions(
@@ -546,9 +524,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                         environments,
                                         permissionsType,
                                         filterParams,
-                                        collapsedParam,
-                                        isContentEditor2Enabled,
-                                        availableContentTypes
+                                        collapsedParam
                                     ];
                                 })
                             );
@@ -564,9 +540,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     environments,
                     permissions,
                     filterParams,
-                    collapsedParam,
-                    isContentEditor2Enabled,
-                    availableContentTypes
+                    collapsedParam
                 ]: [
                     ESContent,
                     DotCurrentUser,
@@ -575,9 +549,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     boolean,
                     DotPermissionsType,
                     DotSessionStorageFilter,
-                    boolean,
-                    boolean,
-                    string[]
+                    boolean
                 ]): void => {
                     this.setState({
                         favoritePages: {
@@ -609,9 +581,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             archived: filterParams?.archived || false,
                             status: ComponentStatus.INIT
                         },
-                        portletStatus: ComponentStatus.LOADED,
-                        isContentEditor2Enabled,
-                        availableContentTypes
+                        portletStatus: ComponentStatus.LOADED
                     });
                 },
                 () => {
@@ -641,9 +611,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             keyword: '',
                             status: ComponentStatus.INIT
                         },
-                        portletStatus: ComponentStatus.LOADED,
-                        isContentEditor2Enabled: false,
-                        availableContentTypes: ['*']
+                        portletStatus: ComponentStatus.LOADED
                     });
                 }
             );
@@ -999,10 +967,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         ? this.dotMessageService.get('Edit')
                         : this.dotMessageService.get('View'),
                 command: () => {
-                    this.get().isContentEditor2Enabled &&
-                    !this.shouldRedirectToOldContentEditor(item.contentType)
-                        ? this.dotRouterService.goToURL(`content/${item.inode}`)
-                        : this.dotRouterService.goToEditContentlet(item.inode);
+                    this.dotRouterService.goToEditContentlet(item.inode);
                 }
             });
         }
@@ -1111,21 +1076,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         this.dotWorkflowActionsFireService.fireTo({ actionId, inode: contentletInode }).subscribe(
             (payload) => this.dotEventsService.notify('save-page', { payload, value }),
             (error) => this.httpErrorManagerService.handle(error, true)
-        );
-    }
-
-    /**
-     * Check if the content type is in the feature flag list
-     *
-     * @private
-     * @param {string} contentType
-     * @return {*}  {boolean}
-     * @memberof DotCustomEventHandlerService
-     */
-    private shouldRedirectToOldContentEditor(contentType: string): boolean {
-        return (
-            !this.get().availableContentTypes.includes('*') &&
-            this.get().availableContentTypes.indexOf(contentType) === -1
         );
     }
 }

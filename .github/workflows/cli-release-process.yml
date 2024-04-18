@@ -1,13 +1,13 @@
 name: dotCLI Release
 on:
+  release:
+    types: [created]
+
   workflow_dispatch:
     inputs:
       version:
         description: 'Release version'
-        required: true
-      skipTests:
-        description: 'Skip tests'
-        default: 'true'
+        default: '1.0.0-SNAPSHOT'
         required: false
 
 concurrency:
@@ -30,6 +30,7 @@ env:
 
 jobs:
   precheck:
+    if: ${{ ( github.event_name == 'release' && !contains(github.event.release.tag_name, 'LTS')) || github.event_name == 'workflow_dispatch' }}
     name: 'Pre-check'
     runs-on: ubuntu-latest
     outputs:
@@ -41,21 +42,32 @@ jobs:
       - name: 'Log GitHub context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
+        run: |
+          echo "::group::Github Context"
+          echo "$GITHUB_CONTEXT"
+          if [[ "$GITHUB_EVENT_NAME" == 'release' ]]; then
+            TAG_NAME=${{ github.event.release.tag_name }}
+            RELEASE_VERSION=${TAG_NAME:1}
+          else
+            RELEASE_VERSION=${{ github.event.inputs.version }}
+          fi
+          
+          echo "::notice:: Event name: $GITHUB_EVENT_NAME"
+          echo "::notice:: Release version: $RELEASE_VERSION"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+          echo "::endgroup::"
 
       - name: 'Checkout'
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.CI_MACHINE_TOKEN }}
-
-
 
       - name: 'Setup Java'
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRO }}
+
       - uses: ./.github/actions/cleanup-runner
+
       - name: 'Get Date'
         id: get-date
         run: |
@@ -80,20 +92,20 @@ jobs:
         id: version
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
-          RELEASE_VERSION=${{ github.event.inputs.version }}
+          RELEASE_VERSION=$RELEASE_VERSION
           HEAD=${{ github.ref_name }}
-
+          
           # Create a release branch for versioning updates
           AUXILIARY_BRANCH=version-update-${RELEASE_VERSION}-${{ github.run_id }}
           git checkout -b $AUXILIARY_BRANCH
-
+          
           # Update version in pom.xml
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
-
+          
           # Commit version changes
           git commit --allow-empty -a -m "Update dotCLI version to $RELEASE_VERSION"
           git push origin $AUXILIARY_BRANCH
-
+          
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
           echo "AUXILIARY_BRANCH=$AUXILIARY_BRANCH" >> "$GITHUB_OUTPUT"
@@ -216,12 +228,12 @@ jobs:
       - name: 'Compile source code'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
+          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=true -am -pl :dotcms-cli
 
       - name: 'Build uber-jar'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Dquarkus.package.type=${{ env.MVN_PACKAGE_TYPE }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Dquarkus.package.type=${{ env.MVN_PACKAGE_TYPE }} -DskipTests=true -pl :dotcms-cli
 
       # Builds a native image of the CLI using GraalVM (Linux/macOS)
       # Runs on a matrix for different operating systems
@@ -229,7 +241,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Pnative -DskipTests=true -pl :dotcms-cli
 
       # Builds a native image of the CLI using GraalVM on Windows
       # Uses PowerShell for setup and execution
@@ -243,7 +255,7 @@ jobs:
       - name: 'Create distribution'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw -B -ntp -Pdist package -DskipTests=true -pl :dotcms-cli
 
       - name: 'Distribution tree'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
@@ -266,7 +278,6 @@ jobs:
       - name: 'Check out repository'
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.CI_MACHINE_TOKEN }}
           ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
 
       - uses: ./.github/actions/cleanup-runner
@@ -346,8 +357,10 @@ jobs:
       # Determines the NPM package version and tag
       # Distinguishes between snapshots and releases
       - name: 'Dynamic configuration of NPM package Version and Tag'
+        env:
+          RELEASE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
         run: |
-          MVN_PACKAGE_VERSION=$(echo ${{ github.event.inputs.version }} | tr '[:lower:]' '[:upper:]')
+          MVN_PACKAGE_VERSION=$(echo ${{ env.RELEASE_VERSION }} | tr '[:lower:]' '[:upper:]')
           PACKAGE_FULL_NAME=${{ env.NPM_PACKAGE_SCOPE }}/${{ env.NPM_PACKAGE_NAME }}
 
           # Check if the npm package exists
@@ -378,7 +391,7 @@ jobs:
               exit 1
             fi
 
-            LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+            LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq --arg filter $VERSION_NPM_FORMAT 'map(.| select(. | contains($filter)))' | jq -r 'map(select(test("-rc\\d+$"))) | max')
 
             if [[ $LAST_RC_VERSION == "$VERSION_NPM_FORMAT"* ]]; then
               NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
@@ -408,6 +421,7 @@ jobs:
         env:
           MVN_PACKAGE_VERSION: ${{ github.event.inputs.version }}
         run: |
+          echo "::group::NPM Package setup"
           echo "Adding bin folder with all the binaries"
           mkdir -p bin
           find ${{ github.workspace }}/artifacts/distributions/ -name "*.zip" -exec unzip -d bin {} \;
@@ -424,6 +438,7 @@ jobs:
 
           cat package.json
           cat src/postinstall.js
+          echo "::endgroup::"
 
       - name: 'NPM Package tree'
         run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
@@ -438,7 +453,7 @@ jobs:
 
   clean-up:
     name: "Clean Up"
-    if: always()
+    if: ${{ needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
     needs: [ precheck, build, release, publish-npm-package ]
     runs-on: ubuntu-latest
     steps:
