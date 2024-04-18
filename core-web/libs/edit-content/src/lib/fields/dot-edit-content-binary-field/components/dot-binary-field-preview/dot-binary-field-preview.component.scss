@@ -70,6 +70,7 @@ dot-contentlet-thumbnail {
     text-overflow: ellipsis;
     white-space: nowrap;
     gap: $spacing-2;
+    min-width: 120px;
 
     .preview-metadata_header {
         font-size: $font-size-md;
@@ -105,10 +106,18 @@ dot-contentlet-thumbnail {
     }
 }
 
+.preview-resource-links__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: $spacing-1;
+    display: none;
+}
+
 .preview-metadata__actions {
     position: absolute;
     bottom: $spacing-1;
-    right: $spacing-1;
+    right: 0;
     display: none;
     justify-content: flex-end;
     align-items: center;
@@ -193,6 +202,10 @@ code {
     .preview-image__container {
         height: 100%;
         max-width: 17.5rem;
+    }
+
+    .preview-resource-links__actions {
+        display: flex;
     }
 
     .preview-overlay__container {

@@ -183,6 +183,15 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     /**
      * Emits event to remove the file
      *
+     * @memberof DotBinaryFieldPreviewComponent
+     */
+    downloadAsset(): void {
+        window.open(this.downloadLink, '_blank');
+    }
+
+    /**
+     * Emits event to remove the file
+     *
      * @private
      * @return {*}  {boolean}
      * @memberof DotBinaryFieldPreviewComponent

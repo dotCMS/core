@@ -54,8 +54,14 @@
     background: $white;
     color: $black;
     padding: $spacing-4;
-    padding-top: 0;
     word-break: break-all;
+}
+.p-dialog:has(.p-dialog-header) .p-dialog-content {
+    padding-top: 0;
+}
+
+.p-dialog:has(.p-dialog-footer) .p-dialog-content {
+    padding-bottom: 0;
 }
 
 .p-dialog .p-dialog-footer {

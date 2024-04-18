@@ -99,9 +99,32 @@ describe('DotBinaryFieldPreviewComponent', () => {
     it('should show download button', () => {
         spectator.detectChanges();
         const downloadButton = spectator.query(byTestId('download-btn'));
+        const spyWindowOpen = jest.spyOn(window, 'open').mockImplementation(() => null);
+
         expect(downloadButton).toBeTruthy();
-        expect(downloadButton.getAttribute('href')).toBe(
-            `/contentAsset/raw-data/${CONTENTLET_MOCK.inode}/${CONTENTLET_MOCK.fieldVariable}?byInode=true&force_download=true`
+
+        spectator.click(downloadButton);
+        spectator.detectChanges();
+
+        expect(spyWindowOpen).toHaveBeenCalledWith(
+            `/contentAsset/raw-data/${CONTENTLET_MOCK.inode}/${CONTENTLET_MOCK.fieldVariable}?byInode=true&force_download=true`,
+            '_blank'
+        );
+    });
+
+    it('should show download button responsive', () => {
+        spectator.detectChanges();
+        const downloadButtonResponsive = spectator.query(byTestId('download-btn-responsive'));
+        const spyWindowOpen = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+        expect(downloadButtonResponsive).toBeTruthy();
+
+        spectator.click(downloadButtonResponsive);
+        spectator.detectChanges();
+
+        expect(spyWindowOpen).toHaveBeenCalledWith(
+            `/contentAsset/raw-data/${CONTENTLET_MOCK.inode}/${CONTENTLET_MOCK.fieldVariable}?byInode=true&force_download=true`,
+            '_blank'
         );
     });
 
