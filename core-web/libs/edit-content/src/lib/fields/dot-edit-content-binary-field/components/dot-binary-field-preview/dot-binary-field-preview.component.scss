@@ -63,14 +63,18 @@ dot-contentlet-thumbnail {
 .preview-metadata__container {
     flex-grow: 1;
     padding: $spacing-1;
+    padding-right: $spacing-6;
     display: none;
-    justify-content: top;
     flex-direction: column;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     gap: $spacing-2;
-    min-width: 120px;
+    min-width: 150px;
+
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 
     .preview-metadata_header {
         font-size: $font-size-md;
@@ -107,9 +111,12 @@ dot-contentlet-thumbnail {
 }
 
 .preview-resource-links__actions {
+    position: absolute;
+    top: 0;
+    right: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: $spacing-0;
     padding-top: $spacing-1;
     display: none;
 }
