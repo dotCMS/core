@@ -95,7 +95,7 @@ dot-contentlet-thumbnail {
 
         span {
             text-decoration: underline;
-            font-size: 12px;
+            font-size: $font-size-xsm;
         }
 
         span,
@@ -158,7 +158,7 @@ code {
     align-items: center;
     gap: $spacing-1;
     min-height: 32px;
-    font-size: 14px;
+    font-size: $font-size-xmd;
     width: 100%;
 
     a {
@@ -169,7 +169,7 @@ code {
 }
 
 .file-info__title {
-    font-size: 14px;
+    font-size: $font-size-xmd;
     font-style: normal;
     font-weight: 600;
 }

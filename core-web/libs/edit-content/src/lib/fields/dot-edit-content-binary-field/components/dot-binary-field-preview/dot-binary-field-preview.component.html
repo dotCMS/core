@@ -116,12 +116,14 @@
         </div>
     </div>
 
-    @for(sourceLink of this.resourceLinks(); track $index; let last = $last) { @if(sourceLink.show)
-    {
+    @if(contentlet) { @for(sourceLink of this.resourceLinks(); track $index; let last = $last) {
+    @if(sourceLink.show) {
     <div class="file-info__item" [attr.data-testId]="'resource-link-' + sourceLink.key">
         <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
         <div class="file-info__link">
-            <a [href]="sourceLink.value" target="_blank">{{ sourceLink.value }}</a>
+            <a [href]="sourceLink.value" target="_blank">{{
+                sourceLink.value || ('dot.binary.field.no.link.found' | dm)
+            }}</a>
             <dot-copy-button [copy]="sourceLink.value" />
         </div>
     </div>
@@ -133,5 +135,5 @@
             <p-skeleton size="20px" />
         </div>
     </div>
-    } }
+    } } }
 </p-dialog>
