@@ -235,7 +235,7 @@ jobs:
           echo "payload=$(echo $payload | jq -c .)" >> $GITHUB_OUTPUT
           echo "payload=$payload"
       - name: Post to Slack
-        if: steps.workflow-data.outputs.has_json == 'true' && github.repository == 'dotcms/core' && ( steps.workflow-data.outputs.status == 'FAILURE' || !inputs.slack-only-on-failure )
+        if: steps.workflow-data.outputs.has_json == 'true' && github.repository == 'dotcms/core' && ( steps.workflow-data.outputs.status == 'FAILURE' || ( github.event_name == 'workflow_call' && inputs.slack-only-on-failure == false ) )
         uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
