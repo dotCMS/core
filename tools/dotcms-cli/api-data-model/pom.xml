@@ -17,6 +17,7 @@
         <test.failure.ignore>false</test.failure.ignore>
         <maven.plugin.jar.version>3.3.0</maven.plugin.jar.version>
         <jackson.module.model.version>1.2.2</jackson.module.model.version>
+        <jackson.datatype.guava.version>2.13.3</jackson.datatype.guava.version>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
         <docker.version.tag>${project.version}</docker.version.tag>
         <testcontainers.docker.image>${docker.output.image.name}/${docker.version.tag}</testcontainers.docker.image>
@@ -77,7 +78,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-guava</artifactId>
-            <version>${version.jackson}</version>
+            <version>${jackson.datatype.guava.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.checkerframework</groupId>
@@ -100,16 +101,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
