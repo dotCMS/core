@@ -1342,7 +1342,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	}
 
 	/**
-	 * Return all the changes between the OldLayout and the newLayout, for example if we have
+	 * Return all the changes between the OldLayout and the newLayout.
+	 *
+	 * To match the Container Instance between the two layouts it used the Container's ID and the Container UUID,
+	 * so if a Container that had the same ID and UUID are in a different position on the two Layout then it means that
+	 * the Container was moved.
+	 *
+	 * If a new Container instances is add on the newLayout then the UUID is -1, it means this instances does not exist
+	 * on the oldLayout.
+	 *
+	 *
+	 * for example if we have
 	 *
 	 * oldLayout:
 	 * <code>
@@ -1374,7 +1384,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	 * <code>
 	 * Row 1:
 	 *   Column 1:
-	 *     Container A OLD_UUID = (IS NEW) NEW_UUID = 1
+	 *     Container A OLD_UUID = -1 (IS NEW) NEW_UUID = 1
 	 * Row 2:
 	 * 	Column1:
 	 * 	   Container A OLD_UUID = 3  NEW_UUID = 2 (WAS MOVED)
