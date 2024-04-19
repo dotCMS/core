@@ -172,17 +172,9 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
-<<<<<<< Updated upstream
-        Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
-        HTMLPageAssetRenderedAPIImplIntegrationTest.class,
-=======
-<<<<<<< Updated upstream
-=======
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         HTMLPageAssetRenderedAPIImplIntegrationTest.class,
->>>>>>> Stashed changes
->>>>>>> Stashed changes
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
