@@ -300,7 +300,13 @@ describe('EmaContentletToolsComponent', () => {
                                     title: 'Fake title',
                                     contentType: 'Fake content type'
                                 },
-                                container: undefined,
+                                container: {
+                                    uuid: '',
+                                    acceptTypes: '',
+                                    identifier: '',
+                                    maxContentlets: 0,
+                                    variantId: ''
+                                },
                                 language_id: '1',
                                 pageContainers: [],
                                 pageId: '1',
