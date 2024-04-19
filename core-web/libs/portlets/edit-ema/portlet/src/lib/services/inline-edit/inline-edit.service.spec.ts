@@ -26,6 +26,28 @@ describe('InlineEditService', () => {
         expect(style).toBeTruthy();
     });
 
+    it('should remove inline edit', () => {
+        const iframe = document.createElement('iframe');
+        document.body.appendChild(iframe);
+        const iframeElement = new ElementRef<HTMLIFrameElement>(iframe);
+
+        spectator.service.injectInlineEdit(iframeElement);
+
+        const script = iframe.contentDocument.querySelector('script[data-inline="true"]');
+        const style = iframe.contentDocument.querySelector('style');
+
+        expect(script).toBeTruthy();
+        expect(style).toBeTruthy();
+
+        spectator.service.removeInlineEdit(iframeElement);
+
+        const scriptRemoved = iframe.contentDocument.querySelector('script[data-inline="true"]');
+        const styleRemoved = iframe.contentDocument.querySelector('style');
+
+        expect(scriptRemoved).toBeFalsy();
+        expect(styleRemoved).toBeFalsy();
+    });
+
     it('should check if contentlet is in multiple pages', () => {
         const dataset: InlineEditingContentletDataset = {
             inode: '123',
