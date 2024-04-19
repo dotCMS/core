@@ -1,4 +1,4 @@
-import { Observable, Subject, fromEvent, of } from 'rxjs';
+import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -1148,6 +1148,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             detail: this.dotMessageService.get('editpage.file.upload.error'),
                             life: 3000
                         });
+
+                        return EMPTY;
                     }
 
                     return this.dotWorkflowActionsFireService
@@ -1170,6 +1172,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 })
             )
             .subscribe((contentlet) => {
+                // If there is no contentlet then the file was not uploaded
+                if (!contentlet) {
+                    this.store.updateEditorState(EDITOR_STATE.IDLE);
+
+                    return;
+                }
+
                 const payload = {
                     ...data,
                     position,
