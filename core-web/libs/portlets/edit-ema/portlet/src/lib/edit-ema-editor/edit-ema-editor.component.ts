@@ -130,6 +130,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
+    //TODO: Remove later
     private readonly dotEventsService = inject(DotEventsService);
 
     readonly editorState$ = this.store.editorState$;
@@ -648,8 +649,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     }
                 });
             },
+            //Remove later
             [NG_CUSTOM_EVENTS.COMPARE_CONTENTLET]: () => {
-                this.dotEventsService.notify(NG_CUSTOM_EVENTS.COMPARE_CONTENTLET, detail.data);
+                // console.log("Called compare!!");
+                // this.dotEventsService.notify(NG_CUSTOM_EVENTS.COMPARE_CONTENTLET, detail.data);
             },
             [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
                 this.messageService.add({

@@ -19,7 +19,7 @@ import { DialogModule } from 'primeng/dialog';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -70,6 +70,8 @@ export class DotEmaDialogComponent {
 
     protected readonly dialogState = toSignal(this.store.dialogState$);
     protected readonly dialogStatus = DialogStatus;
+
+    private readonly dotEventsService = inject(DotEventsService);
 
     protected get ds() {
         return this.dialogState();
@@ -283,6 +285,15 @@ export class DotEmaDialogComponent {
             .pipe(takeUntilDestroyed(this.destroyRef$))
             .subscribe((event: CustomEvent) => {
                 this.action.emit({ event, payload: this.dialogState().payload });
+
+                console.log(event.detail.name);
+
+                if (event.detail.name === NG_CUSTOM_EVENTS.COMPARE_CONTENTLET) {
+                    this.dotEventsService.notify(
+                        NG_CUSTOM_EVENTS.COMPARE_CONTENTLET,
+                        event.detail.data
+                    );
+                }
 
                 if (event.detail.name === NG_CUSTOM_EVENTS.OPEN_WIZARD) {
                     this.handleWorkflowEvent(event.detail.data);
