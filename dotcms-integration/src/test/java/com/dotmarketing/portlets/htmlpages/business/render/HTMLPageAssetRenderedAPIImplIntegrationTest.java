@@ -2716,6 +2716,9 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      */
     @Test
     public void usingViewToolToInjectExperimentCode() throws IOException {
+
+        assertEquals("", com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
+                Config.getStringProperty("TOOLBOX_MANAGER_PATH", "IT IS NOT SET"));
         final Experiment experiment = new ExperimentDataGen().nextPersisted();
         ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
         ConfigExperimentUtil.INSTANCE.setExperimentAutoJsInjection(false);
