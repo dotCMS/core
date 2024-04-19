@@ -14,6 +14,7 @@ declare global {
 export class InlineEditService {
     $iframeWindow = signal<Window | null>(null);
     private $inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
+    $isInlineEditingEnable = signal(true);
 
     private readonly DEFAULT_TINYMCE_CONFIG = {
         menubar: false,
@@ -64,6 +65,8 @@ export class InlineEditService {
         const doc = iframe.nativeElement.contentDocument;
         this.$iframeWindow.set(iframe.nativeElement.contentWindow);
 
+        this.$isInlineEditingEnable.set(true);
+
         if (!doc.querySelector('script[data-inline="true"]')) {
             const script = doc.createElement('script');
             script.dataset.inline = 'true';
@@ -81,6 +84,18 @@ export class InlineEditService {
             doc.body?.appendChild(script);
             doc.body?.appendChild(style);
         }
+    }
+
+    removeInlineEdit(iframe: ElementRef<HTMLIFrameElement>) {
+        const doc = iframe.nativeElement.contentDocument;
+
+        this.$isInlineEditingEnable.set(false);
+
+        doc.querySelectorAll('style').forEach((style) => {
+            if (style.textContent.includes('[data-inode][data-field-name][data-mode]')) {
+                style.remove();
+            }
+        });
     }
 
     /**
@@ -120,6 +135,10 @@ export class InlineEditService {
      * Initializes the editor for inline editing.
      */
     initEditor() {
+        if (!this.$isInlineEditingEnable()) {
+            return;
+        }
+
         const dataset = this.$inlineEditingTargetDataset();
 
         const dataSelector = `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`;

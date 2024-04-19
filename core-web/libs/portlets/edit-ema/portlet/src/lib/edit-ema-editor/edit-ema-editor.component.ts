@@ -232,17 +232,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.vtlIframePage$
             .pipe(
                 takeUntil(this.destroy$),
-                filter(() => this.isVTLPage()),
-                filter(({ isEnterprise }) => isEnterprise)
+                filter(({ isEnterprise }) => this.isVTLPage() && isEnterprise)
             )
             .subscribe(({ mode }) => {
                 requestAnimationFrame(() => {
                     const win = this.iframe.nativeElement.contentWindow;
 
-                    this.inlineEditingService.injectInlineEdit(this.iframe);
-                    fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-                        this.handleInlineEditing(e, mode);
-                    });
+                    if (mode === EDITOR_MODE.EDIT || mode === EDITOR_MODE.INLINE_EDITING) {
+                        this.inlineEditingService.injectInlineEdit(this.iframe);
+                        fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+                            this.handleInlineEditing(e);
+                        });
+                    } else {
+                        this.inlineEditingService.removeInlineEdit(this.iframe);
+                    }
                 });
             });
     }
@@ -280,11 +283,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * Handles the inline editing functionality triggered by a mouse event.
      * @param e - The mouse event that triggered the inline editing.
      */
-    handleInlineEditing(e: MouseEvent, mode: EDITOR_MODE) {
-        if (mode === EDITOR_MODE.INLINE_EDITING) {
-            return;
-        }
-
+    handleInlineEditing(e: MouseEvent) {
         let element = e.target as HTMLElement;
         if (!element.dataset.mode) {
             element = (e.target as HTMLElement).closest('[data-mode]') as HTMLElement;
