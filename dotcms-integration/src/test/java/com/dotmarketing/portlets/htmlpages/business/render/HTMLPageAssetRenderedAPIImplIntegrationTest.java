@@ -4,12 +4,8 @@ import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParse
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
@@ -44,13 +40,11 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -71,15 +65,12 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 
 
 import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
-import java.util.Optional;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -2719,8 +2710,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Ignore("Look like that the  TOOLBOX_MANAGER_PATH property is not set to the test environment anymore")
     public void usingViewToolToInjectExperimentCode() throws IOException {
 
-        assertEquals("", com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
-                Config.getStringProperty("TOOLBOX_MANAGER_PATH", "IT IS NOT SET"));
         final Experiment experiment = new ExperimentDataGen().nextPersisted();
         ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
         ConfigExperimentUtil.INSTANCE.setExperimentAutoJsInjection(false);
