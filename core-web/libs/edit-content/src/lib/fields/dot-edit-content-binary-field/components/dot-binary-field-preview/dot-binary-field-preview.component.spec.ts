@@ -112,6 +112,12 @@ describe('DotBinaryFieldPreviewComponent', () => {
         );
     });
 
+    it('should be editable', () => {
+        spectator.detectChanges();
+        const editButton = spectator.query(byTestId('edit-button'));
+        expect(editButton).toBeTruthy();
+    });
+
     it('should show download button responsive', () => {
         spectator.detectChanges();
         const downloadButtonResponsive = spectator.query(byTestId('download-btn-responsive'));
