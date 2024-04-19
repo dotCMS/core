@@ -399,21 +399,32 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 // I need to do this to hide the dropzone but maintain the current dragItem
-
                 this.store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // If you dragout of the window and is a file of SO, we need to reset the editor
             });
-    }
 
-    /**
-     * Reset the editor when the state is out of bounds
-     *
-     * @param {EDITOR_STATE} editorState
-     * @memberof EditEmaEditorComponent
-     */
-    resetEditorState(editorState: EDITOR_STATE) {
-        if (editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
-            this.store.updateEditorState(EDITOR_STATE.IDLE);
-        }
+        // If we are not dragging this will get triggered and if we have the dragItem we should clean it
+        fromEvent(this.window, 'mouseover')
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((event: MouseEvent & { fromElement: HTMLElement }) => !event.fromElement), // Only wanna listen to it when we are entering
+                switchMap((event) =>
+                    this.dragItem$.pipe(
+                        take(1),
+                        map((dragItem) => ({
+                            event,
+                            dragItem
+                        }))
+                    )
+                )
+            )
+            .subscribe(({ event, dragItem }) => {
+                event.preventDefault();
+
+                // If we have a dragItem in this event, we have to clean the dragState. So we set the editor to IDLE
+                if (dragItem) {
+                    this.store.updateEditorState(EDITOR_STATE.IDLE);
+                }
+            });
     }
 
     /**
