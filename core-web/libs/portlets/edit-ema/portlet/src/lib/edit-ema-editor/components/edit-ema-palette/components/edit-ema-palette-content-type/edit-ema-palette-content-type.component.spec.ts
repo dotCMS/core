@@ -50,40 +50,6 @@ describe('EditEmaPaletteContentTypeComponent', () => {
         });
     });
 
-    it('should emit dragStart event on drag start', () => {
-        const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
-
-        spectator.triggerEventHandler('[data-testId="content-type-0"]', 'dragstart', {
-            variable: 'test',
-            name: 'Test',
-            contentType: 'test',
-            baseType: 'CONTENT'
-        });
-        expect(dragSpy).toHaveBeenCalledWith({
-            variable: 'test',
-            name: 'Test',
-            contentType: 'test',
-            baseType: 'CONTENT'
-        });
-    });
-
-    it('should emit dragEnd event on drag end', () => {
-        const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
-
-        spectator.triggerEventHandler('[data-testId="content-type-0"]', 'dragend', {
-            variable: 'test',
-            name: 'Test',
-            contentType: 'test',
-            baseType: 'CONTENT'
-        });
-        expect(dragSpy).toHaveBeenCalledWith({
-            variable: 'test',
-            name: 'Test',
-            contentType: 'test',
-            baseType: 'CONTENT'
-        });
-    });
-
     it('should emit showContentlets event with contentTypeName', () => {
         const spy = jest.spyOn(spectator.component.showContentlets, 'emit');
         spectator.click('[data-testId="content-type-0-button-go-content"]');
@@ -98,10 +64,12 @@ describe('EditEmaPaletteContentTypeComponent', () => {
         expect(spectator.query('[data-testId="content-type-0"]')).not.toBeNull();
         expect(spectator.query('[data-testId="content-type-0"]')).toHaveAttribute('data-item');
         expect(data).toEqual({
-            variable: 'Test1',
-            name: 'Test Content Type',
-            contentType: 'Test1',
-            baseType: 'CONTENT'
+            contentType: {
+                variable: 'Test1',
+                name: 'Test Content Type',
+                baseType: 'CONTENT'
+            },
+            move: false
         });
     });
 

@@ -93,11 +93,11 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!changes.contentlet) {
+        if (!changes.contentletArea) {
             return;
         }
 
-        if (this.hasContentletOrContainerChanged(changes.contentlet)) {
+        if (this.hasContentletOrContainerChanged(changes.contentletArea)) {
             this.hideMenus();
         }
     }
