@@ -89,13 +89,14 @@ export class InlineEditService {
     removeInlineEdit(iframe: ElementRef<HTMLIFrameElement>) {
         const doc = iframe.nativeElement.contentDocument;
 
-        this.$isInlineEditingEnable.set(false);
-
+        doc.querySelector('script[data-inline="true"]')?.remove();
         doc.querySelectorAll('style').forEach((style) => {
             if (style.textContent.includes('[data-inode][data-field-name][data-mode]')) {
                 style.remove();
             }
         });
+
+        this.$isInlineEditingEnable.set(false);
     }
 
     /**
