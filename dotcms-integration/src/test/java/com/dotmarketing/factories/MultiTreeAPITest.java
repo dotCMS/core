@@ -2913,18 +2913,18 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
-     * - Contentlet_4 : Add to the instance 3
-     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
      *
-     * And you move the instance for to be the first one
+     * And you move the last instance to be the first one
      *
      * Should: The Contentlets should finish as:
      *
      * - Contentlet_1 : Add to the instance 2
      * - Contentlet_2 : Add to the instance 3
      * - Contentlet_3 : Add to the instance 4
-     * - Contentlet_4 : Add to the instance 5
-     * - Contentlet_5 : Add to the instance 1
+     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_4 : Add to the instance 1
      *
      * @throws DotDataException
      */
@@ -3006,18 +3006,18 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
-     * - Contentlet_4 : Add to the instance 3
-     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
      *
      * And you move the instance 2 and 3
      *
      * Should: The Contentlets should finish as:
      *
-     * - Contentlet_1 : Add to the instance 2
+     * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 3
-     * - Contentlet_3 : Add to the instance 4
-     * - Contentlet_4 : Add to the instance 5
-     * - Contentlet_5 : Add to the instance 1
+     * - Contentlet_3 : Add to the instance 2
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 4
      *
      * @throws DotDataException
      */
@@ -3097,8 +3097,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
-     * - Contentlet_4 : Add to the instance 3
-     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
      *
      * And you remove the instance 1
      *
@@ -3107,8 +3107,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : removed
      * - Contentlet_2 : Add to the instance 1
      * - Contentlet_3 : Add to the instance 2
-     * - Contentlet_4 : Add to the instance 2
-     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 3
      *
      * @throws DotDataException
      */
@@ -3281,18 +3281,18 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
-     * - Contentlet_4 : Add to the instance 3
-     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
      *
-     * And you move the instance for to be the first one
+     * And you move last the instance to be the first one
      *
      * Should: The Contentlets should finish as:
      *
      * - Contentlet_1 : Add to the instance 2
      * - Contentlet_2 : Add to the instance 3
      * - Contentlet_3 : Add to the instance 4
-     * - Contentlet_4 : Add to the instance 5
-     * - Contentlet_5 : Add to the instance 1
+     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_4 : Add to the instance 1
      *
      * @throws DotDataException
      */
@@ -3393,17 +3393,15 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
-     * When: You have 1000 Page with 4 containers all of them are different instances of the same containers,
+     * When: You have 100 Page with 4 containers all of them are different instances of the same containers,
      * and you have 5 Contentlets add as follows:
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
-     * - Contentlet_4 : Add to the instance 3
-     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
      *
-     * And you move the instance for to be the first one
-     *
-     * Should: Return on list of 50 millis
+     * Should: Return on list of 100 millis
      *
      * @throws DotDataException
      */
@@ -3465,8 +3463,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
-     * - Contentlet_4 : Add to the instance 3
-     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
      *
      * And you remove the instance 1
      *
@@ -3475,8 +3473,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : removed
      * - Contentlet_2 : Add to the instance 1
      * - Contentlet_3 : Add to the instance 2
-     * - Contentlet_4 : Add to the instance 2
-     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 3
      *
      * @throws DotDataException
      */
@@ -3941,8 +3939,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
-     * - Contentlet_4 : Add to the instance 3
-     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
      *
      * And you remove the instance 1
      *
@@ -3951,8 +3949,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : ORPHANED
      * - Contentlet_2 : Add to the instance 1
      * - Contentlet_3 : Add to the instance 2
-     * - Contentlet_4 : Add to the instance 2
-     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 3
      *
      * @throws DotDataException
      */
@@ -4042,8 +4040,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : Add to the instance 1
      * - Contentlet_2 : Add to the instance 2
      * - Contentlet_3 : Add to the instance 3
-     * - Contentlet_4 : Add to the instance 3
-     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
      *
      * And you remove the instance 1
      *
@@ -4052,8 +4050,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_1 : ORPHANED
      * - Contentlet_2 : Add to the instance 1
      * - Contentlet_3 : Add to the instance 2
-     * - Contentlet_4 : Add to the instance 2
-     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 3
      *
      *  Also the page had a Contentlet_6 orphaned content
      *
