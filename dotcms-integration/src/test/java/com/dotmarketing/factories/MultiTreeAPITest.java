@@ -36,7 +36,6 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
-import graphql.AssertException;
 
 import java.util.*;
 
@@ -977,7 +976,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 assertEquals(variantA.name(), multiTree.getVariantId());
                 assertEquals(DOT_PERSONALIZATION_DEFAULT, multiTree.getPersonalization());
             } else {
-                throw new AssertException("Contentlet not expected");
+                throw new AssertionError("Contentlet not expected");
             }
         }
     }
@@ -2994,7 +2993,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     assertTrue(contentlets.contains(contentlet_5.getIdentifier()));
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -3085,7 +3084,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -3174,7 +3173,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -3385,7 +3384,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                         assertTrue(contentlets.contains(contentlet_5.getIdentifier()));
                         break;
                     default:
-                        throw new AssertException("UUID not expected: " + intanceId);
+                        throw new AssertionError("UUID not expected: " + intanceId);
                 }
             }
         }
@@ -3564,7 +3563,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                         assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).get("child").toString());
                         break;
                     default:
-                        throw new AssertException("UUID not expected: " + intanceId);
+                        throw new AssertionError("UUID not expected: " + intanceId);
                 }
             }
         }
@@ -3678,7 +3677,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             } else if (multiTree.getContainer().equals(container_3.getIdentifier()) && multiTree.getRelationType().equals("1")) {
                 assertEquals(contentlet_5.getIdentifier(), multiTree.getContentlet());
             }else {
-                throw new AssertException("UUID not expected: Container " + multiTree.getContainer() + " UUID " + multiTree.getRelationType());
+                throw new AssertionError("UUID not expected: Container " + multiTree.getContainer() + " UUID " + multiTree.getRelationType());
             }
         }
 
@@ -3789,7 +3788,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             } else if (multiTree.getContainer().equals(container_3.getIdentifier()) && multiTree.getRelationType().equals("1")) {
                 assertEquals(contentlet_4.getIdentifier(), multiTree.getContentlet());
             } else {
-                throw new AssertException("UUID not expected: Container " + multiTree.getContainer() + " UUID " + multiTree.getRelationType());
+                throw new AssertionError("UUID not expected: Container " + multiTree.getContainer() + " UUID " + multiTree.getRelationType());
             }
         }
     }
@@ -3926,7 +3925,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 } else if (multiTree.get("parent2").equals(container_3.getIdentifier()) && multiTree.get("relation_type").equals("1")) {
                     assertEquals(contentlet_4.getIdentifier(), multiTree.get("child"));
                 } else {
-                    throw new AssertException("UUID not expected: Container " + multiTree.get("parent2") + " UUID " + multiTree.get("relation_type"));
+                    throw new AssertionError("UUID not expected: Container " + multiTree.get("parent2") + " UUID " + multiTree.get("relation_type"));
                 }
             }
         }
@@ -4025,7 +4024,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                         assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).getContentlet());
                         break;
                     default:
-                        throw new AssertException("UUID not expected: " + intanceId);
+                        throw new AssertionError("UUID not expected: " + intanceId);
                 }
             }
         } finally {
@@ -4142,7 +4141,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                         assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).getContentlet());
                         break;
                     default:
-                        throw new AssertException("UUID not expected: " + intanceId);
+                        throw new AssertionError("UUID not expected: " + intanceId);
                 }
             }
         } finally {

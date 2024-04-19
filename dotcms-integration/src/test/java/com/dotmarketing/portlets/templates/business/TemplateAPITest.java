@@ -13,7 +13,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.JsonUtil;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.ContainerStructure;
@@ -58,8 +57,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import graphql.AssertException;
-import io.vavr.API;
 import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -1448,7 +1445,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link TemplateAPIImpl#saveAndUpdateLayout(Template, TemplateLayout, Host, User, boolean)}
-     * When: Save a Template with a null layout
+     * When: Save a Template with and not changing the Layout
      * Should: Save the Template
      *
      * @throws DotDataException
@@ -1644,7 +1641,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertTrue(contentlets.contains(contentlet_4.getIdentifier()));
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -1813,7 +1810,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_5.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -1960,7 +1957,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_5.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -2121,7 +2118,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                         assertTrue(contentlets.contains(contentlet_4.getIdentifier()));
                         break;
                     default:
-                        throw new AssertException("UUID not expected: " + intanceId);
+                        throw new AssertionError("UUID not expected: " + intanceId);
                 }
             }
         } finally {
@@ -2286,7 +2283,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             switch (intanceId){
                 case "1":
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
                 case "2":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -2308,7 +2305,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_5.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -2476,7 +2473,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_2.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 case "3":
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
                 case "4":
                     assertEquals(2, multiTrees.size());
 
@@ -2490,7 +2487,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_5.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -2656,7 +2653,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 case "2":
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
                 case "3":
                     assertEquals(1, multiTrees.size());
                     assertEquals(contentlet_2.getIdentifier(), multiTrees.get(0).getContentlet());
@@ -2674,7 +2671,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_5.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -2877,7 +2874,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(contentlet_5.getIdentifier(), multiTrees.get(0).getContentlet());
                     break;
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -3056,7 +3053,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     break;
 
                 default:
-                    throw new AssertException("UUID not expected: " + intanceId);
+                    throw new AssertionError("UUID not expected: " + intanceId);
             }
         }
     }
@@ -3240,7 +3237,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                 assertEquals("1", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
@@ -3424,7 +3421,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                 assertEquals("1", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
@@ -3599,7 +3596,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                 assertEquals("1", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
@@ -3774,7 +3771,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_2.getIdentifier(), multiTree.getContainer());
                 assertEquals("2", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
@@ -3956,7 +3953,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                     assertEquals("1", multiTree.getRelationType());
                 } else {
-                    throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                    throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
                 }
             }
         } finally {
@@ -4141,7 +4138,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                     assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                     assertEquals("-1", multiTree.getRelationType());
                 } else {
-                    throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                    throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
                 }
             }
         } finally {
@@ -4334,7 +4331,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                 assertEquals("1", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
@@ -4517,7 +4514,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                 assertEquals("1", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
@@ -4715,7 +4712,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                 assertEquals("1", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
@@ -4892,7 +4889,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                 assertEquals("1", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
@@ -5072,7 +5069,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                 assertEquals("1", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
@@ -5259,7 +5256,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                 assertEquals(container_3.getIdentifier(), multiTree.getContainer());
                 assertEquals("1", multiTree.getRelationType());
             } else {
-                throw new AssertException("Contententlet not expected: " + multiTree.getContentlet());
+                throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
     }
