@@ -108,7 +108,7 @@ describe('DotBinaryFieldPreviewComponent', () => {
 
         expect(spyWindowOpen).toHaveBeenCalledWith(
             `/contentAsset/raw-data/${CONTENTLET_MOCK.inode}/${CONTENTLET_MOCK.fieldVariable}?byInode=true&force_download=true`,
-            '_blank'
+            '_self'
         );
     });
 
