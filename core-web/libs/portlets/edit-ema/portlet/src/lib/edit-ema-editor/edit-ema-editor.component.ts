@@ -401,30 +401,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // I need to do this to hide the dropzone but maintain the current dragItem
                 this.store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // If you dragout of the window and is a file of SO, we need to reset the editor
             });
-
-        // If we are not dragging this will get triggered and if we have the dragItem we should clean it
-        fromEvent(this.window, 'mouseover')
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((event: MouseEvent & { fromElement: HTMLElement }) => !event.fromElement), // Only wanna listen to it when we are entering
-                switchMap((event) =>
-                    this.dragItem$.pipe(
-                        take(1),
-                        map((dragItem) => ({
-                            event,
-                            dragItem
-                        }))
-                    )
-                )
-            )
-            .subscribe(({ event, dragItem }) => {
-                event.preventDefault();
-
-                // If we have a dragItem in this event, we have to clean the dragState. So we set the editor to IDLE
-                if (dragItem) {
-                    this.store.updateEditorState(EDITOR_STATE.IDLE);
-                }
-            });
     }
 
     /**
@@ -1140,24 +1116,38 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         file: File;
         dragItem: EmaDragItem;
     }) {
+        if (!file.type.match('image.*')) {
+            this.messageService.add({
+                severity: 'error',
+                summary: this.dotMessageService.get('file-upload'),
+                detail: this.dotMessageService.get('editpage.file.upload.not.image'),
+                life: 3000
+            });
+
+            this.store.updateEditorState(EDITOR_STATE.IDLE);
+
+            return;
+        }
+
         this.tempFileUploadService
             .upload(file)
             .pipe(
                 tap(() => {
                     this.messageService.add({
                         severity: 'info',
-                        summary: 'Temporal File',
-                        detail: `Uploading ${file.name}`,
+                        summary: this.dotMessageService.get('upload-image'),
+                        detail: this.dotMessageService.get('editpage.file.uploading', file.name),
                         life: 3000
                     });
                 }),
                 switchMap(([{ id, image }]: DotCMSTempFile[]) => {
                     if (!image) {
-                        // return throwError(
-                        //     this.dotMessageService.get(
-                        //         'templates.properties.form.thumbnail.error.invalid.url'
-                        //     )
-                        // );
+                        this.messageService.add({
+                            severity: 'info',
+                            summary: this.dotMessageService.get('upload-image'),
+                            detail: this.dotMessageService.get('editpage.file.upload.error'),
+                            life: 3000
+                        });
                     }
 
                     return this.dotWorkflowActionsFireService
@@ -1169,7 +1159,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                                 this.messageService.add({
                                     severity: 'info',
                                     summary: this.dotMessageService.get('Workflow Action'),
-                                    detail: `Publishing ${file.name}`,
+                                    detail: this.dotMessageService.get(
+                                        'editpage.file.publishing',
+                                        file.name
+                                    ),
                                     life: 3000
                                 });
                             })
