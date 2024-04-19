@@ -1661,7 +1661,7 @@ public class TemplateAPITest extends IntegrationTestBase {
      * - Contentlet_4 : Add to the instance 3
      * - Contentlet_5 : Add to the instance 4
      *
-     * And you move the two instance of the second row
+     * And you exchanged the two instance of the second row
      *
      * Should: The Layout should finish on the same way:
      * The Contentlets should finish as:
