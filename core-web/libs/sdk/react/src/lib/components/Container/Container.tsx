@@ -4,33 +4,6 @@ import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
-const FAKE_CONTENLET = {
-    identifier: 'TEMP_EMPTY_CONTENTLET',
-    title: 'TEMP_EMPTY_CONTENTLET',
-    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
-    inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
-    widgetTitle: 'TEMP_EMPTY_CONTENTLET',
-    onNumberOfPages: 1
-};
-
-function EmptyContainer() {
-    return (
-        <div
-            data-testid="empty-container"
-            style={{
-                width: '100%',
-                backgroundColor: '#ECF0FD',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                color: '#030E32',
-                height: '10rem'
-            }}>
-            This container is empty.
-        </div>
-    );
-}
-
 function NoContent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
 }
@@ -54,9 +27,6 @@ export function Container({ containerRef }: ContainerProps) {
         containerRef
     );
 
-    const updatedContentlets =
-        contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
-
     const container = {
         acceptTypes,
         identifier: path ?? identifier,
@@ -65,13 +35,20 @@ export function Container({ containerRef }: ContainerProps) {
         uuid
     };
 
-    const renderContentlets = updatedContentlets.map((contentlet) => {
-        const ContentTypeComponent = components[contentlet.contentType] || NoContent;
+    const containerStyles = contentlets.length
+        ? undefined
+        : {
+              width: '100%',
+              backgroundColor: '#ECF0FD',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: '#030E32',
+              height: '10rem'
+          };
 
-        const Component =
-            contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
-                ? EmptyContainer
-                : ContentTypeComponent;
+    const ContainerChildren = contentlets.map((contentlet) => {
+        const Component = components[contentlet.contentType] || NoContent;
 
         return isInsideEditor ? (
             <div
@@ -92,15 +69,17 @@ export function Container({ containerRef }: ContainerProps) {
 
     return isInsideEditor ? (
         <div
+            data-testid="dot-container"
             data-dot-object="container"
             data-dot-accept-types={acceptTypes}
             data-dot-identifier={path ?? identifier}
             data-max-contentlets={maxContentlets}
-            data-uuid={uuid}>
-            {renderContentlets}
+            data-dot-uuid={uuid}
+            style={containerStyles}>
+            {ContainerChildren.length ? ContainerChildren : 'This container is empty.'}
         </div>
     ) : (
         // eslint-disable-next-line react/jsx-no-useless-fragment
-        <>{renderContentlets}</>
+        <>{ContainerChildren}</>
     );
 }

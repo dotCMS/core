@@ -1,41 +1,40 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.CopyContentTypeBean;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldRelationshipDataGen;
+import com.dotcms.datagen.FieldVariableDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VanityUrlDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -50,7 +49,15 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.VersionableFactoryImpl;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -82,33 +89,8 @@ import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-
-import io.vavr.API;
-import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.http.HttpStatus;
-
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -119,7 +101,46 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 /**
+ * This Integration Test verifies that the {@link ContentletAPI} is working as expected.
+ *
  * @author nollymar
  */
 public class ESContentletAPIImplTest extends IntegrationTestBase {
@@ -2785,7 +2806,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(textOver255Chars,vanityURLCheckout.getForwardTo());
     }
 
-    /*
+    /**
      * Method to test: {@link ESContentletAPIImpl#copyContentlet(Contentlet, User, boolean)}
      * Given Scenario:
      * Unable to copy a contentlet with Host/Folder field. Error is thrown when the field name is "Host"
@@ -2813,4 +2834,70 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertNotEquals(respCont.getIdentifier(), contentlet.getIdentifier());
         assertEquals(respCont.getHost(), APILocator.systemHost().getIdentifier());
     }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link ContentletAPI#copyContentlet(Contentlet, ContentType, Host, Folder, User, String, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Two test Sites are created. For Site #1, a source Content Type
+     *     will be created, and it will be copied to Site #2. Then, a Contentlet of the source
+     *     Content Type will be created, and it will be copied over to Content Type #2 and Site #2.
+     *     In summary, the API method copies a contentlet of a given type from one Site, to a copy
+     *     of such a type to anotherSite.</li>
+     *     <li><b>Expected Result: </b>In the end, the test Contentlet of Type #1 in Site #1 must be
+     *     copied over to Site #2 with a type that belongs to the copied Type #2. This is basically
+     *     what happens when you copy a Site, and choose to copy both Content Types and Contentlets
+     *     from the source Site.</li>
+     * </ul>
+     */
+    @Test
+    public void copyContentletToAnotherContentTypeAndSite() throws DotDataException, DotSecurityException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final long currentTime = System.currentTimeMillis();
+        final String sourceSiteName = "sourcesite" + currentTime +".com";
+        final String copiedSiteName = "copiedsite" + currentTime + ".com";
+        final String titleFieldName = "title";
+        final String titleFieldValue = "This is the title of the test Contentlet";
+        final String defaultIcon = "event_note";
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Host sourceSite = new SiteDataGen().name(sourceSiteName).nextPersisted();
+        final Host copiedSite = new SiteDataGen().name(copiedSiteName).nextPersisted();
+
+        final List<Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().name("Title").velocityVarName(titleFieldName).next());
+        final ContentType sourceContentType = new ContentTypeDataGen()
+                .host(sourceSite).description("This is a description of my test Content Type")
+                .fields(fields)
+                .nextPersisted();
+
+        final CopyContentTypeBean.Builder builder = new CopyContentTypeBean.Builder()
+                .sourceContentType(sourceContentType).icon(defaultIcon).name(sourceContentType.name() + " - " + copiedSite.getHostname() + " COPY")
+                .folder(sourceContentType.folder()).host(copiedSite.getIdentifier());
+        final ContentType copiedContentType = contentTypeAPI.copyFromAndDependencies(builder.build(), copiedSite);
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(sourceContentType);
+        contentletDataGen.setProperty(titleFieldName, titleFieldValue);
+        contentletDataGen.setProperty("host", sourceSite.getIdentifier());
+        final Contentlet sourceContentlet = contentletDataGen.nextPersisted();
+
+        final Contentlet copiedContentlet = contentletAPI.copyContentlet(sourceContentlet,
+                copiedContentType, copiedSite, null, user, null, false);
+
+        // ╔══════════════╗
+        // ║  Assertions  ║
+        // ╚══════════════╝
+        assertNotNull("The source Contentlet cannot be null", sourceContentlet);
+        assertNotNull("The copied Contentlet cannot be null", copiedContentlet);
+        assertEquals("The 'title' property in both Contentlets MUST be the same", sourceContentlet.getStringProperty(titleFieldName), copiedContentlet.getStringProperty(titleFieldName));
+        assertEquals("The Site ID that the source Contentlet lives in MUST match the source Site ID", sourceContentlet.getHost(), sourceSite.getIdentifier());
+        assertEquals("The Site ID that the copied Contentlet lives in MUST match the copied Site ID", copiedContentlet.getHost(), copiedSite.getIdentifier());
+        assertNotEquals("The Content Type in the source and copied Contentlets MUST be different because a new Content Type was passed down during the copy process", sourceContentlet.getContentTypeId(), copiedContentlet.getContentTypeId());
+        assertNotEquals("The Site ID from the source and copied Contentlets MUST be different because a new Site was passed down during the copy process", sourceContentlet.getHost(), copiedContentlet.getHost());
+    }
+
 }

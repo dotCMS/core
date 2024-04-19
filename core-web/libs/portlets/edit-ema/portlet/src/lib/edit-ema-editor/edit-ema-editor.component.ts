@@ -1,6 +1,5 @@
 import { Observable, Subject, fromEvent, of } from 'rxjs';
 
-import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -30,7 +29,6 @@ import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/o
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
-    DotPersonalizeService,
     DotMessageService,
     DotCopyContentService,
     DotHttpErrorManagerService,
@@ -41,17 +39,12 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
-    DotDevice,
     DotExperimentStatus,
-    DotPersona,
     DotTreeNode,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import {
-    DotDeviceSelectorSeoComponent,
-    DotResultsSeoToolComponent
-} from '@dotcms/portlets/dot-ema/ui';
+import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import {
     SafeUrlPipe,
     DotSpinnerModule,
@@ -59,22 +52,12 @@ import {
     DotCopyContentModalService
 } from '@dotcms/ui';
 
-import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
-import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
-import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
-import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
-import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
-import {
-    ContentletArea,
-    EmaDragItem,
-    ClientContentletArea,
-    Container
-} from './components/ema-page-dropzone/types';
+import { EmaDragItem, ClientContentletArea, Container } from './components/ema-page-dropzone/types';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
@@ -86,55 +69,19 @@ import {
     PositionPayload,
     ClientData,
     SetUrlPayload,
-    ContainerPayload,
-    ContentletPayload,
-    PageContainer,
-    VTLFile
+    VTLFile,
+    ReorderPayload,
+    PostMessagePayload,
+    ContentletDragPayload,
+    DeletePayload,
+    DraggedPalettePayload,
+    InsertPayloadFromDelete
 } from '../shared/models';
 import {
     areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
 } from '../utils';
-
-interface DeletePayload {
-    payload: ActionPayload;
-    originContainer: ContainerPayload;
-    contentletToMove: ContentletPayload;
-}
-
-interface InsertPayloadFromDelete {
-    payload: ActionPayload;
-    pageContainers: PageContainer[];
-    contentletsId: string[];
-    destinationContainer: ContainerPayload;
-    pivotContentlet: ContentletPayload;
-    positionToInsert: 'before' | 'after';
-}
-
-interface BasePayload {
-    type: 'contentlet' | 'content-type';
-}
-
-interface ContentletDragPayload extends BasePayload {
-    type: 'contentlet';
-    item: {
-        container?: ContainerPayload;
-        contentlet: ContentletPayload;
-    };
-    move: boolean;
-}
-
-// Specific interface when type is 'content-type'
-interface ContentTypeDragPayload extends BasePayload {
-    type: 'content-type';
-    item: {
-        variable: string;
-        name: string;
-    };
-}
-
-type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -149,21 +96,14 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
         DotSpinnerModule,
         DotEmaDialogComponent,
         ConfirmDialogModule,
-        EditEmaPersonaSelectorComponent,
-        EditEmaLanguageSelectorComponent,
         EditEmaToolbarComponent,
-        ClipboardModule,
         DotMessagePipe,
         EmaPageDropzoneComponent,
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
-        DotDeviceSelectorSeoComponent,
-        DotEmaInfoDisplayComponent,
         DotEmaBookmarksComponent,
-        DotEditEmaWorkflowActionsComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent,
-        DotEmaRunningExperimentComponent
+        DotResultsSeoToolComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -175,15 +115,12 @@ type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
-    @ViewChild('personaSelector')
-    personaSelector!: EditEmaPersonaSelectorComponent;
 
     private readonly router = inject(Router);
     private readonly activatedRouter = inject(ActivatedRoute);
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
-    private readonly personalizeService = inject(DotPersonalizeService);
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
     private readonly cd = inject(ChangeDetectorRef);
@@ -250,8 +187,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     protected draggedPayload: DraggedPalettePayload;
 
-    containers: Container[] = [];
-    contentlet!: ContentletArea;
     dragItem: EmaDragItem;
 
     get queryParams(): DotPageApiParams {
@@ -268,6 +203,43 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
+
+        // In VTL Page if user click in a link in the page, we need to update the URL in the editor
+        this.store.pageRendered$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter(() => this.isVTLPage())
+            )
+            .subscribe(() => {
+                requestAnimationFrame(() => {
+                    // This gets destroy when the iframe reloads
+                    fromEvent(this.iframe.nativeElement.contentWindow, 'click')
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe((e) => {
+                            const href =
+                                (e.target as HTMLAnchorElement)?.href ||
+                                (e.target as HTMLElement).closest('a')?.href;
+
+                            if (href) {
+                                e.preventDefault();
+                                const url = new URL(href);
+
+                                // Check if the URL is not external
+                                if (url.hostname === window.location.hostname) {
+                                    this.updateQueryParams({
+                                        url: url.pathname
+                                    });
+
+                                    return;
+                                }
+
+                                // Open external links in a new tab
+                                this.window.open(href, '_blank');
+                            }
+                        });
+                });
+            });
+
         // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
         // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
         // this.store.updateEditorState(EDITOR_STATE.LOADING);
@@ -316,11 +288,56 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    addEditorPageScript(rendered: string) {
+    addEditorPageScript(rendered = ''): string {
         const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
-        const updatedRendered = rendered?.replace('</body>', scriptString + '</body>');
+        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
+    }
+
+    /**
+     * Add custom styles to the rendered content
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addCustomStyles(rendered = ''): string {
+        const styles = `<style>
+
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
+        }
+        </style>
+        `;
+
+        return rendered.replace('</head>', styles + '</head>');
+    }
+
+    /**
+     * Inject the editor page script and styles to the VTL content
+     *
+     * @private
+     * @param {string} rendered
+     * @return {*}  {string}
+     * @memberof EditEmaEditorComponent
+     */
+    private inyectCodeToVTL(rendered: string): string {
+        let newFile = this.addEditorPageScript(rendered);
+
+        newFile = this.addCustomStyles(newFile);
+
+        return newFile;
     }
 
     ngOnDestroy(): void {
@@ -347,98 +364,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     onLanguageSelected(language_id: number) {
         this.updateQueryParams({
             language_id
-        });
-    }
-
-    /**
-     * Handle the persona selection
-     *
-     * @param {DotPersona} persona
-     * @memberof DotEmaComponent
-     */
-    onPersonaSelected(persona: DotPersona & { pageId: string }) {
-        if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
-            this.updateQueryParams({
-                'com.dotmarketing.persona.id': persona.identifier
-            });
-        } else {
-            this.confirmationService.confirm({
-                header: this.dotMessageService.get('editpage.personalization.confirm.header'),
-                message: this.dotMessageService.get(
-                    'editpage.personalization.confirm.message',
-                    persona.name
-                ),
-                acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-                rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-                accept: () => {
-                    this.personalizeService
-                        .personalized(persona.pageId, persona.keyTag)
-                        .subscribe(() => {
-                            this.updateQueryParams({
-                                'com.dotmarketing.persona.id': persona.identifier
-                            });
-
-                            this.personaSelector.fetchPersonas();
-                        }); // This does a take 1 under the hood
-                },
-                reject: () => {
-                    this.personaSelector.resetValue();
-                }
-            });
-        }
-    }
-
-    /**
-     * Handle the persona despersonalization
-     *
-     * @param {(DotPersona & { pageId: string })} persona
-     * @memberof EditEmaEditorComponent
-     */
-    onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('editpage.personalization.delete.confirm.header'),
-            message: this.dotMessageService.get(
-                'editpage.personalization.delete.confirm.message',
-                persona.name
-            ),
-            acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-            rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-            accept: () => {
-                this.personalizeService
-                    .despersonalized(persona.pageId, persona.keyTag)
-                    .subscribe(() => {
-                        this.personaSelector.fetchPersonas();
-
-                        if (persona.selected) {
-                            this.updateQueryParams({
-                                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                            });
-                        }
-                    }); // This does a take 1 under the hood
-            }
-        });
-    }
-
-    /**
-     * Update the current device
-     *
-     * @param {DotDevice} [device]
-     * @memberof EditEmaEditorComponent
-     */
-    updateCurrentDevice(device: DotDevice & { icon?: string }) {
-        this.store.setDevice(device);
-    }
-
-    /**
-     * Handle the copy URL action
-     *
-     * @memberof EditEmaEditorComponent
-     */
-    triggerCopyToast() {
-        this.messageService.add({
-            severity: 'success',
-            summary: this.dotMessageService.get('Copied'),
-            life: 3000
         });
     }
 
@@ -623,8 +548,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const doc = this.iframe?.nativeElement.contentDocument;
 
             if (doc) {
+                const newFile = this.inyectCodeToVTL(code);
+
                 doc.open();
-                doc.write(this.addEditorPageScript(code));
+                doc.write(newFile);
                 doc.close();
 
                 this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
@@ -723,6 +650,36 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [NG_CUSTOM_EVENTS.COMPARE_CONTENTLET]: () => {
                 this.dotEventsService.notify(NG_CUSTOM_EVENTS.COMPARE_CONTENTLET, detail.data);
+            },
+            [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get('message.menu.reordered'),
+                    life: 2000
+                });
+
+                this.store.reload({
+                    params: this.queryParams
+                });
+                this.dialog.resetDialog();
+            },
+            [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get(
+                        'error.menu.reorder.user_has_not_permission'
+                    ),
+                    life: 2000
+                });
+            },
+            [NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER]: () => {
+                this.dialog.resetDialog();
             }
         })[detail.name];
     }
@@ -742,7 +699,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea;
+            payload: PostMessagePayload;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -755,7 +712,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const isSameUrl = this.queryParams.url === payload.url;
 
                 if (isSameUrl) {
-                    this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
+                    // TODO: HOW DO WE DO THIS NOW?
+                    // this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
                     this.store.updateEditorState(EDITOR_STATE.IDLE);
                 } else {
                     this.updateQueryParams({
@@ -765,20 +723,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
-                this.containers = <Container[]>data.payload;
-                this.cd.detectChanges();
+                this.store.setBounds(<Container[]>data.payload);
             },
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
                 const contentletArea = <ClientContentletArea>data.payload;
 
                 const payload = this.getPageSavePayload(contentletArea.payload);
 
-                this.contentlet = {
+                this.store.setContentletArea({
                     ...contentletArea,
                     payload
-                };
-
-                this.cd.detectChanges();
+                });
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
                 this.resetDragProperties();
@@ -788,6 +743,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.iframe?.nativeElement?.contentWindow.postMessage(
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
+                );
+            },
+            [CUSTOMER_ACTIONS.REORDER_MENU]: () => {
+                const { reorderUrl } = <ReorderPayload>data.payload;
+
+                this.dialog.openDialogOnUrl(
+                    reorderUrl,
+                    this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
@@ -807,30 +770,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
         );
-    }
-
-    /**
-     * Handle a new page event. This event is triggered when the page changes for a Workflow Action
-     * Update the query params if the url or the language id changed
-     *
-     * @param {DotCMSContentlet} page
-     * @memberof EditEmaEditorComponent
-     */
-    handleNewPage(page: DotCMSContentlet): void {
-        const { pageURI, url, languageId } = page;
-        const params = {
-            ...this.updateQueryParams,
-            url: pageURI ?? url,
-            language_id: languageId?.toString()
-        };
-
-        if (this.shouldReload(params)) {
-            this.updateQueryParams(params);
-        }
-    }
-
-    onSeoMediaChange(seoMedia: string) {
-        this.store.setSocialMedia(seoMedia);
     }
 
     /**
@@ -858,21 +797,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         this.store.updateEditorState(EDITOR_STATE.IDLE);
         this.dialog.resetDialog();
-    }
-
-    /**
-     * Check if the url or the language id changed
-     *
-     * @private
-     * @param {Params} params
-     * @return {*}  {boolean}
-     * @memberof EditEmaEditorComponent
-     */
-    private shouldReload(params: Params): boolean {
-        const { url: newUrl, language_id: newLanguageId } = params;
-        const { url, language_id } = this.queryParams;
-
-        return newUrl != url || newLanguageId != language_id;
     }
 
     /**
@@ -973,9 +897,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     protected resetDragProperties() {
         this.draggedPayload = undefined;
-        this.contentlet = null;
-        this.containers = [];
         this.dragItem = null;
+
+        this.store.setContentletArea(null);
+        this.store.setBounds([]);
     }
 
     /**

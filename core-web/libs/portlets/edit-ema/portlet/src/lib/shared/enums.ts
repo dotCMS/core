@@ -11,7 +11,11 @@ export enum NG_CUSTOM_EVENTS {
     CREATE_CONTENTLET = 'create-contentlet-from-edit-page',
     SAVE_PAGE = 'save-page',
     FORM_SELECTED = 'form-selected',
-    COMPARE_CONTENTLET = 'compare-contentlet'
+    COMPARE_CONTENTLET = 'compare-contentlet',
+    SAVE_MENU_ORDER = 'save-menu-order',
+    ERROR_SAVING_MENU_ORDER = 'error-saving-menu-order',
+    CANCEL_SAVING_MENU_ORDER = 'cancel-save-menu-order',
+    OPEN_WIZARD = 'workflow-wizard'
 }
 
 // The current state of the editor
@@ -19,6 +23,7 @@ export enum EDITOR_STATE {
     LOADING = 'loading',
     IDLE = 'idle',
     DRAGGING = 'dragging',
+
     ERROR = 'error'
 }
 
@@ -27,5 +32,6 @@ export enum EDITOR_MODE {
     EDIT_VARIANT = 'edit-variant',
     PREVIEW_VARIANT = 'preview-variant',
     DEVICE = 'device',
-    SOCIAL_MEDIA = 'social-media'
+    SOCIAL_MEDIA = 'social-media',
+    LOCKED = 'locked'
 }
