@@ -3400,7 +3400,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * - Contentlet_5 : Add to the instance 3
      * - Contentlet_4 : Add to the instance 4
      *
-     * Should: Return on list under 100 millis
+     * Should: Return the list of pages under 100 millis
      *
      * @throws DotDataException
      */
