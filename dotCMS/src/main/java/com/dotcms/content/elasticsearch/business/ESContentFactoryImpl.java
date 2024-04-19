@@ -234,6 +234,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final int MAX_FIELDS_ALLOWED = 25;
     public static final String ORDER_BY = " order by ";
+    public static final String WORKING_INODE = "working_inode";
+    public static final String LIVE_INODE = "live_inode";
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
@@ -1204,9 +1206,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             final String orderBy, final boolean working) throws DotDataException, DotStateException {
 
        final DotConnect dotConnect = new DotConnect();
-       String workingOrLiveNode = "working_inode";
+       String workingOrLiveNode = WORKING_INODE;
        if(!working) {
-           workingOrLiveNode = "live_inode";
+           workingOrLiveNode = LIVE_INODE;
        }
 
        final String orderByClause = StringUtils.isNotEmpty(orderBy) ? ", " + orderBy : StringPool.BLANK;
@@ -1247,9 +1249,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     public int countByTypeWorkingOrLive(final ContentType contentType, final boolean working) {
         final DotConnect dotConnect = new DotConnect();
-        String workingOrLiveNode = "working_inode";
+        String workingOrLiveNode = WORKING_INODE;
         if(!working) {
-            workingOrLiveNode = "live_inode";
+            workingOrLiveNode = LIVE_INODE;
         }
         dotConnect.setSQL("select count(distinct contentlet.identifier) as x "
                 + " from contentlet, contentlet_version_info, inode "
@@ -1601,9 +1603,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final int marker = condition.indexOf("{0}");
         if(working){
-            condition.replace(marker, marker+3,"working_inode");
+            condition.replace(marker, marker+3, WORKING_INODE);
         }else{
-            condition.replace(marker, marker+3,"live_inode");
+            condition.replace(marker, marker+3, LIVE_INODE);
         }
 
         final DotConnect dotConnect = new DotConnect();

@@ -3988,8 +3988,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "StartDate: " + contentPushPublishDate + "; "
                             + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
                             ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+                            + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
             throw e;
         }
 
@@ -4206,8 +4205,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 "StartDate: " + contentPushPublishDate + "; "
                         + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
                         ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+                        + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
 
         try {
 
@@ -4243,8 +4241,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "StartDate: " + contentPushPublishDate + "; "
                             + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
                             ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+                            + "; ContentIdentifier: " +  contentlet.getIdentifier(), contentlet.getHost());
             throw e;
         }
 
@@ -4252,8 +4249,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 "StartDate: " + contentPushPublishDate + "; "
                         + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
                         ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+                        + "; ContentIdentifier: " + contentlet.getIdentifier()
+                        , contentlet.getHost());
     }
 
     private void internalUnarchive(final Contentlet contentlet, final User user,
