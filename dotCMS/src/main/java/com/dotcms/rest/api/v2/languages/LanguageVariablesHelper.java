@@ -31,7 +31,7 @@ public class LanguageVariablesHelper {
        this(APILocator.getLanguageVariableAPI(), APILocator.getLanguageAPI());
     }
 
-     LanguageVariablePageView view(final PaginationContext context, final User user)
+     LanguageVariablePageView view(final PaginationContext context, final boolean includeNulls)
             throws DotDataException {
 
         final int offset =  context.getPage();
@@ -44,13 +44,13 @@ public class LanguageVariablesHelper {
                 .collect(Collectors.toList());
         final int count = languageVariableAPI.countLiveVariables();
         final Map<String, List<LanguageVariable>> variablesByLanguageMap = languageVariableAPI.findVariablesForPagination(offset, limit, orderBy, allLanguages);
-        variablesByLanguageMap.forEach((key,variables) -> buildVariablesTable(key, variables, allLanguages, table));
+        variablesByLanguageMap.forEach((key,variables) -> buildVariablesTable(key, variables, allLanguages, table, includeNulls));
         table.forEach((k,v) -> Logger.debug(this, "Key: " + k ));
         return ImmutableLanguageVariablePageView.builder().variables(table).total(count).build();
     }
 
 
-    void buildVariablesTable(final String key, final List<LanguageVariable> variables, final List<Language> languages, final Map<String, Map<String, LanguageVariableView>> table) {
+    void buildVariablesTable(final String key, final List<LanguageVariable> variables, final List<Language> languages, final Map<String, Map<String, LanguageVariableView>> table, final boolean includeNulls) {
 
             table.compute(key, (k, v) -> {
 
@@ -63,6 +63,9 @@ public class LanguageVariablesHelper {
                 for(Language current:languages){
                     final LanguageVariable variable = byLangIdMap.get(current.getId());
                     if(variable == null){
+                        if(includeNulls){
+                           v.put(current.getIsoCode(), null);
+                        }
                         continue;
                     }
                     v.put(current.getIsoCode(),

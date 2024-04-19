@@ -13,10 +13,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -29,10 +32,11 @@ public class LanguageVariablesHelperTest {
     }
 
     @Test
-    public void simplePaginationTest()
-            throws DotDataException, DotSecurityException, JsonProcessingException {
+    public void paginationTestVerifyKeyOrder()
+            throws DotDataException, DotSecurityException {
 
         cleanup();
+        Assert.assertEquals(0, APILocator.getLanguageVariableAPI().countLiveVariables());
 
         LanguageDataGen languageDataGen = new LanguageDataGen();
         final List<Language> languages = List.of(
@@ -52,12 +56,16 @@ public class LanguageVariablesHelperTest {
 
         final LanguageVariablesHelper helper = new LanguageVariablesHelper();
         final LanguageVariablePageView view = helper.view(
-                new PaginationContext(null, 0, 10, null, null), null);
+                new PaginationContext(null, 0, 10, null, null), false);
 
-        ObjectMapper mapper = new ObjectMapper();
-        final String asString = mapper.writeValueAsString(view);
+        Assert.assertEquals("Total languages does not match ",view.total(), languages.size() * 3);
+        final LinkedHashMap<String, Map<String, LanguageVariableView>> variables = view.variables();
+        //Validate order of the keys
 
-        System.out.println(asString);
+        final AtomicInteger count = new AtomicInteger(1);
+        variables.forEach((key, langVarMap) -> {
+            Assert.assertEquals("key"+ count.getAndIncrement(), key);
+        });
 
     }
 

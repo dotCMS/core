@@ -418,7 +418,6 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @BeanParam final PaginationContext paginationContext) throws DotDataException {
 
-        final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)
                         .requiredBackendUser(true)
                         .requiredFrontendUser(false)
@@ -428,7 +427,7 @@ public class LanguagesResource {
                         .init();
 
         final LanguageVariablePageView view = new LanguageVariablesHelper()
-                .view(paginationContext, initData.getUser());
+                .view(paginationContext, true);
         return Response.ok(new ResponseEntityView<>(view)).build();
     }
 
