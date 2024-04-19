@@ -12,7 +12,7 @@ declare global {
     providedIn: 'root'
 })
 export class InlineEditService {
-    private $iframeWindow = signal<Window | null>(null);
+    $iframeWindow = signal<Window | null>(null);
     private $inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
 
     private readonly DEFAULT_TINYMCE_CONFIG = {
@@ -107,7 +107,13 @@ export class InlineEditService {
             return;
         }
 
-        this.initEditor();
+        window.parent.postMessage(
+            {
+                action: 'init-inline-editing',
+                payload: {}
+            },
+            '*'
+        );
     }
 
     /**

@@ -99,7 +99,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     private readonly stateLoad$ = this.select((state) => state.editorState);
     private readonly code$ = this.select((state) => state.editor.page.rendered);
-    private readonly editorMode$ = this.select((state) => state.editorData.mode);
     private readonly pageURL$ = this.select((state) => this.createPageURL(state));
     private readonly favoritePageURL$ = this.select((state) =>
         this.createFavoritePagesURL({
@@ -189,7 +188,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             error
         })
     );
-
+    readonly editorMode$ = this.select((state) => state.editorData.mode);
     readonly editorData$ = this.select((state) => state.editorData);
     readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
     readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => ({

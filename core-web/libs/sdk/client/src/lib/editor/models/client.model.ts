@@ -26,6 +26,10 @@ export enum CUSTOMER_ACTIONS {
      */
     PING_EDITOR = 'ping-editor',
     /**
+     * Tell the editor to init the inline editing editor.
+     */
+    INIT_INLINE_EDITING = 'init-inline-editing',
+    /**
      * Tell the editor to open the Copy-contentlet dialog
      * To copy a content and then edit it inline.
      */

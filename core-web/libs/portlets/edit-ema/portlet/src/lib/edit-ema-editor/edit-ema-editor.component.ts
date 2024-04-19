@@ -200,6 +200,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     isVTLPage = toSignal(this.store.clientHost$.pipe(map((clientHost) => !clientHost)));
+    $isInlineEditing = toSignal(
+        this.store.editorMode$.pipe(map((mode) => mode === EDITOR_MODE.INLINE_EDITING))
+    );
 
     ngOnInit(): void {
         this.handleReloadContent();
@@ -211,26 +214,34 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
 
         // In VTL Page if user click in a link in the page, we need to update the URL in the editor
-        this.store.vtlIframePage$
+        this.store.pageRendered$
             .pipe(
                 takeUntil(this.destroy$),
                 filter(() => this.isVTLPage())
             )
-            .subscribe(({ isEnterprise, mode }) => {
+            .subscribe(() => {
                 requestAnimationFrame(() => {
                     const win = this.iframe.nativeElement.contentWindow;
-                    this.inlineEditingService.setIframeWindow(win);
-
-                    if (isEnterprise && mode !== EDITOR_MODE.LOCKED) {
-                        this.inlineEditingService.injectInlineEdit(this.iframe);
-                    }
 
                     fromEvent(win, 'click').subscribe((e: MouseEvent) => {
                         this.handleInternalNav(e);
+                    });
+                });
+            });
 
-                        if (isEnterprise && mode !== EDITOR_MODE.LOCKED) {
-                            this.handleInlineEditing(e);
-                        }
+        this.store.vtlIframePage$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter(() => this.isVTLPage()),
+                filter(({ isEnterprise }) => isEnterprise)
+            )
+            .subscribe(({ mode }) => {
+                requestAnimationFrame(() => {
+                    const win = this.iframe.nativeElement.contentWindow;
+
+                    this.inlineEditingService.injectInlineEdit(this.iframe);
+                    fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+                        this.handleInlineEditing(e, mode);
                     });
                 });
             });
@@ -269,16 +280,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * Handles the inline editing functionality triggered by a mouse event.
      * @param e - The mouse event that triggered the inline editing.
      */
-    handleInlineEditing(e: MouseEvent) {
-        const { dataset } = e.target as HTMLElement;
-        if (!dataset.mode) {
+    handleInlineEditing(e: MouseEvent, mode: EDITOR_MODE) {
+        if (mode === EDITOR_MODE.INLINE_EDITING) {
             return;
         }
 
-        this.inlineEditingService.handleInlineEdit(
-            dataset as unknown as InlineEditingContentletDataset
-        );
-        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
+        let element = e.target as HTMLElement;
+        if (!element.dataset.mode) {
+            element = (e.target as HTMLElement).closest('[data-mode]') as HTMLElement;
+        }
+
+        if (!element?.dataset.mode) {
+            return;
+        }
+
+        this.inlineEditingService.handleInlineEdit({
+            ...element.dataset
+        } as unknown as InlineEditingContentletDataset);
     }
 
     /**
@@ -783,9 +801,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.host
                 );
             },
-
+            [CUSTOMER_ACTIONS.INIT_INLINE_EDITING]: () => {
+                // The iframe says that the editor is ready to start inline editing
+                // The dataset of the inline-editing contentlet is ready inside the service.
+                this.inlineEditingService.initEditor();
+            },
             [CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: () => {
-                this.store.setEditorMode(EDITOR_MODE.EDIT);
+                // The iframe say the contentlet that try to be inline edited is in multiple pages
+                // So the editor open the dialog to question if the edit is in ALL contentlets or only in this page.
+
+                if (this.$isInlineEditing()) {
+                    // If is already in inline editing, dont open the dialog.
+                    return;
+                }
+
                 const payload = <{ dataset: InlineEditingContentletDataset }>data.payload;
 
                 this.dotCopyContentModalService
