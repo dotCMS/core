@@ -92,6 +92,13 @@ jobs:
           build-run-id: ${{ github.run_id }} # We are currently building these artifacts in the current run
           commit-id: ${{ github.sha }}
 
+      - name: CLI Publish
+        if: inputs.publish-npm-package
+        uses: ./.github/actions/publish-npm-cli
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
+
       # A Slack notification is sent using the 'action-slack-notify' action if the repository is 'dotcms/core'.
       - name: Slack Notification
         if: github.repository == 'dotcms/core'
@@ -105,14 +112,3 @@ jobs:
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
           SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *master* with tags: [${{ steps.docker_build.outputs.tags }}] :docker:"
-
-  publish:
-    name: Publish
-    if: inputs.publish-npm-package
-    needs: [ deployment ]
-    uses: ./.github/workflows/cli-npm-build.yml
-    secrets:
-      npm-token: ${{ secrets.NPM_TOKEN }}
-    permissions:
-      contents: read
-      packages: write
