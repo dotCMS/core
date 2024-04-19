@@ -1,6 +1,7 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectorRef,
     Component,
     ComponentFactoryResolver,
     ComponentRef,
@@ -56,14 +57,18 @@ export class DotWizardComponent implements OnDestroy {
     constructor(
         private componentFactoryResolver: ComponentFactoryResolver,
         private dotMessageService: DotMessageService,
-        private dotWizardService: DotWizardService
+        private dotWizardService: DotWizardService,
+        private cd: ChangeDetectorRef
     ) {
         this.dotWizardService.showDialog$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
             this.data = data;
+
             // need to wait to render the dotContainerReference.
+            this.cd.detectChanges();
             setTimeout(() => {
                 this.loadComponents();
                 this.setDialogActions();
+                this.cd.detectChanges();
                 this.focusFistFormElement();
             }, 1000);
         });
