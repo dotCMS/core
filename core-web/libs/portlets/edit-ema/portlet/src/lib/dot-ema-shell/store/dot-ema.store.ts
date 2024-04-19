@@ -188,13 +188,23 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             error
         })
     );
-
+    readonly editorMode$ = this.select((state) => state.editorData.mode);
     readonly editorData$ = this.select((state) => state.editorData);
     readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
     readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => ({
         state,
         code
     }));
+    readonly vtlIframePage$ = this.select(
+        this.pageRendered$,
+        this.isEnterpriseLicense$,
+        this.editorMode$,
+        (rendered, isEnterprise, mode) => ({
+            rendered,
+            isEnterprise,
+            mode
+        })
+    );
     readonly editorState$ = this.select(
         this.bounds$,
         this.clientHost$,
@@ -241,6 +251,17 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             };
         }
     );
+
+    readonly editorToolbarData$ = this.select(this.editorState$, (editorState) => ({
+        ...editorState,
+        showWorkflowActions:
+            editorState.editorData.mode === EDITOR_MODE.EDIT ||
+            editorState.editorData.mode === EDITOR_MODE.INLINE_EDITING,
+        showInfoDisplay:
+            !editorState.editorData.canEditPage ||
+            (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
+                editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING)
+    }));
 
     readonly layoutProperties$ = this.select(
         this.layoutProps$,
@@ -425,6 +446,41 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             )
         );
     });
+
+    readonly saveFromInlineEditedContentlet = this.effect(
+        (payload$: Observable<{ contentlet: { body: string; inode: string } }>) => {
+            return payload$.pipe(
+                switchMap((contentlet) => {
+                    return this.dotPageApiService.saveContentlet(contentlet).pipe(
+                        tapResponse(
+                            () => {
+                                this.messageService.add({
+                                    severity: 'success',
+                                    summary: this.dotMessageService.get(
+                                        'editpage.content.update.success'
+                                    ),
+                                    life: 2000
+                                });
+                                this.setEditorMode(EDITOR_MODE.EDIT);
+                            },
+                            (e) => {
+                                console.error(e);
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: this.dotMessageService.get(
+                                        'editpage.content.update.error'
+                                    ),
+                                    life: 2000
+                                });
+
+                                this.setEditorMode(EDITOR_MODE.EDIT);
+                            }
+                        )
+                    );
+                })
+            );
+        }
+    );
 
     /**
      * Saves data to a page but gets the new form identifier first.
@@ -614,6 +670,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly setContentletArea = this.updater((state, contentletArea: ContentletArea) => ({
         ...state,
         contentletArea
+    }));
+
+    readonly setEditorMode = this.updater((state, mode: EDITOR_MODE) => ({
+        ...state,
+        editorData: {
+            ...state.editorData,
+            mode
+        }
     }));
 
     /**
