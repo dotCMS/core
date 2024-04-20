@@ -392,11 +392,10 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         final List<LanguageVariable> vars = languageCache.getVars(1);
         Assert.assertTrue(vars.isEmpty());
         //Let's create 3 languages and 3 language variables for each language
-        LanguageDataGen languageDataGen = new LanguageDataGen();
         final List<Language> languages = List.of(
-                languageDataGen.nextPersisted(),
-                languageDataGen.nextPersisted(),
-                languageDataGen.nextPersisted()
+                new LanguageDataGen().nextPersisted(),
+                new LanguageDataGen().nextPersisted(),
+                new LanguageDataGen().nextPersisted()
         );
 
         List<Contentlet> contentlets = new ArrayList<>();
