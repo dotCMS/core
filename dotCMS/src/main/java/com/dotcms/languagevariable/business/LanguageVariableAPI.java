@@ -4,7 +4,6 @@ import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -154,14 +153,14 @@ public interface LanguageVariableAPI {
 
     /**
      * Returns a list of {@link LanguageVariable} that the key starts with the specified key and
-     * @param offset - The offset of the list.
-     * @param limit - Size of the list.
+     *
+     * @param offset  - The offset of the list.
+     * @param limit   - Size of the list.
      * @param orderBy - The order by clause.
      * @return List of {@link LanguageVariable}
      * @throws DotDataException - If there is an error retrieving the list of Language Variables.
      */
-    Map<String, List<LanguageVariable>> findVariablesForPagination(final int offset, final int limit,
-            final String orderBy, final List<Language> languages)
+    Map<String, List<LanguageVariable>> findVariablesForPagination(int offset, int limit, String orderBy)
             throws DotDataException;
 
     /**

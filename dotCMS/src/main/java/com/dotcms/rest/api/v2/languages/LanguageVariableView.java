@@ -13,7 +13,6 @@ import org.immutables.value.Value;
 public interface LanguageVariableView {
     String identifier();
     String inode();
-    String key();
     String value();
 
 }

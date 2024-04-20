@@ -192,7 +192,7 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
   @CloseDBIfOpened
   @Override
   public Map<String, List<LanguageVariable>> findVariablesForPagination(final int offset, final int limit,
-          final String orderBy, final List<Language> languages)
+          final String orderBy)
           throws DotDataException {
     final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
     final ContentType contentType = langVarContentType.get();

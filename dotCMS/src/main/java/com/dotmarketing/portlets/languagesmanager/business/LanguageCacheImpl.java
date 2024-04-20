@@ -261,7 +261,7 @@ public class LanguageCacheImpl extends LanguageCache {
 		final ConcurrentMap<String,List<LanguageVariable>> langVarCache = (ConcurrentMap<String,List<LanguageVariable>>) perLangCache;
 		final String languageIdStr = String.valueOf(languageId);
 		langVarCache.remove(languageIdStr);
-		Logger.info(this, "Language Variables for language with id: " + languageId + " have been removed from cache.");
+		Logger.debug(this, "Language Variables for language with id: " + languageId + " have been removed from cache.");
 	}
 
 	public void clearVariables(){

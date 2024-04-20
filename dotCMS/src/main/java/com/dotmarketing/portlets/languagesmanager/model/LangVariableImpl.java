@@ -70,6 +70,11 @@ public class LangVariableImpl extends DefaultKeyValue implements LanguageVariabl
         return Objects.hash(super.hashCode(), contentType.get().id(),  getLanguageId(), getKey(), getValue());
     }
 
+    @Override
+    public String toString() {
+        return "LangVariableImpl{key=" + getKey() + ", value= " + getValue() + ", language=" + getLanguageId() + '}';
+    }
+
     public static LanguageVariable fromContentlet(final Contentlet contentlet) throws DotSecurityException {
         if(contentlet instanceof LanguageVariable) {
             return (LanguageVariable) contentlet;
