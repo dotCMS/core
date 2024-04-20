@@ -70,7 +70,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
 
         String responseString = "";
         try {
-            responseString = doRequest(config.getApiImageUrl(), "POST", config.getApiKey(), jsonObject);
+            responseString = doRequest(config.getApiImageUrl(), config.getApiKey(), jsonObject);
 
             JSONObject returnObject = new JSONObject(responseString);
             if (returnObject.containsKey("error")) {
@@ -88,6 +88,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
             throw new DotRuntimeException("Error generating image:" + e, e);
         }
     }
+
 
     @Override
     public JSONObject sendRawRequest(final String prompt) {
@@ -112,7 +113,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
     private JSONObject createTempFile(final JSONObject imageResponse) {
         final String url = imageResponse.optString("url");
         if (UtilMethods.isEmpty(() -> url)) {
-            Logger.warn(this.getClass(), "imageResponse does not include URL:" + imageResponse.toString());
+            Logger.warn(this.getClass(), "imageResponse does not include URL:" + imageResponse);
             throw new DotRuntimeException("Image Response does not include URL:" + imageResponse);
         }
 
@@ -122,6 +123,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
 
             final DotTempFile file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
             imageResponse.put("response", file.id);
+            imageResponse.put("tempFile", file.file.getAbsolutePath());
 
             return imageResponse;
         } catch (Exception e) {
@@ -162,7 +164,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
         return requestProxy;
     }
 
-    private String generateFileName(final String originalPrompt){
+    private String generateFileName(final String originalPrompt) {
         final SimpleDateFormat dateToString = new SimpleDateFormat("yyyyMMdd_hhmmss");
         try {
             String newFileName = originalPrompt.toLowerCase();
@@ -183,11 +185,8 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
     }
 
     @VisibleForTesting
-    String doRequest(final String urlIn,
-                     final String method,
-                     final String openAiAPIKey,
-                     final JSONObject json) {
-        return OpenAIRequest.doRequest(urlIn, method, openAiAPIKey, json);
+    String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
+        return OpenAIRequest.doRequest(urlIn, "POST", openAiAPIKey, json);
     }
 
     @VisibleForTesting
@@ -200,7 +199,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
         return new AIImageRequestDTO.Builder();
     }
 
-    public static void setStopWordsUtil(StopWordsUtil stopWordsUtil) {
+    public static void setStopWordsUtil(final StopWordsUtil stopWordsUtil) {
         OpenAIImageServiceImpl.stopWordsUtil = stopWordsUtil;
     }
 
