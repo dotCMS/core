@@ -1,0 +1,45 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.messages[?(@.content == 'Short text about Theory of Chaos')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "chatcmpl-9HYUhjuKkA5xbHyUvp8iDm6v51NjW",
+      "object": "chat.completion",
+      "created": 1713971199,
+      "model": "gpt-3.5-turbo-16k-0613",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The Theory of Chaos is a scientific concept that suggests the universe is inherently unpredictable due to the complexity and sensitivity of its systems. Developed in the field of mathematics, it focuses on the study of dynamic systems that exhibit sensitivity to initial conditions, leading to significant differences in output over time. This theory challenges the traditional deterministic view of predictability and emphasizes the importance of small actions or changes in shaping large-scale outcomes. It has far-reaching implications in various fields, including weather forecasting, population dynamics, and even the behavior of financial markets. The Theory of Chaos offers a fascinating perspective on the intricate and intricate nature of our world, reminding us that even the smallest actions can have profound and far-reaching effects."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 40,
+        "completion_tokens": 138,
+        "total_tokens": 178
+      },
+      "system_fingerprint": null
+    }
+  }
+}
