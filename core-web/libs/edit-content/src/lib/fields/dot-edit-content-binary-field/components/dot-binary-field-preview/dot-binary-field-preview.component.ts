@@ -99,14 +99,17 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     }
 
     ngOnInit() {
-        this.isEditable = this.metadata.editableAsText || this.isEditableImage();
         if (this.contentlet) {
             this.content.set(this.contentlet?.content);
             this.fetchResourceLinks();
         }
     }
 
-    ngOnChanges({ tempFile }: SimpleChanges): void {
+    ngOnChanges({ tempFile, editableImage }: SimpleChanges): void {
+        if (editableImage) {
+            this.isEditable = this.isFileEditable();
+        }
+
         if (tempFile?.currentValue) {
             this.content.set(tempFile.currentValue.content);
         }
@@ -190,7 +193,17 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Emits event to remove the file
+     * Check if the file is editable
+     *
+     * @return {*}  {boolean}
+     * @memberof DotBinaryFieldPreviewComponent
+     */
+    private isFileEditable(): boolean {
+        return this.metadata.editableAsText || this.isEditableImage();
+    }
+
+    /**
+     * Check if the file is an editable image
      *
      * @private
      * @return {*}  {boolean}
