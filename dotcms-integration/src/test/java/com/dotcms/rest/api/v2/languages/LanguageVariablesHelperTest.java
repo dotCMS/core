@@ -14,9 +14,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,13 +45,12 @@ public class LanguageVariablesHelperTest {
                 new LanguageDataGen().nextPersisted()
         );
 
-        List<Contentlet> contentlets = new ArrayList<>();
         LanguageVariableDataGen languageVariableDataGen = new LanguageVariableDataGen();
         //Contentlets are created and published
         for (Language language : languages) {
-            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key1").value("value1").nextPersistedAndPublish());
-            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key2").value("value2").nextPersistedAndPublish());
-            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key3").value("value3").nextPersistedAndPublish());
+            languageVariableDataGen.languageId(language.getId()).key("key1").value("value1").nextPersistedAndPublish();
+            languageVariableDataGen.languageId(language.getId()).key("key2").value("value2").nextPersistedAndPublish();
+            languageVariableDataGen.languageId(language.getId()).key("key3").value("value3").nextPersistedAndPublish();
         }
 
         final List<String> languageTags = languages.stream().map(Language::getIsoCode)
@@ -78,10 +75,6 @@ public class LanguageVariablesHelperTest {
                 Assert.assertTrue(langVarMap.containsKey(languageTag));
             });
         });
-
-        final String asString = new ObjectMapper().writerWithDefaultPrettyPrinter()
-                .writeValueAsString(view);
-        System.out.println(asString);
 
     }
 
