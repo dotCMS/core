@@ -485,7 +485,35 @@
 											"});",
 											"",
 											"pm.collectionVariables.set(\"templateIdToDeleteVersion\", jsonData.entity.identifier);",
-											"pm.collectionVariables.set(\"templateInodeV1ToDeleteVersion\", jsonData.entity.inode);"
+											"pm.collectionVariables.set(\"templateInodeV1ToDeleteVersion\", jsonData.entity.inode);",
+											"",
+											"pm.test(\"CanPublish, CanRead, and CanWrite are all boolean values\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData.entity).to.be.an('object');",
+											"    pm.expect(responseData.entity.canPublish).to.be.a('boolean');",
+											"    pm.expect(responseData.entity.canRead).to.be.a('boolean');",
+											"    pm.expect(responseData.entity.canWrite).to.be.a('boolean');",
+											"});",
+											"",
+											"pm.test(\"Identifier is a non-empty string and follows a specific pattern\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData).to.be.an('object');",
+											"    pm.expect(responseData.entity.identifier).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Value should not be empty\");",
+											"    pm.expect(responseData.entity.identifier).to.match(/[A-Za-z0-9]{8}/, \"Pattern should match /[A-Za-z0-9]{8}/\");",
+											"});",
+											"",
+											"",
+											"pm.test(\"ModUser is not a default username\", function () {",
+											"    const responseData = pm.response.json();",
+											"",
+											"    pm.expect(responseData).to.be.an('object');",
+											"    pm.expect(responseData.modUser).to.not.equal('default');",
+											"});",
+											"",
+											""
+
 										],
 										"type": "text/javascript"
 									}
@@ -1052,6 +1080,12 @@
 											"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
 											"",
 											"",
+											"pm.test(\"Ensure entity object contains expected security properties\", function () {",
+											"  const responseData = pm.response.json().entity;",
+											"",
+											"  pm.expect(responseData).to.be.an('object');",
+											"  pm.expect(responseData).to.include.all.keys('canPublish', 'canRead', 'canWrite', 'deleted', 'drawed', 'live', 'locked', 'working');",
+											"});",
 											""
 										],
 										"type": "text/javascript"
@@ -1472,7 +1506,18 @@
 											"});",
 											"",
 											"pm.collectionVariables.set(\"templateIdToFindVersion\", jsonData.entity.identifier);",
-											"pm.collectionVariables.set(\"templateInodeV1ToFindVersion\", jsonData.entity.inode);"
+											"pm.collectionVariables.set(\"templateInodeV1ToFindVersion\", jsonData.entity.inode);",
+											"",
+											"pm.test(\"CanPublish, CanRead, and CanWrite are all true\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData).to.be.an('object');",
+											"    pm.expect(responseData.entity.canPublish).to.be.true;",
+											"    pm.expect(responseData.entity.canRead).to.be.true;",
+											"    pm.expect(responseData.entity.canWrite).to.be.true;",
+											"});",
+											"",
+											""
 										],
 										"type": "text/javascript"
 									}

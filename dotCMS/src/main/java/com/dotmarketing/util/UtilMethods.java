@@ -1389,6 +1389,12 @@ public class UtilMethods {
         return "";
     }
 
+    public static String escapeHTMLCodeFromJSON(String json) {
+        json = json.replace("&#58;",":")
+                .replace("&#44;",",");
+        return json;
+    }
+
 
 
     // Used by the code generated in the contentletmapservices
@@ -3673,5 +3679,18 @@ public class UtilMethods {
      */
     public static <T> T isSetOrGet(final T toEvaluate, final T defaultValue){
         return UtilMethods.isSet(toEvaluate) ? toEvaluate : defaultValue;
+    }
+
+
+    /**
+     * Finds if the length of the given value is valid
+     *
+     * @param value
+     * @param maxLength
+     * @param <T>
+     * @return
+     */
+    public static <T extends CharSequence> boolean exceedsMaxLength(final T value, final int maxLength) {
+        return value != null && value.length() > maxLength;
     }
 }

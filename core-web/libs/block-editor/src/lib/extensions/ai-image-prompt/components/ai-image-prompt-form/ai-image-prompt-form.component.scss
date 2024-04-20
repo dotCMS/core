@@ -21,6 +21,7 @@ form {
         margin: $spacing-0 0 $spacing-1 $spacing-5;
         font-size: $font-size-sm;
         color: $color-palette-gray-700;
+        word-break: break-word;
     }
 }
 
@@ -46,6 +47,16 @@ form {
 
 .ai-image-prompt__orientation {
     margin-bottom: 9rem;
+}
+
+.ai-image-prompt__rewritten-label {
+    display: flex;
+    gap: $spacing-1;
+
+    i {
+        color: $color-palette-primary;
+        cursor: pointer;
+    }
 }
 
 p-accordion {

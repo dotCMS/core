@@ -16,6 +16,7 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPersonasService,
     DotSessionStorageService
@@ -38,8 +39,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditPageViewAsControllerSeoComponent } from './dot-edit-page-view-as-controller-seo.component';
-
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
 @Component({
     selector: 'dot-test-host',

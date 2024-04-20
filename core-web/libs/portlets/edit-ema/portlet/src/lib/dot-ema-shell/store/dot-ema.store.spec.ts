@@ -4,8 +4,17 @@ import { of } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
+    DotContentletLockerService,
+    DotExperimentsService,
+    DotLicenseService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
+import {
+    getDraftExperimentMock,
+    getRunningExperimentMock,
+    getScheduleExperimentMock,
     mockDotContainers,
     mockDotLayout,
     MockDotMessageService,
@@ -16,38 +25,9 @@ import {
 import { EditEmaStore } from './dot-ema.store';
 
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../../shared/consts';
+import { DEFAULT_PERSONA, MOCK_RESPONSE_HEADLESS } from '../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload } from '../../shared/models';
-
-const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
-    page: {
-        pageURI: 'test-url',
-        title: 'Test Page',
-        identifier: '123',
-        inode: '123-i',
-        canEdit: true,
-        canRead: true,
-        contentType: 'htmlpageasset'
-    },
-    viewAs: {
-        language: {
-            id: 1,
-            language: 'English',
-            countryCode: 'US',
-            languageCode: '1',
-            country: 'United States'
-        },
-
-        persona: {
-            ...DEFAULT_PERSONA
-        }
-    },
-    site: mockSites[0],
-    layout: mockDotLayout(),
-    template: mockDotTemplate(),
-    containers: mockDotContainers()
-};
 
 const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     page: {
@@ -58,7 +38,11 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         canEdit: true,
         canRead: true,
         rendered: '<html><body><h1>Hello, World!</h1></body></html>',
-        contentType: 'htmlpageasset'
+        contentType: 'htmlpageasset',
+        canLock: true,
+        locked: false,
+        lockedBy: '',
+        lockedByName: ''
     },
     viewAs: {
         language: {
@@ -79,10 +63,6 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     containers: mockDotContainers()
 };
 
-global.URL.createObjectURL = jest.fn(
-    () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
-);
-
 describe('EditEmaStore', () => {
     describe('EditEmaStore Headless', () => {
         let spectator: SpectatorService<EditEmaStore>;
@@ -90,9 +70,19 @@ describe('EditEmaStore', () => {
 
         const createService = createServiceFactory({
             service: EditEmaStore,
-            mocks: [DotPageApiService],
             providers: [
                 MessageService,
+                {
+                    provide: DotPageApiService,
+                    useValue: {
+                        get() {
+                            return of({});
+                        },
+                        save: jest.fn(),
+                        getFormIndetifier: jest.fn(),
+                        saveContentlet: jest.fn()
+                    }
+                },
                 {
                     provide: DotLicenseService,
                     useValue: {
@@ -102,6 +92,32 @@ describe('EditEmaStore', () => {
                 {
                     provide: DotMessageService,
                     useValue: new MockDotMessageService({})
+                },
+                {
+                    provide: DotExperimentsService,
+                    useValue: {
+                        getById(experimentId: string) {
+                            if (experimentId == 'i-have-a-running-experiment') {
+                                return of(getRunningExperimentMock());
+                            } else if (experimentId == 'i-have-a-scheduled-experiment') {
+                                return of(getScheduleExperimentMock());
+                            } else if (experimentId) return of(getDraftExperimentMock());
+
+                            return of(null);
+                        }
+                    }
+                },
+                {
+                    provide: DotContentletLockerService,
+                    useValue: {
+                        unlock: (_inode: string) => of({})
+                    }
+                },
+                {
+                    provide: LoginService,
+                    useValue: {
+                        getCurrentUser: () => of({})
+                    }
                 }
             ]
         });
@@ -110,7 +126,7 @@ describe('EditEmaStore', () => {
             spectator = createService();
 
             dotPageApiService = spectator.inject(DotPageApiService);
-            dotPageApiService.get.mockImplementation(({ url }) => {
+            jest.spyOn(dotPageApiService, 'get').mockImplementation(({ url }) => {
                 return of({
                     ...MOCK_RESPONSE_HEADLESS,
                     page: {
@@ -130,18 +146,273 @@ describe('EditEmaStore', () => {
 
         describe('selectors', () => {
             it('should return editorState', (done) => {
+                const dotPageApiService = spectator.inject(DotPageApiService);
+
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            pageURI: 'test-url'
+                        }
+                    })
+                );
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                        currentExperiment: null,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADING,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
+                        }
+                    });
+                    done();
+                });
+            });
+
+            it('should return editorToolbarData', (done) => {
+                const dotPageApiService = spectator.inject(DotPageApiService);
+
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            pageURI: 'test-url'
+                        }
+                    })
+                );
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+
+                spectator.service.editorToolbarData$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment: null,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
+                        },
+                        showWorkflowActions: true,
+                        showInfoDisplay: false
+                    });
+                    done();
+                });
+            });
+
+            it('should return editorState with canEditPage setted to false', (done) => {
+                const headlessResponseWithoutEditPermission: DotPageApiResponse = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false
+                    }
+                };
+
+                const dotPageApiService = spectator.inject(DotPageApiService);
+
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of(headlessResponseWithoutEditPermission)
+                );
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: headlessResponseWithoutEditPermission,
+                        currentExperiment: null,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: false,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
+                        }
+                    });
+                    done();
+                });
+            });
+
+            it('should return cannot edit variant for a page with a running experiment', (done) => {
+                const currentExperiment = getRunningExperimentMock();
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123',
+                    experimentId: 'i-have-a-running-experiment',
+                    variantName: currentExperiment.trafficProportion.variants[1].id
+                });
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.PREVIEW_VARIANT,
+                            canEditPage: true,
+                            canEditVariant: false,
+                            variantId: '111',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
+                        }
+                    });
+                    done();
+                });
+            });
+
+            it('should return cannot edit variant for a page with a scheduled experiment', (done) => {
+                const currentExperiment = getScheduleExperimentMock();
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123',
+                    experimentId: 'i-have-a-scheduled-experiment',
+                    variantName: currentExperiment.trafficProportion.variants[1].id
+                });
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=222&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=222&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.PREVIEW_VARIANT,
+                            canEditPage: true,
+                            canEditVariant: false,
+                            variantId: '222',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
+                        }
+                    });
+                    done();
+                });
+            });
+
+            it('should return can edit variant for a page with a draft experiment', (done) => {
+                const currentExperiment = getDraftExperimentMock();
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123',
+                    experimentId: 'i-have-a-draft-experiment',
+                    variantName: currentExperiment.trafficProportion.variants[1].id
+                });
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT_VARIANT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            variantId: '111',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -151,8 +422,47 @@ describe('EditEmaStore', () => {
             it('should return contentState', (done) => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
-                        state: EDITOR_STATE.LOADING,
+                        state: EDITOR_STATE.IDLE,
                         code: undefined
+                    });
+                    done();
+                });
+            });
+
+            it('should return layoutProperties', (done) => {
+                const containersMapMock = {
+                    '/default/': {
+                        type: 'containers',
+                        identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
+                        name: 'Medium Column (md-1)',
+                        categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93',
+                        source: 'DB',
+                        parentPermissionable: {
+                            hostname: 'demo.dotcms.com'
+                        }
+                    },
+                    '/banner/': {
+                        type: 'containers',
+                        identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                        name: 'Large Column (lg-1)',
+                        categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f',
+                        source: 'FILE',
+                        path: '/container/path',
+                        parentPermissionable: {
+                            hostname: 'demo.dotcms.com'
+                        }
+                    }
+                };
+                spectator.service.layoutProperties$.subscribe((state) => {
+                    expect(state).toEqual({
+                        layout: mockDotLayout(),
+                        themeId: mockDotTemplate().theme,
+                        pageId: '123',
+                        containersMap: containersMapMock,
+                        template: {
+                            identifier: '111',
+                            themeId: undefined
+                        }
                     });
                     done();
                 });
@@ -161,20 +471,31 @@ describe('EditEmaStore', () => {
 
         describe('updaters', () => {
             it('should update the editorState', (done) => {
-                spectator.service.updateEditorState(EDITOR_STATE.LOADED);
+                spectator.service.updateEditorState(EDITOR_STATE.IDLE);
 
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                        currentExperiment: null,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            variandId: undefined,
+                            mode: EDITOR_MODE.EDIT,
+                            canEditVariant: true,
+                            canEditPage: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -186,7 +507,7 @@ describe('EditEmaStore', () => {
             it('should handle successful data loading', (done) => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
 
-                dotPageApiService.get.andReturn(of(MOCK_RESPONSE_HEADLESS));
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(MOCK_RESPONSE_HEADLESS));
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
@@ -197,12 +518,22 @@ describe('EditEmaStore', () => {
 
                 spectator.service.state$.subscribe((state) => {
                     expect(state as unknown).toEqual({
+                        bounds: [],
+                        contentletArea: null,
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment: null,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADING,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        editorState: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditVariant: true,
+                            canEditPage: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -228,12 +559,22 @@ describe('EditEmaStore', () => {
 
                 spectator.service.state$.subscribe((state) => {
                     expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADED,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        currentExperiment: null,
+                        editorState: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
@@ -244,12 +585,13 @@ describe('EditEmaStore', () => {
 
             it("should call save method from dotPageApiService when 'save' action is dispatched", () => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
-                const mockResponse = {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const mockResponse: any = {
                     page: {
                         title: 'Test Page'
                     }
                 };
-                dotPageApiService.get.andReturn(of(mockResponse));
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(mockResponse));
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
@@ -272,7 +614,9 @@ describe('EditEmaStore', () => {
             it("should call get method from dotPageApiService when 'save' action is dispatched", () => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
 
-                dotPageApiService.save.andReturn(of({}));
+                jest.spyOn(dotPageApiService, 'save').mockReturnValue(of({}));
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(of({} as any));
 
                 spectator.service.savePage({
                     pageContainers: [],
@@ -288,7 +632,7 @@ describe('EditEmaStore', () => {
                 });
 
                 // This get called twice, once for the load in the before each and once for the save
-                expect(dotPageApiService.get).toHaveBeenNthCalledWith(2, {
+                expect(dotPageApiService.get).toHaveBeenCalledWith({
                     language_id: '2',
                     url: 'test-url',
                     'com.dotmarketing.persona.id': '456'
@@ -322,8 +666,10 @@ describe('EditEmaStore', () => {
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
-                dotPageApiService.save.andReturn(of({}));
-                dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
+                jest.spyOn(dotPageApiService, 'save').mockReturnValue(of({}));
+                jest.spyOn(dotPageApiService, 'getFormIndetifier').mockReturnValue(
+                    of('form-identifier-123')
+                );
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
@@ -393,8 +739,10 @@ describe('EditEmaStore', () => {
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
-                dotPageApiService.save.andReturn(of({}));
-                dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
+                jest.spyOn(dotPageApiService, 'save').mockReturnValue(of({}));
+                jest.spyOn(dotPageApiService, 'getFormIndetifier').mockReturnValue(
+                    of('form-identifier-123')
+                );
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
@@ -457,8 +805,10 @@ describe('EditEmaStore', () => {
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
-                dotPageApiService.save.andReturn(of({}));
-                dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
+                jest.spyOn(dotPageApiService, 'save').mockReturnValue(of({}));
+                jest.spyOn(dotPageApiService, 'getFormIndetifier').mockReturnValue(
+                    of('form-identifier-123')
+                );
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
@@ -486,6 +836,27 @@ describe('EditEmaStore', () => {
                     life: 2000
                 });
             });
+
+            it('should update inline edited contentlet', () => {
+                const payload = {
+                    contentlet: {
+                        body: '',
+                        inode: '123'
+                    }
+                };
+                const dotPageApiService = spectator.inject(DotPageApiService);
+                jest.spyOn(dotPageApiService, 'saveContentlet').mockReturnValue(of({}));
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+                spectator.service.saveFromInlineEditedContentlet(payload);
+
+                expect(dotPageApiService.saveContentlet).toHaveBeenCalledWith(payload);
+            });
         });
     });
 
@@ -507,6 +878,32 @@ describe('EditEmaStore', () => {
                 {
                     provide: DotMessageService,
                     useValue: new MockDotMessageService({})
+                },
+                {
+                    provide: DotExperimentsService,
+                    useValue: {
+                        getById(experimentId: string) {
+                            if (experimentId == 'i-have-a-running-experiment') {
+                                return of(getRunningExperimentMock());
+                            } else if (experimentId == 'i-have-a-scheduled-experiment') {
+                                return of(getScheduleExperimentMock());
+                            } else if (experimentId) return of(getDraftExperimentMock());
+
+                            return of(null);
+                        }
+                    }
+                },
+                {
+                    provide: DotContentletLockerService,
+                    useValue: {
+                        unlock: (_inode: string) => of({})
+                    }
+                },
+                {
+                    provide: LoginService,
+                    useValue: {
+                        getCurrentUser: () => of({})
+                    }
                 }
             ]
         });
@@ -526,7 +923,7 @@ describe('EditEmaStore', () => {
                 });
             });
 
-            dotPageApiService.save.andReturn(of({}));
+            jest.spyOn(dotPageApiService, 'save').mockReturnValue(of({}));
 
             spectator.service.load({
                 language_id: '1',
@@ -536,18 +933,36 @@ describe('EditEmaStore', () => {
         });
 
         describe('selectors', () => {
+            it('should return page rendered', (done) => {
+                spectator.service.pageRendered$.subscribe((rendered) => {
+                    expect(rendered).toEqual('<html><body><h1>Hello, World!</h1></body></html>');
+                    done();
+                });
+            });
+
             it('should return editorState', (done) => {
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                        currentExperiment: null,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADING,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
                         }
                     });
                     done();
@@ -557,7 +972,7 @@ describe('EditEmaStore', () => {
             it('should return contentState', (done) => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
-                        state: EDITOR_STATE.LOADING,
+                        state: EDITOR_STATE.IDLE,
                         code: '<html><body><h1>Hello, World!</h1></body></html>'
                     });
                     done();
@@ -567,20 +982,31 @@ describe('EditEmaStore', () => {
 
         describe('updaters', () => {
             it('should update the editorState', (done) => {
-                spectator.service.updateEditorState(EDITOR_STATE.LOADED);
+                spectator.service.updateEditorState(EDITOR_STATE.IDLE);
 
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        state: EDITOR_STATE.LOADED,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
-                        }
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
+                        },
+                        currentExperiment: null
                     });
                     done();
                 });
@@ -601,12 +1027,23 @@ describe('EditEmaStore', () => {
 
                 spectator.service.state$.subscribe((state) => {
                     expect(state as unknown).toEqual({
+                        bounds: [],
+                        contentletArea: null,
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         isEnterpriseLicense: true,
-                        editorState: EDITOR_STATE.LOADING,
-                        previewState: {
-                            editorMode: EDITOR_MODE.EDIT
+                        currentExperiment: null,
+                        editorState: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
                         }
                     });
                     done();
@@ -666,8 +1103,10 @@ describe('EditEmaStore', () => {
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
-                dotPageApiService.save.andReturn(of({}));
-                dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
+                jest.spyOn(dotPageApiService, 'save').mockReturnValue(of({}));
+                jest.spyOn(dotPageApiService, 'getFormIndetifier').mockReturnValue(
+                    of('form-identifier-123')
+                );
 
                 spectator.service.load({
                     language_id: '1',
@@ -709,6 +1148,17 @@ describe('EditEmaStore', () => {
                 });
             });
 
+            it('should call unlock page service', () => {
+                const dotContentletLockerService = spectator.inject(DotContentletLockerService);
+                const spyUnlock = jest.spyOn(dotContentletLockerService, 'unlock');
+                const spyPatch = jest.spyOn(spectator.service, 'patchState');
+
+                spectator.service.unlockPage('123');
+
+                expect(spyUnlock).toHaveBeenCalledWith('123');
+                expect(spyPatch).toHaveBeenCalled();
+            });
+
             it('should not add form to page when the form is dupe and triggers a message', () => {
                 const messageService = spectator.inject(MessageService);
 
@@ -740,8 +1190,10 @@ describe('EditEmaStore', () => {
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
-                dotPageApiService.save.andReturn(of({}));
-                dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
+                jest.spyOn(dotPageApiService, 'save').mockReturnValue(of({}));
+                jest.spyOn(dotPageApiService, 'getFormIndetifier').mockReturnValue(
+                    of('form-identifier-123')
+                );
 
                 spectator.service.load({
                     language_id: '1',

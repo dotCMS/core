@@ -1,5 +1,6 @@
 package com.dotcms.rest.config;
 
+import com.dotcms.ai.rest.*;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rendering.js.JsResource;
 import com.dotcms.rest.AuditPublishingResource;
@@ -264,6 +265,11 @@ public class DotRestApplication extends Application {
 			.add(StorageResource.class)
 			.add(com.dotcms.rest.api.v2.tags.TagResource.class)
 			.add(AnnouncementsResource.class)
+			.add(CompletionsResource.class)
+			.add(EmbeddingsResource.class)
+			.add(ImageResource.class)
+			.add(SearchResource.class)
+			.add(TextResource.class)
 			.add(ContentReportResource.class)
 			.build();
 

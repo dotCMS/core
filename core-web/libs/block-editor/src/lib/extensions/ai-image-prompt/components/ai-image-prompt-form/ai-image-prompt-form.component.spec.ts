@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -44,21 +44,13 @@ describe('AiImagePromptFormComponent', () => {
         );
     });
 
-    it('should emit value on form submission', () => {
-        const emitSpy = jest.spyOn(spectator.component.value, 'emit');
+    it('should emit value when form value change', () => {
+        const emitSpy = jest.spyOn(spectator.component.valueChange, 'emit');
         spectator.component.form.setValue(formValue);
 
         spectator.detectChanges();
 
-        spectator.click(generateButton);
-
         expect(emitSpy).toHaveBeenCalledWith(formValue);
-    });
-
-    it('should emit orientation on size control value change', () => {
-        const emitSpy = jest.spyOn(spectator.component.orientation, 'emit');
-        spectator.component.form.get('size').setValue(DotAIImageOrientation.SQUARE);
-        expect(emitSpy).toHaveBeenCalledWith(DotAIImageOrientation.SQUARE);
     });
 
     it('should clear validators for text control when type is auto', () => {
@@ -72,7 +64,7 @@ describe('AiImagePromptFormComponent', () => {
             response: { revised_prompt: 'New Prompt' }
         } as DotGeneratedAIImage;
 
-        spectator.setInput('generatedValue', newGeneratedValue);
+        spectator.setInput('value', newGeneratedValue);
         spectator.setInput('isLoading', false);
 
         expect(spectator.component.form.value).toEqual(newGeneratedValue.request);
@@ -107,13 +99,55 @@ describe('AiImagePromptFormComponent', () => {
         expect(generateButton.disabled).toEqual(false);
     });
 
-    it('should call submitForm method on button click', () => {
-        const valueSpy = jest.spyOn(spectator.component.value, 'emit');
+    it('should emit generate when the form is submitted', () => {
+        const valueSpy = jest.spyOn(spectator.component.generate, 'emit');
         spectator.setInput({ isLoading: false });
         spectator.component.form.setValue(formValue);
         spectator.detectChanges();
 
         spectator.click(generateButton);
         expect(valueSpy).toHaveBeenCalled();
+    });
+
+    it('should make the prompt label as required in the UI', () => {
+        const REQUIRED_CLASS = 'p-label-input-required';
+        spectator.setInput('value', {
+            request: formValue,
+            response: { revised_prompt: 'New Prompt' }
+        } as DotGeneratedAIImage);
+        spectator.setInput('isLoading', false);
+
+        expect(spectator.query(byTestId('prompt-label')).classList).toContain(REQUIRED_CLASS);
+
+        spectator.setInput('value', {
+            request: { ...formValue, type: PromptType.AUTO },
+            response: { revised_prompt: 'New Prompt' }
+        } as DotGeneratedAIImage);
+
+        expect(spectator.query(byTestId('prompt-label')).classList).not.toContain(REQUIRED_CLASS);
+    });
+
+    it('should copy to clipboard the ai rewritten text', () => {
+        const writeText = jest.fn();
+
+        Object.assign(navigator, {
+            clipboard: {
+                writeText
+            }
+        });
+
+        const newGeneratedValue = {
+            request: formValue,
+            response: { revised_prompt: 'New Prompt' }
+        } as DotGeneratedAIImage;
+
+        spectator.setInput('value', newGeneratedValue);
+        spectator.setInput('isLoading', false);
+
+        const icon = spectator.query(byTestId('copy-to-clipboard'));
+
+        spectator.click(icon);
+
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('New Prompt');
     });
 });

@@ -14,21 +14,14 @@ interface ContentletBound {
 /**
  * Bound information for a container.
  *
- * @interface ContenainerBound
+ * @interface ContainerBound
  */
-interface ContenainerBound {
+interface ContainerBound {
     x: number;
     y: number;
     width: number;
     height: number;
-    payload: {
-        container: {
-            acceptTypes: string;
-            identifier: string;
-            maxContentlets: string;
-            uuid: string;
-        };
-    };
+    payload: string;
     contentlets: ContentletBound[];
 }
 
@@ -39,7 +32,7 @@ interface ContenainerBound {
  * @param {HTMLDivElement[]} containers
  * @return {*} An array of objects containing the bounding information for each page element.
  */
-export function getPageElementBound(containers: HTMLDivElement[]): ContenainerBound[] {
+export function getPageElementBound(containers: HTMLDivElement[]): ContainerBound[] {
     return containers.map((container) => {
         const containerRect = container.getBoundingClientRect();
         const contentlets = Array.from(
@@ -51,9 +44,9 @@ export function getPageElementBound(containers: HTMLDivElement[]): ContenainerBo
             y: containerRect.y,
             width: containerRect.width,
             height: containerRect.height,
-            payload: {
+            payload: JSON.stringify({
                 container: getContainerData(container)
-            },
+            }),
             contentlets: getContentletsBound(containerRect, contentlets)
         };
     });
@@ -140,12 +133,42 @@ export function getClosestContainerData(element: Element) {
  * @param {(HTMLElement | null)} element
  * @return {*}
  */
-export function findContentletElement(element: HTMLElement | null): HTMLElement | null {
+export function findDotElement(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
-    if (element.dataset && element.dataset?.['dotObject'] === 'contentlet') {
+    if (
+        element?.dataset?.['dotObject'] === 'contentlet' ||
+        (element?.dataset?.['dotObject'] === 'container' && element.children.length === 0)
+    ) {
+        return element;
+    }
+
+    return findDotElement(element?.['parentElement']);
+}
+
+export function findDotVTLElement(element: HTMLElement | null): HTMLElement | null {
+    if (!element) return null;
+
+    if (element.dataset && element.dataset?.['dotObject'] === 'vtl-file') {
         return element;
     } else {
-        return findContentletElement(element?.['parentElement']);
+        return findDotElement(element?.['parentElement']);
     }
+}
+
+export function findVTLData(target: HTMLElement) {
+    const vltElements = target.querySelectorAll(
+        '[data-dot-object="vtl-file"]'
+    ) as NodeListOf<HTMLElement>;
+
+    if (!vltElements.length) {
+        return null;
+    }
+
+    return Array.from(vltElements).map((vltElement) => {
+        return {
+            inode: vltElement.dataset?.['dotInode'],
+            name: vltElement.dataset?.['dotUrl']
+        };
+    });
 }

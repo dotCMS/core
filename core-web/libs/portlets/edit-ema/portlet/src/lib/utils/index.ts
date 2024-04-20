@@ -1,3 +1,7 @@
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+
+import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
 import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
 
 /**
@@ -152,9 +156,9 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
  * @param {string} url
  * @return {*}  {string}
  */
-export function sanitizeURL(url: string): string {
+export function sanitizeURL(url?: string): string {
     return url
-        .replace(/^\/|\/$/g, '') // Remove slashes from the beginning and end of the url
+        ?.replace(/(^\/)|(\/$)/g, '') // Remove slashes from the beginning and end of the url
         .split('/')
         .filter((part, i) => {
             return !i || part !== 'index'; // Filter the index from the url if it is at the last position
@@ -175,3 +179,49 @@ export const getPersonalization = (persona: Record<string, string>) => {
 
     return `dot:${persona.contentType}:${persona.keyTag}`;
 };
+
+/**
+ * Create a page api url with query params
+ *
+ * @export
+ * @param {string} url
+ * @param {Partial<DotPageApiParams>} params
+ * @return {*}  {string}
+ */
+export function createPageApiUrlWithQueryParams(
+    url: string,
+    params: Partial<DotPageApiParams>
+): string {
+    // Set default values
+    const completedParams = {
+        ...params,
+        language_id: params.language_id ?? '1',
+        'com.dotmarketing.persona.id':
+            params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
+        variantName: params.variantName ?? DEFAULT_VARIANT_ID,
+        mode: params.mode ?? EDIT_MODE
+    };
+
+    // Filter out undefined values and url
+    Object.keys(completedParams).forEach(
+        (key) =>
+            (completedParams[key] === undefined || key === 'url') && delete completedParams[key]
+    );
+
+    const queryParams = new URLSearchParams({
+        ...completedParams
+    }).toString();
+
+    return queryParams.length ? `${url}?${queryParams}` : url;
+}
+
+/**
+ * Check if the variant is the default one
+ *
+ * @export
+ * @param {string} [variant]
+ * @return {*}  {boolean}
+ */
+export function getIsDefaultVariant(variant?: string): boolean {
+    return !variant || variant === DEFAULT_VARIANT_ID;
+}

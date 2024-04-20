@@ -2,6 +2,7 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
@@ -13,7 +14,11 @@ import com.dotmarketing.startup.StartupTask;
 public class Task240131UpdateLanguageVariableContentType implements StartupTask {
     @Override
     public boolean forceRun() {
-        return true;
+        final String isSystem = new DotConnect().setSQL(
+                        "select system from structure where velocity_var_name like ?")
+                .addParam(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME).getString("system");
+
+        return DbConnectionFactory.isDBTrue(isSystem);
     }
 
     @Override

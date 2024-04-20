@@ -266,16 +266,16 @@ public class FieldAPIImpl implements FieldAPI {
           }
 
           ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action",
-                  String.format("User %s/%s modified field %s to %s Structure.", user.getUserId(), user.getFirstName(),
-                          field.name(), structure.getName()));
+                  String.format("User %s/%s modified field '%s' to Content Type '%s'", user.getUserId(), user.getFirstName(),
+                          field.name(), structure.getVelocityVarName()));
       } else {
           //If saving a new indexed field, it should try to set an ES mapping for the field
           if (result.indexed()) {
               addESMappingForField(structure, result);
           }
           ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
-                  String.format("User %s/%s added field %s to %s Structure.", user.getUserId(), user.getFirstName(), field.name(),
-                          structure.getName()));
+                  String.format("User %s/%s added field '%s' to Content Type '%s'", user.getUserId(), user.getFirstName(), field.name(),
+                          structure.getVelocityVarName()));
       }
 
       Field finalResult = result;
@@ -297,7 +297,7 @@ public class FieldAPIImpl implements FieldAPI {
             if (indiciesInfo != null){
                 if (UtilMethods.isSet(indiciesInfo.getLive())) {
                     ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getLive());
-                    Logger.info(this.getClass(), String.format(
+                    Logger.debug(this.getClass(), () -> String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()
                                     .removeClusterIdFromName(indiciesInfo.getLive())));
@@ -305,7 +305,7 @@ public class FieldAPIImpl implements FieldAPI {
 
                 if (UtilMethods.isSet(indiciesInfo.getWorking())) {
                     ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getWorking());
-                    Logger.info(this.getClass(), String.format(
+                    Logger.debug(this.getClass(), () -> String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()
                                     .removeClusterIdFromName(indiciesInfo.getWorking())));
@@ -908,7 +908,7 @@ public class FieldAPIImpl implements FieldAPI {
     @Override
     public boolean isFullScreenField(final com.dotcms.contenttype.model.field.Field field) {
 
-        if(!Config.getBooleanProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, false)){
+        if(!Config.getBooleanProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, true)){
             return false;
         }
 

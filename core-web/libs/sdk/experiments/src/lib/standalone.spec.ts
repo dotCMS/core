@@ -1,6 +1,6 @@
-import { EXPERIMENT_WINDOWS_KEY } from './constants';
 import { DotExperiments } from './dot-experiments';
-import { getScriptDataAttributes } from './utils/utils';
+import { EXPERIMENT_WINDOWS_KEY } from './shared/constants';
+import { getScriptDataAttributes } from './shared/utils/utils';
 
 declare global {
     interface Window {
@@ -8,7 +8,7 @@ declare global {
     }
 }
 
-jest.mock('./utils/utils', () => ({
+jest.mock('./shared/utils/utils', () => ({
     getScriptDataAttributes: jest.fn().mockReturnValue({ server: 'http://localhost' }),
     Logger: jest.fn()
 }));
@@ -23,16 +23,12 @@ describe('IIFE Execution', () => {
             .spyOn(DotExperiments, 'getInstance')
             .mockReturnValue(fakeInstance);
 
-        const initializeMock = jest.spyOn(fakeInstance, 'initialize');
-
         require('./standalone');
 
         expect(getScriptDataAttributes).toHaveBeenCalled();
 
         expect(getInstanceMock).toHaveBeenCalledWith({ server: 'http://localhost' });
         expect(getInstanceMock).toHaveBeenCalled();
-
-        expect(initializeMock).toHaveBeenCalled();
 
         expect(window[EXPERIMENT_WINDOWS_KEY]).toBeDefined();
         expect(window[EXPERIMENT_WINDOWS_KEY]).toEqual(fakeInstance);

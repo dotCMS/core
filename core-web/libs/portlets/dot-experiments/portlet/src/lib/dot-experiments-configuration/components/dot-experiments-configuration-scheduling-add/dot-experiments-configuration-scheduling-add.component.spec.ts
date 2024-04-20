@@ -15,9 +15,12 @@ import { Calendar } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
 import { Sidebar } from 'primeng/sidebar';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { ExperimentSteps, TIME_90_DAYS } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,

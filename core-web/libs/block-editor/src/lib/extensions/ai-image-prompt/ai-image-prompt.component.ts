@@ -5,6 +5,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormGroupDirective } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 
@@ -26,27 +27,33 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
         DialogModule,
         AsyncPipe,
         DotMessagePipe,
+        ButtonModule,
         ConfirmDialogModule,
         AiImagePromptFormComponent,
         AiImagePromptGalleryComponent
     ],
-    providers: [FormGroupDirective],
+    providers: [FormGroupDirective, ConfirmationService],
 
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIImagePromptComponent {
     protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
     protected readonly ComponentStatus = ComponentStatus;
-    private confirmationService = inject(ConfirmationService);
     private dotMessageService = inject(DotMessageService);
+    private confirmationService = inject(ConfirmationService);
     store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
-    /**
-     * Clears the error at the store on hiding the confirmation dialog.
-     *
-     * @return {void}
-     */
-    onHideConfirm(): void {
-        this.store.cleanError();
+    closeDialog(): void {
+        this.confirmationService.confirm({
+            key: 'ai-image-prompt',
+            header: this.dotMessageService.get('block-editor.extension.ai.confirmation.header'),
+            message: this.dotMessageService.get('block-editor.extension.ai.confirmation.message'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessageService.get('Discard'),
+            rejectLabel: this.dotMessageService.get('Cancel'),
+            accept: () => {
+                this.store.hideDialog();
+            }
+        });
     }
 }
