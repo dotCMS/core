@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/i",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.prompt == 'Image about Jupiter moon Ganymede')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "created": 1713989422,
+      "data": [
+        {
+          "revised_prompt": "Create a 100x100px high-resolution image showing the majestic planet Jupiter with its largest moon, Ganymede. Capture the swirling storms of Jupiter in hues of orange, tan, and white. Ganymede, its moon, appearing smaller in comparison, radiates a silver-grey surface color, reflecting Jupiter's light. Artfully demonstrate the vast distance between them, with the star-studded blackness of the infinite space as the backdrop.",
+          "url": "http://localhost:50505/s/ganymede"
+        }
+      ]
+    }
+  }
+}
