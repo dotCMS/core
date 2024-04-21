@@ -920,12 +920,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentPushExpireDate =
                 UtilMethods.isSet(contentPushExpireDate) ? contentPushExpireDate : "N/D";
 
-        ActivityLogger.logInfo(getClass(), "Publishing Content",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Publishing Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         try {
 
@@ -943,22 +938,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             this.internalPublish(contentlet, user, respectFrontendRoles);
         } catch (DotDataException | DotStateException | DotSecurityException e) {
-
-            ActivityLogger.logInfo(getClass(), "Error Publishing Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            logInfo("Error Publishing Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Published",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Content Published", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         //Generate a System Event for this publish operation
         HibernateUtil.addCommitListener(
@@ -1926,12 +1910,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String contentPushExpireDate = UtilMethods.get(
                 contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE), ND_SUPPLIER);
 
-        ActivityLogger.logInfo(getClass(), "Unlocking Content",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Unlocking Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         try {
             canLock(contentlet, user, respectFrontendRoles);
@@ -1944,21 +1923,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         } catch (DotDataException | DotStateException | DotSecurityException e) {
 
-            ActivityLogger.logInfo(getClass(), "Error Unlocking Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            logInfo("Error Unlocking Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Unlocked",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Content Unlocked", contentlet, user, contentPushPublishDate, contentPushExpireDate);
     }
 
     @CloseDBIfOpened
@@ -3667,12 +3636,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String contentPushExpireDate = UtilMethods.get(
                 contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE), ND_SUPPLIER);
 
-        ActivityLogger.logInfo(getClass(), "Locking Content",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Locking Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         try {
 
@@ -3687,21 +3651,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getVersionableAPI().setLocked(contentlet, true, user);
             ThreadContextUtil.ifReindex(() -> indexAPI.addContentToIndex(contentlet, false));
         } catch (DotDataException | DotStateException | DotSecurityException e) {
-            ActivityLogger.logInfo(getClass(), "Error Locking Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            logInfo("Error Locking Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Locked",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Content Locked", contentlet, user, contentPushPublishDate, contentPushExpireDate);
     }
 
     @Override
@@ -3951,12 +3905,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String contentPushExpireDate = UtilMethods.get(
                 contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE), ND_SUPPLIER);
 
-        ActivityLogger.logInfo(getClass(), "Unpublishing Content",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Unpublishing Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         try {
 
@@ -3984,20 +3933,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             triggerCommitListenerEvent(contentlet, user, false);
         } catch (DotDataException | DotStateException | DotSecurityException e) {
 
-            ActivityLogger.logInfo(getClass(), "Error Unpublishing Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
+            logInfo("Error Unpublishing Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Unpublished",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Content Unpublished", contentlet, user, contentPushPublishDate, contentPushExpireDate);
     }
 
     private void internalUnpublish(final Contentlet contentlet, final User user, final int reindex)
@@ -4201,11 +4141,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String contentPushExpireDate = UtilMethods.get(
                 contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE), ND_SUPPLIER);
 
-        ActivityLogger.logInfo(getClass(), "Unarchiving Content",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
+        logInfo("Unarchiving Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         try {
 
@@ -4237,20 +4173,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.internalUnarchive(contentlet, user, respectFrontendRoles);
         } catch (DotDataException | DotStateException | DotSecurityException e) {
 
-            ActivityLogger.logInfo(getClass(), "Error Unarchiving Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " +  contentlet.getIdentifier(), contentlet.getHost());
+            logInfo("Error Unarchiving Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Unarchived",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + contentlet.getIdentifier()
-                        , contentlet.getHost());
+        logInfo("Content Unarchived", contentlet, user, contentPushPublishDate, contentPushExpireDate);
+
     }
 
     private void internalUnarchive(final Contentlet contentlet, final User user,
@@ -5037,13 +4965,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String contentPushExpireDateBefore =
                     UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
 
-            ActivityLogger.logInfo(getClass(), "Saving Content",
-                    "StartDate: " + contentPushPublishDateBefore + "; "
-                            + "EndDate: " + contentPushExpireDateBefore + "; User:" + (user != null
-                            ? user
-                            .getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentletIn != null ? contentletIn
-                            .getIdentifier() : "Unknown"), contentletIn.getHost());
+            logInfo("Contentlet to be saved: ", contentletIn, user, contentPushPublishDateBefore,
+                    contentPushExpireDateBefore);
 
             this.checkOrSetContentType(contentletIn, user);
 
@@ -5091,13 +5014,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String contentPushExpireDateAfter =
                     UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
 
-            ActivityLogger.logInfo(getClass(), "Content Saved",
-                    "StartDate: " + contentPushPublishDateAfter + "; "
-                            + "EndDate: " + contentPushExpireDateAfter + "; User:" + (user != null
-                            ? user
-                            .getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + contentletOut.getIdentifier(),
-                    contentletOut.getHost());
+            logInfo("Contentlet saved: " ,contentletOut, user, contentPushPublishDateAfter, contentPushExpireDateAfter);
 
             if (isWorkflowInProgress) {
                 autoAssign = false;
@@ -10278,4 +10195,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return contentlet;
     }
+
+    /**
+     * log info
+     * @param action the label of the action
+     * @param contentlet the contentlet
+     * @param user the user
+     * @param contentPushPublishDate the publish date
+     * @param contentPushExpireDate the expire date
+     */
+    private void logInfo(final String action, final Contentlet contentlet, final User user, String contentPushPublishDate, String contentPushExpireDate) {
+        ActivityLogger.logInfo(getClass(), action,
+                "StartDate: " + contentPushPublishDate + "; "
+                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
+                        ? user.getUserId() : "Unknown")
+                        + "; ContentIdentifier: " + (contentlet != null
+                        ? contentlet.getIdentifier() : "Unknown"), contentlet != null ? contentlet.getHost() : "unknown");
+    }
+
 }
