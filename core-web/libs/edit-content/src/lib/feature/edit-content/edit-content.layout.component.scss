@@ -3,8 +3,7 @@
 :host {
     display: grid;
     grid-template-areas:
-        // "topBar topBar"
-
+        "topBar topBar"
         "header sidebar"
         "body sidebar";
     grid-template-columns: 1fr 21.875rem;

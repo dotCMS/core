@@ -63,7 +63,8 @@ export class DotEditContentWYSIWYGFieldComponent implements OnInit {
         this.http
             .get<RawEditorOptions>(this.configPath)
             .pipe(catchError(() => of(null)))
-            .subscribe((CONFIG = DEFAULT_CONFIG) => {
+            .subscribe((SYTEM_WIDE_CONFIG) => {
+                const CONFIG = SYTEM_WIDE_CONFIG || DEFAULT_CONFIG;
                 this.init.set({
                     setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor),
                     ...CONFIG,

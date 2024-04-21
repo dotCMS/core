@@ -123,8 +123,8 @@ describe('EditContentLayoutComponent', () => {
             spectator.detectChanges();
             const asideComponent = spectator.query(DotEditContentAsideComponent);
             expect(asideComponent).toBeDefined();
-            expect(asideComponent.contentLet).toEqual(mockData.contentlet);
-            expect(asideComponent.contentType).toEqual(mockData.contentType.variable);
+            expect(asideComponent.contentlet).toEqual(mockData.contentlet);
+            expect(asideComponent.contentType).toEqual(mockData.contentType);
         });
 
         it('should fire workflow action', () => {
@@ -229,8 +229,8 @@ describe('EditContentLayoutComponent', () => {
             spectator.detectChanges();
             const asideComponent = spectator.query(DotEditContentAsideComponent);
             expect(asideComponent).toBeDefined();
-            expect(asideComponent.contentLet).toEqual(mockData.contentlet);
-            expect(asideComponent.contentType).toEqual(mockData.contentType.variable);
+            expect(asideComponent.contentlet).toEqual(mockData.contentlet);
+            expect(asideComponent.contentType).toEqual(mockData.contentType);
         });
     });
 });

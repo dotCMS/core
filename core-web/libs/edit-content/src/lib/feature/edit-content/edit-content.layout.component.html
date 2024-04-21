@@ -1,5 +1,5 @@
 <ng-container *ngIf="vm$ | async as vm; else noContent">
-    <!-- <div
+    <div
         class="topBar"
         *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]"
         data-testId="topBar">
@@ -10,7 +10,7 @@
             >{{ 'edit.content.layout.beta.message.switch' | dm }}</a
         >
         {{ 'edit.content.layout.beta.message.needed' | dm }}
-    </div> -->
+    </div>
     <dot-edit-content-toolbar
         class="header"
         [actions]="vm.actions"

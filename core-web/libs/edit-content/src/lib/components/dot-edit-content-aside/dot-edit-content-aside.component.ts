@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotApiLinkComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentAsideInformationComponent } from './components/dot-content-aside-metadata/dot-content-aside-information.component';
 import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
@@ -15,8 +15,6 @@ import { DotContentAsideWorkflowComponent } from './components/dot-content-aside
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         CommonModule,
-        DotApiLinkComponent,
-        DotRelativeDatePipe,
         DotMessagePipe,
         DotContentAsideInformationComponent,
         DotContentAsideWorkflowComponent
