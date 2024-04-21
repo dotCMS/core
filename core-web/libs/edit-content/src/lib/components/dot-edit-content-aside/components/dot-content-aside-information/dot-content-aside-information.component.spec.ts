@@ -130,7 +130,7 @@ describe('DotContentAsideInformationComponent', () => {
         expect(referencesSpan.textContent.trim()).toBe('References');
     });
 
-    describe('routerSpy', () => {
+    describe('history', () => {
         it('should have publish history button', () => {
             spectator.detectChanges();
             const publishButton = spectator.query(byTestId('publish-history'));

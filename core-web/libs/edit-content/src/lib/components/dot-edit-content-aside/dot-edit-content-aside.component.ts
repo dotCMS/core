@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotContentAsideInformationComponent } from './components/dot-content-aside-metadata/dot-content-aside-information.component';
+import { DotContentAsideInformationComponent } from './components/dot-content-aside-information/dot-content-aside-information.component';
 import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
 
 @Component({

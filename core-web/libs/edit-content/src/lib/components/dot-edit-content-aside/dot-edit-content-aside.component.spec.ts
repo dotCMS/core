@@ -6,7 +6,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
-import { DotContentAsideInformationComponent } from './components/dot-content-aside-metadata/dot-content-aside-information.component';
+import { DotContentAsideInformationComponent } from './components/dot-content-aside-information/dot-content-aside-information.component';
 import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
 import { DotEditContentAsideComponent } from './dot-edit-content-aside.component';
 
@@ -72,34 +72,4 @@ describe('DotEditContentAsideComponent', () => {
         );
         expect(dotContentAsideWorkflowComponent.contentType).toEqual(dotcmsContentTypeBasicMock);
     });
-
-    // it('should not render aside information data', () => {
-    //     spectator.setInput('contentlet', null);
-    //     spectator.detectChanges();
-
-    //     expect(spectator.query(byTestId('modified-by')).textContent).toBe('');
-    //     expect(spectator.query(byTestId('last-modified')).textContent).toBe('');
-    //     expect(spectator.query(byTestId('inode'))).toBeFalsy();
-    // });
-
-    // it('should render aside workflow data', () => {
-    //     spectator.setInput('contentlet', CONTENT_FORM_DATA_MOCK.contentlet);
-    //     spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType);
-    //     spectator.detectChanges();
-
-    //     // expect(spectator.component.workflow$).toBeDefined();
-    //     expect(spectator.query(byTestId('workflow-name')).textContent.trim()).toBe('Test');
-    //     expect(spectator.query(byTestId('workflow-step')).textContent.trim()).toBe('Test');
-    //     expect(spectator.query(byTestId('workflow-assigned')).textContent.trim()).toBe(
-    //         'Admin User'
-    //     );
-    // });
-
-    // it('should render New as status when dont have contentlet', () => {
-    //     spectator.setInput('contentlet', null);
-    //     spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType);
-    //     spectator.detectChanges();
-
-    //     expect(spectator.query(byTestId('workflow-step')).textContent).toBe('New');
-    // });
 });

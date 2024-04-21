@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import { Component, Input, OnChanges, OnInit, SimpleChanges, inject, signal } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
@@ -39,18 +41,18 @@ export class DotContentAsideWorkflowComponent implements OnInit, OnChanges {
     }
 
     /**
-     *
+     * Get the current workflow status
      *
      * @private
      * @return {*}
      * @memberof DotContentAsideWorkflowComponent
      */
-    private getWorkflowStatus() {
+    private getWorkflowStatus(): Observable<DotCMSWorkflowStatus> {
         return this.workflowService.getWorkflowStatus(this.inode);
     }
 
     /**
-     *
+     * Get the new content status
      *
      * @private
      * @return {*}
