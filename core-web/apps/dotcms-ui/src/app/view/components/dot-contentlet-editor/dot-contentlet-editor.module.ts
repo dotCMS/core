@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 

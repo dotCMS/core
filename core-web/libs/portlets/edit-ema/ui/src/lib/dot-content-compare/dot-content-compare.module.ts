@@ -9,7 +9,13 @@ import { TableModule } from 'primeng/table';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotContentletService, DotVersionableService } from '@dotcms/data-access';
-import { DotDialogModule, DotDiffPipe, DotMessagePipe, DotRelativeDatePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotDialogModule,
+    DotDiffPipe,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 
 import { DotContentCompareBlockEditorComponent } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component';
 import { DotContentCompareDialogComponent } from './components/dot-content-compare-dialog/dot-content-compare-dialog.component';

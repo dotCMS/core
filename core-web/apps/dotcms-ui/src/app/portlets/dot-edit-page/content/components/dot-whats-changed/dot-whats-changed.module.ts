@@ -10,6 +10,5 @@ import { DotWhatsChangedComponent } from './dot-whats-changed.component';
     imports: [CommonModule, IFrameModule, DotDiffPipe, DotMessagePipe],
     declarations: [DotWhatsChangedComponent],
     exports: [DotWhatsChangedComponent]
-    
 })
 export class DotWhatsChangedModule {}

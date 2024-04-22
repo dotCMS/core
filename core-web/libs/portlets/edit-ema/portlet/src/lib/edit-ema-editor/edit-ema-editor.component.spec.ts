@@ -5,7 +5,6 @@ import {
     byTestId,
     mockProvider
 } from '@ngneat/spectator/jest';
-import { DotContentCompareComponent } from 'libs/portlets/edit-ema/ui/src/lib/dot-content-compare/dot-content-compare.component';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -122,7 +121,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             MockComponent(DotEditEmaWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent),
-            MockComponent(EditEmaToolbarComponent),
+            MockComponent(EditEmaToolbarComponent)
             // MockComponent(DotContentCompareComponent)
         ],
         detectChanges: false,
@@ -2222,6 +2221,22 @@ describe('EditEmaEditorComponent', () => {
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
+            });
+        });
+
+        describe('dialog', () => {
+            it('should reload content from dialog', () => {
+                const reloadSpy = jest.spyOn(store, 'reload');
+                const queryParams = {
+                    language_id: 1,
+                    url: 'page-one'
+                };
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
+
+                expect(reloadSpy).toHaveBeenCalledWith({
+                    params: queryParams
+                });
             });
         });
     });

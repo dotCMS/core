@@ -562,7 +562,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     protected handleNgEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
         const { detail } = event;
-        console.log(event);
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
             [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {
@@ -1010,7 +1009,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         return this.dotHttpErrorManagerService.handle(error).pipe(map(() => null));
     }
 
-    reload() {
+    /**
+     * Reloads the component from the dialog.
+     */
+    reloadFromDialog() {
         this.store.reload({ params: this.queryParams });
     }
 }

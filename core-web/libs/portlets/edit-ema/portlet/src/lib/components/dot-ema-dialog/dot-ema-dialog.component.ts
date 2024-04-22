@@ -255,7 +255,11 @@ export class DotEmaDialogComponent {
      * @param {unknown[]} args
      * @memberof DotEmaDialogComponent
      */
-    private callEmbeddedFunction(callback: string, args: unknown[] = [], whenFinished?: () => void) {
+    private callEmbeddedFunction(
+        callback: string,
+        args: unknown[] = [],
+        whenFinished?: () => void
+    ) {
         this.ngZone.run(() => {
             this.iframe.nativeElement.contentWindow?.[callback]?.(...args);
             whenFinished?.();
@@ -329,14 +333,23 @@ export class DotEmaDialogComponent {
         this.action.emit({ event: customEvent, payload: this.dialogState().payload });
     }
 
+    /**
+     * Brings back the dialog to the previous state and triggers a reload event.
+     * @param options - The options for bringing back the dialog.
+     * @param options.name - The name of the dialog.
+     * @param options.args - The arguments for the dialog.
+     */
     bringBack({ name, args }: { name: string; args: string[] } = { name: '', args: [] }) {
         this.$compareData.set(null);
         this.callEmbeddedFunction(name, args, () => this.reloadFromDialog.emit());
     }
 
+    /**
+     * Close compare dialog
+     *
+     * @memberof DotEmaDialogComponent
+     */
     closeCompareDialog() {
         this.$compareData.set(null);
-        // this.reloadFromDialog.emit();
-        // console.log("closeCompareDialog");
     }
 }

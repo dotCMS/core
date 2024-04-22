@@ -3,8 +3,7 @@
     [innerHTML]="
         htmlWorkingValue$ | async | dotDiff : (htmlCompareValue$ | async) : showDiff | safeHtml
     "
-    data-testId="div-compare"
-></div>
+    data-testId="div-compare"></div>
 
 <ng-template #compareValue>
     <div [innerHTML]="htmlWorkingValue$ | async | safeHtml" data-testId="div-working"></div>
@@ -14,13 +13,11 @@
     id="blockEditor"
     #blockEditor
     [value]="data.working[field]"
-    [ngStyle]="{ display: 'none' }"
->
+    [ngStyle]="{ display: 'none' }">
 </dot-block-editor>
 <dot-block-editor
     id="blockEditorCompare"
     #blockEditorCompare
     [value]="data.compare[field]"
-    [ngStyle]="{ display: 'none' }"
->
+    [ngStyle]="{ display: 'none' }">
 </dot-block-editor>

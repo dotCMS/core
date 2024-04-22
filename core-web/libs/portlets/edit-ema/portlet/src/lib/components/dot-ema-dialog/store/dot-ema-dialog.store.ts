@@ -247,8 +247,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             ...state,
             type
         };
-    
-    })
+    });
 
     /**
      * Create the url to edit a contentlet

@@ -2,7 +2,6 @@ import { Observable } from 'rxjs';
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
-
 import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
 
 import { DotContentCompareState, DotContentCompareStore } from './store/dot-content-compare.store';
@@ -26,7 +25,7 @@ export class DotContentCompareComponent {
         }
     }
     @Output() shutdown = new EventEmitter<boolean>();
-    @Output() getMeBringBack = new EventEmitter<{name: string, args: string[]}>();
+    @Output() letMeBringBack = new EventEmitter<{ name: string; args: string[] }>();
     vm$: Observable<DotContentCompareState> = this.store.vm$;
 
     constructor(
@@ -46,7 +45,7 @@ export class DotContentCompareComponent {
             accept: () => {
                 this.dotIframeService.run({ name: 'getVersionBack', args: [inode] });
                 this.shutdown.emit(true);
-                this.getMeBringBack.emit({name: 'getVersionBack', args: [inode]});
+                this.letMeBringBack.emit({ name: 'getVersionBack', args: [inode] });
             },
             reject: () => {
                 //
