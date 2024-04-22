@@ -81,7 +81,8 @@ describe('DotEditContentStore', () => {
         spectator.service.setState({
             actions: mockWorkflowsActions,
             contentType: CONTENT_TYPE_MOCK,
-            contentlet: BINARY_FIELD_CONTENTLET
+            contentlet: BINARY_FIELD_CONTENTLET,
+            loading: false
         });
     });
 
@@ -96,14 +97,16 @@ describe('DotEditContentStore', () => {
                 expect(state).toEqual({
                     actions: [],
                     contentType: CONTENT_TYPE_MOCK,
-                    contentlet: BINARY_FIELD_CONTENTLET
+                    contentlet: BINARY_FIELD_CONTENTLET,
+                    loading: false
                 });
                 done();
             });
             spectator.service.updateState({
                 actions: [],
                 contentType: CONTENT_TYPE_MOCK,
-                contentlet: BINARY_FIELD_CONTENTLET
+                contentlet: BINARY_FIELD_CONTENTLET,
+                loading: false
             });
         });
 
