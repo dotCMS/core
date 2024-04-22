@@ -8,6 +8,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { MessagesModule } from 'primeng/messages';
 
 import {
     DotContentTypeService,
@@ -41,6 +42,7 @@ describe('EditContentLayoutComponent', () => {
         component: EditContentLayoutComponent,
         imports: [
             HttpClientTestingModule,
+            MessagesModule,
             MockPipe(DotMessagePipe),
             MockComponent(DotEditContentFormComponent),
             MockComponent(DotEditContentToolbarComponent),

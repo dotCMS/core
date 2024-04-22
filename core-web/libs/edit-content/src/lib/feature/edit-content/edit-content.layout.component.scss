@@ -15,12 +15,10 @@
 
 .topBar {
     grid-area: topBar;
-    background: $color-palette-primary-200;
-    color: $color-palette-primary-900;
-    padding: $spacing-2 $spacing-4;
 
-    a {
-        color: $color-palette-primary-900;
+    .pi {
+        font-size: $font-size-lg;
+        margin-right: $spacing-1;
     }
 }
 
