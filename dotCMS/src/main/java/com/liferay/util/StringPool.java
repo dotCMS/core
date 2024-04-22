@@ -31,6 +31,10 @@ package com.liferay.util;
  */
 public class StringPool {
 
+	private StringPool() {
+		//private constructor to prevent instantiation
+	}
+
 	public static final String AMPERSAND = "&";
 
 	public static final String APOSTROPHE = "'";
@@ -89,4 +93,5 @@ public class StringPool {
 
 	public static final String TRUE = Boolean.TRUE.toString();
 
+	public static final String UNKNOWN = "Unknown";
 }
