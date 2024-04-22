@@ -1,4 +1,5 @@
 @use "variables" as *;
+@import "mixins";
 
 .content-aside__workflow {
     display: flex;
@@ -28,10 +29,8 @@
 .workflow-column__description {
     color: $black;
     height: 32px;
-    font-size: 14px;
+    font-size: $font-size-smd;
     line-height: $line-height;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     width: 100%;
+    @include truncate-text;
 }

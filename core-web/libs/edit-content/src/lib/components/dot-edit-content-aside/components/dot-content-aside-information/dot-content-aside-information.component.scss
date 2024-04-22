@@ -1,4 +1,5 @@
 @use "variables" as *;
+@import "mixins";
 
 .content-aside__information {
     display: flex;
@@ -46,10 +47,9 @@
         display: flex;
         justify-content: space-between;
         color: $black;
-        font-size: 14px;
-        font-style: normal;
-        font-weight: 600;
-        line-height: 140%;
+        font-size: $font-size-smd;
+        font-weight: $font-weight-medium-bold;
+        line-height: $line-height-relative;
 
         i {
             color: $color-palette-primary-500;
@@ -58,10 +58,9 @@
 
     .sidebar-card__label {
         color: $color-palette-gray-800;
-        font-size: 14px;
-        font-style: normal;
-        font-weight: 400;
-        line-height: 140%;
+        font-size: $font-size-smd;
+        font-weight: $font-weight-regular-bold;
+        line-height: $line-height-relative;
     }
 }
 
@@ -70,7 +69,7 @@
     align-items: center;
     flex: 1 0 0;
     align-self: stretch;
-    border-radius: 8px;
+    border-radius: $border-radius-lg;
     background: $white;
 
     .content-history {
@@ -82,11 +81,9 @@
         gap: $spacing-0;
         flex: 1 0 0;
         position: relative;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
         user-select: none;
         min-height: 5rem;
+        @include truncate-text;
 
         &,
         & > * {
@@ -115,26 +112,22 @@
 
     .content-history__title {
         color: $black;
-        font-size: 14px;
-        font-weight: 600;
-        line-height: 140%;
+        font-size: $font-size-smd;
+        font-weight: $font-weight-medium-bold;
+        line-height: $line-height-relative;
     }
 
     .content-history__author {
-        overflow: hidden;
         color: $color-palette-gray-800;
-        text-overflow: ellipsis;
-        font-size: 14px;
-        font-style: normal;
-        font-weight: 400;
-        line-height: 140%;
+        font-size: $font-size-smd;
+        font-weight: $font-weight-regular-bold;
+        line-height: $line-height-relative;
     }
 
     .content-history__date {
         color: $color-palette-gray-700;
-        font-size: 12px;
-        font-style: normal;
-        font-weight: 400;
-        line-height: 140%;
+        font-size: $font-size-xsm;
+        font-weight: $font-weight-regular-bold;
+        line-height: $line-height-relative;
     }
 }
