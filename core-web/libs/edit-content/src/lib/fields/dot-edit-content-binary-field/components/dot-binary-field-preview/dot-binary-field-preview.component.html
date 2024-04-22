@@ -108,10 +108,12 @@
     <div class="file-info__item">
         <span class="file-info__title">{{ 'Size' | dm }}:</span>
         <div class="file-info__link">
-            <div class="file-info__size">
+            @if(metadata.width && metadata.height) {
+            <div class="file-info__size" data-testId="file-resolution">
                 <i class="pi pi-arrows-alt"></i>
                 <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
             </div>
+            }
             <div class="file-info__size">
                 <i class="pi pi-file"></i>
                 <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
