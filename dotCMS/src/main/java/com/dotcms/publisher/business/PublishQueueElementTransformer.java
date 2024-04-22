@@ -109,11 +109,13 @@ public class PublishQueueElementTransformer {
             result = new HashMap<>(Map.of(TITLE_KEY, UtilMethods.isSet(title) ? title : StringPool.BLANK));
         }
 
-        result.putAll(Map.of(
-                TYPE_KEY, type,
-                OPERATION_KEY, operation,
-                ASSET_KEY, id
-        ));
+        if (Objects.nonNull(result)) {
+            result.putAll(Map.of(
+                    TYPE_KEY, type,
+                    OPERATION_KEY, operation,
+                    ASSET_KEY, id
+            ));
+        }
 
         return result;
     }
