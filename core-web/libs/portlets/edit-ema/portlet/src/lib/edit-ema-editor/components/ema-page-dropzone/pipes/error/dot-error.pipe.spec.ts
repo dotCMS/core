@@ -23,7 +23,8 @@ describe('DotErrorPipe', () => {
 
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
-            contentType: 'Some Other Content Type'
+            contentType: 'Some Other Content Type',
+            draggedPayload: null
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({
@@ -44,7 +45,8 @@ describe('DotErrorPipe', () => {
 
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
-            contentType: 'theEmperor'
+            contentType: 'theEmperor',
+            draggedPayload: null
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({
@@ -65,7 +67,8 @@ describe('DotErrorPipe', () => {
 
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
-            contentType: 'theEmperor'
+            contentType: 'theEmperor',
+            draggedPayload: null
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({
@@ -96,7 +99,8 @@ describe('DotErrorPipe', () => {
 
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
-            contentType: 'kenobi'
+            contentType: 'kenobi',
+            draggedPayload: null
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({
@@ -141,7 +145,8 @@ describe('DotErrorPipe', () => {
 
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
-            contentType: 'kenobi'
+            contentType: 'kenobi',
+            draggedPayload: null
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({
@@ -186,7 +191,8 @@ describe('DotErrorPipe', () => {
 
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
-            contentType: 'kenobi'
+            contentType: 'kenobi',
+            draggedPayload: null
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({
