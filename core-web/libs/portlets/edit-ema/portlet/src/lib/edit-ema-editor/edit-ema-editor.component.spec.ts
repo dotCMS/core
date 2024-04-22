@@ -36,6 +36,7 @@ import {
     DotPersonalizeService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
+    DotTempFileUploadService,
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
@@ -69,10 +70,9 @@ import {
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
+import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
-import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
-import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
@@ -90,9 +90,7 @@ import {
     TREE_NODE_MOCK,
     URL_CONTENT_MAP_MOCK,
     newContentlet,
-    dotPageContainerStructureMock,
-    dragAddEventMock,
-    dragMoveEventMock
+    dotPageContainerStructureMock
 } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
@@ -190,7 +188,12 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             DotCopyContentService,
             DotCopyContentModalService,
             DotWorkflowActionsFireService,
-
+            {
+                provide: DotTempFileUploadService,
+                useValue: {
+                    upload: () => of({})
+                }
+            },
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
@@ -1793,486 +1796,352 @@ describe('EditEmaEditorComponent', () => {
             });
         });
 
-        describe('move contentlet', () => {
-            it('should post to iframe to get bound on move contentlet and show bounds', () => {
-                spectator.detectChanges();
+        describe('drag and drop', () => {
+            describe('drag start', () => {
+                it('should call the setDragItem from the store for content-types', () => {
+                    const setDragItemSpy = jest.spyOn(store, 'setDragItem');
 
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
-                const postMessageSpy = jest.spyOn(
-                    iframe.nativeElement.contentWindow,
-                    'postMessage'
-                );
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                            payload: {
-                                x: 100,
-                                y: 100,
-                                width: 500,
-                                height: 500,
-                                payload: PAYLOAD_MOCK
+                    const target = {
+                        target: {
+                            dataset: {
+                                type: 'content-type',
+                                item: JSON.stringify({
+                                    contentType: {
+                                        variable: 'test',
+                                        name: 'test',
+                                        baseType: 'test'
+                                    },
+                                    move: false
+                                })
                             }
                         }
-                    })
-                );
+                    };
 
-                spectator.detectChanges();
+                    const dragStart = new Event('dragstart');
 
-                const emaTools = spectator.debugElement.query(
-                    By.css('[data-testId="contentlet-tools"]')
-                );
+                    Object.defineProperty(dragStart, 'target', {
+                        writable: false,
+                        value: target.target
+                    });
 
-                spectator.triggerEventHandler(emaTools, 'moveStart', {
-                    ...PAYLOAD_MOCK
+                    window.dispatchEvent(dragStart);
+
+                    expect(setDragItemSpy).toHaveBeenCalledWith({
+                        baseType: 'test',
+                        contentType: 'test',
+                        draggedPayload: {
+                            item: {
+                                variable: 'test',
+                                name: 'test'
+                            },
+                            type: 'content-type',
+                            move: false
+                        }
+                    });
                 });
 
-                spectator.detectComponentChanges();
+                it('should call the setDragItem from the store for contentlets', () => {
+                    const contentlet = CONTENTLETS_MOCK[0];
 
-                expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
+                    const setDragItemSpy = jest.spyOn(store, 'setDragItem');
 
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                ); // Simulate the iframe response
-
-                spectator.detectComponentChanges();
-
-                expect(spectator.query(EmaPageDropzoneComponent)).not.toBeNull();
-            });
-
-            it('should hide drop zone on contentlet tools drop', () => {
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                            payload: {
-                                x: 100,
-                                y: 100,
-                                width: 500,
-                                height: 500,
-                                payload: PAYLOAD_MOCK
+                    const target = {
+                        target: {
+                            dataset: {
+                                type: 'contentlet',
+                                item: JSON.stringify({
+                                    contentlet,
+                                    move: false
+                                })
                             }
                         }
-                    })
-                );
+                    };
 
-                spectator.detectChanges();
+                    const dragStart = new Event('dragstart');
 
-                const emaTools = spectator.debugElement.query(
-                    By.css('[data-testId="contentlet-tools"]')
-                );
+                    Object.defineProperty(dragStart, 'target', {
+                        writable: false,
+                        value: target.target
+                    });
 
-                spectator.triggerEventHandler(emaTools, 'moveStart', {
-                    ...PAYLOAD_MOCK
-                });
+                    window.dispatchEvent(dragStart);
 
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.detectComponentChanges();
-
-                let dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
-
-                const dropZoneDebugElement = spectator.debugElement.query(
-                    By.css('[data-testId="dropzone"]')
-                );
-
-                expect(dropZoneComponent.dragItem).toEqual({
-                    contentType: 'Banner',
-                    baseType: 'CONTENT'
-                });
-                expect(dropZoneComponent.containers).toBe(BOUNDS_MOCK);
-
-                spectator.triggerEventHandler(emaTools, 'moveStop', {
-                    dataTransfer: {
-                        dropEffect: 'move'
-                    }
-                });
-                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
-                    ...PAYLOAD_MOCK,
-                    position: 'after'
-                });
-
-                spectator.detectComponentChanges();
-                dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZoneComponent).toBeNull();
-            });
-
-            it('should move a contentlet from position in the same contentlet', () => {
-                const saveSpy = jest.spyOn(store, 'savePage');
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                            payload: {
-                                x: 100,
-                                y: 100,
-                                width: 500,
-                                height: 500,
-                                payload: PAYLOAD_MOCK
-                            }
-                        }
-                    })
-                );
-
-                spectator.detectChanges();
-
-                const emaTools = spectator.debugElement.query(
-                    By.css('[data-testId="contentlet-tools"]')
-                );
-
-                spectator.triggerEventHandler(emaTools, 'moveStart', {
-                    container: {
-                        acceptTypes: '123,456',
-                        identifier: '123',
-                        contentletsId: ['123', '456'],
-                        maxContentlets: 123,
-                        uuid: '123'
-                    }, // Same container
-                    contentlet: {
-                        identifier: '123' // The pivot
-                    }
-                });
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.detectComponentChanges();
-
-                const dropZone = spectator.debugElement.query(By.css('[data-testId="dropzone"]'));
-
-                spectator.triggerEventHandler(dropZone, 'place', {
-                    container: {
-                        acceptTypes: '123,456',
-                        identifier: '123',
-                        contentletsId: ['123', '456'],
-                        maxContentlets: 123,
-                        uuid: '123'
-                    }, // Same container
-                    position: 'after',
-                    contentlet: {
-                        identifier: '456' // The pivot
-                    }
-                });
-
-                const newPageContainers = [
-                    {
-                        identifier: '123',
-                        uuid: '123',
-                        contentletsId: ['456', '123'],
-                        personaTag: 'dot:persona'
-                    },
-                    {
-                        identifier: '123',
-                        uuid: '456',
-                        contentletsId: ['123'],
-                        personaTag: 'dot:persona'
-                    }
-                ];
-
-                expect(saveSpy).toHaveBeenCalledWith({
-                    pageContainers: newPageContainers,
-                    pageId: '123',
-                    params: {
-                        language_id: 1,
-                        url: 'page-one'
-                    }
-                });
-            });
-
-            it('should move a contentlet to another container', () => {
-                const saveSpy = jest.spyOn(store, 'savePage');
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                            payload: {
-                                x: 100,
-                                y: 100,
-                                width: 500,
-                                height: 500,
-                                payload: PAYLOAD_MOCK
-                            }
-                        }
-                    })
-                );
-
-                spectator.detectChanges();
-
-                const emaTools = spectator.debugElement.query(
-                    By.css('[data-testId="contentlet-tools"]')
-                );
-
-                spectator.triggerEventHandler(emaTools, 'moveStart', {
-                    container: {
-                        acceptTypes: '123,456',
-                        identifier: '123',
-                        contentletsId: ['123', '456'],
-                        maxContentlets: 123,
-                        uuid: '123'
-                    }, // From container
-                    contentlet: {
-                        identifier: '456' // The contentlet to move
-                    }
-                });
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.detectComponentChanges();
-
-                const dropZone = spectator.debugElement.query(By.css('[data-testId="dropzone"]'));
-
-                spectator.triggerEventHandler(dropZone, 'place', {
-                    container: {
-                        acceptTypes: '123,456',
-                        identifier: '123',
-                        contentletsId: ['123'],
-                        maxContentlets: 123,
-                        uuid: '456'
-                    }, // Another container
-                    position: 'after',
-                    contentlet: {
-                        identifier: '123' // The pivot
-                    }
-                });
-
-                const newPageContainers = [
-                    {
-                        identifier: '123',
-                        uuid: '123',
-                        contentletsId: ['123'],
-                        personaTag: 'dot:persona'
-                    },
-                    {
-                        identifier: '123',
-                        uuid: '456',
-                        contentletsId: ['123', '456'],
-                        personaTag: 'dot:persona'
-                    }
-                ];
-
-                expect(saveSpy).toHaveBeenCalledWith({
-                    pageContainers: newPageContainers,
-                    pageId: '123',
-                    params: {
-                        language_id: 1,
-                        url: 'page-one'
-                    }
-                });
-            });
-        });
-
-        describe('palette', () => {
-            it('should render a palette', () => {
-                spectator.detectChanges();
-
-                const palette = spectator.query(EditEmaPaletteComponent);
-                expect(palette).toBeDefined();
-            });
-
-            it('should post to iframe to get bound on drag', () => {
-                spectator.detectChanges();
-
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
-                const postMessageSpy = jest.spyOn(
-                    iframe.nativeElement.contentWindow,
-                    'postMessage'
-                );
-
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', {
-                    target: {
-                        dataset: {
+                    expect(setDragItemSpy).toHaveBeenCalledWith({
+                        baseType: contentlet.baseType,
+                        contentType: contentlet.contentType,
+                        draggedPayload: {
+                            item: {
+                                contentlet
+                            },
                             type: 'contentlet',
-                            item: JSON.stringify({
-                                contentlet: {
-                                    identifier: '123',
-                                    title: 'hello world'
-                                }
-                            })
+                            move: false
                         }
-                    }
+                    });
                 });
 
-                spectator.detectComponentChanges();
+                it('should call the setDragItem from the store for contentlets and move', () => {
+                    const contentlet = CONTENTLETS_MOCK[0];
 
-                expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
-            });
+                    const container = {
+                        acceptTypes:
+                            'CallToAction,webPageContent,calendarEvent,Image,Product,Video,dotAsset,Blog,Banner,Activity,WIDGET,FORM',
+                        identifier: '//demo.dotcms.com/application/containers/default/',
+                        maxContentlets: '25',
+                        uuid: '2',
+                        contentletsId: [
+                            '4694d40b-d9be-4e09-b031-64ee3e7c9642',
+                            '6ac5921e-e062-49a6-9808-f41aff9343c5'
+                        ]
+                    };
 
-            it('should show drop zone on iframe message', () => {
-                spectator.detectChanges();
+                    const setDragItemSpy = jest.spyOn(store, 'setDragItem');
 
-                let dropZone = spectator.query(EmaPageDropzoneComponent);
-
-                expect(dropZone).toBeNull();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
+                    const target = {
+                        target: {
+                            dataset: {
+                                type: 'contentlet',
+                                item: JSON.stringify({
+                                    contentlet,
+                                    container,
+                                    move: true
+                                })
+                            }
                         }
-                    })
-                );
+                    };
 
-                spectator.triggerEventHandler(
-                    EditEmaPaletteComponent,
-                    'dragStart',
-                    dragMoveEventMock
-                );
+                    const dragStart = new Event('dragstart');
 
-                spectator.detectComponentChanges();
+                    Object.defineProperty(dragStart, 'target', {
+                        writable: false,
+                        value: target.target
+                    });
 
-                dropZone = spectator.query(EmaPageDropzoneComponent);
+                    window.dispatchEvent(dragStart);
 
-                expect(dropZone.containers).toBe(BOUNDS_MOCK);
-                expect(dropZone.dragItem).toEqual({
-                    contentType: 'File',
-                    baseType: 'CONTENT'
-                });
-            });
-
-            it('should hide drop zone on palette drop', () => {
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
+                    expect(setDragItemSpy).toHaveBeenCalledWith({
+                        baseType: contentlet.baseType,
+                        contentType: contentlet.contentType,
+                        draggedPayload: {
+                            item: {
+                                contentlet,
+                                container
+                            },
+                            type: 'contentlet',
+                            move: true
                         }
-                    })
-                );
-
-                spectator.triggerEventHandler(
-                    EditEmaPaletteComponent,
-                    'dragStart',
-                    dragAddEventMock
-                );
-
-                spectator.detectComponentChanges();
-
-                let dropZone = spectator.query(EmaPageDropzoneComponent);
-
-                const dropZoneDebugElement = spectator.debugElement.query(
-                    By.css('[data-testId="dropzone"]')
-                );
-
-                expect(dropZone.dragItem).toEqual({
-                    contentType: 'Banner',
-                    baseType: 'CONTENT'
+                    });
                 });
-                expect(dropZone.containers).toBe(BOUNDS_MOCK);
+            });
 
-                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
-                    ...PAYLOAD_MOCK,
-                    position: 'after'
+            describe('drag over', () => {
+                it('should prevent default to avoid opening files', () => {
+                    const dragOver = new Event('dragover');
+                    const preventDefaultSpy = jest.spyOn(dragOver, 'preventDefault');
+
+                    window.dispatchEvent(dragOver);
+
+                    expect(preventDefaultSpy).toHaveBeenCalled();
                 });
-                spectator.detectComponentChanges();
-
-                dropZone = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZone).toBeNull();
-            });
-        });
-    });
-
-    describe('without edit permission', () => {
-        let spectator: SpectatorRouting<EditEmaEditorComponent>;
-        let store: EditEmaStore;
-
-        const createComponent = createRouting({ canEdit: false, canRead: true });
-        beforeEach(() => {
-            spectator = createComponent({
-                queryParams: { language_id: 1, url: 'page-one' }
             });
 
-            store = spectator.inject(EditEmaStore, true);
+            describe('drag end', () => {
+                it('should reset the editor state to IDLE when dropEffect is none', () => {
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
 
-            store.load({
-                url: 'index',
-                language_id: '1',
-                clientHost: '',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    const dragEnd = new Event('dragend');
+
+                    Object.defineProperty(dragEnd, 'dataTransfer', {
+                        writable: false,
+                        value: {
+                            dropEffect: 'none'
+                        }
+                    });
+
+                    window.dispatchEvent(dragEnd);
+
+                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                });
+                it('should not reset the editor state to IDLE when dropEffect is not none', () => {
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    const dragEnd = new Event('dragend');
+
+                    Object.defineProperty(dragEnd, 'dataTransfer', {
+                        writable: false,
+                        value: {
+                            dropEffect: 'copy'
+                        }
+                    });
+
+                    window.dispatchEvent(dragEnd);
+
+                    expect(updateEditorStateSpy).not.toHaveBeenCalled();
+                });
+            });
+
+            describe('drag leave', () => {
+                it('should set the editor state to OUT_OF_BOUNDS', () => {
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    const dragLeave = new Event('dragleave');
+
+                    Object.defineProperties(dragLeave, {
+                        x: {
+                            value: 0
+                        },
+                        y: {
+                            value: 0
+                        },
+                        relatedTarget: {
+                            value: undefined // this is undefined when the mouse leaves the window
+                        }
+                    });
+
+                    window.dispatchEvent(dragLeave);
+
+                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.OUT_OF_BOUNDS);
+                });
+                it('should not set the editor state to OUT_OF_BOUNDS when the leave is from an element in the window', () => {
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    const dragLeave = new Event('dragleave');
+
+                    Object.defineProperties(dragLeave, {
+                        x: {
+                            value: 900
+                        },
+                        y: {
+                            value: 1200
+                        },
+                        relatedTarget: {
+                            value: {}
+                        }
+                    });
+
+                    window.dispatchEvent(dragLeave);
+
+                    expect(updateEditorStateSpy).not.toHaveBeenCalled();
+                });
+            });
+
+            describe('drag enter', () => {
+                it('should call the event prevent default to prevent file opening', () => {
+                    const dragEnter = new Event('dragenter');
+
+                    const preventDefaultSpy = jest.spyOn(dragEnter, 'preventDefault');
+
+                    Object.defineProperty(dragEnter, 'fromElement', {
+                        writable: false,
+                        value: undefined
+                    }); // fromElement is falsy when the mouse enters the window
+
+                    window.dispatchEvent(dragEnter);
+
+                    expect(preventDefaultSpy).toHaveBeenCalled();
+                });
+
+                it('should set the dragItem if there is no dragItem', () => {
+                    const setDragItemSpy = jest.spyOn(store, 'setDragItem');
+
+                    const dragEnter = new Event('dragenter');
+
+                    Object.defineProperty(dragEnter, 'fromElement', {
+                        writable: false,
+                        value: undefined
+                    }); // fromElement is falsy when the mouse enters the window
+
+                    window.dispatchEvent(dragEnter);
+
+                    expect(setDragItemSpy).toHaveBeenCalledWith({
+                        baseType: 'dotAsset',
+                        contentType: 'dotAsset',
+                        draggedPayload: {
+                            type: 'temp'
+                        }
+                    });
+                });
+
+                it('should set the editor to DRAGGING if there is dragItem and the state is OUT_OF_BOUNDS', () => {
+                    store.setDragItem({
+                        baseType: 'dotAsset',
+                        contentType: 'dotAsset',
+                        draggedPayload: {
+                            type: 'temp'
+                        }
+                    }); // Simulate drag start
+
+                    store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // Simulate drag leave
+
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    const dragEnter = new Event('dragenter');
+
+                    Object.defineProperty(dragEnter, 'fromElement', {
+                        writable: false,
+                        value: undefined
+                    }); // fromElement is falsy when the mouse enters the window
+
+                    window.dispatchEvent(dragEnter);
+
+                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                });
+            });
+
+            describe('drop', () => {
+                it("should call prevent default to avoid opening files when it's not a contentlet", () => {
+                    const drop = new Event('drop');
+
+                    const preventDefaultSpy = jest.spyOn(drop, 'preventDefault');
+
+                    Object.defineProperty(drop, 'target', {
+                        writable: false,
+                        value: {
+                            dataset: {
+                                dropzone: 'false'
+                            }
+                        }
+                    });
+
+                    window.dispatchEvent(drop);
+
+                    expect(preventDefaultSpy).toHaveBeenCalled();
+                });
+                it('should update the editor state when the drop is not in a dropzone', () => {
+                    const drop = new Event('drop');
+
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    Object.defineProperty(drop, 'target', {
+                        writable: false,
+                        value: {
+                            dataset: {
+                                dropzone: 'false'
+                            }
+                        }
+                    });
+
+                    window.dispatchEvent(drop);
+
+                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                });
             });
         });
 
-        it('should not render components', () => {
-            spectator.detectChanges();
-            expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
-            expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
-        });
-
-        it('should render a "Dont have permission" message', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
-        });
-
-        it('should iframe wrapper to be expanded', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('editor-content')).classList).toContain(
-                'editor-content--expanded'
-            );
-        });
-    });
-
-    describe('locked', () => {
-        describe('locked with unlock permission', () => {
+        describe('without edit permission', () => {
             let spectator: SpectatorRouting<EditEmaEditorComponent>;
             let store: EditEmaStore;
 
-            const createComponent = createRouting({ canEdit: true, canRead: true });
+            const createComponent = createRouting({ canEdit: false, canRead: true });
             beforeEach(() => {
                 spectator = createComponent({
-                    queryParams: { language_id: 7, url: 'page-one' }
+                    queryParams: { language_id: 1, url: 'page-one' }
                 });
 
                 store = spectator.inject(EditEmaStore, true);
 
                 store.load({
                     url: 'index',
-                    language_id: '7',
+                    language_id: '1',
                     clientHost: '',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
@@ -2284,7 +2153,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
             });
 
-            it('should render a banner', () => {
+            it('should render a "Dont have permission" message', () => {
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
             });
@@ -2294,6 +2163,47 @@ describe('EditEmaEditorComponent', () => {
                 expect(spectator.query(byTestId('editor-content')).classList).toContain(
                     'editor-content--expanded'
                 );
+            });
+        });
+
+        describe('locked', () => {
+            describe('locked with unlock permission', () => {
+                let spectator: SpectatorRouting<EditEmaEditorComponent>;
+                let store: EditEmaStore;
+
+                const createComponent = createRouting({ canEdit: true, canRead: true });
+                beforeEach(() => {
+                    spectator = createComponent({
+                        queryParams: { language_id: 7, url: 'page-one' }
+                    });
+
+                    store = spectator.inject(EditEmaStore, true);
+
+                    store.load({
+                        url: 'index',
+                        language_id: '7',
+                        clientHost: '',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+                });
+
+                it('should not render components', () => {
+                    spectator.detectChanges();
+                    expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
+                    expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
+                });
+
+                it('should render a banner', () => {
+                    spectator.detectChanges();
+                    expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
+                });
+
+                it('should iframe wrapper to be expanded', () => {
+                    spectator.detectChanges();
+                    expect(spectator.query(byTestId('editor-content')).classList).toContain(
+                        'editor-content--expanded'
+                    );
+                });
             });
         });
     });

@@ -7,6 +7,7 @@ import {
     ChangeDetectorRef,
     Component,
     ElementRef,
+    HostListener,
     OnDestroy,
     OnInit,
     Signal,
@@ -146,9 +147,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
 
-
     readonly editorState$ = this.store.editorState$;
-    readonly dragItem$ = this.store.dragItem$;
+    readonly dragState$ = this.store.dragState$;
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
@@ -355,36 +355,46 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // For some reason the fromElement is not in the DragEvent type
                 filter((event: DragEvent & { fromElement: HTMLElement }) => !event.fromElement), // I just want to trigger this when we are dragging from the outside
                 switchMap((event) =>
-                    this.dragItem$.pipe(
+                    this.dragState$.pipe(
                         take(1),
-                        map((dragItem) => ({
+                        map(({ dragItem, editorState }) => ({
                             event,
-                            dragItem
+                            dragItem,
+                            editorState
                         }))
                     )
                 )
             )
-            .subscribe(({ dragItem, event }: { dragItem: EmaDragItem; event: DragEvent }) => {
-                event.preventDefault();
-                // Set the temp item to be dragged, which is the outsider file if there is not a drag item
-                if (!dragItem) {
-                    this.store.setDragItem({
-                        baseType: 'dotAsset',
-                        contentType: 'dotAsset',
-                        draggedPayload: {
-                            type: 'temp'
-                        }
-                    });
-                } else {
-                    // if there is a dragItem then the state should be OUT_OF_BOUNDS
-                    this.store.updateEditorState(EDITOR_STATE.DRAGGING);
-                }
+            .subscribe(
+                ({
+                    dragItem,
+                    event,
+                    editorState
+                }: {
+                    dragItem: EmaDragItem;
+                    event: DragEvent;
+                    editorState: EDITOR_STATE;
+                }) => {
+                    event.preventDefault();
+                    // Set the temp item to be dragged, which is the outsider file if there is not a drag item
+                    if (!dragItem) {
+                        this.store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+                    } else if (editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
+                        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+                    }
 
-                this.iframe.nativeElement.contentWindow?.postMessage(
-                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-                    this.host
-                );
-            });
+                    this.iframe.nativeElement.contentWindow?.postMessage(
+                        NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+                        this.host
+                    );
+                }
+            );
 
         fromEvent(this.window, 'dragend')
             .pipe(takeUntil(this.destroy$))
@@ -404,9 +414,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .pipe(
                 takeUntil(this.destroy$),
                 switchMap((event) =>
-                    this.dragItem$.pipe(
+                    this.dragState$.pipe(
                         take(1),
-                        map((dragItem) => ({
+                        map(({ dragItem }) => ({
                             event,
                             dragItem
                         }))
@@ -455,7 +465,30 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 // I need to do this to hide the dropzone but maintain the current dragItem
-                this.store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // If you dragout of the window and is a file of SO, we need to reset the editor
+                this.store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // The user is dragging outside the window, we set this to know that user can potentially drop a file outside the window
+            });
+    }
+
+    /**
+     * Handle the reset of the editor when the user drops a file outside of the browser
+     *
+     * @param {(MouseEvent)} event
+     * @memberof EditEmaEditorComponent
+     */
+    @HostListener('mouseover', ['$event'])
+    resetEditorWhenOutOfBounds(event: MouseEvent) {
+        event.preventDefault();
+
+        this.dragState$
+            .pipe(
+                take(1),
+                filter(
+                    ({ dragItem, editorState }) =>
+                        !!dragItem && editorState === EDITOR_STATE.OUT_OF_BOUNDS // If the user dropped outside of the window and we still have a dragItem we need to clean the editor
+                )
+            )
+            .subscribe(() => {
+                this.store.updateEditorState(EDITOR_STATE.IDLE);
             });
     }
 
@@ -1230,7 +1263,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         return this.dotHttpErrorManagerService.handle(error).pipe(map(() => null));
     }
 
-    private handleFileUpload({
+    /**
+     * Handle the file upload
+     *
+     * @private
+     * @param {{
+     *         data: ClientData;
+     *         position?: string;
+     *         file: File;
+     *         dragItem: EmaDragItem;
+     *     }} {
+     *         data,
+     *         position,
+     *         file,
+     *         dragItem
+     *     }
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    handleFileUpload({
         data,
         position,
         file,
@@ -1240,8 +1291,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         position?: string;
         file: File;
         dragItem: EmaDragItem;
-    }) {
-        if (!file.type.match('image.*')) {
+    }): void {
+        if (!/image.*/.exec(file.type)) {
             this.messageService.add({
                 severity: 'error',
                 summary: this.dotMessageService.get('file-upload'),

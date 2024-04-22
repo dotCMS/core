@@ -196,35 +196,6 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
     containers: mockDotContainers()
 };
 
-export const dragMoveEventMock = {
-    target: {
-        dataset: {
-            type: 'contentlet',
-            item: JSON.stringify({
-                identifier: '123',
-                title: 'hello world',
-                contentType: 'File',
-                baseType: 'CONTENT'
-            })
-        }
-    }
-};
-
-export const dragAddEventMock = {
-    target: {
-        dataset: {
-            type: 'contentlet',
-            item: JSON.stringify({
-                contentlet: {
-                    identifier: '322b7cc0-3ab9-4267-97f7-9634e519d5a8'
-                },
-                contentType: 'Banner',
-                baseType: 'CONTENT'
-            })
-        }
-    }
-};
-
 export const dotPageContainerStructureMock: DotPageContainerStructure = {
     '123': {
         container: {

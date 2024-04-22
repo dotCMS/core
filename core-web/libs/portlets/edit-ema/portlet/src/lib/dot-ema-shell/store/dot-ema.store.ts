@@ -302,6 +302,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
+    readonly dragState$ = this.select(this.stateLoad$, this.dragItem$, (editorState, dragItem) => ({
+        editorState,
+        dragItem
+    }));
+
     /**
      * Concurrently loads page and license data to updat the state.
      *
