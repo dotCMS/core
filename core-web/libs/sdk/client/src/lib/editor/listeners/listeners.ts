@@ -2,7 +2,8 @@ import { CUSTOMER_ACTIONS, postMessageToEditor } from '../models/client.model';
 import { DotCMSPageEditorConfig } from '../models/editor.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CUSTOMER } from '../models/listeners.model';
 import {
-    findContentletElement,
+    findVTLData,
+    findDotElement,
     getClosestContainerData,
     getPageElementBound
 } from '../utils/editor.utils';
@@ -98,24 +99,42 @@ export function listenEditorMessages() {
  */
 export function listenHoveredContentlet() {
     const pointerMoveCallback = (event: PointerEvent) => {
-        const target = findContentletElement(event.target as HTMLElement);
-        if (!target) return;
-        const { x, y, width, height } = target.getBoundingClientRect();
+        const foundElement = findDotElement(event.target as HTMLElement);
 
+        if (!foundElement) return;
+
+        const { x, y, width, height } = foundElement.getBoundingClientRect();
+
+        const isContainer = foundElement.dataset?.['dotObject'] === 'container';
+
+        const contentletForEmptyContainer = {
+            identifier: 'TEMP_EMPTY_CONTENTLET',
+            title: 'TEMP_EMPTY_CONTENTLET',
+            contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
+            inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
+            widgetTitle: 'TEMP_EMPTY_CONTENTLET',
+            onNumberOfPages: 1
+        };
+
+        const contentlet = {
+            identifier: foundElement.dataset?.['dotIdentifier'],
+            title: foundElement.dataset?.['dotTitle'],
+            inode: foundElement.dataset?.['dotInode'],
+            contentType: foundElement.dataset?.['dotType'],
+            widgetTitle: foundElement.dataset?.['dotWidgetTitle'],
+            onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages']
+        };
+
+        const vtlFiles = findVTLData(foundElement);
         const contentletPayload = {
             container:
                 // Here extract dot-container from contentlet if is Headless
                 // or search in parent container if is VTL
-                target.dataset?.['dotContainer']
-                    ? JSON.parse(target.dataset?.['dotContainer'])
-                    : getClosestContainerData(target),
-            contentlet: {
-                identifier: target.dataset?.['dotIdentifier'],
-                title: target.dataset?.['dotTitle'],
-                inode: target.dataset?.['dotInode'],
-                contentType: target.dataset?.['dotType'],
-                onNumberOfPages: target.dataset?.['dotOnNumberOfPages']
-            }
+                foundElement.dataset?.['dotContainer']
+                    ? JSON.parse(foundElement.dataset?.['dotContainer'])
+                    : getClosestContainerData(foundElement),
+            contentlet: isContainer ? contentletForEmptyContainer : contentlet,
+            vtlFiles
         };
 
         postMessageToEditor({
@@ -178,40 +197,6 @@ export function preserveScrollOnIframe() {
         type: 'listener',
         event: 'scroll',
         callback: preserveScrollCallback
-    });
-}
-
-/**
- * Listens for changes in the content and triggers a customer action when the content changes.
- *
- * @private
- * @memberof DotCMSPageEditor
- */
-export function listenContentChange() {
-    const observer = new MutationObserver((mutationsList) => {
-        for (const { addedNodes, removedNodes, type } of mutationsList) {
-            if (type === 'childList') {
-                const didNodesChanged = [
-                    ...Array.from(addedNodes),
-                    ...Array.from(removedNodes)
-                ].filter(
-                    (node) => (node as HTMLDivElement).dataset?.['dotObject'] === 'contentlet'
-                ).length;
-
-                if (didNodesChanged) {
-                    postMessageToEditor({
-                        action: CUSTOMER_ACTIONS.CONTENT_CHANGE
-                    });
-                }
-            }
-        }
-    });
-
-    observer.observe(document, { childList: true, subtree: true });
-
-    subscriptions.push({
-        type: 'observer',
-        observer
     });
 }
 

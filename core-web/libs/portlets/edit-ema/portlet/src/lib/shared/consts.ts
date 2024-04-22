@@ -1,8 +1,17 @@
 import { InjectionToken } from '@angular/core';
 
-import { DotPersona } from '@dotcms/dotcms-models';
+import { mockSites } from '@dotcms/dotcms-js';
+import { CONTAINER_SOURCE, DotPageContainerStructure, DotPersona } from '@dotcms/dotcms-models';
+import {
+    mockDotLayout,
+    mockDotTemplate,
+    mockDotContainers,
+    dotcmsContentletMock
+} from '@dotcms/utils-testing';
 
 import { ActionPayload } from './models';
+
+import { DotPageApiResponse } from '../services/dot-page-api.service';
 
 export const EDIT_CONTENTLET_URL =
     '/c/portal/layout?p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=';
@@ -14,6 +23,10 @@ export const HOST = 'http://localhost:3000';
 export const EDIT_MODE = 'EDIT_MODE';
 
 export const WINDOW = new InjectionToken<Window>('WindowToken');
+
+export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
+
+export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 export const DEFAULT_PERSONA: DotPersona = {
     hostFolder: 'SYSTEM_HOST',
@@ -148,4 +161,246 @@ export const PAYLOAD_MOCK: ActionPayload = {
     ],
     pageId: 'a9f30020-54ef-494e-92ed-645e757171c2',
     position: 'before'
+};
+
+export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
+    page: {
+        pageURI: 'test-url',
+        title: 'Test Page',
+        identifier: '123',
+        inode: '123-i',
+        canEdit: true,
+        canRead: true,
+        contentType: 'htmlpageasset',
+        canLock: true,
+        locked: false,
+        lockedBy: '',
+        lockedByName: ''
+    },
+    viewAs: {
+        language: {
+            id: 1,
+            language: 'English',
+            countryCode: 'US',
+            languageCode: '1',
+            country: 'United States'
+        },
+
+        persona: {
+            ...DEFAULT_PERSONA
+        }
+    },
+    site: mockSites[0],
+    layout: mockDotLayout(),
+    template: mockDotTemplate(),
+    containers: mockDotContainers()
+};
+
+export const dragMoveEventMock = {
+    target: {
+        dataset: {
+            type: 'contentlet',
+            item: JSON.stringify({
+                identifier: '123',
+                title: 'hello world',
+                contentType: 'File',
+                baseType: 'CONTENT'
+            })
+        }
+    }
+};
+
+export const dragAddEventMock = {
+    target: {
+        dataset: {
+            type: 'contentlet',
+            item: JSON.stringify({
+                contentlet: {
+                    identifier: '322b7cc0-3ab9-4267-97f7-9634e519d5a8'
+                },
+                contentType: 'Banner',
+                baseType: 'CONTENT'
+            })
+        }
+    }
+};
+
+export const dotPageContainerStructureMock: DotPageContainerStructure = {
+    '123': {
+        container: {
+            archived: false,
+            categoryId: '123',
+            deleted: false,
+            friendlyName: '123',
+            identifier: '123',
+            live: false,
+            locked: false,
+            maxContentlets: 123,
+            name: '123',
+            path: '123',
+            pathName: '123',
+            postLoop: '123',
+            preLoop: '123',
+            source: CONTAINER_SOURCE.DB,
+            title: '123',
+            type: '123',
+            working: false
+        },
+        containerStructures: [
+            {
+                contentTypeVar: '123'
+            }
+        ],
+        contentlets: {
+            '123': [
+                {
+                    baseType: '123',
+                    content: 'something',
+                    contentType: '123',
+                    dateCreated: '123',
+                    dateModifed: '123',
+                    folder: '123',
+                    host: '123',
+                    identifier: '123',
+                    inode: '123',
+                    languageId: 123,
+                    live: false,
+                    locked: false,
+                    modDate: '123',
+                    modUser: '123',
+                    owner: '123',
+                    working: false,
+                    url: '123',
+                    stInode: '123',
+                    deleted: false,
+                    hostName: '123',
+                    archived: false,
+                    hasTitleImage: false,
+                    image: '123',
+                    title: '123',
+                    sortOrder: 123,
+                    __icon__: '123',
+                    modUserName: '123',
+                    titleImage: '123'
+                },
+                {
+                    baseType: '456',
+                    content: 'something',
+                    contentType: '456',
+                    dateCreated: '456',
+                    folder: '456',
+                    identifier: '456',
+                    inode: '456',
+                    languageId: 456,
+                    live: false,
+                    dateModifed: '456',
+                    modDate: '456',
+                    host: '456',
+                    working: false,
+                    title: '456',
+                    locked: false,
+                    archived: false,
+                    owner: '456',
+                    url: '456',
+                    modUser: '456',
+                    __icon__: '456',
+                    deleted: false,
+                    hasTitleImage: false,
+                    titleImage: '456',
+                    hostName: '456',
+                    sortOrder: 456,
+                    image: '456',
+                    stInode: '456',
+                    modUserName: '456'
+                }
+            ],
+            '456': [
+                {
+                    contentType: '123',
+                    content: 'something',
+                    dateCreated: '123',
+                    baseType: '123',
+                    folder: '123',
+                    dateModifed: '123',
+                    identifier: '123',
+                    host: '123',
+                    live: false,
+                    inode: '123',
+                    locked: false,
+                    languageId: 123,
+                    owner: '123',
+                    working: false,
+                    modDate: '123',
+                    modUser: '123',
+                    title: '123',
+                    image: '123',
+                    archived: false,
+                    titleImage: '123',
+                    url: '123',
+                    __icon__: '123',
+                    deleted: false,
+                    hasTitleImage: false,
+                    hostName: '123',
+                    modUserName: '123',
+                    stInode: '123',
+                    sortOrder: 123
+                }
+            ]
+        }
+    }
+};
+
+export const PAGE_INODE_MOCK = '1234';
+
+export const QUERY_PARAMS_MOCK = { language_id: 1, url: 'page-one' };
+
+export const TREE_NODE_MOCK = {
+    containerId: '123',
+    contentId: '123',
+    pageId: '123',
+    relationType: 'test',
+    treeOrder: '1',
+    variantId: 'test',
+    personalization: 'dot:default'
+};
+
+export const newContentlet = {
+    ...dotcmsContentletMock,
+    inode: '123',
+    title: 'test'
+};
+
+export const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
+    language_id: '1',
+    pageContainers: [
+        {
+            identifier: 'test',
+            uuid: 'test',
+            contentletsId: []
+        }
+    ],
+    contentlet: {
+        identifier: 'contentlet-identifier-123',
+        inode: 'contentlet-inode-123',
+        title: 'Hello World',
+        contentType: 'test',
+        onNumberOfPages: 1
+    },
+    container: {
+        identifier: 'test',
+        acceptTypes: 'test',
+        uuid: 'test',
+        maxContentlets: 1,
+        contentletsId: ['123'],
+        variantId: '123'
+    },
+    pageId: 'test',
+    position: 'before'
+};
+
+export const URL_CONTENT_MAP_MOCK = {
+    contentType: 'Blog',
+    identifier: '123',
+    inode: '1234',
+    title: 'hello world'
 };

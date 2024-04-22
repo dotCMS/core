@@ -1,11 +1,10 @@
 import {
-    listenContentChange,
     listenEditorMessages,
     listenHoveredContentlet,
     pingEditor,
     scrollHandler,
-    subscriptions,
-    setPageEditorConfig
+    setPageEditorConfig,
+    subscriptions
 } from './listeners/listeners';
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig } from './models/editor.model';
@@ -30,11 +29,11 @@ export function updateNavigation(pathname: string) {
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
  */
 export function isInsideEditor() {
-    if (window.parent === window) {
+    if (typeof window === 'undefined') {
         return false;
     }
 
-    return true;
+    return window.parent !== window;
 }
 
 /**
@@ -51,7 +50,6 @@ export function initEditor(config?: DotCMSPageEditorConfig) {
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();
-    listenContentChange();
 }
 
 /**

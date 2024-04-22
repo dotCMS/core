@@ -116,27 +116,39 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     /**
      * Returns a collection of contentlets, folders, links based on diff attributes of the BrowserQuery
+     * object. The collection is filtered based on the user's permissions respecting front-end roles
      * @param browserQuery {@link BrowserQuery}
      * @return list of treeable (folders, content, links)
      * @throws DotSecurityException
      * @throws DotDataException
      */
     @Override
-    @CloseDBIfOpened
     public List<Treeable> getFolderContentList(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException {
+      return getFolderContentList(browserQuery, true);
+    }
 
-        final List<Treeable> returnList = new ArrayList<>();
+    /**
+     * Returns a collection of contentlets, folders, links based on diff attributes of the BrowserQuery
+     * @param browserQuery {@link BrowserQuery}
+     * @param respectFrontEndRoles if true, the method will respect the front end roles
+     * @return list of treeable (folders, content, links)
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Override
+    @CloseDBIfOpened
+    public List<Treeable> getFolderContentList(final BrowserQuery browserQuery, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException{
 
         final List<Contentlet> contentlets = browserQuery.showContent ? getContentUnderParentFromDB(browserQuery)
                 : Collections.emptyList();
-        returnList.addAll(contentlets);
+        final List<Treeable> returnList = new ArrayList<>(contentlets);
 
         if (browserQuery.showFolders) {
             List<Folder> folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(), false);
             if (browserQuery.showMenuItemsOnly) {
                 folders.removeIf(folder -> !folder.isShowOnMenu());
             }
-            folders.forEach(folder -> returnList.add(folder));
+            returnList.addAll(folders);
         }
 
         if (browserQuery.showLinks) {
@@ -144,10 +156,10 @@ public class BrowserAPIImpl implements BrowserAPI {
             if(browserQuery.showMenuItemsOnly){
                 links.removeIf(link -> !link.isShowOnMenu());
             }
-            links.forEach(link -> returnList.add(link));
+            returnList.addAll(links);
         }
 
-        return permissionAPI.filterCollection(returnList,PERMISSION_READ,true, browserQuery.user);
+        return permissionAPI.filterCollection(returnList, PERMISSION_READ, respectFrontEndRoles, browserQuery.user);
     }
 
     @Override

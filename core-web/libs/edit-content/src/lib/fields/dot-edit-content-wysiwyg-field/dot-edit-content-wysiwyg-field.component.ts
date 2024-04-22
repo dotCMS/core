@@ -1,23 +1,41 @@
 import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
+import { of } from 'rxjs';
 import { RawEditorOptions } from 'tinymce';
 
-import { ChangeDetectionStrategy, Component, Input, inject, signal } from '@angular/core';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
+
+import { catchError } from 'rxjs/operators';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 
+import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
+
+const DEFAULT_CONFIG = {
+    menubar: false,
+    image_caption: true,
+    image_advtab: true,
+    contextmenu: 'align link image',
+    toolbar1:
+        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent dotAddImage hr',
+    plugins:
+        'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template'
+};
+
 @Component({
-    selector: 'dot-wysiwyg-field',
+    selector: 'dot-edit-content-wysiwyg-field',
     standalone: true,
-    imports: [EditorModule, FormsModule, ReactiveFormsModule],
+    imports: [EditorModule, FormsModule, ReactiveFormsModule, HttpClientModule],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
     styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
+        HttpClient,
         DialogService,
         DotWysiwygPluginService,
         { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }
@@ -29,24 +47,30 @@ import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin
         }
     ]
 })
-export class DotEditContentWYSIWYGFieldComponent {
+export class DotEditContentWYSIWYGFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
 
+    private readonly http = inject(HttpClient);
     private readonly dotWysiwygPluginService = inject(DotWysiwygPluginService);
 
-    protected readonly init: RawEditorOptions = {
-        menubar: false,
-        image_caption: true,
-        image_advtab: true,
-        contextmenu: 'align link image',
-        setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor)
-    };
+    private readonly configPath = '/api/vtl/tinymceprops';
+    protected readonly init = signal<RawEditorOptions>(null);
 
-    protected readonly plugins = signal(
-        'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template'
-    );
+    ngOnInit(): void {
+        const { tinymceprops } = getFieldVariablesParsed(this.field.fieldVariables);
+        const variables = stringToJson(tinymceprops as string);
 
-    protected readonly toolbar = signal(
-        'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent dotAddImage hr'
-    );
+        this.http
+            .get<RawEditorOptions>(this.configPath)
+            .pipe(catchError(() => of({})))
+            .subscribe((GLOBAL_CONFIG = {}) => {
+                this.init.set({
+                    setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor),
+                    ...DEFAULT_CONFIG,
+                    ...GLOBAL_CONFIG,
+                    ...variables,
+                    theme: 'silver' // In the new version, there is only one theme, which is the default one. Docs: https://www.tiny.cloud/docs/tinymce/latest/editor-theme/
+                });
+            });
+    }
 }

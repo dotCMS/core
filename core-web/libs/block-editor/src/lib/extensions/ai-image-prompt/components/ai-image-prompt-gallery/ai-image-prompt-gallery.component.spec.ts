@@ -101,4 +101,15 @@ describe('AiImagePromptGalleryComponent', () => {
 
         expect(emitterSpy).toHaveBeenCalled();
     });
+
+    it('should display error message when images is not empty and has error', () => {
+        spectator.setInput({
+            isLoading: false,
+            images: errorImagesMock
+        });
+        spectator.detectChanges();
+
+        const errorContainer = spectator.query(DotEmptyContainerComponent);
+        expect(errorContainer.configuration.title).toEqual(errorImagesMock[0].error);
+    });
 });

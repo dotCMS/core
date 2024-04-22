@@ -201,7 +201,7 @@ public class Validator {
 	private static boolean defaultEmailValidation (String ea){
 		int eaLength = ea.length();
 
-		if (eaLength < 6) {
+		if (eaLength < 6 || eaLength>=100) {
 
 			// j@j.c
 

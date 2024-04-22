@@ -92,6 +92,7 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
             var localContent = map(localFile, comparator.type());
 
             var matchingServerContent = comparator.findMatchingServerContent(
+                    localFile,
                     localContent,
                     serverContents
             );
@@ -161,8 +162,10 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
 
         for (T serverContent : serverContents) {
 
-            var local = comparator.localContains(serverContent, localContents);
-            if (local.isEmpty()) {
+            var localMatch = comparator.existMatchingLocalContent(
+                    serverContent, localFiles, localContents
+            );
+            if (!localMatch) {
                 removals.add(
                         PushAnalysisResult.<T>builder().
                                 action(PushAction.REMOVE).

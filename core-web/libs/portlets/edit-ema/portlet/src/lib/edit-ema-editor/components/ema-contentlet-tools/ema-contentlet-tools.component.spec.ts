@@ -72,6 +72,29 @@ describe('EmaContentletToolsComponent', () => {
             expect(spectator.query(byTestId('drag-image'))).toHaveText('test');
         });
 
+        it('should close menus when contentlet @input was changed', () => {
+            const spyHideMenus = jest.spyOn(spectator.component, 'hideMenus');
+
+            const hideMenu = jest.spyOn(spectator.component.menu, 'hide');
+            // Open menu
+            spectator.click('[data-testId="menu-add"]');
+
+            //Change contentlet hover
+            spectator.setInput('contentlet', {
+                ...contentletAreaMock,
+                payload: {
+                    ...contentletAreaMock.payload,
+                    contentlet: {
+                        ...contentletAreaMock.payload.contentlet,
+                        identifier: 'new-identifier'
+                    }
+                }
+            });
+
+            expect(spyHideMenus).toHaveBeenCalled();
+            expect(hideMenu).toHaveBeenCalled();
+        });
+
         describe('events', () => {
             it('should emit delete on delete button click', () => {
                 const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
@@ -277,7 +300,13 @@ describe('EmaContentletToolsComponent', () => {
                                     title: 'Fake title',
                                     contentType: 'Fake content type'
                                 },
-                                container: undefined,
+                                container: {
+                                    uuid: '',
+                                    acceptTypes: '',
+                                    identifier: '',
+                                    maxContentlets: 0,
+                                    variantId: ''
+                                },
                                 language_id: '1',
                                 pageContainers: [],
                                 pageId: '1',
@@ -292,6 +321,38 @@ describe('EmaContentletToolsComponent', () => {
             expect(spectator.query(byTestId('add-top-button'))).toBeDefined();
             expect(spectator.query(byTestId('add-bottom-button'))).toBeNull();
             expect(spectator.query(byTestId('actions'))).toBeNull();
+        });
+    });
+
+    describe('VTL contentlet', () => {
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    props: {
+                        contentlet: {
+                            ...contentletAreaMock,
+                            payload: {
+                                ...contentletAreaMock.payload,
+                                vtlFiles: [
+                                    {
+                                        inode: '123',
+                                        name: 'test.vtl'
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }))
+        );
+
+        it('should set right position for actions', () => {
+            const topButton = spectator.query(byTestId('actions'));
+            expect(topButton).toHaveStyle({
+                position: 'absolute',
+                left: '414px',
+                top: '80px',
+                zIndex: '1'
+            });
         });
     });
 });

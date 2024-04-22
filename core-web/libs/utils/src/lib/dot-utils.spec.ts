@@ -1,40 +1,69 @@
-// import { DotPageRenderState } from '../../../../apps/dotcms-ui/src/app/portlets/dot-edit-page/shared/models';
-// import { mockDotRenderedPage } from '../../../../apps/dotcms-ui/src/app/test/dot-page-render.mock';
-// import { mockUser } from '../../../../apps/dotcms-ui/src/app/test/login-service.mock';
-// import { getDownloadLink } from './dot-utils';
-// import { DotPageRender } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
-// describe('Dot Utils', () => {
-//     it('should return anchor with the correct values', () => {
-//         const blobMock = new Blob(['']);
-//         const fileName = 'doc.txt';
-//         spyOn(window.URL, 'createObjectURL');
-//         const anchor = getDownloadLink(blobMock, fileName);
+import { getImageAssetUrl } from './dot-utils';
 
-//         expect(anchor.download).toEqual(fileName);
-//         expect(window.URL.createObjectURL).toHaveBeenCalledWith(blobMock);
-//     });
+describe('Dot Utils', () => {
+    describe('getImageAssetUrl', () => {
+        it('should return fileAssetVersion when baseType is FILEASSET and fileAssetVersion is defined', () => {
+            const contentlet = {
+                ...EMPTY_CONTENTLET,
+                baseType: DotCMSBaseTypesContentTypes.FILEASSET,
+                fileAssetVersion: 'fileAssetVersion',
+                fileAsset: 'fileAsset'
+            };
 
-//     it('should return unique URL with host, language and device Ids', () => {
-//         const mockRenderedPageState = new DotPageRenderState(
-//             mockUser(),
-//             new DotPageRender({
-//                 ...mockDotRenderedPage(),
-//                 viewAs: {
-//                     ...mockDotRenderedPage().viewAs,
-//                     device: {
-//                         identifier: 'abc123',
-//                         cssHeight: '800',
-//                         cssWidth: '1200',
-//                         name: 'custom',
-//                         inode: '123zxc'
-//                     }
-//                 }
-//             })
-//         );
+            expect(getImageAssetUrl(contentlet)).toEqual('fileAssetVersion');
+        });
 
-//         const url = dotUtils.generateDotFavoritePageUrl(mockRenderedPageState);
+        it('should return fileAsset when baseType is FILEASSET and fileAssetVersion is not defined', () => {
+            const contentlet = {
+                ...EMPTY_CONTENTLET,
+                baseType: DotCMSBaseTypesContentTypes.FILEASSET,
+                fileAsset: 'fileAsset'
+            };
 
-//         expect(url).toEqual('/an/url/test?&language_id=1&device_id=abc123');
-//     });
-// });
+            expect(getImageAssetUrl(contentlet)).toEqual('fileAsset');
+        });
+
+        it('should return assetVersion when baseType is DOTASSET and assetVersion is defined', () => {
+            const contentlet = {
+                ...EMPTY_CONTENTLET,
+                baseType: DotCMSBaseTypesContentTypes.DOTASSET,
+                assetVersion: 'assetVersion',
+                asset: 'asset'
+            };
+
+            expect(getImageAssetUrl(contentlet)).toEqual('assetVersion');
+        });
+
+        it('should return asset when baseType is DOTASSET and assetVersion is not defined', () => {
+            const contentlet = {
+                ...EMPTY_CONTENTLET,
+                baseType: DotCMSBaseTypesContentTypes.DOTASSET,
+                asset: 'asset'
+            };
+
+            expect(getImageAssetUrl(contentlet)).toEqual('asset');
+        });
+
+        it('should return asset when baseType is not FILEASSET or DOTASSET', () => {
+            const contentlet = {
+                ...EMPTY_CONTENTLET,
+                baseType: 'OTHER',
+                asset: 'asset'
+            };
+
+            expect(getImageAssetUrl(contentlet)).toEqual('asset');
+        });
+
+        it('should return empty string when asset is not defined and baseType is not FILEASSET or DOTASSET', () => {
+            const contentlet = {
+                ...EMPTY_CONTENTLET,
+                baseType: 'OTHER'
+            };
+
+            expect(getImageAssetUrl(contentlet)).toEqual('');
+        });
+    });
+});
