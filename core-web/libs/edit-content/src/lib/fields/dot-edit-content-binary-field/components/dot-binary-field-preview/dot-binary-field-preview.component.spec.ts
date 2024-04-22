@@ -298,5 +298,23 @@ describe('DotBinaryFieldPreviewComponent', () => {
                 inodeOrIdentifier: CONTENTLET_MOCK.identifier
             });
         }));
+
+        it('should not show file resolution', () => {
+            spectator.setInput('contentlet', {
+                ...CONTENTLET_MOCK,
+                BinaryMetaData: {
+                    ...BINARY_FIELD_CONTENTLET.binaryMetaData,
+                    height: 0,
+                    width: 0
+                }
+            });
+
+            spectator.detectChanges();
+
+            clickOnInfoButton(spectator);
+
+            const resolution = spectator.query(byTestId('file-resolution'));
+            expect(resolution).toBeNull();
+        });
     });
 });
