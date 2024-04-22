@@ -24,6 +24,7 @@
     <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
     <dot-edit-content-aside
         class="sidebar"
+        [loading]="vm.loading"
         [contentlet]="vm.contentlet"
         [contentType]="vm.contentType" />
 </ng-container>

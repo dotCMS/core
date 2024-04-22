@@ -3,6 +3,7 @@ import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ChipModule } from 'primeng/chip';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -23,6 +24,7 @@ import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
         RouterLink,
         TooltipModule,
         ChipModule,
+        SkeletonModule,
         DotCopyButtonComponent,
         DotLinkComponent,
         ContentletStatusPipe,

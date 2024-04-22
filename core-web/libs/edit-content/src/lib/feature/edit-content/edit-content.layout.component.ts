@@ -76,7 +76,8 @@ export class EditContentLayoutComponent implements OnInit {
             this.store.setState({
                 contentType,
                 actions,
-                contentlet
+                contentlet,
+                loading: false
             });
         });
     }

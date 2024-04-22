@@ -86,6 +86,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         user-select: none;
+        min-height: 5rem;
 
         &,
         & > * {

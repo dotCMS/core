@@ -23,4 +23,5 @@ import { DotContentAsideWorkflowComponent } from './components/dot-content-aside
 export class DotEditContentAsideComponent {
     @Input() contentlet!: DotCMSContentlet;
     @Input() contentType!: DotCMSContentType;
+    @Input() loading!: boolean;
 }

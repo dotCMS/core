@@ -29,7 +29,13 @@
             </div>
         </div>
         <div class="content-history__container" data-testId="history-container">
-            @if(contentlet?.publishDate) {
+            @if(loading) { @for(title of ['Published','Modified','Created'] ; track $index) {
+            <div class="content-history">
+                <label class="content-history__title">{{ title | dm }}</label>
+                <p-skeleton class="content-history__author" width="89.33px" height="14px" />
+                <p-skeleton class="content-history__date" width="89.33px" height="14px" />
+            </div>
+            } } @else { @if(contentlet?.publishDate) {
             <div
                 class="content-history"
                 [pTooltip]="contentlet?.publishDate | date : 'MMM dd, yyyy'"
@@ -67,6 +73,7 @@
                     contentlet?.createDate | dotRelativeDate : 'MM/dd/yyyy' : null
                 }}</label>
             </div>
+            }
         </div>
     </div>
 </div>
