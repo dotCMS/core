@@ -35,5 +35,48 @@
                 [ngStyle]="{ position: 'absolute', top: '50%' }"
                 data-testId="spinner"></dot-spinner>
         </ng-container>
+
+        <ng-container *ngSwitchCase="'compare'">
+        </ng-container>
     </ng-container>
+
+    <!-- @if (this.$compareData()) { -->
+        <p-dialog
+            [visible]="this.$compareData()"
+            [style]="{ height: '90vh', width: '90vw' }"
+            [header]="'Compare'"
+            [draggable]="false"
+            [resizable]="false"
+            [maximizable]="true"
+            [modal]="true"
+            [maskStyleClass]="'p-dialog-mask-transparent-nested'"
+            (visibleChange)="closeCompareDialog()"
+            appendTo="body"
+            data-testId="dialog-compare">
+                <dot-content-compare [data]="$compareData()" (getMeBringBack)="bringBack($event)"></dot-content-compare>
+        </p-dialog>
+    <!-- } -->
+
 </p-dialog>
+
+
+<!-- @if (this.$compareData()) {
+    <p-dialog
+    [visible]="this.$compareData()?.inode"
+    [style]="{ height: '90vh', width: '90vw' }"
+    [header]="'Compare'"
+    [draggable]="false"
+    [resizable]="false"
+    [maximizable]="true"
+    [modal]="true"
+    [baseZIndex]="10000"
+    appendTo="body"
+    data-testId="dialog-compare"
+    styleClass="edit-ema-dialog"
+    >
+        @if (this.$compareData()?.inode) {
+            Hola
+            <dot-content-compare [data]="$compareData()" (getMeBringBack)="close($event)"></dot-content-compare>
+        }
+    </p-dialog>
+} -->

@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
-import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
+import { DotContentCompareEvent } from 'libs/portlets/edit-ema/ui/src/lib/dot-content-compare/dot-content-compare.component';
 import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {

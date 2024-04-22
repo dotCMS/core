@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { Spectator, createComponentFactory, SpyObject, byTestId } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, SpyObject, byTestId, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -9,6 +9,10 @@ import { By } from '@angular/platform-browser';
 import { MessageService } from 'primeng/api';
 
 import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageService,
     DotWorkflowActionsFireService,
     PushPublishService
@@ -71,7 +75,6 @@ describe('DotEmaDialogComponent', () => {
             HttpClient,
             DotWorkflowActionsFireService,
             MessageService,
-
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
@@ -114,7 +117,12 @@ describe('DotEmaDialogComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
-            }
+            },
+            //TODO: Ask for this
+            mockProvider(DotContentTypeService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotAlertConfirmService),
+            mockProvider(DotIframeService)
         ]
     });
 

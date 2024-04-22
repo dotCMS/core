@@ -4,15 +4,14 @@ import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotDiffPipe } from '@dotcms/app/view/pipes';
-import { DotDiffPipeModule } from '@dotcms/app/view/pipes/dot-diff/dot-diff.pipe.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotDiffPipe, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { BlockEditorMockComponent } from './block-editor-mock/block-editor-mock.component';
 import { DotContentCompareBlockEditorComponent } from './dot-content-compare-block-editor.component';
+
+import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
 
 export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     working: {
@@ -237,7 +236,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
             schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
             imports: [
-                DotDiffPipeModule,
+                DotDiffPipe,
                 HttpClientTestingModule,
                 CommonModule,
                 BlockEditorMockComponent,

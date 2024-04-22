@@ -5,8 +5,9 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { map } from 'rxjs/operators';
 
-import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
+
+import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
 
 @Component({
     selector: 'dot-content-compare-block-editor',

@@ -7,10 +7,6 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotContentCompareTableComponent } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component';
-import { dotContentCompareTableDataMock } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component.spec';
-import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
-import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -21,10 +17,14 @@ import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { dotContentCompareTableDataMock } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component.spec';
+import { DotContentCompareTableComponent } from './components/dot-content-compare-table/dot-content-compare-table.component';
 import {
     DotContentCompareComponent,
     DotContentCompareEvent
 } from './dot-content-compare.component';
+import { DotContentCompareModule } from './dot-content-compare.module';
+import { DotContentCompareStore } from './store/dot-content-compare.store';
 
 const DotContentCompareEventMOCK = {
     inode: '1',

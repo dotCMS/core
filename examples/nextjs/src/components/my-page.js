@@ -12,7 +12,7 @@ import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
 
-import { DotExperimentsProvider } from "@dotcms/experiments";
+// import { DotExperimentsProvider } from "@dotcms/experiments";
 
 
 export function MyPage({ data, nav }) {
@@ -27,7 +27,7 @@ export function MyPage({ data, nav }) {
   }
   
   return (
-    <DotExperimentsProvider config={experimentConfig} >
+    // <DotExperimentsProvider config={experimentConfig} >
 
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
       {data.layout.header && (
@@ -54,6 +54,6 @@ export function MyPage({ data, nav }) {
       {data.layout.footer && <Footer />}
     </div>
 
-    </DotExperimentsProvider>
+    // </DotExperimentsProvider>
   );
 }

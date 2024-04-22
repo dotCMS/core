@@ -34,8 +34,7 @@ import {
     DotHttpErrorManagerService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
-    DotContentletService,
-    DotEventsService
+    DotContentletService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -130,8 +129,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
-    //TODO: Remove later
-    private readonly dotEventsService = inject(DotEventsService);
 
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
@@ -565,6 +562,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     protected handleNgEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
         const { detail } = event;
+        console.log(event);
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
             [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {
@@ -648,11 +646,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.dialog.resetDialog();
                     }
                 });
-            },
-            //Remove later
-            [NG_CUSTOM_EVENTS.COMPARE_CONTENTLET]: () => {
-                // console.log("Called compare!!");
-                // this.dotEventsService.notify(NG_CUSTOM_EVENTS.COMPARE_CONTENTLET, detail.data);
             },
             [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -1015,5 +1008,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.updateEditorState(EDITOR_STATE.ERROR);
 
         return this.dotHttpErrorManagerService.handle(error).pipe(map(() => null));
+    }
+
+    reload() {
+        this.store.reload({ params: this.queryParams });
     }
 }

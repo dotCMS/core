@@ -5,6 +5,7 @@ import {
     byTestId,
     mockProvider
 } from '@ngneat/spectator/jest';
+import { DotContentCompareComponent } from 'libs/portlets/edit-ema/ui/src/lib/dot-content-compare/dot-content-compare.component';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -20,6 +21,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
+    DotAlertConfirmService,
     DotContentTypeService,
     DotContentletLockerService,
     DotContentletService,
@@ -30,6 +32,7 @@ import {
     DotExperimentsService,
     DotFavoritePageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
@@ -119,7 +122,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             MockComponent(DotEditEmaWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent),
-            MockComponent(EditEmaToolbarComponent)
+            MockComponent(EditEmaToolbarComponent),
+            // MockComponent(DotContentCompareComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -128,6 +132,19 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             EditEmaStore,
             DotFavoritePageService,
             DotESContentService,
+            //TODO: Ask for this
+            {
+                provide: DotAlertConfirmService,
+                useValue: {
+                    confirm: () => of({})
+                }
+            },
+            {
+                provide: DotIframeService,
+                useValue: {
+                    run: () => of({})
+                }
+            },
             {
                 provide: DotExperimentsService,
                 useValue: {

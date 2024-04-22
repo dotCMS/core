@@ -12,7 +12,8 @@ const removeDataAttr = function (html: string): string {
 };
 
 @Pipe({
-    name: 'dotDiff'
+    name: 'dotDiff',
+    standalone: true
 })
 export class DotDiffPipe implements PipeTransform {
     transform(oldValue: string, newValue: string, showDiff = true): string {
