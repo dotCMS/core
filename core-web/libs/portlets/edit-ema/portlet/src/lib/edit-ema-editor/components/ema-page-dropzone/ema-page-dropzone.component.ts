@@ -15,7 +15,16 @@ import { DotErrorPipe } from './pipes/error/dot-error.pipe';
 import { DotPositionPipe } from './pipes/position/dot-position.pipe';
 import { EmaDragItem, Container } from './types';
 
+import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
+import { EDITOR_STATE } from '../../../shared/enums';
 import { PositionPayload, ClientData } from '../../../shared/models';
+
+const POINTER_INITIAL_POSITION = {
+    left: '0',
+    width: '0',
+    opacity: '0',
+    top: '0'
+};
 
 @Component({
     selector: 'dot-ema-page-dropzone',
@@ -30,14 +39,11 @@ export class EmaPageDropzoneComponent {
     @Input() item: EmaDragItem;
     @Output() place = new EventEmitter<PositionPayload>();
 
-    pointerPosition: Record<string, string> = {
-        left: '0',
-        width: '0',
-        opacity: '0',
-        top: '0'
-    };
+    pointerPosition: Record<string, string> = POINTER_INITIAL_POSITION;
 
     private readonly el = inject(ElementRef);
+
+    private readonly store = inject(EditEmaStore);
 
     /**
      * Emit place event and reset pointer position
@@ -47,21 +53,47 @@ export class EmaPageDropzoneComponent {
      */
     onDrop(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
+
         const data: ClientData = JSON.parse(target.dataset.payload);
         const isTop = this.isTop(event);
 
+        const insertPosition = isTop ? 'before' : 'after';
+
         const payload = <PositionPayload>{
             ...data,
-            position: isTop ? 'before' : 'after'
+            position: insertPosition
         };
 
         this.place.emit(payload);
-        this.pointerPosition = {
-            left: '0',
-            width: '0',
-            opacity: '0',
-            top: '0'
+        this.pointerPosition = POINTER_INITIAL_POSITION;
+    }
+
+    /**
+     * Emit place event and reset pointer position
+     *
+     * @param {DragEvent} event
+     * @memberof EmaPageDropzoneComponent
+     */
+    onDropEmptyContainer(event: DragEvent): void {
+        const target = event.target as HTMLDivElement;
+        this.pointerPosition = POINTER_INITIAL_POSITION;
+
+        // If the target doesn't have a payload, then we have an error zone and we should not emit the event
+        // We should also reset the editor to IDLE
+
+        if (!target?.dataset?.payload) {
+            this.store.updateEditorState(EDITOR_STATE.IDLE);
+
+            return;
+        }
+
+        const data: ClientData = JSON.parse(target.dataset.payload);
+
+        const payload = <PositionPayload>{
+            ...data
         };
+
+        this.place.emit(payload);
     }
 
     /**
@@ -75,11 +107,6 @@ export class EmaPageDropzoneComponent {
         event.preventDefault();
 
         const target = event.target as HTMLDivElement;
-        const { type = '' } = target.dataset;
-
-        if (type !== 'contentlet') {
-            return;
-        }
 
         const parentReact = this.el.nativeElement.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
@@ -91,10 +118,43 @@ export class EmaPageDropzoneComponent {
             opacity: '1',
             top: isTop
                 ? `${targetRect.top - parentReact.top}px`
-                : `${targetRect.top - parentReact.top + targetRect.height}px`
+                : `${targetRect.top - parentReact.top + targetRect.height}px`,
+            height: '3px'
         };
     }
 
+    /**
+     * Set the pointer position
+     *
+     * @param {DragEvent} event
+     * @memberof EmaPageDropzoneComponent
+     */
+    onDragoverEmptyContainer(event: DragEvent): void {
+        event.stopPropagation();
+        event.preventDefault();
+
+        const target = event.target as HTMLDivElement;
+
+        const parentReact = this.el.nativeElement.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+
+        this.pointerPosition = {
+            left: `${targetRect.left - parentReact.left}px`,
+            width: `${targetRect.width}px`,
+            opacity: '0.1',
+            top: `${targetRect.top - parentReact.top}px`,
+            height: `${targetRect.height}px`
+        };
+    }
+
+    /**
+     * Check pointer position
+     *
+     * @private
+     * @param {DragEvent} event
+     * @return {*}  {boolean}
+     * @memberof EmaPageDropzoneComponent
+     */
     private isTop(event: DragEvent): boolean {
         const target = event.target as HTMLDivElement;
         const targetRect = target.getBoundingClientRect();

@@ -17,6 +17,7 @@ import java.io.Serializable;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -185,6 +186,19 @@ public class TemplateLayout implements Serializable {
         } catch (JsonProcessingException e) {
             return super.toString();
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TemplateLayout that = (TemplateLayout) o;
+        return toString().equals(that.toString());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(toString());
     }
 
     /**
