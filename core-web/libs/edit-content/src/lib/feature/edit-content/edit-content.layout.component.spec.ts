@@ -60,7 +60,8 @@ describe('EditContentLayoutComponent', () => {
         const mockData: EditContentPayload = {
             actions: mockWorkflowsActions,
             contentType: CONTENT_TYPE_MOCK,
-            contentlet: BINARY_FIELD_CONTENTLET
+            contentlet: BINARY_FIELD_CONTENTLET,
+            loading: false
         };
 
         beforeEach(async () => {
@@ -165,7 +166,8 @@ describe('EditContentLayoutComponent', () => {
         const mockData: EditContentPayload = {
             actions: mockWorkflowsActions,
             contentType: CONTENT_TYPE_MOCK,
-            contentlet: null
+            contentlet: null,
+            loading: false
         };
 
         beforeEach(async () => {
