@@ -15,6 +15,9 @@ on:
       deploy-dev-image:
         default: false
         type: boolean
+      reuse-previous-build:
+        default: false
+        type: boolean
       publish-npm-package:
         default: false
         type: boolean
@@ -98,6 +101,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           npm-token: ${{ secrets.NPM_TOKEN }}
+          reuse-previous-build: ${{ inputs.reuse-previous-build }}
 
       # A Slack notification is sent using the 'action-slack-notify' action if the repository is 'dotcms/core'.
       - name: Slack Notification
@@ -111,4 +115,4 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
-          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *master* with tags: [${{ steps.docker_build.outputs.tags }}] :docker:"
+          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *${{ inputs.environment }}* with tags: [${{ steps.docker_build.outputs.tags }}] :docker:"

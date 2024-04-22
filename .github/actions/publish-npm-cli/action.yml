@@ -23,14 +23,13 @@ inputs:
     description: 'Node.js version'
     required: false
     default: '19'
-  workflow-to-search:
-    description: 'Workflow to search for artifacts'
-    required: false
-    default: 'build-test-master.yml'
   artifact-id:
     description: 'Artifact id'
     required: false
     default: 'cli-artifacts-*'
+  reuse-previous-build:
+    description: 'Indicates if the workflow should reuse the previous build'
+    required: false
 
 runs:
   using: "composite"
@@ -54,8 +53,8 @@ runs:
       uses: dawidd6/action-download-artifact@v3.1.4
       with:
         github_token: ${{ inputs.github-token }}
-        workflow: ${{ inputs.workflow-to-search }}
-        #commit: ${{ github.sha }}
+        #workflow: ${{ inputs.workflow-to-search }}
+        commit: ${{ github.sha }}
         workflow_conclusion: success
         search_artifacts: true
         dry_run: true
@@ -70,6 +69,40 @@ runs:
         build_artifact_exists=${{ steps.data-download.outputs.found_artifact }}
         if [[ ${build_artifact_exists} == "true" ]]; then
             run_id=`echo '${{ steps.data-download.outputs.artifacts }}' | jq -r '.[0].workflow_run.id'`
+            found_artifacts=true
+            echo "Artifact Run id: $run_id"
+        else
+           echo "No artifact found"
+           run_id="${{ github.run_id }}"
+           found_artifacts=false
+        fi
+        echo "run_id=$run_id" >> $GITHUB_OUTPUT
+        echo "found_artifacts=$found_artifacts" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Download Previous Build Artifact
+      id: data-download-previous
+      uses: dawidd6/action-download-artifact@v3.1.4
+      if: ${{ inputs.reuse-previous-build == true && steps.data-download.outputs.found_artifact == 'false' }}
+      with:
+        github_token: ${{ inputs.github-token }}
+        #workflow: build-test-merge_group.yml
+        workflow_search: true
+        #commit: ${{ github.sha }}
+        workflow_conclusion: success
+        search_artifacts: true
+        dry_run: true
+        name: ${{ inputs.artifact-id }}
+        path: .
+        if_no_artifact_found: warn
+
+    - name: 'Check if any previous artifact exists'
+      id: check-previous
+      if: ${{ inputs.reuse-previous-build == true && steps.data-download.outputs.found_artifact == 'false' }}
+      run: |
+        build_artifact_exists=${{ steps.data-download-previous.outputs.found_artifact }}
+        if [[ ${build_artifact_exists} == "true" ]]; then
+            run_id=`echo '${{ steps.data-download-previous.outputs.artifacts }}' | jq -r '.[0].workflow_run.id'`
             found_artifacts=true
             echo "Artifact Run id: $run_id"
         else
