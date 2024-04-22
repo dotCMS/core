@@ -10210,7 +10210,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
                         ? user.getUserId() : "Unknown")
                         + "; ContentIdentifier: " + (contentlet != null
-                        ? contentlet.getIdentifier() : "Unknown"), contentlet != null ? contentlet.getHost() : "unknown");
+                        ? contentlet.getIdentifier() : "Unknown"), contentlet != null ? contentlet.getHost() : "Unknown");
     }
 
 }
