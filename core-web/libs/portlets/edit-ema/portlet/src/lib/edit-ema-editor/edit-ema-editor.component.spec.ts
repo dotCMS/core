@@ -47,7 +47,7 @@ import {
     DotcmsEventsService,
     LoginService
 } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DEFAULT_VARIANT_ID, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
@@ -500,6 +500,8 @@ describe('EditEmaEditorComponent', () => {
         let dotCopyContentService: DotCopyContentService;
         let dotContentletService: DotContentletService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
+        let dotTempFileUploadService: DotTempFileUploadService;
+        let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
 
         const createComponent = createRouting({ canEdit: true, canRead: true });
 
@@ -528,6 +530,8 @@ describe('EditEmaEditorComponent', () => {
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
             dotContentletService = spectator.inject(DotContentletService, true);
+            dotTempFileUploadService = spectator.inject(DotTempFileUploadService, true);
+            dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
 
             addMessageSpy = jest.spyOn(messageService, 'add');
 
@@ -2272,262 +2276,536 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(dialog.attributes['ng-reflect-visible']).toBe('true');
                     });
-                });
-            });
-        });
 
-        describe('DOM', () => {
-            it("should not show a loader when the editor state is not 'loading'", () => {
-                spectator.detectChanges();
+                    it('should advice and reset the state to IDLE when the dropped file is not an image', () => {
+                        const drop = new Event('drop');
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
 
-                const progressbar = spectator.query(byTestId('progress-bar'));
-
-                expect(progressbar).toBeNull();
-            });
-
-            it('should show a loader when the editor state is loading', () => {
-                store.updateEditorState(EDITOR_STATE.LOADING);
-
-                spectator.detectChanges();
-
-                const progressbar = spectator.query(byTestId('progress-bar'));
-
-                expect(progressbar).not.toBeNull();
-            });
-            it('iframe should have the correct src when is HEADLESS', () => {
-                spectator.detectChanges();
-
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
-                expect(iframe.nativeElement.src).toBe(
-                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
-                );
-            });
-
-            describe('VTL Page', () => {
-                beforeEach(() => {
-                    jest.useFakeTimers(); // Mock the timers
-                    store.load({
-                        url: 'index',
-                        language_id: '3',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    });
-                    spectator.detectChanges();
-                });
-
-                afterEach(() => {
-                    jest.useRealTimers(); // Restore the real timers after each test
-                });
-
-                it('iframe should have the correct content when is VTL', () => {
-                    spectator.detectChanges();
-
-                    jest.runOnlyPendingTimers();
-                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
-                        '<div>hello world</div>'
-                    );
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
-                        '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
-                    );
-                });
-
-                it('iframe should have reload the page and add the new content, maintaining scroll', () => {
-                    const params = {
-                        language_id: '4',
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    };
-
-                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-                    const scrollSpy = jest
-                        .spyOn(spectator.component.iframe.nativeElement.contentWindow, 'scrollTo')
-                        .mockImplementation(() => jest.fn);
-
-                    iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
-
-                    store.reload({
-                        params,
-                        whenReloaded: () => {
-                            /* */
-                        }
-                    });
-                    spectator.detectChanges();
-
-                    jest.runOnlyPendingTimers();
-
-                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
-                        '<div>New Content - Hello World</div>'
-                    );
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
-                        '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
-                    );
-
-                    expect(scrollSpy).toHaveBeenCalledWith(0, 100);
-                });
-            });
-
-            it('should navigate to new url and change persona when postMessage SET_URL', () => {
-                const router = spectator.inject(Router);
-                jest.spyOn(router, 'navigate');
-
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-url',
-                            payload: {
-                                url: '/some'
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
                             }
-                        }
-                    })
-                );
+                        });
 
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        url: '/some',
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-            });
+                        Object.defineProperties(drop, {
+                            dataTransfer: {
+                                writable: false,
+                                value: {
+                                    files: [new File([''], 'test.pdf', { type: 'application/pdf' })]
+                                }
+                            },
+                            target: {
+                                value: {
+                                    dataset: {
+                                        dropzone: 'true',
+                                        position: 'before',
+                                        payload: JSON.stringify({
+                                            container: {
+                                                acceptTypes: 'Banner,Activity,DotAsset',
+                                                identifier: '123',
+                                                maxContentlets: 25,
+                                                variantId: 'DEFAULT',
+                                                uuid: '456'
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        });
 
-            it('should not call navigate on load same url', () => {
-                const router = spectator.inject(Router);
-                jest.spyOn(router, 'navigate');
+                        window.dispatchEvent(drop);
 
-                spectator.detectChanges();
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            severity: 'error',
+                            summary: 'file-upload',
+                            detail: 'editpage.file.upload.not.image',
+                            life: 3000
+                        });
 
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-url',
-                            payload: {
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should advice and reset state to IDLE when the dropped image failed uploading ', () => {
+                        const drop = new Event('drop');
+                        jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                            of([
+                                {
+                                    image: null,
+                                    id: 'temp_file_test'
+                                }
+                            ] as DotCMSTempFile[])
+                        );
+
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        Object.defineProperties(drop, {
+                            dataTransfer: {
+                                writable: false,
+                                value: {
+                                    files: [new File([''], 'test.png', { type: 'image/png' })]
+                                }
+                            },
+                            target: {
+                                value: {
+                                    dataset: {
+                                        dropzone: 'true',
+                                        position: 'before',
+                                        payload: JSON.stringify({
+                                            container: {
+                                                acceptTypes: 'Banner,Activity,DotAsset',
+                                                identifier: '123',
+                                                maxContentlets: 25,
+                                                variantId: 'DEFAULT',
+                                                uuid: '456'
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(1, {
+                            severity: 'info',
+                            summary: 'upload-image',
+                            detail: 'editpage.file.uploading',
+                            life: 3000
+                        });
+
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(2, {
+                            severity: 'error',
+                            summary: 'upload-image',
+                            detail: 'editpage.file.upload.error',
+                            life: 3000
+                        });
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    // This case is not probable but I added it anyways
+                    it('should not add an image when it is duplicated', () => {
+                        const drop = new Event('drop');
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                            of([
+                                {
+                                    image: true,
+                                    id: 'temp_file_test'
+                                }
+                            ] as DotCMSTempFile[])
+                        );
+
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+
+                        jest.spyOn(
+                            dotWorkflowActionsFireService,
+                            'publishContentletAndWaitForIndex'
+                        ).mockReturnValue(
+                            of({
+                                identifier: '123',
+                                inode: '123',
+                                title: 'test',
+                                contentType: 'dotAsset',
+                                baseType: 'IMAGE'
+                            })
+                        );
+
+                        Object.defineProperties(drop, {
+                            dataTransfer: {
+                                writable: false,
+                                value: {
+                                    files: [new File([''], 'test.png', { type: 'image/png' })]
+                                }
+                            },
+                            target: {
+                                value: {
+                                    dataset: {
+                                        dropzone: 'true',
+                                        position: 'before',
+                                        payload: JSON.stringify({
+                                            container: {
+                                                acceptTypes: 'Banner,Activity,DotAsset',
+                                                identifier: '123',
+                                                maxContentlets: 25,
+                                                variantId: 'DEFAULT',
+                                                uuid: '456'
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(1, {
+                            severity: 'info',
+                            summary: 'upload-image',
+                            detail: 'editpage.file.uploading',
+                            life: 3000
+                        });
+
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(2, {
+                            severity: 'info',
+                            summary: 'Workflow-Action',
+                            detail: 'editpage.file.publishing',
+                            life: 3000
+                        });
+
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(3, {
+                            detail: 'This content is already added to this container',
+                            life: 2000,
+                            severity: 'info',
+                            summary: 'Content already added'
+                        });
+
+                        expect(savePapeSpy).not.toHaveBeenCalled();
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should add an image successfully', () => {
+                        const drop = new Event('drop');
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+
+                        jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                            of([
+                                {
+                                    image: true,
+                                    id: 'temp_file_test'
+                                }
+                            ] as DotCMSTempFile[])
+                        );
+
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+
+                        jest.spyOn(
+                            dotWorkflowActionsFireService,
+                            'publishContentletAndWaitForIndex'
+                        ).mockReturnValue(
+                            of({
+                                identifier: '789',
+                                inode: '123',
+                                title: 'test',
+                                contentType: 'dotAsset',
+                                baseType: 'IMAGE'
+                            })
+                        );
+
+                        Object.defineProperties(drop, {
+                            dataTransfer: {
+                                writable: false,
+                                value: {
+                                    files: [new File([''], 'test.png', { type: 'image/png' })]
+                                }
+                            },
+                            target: {
+                                value: {
+                                    dataset: {
+                                        dropzone: 'true',
+                                        position: 'before',
+                                        payload: JSON.stringify({
+                                            container: {
+                                                acceptTypes: 'Banner,Activity,DotAsset',
+                                                identifier: '123',
+                                                maxContentlets: 25,
+                                                variantId: 'DEFAULT',
+                                                uuid: '456'
+                                            },
+                                            contentlet: {
+                                                identifier: '123',
+                                                title: 'Explore the World',
+                                                inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                                contentType: 'Banner'
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(1, {
+                            severity: 'info',
+                            summary: 'upload-image',
+                            detail: 'editpage.file.uploading',
+                            life: 3000
+                        });
+
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(2, {
+                            severity: 'info',
+                            summary: 'Workflow-Action',
+                            detail: 'editpage.file.publishing',
+                            life: 3000
+                        });
+
+                        expect(savePapeSpy).toHaveBeenCalledWith({
+                            pageContainers: [
+                                {
+                                    contentletsId: ['123', '456'],
+                                    identifier: '123',
+                                    personaTag: 'dot:persona',
+                                    uuid: '123'
+                                },
+                                {
+                                    contentletsId: ['789', '123'], // image inserted before
+                                    identifier: '123',
+                                    personaTag: 'dot:persona',
+                                    uuid: '456'
+                                }
+                            ],
+                            pageId: '123',
+                            params: {
+                                language_id: 1,
                                 url: 'page-one'
                             }
-                        }
-                    })
-                );
-
-                expect(router.navigate).not.toHaveBeenCalled();
+                        });
+                    });
+                });
             });
 
-            it('set url to a different route should set the editor state to loading', () => {
-                const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+            describe('DOM', () => {
+                it("should not show a loader when the editor state is not 'loading'", () => {
+                    spectator.detectChanges();
 
-                spectator.detectChanges();
+                    const progressbar = spectator.query(byTestId('progress-bar'));
 
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-url',
-                            payload: {
-                                url: '/some'
+                    expect(progressbar).toBeNull();
+                });
+
+                it('should show a loader when the editor state is loading', () => {
+                    store.updateEditorState(EDITOR_STATE.LOADING);
+
+                    spectator.detectChanges();
+
+                    const progressbar = spectator.query(byTestId('progress-bar'));
+
+                    expect(progressbar).not.toBeNull();
+                });
+                it('iframe should have the correct src when is HEADLESS', () => {
+                    spectator.detectChanges();
+
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                    expect(iframe.nativeElement.src).toBe(
+                        'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
+                    );
+                });
+
+                describe('VTL Page', () => {
+                    beforeEach(() => {
+                        jest.useFakeTimers(); // Mock the timers
+                        store.load({
+                            url: 'index',
+                            language_id: '3',
+                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        });
+                        spectator.detectChanges();
+                    });
+
+                    afterEach(() => {
+                        jest.useRealTimers(); // Restore the real timers after each test
+                    });
+
+                    it('iframe should have the correct content when is VTL', () => {
+                        spectator.detectChanges();
+
+                        jest.runOnlyPendingTimers();
+                        const iframe = spectator.debugElement.query(
+                            By.css('[data-testId="iframe"]')
+                        );
+                        expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                        expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                            '<div>hello world</div>'
+                        );
+                        expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                            '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
+                        );
+                    });
+
+                    it('iframe should have reload the page and add the new content, maintaining scroll', () => {
+                        const params = {
+                            language_id: '4',
+                            url: 'index',
+                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        };
+
+                        const iframe = spectator.debugElement.query(
+                            By.css('[data-testId="iframe"]')
+                        );
+                        const scrollSpy = jest
+                            .spyOn(
+                                spectator.component.iframe.nativeElement.contentWindow,
+                                'scrollTo'
+                            )
+                            .mockImplementation(() => jest.fn);
+
+                        iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
+
+                        store.reload({
+                            params,
+                            whenReloaded: () => {
+                                /* */
                             }
-                        }
-                    })
-                );
+                        });
+                        spectator.detectChanges();
 
-                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
-            });
+                        jest.runOnlyPendingTimers();
 
-            it('set url to the same route should set the editor state to IDLE', () => {
-                const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+                        expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                        expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                            '<div>New Content - Hello World</div>'
+                        );
+                        expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                            '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
+                        );
 
-                const url = "/ultra-cool-url-that-doesn't-exist";
-
-                spectator.detectChanges();
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: { url }
+                        expect(scrollSpy).toHaveBeenCalledWith(0, 100);
+                    });
                 });
 
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-url',
-                            payload: {
-                                url
+                it('should navigate to new url and change persona when postMessage SET_URL', () => {
+                    const router = spectator.inject(Router);
+                    jest.spyOn(router, 'navigate');
+
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'set-url',
+                                payload: {
+                                    url: '/some'
+                                }
                             }
-                        }
-                    })
-                );
+                        })
+                    );
 
-                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
-            });
-
-            it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                expect(confirmDialog.getAttribute('acceptIcon')).toBe('hidden');
-                expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
-            });
-        });
-
-        describe('without edit permission', () => {
-            let spectator: SpectatorRouting<EditEmaEditorComponent>;
-            let store: EditEmaStore;
-
-            const createComponent = createRouting({ canEdit: false, canRead: true });
-            beforeEach(() => {
-                spectator = createComponent({
-                    queryParams: { language_id: 1, url: 'page-one' }
+                    expect(router.navigate).toHaveBeenCalledWith([], {
+                        queryParams: {
+                            url: '/some',
+                            'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                        },
+                        queryParamsHandling: 'merge'
+                    });
                 });
 
-                store = spectator.inject(EditEmaStore, true);
+                it('should not call navigate on load same url', () => {
+                    const router = spectator.inject(Router);
+                    jest.spyOn(router, 'navigate');
 
-                store.load({
-                    url: 'index',
-                    language_id: '1',
-                    clientHost: '',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'set-url',
+                                payload: {
+                                    url: 'page-one'
+                                }
+                            }
+                        })
+                    );
+
+                    expect(router.navigate).not.toHaveBeenCalled();
+                });
+
+                it('set url to a different route should set the editor state to loading', () => {
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'set-url',
+                                payload: {
+                                    url: '/some'
+                                }
+                            }
+                        })
+                    );
+
+                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+                });
+
+                it('set url to the same route should set the editor state to IDLE', () => {
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    const url = "/ultra-cool-url-that-doesn't-exist";
+
+                    spectator.detectChanges();
+                    spectator.triggerNavigation({
+                        url: [],
+                        queryParams: { url }
+                    });
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'set-url',
+                                payload: {
+                                    url
+                                }
+                            }
+                        })
+                    );
+
+                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                });
+
+                it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
+                    spectator.detectChanges();
+
+                    const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                    expect(confirmDialog.getAttribute('acceptIcon')).toBe('hidden');
+                    expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
                 });
             });
 
-            it('should not render components', () => {
-                spectator.detectChanges();
-                expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
-                expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
-            });
-
-            it('should render a "Dont have permission" message', () => {
-                spectator.detectChanges();
-                expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
-            });
-
-            it('should iframe wrapper to be expanded', () => {
-                spectator.detectChanges();
-                expect(spectator.query(byTestId('editor-content')).classList).toContain(
-                    'editor-content--expanded'
-                );
-            });
-        });
-
-        describe('locked', () => {
-            describe('locked with unlock permission', () => {
+            describe('without edit permission', () => {
                 let spectator: SpectatorRouting<EditEmaEditorComponent>;
                 let store: EditEmaStore;
 
-                const createComponent = createRouting({ canEdit: true, canRead: true });
+                const createComponent = createRouting({ canEdit: false, canRead: true });
                 beforeEach(() => {
                     spectator = createComponent({
-                        queryParams: { language_id: 7, url: 'page-one' }
+                        queryParams: { language_id: 1, url: 'page-one' }
                     });
 
                     store = spectator.inject(EditEmaStore, true);
 
                     store.load({
                         url: 'index',
-                        language_id: '7',
+                        language_id: '1',
                         clientHost: '',
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                     });
@@ -2539,7 +2817,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
                 });
 
-                it('should render a banner', () => {
+                it('should render a "Dont have permission" message', () => {
                     spectator.detectChanges();
                     expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
                 });
@@ -2549,6 +2827,47 @@ describe('EditEmaEditorComponent', () => {
                     expect(spectator.query(byTestId('editor-content')).classList).toContain(
                         'editor-content--expanded'
                     );
+                });
+            });
+
+            describe('locked', () => {
+                describe('locked with unlock permission', () => {
+                    let spectator: SpectatorRouting<EditEmaEditorComponent>;
+                    let store: EditEmaStore;
+
+                    const createComponent = createRouting({ canEdit: true, canRead: true });
+                    beforeEach(() => {
+                        spectator = createComponent({
+                            queryParams: { language_id: 7, url: 'page-one' }
+                        });
+
+                        store = spectator.inject(EditEmaStore, true);
+
+                        store.load({
+                            url: 'index',
+                            language_id: '7',
+                            clientHost: '',
+                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        });
+                    });
+
+                    it('should not render components', () => {
+                        spectator.detectChanges();
+                        expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
+                        expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
+                    });
+
+                    it('should render a banner', () => {
+                        spectator.detectChanges();
+                        expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
+                    });
+
+                    it('should iframe wrapper to be expanded', () => {
+                        spectator.detectChanges();
+                        expect(spectator.query(byTestId('editor-content')).classList).toContain(
+                            'editor-content--expanded'
+                        );
+                    });
                 });
             });
         });

@@ -1,4 +1,4 @@
-import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
+import { Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -1319,13 +1319,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 switchMap(([{ id, image }]: DotCMSTempFile[]) => {
                     if (!image) {
                         this.messageService.add({
-                            severity: 'info',
+                            severity: 'error',
                             summary: this.dotMessageService.get('upload-image'),
                             detail: this.dotMessageService.get('editpage.file.upload.error'),
                             life: 3000
                         });
 
-                        return EMPTY;
+                        return of(undefined);
                     }
 
                     return this.dotWorkflowActionsFireService
@@ -1336,7 +1336,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             tap(() => {
                                 this.messageService.add({
                                     severity: 'info',
-                                    summary: this.dotMessageService.get('Workflow Action'),
+                                    summary: this.dotMessageService.get('Workflow-Action'),
                                     detail: this.dotMessageService.get(
                                         'editpage.file.publishing',
                                         file.name
