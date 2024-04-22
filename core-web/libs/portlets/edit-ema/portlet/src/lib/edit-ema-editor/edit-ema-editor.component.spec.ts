@@ -64,11 +64,13 @@ import {
     getDraftExperimentMock,
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,
-    DotPersonalizeServiceMock
+    DotPersonalizeServiceMock,
+    MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
@@ -93,7 +95,7 @@ import {
     dotPageContainerStructureMock
 } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
-import { ActionPayload } from '../shared/models';
+import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -188,11 +190,10 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             DotCopyContentService,
             DotCopyContentModalService,
             DotWorkflowActionsFireService,
+            DotTempFileUploadService,
             {
-                provide: DotTempFileUploadService,
-                useValue: {
-                    upload: () => of({})
-                }
+                provide: DotHttpErrorManagerService,
+                useValue: new MockDotHttpErrorManagerService()
             },
             {
                 provide: DotcmsConfigService,
@@ -1597,6 +1598,682 @@ describe('EditEmaEditorComponent', () => {
                     });
                 });
             });
+
+            describe('drag and drop', () => {
+                describe('drag start', () => {
+                    it('should call the setDragItem from the store for content-types', () => {
+                        const setDragItemSpy = jest.spyOn(store, 'setDragItem');
+
+                        const target = {
+                            target: {
+                                dataset: {
+                                    type: 'content-type',
+                                    item: JSON.stringify({
+                                        contentType: {
+                                            variable: 'test',
+                                            name: 'test',
+                                            baseType: 'test'
+                                        },
+                                        move: false
+                                    })
+                                }
+                            }
+                        };
+
+                        const dragStart = new Event('dragstart');
+
+                        Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        window.dispatchEvent(dragStart);
+
+                        expect(setDragItemSpy).toHaveBeenCalledWith({
+                            baseType: 'test',
+                            contentType: 'test',
+                            draggedPayload: {
+                                item: {
+                                    variable: 'test',
+                                    name: 'test'
+                                },
+                                type: 'content-type',
+                                move: false
+                            }
+                        });
+                    });
+
+                    it('should call the setDragItem from the store for contentlets', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const setDragItemSpy = jest.spyOn(store, 'setDragItem');
+
+                        const target = {
+                            target: {
+                                dataset: {
+                                    type: 'contentlet',
+                                    item: JSON.stringify({
+                                        contentlet,
+                                        move: false
+                                    })
+                                }
+                            }
+                        };
+
+                        const dragStart = new Event('dragstart');
+
+                        Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        window.dispatchEvent(dragStart);
+
+                        expect(setDragItemSpy).toHaveBeenCalledWith({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet
+                                },
+                                type: 'contentlet',
+                                move: false
+                            }
+                        });
+                    });
+
+                    it('should call the setDragItem from the store for contentlets and move', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const container = {
+                            acceptTypes:
+                                'CallToAction,webPageContent,calendarEvent,Image,Product,Video,dotAsset,Blog,Banner,Activity,WIDGET,FORM',
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            maxContentlets: '25',
+                            uuid: '2',
+                            contentletsId: [
+                                '4694d40b-d9be-4e09-b031-64ee3e7c9642',
+                                '6ac5921e-e062-49a6-9808-f41aff9343c5'
+                            ]
+                        };
+
+                        const setDragItemSpy = jest.spyOn(store, 'setDragItem');
+
+                        const target = {
+                            target: {
+                                dataset: {
+                                    type: 'contentlet',
+                                    item: JSON.stringify({
+                                        contentlet,
+                                        container,
+                                        move: true
+                                    })
+                                }
+                            }
+                        };
+
+                        const dragStart = new Event('dragstart');
+
+                        Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        window.dispatchEvent(dragStart);
+
+                        expect(setDragItemSpy).toHaveBeenCalledWith({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet,
+                                    container
+                                },
+                                type: 'contentlet',
+                                move: true
+                            }
+                        });
+                    });
+                });
+
+                describe('drag over', () => {
+                    it('should prevent default to avoid opening files', () => {
+                        const dragOver = new Event('dragover');
+                        const preventDefaultSpy = jest.spyOn(dragOver, 'preventDefault');
+
+                        window.dispatchEvent(dragOver);
+
+                        expect(preventDefaultSpy).toHaveBeenCalled();
+                    });
+                });
+
+                describe('drag end', () => {
+                    it('should reset the editor state to IDLE when dropEffect is none', () => {
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragEnd = new Event('dragend');
+
+                        Object.defineProperty(dragEnd, 'dataTransfer', {
+                            writable: false,
+                            value: {
+                                dropEffect: 'none'
+                            }
+                        });
+
+                        window.dispatchEvent(dragEnd);
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+                    it('should not reset the editor state to IDLE when dropEffect is not none', () => {
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragEnd = new Event('dragend');
+
+                        Object.defineProperty(dragEnd, 'dataTransfer', {
+                            writable: false,
+                            value: {
+                                dropEffect: 'copy'
+                            }
+                        });
+
+                        window.dispatchEvent(dragEnd);
+
+                        expect(updateEditorStateSpy).not.toHaveBeenCalled();
+                    });
+                });
+
+                describe('drag leave', () => {
+                    it('should set the editor state to OUT_OF_BOUNDS', () => {
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragLeave = new Event('dragleave');
+
+                        Object.defineProperties(dragLeave, {
+                            x: {
+                                value: 0
+                            },
+                            y: {
+                                value: 0
+                            },
+                            relatedTarget: {
+                                value: undefined // this is undefined when the mouse leaves the window
+                            }
+                        });
+
+                        window.dispatchEvent(dragLeave);
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(
+                            EDITOR_STATE.OUT_OF_BOUNDS
+                        );
+                    });
+                    it('should not set the editor state to OUT_OF_BOUNDS when the leave is from an element in the window', () => {
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragLeave = new Event('dragleave');
+
+                        Object.defineProperties(dragLeave, {
+                            x: {
+                                value: 900
+                            },
+                            y: {
+                                value: 1200
+                            },
+                            relatedTarget: {
+                                value: {}
+                            }
+                        });
+
+                        window.dispatchEvent(dragLeave);
+
+                        expect(updateEditorStateSpy).not.toHaveBeenCalled();
+                    });
+                });
+
+                describe('drag enter', () => {
+                    it('should call the event prevent default to prevent file opening', () => {
+                        const dragEnter = new Event('dragenter');
+
+                        const preventDefaultSpy = jest.spyOn(dragEnter, 'preventDefault');
+
+                        Object.defineProperty(dragEnter, 'fromElement', {
+                            writable: false,
+                            value: undefined
+                        }); // fromElement is falsy when the mouse enters the window
+
+                        window.dispatchEvent(dragEnter);
+
+                        expect(preventDefaultSpy).toHaveBeenCalled();
+                    });
+
+                    it('should set the dragItem if there is no dragItem', () => {
+                        const setDragItemSpy = jest.spyOn(store, 'setDragItem');
+
+                        const dragEnter = new Event('dragenter');
+
+                        Object.defineProperty(dragEnter, 'fromElement', {
+                            writable: false,
+                            value: undefined
+                        }); // fromElement is falsy when the mouse enters the window
+
+                        window.dispatchEvent(dragEnter);
+
+                        expect(setDragItemSpy).toHaveBeenCalledWith({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+                    });
+
+                    it('should set the editor to DRAGGING if there is dragItem and the state is OUT_OF_BOUNDS', () => {
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        }); // Simulate drag start
+
+                        store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // Simulate drag leave
+
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragEnter = new Event('dragenter');
+
+                        Object.defineProperty(dragEnter, 'fromElement', {
+                            writable: false,
+                            value: undefined
+                        }); // fromElement is falsy when the mouse enters the window
+
+                        window.dispatchEvent(dragEnter);
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                    });
+                });
+
+                describe('drop', () => {
+                    it("should call prevent default to avoid opening files when it's not a contentlet", () => {
+                        const drop = new Event('drop');
+
+                        const preventDefaultSpy = jest.spyOn(drop, 'preventDefault');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'false'
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(preventDefaultSpy).toHaveBeenCalled();
+                    });
+                    it('should update the editor state when the drop is not in a dropzone', () => {
+                        const drop = new Event('drop');
+
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'false'
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should do the place item flow when dropping a contentlet and is not moving', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+
+                        store.setDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet
+                                },
+                                type: 'contentlet',
+                                move: false
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '123'
+                                        },
+                                        contentlet: {
+                                            identifier: '456',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(savePapeSpy).toHaveBeenCalledWith({
+                            pageContainers: [
+                                {
+                                    identifier: '123',
+                                    uuid: '123',
+                                    personaTag: 'dot:persona',
+                                    contentletsId: ['123', contentlet.identifier, '456'] // Before 456
+                                },
+                                {
+                                    identifier: '123',
+                                    uuid: '456',
+                                    personaTag: 'dot:persona',
+                                    contentletsId: ['123']
+                                }
+                            ],
+                            pageId: '123',
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        });
+                    });
+
+                    it('should handle duplicated content', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        store.setDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet: {
+                                        ...contentlet,
+                                        identifier: '123' // Already added
+                                    }
+                                },
+                                type: 'contentlet',
+                                move: false
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '123'
+                                        },
+                                        contentlet: {
+                                            identifier: '456',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(savePapeSpy).not.toHaveBeenCalled();
+
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            detail: 'This content is already added to this container',
+                            life: 2000,
+                            severity: 'info',
+                            summary: 'Content already added'
+                        });
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should do the place item flow when dropping a contentlet and is moving', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+
+                        store.setDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    // Moving contentlet
+                                    contentlet: {
+                                        ...contentlet,
+                                        identifier: '456' // Existent one
+                                    },
+                                    // Move it from this container
+                                    container: {
+                                        acceptTypes: 'Banner,Activity',
+                                        identifier: '123',
+                                        maxContentlets: 25,
+                                        variantId: 'DEFAULT',
+                                        uuid: '123'
+                                    }
+                                },
+                                type: 'contentlet',
+                                move: true
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        // Container where we dropped
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '456'
+                                        },
+                                        // Pivot contentlet
+                                        contentlet: {
+                                            identifier: '123',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(savePapeSpy).toHaveBeenCalledWith({
+                            pageContainers: [
+                                {
+                                    identifier: '123',
+                                    uuid: '123',
+                                    personaTag: 'dot:persona',
+                                    contentletsId: ['123']
+                                },
+                                {
+                                    identifier: '123',
+                                    uuid: '456',
+                                    personaTag: 'dot:persona',
+                                    contentletsId: ['456', '123'] // before pivot contentlet
+                                }
+                            ],
+                            pageId: '123',
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        });
+                    });
+
+                    it('should handle duplicated content when moving', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        store.setDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    // Moving contentlet
+                                    contentlet: {
+                                        ...contentlet,
+                                        identifier: '123' // Existent one
+                                    },
+                                    // Move it from this container
+                                    container: {
+                                        acceptTypes: 'Banner,Activity',
+                                        identifier: '123',
+                                        maxContentlets: 25,
+                                        variantId: 'DEFAULT',
+                                        uuid: '123'
+                                    }
+                                },
+                                type: 'contentlet',
+                                move: true
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        // Container where we dropped
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '456'
+                                        },
+                                        // Pivot contentlet
+                                        contentlet: {
+                                            identifier: '123',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+                        expect(savePapeSpy).not.toHaveBeenCalled();
+
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            detail: 'This content is already added to this container',
+                            life: 2000,
+                            severity: 'info',
+                            summary: 'Content already added'
+                        });
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should open dialog when dropping a content-type', () => {
+                        const contentType = CONTENT_TYPE_MOCK[0];
+
+                        store.setDragItem({
+                            baseType: contentType.baseType,
+                            contentType: contentType.variable,
+                            draggedPayload: {
+                                item: {
+                                    variable: contentType.variable,
+                                    name: contentType.name
+                                },
+                                type: 'content-type',
+                                move: false
+                            } as ContentTypeDragPayload
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        // Container where we dropped
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '456'
+                                        },
+                                        // Pivot contentlet
+                                        contentlet: {
+                                            identifier: '123',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        spectator.detectChanges();
+
+                        const dialog = spectator.debugElement.query(
+                            By.css('[data-testId="dialog"]')
+                        );
+
+                        expect(dialog.attributes['ng-reflect-visible']).toBe('true');
+                    });
+                });
+            });
         });
 
         describe('DOM', () => {
@@ -1793,337 +2470,6 @@ describe('EditEmaEditorComponent', () => {
 
                 expect(confirmDialog.getAttribute('acceptIcon')).toBe('hidden');
                 expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
-            });
-        });
-
-        describe('drag and drop', () => {
-            describe('drag start', () => {
-                it('should call the setDragItem from the store for content-types', () => {
-                    const setDragItemSpy = jest.spyOn(store, 'setDragItem');
-
-                    const target = {
-                        target: {
-                            dataset: {
-                                type: 'content-type',
-                                item: JSON.stringify({
-                                    contentType: {
-                                        variable: 'test',
-                                        name: 'test',
-                                        baseType: 'test'
-                                    },
-                                    move: false
-                                })
-                            }
-                        }
-                    };
-
-                    const dragStart = new Event('dragstart');
-
-                    Object.defineProperty(dragStart, 'target', {
-                        writable: false,
-                        value: target.target
-                    });
-
-                    window.dispatchEvent(dragStart);
-
-                    expect(setDragItemSpy).toHaveBeenCalledWith({
-                        baseType: 'test',
-                        contentType: 'test',
-                        draggedPayload: {
-                            item: {
-                                variable: 'test',
-                                name: 'test'
-                            },
-                            type: 'content-type',
-                            move: false
-                        }
-                    });
-                });
-
-                it('should call the setDragItem from the store for contentlets', () => {
-                    const contentlet = CONTENTLETS_MOCK[0];
-
-                    const setDragItemSpy = jest.spyOn(store, 'setDragItem');
-
-                    const target = {
-                        target: {
-                            dataset: {
-                                type: 'contentlet',
-                                item: JSON.stringify({
-                                    contentlet,
-                                    move: false
-                                })
-                            }
-                        }
-                    };
-
-                    const dragStart = new Event('dragstart');
-
-                    Object.defineProperty(dragStart, 'target', {
-                        writable: false,
-                        value: target.target
-                    });
-
-                    window.dispatchEvent(dragStart);
-
-                    expect(setDragItemSpy).toHaveBeenCalledWith({
-                        baseType: contentlet.baseType,
-                        contentType: contentlet.contentType,
-                        draggedPayload: {
-                            item: {
-                                contentlet
-                            },
-                            type: 'contentlet',
-                            move: false
-                        }
-                    });
-                });
-
-                it('should call the setDragItem from the store for contentlets and move', () => {
-                    const contentlet = CONTENTLETS_MOCK[0];
-
-                    const container = {
-                        acceptTypes:
-                            'CallToAction,webPageContent,calendarEvent,Image,Product,Video,dotAsset,Blog,Banner,Activity,WIDGET,FORM',
-                        identifier: '//demo.dotcms.com/application/containers/default/',
-                        maxContentlets: '25',
-                        uuid: '2',
-                        contentletsId: [
-                            '4694d40b-d9be-4e09-b031-64ee3e7c9642',
-                            '6ac5921e-e062-49a6-9808-f41aff9343c5'
-                        ]
-                    };
-
-                    const setDragItemSpy = jest.spyOn(store, 'setDragItem');
-
-                    const target = {
-                        target: {
-                            dataset: {
-                                type: 'contentlet',
-                                item: JSON.stringify({
-                                    contentlet,
-                                    container,
-                                    move: true
-                                })
-                            }
-                        }
-                    };
-
-                    const dragStart = new Event('dragstart');
-
-                    Object.defineProperty(dragStart, 'target', {
-                        writable: false,
-                        value: target.target
-                    });
-
-                    window.dispatchEvent(dragStart);
-
-                    expect(setDragItemSpy).toHaveBeenCalledWith({
-                        baseType: contentlet.baseType,
-                        contentType: contentlet.contentType,
-                        draggedPayload: {
-                            item: {
-                                contentlet,
-                                container
-                            },
-                            type: 'contentlet',
-                            move: true
-                        }
-                    });
-                });
-            });
-
-            describe('drag over', () => {
-                it('should prevent default to avoid opening files', () => {
-                    const dragOver = new Event('dragover');
-                    const preventDefaultSpy = jest.spyOn(dragOver, 'preventDefault');
-
-                    window.dispatchEvent(dragOver);
-
-                    expect(preventDefaultSpy).toHaveBeenCalled();
-                });
-            });
-
-            describe('drag end', () => {
-                it('should reset the editor state to IDLE when dropEffect is none', () => {
-                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                    const dragEnd = new Event('dragend');
-
-                    Object.defineProperty(dragEnd, 'dataTransfer', {
-                        writable: false,
-                        value: {
-                            dropEffect: 'none'
-                        }
-                    });
-
-                    window.dispatchEvent(dragEnd);
-
-                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
-                });
-                it('should not reset the editor state to IDLE when dropEffect is not none', () => {
-                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                    const dragEnd = new Event('dragend');
-
-                    Object.defineProperty(dragEnd, 'dataTransfer', {
-                        writable: false,
-                        value: {
-                            dropEffect: 'copy'
-                        }
-                    });
-
-                    window.dispatchEvent(dragEnd);
-
-                    expect(updateEditorStateSpy).not.toHaveBeenCalled();
-                });
-            });
-
-            describe('drag leave', () => {
-                it('should set the editor state to OUT_OF_BOUNDS', () => {
-                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                    const dragLeave = new Event('dragleave');
-
-                    Object.defineProperties(dragLeave, {
-                        x: {
-                            value: 0
-                        },
-                        y: {
-                            value: 0
-                        },
-                        relatedTarget: {
-                            value: undefined // this is undefined when the mouse leaves the window
-                        }
-                    });
-
-                    window.dispatchEvent(dragLeave);
-
-                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.OUT_OF_BOUNDS);
-                });
-                it('should not set the editor state to OUT_OF_BOUNDS when the leave is from an element in the window', () => {
-                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                    const dragLeave = new Event('dragleave');
-
-                    Object.defineProperties(dragLeave, {
-                        x: {
-                            value: 900
-                        },
-                        y: {
-                            value: 1200
-                        },
-                        relatedTarget: {
-                            value: {}
-                        }
-                    });
-
-                    window.dispatchEvent(dragLeave);
-
-                    expect(updateEditorStateSpy).not.toHaveBeenCalled();
-                });
-            });
-
-            describe('drag enter', () => {
-                it('should call the event prevent default to prevent file opening', () => {
-                    const dragEnter = new Event('dragenter');
-
-                    const preventDefaultSpy = jest.spyOn(dragEnter, 'preventDefault');
-
-                    Object.defineProperty(dragEnter, 'fromElement', {
-                        writable: false,
-                        value: undefined
-                    }); // fromElement is falsy when the mouse enters the window
-
-                    window.dispatchEvent(dragEnter);
-
-                    expect(preventDefaultSpy).toHaveBeenCalled();
-                });
-
-                it('should set the dragItem if there is no dragItem', () => {
-                    const setDragItemSpy = jest.spyOn(store, 'setDragItem');
-
-                    const dragEnter = new Event('dragenter');
-
-                    Object.defineProperty(dragEnter, 'fromElement', {
-                        writable: false,
-                        value: undefined
-                    }); // fromElement is falsy when the mouse enters the window
-
-                    window.dispatchEvent(dragEnter);
-
-                    expect(setDragItemSpy).toHaveBeenCalledWith({
-                        baseType: 'dotAsset',
-                        contentType: 'dotAsset',
-                        draggedPayload: {
-                            type: 'temp'
-                        }
-                    });
-                });
-
-                it('should set the editor to DRAGGING if there is dragItem and the state is OUT_OF_BOUNDS', () => {
-                    store.setDragItem({
-                        baseType: 'dotAsset',
-                        contentType: 'dotAsset',
-                        draggedPayload: {
-                            type: 'temp'
-                        }
-                    }); // Simulate drag start
-
-                    store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // Simulate drag leave
-
-                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                    const dragEnter = new Event('dragenter');
-
-                    Object.defineProperty(dragEnter, 'fromElement', {
-                        writable: false,
-                        value: undefined
-                    }); // fromElement is falsy when the mouse enters the window
-
-                    window.dispatchEvent(dragEnter);
-
-                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
-                });
-            });
-
-            describe('drop', () => {
-                it("should call prevent default to avoid opening files when it's not a contentlet", () => {
-                    const drop = new Event('drop');
-
-                    const preventDefaultSpy = jest.spyOn(drop, 'preventDefault');
-
-                    Object.defineProperty(drop, 'target', {
-                        writable: false,
-                        value: {
-                            dataset: {
-                                dropzone: 'false'
-                            }
-                        }
-                    });
-
-                    window.dispatchEvent(drop);
-
-                    expect(preventDefaultSpy).toHaveBeenCalled();
-                });
-                it('should update the editor state when the drop is not in a dropzone', () => {
-                    const drop = new Event('drop');
-
-                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                    Object.defineProperty(drop, 'target', {
-                        writable: false,
-                        value: {
-                            dataset: {
-                                dropzone: 'false'
-                            }
-                        }
-                    });
-
-                    window.dispatchEvent(drop);
-
-                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
-                });
             });
         });
 

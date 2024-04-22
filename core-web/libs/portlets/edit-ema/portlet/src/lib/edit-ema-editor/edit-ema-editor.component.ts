@@ -438,7 +438,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 const data: ClientData = JSON.parse(payload);
 
-                const file = event.dataTransfer.files[0];
+                const file = event.dataTransfer?.files[0]; // We are sure that is comes but in the tests we don't have DragEvent class
 
                 if (file) {
                     // I need to publish the temp file to use it.
