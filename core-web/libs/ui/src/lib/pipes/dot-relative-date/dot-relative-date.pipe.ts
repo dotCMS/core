@@ -8,7 +8,7 @@ import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 @Pipe({ name: 'dotRelativeDate', standalone: true })
 export class DotRelativeDatePipe implements PipeTransform {
     constructor(
-        private dotFormatDateService: DotFormatDateService,
+        private readonly dotFormatDateService: DotFormatDateService,
         private readonly dotMessageService: DotMessageService
     ) {}
 
