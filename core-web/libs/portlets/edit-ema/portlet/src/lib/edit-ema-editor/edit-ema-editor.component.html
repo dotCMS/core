@@ -101,7 +101,8 @@
         (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
-    @if(es.editorData.canEditVariant && es.editorData.mode === editorMode.EDIT) {
+    @if(es.editorData.canEditVariant && (es.editorData.mode === editorMode.EDIT ||
+    es.editorData.mode === editorMode.EDIT_VARIANT)) {
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"
