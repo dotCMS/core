@@ -161,7 +161,7 @@
         
         
         var xhrArgs = {
-            url: "/api/osgi/getInstalledBundles/ignoreSystemBundles/true/type/json",
+            url: "/api/v1/osgi/getInstalledBundles?ignoresystembundles=true",
             handleAs: "json",
             load: function (data) {
                 document.getElementById("bundlesTable-body").innerHTML="";

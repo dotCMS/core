@@ -1,4 +1,4 @@
-<%@page import="com.liferay.portal.language.LanguageUtil"%>
+	<%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <script type="text/javascript" src="/html/portlet/ext/osgi/js.jsp" ></script>
 <dot-asset-drop-zone dojoAttachPoint="dropzone">
@@ -33,7 +33,7 @@
         
         return new Promise((res, rej) => {
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/osgi');
+            xhr.open('POST', '/api/v1/osgi');
             xhr.onload = () => res(xhr);
             xhr.onerror = rej;
 

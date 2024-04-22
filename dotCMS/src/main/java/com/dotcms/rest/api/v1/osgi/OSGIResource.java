@@ -10,7 +10,6 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
@@ -337,13 +336,13 @@ public class OSGIResource {
 
             if (from.renameTo(to)) {
                 final String responseText = String.format("OSGI Bundle  %s Loaded", jarName);
-                Logger.info(OSGIAJAX.class, responseText);
+                Logger.info(this, responseText);
                 return new ResponseEntityStringView(responseText);
             }
         }
 
         final String responseText = String.format("Error Loading OSGI Bundle  %s ", jarName);
-        Logger.error(OSGIAJAX.class, responseText);
+        Logger.error(this, responseText);
         throw new BadRequestException(responseText);
     }
 
