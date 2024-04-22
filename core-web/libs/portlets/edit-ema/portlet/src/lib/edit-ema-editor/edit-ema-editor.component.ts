@@ -56,11 +56,18 @@ import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
-import { EmaDragItem, ClientContentletArea, Container } from './components/ema-page-dropzone/types';
+import {
+    EmaDragItem,
+    ClientContentletArea,
+    Container,
+    UpdatedContentlet,
+    InlineEditingContentletDataset
+} from './components/ema-page-dropzone/types';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiParams } from '../services/dot-page-api.service';
+import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import {
@@ -68,55 +75,19 @@ import {
     PositionPayload,
     ClientData,
     SetUrlPayload,
-    ContainerPayload,
-    ContentletPayload,
-    PageContainer,
-    VTLFile
+    VTLFile,
+    ReorderPayload,
+    PostMessagePayload,
+    ContentletDragPayload,
+    DeletePayload,
+    DraggedPalettePayload,
+    InsertPayloadFromDelete
 } from '../shared/models';
 import {
     areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
 } from '../utils';
-
-interface DeletePayload {
-    payload: ActionPayload;
-    originContainer: ContainerPayload;
-    contentletToMove: ContentletPayload;
-}
-
-interface InsertPayloadFromDelete {
-    payload: ActionPayload;
-    pageContainers: PageContainer[];
-    contentletsId: string[];
-    destinationContainer: ContainerPayload;
-    pivotContentlet: ContentletPayload;
-    positionToInsert: 'before' | 'after';
-}
-
-interface BasePayload {
-    type: 'contentlet' | 'content-type';
-}
-
-interface ContentletDragPayload extends BasePayload {
-    type: 'contentlet';
-    item: {
-        container?: ContainerPayload;
-        contentlet: ContentletPayload;
-    };
-    move: boolean;
-}
-
-// Specific interface when type is 'content-type'
-interface ContentTypeDragPayload extends BasePayload {
-    type: 'content-type';
-    item: {
-        variable: string;
-        name: string;
-    };
-}
-
-type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -165,6 +136,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
+    private readonly inlineEditingService = inject(InlineEditService);
 
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
@@ -228,6 +200,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     isVTLPage = toSignal(this.store.clientHost$.pipe(map((clientHost) => !clientHost)));
+    $isInlineEditing = toSignal(
+        this.store.editorMode$.pipe(map((mode) => mode === EDITOR_MODE.INLINE_EDITING))
+    );
 
     ngOnInit(): void {
         this.handleReloadContent();
@@ -239,37 +214,88 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
 
         // In VTL Page if user click in a link in the page, we need to update the URL in the editor
-        this.store.url$
+        this.store.pageRendered$
             .pipe(
                 takeUntil(this.destroy$),
                 filter(() => this.isVTLPage())
             )
             .subscribe(() => {
                 requestAnimationFrame(() => {
-                    this.iframe.nativeElement.contentWindow.addEventListener('click', (e) => {
-                        const href =
-                            (e.target as HTMLAnchorElement).href ||
-                            ((e.target as HTMLElement).closest('a') as HTMLAnchorElement).href;
+                    const win = this.iframe.nativeElement.contentWindow;
 
-                        if (href) {
-                            const url = new URL(href);
-
-                            // Check if the URL is not external
-                            if (url.hostname === window.location.hostname) {
-                                e.preventDefault();
-
-                                this.updateQueryParams({
-                                    url: url.pathname
-                                });
-                            }
-                        }
+                    fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+                        this.handleInternalNav(e);
                     });
                 });
             });
 
-        // Think is not necessary, if is Headless, it init as loading. If is VTL, init as Loaded
-        // So here is re-set to loading in Headless and prevent VTL to hide the progressbar
-        // this.store.updateEditorState(EDITOR_STATE.LOADING);
+        this.store.vtlIframePage$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter(({ isEnterprise }) => this.isVTLPage() && isEnterprise)
+            )
+            .subscribe(({ mode }) => {
+                requestAnimationFrame(() => {
+                    const win = this.iframe.nativeElement.contentWindow;
+
+                    if (mode === EDITOR_MODE.EDIT || mode === EDITOR_MODE.INLINE_EDITING) {
+                        this.inlineEditingService.injectInlineEdit(this.iframe);
+                        fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+                            this.handleInlineEditing(e);
+                        });
+                    } else {
+                        this.inlineEditingService.removeInlineEdit(this.iframe);
+                    }
+                });
+            });
+    }
+
+    /**
+     * Handles internal navigation by preventing the default behavior of the click event,
+     * updating the query parameters, and opening external links in a new tab.
+     *
+     * @param e - The MouseEvent object representing the click event.
+     */
+    handleInternalNav(e: MouseEvent) {
+        const href =
+            (e.target as HTMLAnchorElement)?.href ||
+            (e.target as HTMLElement)?.closest('a')?.getAttribute('href');
+
+        if (href) {
+            e.preventDefault();
+            const url = new URL(href);
+
+            // Check if the URL is not external
+            if (url.hostname === window.location.hostname) {
+                this.updateQueryParams({
+                    url: url.pathname
+                });
+
+                return;
+            }
+
+            // Open external links in a new tab
+            this.window.open(href, '_blank');
+        }
+    }
+
+    /**
+     * Handles the inline editing functionality triggered by a mouse event.
+     * @param e - The mouse event that triggered the inline editing.
+     */
+    handleInlineEditing(e: MouseEvent) {
+        const target = e.target as HTMLElement;
+        const element = target.dataset?.mode
+            ? target
+            : (target.closest('[data-mode]') as HTMLElement);
+
+        if (!element?.dataset.mode) {
+            return;
+        }
+
+        this.inlineEditingService.handleInlineEdit({
+            ...element.dataset
+        } as unknown as InlineEditingContentletDataset);
     }
 
     /**
@@ -304,8 +330,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {string} clientHost
      * @memberof EditEmaEditorComponent
      */
-    onIframePageLoad() {
+    onIframePageLoad(editorMode: EDITOR_MODE) {
         this.store.updateEditorState(EDITOR_STATE.IDLE);
+
+        //The iframe is loaded after copy contentlet to inline editing.
+        if (editorMode === EDITOR_MODE.INLINE_EDITING) {
+            this.inlineEditingService.initEditor();
+        }
     }
 
     /**
@@ -315,11 +346,56 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    addEditorPageScript(rendered: string) {
+    addEditorPageScript(rendered = ''): string {
         const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
-        const updatedRendered = rendered?.replace('</body>', scriptString + '</body>');
+        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
+    }
+
+    /**
+     * Add custom styles to the rendered content
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addCustomStyles(rendered = ''): string {
+        const styles = `<style>
+
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
+        }
+        </style>
+        `;
+
+        return rendered.replace('</head>', styles + '</head>');
+    }
+
+    /**
+     * Inject the editor page script and styles to the VTL content
+     *
+     * @private
+     * @param {string} rendered
+     * @return {*}  {string}
+     * @memberof EditEmaEditorComponent
+     */
+    private inyectCodeToVTL(rendered: string): string {
+        let newFile = this.addEditorPageScript(rendered);
+
+        newFile = this.addCustomStyles(newFile);
+
+        return newFile;
     }
 
     ngOnDestroy(): void {
@@ -530,8 +606,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const doc = this.iframe?.nativeElement.contentDocument;
 
             if (doc) {
+                const newFile = this.inyectCodeToVTL(code);
+
                 doc.open();
-                doc.write(this.addEditorPageScript(code));
+                doc.write(newFile);
                 doc.close();
 
                 this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
@@ -627,6 +705,36 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.dialog.resetDialog();
                     }
                 });
+            },
+            [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get('message.menu.reordered'),
+                    life: 2000
+                });
+
+                this.store.reload({
+                    params: this.queryParams
+                });
+                this.dialog.resetDialog();
+            },
+            [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: this.dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.dotMessageService.get(
+                        'error.menu.reorder.user_has_not_permission'
+                    ),
+                    life: 2000
+                });
+            },
+            [NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER]: () => {
+                this.dialog.resetDialog();
             }
         })[detail.name];
     }
@@ -646,7 +754,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Container[] | ClientContentletArea;
+            payload: PostMessagePayload;
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
@@ -690,6 +798,78 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.iframe?.nativeElement?.contentWindow.postMessage(
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
+                );
+            },
+            [CUSTOMER_ACTIONS.INIT_INLINE_EDITING]: () => {
+                // The iframe says that the editor is ready to start inline editing
+                // The dataset of the inline-editing contentlet is ready inside the service.
+                this.inlineEditingService.initEditor();
+            },
+            [CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: () => {
+                // The iframe say the contentlet that try to be inline edited is in multiple pages
+                // So the editor open the dialog to question if the edit is in ALL contentlets or only in this page.
+
+                if (this.$isInlineEditing()) {
+                    // If is already in inline editing, dont open the dialog.
+                    return;
+                }
+
+                const payload = <{ dataset: InlineEditingContentletDataset }>data.payload;
+
+                this.dotCopyContentModalService
+                    .open()
+                    .pipe(
+                        switchMap(({ shouldCopy }) => {
+                            if (!shouldCopy) {
+                                return of(null);
+                            }
+
+                            return this.handleCopyContent();
+                        })
+                    )
+                    .subscribe((res: DotCMSContentlet | null) => {
+                        const updatedDataset = {
+                            inode: res?.inode || payload.dataset.inode,
+                            fieldName: payload.dataset.fieldName,
+                            mode: payload.dataset.mode,
+                            language: payload.dataset.language
+                        };
+
+                        this.inlineEditingService.setTargetInlineMCEDataset(updatedDataset);
+                        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
+                        if (res) {
+                            this.store.reload({
+                                params: this.queryParams
+                            });
+
+                            return;
+                        }
+
+                        this.inlineEditingService.initEditor();
+                    });
+            },
+            [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
+                const payload = <UpdatedContentlet>data.payload;
+
+                if (!payload) {
+                    this.store.setEditorMode(EDITOR_MODE.EDIT);
+
+                    return;
+                }
+
+                this.store.saveFromInlineEditedContentlet({
+                    contentlet: {
+                        inode: payload.dataset['inode'],
+                        body: payload.innerHTML
+                    }
+                });
+            },
+            [CUSTOMER_ACTIONS.REORDER_MENU]: () => {
+                const { reorderUrl } = <ReorderPayload>data.payload;
+
+                this.dialog.openDialogOnUrl(
+                    reorderUrl,
+                    this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {

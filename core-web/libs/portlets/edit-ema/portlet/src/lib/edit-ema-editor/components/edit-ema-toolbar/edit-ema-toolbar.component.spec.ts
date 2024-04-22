@@ -91,14 +91,19 @@ describe('EditEmaToolbarComponent', () => {
                     {
                         provide: EditEmaStore,
                         useValue: {
-                            editorState$: of({
+                            editorToolbarData$: of({
                                 favoritePageURL: 'http://localhost:8080/fav',
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
                                 apiURL: 'http://localhost/api/v1/page/json/page-one',
                                 editorData: {
                                     mode: EDITOR_MODE.EDIT,
-                                    canEditPage: true
+                                    canEditPage: true,
+                                    page: {
+                                        isLocked: false,
+                                        canLock: true,
+                                        lockedByUser: ''
+                                    }
                                 },
                                 editor: {
                                     page: {
@@ -113,7 +118,9 @@ describe('EditEmaToolbarComponent', () => {
                                             id: 1
                                         }
                                     }
-                                }
+                                },
+                                showWorkflowActions: true,
+                                showInfoDisplay: false
                             }),
                             load: jest.fn(),
                             setDevice: jest.fn(),
@@ -395,14 +402,19 @@ describe('EditEmaToolbarComponent', () => {
                     {
                         provide: EditEmaStore,
                         useValue: {
-                            editorState$: of({
+                            editorToolbarData$: of({
                                 favoritePageURL: 'http://localhost:8080/fav',
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
                                 apiURL: 'http://localhost/api/v1/page/json/page-one',
                                 editorData: {
                                     mode: EDITOR_MODE.DEVICE,
-                                    canEditPage: true
+                                    canEditPage: true,
+                                    page: {
+                                        isLocked: false,
+                                        canLock: true,
+                                        lockedByUser: ''
+                                    }
                                 },
                                 editor: {
                                     page: {
@@ -417,7 +429,9 @@ describe('EditEmaToolbarComponent', () => {
                                             id: 1
                                         }
                                     }
-                                }
+                                },
+                                showWorkflowActions: true,
+                                showInfoDisplay: true
                             }),
                             load: jest.fn(),
                             setDevice: jest.fn(),
@@ -445,7 +459,12 @@ describe('EditEmaToolbarComponent', () => {
                 const infoDisplay = spectator.query(DotEmaInfoDisplayComponent);
                 expect(infoDisplay.editorData).toEqual({
                     canEditPage: true,
-                    mode: EDITOR_MODE.DEVICE
+                    mode: EDITOR_MODE.DEVICE,
+                    page: {
+                        isLocked: false,
+                        canLock: true,
+                        lockedByUser: ''
+                    }
                 });
 
                 expect(infoDisplay.currentExperiment).not.toBeDefined();
@@ -460,14 +479,19 @@ describe('EditEmaToolbarComponent', () => {
                     {
                         provide: EditEmaStore,
                         useValue: {
-                            editorState$: of({
+                            editorToolbarData$: of({
                                 favoritePageURL: 'http://localhost:8080/fav',
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
                                 apiURL: 'http://localhost/api/v1/page/json/page-one',
                                 editorData: {
                                     mode: EDITOR_MODE.DEVICE,
-                                    canEditPage: true
+                                    canEditPage: true,
+                                    page: {
+                                        isLocked: false,
+                                        canLock: true,
+                                        lockedByUser: ''
+                                    }
                                 },
                                 currentExperiment: {
                                     status: DotExperimentStatus.RUNNING
@@ -485,7 +509,9 @@ describe('EditEmaToolbarComponent', () => {
                                             id: 1
                                         }
                                     }
-                                }
+                                },
+                                showWorkflowActions: true,
+                                showInfoDisplay: true
                             }),
                             load: jest.fn(),
                             setDevice: jest.fn(),
@@ -518,14 +544,19 @@ describe('EditEmaToolbarComponent', () => {
                     {
                         provide: EditEmaStore,
                         useValue: {
-                            editorState$: of({
+                            editorToolbarData$: of({
                                 favoritePageURL: 'http://localhost:8080/fav',
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
                                 apiURL: 'http://localhost/api/v1/page/json/page-one',
                                 editorData: {
                                     mode: EDITOR_MODE.EDIT,
-                                    canEditPage: true
+                                    canEditPage: true,
+                                    page: {
+                                        isLocked: false,
+                                        canLock: true,
+                                        lockedByUser: ''
+                                    }
                                 },
                                 editor: {
                                     urlContentMap: {
@@ -545,7 +576,9 @@ describe('EditEmaToolbarComponent', () => {
                                             id: 1
                                         }
                                     }
-                                }
+                                },
+                                showWorkflowActions: true,
+                                showInfoDisplay: true
                             }),
                             load: jest.fn(),
                             setDevice: jest.fn(),
@@ -593,6 +626,124 @@ describe('EditEmaToolbarComponent', () => {
                 identifier: '123',
                 inode: '456',
                 title: 'This is the content title'
+            });
+        });
+    });
+
+    describe('locked', () => {
+        describe('locked with unlock permission', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    providers: [
+                        {
+                            provide: EditEmaStore,
+                            useValue: {
+                                editorToolbarData$: of({
+                                    favoritePageURL: 'http://localhost:8080/fav',
+                                    iframeURL: 'http://localhost:8080/index',
+                                    clientHost: 'http://localhost:3000',
+                                    apiURL: 'http://localhost/api/v1/page/json/page-one',
+                                    editorData: {
+                                        mode: EDITOR_MODE.EDIT,
+                                        canEditPage: true,
+                                        page: {
+                                            isLocked: true,
+                                            canLock: true,
+                                            lockedByUser: 'user'
+                                        }
+                                    },
+                                    editor: {
+                                        page: {
+                                            identifier: '123',
+                                            inode: '456'
+                                        },
+                                        viewAs: {
+                                            persona: {
+                                                id: '123'
+                                            },
+                                            language: {
+                                                id: 1
+                                            }
+                                        }
+                                    },
+                                    showWorkflowActions: false,
+                                    showInfoDisplay: true
+                                }),
+                                load: jest.fn(),
+                                setDevice: jest.fn(),
+                                setSocialMedia: jest.fn(),
+                                updateEditorState: jest.fn()
+                            }
+                        }
+                    ]
+                });
+                store = spectator.inject(EditEmaStore);
+                messageService = spectator.inject(MessageService);
+                router = spectator.inject(Router);
+                confirmationService = spectator.inject(ConfirmationService);
+            });
+
+            it('should render a unlock button', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('unlock-button'))).toBeDefined();
+            });
+        });
+
+        describe('locked without unlock permission', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    providers: [
+                        {
+                            provide: EditEmaStore,
+                            useValue: {
+                                editorToolbarData$: of({
+                                    favoritePageURL: 'http://localhost:8080/fav',
+                                    iframeURL: 'http://localhost:8080/index',
+                                    clientHost: 'http://localhost:3000',
+                                    apiURL: 'http://localhost/api/v1/page/json/page-one',
+                                    editorData: {
+                                        mode: EDITOR_MODE.EDIT,
+                                        canEditPage: true,
+                                        page: {
+                                            isLocked: true,
+                                            canLock: false,
+                                            lockedByUser: 'user'
+                                        }
+                                    },
+                                    editor: {
+                                        page: {
+                                            identifier: '123',
+                                            inode: '456'
+                                        },
+                                        viewAs: {
+                                            persona: {
+                                                id: '123'
+                                            },
+                                            language: {
+                                                id: 1
+                                            }
+                                        }
+                                    },
+                                    showWorkflowActions: false,
+                                    showInfoDisplay: true
+                                }),
+                                load: jest.fn(),
+                                setDevice: jest.fn(),
+                                setSocialMedia: jest.fn(),
+                                updateEditorState: jest.fn()
+                            }
+                        }
+                    ]
+                });
+                store = spectator.inject(EditEmaStore);
+                messageService = spectator.inject(MessageService);
+                router = spectator.inject(Router);
+                confirmationService = spectator.inject(ConfirmationService);
+            });
+
+            it('should not render a unlock button', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('unlock-button'))).toBeNull();
             });
         });
     });

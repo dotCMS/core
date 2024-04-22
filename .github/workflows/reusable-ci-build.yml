@@ -1,0 +1,120 @@
+name: Reusable CI Build
+on:
+  workflow_call:
+    inputs:
+      core-build:
+        type: boolean
+        default: true
+env:
+  JVM_TEST_MAVEN_OPTS: "-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+  DOCKER_PLATFORMS: "linux/amd64,linux/arm64"
+  REGISTRY: ghcr.io
+  DOCKER_IMAGE: dotcms/dotcms_test
+  DOCKER_TAG: run-${{ github.run_id }}
+
+jobs:
+  #
+  # Initial JDK 11 Build
+  # Basic build and install all with maven without running tests.
+  # Provides local maven repo for subsequent steps
+  #
+  build-jdk11:
+    name: "Initial Artifact Build"
+    runs-on: ubuntu-20.04
+    if: inputs.core-build == true
+    env:
+      DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup master branch locally without switching current branch
+        if: github.ref != 'refs/heads/master'
+        run: git fetch origin master:master
+      - uses: ./.github/actions/cleanup-runner
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Cache Maven Repository
+        id: cache-maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+          restore-keys: |
+            mavencore-${{ steps.get-date.outputs.date }}
+      - name: Cache Node Binary
+        id: cache-node-binary
+        uses: actions/cache@v4
+        with:
+          path: |
+            installs
+          key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+      - name: Cache yarn
+        id: cache-yarn
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/yarn
+          # if specific cache does not exist then can base upon latest version
+          key: yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: yarn-
+      - name: Lint Checks
+        shell: bash
+        run: |
+          ./mvnw $JVM_TEST_MAVEN_OPTS -Pvalidate --fail-at-end -Dgithub.event.name=${{ github.event_name }} --file pom.xml
+      - name: Maven Build No Test
+        shell: bash
+        run: |
+          echo "Creating $DOCKER_BUILD_CONTEXT"
+          mkdir -p $DOCKER_BUILD_CONTEXT
+          ./mvnw -Dprod=true $JVM_TEST_MAVEN_OPTS -Dcoreit.test.skip=true -Dpostman.test.skip=true -Ddocker.buildArchiveOnly=$DOCKER_BUILD_CONTEXT -Ddotcms.image.name=${DOCKER_IMAGE}:${DOCKER_TAG} --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
+      - name: Persist Maven Repo
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-repo
+          path: ~/.m2/repository
+      - name: Delete Local Artifacts From Cache
+        shell: bash
+        run: find ~/.m2 -name \*-SNAPSHOT -type d -exec rm -rf {} +
+      - name: Persist Docker Build Context
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-build-context
+          path: ${{ env.DOCKER_BUILD_CONTEXT }}/docker-build.tar
+      - name: Save Docker image to a tar file
+        run: docker save ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }} > image.tar
+
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: image.tar
+      - name: core-build-report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "build-reports-Initial Artifact Build"
+          path: |
+            target/build-report.json
+            LICENSE
+          retention-days: 2
+      - name: build-classes # required for sonarqube
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "build-classes-Initial Artifact Build"
+          path: |
+            **/target/classes/**/*.class
+            LICENSE
+          retention-days: 2

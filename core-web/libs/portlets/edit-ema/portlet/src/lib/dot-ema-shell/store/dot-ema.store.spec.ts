@@ -4,7 +4,13 @@ import { of } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 
-import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotExperimentsService,
+    DotLicenseService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     getDraftExperimentMock,
     getRunningExperimentMock,
@@ -32,7 +38,11 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         canEdit: true,
         canRead: true,
         rendered: '<html><body><h1>Hello, World!</h1></body></html>',
-        contentType: 'htmlpageasset'
+        contentType: 'htmlpageasset',
+        canLock: true,
+        locked: false,
+        lockedBy: '',
+        lockedByName: ''
     },
     viewAs: {
         language: {
@@ -69,7 +79,8 @@ describe('EditEmaStore', () => {
                             return of({});
                         },
                         save: jest.fn(),
-                        getFormIndetifier: jest.fn()
+                        getFormIndetifier: jest.fn(),
+                        saveContentlet: jest.fn()
                     }
                 },
                 {
@@ -94,6 +105,18 @@ describe('EditEmaStore', () => {
 
                             return of(null);
                         }
+                    }
+                },
+                {
+                    provide: DotContentletLockerService,
+                    useValue: {
+                        unlock: (_inode: string) => of({})
+                    }
+                },
+                {
+                    provide: LoginService,
+                    useValue: {
+                        getCurrentUser: () => of({})
                     }
                 }
             ]
@@ -122,13 +145,6 @@ describe('EditEmaStore', () => {
         });
 
         describe('selectors', () => {
-            it('should return page url', (done) => {
-                spectator.service.url$.subscribe((url) => {
-                    expect(url).toEqual('test-url');
-                    done();
-                });
-            });
-
             it('should return editorState', (done) => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
 
@@ -166,8 +182,64 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
                             canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
                             variantId: undefined
                         }
+                    });
+                    done();
+                });
+            });
+
+            it('should return editorToolbarData', (done) => {
+                const dotPageApiService = spectator.inject(DotPageApiService);
+
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            pageURI: 'test-url'
+                        }
+                    })
+                );
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+
+                spectator.service.editorToolbarData$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment: null,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
+                        },
+                        showWorkflowActions: true,
+                        showInfoDisplay: false
                     });
                     done();
                 });
@@ -212,6 +284,11 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: false,
                             canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
                             variantId: undefined
                         }
                     });
@@ -248,7 +325,12 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.PREVIEW_VARIANT,
                             canEditPage: true,
                             canEditVariant: false,
-                            variantId: '111'
+                            variantId: '111',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -284,7 +366,12 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.PREVIEW_VARIANT,
                             canEditPage: true,
                             canEditVariant: false,
-                            variantId: '222'
+                            variantId: '222',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -320,7 +407,12 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.EDIT_VARIANT,
                             canEditPage: true,
                             canEditVariant: true,
-                            variantId: '111'
+                            variantId: '111',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -333,20 +425,6 @@ describe('EditEmaStore', () => {
                         state: EDITOR_STATE.IDLE,
                         code: undefined
                     });
-                    done();
-                });
-            });
-
-            it('should return templateIdentifier', (done) => {
-                spectator.service.templateIdentifier$.subscribe((state) => {
-                    expect(state).toEqual('111');
-                    done();
-                });
-            });
-
-            it('should return templateDrawed', (done) => {
-                spectator.service.templateDrawed$.subscribe((state) => {
-                    expect(state).toEqual(true);
                     done();
                 });
             });
@@ -412,7 +490,12 @@ describe('EditEmaStore', () => {
                             variandId: undefined,
                             mode: EDITOR_MODE.EDIT,
                             canEditVariant: true,
-                            canEditPage: true
+                            canEditPage: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -445,7 +528,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditVariant: true,
-                            canEditPage: true
+                            canEditPage: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     done();
@@ -481,7 +569,12 @@ describe('EditEmaStore', () => {
                         editorData: {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
-                            canEditVariant: true
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
                         }
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
@@ -743,6 +836,27 @@ describe('EditEmaStore', () => {
                     life: 2000
                 });
             });
+
+            it('should update inline edited contentlet', () => {
+                const payload = {
+                    contentlet: {
+                        body: '',
+                        inode: '123'
+                    }
+                };
+                const dotPageApiService = spectator.inject(DotPageApiService);
+                jest.spyOn(dotPageApiService, 'saveContentlet').mockReturnValue(of({}));
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+                spectator.service.saveFromInlineEditedContentlet(payload);
+
+                expect(dotPageApiService.saveContentlet).toHaveBeenCalledWith(payload);
+            });
         });
     });
 
@@ -778,6 +892,18 @@ describe('EditEmaStore', () => {
                             return of(null);
                         }
                     }
+                },
+                {
+                    provide: DotContentletLockerService,
+                    useValue: {
+                        unlock: (_inode: string) => of({})
+                    }
+                },
+                {
+                    provide: LoginService,
+                    useValue: {
+                        getCurrentUser: () => of({})
+                    }
                 }
             ]
         });
@@ -807,6 +933,13 @@ describe('EditEmaStore', () => {
         });
 
         describe('selectors', () => {
+            it('should return page rendered', (done) => {
+                spectator.service.pageRendered$.subscribe((rendered) => {
+                    expect(rendered).toEqual('<html><body><h1>Hello, World!</h1></body></html>');
+                    done();
+                });
+            });
+
             it('should return editorState', (done) => {
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
@@ -824,6 +957,11 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
                             canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
                             variantId: undefined
                         }
                     });
@@ -861,6 +999,11 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
                             canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
                             variantId: undefined
                         },
                         currentExperiment: null
@@ -895,6 +1038,11 @@ describe('EditEmaStore', () => {
                             mode: EDITOR_MODE.EDIT,
                             canEditPage: true,
                             canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
                             variantId: undefined
                         }
                     });
@@ -998,6 +1146,17 @@ describe('EditEmaStore', () => {
                         language_id: '1'
                     }
                 });
+            });
+
+            it('should call unlock page service', () => {
+                const dotContentletLockerService = spectator.inject(DotContentletLockerService);
+                const spyUnlock = jest.spyOn(dotContentletLockerService, 'unlock');
+                const spyPatch = jest.spyOn(spectator.service, 'patchState');
+
+                spectator.service.unlockPage('123');
+
+                expect(spyUnlock).toHaveBeenCalledWith('123');
+                expect(spyPatch).toHaveBeenCalled();
             });
 
             it('should not add form to page when the form is dupe and triggers a message', () => {

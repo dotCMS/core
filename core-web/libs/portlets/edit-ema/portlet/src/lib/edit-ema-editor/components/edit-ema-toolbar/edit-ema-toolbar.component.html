@@ -1,4 +1,4 @@
-<ng-container *ngIf="editorState$ | async as es">
+<ng-container *ngIf="editorToolbarData$ | async as es">
     <p-toolbar>
         <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
             <dot-device-selector-seo
@@ -65,13 +65,22 @@
                 (despersonalize)="onDespersonalize($event)"
                 data-testId="persona-selector" />
             <dot-edit-ema-workflow-actions
-                *ngIf="es.editorData.mode === editorMode.EDIT"
+                *ngIf="es.showWorkflowActions"
                 [inode]="es.editor.page.inode"
                 (newPage)="handleNewPage($event)" />
+
+            @if(es.editorData.page.isLocked && es.editorData.page.canLock) {
+            <p-button
+                [label]="'Unlock' | dm"
+                [loading]="es.state === editorState.LOADING"
+                (click)="unlockPage(es.editor.page.inode)"
+                styleClass="p-button-sm"
+                data-testId="unlock-button"></p-button>
+            }
         </div>
     </p-toolbar>
     <dot-ema-info-display
-        *ngIf="!es.editorData.canEditPage || es.editorData.mode !== editorMode.EDIT"
+        *ngIf="es.showInfoDisplay"
         [editorData]="es.editorData"
         [currentExperiment]="es.currentExperiment"
         data-testId="info-display" />

@@ -8,7 +8,13 @@ import { MessageService } from 'primeng/api';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotExperimentsService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotExperimentsService,
+    DotLicenseService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotContainerMap,
     DotDevice,
@@ -78,7 +84,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         private readonly dotLicenseService: DotLicenseService,
         private readonly messageService: MessageService,
         private readonly dotMessageService: DotMessageService,
-        private readonly dotExperimentsService: DotExperimentsService
+        private readonly dotExperimentsService: DotExperimentsService,
+        private readonly dotContentletLockerService: DotContentletLockerService,
+        private readonly loginService: LoginService
     ) {
         super();
     }
@@ -87,74 +95,172 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * Selectors
      *******************/
 
-    readonly url$ = this.select((state) => state.editor.page.pageURI);
+    readonly clientHost$ = this.select((state) => state.clientHost);
 
-    readonly code$ = this.select((state) => state.editor.page.rendered);
-
-    readonly stateLoad$ = this.select((state) => state.editorState);
-
-    readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
-
-    readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
-
-    readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
-
-    readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => {
-        return {
-            state,
-            code
-        };
-    });
-
-    readonly editorState$ = this.select((state) => {
-        const pageURL = this.createPageURL({
-            url: state.editor.page.pageURI,
-            language_id: state.editor.viewAs.language.id.toString(),
-            'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
-            variantName: state.editorData.variantId
-        });
-
-        const favoritePageURL = this.createFavoritePagesURL({
+    private readonly stateLoad$ = this.select((state) => state.editorState);
+    private readonly code$ = this.select((state) => state.editor.page.rendered);
+    private readonly pageURL$ = this.select((state) => this.createPageURL(state));
+    private readonly favoritePageURL$ = this.select((state) =>
+        this.createFavoritePagesURL({
             languageId: state.editor.viewAs.language.id,
             pageURI: state.editor.page.pageURI,
             siteId: state.editor.site.identifier
-        });
-
-        const iframeURL = state.clientHost ? `${state.clientHost}/${pageURL}` : '';
-
-        return {
-            bounds: state.bounds,
-            contentletArea: state.contentletArea,
-            clientHost: state.clientHost,
-            favoritePageURL,
-            apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-            iframeURL,
-            editor: {
-                ...state.editor,
-                viewAs: {
-                    ...state.editor.viewAs,
-                    persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
+        })
+    );
+    private readonly iframeURL$ = this.select(
+        this.clientHost$,
+        this.pageURL$,
+        (clientHost, pageURL) => (clientHost ? `${clientHost}/${pageURL}` : '')
+    );
+    private readonly bounds$ = this.select((state) => state.bounds);
+    private readonly contentletArea$: Observable<ContentletArea> = this.select(
+        (state) => state.contentletArea,
+        {
+            equal: (prev, curr) => {
+                if (!prev) {
+                    return false;
                 }
-            },
-            isEnterpriseLicense: state.isEnterpriseLicense,
-            state: state.editorState ?? EDITOR_STATE.LOADING,
-            editorData: state.editorData,
-            currentExperiment: state.currentExperiment
-        };
-    });
 
-    readonly clientHost$ = this.select((state) => state.clientHost);
+                if (prev.x === curr?.x && prev.y === curr?.y) {
+                    return true;
+                }
 
+                return false;
+            }
+        }
+    );
+
+    private readonly editor$ = this.select((state) => state.editor);
+    private readonly isEnterpriseLicense$ = this.select((state) => state.isEnterpriseLicense);
+    private readonly currentState$ = this.select(
+        (state) => state.editorState ?? EDITOR_STATE.LOADING
+    );
+    private readonly currentExperiment$ = this.select((state) => state.currentExperiment);
+    private readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
+    private readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
+    private readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
+    private readonly page$ = this.select((state) => state.editor.page);
+    private readonly siteId$ = this.select((state) => state.editor.site.identifier);
+    private readonly languageId$ = this.select((state) => state.editor.viewAs.language.id);
+    private readonly currentUrl$ = this.select(
+        (state) => '/' + sanitizeURL(state.editor.page.pageURI)
+    );
+    private readonly error$ = this.select((state) => state.error);
     /**
      * Before this was layoutProperties, but are separate to "temp" selector.
      * And then is merged with templateIdentifier in layoutProperties$.
      * This is to try avoid extra-calls on the select, and avoid memory leaks
      */
-    private readonly layoutProps$ = this.select((state) => ({
-        layout: state.editor.layout,
-        themeId: state.editor.template.theme,
-        pageId: state.editor.page.identifier,
-        containersMap: this.mapContainers(state.editor.containers)
+    private readonly layout$ = this.select((state) => state.editor.layout);
+    private readonly themeId$ = this.select((state) => state.editor.template.theme);
+    private readonly pageId$ = this.select((state) => state.editor.page.identifier);
+    private readonly containersMap$ = this.select((state) =>
+        this.mapContainers(state.editor.containers)
+    );
+    private readonly layoutProps$ = this.select(
+        this.layout$,
+        this.themeId$,
+        this.pageId$,
+        this.containersMap$,
+        (layout, themeId, pageId, containersMap) => ({ layout, themeId, pageId, containersMap })
+    );
+
+    private readonly containers$ = this.select((state) =>
+        this.getPageContainers(state.editor.containers)
+    );
+    private readonly personaTag$ = this.select((state) => state.editor.viewAs.persona?.keyTag);
+    private readonly personalization$ = this.select((state) =>
+        getPersonalization(state.editor.viewAs.persona)
+    );
+    private readonly shellProps$ = this.select(
+        this.page$,
+        this.siteId$,
+        this.languageId$,
+        this.currentUrl$,
+        this.clientHost$,
+        this.error$,
+        (page, siteId, languageId, currentUrl, host, error) => ({
+            page,
+            siteId,
+            languageId,
+            currentUrl,
+            host,
+            error
+        })
+    );
+    readonly editorMode$ = this.select((state) => state.editorData.mode);
+    readonly editorData$ = this.select((state) => state.editorData);
+    readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
+    readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => ({
+        state,
+        code
+    }));
+    readonly vtlIframePage$ = this.select(
+        this.pageRendered$,
+        this.isEnterpriseLicense$,
+        this.editorMode$,
+        (rendered, isEnterprise, mode) => ({
+            rendered,
+            isEnterprise,
+            mode
+        })
+    );
+    readonly editorState$ = this.select(
+        this.bounds$,
+        this.clientHost$,
+        this.contentletArea$,
+        this.currentExperiment$,
+        this.currentState$,
+        this.editor$,
+        this.editorData$,
+        this.favoritePageURL$,
+        this.iframeURL$,
+        this.isEnterpriseLicense$,
+        this.pageURL$,
+        (
+            bounds,
+            clientHost,
+            contentletArea,
+            currentExperiment,
+            currentState,
+            editor,
+            editorData,
+            favoritePageURL,
+            iframeURL,
+            isEnterpriseLicense,
+            pageURL
+        ) => {
+            return {
+                apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
+                bounds: bounds,
+                clientHost: clientHost,
+                contentletArea: contentletArea,
+                currentExperiment,
+                editorData,
+                editor: {
+                    ...editor,
+                    viewAs: {
+                        ...editor.viewAs,
+                        persona: editor.viewAs.persona ?? DEFAULT_PERSONA
+                    }
+                },
+                favoritePageURL,
+                iframeURL,
+                isEnterpriseLicense,
+                state: currentState
+            };
+        }
+    );
+
+    readonly editorToolbarData$ = this.select(this.editorState$, (editorState) => ({
+        ...editorState,
+        showWorkflowActions:
+            editorState.editorData.mode === EDITOR_MODE.EDIT ||
+            editorState.editorData.mode === EDITOR_MODE.INLINE_EDITING,
+        showInfoDisplay:
+            !editorState.editorData.canEditPage ||
+            (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
+                editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING)
     }));
 
     readonly layoutProperties$ = this.select(
@@ -167,15 +273,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         })
     );
 
-    readonly shellProps$ = this.select((state) => ({
-        page: state.editor.page,
-        siteId: state.editor.site.identifier,
-        languageId: state.editor.viewAs.language.id,
-        currentUrl: '/' + sanitizeURL(state.editor.page.pageURI),
-        host: state.clientHost,
-        error: state.error
-    }));
-
     readonly shellProperties$ = this.select(
         this.shellProps$,
         this.templateDrawed$,
@@ -183,17 +280,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     );
 
     // This data is needed to save the page on CRUD operation
-    readonly pageData$ = this.select((state) => {
-        const containers = this.getPageContainers(state.editor.containers);
-
-        return {
-            containers,
-            id: state.editor.page.identifier,
-            languageId: state.editor.viewAs.language.id,
-            personaTag: state.editor.viewAs.persona?.keyTag,
-            personalization: getPersonalization(state.editor.viewAs.persona)
-        };
-    });
+    readonly pageData$ = this.select(
+        this.containers$,
+        this.pageId$,
+        this.languageId$,
+        this.personaTag$,
+        this.personalization$,
+        (containers, id, languageId, personaTag, personalization) => {
+            return {
+                containers,
+                id,
+                languageId,
+                personaTag,
+                personalization
+            };
+        }
+    );
 
     /**
      * Concurrently loads page and license data to updat the state.
@@ -209,14 +311,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         pageData: this.dotPageApiService.get(params),
                         licenseData: this.dotLicenseService
                             .isEnterprise()
-                            .pipe(take(1), shareReplay())
+                            .pipe(take(1), shareReplay()),
+                        currentUser: this.loginService.getCurrentUser()
                     }).pipe(
                         tap({
                             error: ({ status }: HttpErrorResponse) => {
                                 this.createEmptyState({ canEdit: false, canRead: false }, status);
                             }
                         }),
-                        switchMap(({ pageData, licenseData }) =>
+                        switchMap(({ pageData, licenseData, currentUser }) =>
                             this.dotExperimentsService.getById(params.experimentId ?? '').pipe(
                                 tap({
                                     next: (experiment) => {
@@ -234,10 +337,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                         const canEditVariant =
                                             isDefaultVariant || !editingBlockedByExperiment;
 
-                                        const mode = this.getInitialEditorMode(
+                                        const isLocked =
+                                            pageData.page.locked &&
+                                            pageData.page.lockedBy !== currentUser.userId;
+
+                                        const mode = this.getInitialEditorMode({
                                             isDefaultVariant,
-                                            canEditVariant
-                                        );
+                                            canEditVariant,
+                                            isLocked
+                                        });
 
                                         return this.setState({
                                             currentExperiment: experiment,
@@ -251,7 +359,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                 mode,
                                                 canEditVariant,
                                                 canEditPage: pageData.page.canEdit,
-                                                variantId: params.variantName
+                                                variantId: params.variantName,
+                                                page: {
+                                                    isLocked,
+                                                    canLock: pageData.page.canLock,
+                                                    lockedByUser: pageData.page.lockedByName
+                                                }
                                             }
                                         });
                                     },
@@ -334,6 +447,41 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     });
 
+    readonly saveFromInlineEditedContentlet = this.effect(
+        (payload$: Observable<{ contentlet: { body: string; inode: string } }>) => {
+            return payload$.pipe(
+                switchMap((contentlet) => {
+                    return this.dotPageApiService.saveContentlet(contentlet).pipe(
+                        tapResponse(
+                            () => {
+                                this.messageService.add({
+                                    severity: 'success',
+                                    summary: this.dotMessageService.get(
+                                        'editpage.content.update.success'
+                                    ),
+                                    life: 2000
+                                });
+                                this.setEditorMode(EDITOR_MODE.EDIT);
+                            },
+                            (e) => {
+                                console.error(e);
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: this.dotMessageService.get(
+                                        'editpage.content.update.error'
+                                    ),
+                                    life: 2000
+                                });
+
+                                this.setEditorMode(EDITOR_MODE.EDIT);
+                            }
+                        )
+                    );
+                })
+            );
+        }
+    );
+
     /**
      * Saves data to a page but gets the new form identifier first.
      * Calls `whenSaved` callback on success or error.
@@ -408,7 +556,43 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    private createPageURL(params: DotPageApiParams): string {
+    readonly unlockPage = this.effect((inode$: Observable<string>) => {
+        return inode$.pipe(
+            tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
+            switchMap((inode) =>
+                this.dotContentletLockerService.unlock(inode).pipe(
+                    tapResponse({
+                        next: () => {
+                            this.patchState((state) => ({
+                                ...state,
+                                editorState: EDITOR_STATE.IDLE,
+                                editorData: {
+                                    ...state.editorData,
+                                    page: {
+                                        ...state.editorData.page,
+                                        isLocked: false
+                                    },
+                                    mode: EDITOR_MODE.EDIT
+                                }
+                            }));
+                        },
+                        error: () => {
+                            this.updateEditorState(EDITOR_STATE.ERROR);
+                        }
+                    })
+                )
+            )
+        );
+    });
+
+    private createPageURL(state: EditEmaState): string {
+        const params = {
+            url: state.editor.page.pageURI,
+            language_id: state.editor.viewAs.language.id.toString(),
+            'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
+            variantName: state.editorData.variantId
+        };
+
         const url = sanitizeURL(params.url);
 
         return createPageApiUrlWithQueryParams(url, params);
@@ -488,6 +672,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         contentletArea
     }));
 
+    readonly setEditorMode = this.updater((state, mode: EDITOR_MODE) => ({
+        ...state,
+        editorData: {
+            ...state.editorData,
+            mode
+        }
+    }));
+
     /**
      * Create the url to add a page to favorites
      *
@@ -504,8 +696,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private createFavoritePagesURL(params: {
         languageId: number;
         pageURI: string;
-        deviceInode?: string;
-        siteId?: string;
+        siteId: string;
     }): string {
         const { languageId, pageURI, siteId } = params;
 
@@ -620,7 +811,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     };
 
-    private getInitialEditorMode(isDefaultVariant: boolean, canEditVariant: boolean): EDITOR_MODE {
+    private getInitialEditorMode({
+        isDefaultVariant,
+        canEditVariant,
+        isLocked
+    }: {
+        isDefaultVariant: boolean;
+        canEditVariant: boolean;
+        isLocked: boolean;
+    }): EDITOR_MODE {
+        if (isLocked) {
+            return EDITOR_MODE.LOCKED;
+        }
+
         if (isDefaultVariant) {
             return EDITOR_MODE.EDIT;
         } else if (canEditVariant) {

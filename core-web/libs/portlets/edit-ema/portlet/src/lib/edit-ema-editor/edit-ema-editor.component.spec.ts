@@ -21,6 +21,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
     DotContentTypeService,
+    DotContentletLockerService,
     DotContentletService,
     DotCopyContentService,
     DotCurrentUserService,
@@ -32,10 +33,19 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPersonalizeService,
     DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
+    DotSeoMetaTagsUtilService,
+    DotWorkflowActionsFireService,
+    PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsConfigService,
+    DotcmsEventsService,
+    LoginService
+} from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
@@ -50,7 +60,10 @@ import {
     URL_MAP_CONTENTLET,
     getRunningExperimentMock,
     getScheduleExperimentMock,
-    getDraftExperimentMock
+    getDraftExperimentMock,
+    DotcmsConfigServiceMock,
+    DotcmsEventsServiceMock,
+    DotPersonalizeServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
@@ -172,14 +185,41 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ],
         providers: [
-            {
-                provide: DotSeoMetaTagsService,
-                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
-            },
             DotSeoMetaTagsUtilService,
             DialogService,
             DotCopyContentService,
             DotCopyContentModalService,
+            DotWorkflowActionsFireService,
+
+            {
+                provide: DotcmsConfigService,
+                useValue: new DotcmsConfigServiceMock()
+            },
+            {
+                provide: DotcmsEventsService,
+                useValue: new DotcmsEventsServiceMock()
+            },
+            {
+                provide: PushPublishService,
+                useValue: {
+                    getEnvironments() {
+                        return of([
+                            {
+                                id: '123',
+                                name: 'Environment 1'
+                            },
+                            {
+                                id: '456',
+                                name: 'Environment 2'
+                            }
+                        ]);
+                    }
+                }
+            },
+            {
+                provide: DotSeoMetaTagsService,
+                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
+            },
             { provide: ActivatedRoute, useValue: { snapshot: { queryParams: QUERY_PARAMS_MOCK } } },
             {
                 provide: DotPageApiService,
@@ -187,6 +227,62 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                     get({ language_id }) {
                         // We use the language_id to determine the response, use this to test different behaviors
                         return {
+                            // Locked without unlock permission
+                            8: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    canEdit: true,
+                                    canLock: false,
+                                    isLocked: true,
+                                    lockedByUser: 'user'
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 2,
+                                        language: 'Spanish',
+                                        countryCode: 'ES',
+                                        languageCode: 'es',
+                                        country: 'España'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                containers: dotPageContainerStructureMock
+                            }),
+                            //Locked  with unlock permission
+                            7: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    canEdit: true,
+                                    canLock: true,
+                                    locked: true,
+                                    lockedByName: 'user'
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 2,
+                                        language: 'Spanish',
+                                        countryCode: 'ES',
+                                        languageCode: 'es',
+                                        country: 'España'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                containers: dotPageContainerStructureMock
+                            }),
                             6: of({
                                 page: {
                                     title: 'hello world',
@@ -355,6 +451,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                     }
                 }
             },
+
             {
                 provide: DotDevicesService,
                 useValue: new DotDevicesServiceMock()
@@ -375,7 +472,17 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 provide: WINDOW,
                 useValue: window
             },
-            mockProvider(DotContentTypeService)
+            {
+                provide: DotPersonalizeService,
+                useValue: new DotPersonalizeServiceMock()
+            },
+            mockProvider(DotContentTypeService),
+            {
+                provide: DotContentletLockerService,
+                useValue: {
+                    unlock: (_inode: string) => of({})
+                }
+            }
         ]
     });
 describe('EditEmaEditorComponent', () => {
@@ -656,6 +763,126 @@ describe('EditEmaEditorComponent', () => {
                             done();
                         }
                     );
+                });
+
+                describe('reorder navigation', () => {
+                    it('should open a dialog to reorder the navigation', () => {
+                        window.dispatchEvent(
+                            new MessageEvent('message', {
+                                origin: HOST,
+                                data: {
+                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    payload: {
+                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                    }
+                                }
+                            })
+                        );
+
+                        spectator.detectComponentChanges();
+
+                        const dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        const pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+                    });
+
+                    it('should reload the page after saving the new navigation order', () => {
+                        const reloadSpy = jest.spyOn(store, 'reload');
+                        const messageSpy = jest.spyOn(messageService, 'add');
+                        const dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.SAVE_MENU_ORDER
+                                }
+                            })
+                        });
+
+                        expect(reloadSpy).toHaveBeenCalledWith({
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        });
+
+                        expect(messageSpy).toHaveBeenCalledWith({
+                            severity: 'success',
+                            summary: 'editpage.content.contentlet.menu.reorder.title',
+                            detail: 'message.menu.reordered',
+                            life: 2000
+                        });
+
+                        const pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                    });
+
+                    it('should advice the users when they can not save the new order', () => {
+                        const messageSpy = jest.spyOn(messageService, 'add');
+                        const dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER
+                                }
+                            })
+                        });
+
+                        expect(messageSpy).toHaveBeenCalledWith({
+                            severity: 'error',
+                            summary: 'editpage.content.contentlet.menu.reorder.title',
+                            detail: 'error.menu.reorder.user_has_not_permission',
+                            life: 2000
+                        });
+                    });
+
+                    it('should close the dialog if the users cancel the reorder action', () => {
+                        window.dispatchEvent(
+                            new MessageEvent('message', {
+                                origin: HOST,
+                                data: {
+                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    payload: {
+                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                    }
+                                }
+                            })
+                        );
+
+                        spectator.detectComponentChanges();
+
+                        let dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        let pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+
+                        dialog = spectator.debugElement.query(By.css("[data-testId='ema-dialog']"));
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER
+                                }
+                            })
+                        });
+
+                        pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                    });
                 });
 
                 xdescribe('reload', () => {
@@ -1413,11 +1640,16 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('iframe should have the correct content when is VTL', () => {
+                    spectator.detectChanges();
+
                     jest.runOnlyPendingTimers();
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
                     expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                         '<div>hello world</div>'
+                    );
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                        '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
                     );
                 });
 
@@ -1446,9 +1678,13 @@ describe('EditEmaEditorComponent', () => {
                     jest.runOnlyPendingTimers();
 
                     expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                         '<div>New Content - Hello World</div>'
                     );
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                        '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
+                    );
+
                     expect(scrollSpy).toHaveBeenCalledWith(0, 100);
                 });
             });
@@ -2018,6 +2254,47 @@ describe('EditEmaEditorComponent', () => {
             expect(spectator.query(byTestId('editor-content')).classList).toContain(
                 'editor-content--expanded'
             );
+        });
+    });
+
+    describe('locked', () => {
+        describe('locked with unlock permission', () => {
+            let spectator: SpectatorRouting<EditEmaEditorComponent>;
+            let store: EditEmaStore;
+
+            const createComponent = createRouting({ canEdit: true, canRead: true });
+            beforeEach(() => {
+                spectator = createComponent({
+                    queryParams: { language_id: 7, url: 'page-one' }
+                });
+
+                store = spectator.inject(EditEmaStore, true);
+
+                store.load({
+                    url: 'index',
+                    language_id: '7',
+                    clientHost: '',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should not render components', () => {
+                spectator.detectChanges();
+                expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
+                expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
+            });
+
+            it('should render a banner', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
+            });
+
+            it('should iframe wrapper to be expanded', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('editor-content')).classList).toContain(
+                    'editor-content--expanded'
+                );
+            });
         });
     });
 });
