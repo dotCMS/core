@@ -307,7 +307,7 @@ public class OSGIResource {
      * @return ResponseEntityStringView
      */
     @PUT
-    @Path("/_deploy/jar/{jar}")
+    @Path("/jar/{jar}/_deploy")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -352,14 +352,13 @@ public class OSGIResource {
      *
      * @param request
      * @param response
-     * @param bundleId
      * @param jarName
      * @return ResponseEntityStringView
      * @throws BundleException
      * @throws IOException
      */
     @PUT
-    @Path("/_stop/bundle/{bundleId}/jar/{jar}")
+    @Path("/jar/{jar}/_stop")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -374,12 +373,13 @@ public class OSGIResource {
             })
     public final ResponseEntityStringView stop(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response,
-                                 @PathParam ("bundleId") final String bundleId,
                                  @PathParam ("jar") final String jarName) throws BundleException, IOException {
 
         checkUserPermissions(request, response, "dynamic-plugins");
 
         Logger.debug(this, ()->"Stopping OSGI jar " + jarName);
+        final String sanitizeFileNameJarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
+        final String bundleId = findBundleByJar(sanitizeFileNameJarName);
         final Bundle bundle = findBundleOrThrowNotExist(bundleId);
         final String bundleLocation = bundle.getLocation();
         if (isSystemBundle(bundleLocation)) {
@@ -400,14 +400,13 @@ public class OSGIResource {
      * Does the Start of a bundle
      * @param request
      * @param response
-     * @param bundleId
      * @param jarName
      * @return ResponseEntityStringView
      * @throws BundleException
      * @throws IOException
      */
     @PUT
-    @Path("/_start/bundle/{bundleId}/jar/{jar}")
+    @Path("/jar/{jar}/_start")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -422,12 +421,13 @@ public class OSGIResource {
             })
     public final ResponseEntityStringView start(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
-                               @PathParam ("bundleId") final String bundleId,
                                @PathParam ("jar") final String jarName) throws BundleException, IOException {
 
         checkUserPermissions(request, response, "dynamic-plugins");
 
         Logger.debug(this, ()->"Starting OSGI jar " + jarName);
+        final String sanitizeFileNameJarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
+        final String bundleId = findBundleByJar(sanitizeFileNameJarName);
         final Bundle bundle = findBundleOrThrowNotExist(bundleId);
         final String bundleLocation = bundle.getLocation();
         if (isSystemBundle(bundleLocation)) {
