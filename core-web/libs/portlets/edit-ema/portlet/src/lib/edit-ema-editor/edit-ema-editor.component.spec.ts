@@ -1640,11 +1640,16 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('iframe should have the correct content when is VTL', () => {
+                    spectator.detectChanges();
+
                     jest.runOnlyPendingTimers();
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
                     expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                         '<div>hello world</div>'
+                    );
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                        '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
                     );
                 });
 
@@ -1673,9 +1678,13 @@ describe('EditEmaEditorComponent', () => {
                     jest.runOnlyPendingTimers();
 
                     expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                         '<div>New Content - Hello World</div>'
                     );
+                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                        '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
+                    );
+
                     expect(scrollSpy).toHaveBeenCalledWith(0, 100);
                 });
             });
