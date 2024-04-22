@@ -6,7 +6,8 @@ import {
     ClientContentletArea,
     Container,
     ContentletArea,
-    EmaDragItem
+    EmaDragItem,
+    UpdatedContentlet
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
 
@@ -131,7 +132,8 @@ export type PostMessagePayload =
     | SetUrlPayload
     | Container[]
     | ClientContentletArea
-    | ReorderPayload;
+    | ReorderPayload
+    | UpdatedContentlet;
 
 export interface DeletePayload {
     payload: ActionPayload;

@@ -173,7 +173,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
             By.css('[data-testId="dot-device-selector-link"]')
         );
         expect(addContent.nativeElement.href).toContain(
-            '/an/url/test?language_id=1&disabledNavigateMode=true'
+            '/an/url/test?language_id=1&disabledNavigateMode=true&mode=LIVE'
         );
     });
 
@@ -210,6 +210,9 @@ describe('DotDeviceSelectorSeoComponent', () => {
         const mediaTiles = de.query(By.css('[data-testId="social-media-tiles"]'));
 
         expect(link).not.toBeNull();
+        expect(link.nativeElement.href).toContain(
+            '/an/url/test?language_id=1&disabledNavigateMode=true&mode=LIVE'
+        );
         expect(mediaTiles).toBeNull();
     });
 });

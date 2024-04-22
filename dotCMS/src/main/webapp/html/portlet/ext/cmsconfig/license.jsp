@@ -506,9 +506,13 @@
 
 
         <div class="license-manager-information__actions">
+            <button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()">
+                    <%= LanguageUtil.get(pageContext, "I-already-have-a-license-to-upload") %>
+             </button>
+
         <% if(!isCommunity){  %>
 
-            <button class="dijitButtonFlat" data-dojo-type="dijit.form.Button" onClick="licenseAdmin.resetLicense()" iconClass="resetIcon">
+            <button data-dojo-type="dijit.form.Button" onClick="licenseAdmin.resetLicense()" iconClass="resetIcon">
                 <%= LanguageUtil.get(pageContext, "license-bad-id-button") %>
             </button>
 
@@ -517,10 +521,6 @@
                     <%= LanguageUtil.get(pageContext, "request-trial-license") %>
                 </button>
          <%} %>
-
-         <button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()">
-              <%= LanguageUtil.get(pageContext, "I-already-have-a-license-to-upload") %>
-         </button>
 
         </div>
     </div>
