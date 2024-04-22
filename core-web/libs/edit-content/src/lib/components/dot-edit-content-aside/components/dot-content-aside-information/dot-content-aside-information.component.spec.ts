@@ -80,7 +80,7 @@ describe('DotContentAsideInformationComponent', () => {
             detectChanges: false,
             props: {
                 contentlet: BASIC_CONTENTLET,
-                contentType: 'Blog',
+                contentTypeName: 'Blog',
                 loading: false
             }
         });

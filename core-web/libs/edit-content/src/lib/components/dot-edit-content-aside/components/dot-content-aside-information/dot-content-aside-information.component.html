@@ -15,12 +15,12 @@
     <div class="content-aside__metadata">
         <div
             class="sidebar-card"
-            [routerLink]="'/content-types-angular/edit/' + contentType"
+            [routerLink]="'/content-types-angular/edit/' + contentTypeName"
             data-testId="content-type-link">
             <div class="sidebar-card__header">
                 <span>{{ 'Content-Type' | dm }}</span>
             </div>
-            <label class="sidebar-card__label">{{ contentType }}</label>
+            <label class="sidebar-card__label">{{ contentTypeName }}</label>
         </div>
         <div class="sidebar-card" data-testId="references-button">
             <div class="sidebar-card__header">

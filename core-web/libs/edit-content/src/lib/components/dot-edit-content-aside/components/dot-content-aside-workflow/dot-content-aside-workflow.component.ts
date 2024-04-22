@@ -23,7 +23,7 @@ export class DotContentAsideWorkflowComponent implements OnInit, OnChanges {
     @Input() contentType: DotCMSContentType;
 
     private readonly workflowService = inject(DotWorkflowService);
-    protected readonly workflowStatus = signal<DotCMSWorkflowStatus>(null);
+    protected readonly $workflowStatus = signal<DotCMSWorkflowStatus>(null);
 
     ngOnInit() {
         this.setContentStatus();
@@ -37,7 +37,7 @@ export class DotContentAsideWorkflowComponent implements OnInit, OnChanges {
 
     private setContentStatus() {
         const obs$ = this.inode ? this.getWorkflowStatus() : this.getNewContentStatus();
-        obs$.subscribe((workflowStatus) => this.workflowStatus.set(workflowStatus));
+        obs$.subscribe((workflowStatus) => this.$workflowStatus.set(workflowStatus));
     }
 
     /**

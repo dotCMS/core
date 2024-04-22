@@ -54,7 +54,7 @@ describe('DotEditContentAsideComponent', () => {
         );
 
         expect(dotContentAsideInformationComponent).toBeTruthy();
-        expect(dotContentAsideInformationComponent.contentType).toEqual(
+        expect(dotContentAsideInformationComponent.contentTypeName).toEqual(
             dotcmsContentTypeBasicMock.variable
         );
         expect(dotContentAsideInformationComponent.contentlet).toEqual(

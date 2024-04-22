@@ -36,6 +36,6 @@ import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 })
 export class DotContentAsideInformationComponent {
     @Input() contentlet!: DotCMSContentlet;
-    @Input() contentType!: string;
+    @Input() contentTypeName!: string;
     @Input() loading!: boolean;
 }
