@@ -64,7 +64,7 @@ jobs:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       environment: nightly
       deploy-dev-image: true
-      publish-npm-package: ${{ inputs.publish-npm-package || false }} # false unless set manually on workflow_dispatch
+      publish-npm-package: ${{ ( github.event_name == 'workflow_dispatch' && inputs.publish-npm-package == true ) || github.event_name == 'schedule' }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
