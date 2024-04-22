@@ -35,9 +35,6 @@
                 [ngStyle]="{ position: 'absolute', top: '50%' }"
                 data-testId="spinner"></dot-spinner>
         </ng-container>
-
-        <ng-container *ngSwitchCase="'compare'">
-        </ng-container>
     </ng-container>
 
     <!-- @if (this.$compareData()) { -->
@@ -75,7 +72,6 @@
     styleClass="edit-ema-dialog"
     >
         @if (this.$compareData()?.inode) {
-            Hola
             <dot-content-compare [data]="$compareData()" (getMeBringBack)="close($event)"></dot-content-compare>
         }
     </p-dialog>
