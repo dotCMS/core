@@ -13,6 +13,7 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.Site;
+import com.dotcms.model.site.SiteVariableView;
 import com.dotcms.model.site.SiteView;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -21,7 +22,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -449,7 +453,7 @@ class SiteCommandIT extends CommandTest {
             }
 
             // ---
-            // Creating a some test sites
+            // Creating some test sites
             final String newSiteName1 = String.format("new.dotcms.site1-%d",
                     System.currentTimeMillis());
             var status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName1);
@@ -614,7 +618,7 @@ class SiteCommandIT extends CommandTest {
             commandLine.setErr(out);
 
             // ---
-            // Creating a some test sites
+            // Creating some test sites
             final String newSiteName1 = String.format("new.dotcms.site1-%d",
                     System.currentTimeMillis());
             var status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName1);
@@ -705,7 +709,7 @@ class SiteCommandIT extends CommandTest {
             commandLine.setErr(out);
 
             // ---
-            // Creating a some test sites
+            // Creating some test sites
             final String newSiteName1 = String.format("new.dotcms.site1-%d",
                     System.currentTimeMillis());
             var status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName1);
@@ -797,7 +801,7 @@ class SiteCommandIT extends CommandTest {
             commandLine.setErr(out);
 
             // ---
-            // Creating a some test sites
+            // Creating some test sites
             final String newSiteName1 = String.format("new.dotcms.site1-%d",
                     System.currentTimeMillis());
             var status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName1);
@@ -1168,6 +1172,442 @@ class SiteCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: Create a site with variables, push the changes to the server.
+     * <p>
+     * Expected result: The site should be created with the variables.
+     *
+     * @throws IOException if there is an error creating the temporary folder or writing to files
+     */
+    @Test
+    @Order(19)
+    void Test_Command_Create_Site_With_Variables() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+
+            final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            var result = createSite(workspace, false);
+
+            // Pushing the changes to create the site
+            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // Validating the site was created
+            status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                    "--name", result.siteName);
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+
+            // Now validating the updated site descriptors
+            var mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
+            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
+            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
+            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
+            Assertions.assertNotNull(mappedSiteWithVariables.variables());
+            Assertions.assertEquals(5, mappedSiteWithVariables.variables().size());
+
+            // Now check the server
+            var byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName(result.siteName).build()
+            );
+            Assertions.assertEquals(result.siteName, byName.entity().siteName());
+            Assertions.assertNotNull(byName.entity().variables());
+            Assertions.assertEquals(5, byName.entity().variables().size());
+
+            // Validating everything matches between the local site and the server
+            var localSiteVariables = mappedSiteWithVariables.variables();
+            var serverSiteVariables = byName.entity().variables();
+            for (int i = 0; i < localSiteVariables.size(); i++) {
+                var localVar = localSiteVariables.get(i);
+                var serverVar = serverSiteVariables.get(i);
+                Assertions.assertEquals(localVar.name(), serverVar.name());
+                Assertions.assertEquals(localVar.key(), serverVar.key());
+                Assertions.assertEquals(localVar.value(), serverVar.value());
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Create a site without variables, push the changes to the server.
+     * <p>
+     * Expected result: The site should be created without variables.
+     *
+     * @throws IOException if there is an error creating the temporary folder or writing to files
+     */
+    @Test
+    @Order(20)
+    void Test_Command_Create_Site_Without_Variables() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+
+            final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            var result = createSite(workspace, false, false);
+
+            // Pushing the changes to create the site
+            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // Validating the site was created
+            status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                    "--name", result.siteName);
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+
+            // Now validating the updated site descriptors
+            var mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
+            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
+            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
+            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
+            Assertions.assertNotNull(mappedSiteWithVariables.variables());
+            Assertions.assertEquals(0, mappedSiteWithVariables.variables().size());
+
+            // Now check the server
+            var byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName(result.siteName).build()
+            );
+            Assertions.assertEquals(result.siteName, byName.entity().siteName());
+            Assertions.assertNotNull(byName.entity().variables());
+            Assertions.assertEquals(0, byName.entity().variables().size());
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Create a site with variables, push the changes to the server, update the site
+     * variables a couple of times and push those changes.
+     * <br>
+     * Expected result: The site should be created with the variables, and the variables should be
+     * updated for each modification in the server.
+     *
+     * @throws IOException if there is an error creating the temporary folder or writing to files
+     */
+    @Test
+    @Order(21)
+    void Test_Command_Updating_Site_Variables() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+
+            final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            var result = createSite(workspace, false, false);
+
+            // Pushing the changes to create the site
+            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // Validating the site was created
+            status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                    "--name", result.siteName);
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ---
+            // Now validating the updated the site descriptors
+            var mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
+            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
+            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
+            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
+            Assertions.assertNotNull(mappedSiteWithVariables.variables());
+            Assertions.assertTrue(mappedSiteWithVariables.variables().isEmpty());
+
+            // ╔════════════════════╗
+            // ║  Adding variables  ║
+            // ╚════════════════════╝
+            var siteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            siteWithVariables = siteWithVariables.withVariables(
+                    SiteVariableView.builder()
+                            .name("var1Name")
+                            .key("var1Key")
+                            .value("var1Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var2Name")
+                            .key("var2Key")
+                            .value("var2Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var3Name")
+                            .key("var3Key")
+                            .value("var3Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var4Name")
+                            .key("var4Key")
+                            .value("var4Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var5Name")
+                            .key("var5Key")
+                            .value("var5Value")
+                            .build()
+            );
+            var jsonContent = this.mapperService
+                    .objectMapper(result.path.toFile())
+                    .writeValueAsString(siteWithVariables);
+            Files.write(result.path, jsonContent.getBytes());
+
+            // Pushing again
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            // Now validating the updated the site descriptors
+            mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
+            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
+            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
+            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
+            Assertions.assertNotNull(mappedSiteWithVariables.variables());
+            Assertions.assertEquals(5, mappedSiteWithVariables.variables().size());
+
+            // Now check the server
+            var byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName(result.siteName).build()
+            );
+            Assertions.assertEquals(result.siteName, byName.entity().siteName());
+            Assertions.assertNotNull(byName.entity().variables());
+            Assertions.assertEquals(5, byName.entity().variables().size());
+
+            // Validating everything matches between the local site and the server
+            List<SiteVariableView> localSiteVariables = new ArrayList<>(
+                    siteWithVariables.variables());
+            localSiteVariables.sort(Comparator.comparing(SiteVariableView::key));
+            var serverSiteVariables = byName.entity().variables();
+            for (int i = 0; i < localSiteVariables.size(); i++) {
+                var localVar = localSiteVariables.get(i);
+                var serverVar = serverSiteVariables.get(i);
+                Assertions.assertEquals(localVar.name(), serverVar.name());
+                Assertions.assertEquals(localVar.key(), serverVar.key());
+                Assertions.assertEquals(localVar.value(), serverVar.value());
+            }
+
+            // ╔══════════════════════════╗
+            // ║  Updating the variables  ║
+            // ╚══════════════════════════╝
+            siteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            siteWithVariables = siteWithVariables.withVariables(
+                    SiteVariableView.builder()
+                            .name("var5Name")
+                            .key("var5KeyUpdated")
+                            .value("var5Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var3NameUpdated")
+                            .key("var3Key")
+                            .value("var3ValueUpdated")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var2Name")
+                            .key("var2Key")
+                            .value("var2Value")
+                            .build()
+            );
+            jsonContent = this.mapperService
+                    .objectMapper(result.path.toFile())
+                    .writeValueAsString(siteWithVariables);
+            Files.write(result.path, jsonContent.getBytes());
+
+            // Pushing again
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ╔══════════════════════════════════════════╗
+            // ║  Validating the information was updated  ║
+            // ╚══════════════════════════════════════════╝
+
+            // Now validating the updated the site descriptors
+            mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
+            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
+            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
+            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
+            Assertions.assertNotNull(mappedSiteWithVariables.variables());
+            Assertions.assertEquals(3, mappedSiteWithVariables.variables().size());
+
+            // Now check the server
+            byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName(result.siteName).build()
+            );
+            Assertions.assertEquals(result.siteName, byName.entity().siteName());
+            Assertions.assertNotNull(byName.entity().variables());
+            Assertions.assertEquals(3, byName.entity().variables().size());
+
+            // Validating everything matches between the local site and the server
+            localSiteVariables = new ArrayList<>(siteWithVariables.variables());
+            localSiteVariables.sort(Comparator.comparing(SiteVariableView::key));
+            serverSiteVariables = byName.entity().variables();
+            for (int i = 0; i < localSiteVariables.size(); i++) {
+                var localVar = localSiteVariables.get(i);
+                var serverVar = serverSiteVariables.get(i);
+                Assertions.assertEquals(localVar.name(), serverVar.name());
+                Assertions.assertEquals(localVar.key(), serverVar.key());
+                Assertions.assertEquals(localVar.value(), serverVar.value());
+            }
+
+            // ╔════════════════════════════════╗
+            // ║  Updating again the variables  ║
+            // ╚════════════════════════════════╝
+            siteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            siteWithVariables = siteWithVariables.withVariables(
+                    SiteVariableView.builder()
+                            .name("var4Name")
+                            .key("var4Key")
+                            .value("var4Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var1Name")
+                            .key("var1Key")
+                            .value("var1Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var2Name")
+                            .key("var2Key")
+                            .value("var2Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var5Name")
+                            .key("var5Key")
+                            .value("var5Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var3Name")
+                            .key("var3Key")
+                            .value("var3Value")
+                            .build()
+            );
+            jsonContent = this.mapperService
+                    .objectMapper(result.path.toFile())
+                    .writeValueAsString(siteWithVariables);
+            Files.write(result.path, jsonContent.getBytes());
+
+            // Pushing again
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ╔══════════════════════════════════════════╗
+            // ║  Validating the information was updated  ║
+            // ╚══════════════════════════════════════════╝
+
+            // Now validating the updated the site descriptors
+            mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
+            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
+            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
+            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
+            Assertions.assertNotNull(mappedSiteWithVariables.variables());
+            Assertions.assertEquals(5, mappedSiteWithVariables.variables().size());
+
+            // Now check the server
+            byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName(result.siteName).build()
+            );
+            Assertions.assertEquals(result.siteName, byName.entity().siteName());
+            Assertions.assertNotNull(byName.entity().variables());
+            Assertions.assertEquals(5, byName.entity().variables().size());
+
+            // Validating everything matches between the local site and the server
+            localSiteVariables = new ArrayList<>(siteWithVariables.variables());
+            localSiteVariables.sort(Comparator.comparing(SiteVariableView::key));
+            serverSiteVariables = byName.entity().variables();
+            for (int i = 0; i < localSiteVariables.size(); i++) {
+                var localVar = localSiteVariables.get(i);
+                var serverVar = serverSiteVariables.get(i);
+                Assertions.assertEquals(localVar.name(), serverVar.name());
+                Assertions.assertEquals(localVar.key(), serverVar.key());
+                Assertions.assertEquals(localVar.value(), serverVar.value());
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
      * Creates a new site JSON file in the given workspace.
      *
      * @param workspace The workspace where the site file will be created.
@@ -1177,6 +1617,42 @@ class SiteCommandIT extends CommandTest {
      */
     private static SiteCreationResult createSite(final Workspace workspace, final boolean isDefault)
             throws IOException {
+        return createSite(workspace, isDefault, true);
+    }
+
+    /**
+     * Creates a new site JSON file in the given workspace.
+     *
+     * @param workspace The workspace where the site file will be created.
+     * @param isDefault Whether the site should be created as the default site.
+     * @return The name of the created site and the path to the created site file.
+     * @throws IOException If an I/O error occurs while creating the site file.
+     */
+    private static SiteCreationResult createSite(final Workspace workspace, final boolean isDefault,
+            final boolean withVariables) throws IOException {
+
+        final String siteVariables = withVariables ? ",\n"
+                + "  \"variables\" : [ {\n"
+                + "    \"name\" : \"var1Name\",\n"
+                + "    \"key\" : \"var1Key\",\n"
+                + "    \"value\" : \"var1Value\"\n"
+                + "  }, {\n"
+                + "    \"name\" : \"var2Name\",\n"
+                + "    \"key\" : \"var2Key\",\n"
+                + "    \"value\" : \"var2Value\"\n"
+                + "  }, {\n"
+                + "    \"name\" : \"var3Name\",\n"
+                + "    \"key\" : \"var3Key\",\n"
+                + "    \"value\" : \"var3Value\"\n"
+                + "  }, {\n"
+                + "    \"name\" : \"var4Name\",\n"
+                + "    \"key\" : \"var4Key\",\n"
+                + "    \"value\" : \"var4Value\"\n"
+                + "  }, {\n"
+                + "    \"name\" : \"var5Name\",\n"
+                + "    \"key\" : \"var5Key\",\n"
+                + "    \"value\" : \"var5Value\"\n"
+                + "  } ]" : "";
 
         final String newSiteName = String.format(
                 "new.dotcms.site.%s",
@@ -1190,7 +1666,8 @@ class SiteCommandIT extends CommandTest {
                 + "  \"live\" : true,\n"
                 + "  \"working\" : true,\n"
                 + "  \"default\" : %b\n"
-                + "}", newSiteName, isDefault);
+                + "%s\n"
+                + "}", newSiteName, isDefault, siteVariables);
 
         final var path = Path.of(
                 workspace.sites().toString(),
