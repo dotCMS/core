@@ -101,16 +101,14 @@ export class EmaPageDropzoneComponent {
     }
 
     private getTop(isEmpty: boolean): string {
-        {
-            const { parentRect, targetRect, position } = this.positionData();
+        const { parentRect, targetRect, position } = this.positionData();
 
-            if (isEmpty) {
-                return `${targetRect.top - parentRect.top}px`;
-            }
-
-            return position === 'before'
-                ? `${targetRect.top - parentRect.top}px`
-                : `${targetRect.top - parentRect.top + targetRect.height}px`;
+        if (isEmpty) {
+            return `${targetRect.top - parentRect.top}px`;
         }
+
+        return position === 'before'
+            ? `${targetRect.top - parentRect.top}px`
+            : `${targetRect.top - parentRect.top + targetRect.height}px`;
     }
 }
