@@ -35,7 +35,13 @@
         },
         "publish": {
             "command": "node tools/scripts/publish.mjs sdk-experiments {args.ver} {args.tag}",
+            "outputPath": "dist/libs/sdk/experiments",
             "dependsOn": ["build", "test"]
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/experiments"
+            }
         },
         "test": {
             "executor": "@nx/jest:jest",
