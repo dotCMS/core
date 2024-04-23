@@ -5,6 +5,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    Inject,
     Input,
     OnInit,
     Output,
@@ -31,6 +32,7 @@ import {
     socialMediaTiles
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 
 @Component({
     standalone: true,
@@ -46,7 +48,13 @@ import { DotMessagePipe } from '@dotcms/ui';
         RouterLink,
         DividerModule
     ],
-    providers: [DotDevicesService],
+    providers: [
+        DotDevicesService,
+        {
+            provide: WINDOW,
+            useValue: window
+        }
+    ],
     selector: 'dot-device-selector-seo',
     templateUrl: './dot-device-selector-seo.component.html',
     styleUrls: ['./dot-device-selector-seo.component.scss'],
@@ -125,7 +133,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         private dotDevicesService: DotDevicesService,
         private dotMessageService: DotMessageService,
         private dotCurrentUser: DotCurrentUserService,
-        private location: Location
+        @Inject(WINDOW) private window: Window
     ) {}
 
     ngOnInit() {
@@ -220,7 +228,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             } catch {
                 // In case it is not a valid URL, we will use the current location
                 url = new URL(
-                    `${this.location.origin}/${cleanMode}${
+                    `${this.window.location.origin}/${cleanMode}${
                         frontEndUrl.indexOf('?') != -1 ? '&' : '?'
                     }disabledNavigateMode=true&mode=LIVE`
                 );

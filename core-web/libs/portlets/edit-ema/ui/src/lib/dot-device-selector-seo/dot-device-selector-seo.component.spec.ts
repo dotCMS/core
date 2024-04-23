@@ -12,6 +12,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { WINDOW } from '@dotcms/utils';
 import {
     CurrentUserDataMock,
     DotCurrentUserServiceMock,
@@ -63,8 +64,8 @@ describe('DotDeviceSelectorSeoComponent', () => {
             ],
             providers: [
                 {
-                    provide: Location,
-                    useValue: location
+                    provide: WINDOW,
+                    useValue: window
                 },
                 {
                     provide: DotDevicesService,
