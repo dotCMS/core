@@ -192,8 +192,6 @@
 
 #macro(sortNavigation)
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
-        #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
-
       <button
     onclick="openReorderDialog(event)"
     style="
@@ -228,7 +226,7 @@
     function openReorderDialog(event) {
         event.preventDefault();
         var reorderUrl =
-            '${directorURL}&startLevel=${menuLevel}&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}';
+            '${directorURL}&startLevel=1&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}';
 
         window.parent.postMessage(
             {
