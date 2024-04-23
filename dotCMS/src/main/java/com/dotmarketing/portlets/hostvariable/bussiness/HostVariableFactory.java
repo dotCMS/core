@@ -60,7 +60,7 @@ public abstract  class HostVariableFactory {
 	 * @return The list of Site Variables
 	 * @throws DotDataException
 	 */
-	protected abstract List<HostVariable> getVariablesForHost(String siteId)
+	public abstract List<HostVariable> getVariablesForHost(String siteId)
 			throws DotDataException;
 
 	protected abstract void updateUserReferences(String userToDelete, String userToReplace) throws DotDataException ;
