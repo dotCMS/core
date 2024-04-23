@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.languagesmanager.model;
 
 import java.io.Serializable;
 
+@Deprecated(since = "24.04", forRemoval = true)
 public class LanguageKey implements Serializable, Comparable<LanguageKey> {
 
 	/**

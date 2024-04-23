@@ -1651,7 +1651,7 @@ public class ContentletAjax {
 
 	@CloseDB
 	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
-		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
+f		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
 		ArrayList<String[]> list = new ArrayList<>(limit);
 		final User systemUser = APILocator.systemUser();
 		final long languageId = Long.parseLong(language);
@@ -1688,6 +1688,7 @@ public class ContentletAjax {
 		return list;
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
 	private List<LanguageKey> retrieveProperties(long langId) throws Exception {
 		Language lang = langAPI.getLanguage(langId);
 		return langAPI.getLanguageKeys(lang);

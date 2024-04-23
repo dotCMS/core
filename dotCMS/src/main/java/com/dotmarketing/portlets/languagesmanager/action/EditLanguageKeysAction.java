@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 /**
  * @author alex
  */
+@Deprecated(since = "24.04", forRemoval = true)
 public class EditLanguageKeysAction extends DotPortletAction {
 	
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
