@@ -123,6 +123,7 @@ public interface LanguageAPI {
 	 * @param lang
 	 * @return
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(Language lang);
 
 	/**
@@ -130,6 +131,7 @@ public interface LanguageAPI {
 	 * @param langCode
 	 * @return
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(String langCode);
 
 	/**
@@ -138,12 +140,14 @@ public interface LanguageAPI {
 	 * @param countryCode
 	 * @return
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(String langCode, String countryCode);
 
 	/**
 	 * 
 	 * @param lang
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	public void createLanguageFiles(Language lang);
 
 	/**
