@@ -230,18 +230,12 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
     extraPackages : function (){
         var xhrArgs = {
             url: "/api/v1/osgi/extra-packages",
+            handleAs: "json",
             handle : function(dataOrError, ioArgs) {
-
-                if (dojo.isString(dataOrError)) {
-                    if (dataOrError.indexOf("FAILURE") == 0) {
-                        console.error(dataOrError);
-                    } else {
-                        var packages = dataOrError.replace("SUCCESS:", "");
-                        dijit.byId('packages').set("value", packages);
-                    }
-                } else {
-                    //this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-                }
+                console.log("dataOrError: ", dataOrError);
+                let packages = dataOrError.entity;
+                console.log("packages: ", packages);
+                dijit.byId('packages').set("value", packages);
             }
         };
         dijit.byId('packagesOSGIDialog').show();
