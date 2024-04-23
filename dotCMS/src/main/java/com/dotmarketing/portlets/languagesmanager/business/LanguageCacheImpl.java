@@ -264,6 +264,9 @@ public class LanguageCacheImpl extends LanguageCache {
 		Logger.debug(this, "Language Variables for language with id: " + languageId + " have been removed from cache.");
 	}
 
+	/**
+	 * This method is used to clear the cache for all language variables
+	 */
 	public void clearVariables(){
 		final String group = getSecondaryGroup();
 		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
@@ -271,7 +274,11 @@ public class LanguageCacheImpl extends LanguageCache {
 	}
 
 
-
+    /**
+	 * This method is used to store a list of LanguageVariables in cache
+	 * @param languageId the language id to store the list of LanguageVariables for
+	 * @param vars the list of LanguageVariables to store
+	 */
 	@Override
 	public void putVars(final long languageId, final List<LanguageVariable> vars){
 		final String languageIdStr = String.valueOf(languageId);
@@ -291,6 +298,11 @@ public class LanguageCacheImpl extends LanguageCache {
 		cache.put(languageIdStr, langVarCache, group);
 	}
 
+	/**
+	 * This method is used to retrieve a list of LanguageVariables from cache
+	 * @param languageId the language id
+	 * @return a list of LanguageVariables
+	 */
 	public List<LanguageVariable> getVars(final long languageId){
 		final String group = getSecondaryGroup();
 		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();

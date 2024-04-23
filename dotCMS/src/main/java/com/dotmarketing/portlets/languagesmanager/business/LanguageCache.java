@@ -65,11 +65,26 @@ public abstract class LanguageCache implements Cachable{
      */
     public abstract void clearDefaultLanguage();
 
+    /**
+     * Removes the language stored under the key LANGUAGE_KEY_PREFIX + languageId
+     * @param languageId the language id
+     */
     public abstract void clearVarsByLang(final long languageId);
 
+    /**
+     * Removes all language variables stored in cache
+     */
     public abstract void clearVariables();
 
+    /**
+     * Removes the language stored under the key LANGUAGE_KEY_PREFIX + languageId
+     * @param languageId the language id
+     */
     public abstract void putVars(long languageId, List<LanguageVariable> vars);
 
+    /**
+     * Removes the language stored under the key LANGUAGE_KEY_PREFIX + languageId
+     * @param languageId the language id
+     */
     public abstract List<LanguageVariable> getVars(final long languageId);
 }

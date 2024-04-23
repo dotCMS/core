@@ -24,6 +24,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Test for LanguageVariablesHelper
+ */
 public class LanguageVariablesHelperTest {
 
     @BeforeClass
@@ -32,6 +35,13 @@ public class LanguageVariablesHelperTest {
         LanguageVariableAPITest.prepare();
     }
 
+    /**
+     * Given scenario: There are 3 languages and 3 language variables for each language
+     * Expected result: The keys should be ordered as key1, key2, key3
+     * @throws DotDataException if an error occurs
+     * @throws DotSecurityException if an error occurs
+     * @throws JsonProcessingException if an error occurs
+     */
     @Test
     public void paginationTestVerifyKeyOrder()
             throws DotDataException, DotSecurityException, JsonProcessingException {
@@ -78,6 +88,11 @@ public class LanguageVariablesHelperTest {
 
     }
 
+    /**
+     * cleanup the language variables
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     void cleanup() throws DotDataException, DotSecurityException {
         final User user = APILocator.systemUser();
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();

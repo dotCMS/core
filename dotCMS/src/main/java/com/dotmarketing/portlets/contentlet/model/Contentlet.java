@@ -1757,6 +1757,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return getContentType().baseType() == BaseContentType.KEY_VALUE;
     }
 
+	/**
+	 * Determines whether this object belongs to a Language Variable Content Type or not.
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public boolean isLanguageVariable() throws DotDataException, DotSecurityException {
 		return isKeyValue() && LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME.equals(getContentType().variable());
 	}

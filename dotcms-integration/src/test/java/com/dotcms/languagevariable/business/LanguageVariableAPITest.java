@@ -439,6 +439,12 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * helper method to check if a list of contentlets contains a contentlet with a given inode
+     * @param contentlets list of contentlets
+     * @param inode  the inode to check for
+     * @return  true if the inode is found in the list of contentlets
+     */
     boolean containsInode(final List<Contentlet> contentlets, final String inode) {
         return contentlets.stream().anyMatch(contentlet -> contentlet.getInode().equals(inode));
     }

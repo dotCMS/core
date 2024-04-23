@@ -230,6 +230,13 @@ public class ContentletFactoryTest extends ContentletBaseTest {
         Assert.assertEquals(contentlet.getInode(), byContentTypeAndLanguage.get(0).getInode());
     }
 
+    /**
+     * Method under test: {@link ContentletFactory#findByContentType(ContentType, int, int, String, boolean)}
+     * Given scenario: we have a content type and a language, and we create a contentlet of that type and language
+     * Expected result: we should be able to find that contentlet by content type and language
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void testFindContentlet() throws DotDataException, DotSecurityException {
         final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen();

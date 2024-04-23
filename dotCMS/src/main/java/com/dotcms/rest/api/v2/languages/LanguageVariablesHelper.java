@@ -13,22 +13,40 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Helper class to manage Language Variables in the REST API
+
+ */
 public class LanguageVariablesHelper {
 
     private final LanguageVariableAPI languageVariableAPI;
 
     private final LanguageAPI languageAPI;
 
-
+    /**
+     * Constructor
+     * @param languageVariableAPI the LanguageVariableAPI
+     * @param languageAPI the LanguageAPI
+     */
      LanguageVariablesHelper(LanguageVariableAPI languageVariableAPI, LanguageAPI languageAPI) {
         this.languageVariableAPI = languageVariableAPI;
         this.languageAPI = languageAPI;
     }
 
+    /**
+     * Default constructor
+     */
      LanguageVariablesHelper () {
        this(APILocator.getLanguageVariableAPI(), APILocator.getLanguageAPI());
     }
 
+    /**
+     * View Language Variables
+     * @param context the PaginationContext
+     * @param renderNulls whether to render nulls
+     * @return the LanguageVariablePageView
+     * @throws DotDataException if an error occurs
+     */
      LanguageVariablePageView view(final PaginationContext context, final boolean renderNulls)
             throws DotDataException {
 
@@ -46,7 +64,14 @@ public class LanguageVariablesHelper {
         return ImmutableLanguageVariablePageView.builder().variables(table).total(count).build();
     }
 
-
+    /**
+     * Builds the variables table
+     * @param key the key
+     * @param variables the variables
+     * @param languages the languages
+     * @param table the table
+     * @param renderNulls whether to render nulls
+     */
     void buildVariablesTable(final String key, final List<LanguageVariable> variables,
             final List<Language> languages,
             final Map<String, Map<String, LanguageVariableView>> table,
