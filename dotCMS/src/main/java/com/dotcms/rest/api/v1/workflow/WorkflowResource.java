@@ -170,7 +170,7 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
  *     <li>Fire an action for a single content or bulk (action for a several contents).</li>
  * </ul>
  * <p>You can find more information in the
- * {@code dotCMS/src/curl-test/documentation/Workflow_Resource_Tests.json} file. It's a complete
+ * {@code dotcms-postman/src/main/resources/postman/documentation/Workflow_Resource_Tests.json} file. It's a complete
  * collection of examples on how to interact with this Resource.</p>
  *
  * @author jsanca
