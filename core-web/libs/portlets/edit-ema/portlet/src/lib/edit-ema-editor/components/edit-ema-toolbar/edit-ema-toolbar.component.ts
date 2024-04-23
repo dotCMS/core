@@ -73,7 +73,7 @@ export class EditEmaToolbarComponent {
     private readonly personalizeService = inject(DotPersonalizeService);
     private readonly activatedRouter = inject(ActivatedRoute);
 
-    readonly editorState$ = this.store.editorState$;
+    readonly editorToolbarData$ = this.store.editorToolbarData$;
     readonly editorState = EDITOR_STATE;
     readonly editorMode = EDITOR_MODE;
     readonly experimentStatus = DotExperimentStatus;

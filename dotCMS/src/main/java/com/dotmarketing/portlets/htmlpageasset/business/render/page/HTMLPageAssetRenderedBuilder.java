@@ -181,7 +181,7 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
-            final String pageHTML = this.getPageHTML();
+            final String pageHTML = this.getPageHTML(mode);
 
             final HTMLPageAssetRendered.RenderedBuilder pageViewBuilder = new HTMLPageAssetRendered.RenderedBuilder().html(pageHTML);
             pageViewBuilder.site(site).template(template).containers(containers)
@@ -214,12 +214,6 @@ public class HTMLPageAssetRenderedBuilder {
         return Optional.ofNullable(contentlet);
     }
 
-    public String getPageHTML() throws DotSecurityException {
-
-        final PageMode mode = PageMode.get(request);
-
-        return getPageHTML(mode);
-    }
 
     @CloseDBIfOpened
     public String getPageHTML(final PageMode pageMode) throws DotSecurityException {

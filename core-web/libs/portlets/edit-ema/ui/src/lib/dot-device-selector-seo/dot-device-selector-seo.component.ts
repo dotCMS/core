@@ -207,7 +207,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
             this.previewUrl = `${frontEndUrl}${
                 frontEndUrl.indexOf('?') != -1 ? '&' : '?'
-            }disabledNavigateMode=true`;
+            }disabledNavigateMode=true&mode=LIVE`;
         }
     }
 }
