@@ -202,16 +202,30 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     @Input()
     set apiLink(value: string) {
-        // Api link wont work for headless.
-
         if (value) {
             const frontEndUrl = `${value.replace(/api\/v1\/page\/(render|json)\//, '')}`;
 
             const cleanMode = frontEndUrl.replace(/(\?|&)mode=(.*)/, ''); // Clean the mode so the Live always takes effect
 
-            this.previewUrl = `${cleanMode}${
-                frontEndUrl.indexOf('?') != -1 ? '&' : '?'
-            }disabledNavigateMode=true&mode=LIVE`;
+            let url: URL;
+
+            try {
+                // Sometimes the host is specified in the url so this will work
+                url = new URL(
+                    `${cleanMode}${
+                        frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+                    }disabledNavigateMode=true&mode=LIVE`
+                );
+            } catch {
+                // In case it is not a valid URL, we will use the current location
+                url = new URL(
+                    `${location.origin}/${cleanMode}${
+                        frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+                    }disabledNavigateMode=true&mode=LIVE`
+                );
+            } finally {
+                this.previewUrl = url.toString();
+            }
         }
     }
 }
