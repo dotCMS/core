@@ -122,7 +122,6 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent),
             MockComponent(EditEmaToolbarComponent)
-            // MockComponent(DotContentCompareComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -131,7 +130,6 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             EditEmaStore,
             DotFavoritePageService,
             DotESContentService,
-            //TODO: Ask for this
             {
                 provide: DotAlertConfirmService,
                 useValue: {

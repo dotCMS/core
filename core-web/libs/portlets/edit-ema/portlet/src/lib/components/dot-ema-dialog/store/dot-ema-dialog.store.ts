@@ -11,7 +11,7 @@ import { DotActionUrlService } from '../../../services/dot-action-url/dot-action
 import { EDIT_CONTENTLET_URL, ADD_CONTENTLET_URL } from '../../../shared/consts';
 import { ActionPayload } from '../../../shared/models';
 
-type DialogType = 'content' | 'form' | 'widget' | 'compare' | null;
+type DialogType = 'content' | 'form' | 'widget' | null;
 
 export enum DialogStatus {
     IDLE = 'IDLE',
@@ -239,13 +239,6 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         return {
             ...state,
             status
-        };
-    });
-
-    readonly changeDialogType = this.updater((state, type: DialogType) => {
-        return {
-            ...state,
-            type
         };
     });
 

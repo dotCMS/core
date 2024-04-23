@@ -125,7 +125,6 @@ describe('DotEmaDialogComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
             },
-            //TODO: Ask for this
             mockProvider(DotContentTypeService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotAlertConfirmService),
