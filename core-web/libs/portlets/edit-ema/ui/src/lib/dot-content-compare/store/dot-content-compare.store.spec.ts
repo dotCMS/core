@@ -691,17 +691,13 @@ describe('DotContentCompareStore', () => {
                 {
                     provide: DotContentTypeService,
                     useValue: {
-                        getContentType: jasmine
-                            .createSpy()
-                            .and.returnValue(of(getContentTypeMOCKResponse))
+                        getContentType: () => of(getContentTypeMOCKResponse)
                     }
                 },
                 {
                     provide: DotContentletService,
                     useValue: {
-                        getContentletVersions: jasmine
-                            .createSpy()
-                            .and.returnValue(of(getContentletVersionsMOCKResponse))
+                        getContentletVersions: () => of(getContentletVersionsMOCKResponse)
                     }
                 },
                 {

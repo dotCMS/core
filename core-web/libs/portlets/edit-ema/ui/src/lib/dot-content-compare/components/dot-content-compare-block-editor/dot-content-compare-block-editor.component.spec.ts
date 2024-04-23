@@ -221,6 +221,58 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     ]
 };
 
+//This is to mock the ClipboardEvent and DragEvent
+//to avoid tiptap implementation errors.
+class ClipboardDataMock {
+    getData: jest.Mock<string, [string]>;
+    setData: jest.Mock<void, [string, string]>;
+
+    constructor() {
+        this.getData = jest.fn();
+        this.setData = jest.fn();
+    }
+}
+
+class ClipboardEventMock extends Event {
+    clipboardData: ClipboardDataMock;
+
+    constructor(type: string, options?: EventInit) {
+        super(type, options);
+        this.clipboardData = new ClipboardDataMock();
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).ClipboardEvent = ClipboardEventMock;
+
+class DataTransferMock {
+    data: { [key: string]: string };
+
+    constructor() {
+        this.data = {};
+    }
+
+    setData(format: string, data: string): void {
+        this.data[format] = data;
+    }
+
+    getData(format: string): string {
+        return this.data[format] || '';
+    }
+}
+
+class DragEventMock extends Event {
+    dataTransfer: DataTransferMock;
+
+    constructor(type: string, options?: EventInit) {
+        super(type, options);
+        this.dataTransfer = new DataTransferMock();
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).DragEvent = DragEventMock;
+
 describe('DotContentCompareBlockEditorComponent', () => {
     let component: DotContentCompareBlockEditorComponent;
     let fixture: ComponentFixture<DotContentCompareBlockEditorComponent>;

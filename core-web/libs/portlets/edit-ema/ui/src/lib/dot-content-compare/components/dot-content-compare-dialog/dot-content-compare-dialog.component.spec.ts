@@ -82,7 +82,7 @@ describe('DotContentCompareDialogComponent', () => {
 
     it('should have the correct header', () => {
         expect(
-            fixture.debugElement.query(By.css('dot-dialog .dialog__title')).nativeElement.innerText
+            fixture.debugElement.query(By.css('dot-dialog .dialog__title')).nativeElement.innerHTML
         ).toEqual('Compare');
     });
 
