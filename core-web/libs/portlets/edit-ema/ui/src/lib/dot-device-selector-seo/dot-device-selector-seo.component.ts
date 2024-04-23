@@ -205,7 +205,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         if (value) {
             const frontEndUrl = `${value.replace(/api\/v1\/page\/(render|json)\//, '')}`;
 
-            const cleanMode = frontEndUrl.replace(/(\?|&)mode=(.*)/, ''); // Clean the mode so the Live always takes effect
+            const cleanMode = frontEndUrl.replace(/[?&]mode=(.*)/, ''); // Clean the mode so the Live always takes effect
 
             let url: URL;
 
