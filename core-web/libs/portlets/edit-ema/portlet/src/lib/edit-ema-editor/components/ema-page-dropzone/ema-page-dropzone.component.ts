@@ -39,6 +39,9 @@ export class EmaPageDropzoneComponent {
 
     protected readonly position = signal('');
 
+    protected readonly parentRect = signal<DOMRect>(null);
+    protected readonly targetRect = signal<DOMRect>(null);
+
     /**
      * Set the pointer position
      *
@@ -56,8 +59,9 @@ export class EmaPageDropzoneComponent {
         }
 
         this.calculatePosition(event);
-        const parentRect = this.el.nativeElement.getBoundingClientRect();
-        const targetRect = target.getBoundingClientRect();
+
+        const parentRect = this.parentRect();
+        const targetRect = this.targetRect();
 
         const isEmpty = empty === 'true';
 
@@ -89,11 +93,14 @@ export class EmaPageDropzoneComponent {
      */
     private calculatePosition(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
+        const parentRect = this.el.nativeElement.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
         const mouseY = event.clientY;
         const isTop = mouseY < targetRect.top + targetRect.height / 2;
 
         this.position.set(isTop ? 'before' : 'after');
+        this.parentRect.set(parentRect);
+        this.targetRect.set(targetRect);
     }
 
     private getTop({
