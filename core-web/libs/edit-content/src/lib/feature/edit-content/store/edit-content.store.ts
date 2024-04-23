@@ -22,6 +22,7 @@ interface EditContentState {
     actions: DotCMSWorkflowAction[];
     contentType: DotCMSContentType;
     contentlet: DotCMSContentlet;
+    loading: boolean;
 }
 
 /**
@@ -43,10 +44,11 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly location = inject(Location);
 
-    readonly vm$ = this.select(({ actions, contentType, contentlet }) => ({
+    readonly vm$ = this.select(({ actions, contentType, contentlet, loading }) => ({
         actions,
         contentType,
-        contentlet
+        contentlet,
+        loading
     }));
 
     /**
@@ -60,6 +62,16 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     }));
 
     /**
+     * Update the loading state
+     *
+     * @memberof DotEditContentStore
+     */
+    readonly updateLoading = this.updater((state, loading: boolean) => ({
+        ...state,
+        loading
+    }));
+
+    /**
      * Update the contentlet and actions
      *
      * @memberof DotEditContentStore
@@ -70,7 +82,8 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     }>((state, { contentlet, actions }) => ({
         ...state,
         contentlet,
-        actions
+        actions,
+        loading: false
     }));
 
     /**
@@ -81,6 +94,7 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     readonly fireWorkflowActionEffect = this.effect(
         (data$: Observable<DotFireActionOptions<{ [key: string]: string | object }>>) => {
             return data$.pipe(
+                tap(() => this.updateLoading(true)),
                 switchMap((options) => {
                     return this.fireWorkflowAction(options).pipe(
                         tapResponse(
@@ -102,6 +116,7 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
                                 });
                             },
                             ({ error }) => {
+                                this.updateLoading(false);
                                 this.messageService.add({
                                     severity: 'error',
                                     summary: this.dotMessageService.get('dot.common.message.error'),

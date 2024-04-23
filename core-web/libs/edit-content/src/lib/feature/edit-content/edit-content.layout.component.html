@@ -1,16 +1,24 @@
 <ng-container *ngIf="vm$ | async as vm; else noContent">
-    <div
+    <p-messages
         class="topBar"
         *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]"
+        styleClass="p-message-border-y"
+        severity="success"
         data-testId="topBar">
-        <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
-        <a
-            [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"
-            data-testId="content-type"
-            >{{ 'edit.content.layout.beta.message.switch' | dm }}</a
-        >
-        {{ 'edit.content.layout.beta.message.needed' | dm }}
-    </div>
+        <ng-template pTemplate>
+            <i class="pi pi-info-circle"></i>
+            <div>
+                <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
+                <a
+                    [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"
+                    data-testId="content-type"
+                    >{{ 'edit.content.layout.beta.message.switch' | dm }}</a
+                >
+                <span>{{ ' ' }}{{ 'edit.content.layout.beta.message.needed' | dm }}</span>
+            </div>
+        </ng-template>
+    </p-messages>
+
     <dot-edit-content-toolbar
         class="header"
         [actions]="vm.actions"
@@ -22,11 +30,11 @@
             })
         "></dot-edit-content-toolbar>
     <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
-    <aside class="sidebar">
-        <dot-edit-content-aside
-            [contentLet]="vm.contentlet"
-            [contentType]="vm.contentType.variable" />
-    </aside>
+    <dot-edit-content-aside
+        class="sidebar"
+        [loading]="vm.loading"
+        [contentlet]="vm.contentlet"
+        [contentType]="vm.contentType" />
 </ng-container>
 
 <ng-template #noContent>{{ 'edit.content.layout.no.content.to.show ' | dm }}</ng-template>

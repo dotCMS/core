@@ -6,8 +6,17 @@ import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotTempFileThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
+import { DotResourceLinksService } from '@dotcms/data-access';
+import {
+    DotTempFileThumbnailComponent,
+    DotSpinnerModule,
+    DotCopyButtonComponent,
+    DotFileSizeFormatPipe,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotBinaryFieldPreviewComponent } from './dot-binary-field-preview.component';
 
@@ -68,11 +77,16 @@ export default {
                 BrowserAnimationsModule,
                 CommonModule,
                 ButtonModule,
+                SkeletonModule,
                 DotTempFileThumbnailComponent,
                 DotSpinnerModule,
+                DialogModule,
+                DotMessagePipe,
+                DotFileSizeFormatPipe,
+                DotCopyButtonComponent,
                 HttpClientModule
             ],
-            providers: []
+            providers: [DotResourceLinksService]
         })
     ],
     parameters: {
@@ -92,6 +106,11 @@ export default {
         },
         variableName: {
             defaultValue: 'binaryField',
+            control: 'text',
+            description: 'Field variable name'
+        },
+        fieldVariable: {
+            defaultValue: 'Blog',
             control: 'text',
             description: 'Field variable name'
         }
@@ -135,12 +154,14 @@ export const Video = Template.bind({});
 
 Video.args = {
     file: previewVideo,
-    variableName: 'binaryField'
+    variableName: 'binaryField',
+    fieldVariable: 'Blog'
 };
 
 export const File = Template.bind({});
 
 File.args = {
     file: previewFile,
-    variableName: 'binaryField'
+    variableName: 'binaryField',
+    fieldVariable: 'Blog'
 };

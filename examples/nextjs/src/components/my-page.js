@@ -20,7 +20,7 @@ export function MyPage({ data, nav }) {
   const pathname = usePathname();
 
   const experimentConfig = {
-    apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY ,
+    apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY ?? '' , //We dont want to run experiments all the time
     server: process.env.NEXT_PUBLIC_DOTCMS_HOST ,
     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG,
     redirectFn: replace
