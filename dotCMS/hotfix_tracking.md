@@ -89,3 +89,4 @@ This maintenance release includes the following code fixes:
 82. https://github.com/dotCMS/core/issues/27909 : Invalid role check when accessing resource #27909
 83. https://github.com/dotCMS/core/issues/27910 : Log too verbose in certain situations #27910
 84. https://github.com/dotCMS/core/issues/27453 : Make experience plugin into a system plugin #27453
+85. https://github.com/dotCMS/core/issues/27516 : Secrets can not find the inode on certain url #27516

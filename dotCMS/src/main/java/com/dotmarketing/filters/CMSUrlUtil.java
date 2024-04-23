@@ -17,10 +17,7 @@ import com.dotmarketing.filters.CMSFilter.IAmSubType;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
 import io.vavr.Tuple;
@@ -45,8 +42,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.filters.CMSFilter.CMS_INDEX_PAGE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
-import static com.liferay.util.StringPool.UNDERLINE;
+import static com.liferay.util.StringPool.*;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -590,13 +586,33 @@ public class CMSUrlUtil {
 	 * @return The Inode of the Contentlet.
 	 */
 	public String getInodeFromUrlPath(final String urlPath) {
+		// tries the edit mode first
 		final PageMode[] modes = PageMode.values();
 		for (final PageMode mode : modes) {
 			if (urlPath.startsWith(FORWARD_SLASH + mode.name() + FORWARD_SLASH)) {
 				final String urlPathWithoutMode = urlPath.substring(mode.name().length() + 2);
 				return urlPathWithoutMode.substring(0, urlPathWithoutMode.indexOf(FORWARD_SLASH));
 			}
+			if (urlPath.startsWith(mode.name() + FORWARD_SLASH)) {
+				final String urlPathWithoutMode = urlPath.substring(mode.name().length() + 1);
+				int indexOf = urlPathWithoutMode.indexOf(FORWARD_SLASH);
+				if (indexOf == -1) {
+					indexOf = urlPathWithoutMode.indexOf(UNDERLINE);
+				}
+				if (indexOf == -1) {
+					indexOf = urlPathWithoutMode.indexOf(PERIOD);
+				}
+				return urlPathWithoutMode.substring(0, indexOf);
+			}
 		}
+
+		// tries the fe mode: /data/shared/assets/c/e/ce837ff5-dc6f-427a-8f60-d18afc395be9/fileAsset/openai-summarize.vtl
+		final Optional<String> inodeOPt = UUIDUtil.findInode(urlPath);
+		if (inodeOPt.isPresent()) {
+			return inodeOPt.get();
+		}
+
+		// tries the content mode: CONTENT/27e8f845c3bd21ad1c601b8fe005caa6_1695072095296.content
 		return urlPath.substring(urlPath.indexOf(FORWARD_SLASH) + 1, urlPath.indexOf(UNDERLINE));
 	}
 
