@@ -37,10 +37,11 @@ export class EmaPageDropzoneComponent {
 
     private readonly el = inject(ElementRef);
 
-    protected readonly position = signal('');
-
-    protected readonly parentRect = signal<DOMRect>(null);
-    protected readonly targetRect = signal<DOMRect>(null);
+    protected readonly positionData = signal({
+        position: '',
+        parentRect: null,
+        targetRect: null
+    });
 
     /**
      * Set the pointer position
@@ -60,19 +61,13 @@ export class EmaPageDropzoneComponent {
 
         this.calculatePosition(event);
 
-        const parentRect = this.parentRect();
-        const targetRect = this.targetRect();
+        const { parentRect, targetRect } = this.positionData();
 
         const isEmpty = empty === 'true';
 
         const opacity = isEmpty ? '0.1' : '1';
         const height = isEmpty ? `${targetRect.height}px` : '3px';
-        const top = this.getTop({
-            targetRect,
-            parentRect,
-            isEmpty,
-            position: this.position()
-        });
+        const top = this.getTop(isEmpty);
 
         this.pointerPosition = {
             left: `${targetRect.left - parentRect.left}px`,
@@ -98,25 +93,21 @@ export class EmaPageDropzoneComponent {
         const mouseY = event.clientY;
         const isTop = mouseY < targetRect.top + targetRect.height / 2;
 
-        this.position.set(isTop ? 'before' : 'after');
-        this.parentRect.set(parentRect);
-        this.targetRect.set(targetRect);
+        this.positionData.set({
+            position: isTop ? 'before' : 'after',
+            parentRect,
+            targetRect
+        });
     }
 
-    private getTop({
-        targetRect,
-        parentRect,
-        isEmpty,
-        position
-    }: {
-        targetRect: DOMRect;
-        isEmpty: boolean;
-        position: string;
-        parentRect: DOMRect;
-    }) {
-        if (isEmpty) {
-            return `${targetRect.top - parentRect.top}px`;
-        } else {
+    private getTop(isEmpty: boolean): string {
+        {
+            const { parentRect, targetRect, position } = this.positionData();
+
+            if (isEmpty) {
+                return `${targetRect.top - parentRect.top}px`;
+            }
+
             return position === 'before'
                 ? `${targetRect.top - parentRect.top}px`
                 : `${targetRect.top - parentRect.top + targetRect.height}px`;
