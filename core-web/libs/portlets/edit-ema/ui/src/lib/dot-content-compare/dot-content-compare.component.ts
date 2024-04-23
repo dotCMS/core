@@ -3,14 +3,9 @@ import { Observable } from 'rxjs';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
+import { DotContentCompareEvent } from '@dotcms/dotcms-models';
 
 import { DotContentCompareState, DotContentCompareStore } from './store/dot-content-compare.store';
-
-export interface DotContentCompareEvent {
-    inode: string;
-    identifier: string;
-    language: string;
-}
 
 @Component({
     selector: 'dot-content-compare',

@@ -12,9 +12,12 @@ import {
     DotFormatDateService,
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-
-import { DotContentCompareEvent } from '../dot-content-compare.component';
+import {
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotContentCompareEvent
+} from '@dotcms/dotcms-models';
 
 export interface DotContentCompareTableData {
     working: DotCMSContentlet;

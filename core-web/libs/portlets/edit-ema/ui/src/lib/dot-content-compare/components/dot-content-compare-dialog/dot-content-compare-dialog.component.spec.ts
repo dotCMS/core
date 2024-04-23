@@ -4,14 +4,14 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { COMPARE_CUSTOM_EVENT } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotContentCompareEvent } from '@dotcms/dotcms-models';
 import { DotDialogComponent, DotDialogModule, DotMessagePipe } from '@dotcms/ui';
 import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
 
-import { DotContentCompareEvent } from '../../dot-content-compare.component';
+const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 
 @Component({
     selector: 'dot-content-compare',

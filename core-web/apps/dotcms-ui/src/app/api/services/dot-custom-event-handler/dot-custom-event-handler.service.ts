@@ -1,6 +1,3 @@
-
-import { DotContentCompareEvent } from 'libs/portlets/edit-ema/ui/src/lib/dot-content-compare/dot-content-compare.component';
-
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -19,7 +16,7 @@ import {
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
-import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotContentCompareEvent, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';

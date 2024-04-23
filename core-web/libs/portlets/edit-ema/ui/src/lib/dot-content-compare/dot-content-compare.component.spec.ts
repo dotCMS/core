@@ -14,15 +14,12 @@ import {
     DotFormatDateService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotContentCompareEvent } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { dotContentCompareTableDataMock } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component.spec';
 import { DotContentCompareTableComponent } from './components/dot-content-compare-table/dot-content-compare-table.component';
-import {
-    DotContentCompareComponent,
-    DotContentCompareEvent
-} from './dot-content-compare.component';
+import { DotContentCompareComponent } from './dot-content-compare.component';
 import { DotContentCompareModule } from './dot-content-compare.module';
 import { DotContentCompareStore } from './store/dot-content-compare.store';
 

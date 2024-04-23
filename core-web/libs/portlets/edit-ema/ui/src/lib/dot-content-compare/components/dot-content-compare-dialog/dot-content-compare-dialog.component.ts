@@ -4,10 +4,10 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import { map, pluck, takeUntil, tap } from 'rxjs/operators';
 
-import { COMPARE_CUSTOM_EVENT } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotEventsService } from '@dotcms/data-access';
+import { DotContentCompareEvent } from '@dotcms/dotcms-models';
 
-import { DotContentCompareEvent } from '../../dot-content-compare.component';
+const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 
 @Component({
     selector: 'dot-content-compare-dialog',

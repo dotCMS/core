@@ -6,7 +6,6 @@ import {
     byTestId,
     mockProvider
 } from '@ngneat/spectator/jest';
-import { DotContentCompareComponent } from 'libs/portlets/edit-ema/ui/src/lib/dot-content-compare/dot-content-compare.component';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -26,6 +25,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import {
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,

@@ -2,7 +2,6 @@ import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-
 import {
     DotContentletService,
     DotContentTypeService,

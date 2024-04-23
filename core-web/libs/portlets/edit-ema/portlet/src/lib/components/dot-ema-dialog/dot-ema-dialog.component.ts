@@ -1,4 +1,3 @@
-import { DotContentCompareEvent } from 'libs/portlets/edit-ema/ui/src/lib/dot-content-compare/dot-content-compare.component';
 import { fromEvent } from 'rxjs';
 
 import { NgIf, NgStyle, NgSwitch, NgSwitchCase } from '@angular/common';
@@ -25,7 +24,8 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
-    DotCMSWorkflowActionEvent
+    DotCMSWorkflowActionEvent,
+    DotContentCompareEvent
 } from '@dotcms/dotcms-models';
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
