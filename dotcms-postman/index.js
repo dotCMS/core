@@ -14,7 +14,7 @@ const summaryResults = {
 
 // Default configurations
 const defaultServerUrl = 'http://localhost:8080';
-const defaultPostmanTestsDir = '../dotCMS/src/curl-test'; // Default directory
+const defaultPostmanTestsDir = 'src/main/resources/postman'; // Default directory
 const defaultConfigFilePath = 'config.json'; // Default config file path
 const defaultPostmanTestsResultsDir = 'target/failsafe-reports'; // Default results directory
 
