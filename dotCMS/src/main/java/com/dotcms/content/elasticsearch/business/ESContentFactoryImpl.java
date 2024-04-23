@@ -1159,6 +1159,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return contentlets;
     }
 
+    /**
+     * Find all contentlets by content type and language
+     * @param contentType ContentType
+     * @param languageId long
+     * @param offset int
+     * @param limit int
+     * @param sortBy String
+     * @param working boolean
+     * @return List<Contentlet>
+     * @throws DotDataException DotDataException
+     * @throws DotStateException DotStateException
+     */
     @Override
     public List<Contentlet> findByContentTypeAndLanguage(final ContentType contentType, final long languageId,
             final int offset, final int limit,
@@ -1200,6 +1212,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 
+    /**
+     * Find  contentlets by content type using pagination and ordering
+     * @param contentType ContentType
+     * @param offset int
+     * @param limit int
+     * @param orderBy String
+     * @param working boolean
+     * @return List<Contentlet>
+     * @throws DotDataException DotDataException
+     * @throws DotStateException DotStateException
+     */
     @Override
     public List<Contentlet> findByContentType(final ContentType contentType,
             final int offset, final int limit,
@@ -1246,6 +1269,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return contentlets;
     }
 
+    /**
+     * auxiliary method to count contentlets by content type and working or live required by pagination
+     * @param contentType ContentType
+     * @param working boolean
+     * @return List<Contentlet>
+     * @throws DotDataException DotDataException
+     * @throws DotStateException DotStateException
+     */
     @Override
     public int countByTypeWorkingOrLive(final ContentType contentType, final boolean working) {
         final DotConnect dotConnect = new DotConnect();
