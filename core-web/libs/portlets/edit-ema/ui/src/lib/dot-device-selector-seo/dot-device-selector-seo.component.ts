@@ -203,9 +203,11 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input()
     set apiLink(value: string) {
         if (value) {
-            const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
+            const frontEndUrl = `${value.replace(/api\/v1\/page\/(render|json)\//, '')}`;
 
-            this.previewUrl = `${frontEndUrl}${
+            const cleanMode = frontEndUrl.replace(/(\?|&)mode=(.*)/, ''); // Clean the mode so the Live always takes effect
+
+            this.previewUrl = `${cleanMode}${
                 frontEndUrl.indexOf('?') != -1 ? '&' : '?'
             }disabledNavigateMode=true&mode=LIVE`;
         }
