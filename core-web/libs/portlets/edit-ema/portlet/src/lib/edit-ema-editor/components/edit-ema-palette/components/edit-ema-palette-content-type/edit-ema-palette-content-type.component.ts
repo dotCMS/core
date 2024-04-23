@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { JsonPipe, NgFor, NgIf } from '@angular/common';
+import { JsonPipe, NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -16,7 +16,6 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
-import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 
 import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
@@ -25,7 +24,6 @@ import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
     selector: 'dot-edit-ema-palette-content-type',
     standalone: true,
     imports: [
-        NgFor,
         NgIf,
         ReactiveFormsModule,
         DotIconModule,
@@ -73,9 +71,5 @@ export class EditEmaPaletteContentTypeComponent implements OnInit, OnDestroy {
     ngOnDestroy() {
         this.destroy$.next();
         this.destroy$.complete();
-    }
-
-    protected contentTypeTrackBy(_: number, contentType: DotCMSContentType): string {
-        return contentType.id;
     }
 }

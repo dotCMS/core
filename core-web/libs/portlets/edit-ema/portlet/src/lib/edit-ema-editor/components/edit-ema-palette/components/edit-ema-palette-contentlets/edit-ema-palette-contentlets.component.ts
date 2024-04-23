@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { JsonPipe, NgFor, NgIf } from '@angular/common';
+import { JsonPipe, NgIf } from '@angular/common';
 import {
     CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
@@ -19,7 +19,6 @@ import { PaginatorModule } from 'primeng/paginator';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 
 import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
@@ -29,7 +28,6 @@ import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
     standalone: true,
     imports: [
         NgIf,
-        NgFor,
         ReactiveFormsModule,
         DotIconModule,
         PaginatorModule,
@@ -79,9 +77,5 @@ export class EditEmaPaletteContentletsComponent implements OnInit, OnDestroy {
     ngOnDestroy() {
         this.destroy$.next();
         this.destroy$.complete();
-    }
-
-    protected contentletTrackBy(_: number, contentlet: DotCMSContentlet): string {
-        return contentlet.identifier;
     }
 }
