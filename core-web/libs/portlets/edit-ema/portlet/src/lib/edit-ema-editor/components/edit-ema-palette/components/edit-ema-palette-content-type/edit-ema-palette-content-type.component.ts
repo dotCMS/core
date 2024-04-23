@@ -16,6 +16,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 
 import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
@@ -72,5 +73,9 @@ export class EditEmaPaletteContentTypeComponent implements OnInit, OnDestroy {
     ngOnDestroy() {
         this.destroy$.next();
         this.destroy$.complete();
+    }
+
+    protected contentTypeTrackBy(_: number, contentType: DotCMSContentType): string {
+        return contentType.id;
     }
 }

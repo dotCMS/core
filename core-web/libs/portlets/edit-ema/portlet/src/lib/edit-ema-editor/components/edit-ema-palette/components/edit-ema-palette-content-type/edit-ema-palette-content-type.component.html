@@ -21,7 +21,7 @@
     <ng-template #content>
         <div
             class="content-type-card"
-            *ngFor="let contenttype of contentTypes; let i = index"
+            *ngFor="let contenttype of contentTypes; let i = index; trackBy: contentTypeTrackBy"
             [attr.data-item]="
                 {
                     contentType: {
