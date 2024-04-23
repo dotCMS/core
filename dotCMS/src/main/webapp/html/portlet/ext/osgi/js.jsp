@@ -81,17 +81,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 	undeploy : function (jarName, bundleId){
 		var xhrArgs = {
 			url: "/api/v1/osgi/jar/" + jarName,
+            handleAs: "json",
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
 
-						// needs logging
-					} else {
-						// needs logging
-					}
-				} else {
-					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-				}
 			}
 		};
 		dijit.byId('savingOSGIDialog').show();
@@ -108,16 +100,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		var jarName = availBundles.value;
 		var xhrArgs = {
             url: "/api/v1/osgi/jar/" + jarName + "/_deploy",
+            handleAs: "json",
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						// needs logging
-					} else {
-						// needs logging
-					}
-				} else {
-					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-				}
+
 			}
 		};
 		dijit.byId('savingOSGIDialog').show();
@@ -128,16 +113,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 	start : function(jarName, bundleId){
 		var xhrArgs = {
             url: "/api/v1/osgi/jar/" + jarName + "/_start",
+            handleAs: "json",
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						// needs logging
-					} else {
-						// needs logging
-					}
-				} else {
-					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-				}
+				// do nothing
 			}
 		};
 		dijit.byId('savingOSGIDialog').show();
@@ -148,16 +126,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 	stop : function(jarName, bundleId){
 		var xhrArgs = {
             url: "/api/v1/osgi/jar/" + jarName + "/_stop",
+            handleAs: "json",
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						// needs logging
-					} else {
-						// needs logging
-					}
-				} else {
-					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-				}
+				// do nothing
 			}
 		};
 		dijit.byId('savingOSGIDialog').show();
@@ -208,17 +179,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
         if(canContinue) {
             var xhrArgs = {
                 url: "/api/v1/osgi/_restart",
+                handleAs: "json",
                 handle : function(dataOrError, ioArgs) {
-                    if (dojo.isString(dataOrError)) {
-                        if (dataOrError.indexOf("FAILURE") == 0) {
-                            // needs logging
-                            console.error(dataOrError);
-                        } else {
-                            // needs logging
-                        }
-                    } else {
-                        // needs logging
-                    }
+                    // do nothing
                 }
             };
             dijit.byId('savingOSGIDialog').show();
@@ -232,9 +195,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
             url: "/api/v1/osgi/extra-packages",
             handleAs: "json",
             handle : function(dataOrError, ioArgs) {
-                console.log("dataOrError: ", dataOrError);
                 let packages = dataOrError.entity;
-                console.log("packages: ", packages);
                 dijit.byId('packages').set("value", packages);
             }
         };
@@ -242,32 +203,28 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
         dojo.xhrGet(xhrArgs);
     },
     
-    resetExtraPackages : function(){
+    resetExtraPackages : function(){ // todo: fix this one
 
         var canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-modify-packages-confirmation") %>');
         if(canContinue) {
 
-            var fm = dojo.byId("modifyPackagesForm");
+            var data = {
+                packages: "RESET"
+            };
+            var xhrArgs = {
+                 url: "/api/v1/osgi/extra-packages",
+                postData: dojo.toJson(data),
+                handleAs: "json",
+                headers : {
+                    'Accept' : 'application/json',
+                    'Content-Type' : 'application/json;charset=utf-8',
+                },
+                handle : function(dataOrError, ioArgs) {
+                    // do nothing
+                }
+            };
+            dojo.xhrPut(xhrArgs);
 
-            require(["dojo/io/iframe"], function(ioIframe){
-     
-                ioIframe.send({
-                    // The form node, which contains the
-                    // data. We also pull the URL and METHOD from it:
-                    form: fm,
-                    url: "/api/v1/osgi/extra-packages",
-                    method : "put",
-                    // The used data format:
-                    handleAs: "json",
-
-                    // Callback on successful call:
-                    load: function(response, ioArgs) {
-                        // return the response for succeeding callbacks
-                        //setTimeout(function() {mainAdmin.refresh();},7000);
-                        return response;
-                    }
-                });
-            });
             dijit.byId('packagesOSGIDialog').hide();
             dijit.byId('savingOSGIDialog').show();
             setTimeout(function() {bundles.reboot(false);dijit.byId('savingOSGIDialog').hide();},4000);
@@ -305,7 +262,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
         
     },
     
-    modifyExtraPackages : function(){
+    modifyExtraPackages : function(){ // // todo: fix this one
 
         var canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-modify-packages-confirmation") %>');
         if(canContinue) {
