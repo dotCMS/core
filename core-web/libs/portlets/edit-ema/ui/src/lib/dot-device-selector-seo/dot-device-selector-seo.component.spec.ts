@@ -63,6 +63,10 @@ describe('DotDeviceSelectorSeoComponent', () => {
             ],
             providers: [
                 {
+                    provide: Location,
+                    useValue: location
+                },
+                {
                     provide: DotDevicesService,
                     useClass: DotDevicesServiceMock
                 },

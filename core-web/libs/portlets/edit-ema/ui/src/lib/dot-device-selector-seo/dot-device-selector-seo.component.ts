@@ -124,7 +124,8 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     constructor(
         private dotDevicesService: DotDevicesService,
         private dotMessageService: DotMessageService,
-        private dotCurrentUser: DotCurrentUserService
+        private dotCurrentUser: DotCurrentUserService,
+        private location: Location
     ) {}
 
     ngOnInit() {
@@ -219,7 +220,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             } catch {
                 // In case it is not a valid URL, we will use the current location
                 url = new URL(
-                    `${location.origin}/${cleanMode}${
+                    `${this.location.origin}/${cleanMode}${
                         frontEndUrl.indexOf('?') != -1 ? '&' : '?'
                     }disabledNavigateMode=true&mode=LIVE`
                 );
