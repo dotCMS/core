@@ -1,5 +1,5 @@
 # Require workflow changes to be approved by developers who understand the codebase
 # and security implications of changes
 
-./github/ @dotcms/core-workflow-developers
+/.github/ @dotCMS/core-workflow-developers
 
