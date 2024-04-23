@@ -456,9 +456,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             () => {
                                 this.messageService.add({
                                     severity: 'success',
-                                    summary: this.dotMessageService.get(
-                                        'editpage.content.update.success'
-                                    ),
+                                    summary: this.dotMessageService.get('message.content.saved'),
                                     life: 2000
                                 });
                                 this.setEditorMode(EDITOR_MODE.EDIT);
@@ -468,7 +466,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 this.messageService.add({
                                     severity: 'error',
                                     summary: this.dotMessageService.get(
-                                        'editpage.content.update.error'
+                                        'editpage.content.update.contentlet.error'
                                     ),
                                     life: 2000
                                 });
