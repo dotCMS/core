@@ -12,7 +12,7 @@ import Navigation from './layout/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { DotcmsLayout } from '@dotcms/react';
 
-import { DotExperimentsProvider } from '@dotcms/experiments';
+import { DotcmsLayoutWithExperiments, DotExperimentsProvider } from '@dotcms/experiments';
 
 export function MyPage({ data, nav }) {
     const { refresh, replace } = useRouter();
@@ -26,7 +26,7 @@ export function MyPage({ data, nav }) {
   }
   
   return (
-    <DotExperimentsProvider config={experimentConfig} data={data}>
+    <DotExperimentsProvider config={experimentConfig}>
 
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
       {data.layout.header && (
@@ -35,20 +35,25 @@ export function MyPage({ data, nav }) {
         </Header>
       )}
       <main className="container flex flex-col gap-8 m-auto">
-        <DotcmsLayout
-          entity={{
-            // These are the components that will be used to render the contentlets in the page.
-            components: {
-              webPageContent: WebPageContent,
-              Banner: Banner,
-              Activity: Activity,
-              Product: Product,
-              Image: ImageComponent,
-            },
-            ...data,
-          }}
-          config={{ onReload: refresh, pathname }}
-        />
+        <DotcmsLayoutWithExperiments entity={data}>
+
+          <DotcmsLayout
+            entity={{
+              // These are the components that will be used to render the contentlets in the page.
+              components: {
+                webPageContent: WebPageContent,
+                Banner: Banner,
+                Activity: Activity,
+                Product: Product,
+                Image: ImageComponent,
+              },
+              ...data,
+            }}
+            config={{ onReload: refresh, pathname }}
+          />
+
+        </DotcmsLayoutWithExperiments>
+
       </main>
       {data.layout.footer && <Footer />}
     </div>

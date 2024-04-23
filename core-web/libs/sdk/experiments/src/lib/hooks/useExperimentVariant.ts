@@ -15,7 +15,7 @@ export const useExperimentVariant = (data: {
 
     const { variantId } = viewAs;
 
-    // By default wait for the variant
+    // By default, wait for the variant
     const [shouldWaitForVariant, setShouldWaitForVariant] = useState<boolean>(true);
 
     useEffect(() => {

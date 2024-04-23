@@ -1,5 +1,4 @@
 import { DotCMSPageEditorConfig } from '@dotcms/client';
-import { useExperimentVariant } from '@dotcms/experiments';
 
 import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
 import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
@@ -39,12 +38,6 @@ export type DotcmsPageProps = {
  */
 export function DotcmsLayout({ entity, config }: DotcmsPageProps): JSX.Element {
     const isInsideEditor = useDotcmsEditor(config);
-
-    const { shouldWaitForVariant } = useExperimentVariant(entity);
-
-    if (shouldWaitForVariant()) {
-        return <div></div>;
-    }
 
     return (
         <PageProvider entity={{ ...entity, isInsideEditor }}>
