@@ -117,7 +117,12 @@ public class ImportContentletsAction extends DotPortletAction {
 				if(importContentletsForm.getStructure().isEmpty()){
 					SessionMessages.add(req, "error", "structure-type-is-required");
 					setForward(req, "portlet.ext.contentlet.import_contentlets");
-				}else if (bytes == null || bytes.length == 0) {
+				}
+				else if(importContentletsForm.getWorkflowActionId().isEmpty()){
+					SessionMessages.add(req, "error", "Workflow-action-type-required");
+					setForward(req, "portlet.ext.contentlet.import_contentlets");
+				}
+				else if (bytes == null || bytes.length == 0) {
 					SessionMessages.add(req, "error", "message.contentlet.file.required");
 					setForward(req, "portlet.ext.contentlet.import_contentlets");
 				} else {
