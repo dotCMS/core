@@ -202,6 +202,8 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     @Input()
     set apiLink(value: string) {
+        // Api link wont work for headless.
+
         if (value) {
             const frontEndUrl = `${value.replace(/api\/v1\/page\/(render|json)\//, '')}`;
 
