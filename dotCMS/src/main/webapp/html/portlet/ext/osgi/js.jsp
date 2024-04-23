@@ -207,7 +207,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
         if(canContinue) {
             var xhrArgs = {
-                url: "/api/v1/osgi/jar/" + jarName + "/_restart",
+                url: "/api/v1/osgi/_restart",
                 handle : function(dataOrError, ioArgs) {
                     if (dojo.isString(dataOrError)) {
                         if (dataOrError.indexOf("FAILURE") == 0) {
