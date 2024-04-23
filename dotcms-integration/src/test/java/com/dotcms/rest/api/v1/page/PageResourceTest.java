@@ -547,6 +547,9 @@ public class PageResourceTest {
     @Test
     public void shouldReturnPageByURLPattern()
             throws DotDataException, DotSecurityException, InterruptedException, SystemException, PortalException {
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         final String baseUrl = String.format("/test%s", System.currentTimeMillis());
@@ -747,7 +750,7 @@ public class PageResourceTest {
             throws DotDataException, DotSecurityException, SystemException, PortalException {
         final String modeParam = "PREVIEW_MODE";
         when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.get(modeParam));
-        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
@@ -784,6 +787,9 @@ public class PageResourceTest {
     @Test
     public void testRenderPersonalizationVersion()
             throws DotDataException, DotSecurityException, SystemException, PortalException {
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
 
@@ -1127,6 +1133,9 @@ public class PageResourceTest {
     @Test
     public void testOnNumberOfPagesDataAttribute_render() throws DotDataException, SystemException, DotSecurityException,
                                                                 PortalException {
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         // Initialization
         final String modeParam = "EDIT_MODE";
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -1157,6 +1166,8 @@ public class PageResourceTest {
      */
     @Test
     public void testCleanUpSessionWhenDeviceInodeIsNull() throws Exception {
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null);
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
@@ -1171,6 +1182,8 @@ public class PageResourceTest {
      */
     @Test
     public void testCleanUpSessionWhenDeviceInodeIsBlank() throws Exception {
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "");
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);

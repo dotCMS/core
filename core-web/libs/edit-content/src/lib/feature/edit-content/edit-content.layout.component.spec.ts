@@ -8,6 +8,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { MessagesModule } from 'primeng/messages';
 
 import {
     DotContentTypeService,
@@ -41,6 +42,7 @@ describe('EditContentLayoutComponent', () => {
         component: EditContentLayoutComponent,
         imports: [
             HttpClientTestingModule,
+            MessagesModule,
             MockPipe(DotMessagePipe),
             MockComponent(DotEditContentFormComponent),
             MockComponent(DotEditContentToolbarComponent),
@@ -60,7 +62,8 @@ describe('EditContentLayoutComponent', () => {
         const mockData: EditContentPayload = {
             actions: mockWorkflowsActions,
             contentType: CONTENT_TYPE_MOCK,
-            contentlet: BINARY_FIELD_CONTENTLET
+            contentlet: BINARY_FIELD_CONTENTLET,
+            loading: false
         };
 
         beforeEach(async () => {
@@ -123,8 +126,8 @@ describe('EditContentLayoutComponent', () => {
             spectator.detectChanges();
             const asideComponent = spectator.query(DotEditContentAsideComponent);
             expect(asideComponent).toBeDefined();
-            expect(asideComponent.contentLet).toEqual(mockData.contentlet);
-            expect(asideComponent.contentType).toEqual(mockData.contentType.variable);
+            expect(asideComponent.contentlet).toEqual(mockData.contentlet);
+            expect(asideComponent.contentType).toEqual(mockData.contentType);
         });
 
         it('should fire workflow action', () => {
@@ -165,7 +168,8 @@ describe('EditContentLayoutComponent', () => {
         const mockData: EditContentPayload = {
             actions: mockWorkflowsActions,
             contentType: CONTENT_TYPE_MOCK,
-            contentlet: null
+            contentlet: null,
+            loading: false
         };
 
         beforeEach(async () => {
@@ -229,8 +233,8 @@ describe('EditContentLayoutComponent', () => {
             spectator.detectChanges();
             const asideComponent = spectator.query(DotEditContentAsideComponent);
             expect(asideComponent).toBeDefined();
-            expect(asideComponent.contentLet).toEqual(mockData.contentlet);
-            expect(asideComponent.contentType).toEqual(mockData.contentType.variable);
+            expect(asideComponent.contentlet).toEqual(mockData.contentlet);
+            expect(asideComponent.contentType).toEqual(mockData.contentType);
         });
     });
 });

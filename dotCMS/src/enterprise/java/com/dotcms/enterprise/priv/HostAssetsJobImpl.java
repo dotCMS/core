@@ -98,6 +98,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.HostCopyOptions;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -520,7 +521,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			HibernateUtil.startTransaction();
 			this.siteCopyStatus.updateProgress(70);
 
-			if (copyOptions.isCopyContentTypes()) {
+			if (Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false) && copyOptions.isCopyContentTypes()) {
 				final List<Relationship> copiedRelationships = new ArrayList<>();
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying Content Types to new Site '%s'", destinationSite.getHostname()));
@@ -1002,7 +1003,7 @@ public class HostAssetsJobImpl extends ParentProxy{
                     }
                 }
 				ContentletRelationshipRecords related;
-				if (!copyOptions.isCopyContentTypes()) {
+				if (!Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false) || !copyOptions.isCopyContentTypes()) {
 					related = new ContentletRelationships(
 							destinationContent).new ContentletRelationshipRecords(r, true);
 				} else {
