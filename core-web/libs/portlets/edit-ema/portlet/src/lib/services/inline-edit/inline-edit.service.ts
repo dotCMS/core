@@ -201,6 +201,10 @@ export class InlineEditService {
                 ed.destroy(false);
             }
         });
+
+        editor.on('cut copy paste', () => {
+            editor.setDirty(true);
+        });
     }
 
     /**

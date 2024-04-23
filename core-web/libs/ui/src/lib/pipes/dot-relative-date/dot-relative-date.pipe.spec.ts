@@ -1,9 +1,9 @@
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
-import { DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotRelativeDatePipe } from '@dotcms/ui';
-import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
+import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 const ONE_DAY = 86400000;
 
@@ -29,6 +29,10 @@ describe('DotRelativeDatePipe', () => {
                     provide: DotcmsConfigService,
                     useClass: DotcmsConfigServiceMock
                 },
+                {
+                    provide: DotMessageService,
+                    useValue: new MockDotMessageService({ new: 'New' })
+                },
                 DotFormatDateService,
                 DotRelativeDatePipe
             ]
@@ -44,7 +48,7 @@ describe('DotRelativeDatePipe', () => {
 
             tick(1000);
 
-            expect(pipe.transform(date.getTime())).toEqual('1 second ago');
+            expect(pipe.transform(date.getTime())).toEqual('Now');
         }));
 
         it('should return relative date even if it is hardcoded date', fakeAsync(() => {
