@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.keyvalue.model.KeyValue;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
@@ -51,6 +52,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
@@ -142,6 +144,8 @@ public class ContentletAjax {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
+
+	private LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
 
 	//Number of children related IDs to be added to a lucene query to get children related to a selected parent
 	private static final int RELATIONSHIPS_FILTER_CRITERIA_SIZE = Config
@@ -1651,13 +1655,25 @@ public class ContentletAjax {
 
 	@CloseDB
 	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
-f		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
+		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
 		ArrayList<String[]> list = new ArrayList<>(limit);
 		final User systemUser = APILocator.systemUser();
 		final long languageId = Long.parseLong(language);
 		List<String> listAddedKeys = new ArrayList<>();
 		String[] term;
 
+		final List<LanguageVariable> variables = loadVariables(languageId);
+		valueToComplete = valueToComplete.toLowerCase();
+		for (LanguageVariable variable : variables) {
+			if (variable.getKey().toLowerCase().startsWith(valueToComplete)) {
+				term = new String[]{variable.getKey(),
+						(70 < variable.getValue().length() ? variable.getValue().substring(0, 69)
+								: variable.getValue())};
+				list.add(term);
+				listAddedKeys.add(variable.getKey());
+			}
+		}
+		/*
 		List<LanguageKey> props = retrieveProperties(languageId);
 		valueToComplete = valueToComplete.toLowerCase();
 		for (LanguageKey prop : props) {
@@ -1668,7 +1684,7 @@ f		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
 				list.add(term);
 				listAddedKeys.add(prop.getKey());
 			}
-		}
+		}*/
 
 		if(list.size() < limit){
 			List<KeyValue> languageVariables = APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith(valueToComplete,languageId,systemUser,limit);
@@ -1692,6 +1708,16 @@ f		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
 	private List<LanguageKey> retrieveProperties(long langId) throws Exception {
 		Language lang = langAPI.getLanguage(langId);
 		return langAPI.getLanguageKeys(lang);
+	}
+
+	/**
+	 * Load the variables for a given language
+	 * @param langId the language id
+	 * @return the list of variables
+	 * @throws Exception if something goes wrong
+	 */
+	private List<LanguageVariable> loadVariables(long langId) throws Exception {
+		return languageVariableAPI.findVariables(langId, APILocator.systemUser());
 	}
 
 	/**
