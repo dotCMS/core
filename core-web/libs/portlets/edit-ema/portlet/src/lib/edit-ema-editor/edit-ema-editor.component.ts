@@ -860,7 +860,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.saveFromInlineEditedContentlet({
                     contentlet: {
                         inode: payload.dataset['inode'],
-                        body: payload.innerHTML
+                        [payload.dataset.fieldName]: payload.innerHTML
                     }
                 });
             },
