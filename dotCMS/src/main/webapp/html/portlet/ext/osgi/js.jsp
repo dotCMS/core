@@ -136,37 +136,65 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
-	add : function(){ // todo: not sure how to fix this
-		var fm = dojo.byId("addBundle");
-		var bundleUpload = fm.elements["bundleUpload"].value;
-		var jarName = bundleUpload.split(/(\\|\/)/g).pop();
-		if(bundleUpload){
-        require(["dojo/io/iframe"], function(ioIframe){
-            ioIframe.send({
-                // The form node, which contains the
-                // data. We also pull the URL and METHOD from it:
-                form: fm,
-                url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=add&jar=" + jarName,
-                method : "post",
-                // The used data format:
-                handleAs: "json",
+    add: () => {
+        const fm = dojo.byId("addBundle");
+        const files = fm.elements["bundleUpload"].files;
 
-                // Callback on successful call:
-                load: function(response, ioArgs) {
-                    // return the response for succeeding callbacks
-                    setTimeout(function() {mainAdmin.refresh();},7000);
-                    return response;
-                }
-            });
-		});
-		dijit.byId('uploadOSGIDialog').hide();
-		dijit.byId('savingOSGIDialog').show();
-		setTimeout(function() {mainAdmin.refresh();},7000);
-		}else{
-			showDotCMSSystemMessage("Please select a bundle to upload");
-			return false;
-		}
-		fm.elements["bundleUpload"].value='';
+        if(files.length === 0){
+            showDotCMSSystemMessage("Please select a bundle to upload");
+            return false;
+        }
+
+        bundles.handleUpload({ files: files[0] });
+    },
+
+	handleUpload : function({ files, updateProgress, onSuccess, onError }){
+        const formData = new FormData();
+        const plugins = Array.isArray(files) ? files : [files];
+        plugins.forEach((file) => formData.append("file", file));
+        formData.append("json", "{}");
+
+        return new Promise((res, rej) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/v1/osgi");
+            xhr.onload = () => res(xhr);
+            xhr.onerror = rej;
+        
+            // Get Upload Process
+            if (xhr.upload && updateProgress) {
+                xhr.upload.onprogress = (e) => {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    updateProgress(percentComplete);
+                };
+            }
+        
+            xhr.send(formData);
+        }).then(async (request) => {
+            if (request.status !== 200) {
+                throw request;
+            }
+
+            if(onSuccess) {
+                onSuccess();
+            }
+
+            dijit.byId("uploadOSGIDialog").hide();
+            dijit.byId("savingOSGIDialog").show();
+            setTimeout(() => mainAdmin.refresh(), 7000);
+
+            return JSON.parse(request.response);
+        })
+        .catch((request) => {
+            const response = typeof (request.response) === 'string' ? JSON.parse(request.response) : request.response;
+            const errorMesage = response.errors[0]?.message || "An error occurred while uploading the bundle";
+
+            if(onError) {
+                onError(response, errorMesage);
+            } else {
+                showDotCMSSystemMessage(errorMesage);
+            }
+            throw response;
+        });
 	},
 
     reboot : function(askForConfirmation){
