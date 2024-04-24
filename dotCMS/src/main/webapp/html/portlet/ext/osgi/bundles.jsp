@@ -171,7 +171,6 @@
                     var i = 0;
                     data.entity.forEach(function(bundleData){
 
-                        console.log("bundleData", bundleData);
                         if(!showSystem && bundleData.system){
                             return;
                         }

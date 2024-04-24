@@ -203,7 +203,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
         dojo.xhrGet(xhrArgs);
     },
     
-    resetExtraPackages : function(){ // todo: fix this one
+    resetExtraPackages : function(){
 
         var canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-modify-packages-confirmation") %>');
         if(canContinue) {
