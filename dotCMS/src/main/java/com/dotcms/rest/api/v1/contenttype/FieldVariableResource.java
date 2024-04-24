@@ -9,7 +9,6 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -181,37 +180,21 @@ public class FieldVariableResource implements Serializable {
 	 * @param res     The current instance of the {@link HttpServletResponse}.
 	 *
 	 * @return The list of all Field Variables of the specified Field.
+	 *
+	 * @throws DotDataException An error occurred when accessing the database.
 	 */
 	@GET
 	@Path("/id/{fieldId}/variables")
 	@JSONP
 	@NoCache
-	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getFieldVariablesByFieldId(@PathParam("typeId") final String typeId,
-			@PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req, @Context final HttpServletResponse res) {
-
-		this.webResource.init(null, req, res, true, null);
-		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
-
-		Response response = null;
-
-		try {
-			final Field field = typeFieldAPI.find(fieldId);
-
-			final List<FieldVariable> fieldVariables = field.fieldVariables();
-
-			response = Response.ok(new ResponseEntityView<>(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
-
-		} catch (NotFoundInDbException e) {
-
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-
-		} catch (Exception e) {
-
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
-
-		return response;
+													 @PathParam("fieldId") final String fieldId,
+													 @Context final HttpServletRequest req,
+													 @Context final HttpServletResponse res) throws DotDataException {
+		final Field field = this.fieldAPI.find(fieldId);
+		final List<FieldVariable> fieldVariables = field.fieldVariables();
+		return Response.ok(new ResponseEntityView<>(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 	}
 
 	/**
@@ -228,37 +211,21 @@ public class FieldVariableResource implements Serializable {
 	 * @param res      The current instance of the {@link HttpServletResponse}.
 	 *
 	 * @return The list of all Field Variables of the specified Field.
+	 *
+	 * @throws DotDataException An error occurred when accessing the database.
 	 */
 	@GET
 	@Path("/var/{fieldVar}/variables")
 	@JSONP
 	@NoCache
-	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getFieldVariablesByFieldVar(@PathParam("typeId") final String typeId,
-			@PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res) {
-
-		this.webResource.init(null, req, res, true, null);
-		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
-
-		Response response = null;
-
-		try {
-			final Field field = typeFieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
-
-			final List<FieldVariable> fieldVariables = field.fieldVariables();
-
-			response = Response.ok(new ResponseEntityView<>(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
-
-		} catch (NotFoundInDbException e) {
-
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-
-		} catch (Exception e) {
-
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
-
-		return response;
+													  @PathParam("fieldVar") final String fieldVar,
+													  @Context final HttpServletRequest req,
+													  @Context final HttpServletResponse res) throws DotDataException {
+		final Field field = this.fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+		final List<FieldVariable> fieldVariables = field.fieldVariables();
+		return Response.ok(new ResponseEntityView<>(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 	}
 
 	/**
