@@ -99,7 +99,7 @@ const data = [
 ] as WorkflowItem[];
 
 export default {
-    title: 'PrimeNG/Tables/Basic Table',
+    title: 'PrimeNG/Data/Table/List View',
     decorators: [
         moduleMetadata({
             imports: [TableModule, CommonModule, TagModule, ButtonModule]
@@ -109,7 +109,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'Table is a container component to display data in tabular format.: https://primeng.org/table'
+                    'Table displays data in tabular format. List View Version: https://www.primefaces.org/primeng-v15-lts/table'
             }
         }
     }
