@@ -425,7 +425,8 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
        // Now let's see if the API can find all the variables
         final List<LanguageVariable> languageVariables = languageVariableAPI.findAllVariables(systemUser);
         for (LanguageVariable variable : languageVariables) {
-            Assert.assertFalse(containsIdentifier(contentlets, variable.getIdentifier()));
+            Assert.assertFalse("Unpublished Variables should not appear in the contentlets first created",
+                    containsIdentifier(contentlets, variable.getIdentifier()));
         }
         //Now Republish content and make sure the content comes back
         for (Contentlet contentlet: contentlets) {
@@ -435,7 +436,8 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         Assert.assertFalse(republished.isEmpty());
         for (LanguageVariable variable : republished) {
             //After having re-published the contentlet they will have different inodes
-            Assert.assertTrue(containsIdentifier(contentlets, variable.getIdentifier()));
+            Assert.assertTrue("Published item should appear in the contentlets first created.",
+                    containsIdentifier(contentlets, variable.getIdentifier()));
         }
 
     }
