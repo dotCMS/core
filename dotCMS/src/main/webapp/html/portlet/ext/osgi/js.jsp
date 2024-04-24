@@ -262,35 +262,35 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
         
     },
     
-    modifyExtraPackages : function(){ // // todo: fix this one
+    modifyExtraPackages : function(){
 
         var canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-modify-packages-confirmation") %>');
         if(canContinue) {
 
-            var fm = dojo.byId("modifyPackagesForm");
+            var packages = dojo.byId("packages");
+            var data = {
+                packages: packages.value
+            };
 
-            require(["dojo/io/iframe"], function(ioIframe){
-                ioIframe.send({
-                    // The form node, which contains the
-                    // data. We also pull the URL and METHOD from it:
-                    form: fm, // todo: this should be a form
-                    url : "/api/v1/osgi/extra-packages/",
-                    method : "put",
-                    // The used data format:
-                    handleAs: "json",
+            var xhrArgs = {
+                url: "/api/v1/osgi/extra-packages",
+                postData: dojo.toJson(data),
+                handleAs: "json",
+                headers : {
+                    'Accept' : 'application/json',
+                    'Content-Type' : 'application/json;charset=utf-8',
+                },
+                handle : function(dataOrError, ioArgs) {
+                    // do nothing
+                }
+            };
+            dojo.xhrPut(xhrArgs);
 
-                    // Callback on successful call:
-                    load: function(response, ioArgs) {
-                        // return the response for succeeding callbacks
-                        //setTimeout(function() {mainAdmin.refresh();},7000);
-                        return response;
-                    }
-                });
-            });
             dijit.byId('packagesOSGIDialog').hide();
             dijit.byId('savingOSGIDialog').show();
             setTimeout(function() {bundles.reboot(false);dijit.byId('savingOSGIDialog').hide();},4000);
         }
+
     },
 
     remotePublishBundle : function(jarFile){
