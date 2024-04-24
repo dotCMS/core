@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -1365,12 +1364,7 @@ class SiteCommandIT extends CommandTest {
                     result.path.toFile(),
                     SiteView.class
             );
-            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
-            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
-            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
-            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
-            Assertions.assertNotNull(mappedSiteWithVariables.variables());
-            Assertions.assertTrue(mappedSiteWithVariables.variables().isEmpty());
+            validateLocalDescriptor(result.siteName, mappedSiteWithVariables, 0);
 
             // ╔════════════════════╗
             // ║  Adding variables  ║
@@ -1424,33 +1418,16 @@ class SiteCommandIT extends CommandTest {
                     result.path.toFile(),
                     SiteView.class
             );
-            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
-            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
-            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
-            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
-            Assertions.assertNotNull(mappedSiteWithVariables.variables());
-            Assertions.assertEquals(5, mappedSiteWithVariables.variables().size());
+            validateLocalDescriptor(result.siteName, mappedSiteWithVariables, 5);
 
             // Now check the server
             var byName = siteAPI.findByName(
                     GetSiteByNameRequest.builder().siteName(result.siteName).build()
             );
-            Assertions.assertEquals(result.siteName, byName.entity().siteName());
-            Assertions.assertNotNull(byName.entity().variables());
-            Assertions.assertEquals(5, byName.entity().variables().size());
+            validateServerVariables(result.siteName, byName.entity(), 5);
 
             // Validating everything matches between the local site and the server
-            List<SiteVariableView> localSiteVariables = new ArrayList<>(
-                    siteWithVariables.variables());
-            localSiteVariables.sort(Comparator.comparing(SiteVariableView::key));
-            var serverSiteVariables = byName.entity().variables();
-            for (int i = 0; i < localSiteVariables.size(); i++) {
-                var localVar = localSiteVariables.get(i);
-                var serverVar = serverSiteVariables.get(i);
-                Assertions.assertEquals(localVar.name(), serverVar.name());
-                Assertions.assertEquals(localVar.key(), serverVar.key());
-                Assertions.assertEquals(localVar.value(), serverVar.value());
-            }
+            validateVariablesMatches(siteWithVariables, byName.entity());
 
             // ╔══════════════════════════╗
             // ║  Updating the variables  ║
@@ -1495,32 +1472,16 @@ class SiteCommandIT extends CommandTest {
                     result.path.toFile(),
                     SiteView.class
             );
-            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
-            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
-            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
-            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
-            Assertions.assertNotNull(mappedSiteWithVariables.variables());
-            Assertions.assertEquals(3, mappedSiteWithVariables.variables().size());
+            validateLocalDescriptor(result.siteName, mappedSiteWithVariables, 3);
 
             // Now check the server
             byName = siteAPI.findByName(
                     GetSiteByNameRequest.builder().siteName(result.siteName).build()
             );
-            Assertions.assertEquals(result.siteName, byName.entity().siteName());
-            Assertions.assertNotNull(byName.entity().variables());
-            Assertions.assertEquals(3, byName.entity().variables().size());
+            validateServerVariables(result.siteName, byName.entity(), 3);
 
             // Validating everything matches between the local site and the server
-            localSiteVariables = new ArrayList<>(siteWithVariables.variables());
-            localSiteVariables.sort(Comparator.comparing(SiteVariableView::key));
-            serverSiteVariables = byName.entity().variables();
-            for (int i = 0; i < localSiteVariables.size(); i++) {
-                var localVar = localSiteVariables.get(i);
-                var serverVar = serverSiteVariables.get(i);
-                Assertions.assertEquals(localVar.name(), serverVar.name());
-                Assertions.assertEquals(localVar.key(), serverVar.key());
-                Assertions.assertEquals(localVar.value(), serverVar.value());
-            }
+            validateVariablesMatches(siteWithVariables, byName.entity());
 
             // ╔════════════════════════════════╗
             // ║  Updating again the variables  ║
@@ -1575,35 +1536,98 @@ class SiteCommandIT extends CommandTest {
                     result.path.toFile(),
                     SiteView.class
             );
-            Assertions.assertEquals(result.siteName, mappedSiteWithVariables.siteName());
-            Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
-            Assertions.assertNotNull(mappedSiteWithVariables.identifier());
-            Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
-            Assertions.assertNotNull(mappedSiteWithVariables.variables());
-            Assertions.assertEquals(5, mappedSiteWithVariables.variables().size());
+            validateLocalDescriptor(result.siteName, mappedSiteWithVariables, 5);
 
             // Now check the server
             byName = siteAPI.findByName(
                     GetSiteByNameRequest.builder().siteName(result.siteName).build()
             );
-            Assertions.assertEquals(result.siteName, byName.entity().siteName());
-            Assertions.assertNotNull(byName.entity().variables());
-            Assertions.assertEquals(5, byName.entity().variables().size());
+            validateServerVariables(result.siteName, byName.entity(), 5);
 
             // Validating everything matches between the local site and the server
-            localSiteVariables = new ArrayList<>(siteWithVariables.variables());
-            localSiteVariables.sort(Comparator.comparing(SiteVariableView::key));
-            serverSiteVariables = byName.entity().variables();
-            for (int i = 0; i < localSiteVariables.size(); i++) {
-                var localVar = localSiteVariables.get(i);
-                var serverVar = serverSiteVariables.get(i);
-                Assertions.assertEquals(localVar.name(), serverVar.name());
-                Assertions.assertEquals(localVar.key(), serverVar.key());
-                Assertions.assertEquals(localVar.value(), serverVar.value());
-            }
+            validateVariablesMatches(siteWithVariables, byName.entity());
 
         } finally {
             deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Find a site using the site name. Authentication is done using a token.
+     * Expected Result: The site should be found
+     *
+     * @throws IOException
+     */
+    @Test
+    @Order(22)
+    void Test_Find_Site_Command_Authenticate_With_Token() throws IOException {
+        final String token = requestToken();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name",
+                    siteName, "--token", token);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.startsWith("name:"));
+        }
+    }
+
+    /**
+     * Validates the local descriptor of a site against the expected values.
+     *
+     * @param siteName                The expected site name.
+     * @param mappedSiteWithVariables The site view object containing the mapped site with
+     *                                variables.
+     * @param expectedVariablesSize   The expected number of variables in the mapped site.
+     */
+    private void validateLocalDescriptor(final String siteName,
+            final SiteView mappedSiteWithVariables, final int expectedVariablesSize) {
+
+        Assertions.assertEquals(siteName, mappedSiteWithVariables.siteName());
+        Assertions.assertEquals(1, mappedSiteWithVariables.languageId());
+        Assertions.assertNotNull(mappedSiteWithVariables.identifier());
+        Assertions.assertFalse(mappedSiteWithVariables.identifier().isBlank());
+        Assertions.assertNotNull(mappedSiteWithVariables.variables());
+        Assertions.assertEquals(expectedVariablesSize, mappedSiteWithVariables.variables().size());
+    }
+
+    /**
+     * Validates the server variables against the expected values.
+     *
+     * @param siteName              The expected site name.
+     * @param serverSite            The SiteView object representing the server site.
+     * @param expectedVariablesSize The expected size of the server variables list.
+     */
+    private void validateServerVariables(final String siteName, final SiteView serverSite,
+            final int expectedVariablesSize) {
+
+        Assertions.assertEquals(siteName, serverSite.siteName());
+        Assertions.assertNotNull(serverSite.variables());
+        Assertions.assertEquals(expectedVariablesSize, serverSite.variables().size());
+    }
+
+    /**
+     * Validates that the variables in the "localSite" match the variables in the "remoteSite".
+     *
+     * @param localSite  The local SiteView object containing the variables to be validated.
+     * @param remoteSite The remote SiteView object containing the expected variables.
+     */
+    private void validateVariablesMatches(final SiteView localSite, final SiteView remoteSite) {
+
+        var localSiteVariables = new ArrayList<>(localSite.variables());
+        localSiteVariables.sort(Comparator.comparing(SiteVariableView::key));
+        var serverSiteVariables = remoteSite.variables();
+
+        Assertions.assertEquals(localSiteVariables.size(), serverSiteVariables.size());
+
+        for (int i = 0; i < localSiteVariables.size(); i++) {
+            var localVar = localSiteVariables.get(i);
+            var serverVar = serverSiteVariables.get(i);
+            Assertions.assertEquals(localVar.name(), serverVar.name());
+            Assertions.assertEquals(localVar.key(), serverVar.key());
+            Assertions.assertEquals(localVar.value(), serverVar.value());
         }
     }
 
@@ -1691,26 +1715,5 @@ class SiteCommandIT extends CommandTest {
             this.path = path;
         }
     }
-
-    /**
-     * Given scenario: Find a site using the site name. Authentication is done using a token.
-     * Expected Result: The site should be found
-     * @throws IOException
-     */
-    @Test
-    @Order(18)
-    void Test_Find_Site_Command_Authenticate_With_Token() throws IOException {
-        final String token = requestToken();
-        final CommandLine commandLine = createCommand();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName, "--token", token);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("name:"));
-        }
-    }
-
 
 }

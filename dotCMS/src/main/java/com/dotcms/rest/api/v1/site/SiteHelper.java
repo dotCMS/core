@@ -45,8 +45,8 @@ public class SiteHelper implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private final HostAPI hostAPI;
-	private final HostVariableAPI hostVariableAPI;
+	private final transient HostAPI hostAPI;
+	private final transient HostVariableAPI hostVariableAPI;
 
 	public static final String EXT_HOSTADMIN = "sites";
 

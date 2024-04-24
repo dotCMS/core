@@ -34,11 +34,15 @@ public class HostVariablesCacheImpl extends HostVariablesCache {
 
 		String key = primaryGroup + siteId;
 
+		List<HostVariable> variables = null;
+
 		try {
-			return (List<HostVariable>) cache.get(key, primaryGroup);
+			variables = (List<HostVariable>) cache.get(key, primaryGroup);
 		} catch (DotCacheException e) {
-			return null;
+			Logger.debug(this, "Error retrieving cache entry", e);
 		}
+
+		return variables;
 	}
 
 	@Override
