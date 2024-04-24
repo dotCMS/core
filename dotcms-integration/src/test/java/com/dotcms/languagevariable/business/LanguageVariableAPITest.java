@@ -464,8 +464,8 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         final List<Contentlet> list = List.of(
                 new LanguageVariableDataGen().languageId(language.getId()).key("key1")
                         .value("value1").nextPersistedAndPublish(),
-                new LanguageVariableDataGen().languageId(language.getId()).key("key1")
-                        .value("value1").nextPersistedAndPublish()
+                new LanguageVariableDataGen().languageId(language.getId()).key("key2")
+                        .value("value2").nextPersistedAndPublish()
         );
         Assert.assertEquals(2,list.stream().map(contentlet -> {
             try {
