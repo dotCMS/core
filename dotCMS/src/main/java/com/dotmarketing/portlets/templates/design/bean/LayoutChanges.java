@@ -1,6 +1,11 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
 import com.dotcms.rest.api.v1.workflow.SchemesAndSchemesContentTypeView;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,7 +41,7 @@ public class LayoutChanges {
          * @param newIntanceId New UUID
          */
         public Builder change(final String containerId, final String oldIntanceId, final String newIntanceId) {
-            changes.add(new ContainerChanged(containerId, oldIntanceId, newIntanceId));
+            changes.add(new ContainerChanged(getContainerId(containerId), oldIntanceId, newIntanceId));
             return this;
         }
 
@@ -48,7 +53,7 @@ public class LayoutChanges {
          * @param oldIntanceId Old UUID
          */
         public Builder remove(final String containerId, final String oldIntanceId) {
-            changes.add(new ContainerChanged(containerId, oldIntanceId, ContainerUUID.UUID_DEFAULT_VALUE));
+            changes.add(new ContainerChanged(getContainerId(containerId), oldIntanceId, ContainerUUID.UUID_DEFAULT_VALUE));
             return this;
         }
 
@@ -59,9 +64,26 @@ public class LayoutChanges {
          * @param newIntanceId
          */
         public Builder include(final String containerId, final String newIntanceId) {
-            changes.add(new ContainerChanged(containerId, ContainerUUID.UUID_DEFAULT_VALUE, newIntanceId));
+            changes.add(new ContainerChanged(getContainerId(containerId), ContainerUUID.UUID_DEFAULT_VALUE, newIntanceId));
             return this;
         }
+
+        private String getContainerId(String containerId) {
+
+            if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
+                try {
+                    return APILocator.getContainerAPI().findContainer(containerId, APILocator.systemUser(),
+                                    false, false)
+                            .map(Container::getIdentifier)
+                            .orElse(containerId);
+                } catch (DotDataException | DotSecurityException e) {
+                    return containerId;
+                }
+            }
+
+            return containerId;
+        }
+
         public LayoutChanges build() {
             return new LayoutChanges(this);
         }
