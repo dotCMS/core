@@ -1,0 +1,79 @@
+<div class="content-aside__information">
+    <div class="content-aside__status">
+        <p-chip
+            *ngIf="contentlet | contentletStatus as status"
+            [styleClass]="'p-chip-sm ' + status.classes"
+            [label]="status.label" />
+        <dot-copy-button
+            *ngIf="contentlet?.inode as inode"
+            [copy]="inode"
+            [tooltipText]="'ID: ' + inode"
+            [label]="'ID: ' + (inode | slice : -10)"
+            data-testId="inode"
+            aria-label="Copy ID" />
+    </div>
+    <div class="content-aside__metadata">
+        <div
+            class="sidebar-card"
+            [routerLink]="'/content-types-angular/edit/' + contentTypeName"
+            data-testId="content-type-link">
+            <div class="sidebar-card__header">
+                <span>{{ 'Content-Type' | dm }}</span>
+            </div>
+            <label class="sidebar-card__label">{{ contentTypeName }}</label>
+        </div>
+        <div class="sidebar-card" data-testId="references-button">
+            <div class="sidebar-card__header">
+                <span>{{ 'References' | dm }}</span>
+                <i class="pi pi-eye"></i>
+            </div>
+        </div>
+        <div class="content-history__container" data-testId="history-container">
+            @if(loading) { @for(title of ['Published','Modified','Created'] ; track $index) {
+            <div class="content-history">
+                <label class="content-history__title">{{ title | dm }}</label>
+                <p-skeleton class="content-history__author" width="89.33px" height="14px" />
+                <p-skeleton class="content-history__date" width="89.33px" height="14px" />
+            </div>
+            } } @else { @if(contentlet?.publishDate) {
+            <div
+                class="content-history"
+                [pTooltip]="contentlet?.publishDate | date : 'MMM dd, yyyy'"
+                tooltipPosition="bottom"
+                data-testId="publish-history">
+                <label class="content-history__title">{{ 'Published' | dm }}</label>
+                <label class="content-history__author" *ngIf="contentlet?.publishUserName">{{
+                    contentlet?.publishUserName
+                }}</label>
+                <label class="content-history__date">{{
+                    contentlet?.publishDate | dotRelativeDate : 'MM/dd/yyyy' : null
+                }}</label>
+            </div>
+            } @if(contentlet?.modDate) {
+            <div
+                class="content-history"
+                [pTooltip]="contentlet?.modDate | date : 'MMM dd, yyyy'"
+                tooltipPosition="bottom"
+                data-testId="mod-history">
+                <label class="content-history__title">{{ 'Modified' | dm }}</label>
+                <label class="content-history__author">{{ contentlet?.modUserName }}</label>
+                <label class="content-history__date">{{
+                    contentlet?.modDate | dotRelativeDate : 'MM/dd/yyyy' : null
+                }}</label>
+            </div>
+            }
+            <div
+                class="content-history"
+                [pTooltip]="contentlet?.createDate | date : 'MMM dd, yyyy'"
+                tooltipPosition="bottom"
+                data-testId="create-history">
+                <label class="content-history__title">{{ 'Created' | dm }}</label>
+                <label class="content-history__author">{{ contentlet?.ownerName || 'You' }}</label>
+                <label class="content-history__date">{{
+                    contentlet?.createDate | dotRelativeDate : 'MM/dd/yyyy' : null
+                }}</label>
+            </div>
+            }
+        </div>
+    </div>
+</div>

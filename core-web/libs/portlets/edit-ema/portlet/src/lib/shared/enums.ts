@@ -33,5 +33,6 @@ export enum EDITOR_MODE {
     PREVIEW_VARIANT = 'preview-variant',
     DEVICE = 'device',
     SOCIAL_MEDIA = 'social-media',
+    INLINE_EDITING = 'inline-editing',
     LOCKED = 'locked'
 }

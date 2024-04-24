@@ -15,6 +15,12 @@ on:
       deploy-dev-image:
         default: false
         type: boolean
+      reuse-previous-build:
+        default: false
+        type: boolean
+      publish-npm-package:
+        default: false
+        type: boolean
     secrets:
         DOCKER_USERNAME:
           required: false
@@ -31,6 +37,9 @@ on:
         DEVELOPERS_SLACK_WEBHOOK:
           required: false
           description: 'Slack webhook for developers'
+        NPM_ORG_TOKEN:
+          required: false
+          description: 'NPM token'
 jobs:
   deployment:
     runs-on: ubuntu-latest
@@ -86,6 +95,14 @@ jobs:
           build-run-id: ${{ github.run_id }} # We are currently building these artifacts in the current run
           commit-id: ${{ github.sha }}
 
+      - name: CLI Publish
+        if: inputs.publish-npm-package
+        uses: ./.github/actions/publish-npm-cli
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+          reuse-previous-build: ${{ inputs.reuse-previous-build }}
+
       # A Slack notification is sent using the 'action-slack-notify' action if the repository is 'dotcms/core'.
       - name: Slack Notification
         if: github.repository == 'dotcms/core'
@@ -98,4 +115,4 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
-          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *master* with tags: [${{ steps.docker_build.outputs.tags }}] :docker:"
+          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *${{ inputs.environment }}* with tags: [${{ steps.docker_build.outputs.tags }}] :docker:"
