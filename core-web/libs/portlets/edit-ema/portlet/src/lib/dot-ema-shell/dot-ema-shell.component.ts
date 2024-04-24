@@ -240,6 +240,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * Reloads the component from the dialog.
+     */
+    reloadFromDialog() {
+        this.store.reload({ params: this.queryParams });
+    }
+
     private navigate(queryParams) {
         this.router.navigate([], {
             queryParams,

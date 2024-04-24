@@ -353,6 +353,22 @@ describe('DotEmaShellComponent', () => {
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
+
+            it('should reload content from dialog', () => {
+                const reloadSpy = jest.spyOn(store, 'reload');
+                const queryParams = {
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    language_id: 1,
+                    url: 'index',
+                    variantName: undefined
+                };
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
+
+                expect(reloadSpy).toHaveBeenCalledWith({
+                    params: queryParams
+                });
+            });
         });
     });
 
