@@ -79,7 +79,8 @@ describe('EditEmaStore', () => {
                             return of({});
                         },
                         save: jest.fn(),
-                        getFormIndetifier: jest.fn()
+                        getFormIndetifier: jest.fn(),
+                        saveContentlet: jest.fn()
                     }
                 },
                 {
@@ -188,6 +189,57 @@ describe('EditEmaStore', () => {
                             },
                             variantId: undefined
                         }
+                    });
+                    done();
+                });
+            });
+
+            it('should return editorToolbarData', (done) => {
+                const dotPageApiService = spectator.inject(DotPageApiService);
+
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            pageURI: 'test-url'
+                        }
+                    })
+                );
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+
+                spectator.service.editorToolbarData$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment: null,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
+                        },
+                        showWorkflowActions: true,
+                        showInfoDisplay: false
                     });
                     done();
                 });
@@ -783,6 +835,27 @@ describe('EditEmaStore', () => {
                     detail: 'editpage.content.add.already.message',
                     life: 2000
                 });
+            });
+
+            it('should update inline edited contentlet', () => {
+                const payload = {
+                    contentlet: {
+                        body: '',
+                        inode: '123'
+                    }
+                };
+                const dotPageApiService = spectator.inject(DotPageApiService);
+                jest.spyOn(dotPageApiService, 'saveContentlet').mockReturnValue(of({}));
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+                spectator.service.saveFromInlineEditedContentlet(payload);
+
+                expect(dotPageApiService.saveContentlet).toHaveBeenCalledWith(payload);
             });
         });
     });

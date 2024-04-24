@@ -15,6 +15,7 @@ import {
     HostListener,
     inject,
     Input,
+    OnChanges,
     OnInit,
     Output,
     signal,
@@ -42,7 +43,7 @@ import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-v
 
 const DEFAULT_FILE_TYPE = 'text';
 @Component({
-    selector: 'dot-dot-binary-field-editor',
+    selector: 'dot-binary-field-editor',
     standalone: true,
     imports: [
         CommonModule,
@@ -58,7 +59,7 @@ const DEFAULT_FILE_TYPE = 'text';
     styleUrls: ['./dot-binary-field-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldEditorComponent implements OnInit {
+export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
     @Input() fileName = '';
     @Input() fileContent = '';
     @Input() allowFileNameEdit = true;
@@ -127,6 +128,13 @@ export class DotBinaryFieldEditorComponent implements OnInit {
             'dot.binary.field.error.type.file.not.supported.message',
             this.dotBinaryFieldValidatorService.accept.join(', ')
         );
+    }
+
+    ngOnChanges(): void {
+        this.setFormValues();
+        if (window.monaco) {
+            this.setEditorLanguage(this.fileName);
+        }
     }
 
     onEditorInit() {

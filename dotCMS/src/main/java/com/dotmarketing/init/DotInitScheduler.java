@@ -467,8 +467,8 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
 	try {
 		// Define the job and trigger names and group
 		final String jobName      = "RemoveOldSiteSearchIndicesJob";
-		final String triggerName  = "trigger31";
-		final String triggerGroup = "group31";
+		final String triggerName  = "trigger34";
+		final String triggerGroup = "group34";
 
 		// Check if the job is enabled in the system configuration
 		if (Config.getBooleanProperty( "ENABLE_DELETE_OLD_SS_INDICES_JOB", true)) {
