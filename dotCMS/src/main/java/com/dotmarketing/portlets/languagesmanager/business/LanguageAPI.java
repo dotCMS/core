@@ -123,6 +123,7 @@ public interface LanguageAPI {
 	 * @param lang
 	 * @return
 	 */
+
 	List<LanguageKey> getLanguageKeys(Language lang);
 
 	/**
@@ -138,6 +139,7 @@ public interface LanguageAPI {
 	 * @param countryCode
 	 * @return
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(String langCode, String countryCode);
 
 	/**

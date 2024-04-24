@@ -470,6 +470,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		return ret+File.separator;
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode) {
 
