@@ -11,10 +11,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.LayoutChanges;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -418,5 +420,23 @@ public interface TemplateAPI {
 	 * @return List of {@link HTMLPageVersion} this objects contains a resume of the page data
 	 */
 	List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Save and Update the Layout of a Template
+	 * This method calculate the changes on the current {@link TemplateLayout} of the Template and then update
+	 * the {@link com.dotmarketing.beans.MultiTree} using the {@link com.dotmarketing.factories.MultiTreeAPI#updateMultiTrees(LayoutChanges, Collection)}
+	 *
+	 *
+	 * @param template
+	 * @param newLayout
+	 * @param site
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+    Template saveAndUpdateLayout(Template template, TemplateLayout newLayout, Host site, User user,
+								 boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 }

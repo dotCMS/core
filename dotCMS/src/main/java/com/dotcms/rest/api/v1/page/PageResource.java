@@ -422,11 +422,6 @@ public class PageResource {
                     e.getClass().getCanonicalName(), request, form);
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-        } catch (IOException e) {
-            final String errorMsg = String.format("IOException on PageResource.saveLayout, parameters:  %s, %s: ",
-                    request, form);
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return res;

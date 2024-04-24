@@ -91,7 +91,7 @@ describe('EditEmaToolbarComponent', () => {
                     {
                         provide: EditEmaStore,
                         useValue: {
-                            editorState$: of({
+                            editorToolbarData$: of({
                                 favoritePageURL: 'http://localhost:8080/fav',
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
@@ -118,7 +118,9 @@ describe('EditEmaToolbarComponent', () => {
                                             id: 1
                                         }
                                     }
-                                }
+                                },
+                                showWorkflowActions: true,
+                                showInfoDisplay: false
                             }),
                             load: jest.fn(),
                             setDevice: jest.fn(),
@@ -400,7 +402,7 @@ describe('EditEmaToolbarComponent', () => {
                     {
                         provide: EditEmaStore,
                         useValue: {
-                            editorState$: of({
+                            editorToolbarData$: of({
                                 favoritePageURL: 'http://localhost:8080/fav',
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
@@ -427,7 +429,9 @@ describe('EditEmaToolbarComponent', () => {
                                             id: 1
                                         }
                                     }
-                                }
+                                },
+                                showWorkflowActions: true,
+                                showInfoDisplay: true
                             }),
                             load: jest.fn(),
                             setDevice: jest.fn(),
@@ -475,7 +479,7 @@ describe('EditEmaToolbarComponent', () => {
                     {
                         provide: EditEmaStore,
                         useValue: {
-                            editorState$: of({
+                            editorToolbarData$: of({
                                 favoritePageURL: 'http://localhost:8080/fav',
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
@@ -505,7 +509,9 @@ describe('EditEmaToolbarComponent', () => {
                                             id: 1
                                         }
                                     }
-                                }
+                                },
+                                showWorkflowActions: true,
+                                showInfoDisplay: true
                             }),
                             load: jest.fn(),
                             setDevice: jest.fn(),
@@ -538,7 +544,7 @@ describe('EditEmaToolbarComponent', () => {
                     {
                         provide: EditEmaStore,
                         useValue: {
-                            editorState$: of({
+                            editorToolbarData$: of({
                                 favoritePageURL: 'http://localhost:8080/fav',
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
@@ -570,7 +576,9 @@ describe('EditEmaToolbarComponent', () => {
                                             id: 1
                                         }
                                     }
-                                }
+                                },
+                                showWorkflowActions: true,
+                                showInfoDisplay: true
                             }),
                             load: jest.fn(),
                             setDevice: jest.fn(),
@@ -630,7 +638,7 @@ describe('EditEmaToolbarComponent', () => {
                         {
                             provide: EditEmaStore,
                             useValue: {
-                                editorState$: of({
+                                editorToolbarData$: of({
                                     favoritePageURL: 'http://localhost:8080/fav',
                                     iframeURL: 'http://localhost:8080/index',
                                     clientHost: 'http://localhost:3000',
@@ -657,7 +665,9 @@ describe('EditEmaToolbarComponent', () => {
                                                 id: 1
                                             }
                                         }
-                                    }
+                                    },
+                                    showWorkflowActions: false,
+                                    showInfoDisplay: true
                                 }),
                                 load: jest.fn(),
                                 setDevice: jest.fn(),
@@ -686,7 +696,7 @@ describe('EditEmaToolbarComponent', () => {
                         {
                             provide: EditEmaStore,
                             useValue: {
-                                editorState$: of({
+                                editorToolbarData$: of({
                                     favoritePageURL: 'http://localhost:8080/fav',
                                     iframeURL: 'http://localhost:8080/index',
                                     clientHost: 'http://localhost:3000',
@@ -713,7 +723,9 @@ describe('EditEmaToolbarComponent', () => {
                                                 id: 1
                                             }
                                         }
-                                    }
+                                    },
+                                    showWorkflowActions: false,
+                                    showInfoDisplay: true
                                 }),
                                 load: jest.fn(),
                                 setDevice: jest.fn(),

@@ -4,4 +4,5 @@ export interface EditContentPayload {
     contentType: DotCMSContentType;
     actions: DotCMSWorkflowAction[];
     contentlet?: DotCMSContentlet;
+    loading: boolean;
 }
