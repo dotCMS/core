@@ -453,9 +453,10 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	}
 
 	/**
-	 *
-	 * @return
+	 * This is the key method that should be used to identify what method should be considered deprecated
+	 * @return the path to the global variables
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	private String getGlobalVariablesPath () {
 		String ret="";
 		String realPath = Config.getStringProperty("ASSET_REAL_PATH");
@@ -469,13 +470,13 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		return ret+File.separator;
 	}
 
-	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode) {
 
 		return getLanguageKeys(langCode, null);
 	}
 
+	//This is deprecated since it uses the old getGlobalVariablesPath() method
 	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode, String countryCode) {
@@ -622,6 +623,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	 * @param toDeleteKeys
 	 * @throws IOException
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	private void saveLanguageKeys(final String fileLangName, Map<String, String> keys, final Set<String> toDeleteKeys) throws IOException {
 
 		if(keys == null)
@@ -695,6 +697,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		tempFile.delete();
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	protected void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException {
 

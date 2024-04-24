@@ -123,16 +123,14 @@ public interface LanguageAPI {
 	 * @param lang
 	 * @return
 	 */
-	@Deprecated(since = "24.04", forRemoval = true)
-	public List<LanguageKey> getLanguageKeys(Language lang);
+	List<LanguageKey> getLanguageKeys(Language lang);
 
 	/**
 	 * Retrieves the keys for the given language and specific for the given country
 	 * @param langCode
 	 * @return
 	 */
-	@Deprecated(since = "24.04", forRemoval = true)
-	public List<LanguageKey> getLanguageKeys(String langCode);
+	List<LanguageKey> getLanguageKeys(String langCode);
 
 	/**
 	 * 
@@ -140,7 +138,6 @@ public interface LanguageAPI {
 	 * @param countryCode
 	 * @return
 	 */
-	@Deprecated(since = "24.04", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(String langCode, String countryCode);
 
 	/**
@@ -158,6 +155,7 @@ public interface LanguageAPI {
 	 * @param toDeleteKeys
 	 * @throws DotDataException
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	public void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException;
 
     /**

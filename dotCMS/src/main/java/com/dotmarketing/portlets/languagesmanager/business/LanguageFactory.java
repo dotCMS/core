@@ -140,6 +140,7 @@ public abstract class LanguageFactory {
 	 * 
 	 * @param lang
 	 */
+    @Deprecated(since = "24.04", forRemoval = true)
 	protected abstract void createLanguageFiles(Language lang);
 
 	/**
@@ -150,6 +151,7 @@ public abstract class LanguageFactory {
 	 * @param toDeleteKeys
 	 * @throws DotDataException
 	 */
+    @Deprecated(since = "24.04", forRemoval = true)
 	protected abstract void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException;
 
     /**

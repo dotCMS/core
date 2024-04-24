@@ -41,13 +41,10 @@ public abstract class LanguageCache implements Cachable{
     
     public abstract String getPrimaryGroup();
 
-    @Deprecated(since = "24.04", forRemoval = true)
     protected abstract List<LanguageKey> getLanguageKeys(String langCode, String countryCode) throws DotCacheException;
 
-    @Deprecated(since = "24.04", forRemoval = true)
     protected abstract void removeLanguageKeys(String langCode, String countryCode);
 
-    @Deprecated(since = "24.04", forRemoval = true)
     protected abstract void setLanguageKeys(String langCode, String countryCode, List<LanguageKey> keys);
 
     public abstract List<Language> getLanguages()  ;
