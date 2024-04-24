@@ -94,7 +94,7 @@ import {
     newContentlet,
     dotPageContainerStructureMock
 } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 
 global.URL.createObjectURL = jest.fn(
@@ -452,6 +452,9 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                 page: 1
                             }
                         });
+                    },
+                    saveContentlet() {
+                        return of({});
                     }
                 }
             },
@@ -2850,6 +2853,80 @@ describe('EditEmaEditorComponent', () => {
                     expect(spectator.query(byTestId('editor-content')).classList).toContain(
                         'editor-content--expanded'
                     );
+                });
+            });
+
+            describe('inline editing', () => {
+                it('should save from inline edited contentlet', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: {
+                                    dataset: {
+                                        inode: '123',
+                                        fieldName: 'title',
+                                        mode: 'full',
+                                        language: '1'
+                                    },
+                                    innerHTML: 'Hello World',
+                                    element: {},
+                                    eventType: '',
+                                    isNotDirty: false
+                                }
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).toHaveBeenCalledWith({
+                        contentlet: {
+                            inode: '123',
+                            title: 'Hello World'
+                        }
+                    });
+                });
+
+                it('should dont trigger save from inline edited contentlet when dont have changes', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: null
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
+                    expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT);
+                });
+
+                it('should trigger copy contentlet dialog when inline editing', () => {
+                    const copyContentletSpy = jest.spyOn(dotCopyContentModalService, 'open');
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                                payload: {
+                                    inode: '123',
+                                    language: '1'
+                                }
+                            }
+                        })
+                    );
+
+                    expect(copyContentletSpy).toHaveBeenCalledWith();
                 });
             });
 
