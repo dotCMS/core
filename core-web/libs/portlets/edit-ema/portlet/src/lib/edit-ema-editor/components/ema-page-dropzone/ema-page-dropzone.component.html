@@ -11,7 +11,7 @@
         [attr.data-payload]="contentlet.payload"
         [ngStyle]="contentlet | dotPosition"
         [attr.data-dropzone]="true"
-        [attr.data-position]="positionData().position"
+        [attr.data-position]="$positionData().position"
         [attr.data-empty]="false"
         (dragover)="onDragover($event)"
         data-type="contentlet"></div>

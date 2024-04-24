@@ -37,7 +37,7 @@ export class EmaPageDropzoneComponent {
 
     private readonly el = inject(ElementRef);
 
-    protected readonly positionData = signal({
+    protected readonly $positionData = signal({
         position: '',
         parentRect: null,
         targetRect: null
@@ -59,9 +59,9 @@ export class EmaPageDropzoneComponent {
             return;
         }
 
-        this.calculatePosition(event);
+        this.setPositionData(event);
 
-        const { parentRect, targetRect } = this.positionData();
+        const { parentRect, targetRect } = this.$positionData();
 
         const isEmpty = empty === 'true';
 
@@ -86,14 +86,14 @@ export class EmaPageDropzoneComponent {
      * @return {*}  {boolean}
      * @memberof EmaPageDropzoneComponent
      */
-    private calculatePosition(event: DragEvent): void {
+    private setPositionData(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
         const parentRect = this.el.nativeElement.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
         const mouseY = event.clientY;
         const isTop = mouseY < targetRect.top + targetRect.height / 2;
 
-        this.positionData.set({
+        this.$positionData.set({
             position: isTop ? 'before' : 'after',
             parentRect,
             targetRect
@@ -101,7 +101,7 @@ export class EmaPageDropzoneComponent {
     }
 
     private getTop(isEmpty: boolean): string {
-        const { parentRect, targetRect, position } = this.positionData();
+        const { parentRect, targetRect, position } = this.$positionData();
 
         if (isEmpty) {
             return `${targetRect.top - parentRect.top}px`;
