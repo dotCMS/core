@@ -9,6 +9,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -51,20 +53,21 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
 
   private final KeyValueAPI keyValueAPI;
   private final LanguageAPI languageAPI;
+  private final PermissionAPI permissionAPI;
 
   /**
    * Creates a new instance of the {@link LanguageVariableAPI}.
    */
   public LanguageVariableAPIImpl() {
-    this(APILocator.getKeyValueAPI(), APILocator.getLanguageAPI());
+    this(APILocator.getKeyValueAPI(), APILocator.getLanguageAPI(), APILocator.getPermissionAPI());
 
   }
 
   @VisibleForTesting
-  public LanguageVariableAPIImpl(final KeyValueAPI keyValueAPI, final LanguageAPI languageAPI) {
-
+  public LanguageVariableAPIImpl(final KeyValueAPI keyValueAPI, final LanguageAPI languageAPI, final PermissionAPI permissionAPI) {
     this.keyValueAPI = keyValueAPI;
     this.languageAPI = languageAPI;
+    this.permissionAPI = permissionAPI;
   }
 
   @Override
@@ -144,13 +147,13 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
   }
 
   @Override
-  public List<LanguageVariable> findAllVariables() throws DotDataException{
+  public List<LanguageVariable> findAllVariables(final User user) throws DotDataException{
        final List<Language> languages = languageAPI.getLanguages();
          return languages.stream()
                 .map(Language::getId)
                 .map(langId -> {
                      try {
-                          return findVariables(langId);
+                          return findVariables(langId, user);
                      } catch (DotDataException e) {
                           Logger.error(this, e.getMessage(), e);
                           return List.<LanguageVariable>of();
@@ -164,32 +167,43 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
    * {@inheritDoc}
    *
    * @param langId - The ID of the language that the variable was created for.
+   * @param user
    * @return
    * @throws DotDataException
    */
   @CloseDBIfOpened
   @Override
-  public List<LanguageVariable> findVariables(final long langId)
-            throws DotDataException {
+  public List<LanguageVariable> findVariables(final long langId, final User user) throws DotDataException {
       final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
       final ContentType contentType = langVarContentType.get();
       final LanguageCache languageCache = CacheLocator.getLanguageCache();
       final List<LanguageVariable> cacheVars = languageCache.getVars(langId);
       if (cacheVars != null && !cacheVars.isEmpty()) {
-          return cacheVars;
+          return cacheVars.stream().filter(nonPermitted(user)).collect(Collectors.toList());
       }
     //We bring non-archived live contentlets
       final List<Contentlet> byContentTypeAndLanguage = contentletFactory.findByContentTypeAndLanguage(
               contentType, langId, 0, 0, LanguageVariableAPI.ORDER_BY_KEY, false);
       final ImmutableList<LanguageVariable> languageVariables = byContentTypeAndLanguage.stream()
               .map(fromContentlet()).filter(Objects::nonNull)
+              .filter(nonPermitted(user))
               .collect(CollectionsUtils.toImmutableList());
 
       languageCache.putVars(langId, languageVariables);
       return languageVariables;
     }
+    Predicate<LanguageVariable> nonPermitted(final User user) {
+        return variable -> {
+            try {
+                return permissionAPI.doesUserHavePermission(variable, PermissionAPI.PERMISSION_READ, user);
+            } catch (DotDataException e) {
+                Logger.debug(this, String.format("user %s does not have permission to read language variable", user.getUserId()));
+                return false;
+            }
+        };
+    }
 
-  @CloseDBIfOpened
+    @CloseDBIfOpened
   @Override
   public Map<String, List<LanguageVariable>> findVariablesForPagination(final int offset, final int limit,
           final String orderBy)

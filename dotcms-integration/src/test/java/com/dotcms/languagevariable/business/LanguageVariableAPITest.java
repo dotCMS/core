@@ -2,8 +2,8 @@ package com.dotcms.languagevariable.business;
 
 import static com.dotcms.contenttype.model.type.KeyValueContentType.MULTILINGUABLE_FALLBACK_KEY;
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
-import static com.dotcms.integrationtestutil.content.ContentUtils.updateTestKeyValueContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
+import static com.dotcms.integrationtestutil.content.ContentUtils.updateTestKeyValueContent;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -11,10 +11,12 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LanguageVariableDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -23,6 +25,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
+import com.dotmarketing.portlets.languagesmanager.model.LangVariableImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageVariable;
 import com.dotmarketing.util.Config;
@@ -386,7 +389,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
      */
     @Test
     public void findLanguageVariablesThenUnpublishTest() throws DotDataException, DotSecurityException {
-
+        final User user = APILocator.systemUser();
         final LanguageCache languageCache = CacheLocator.getLanguageCache();
         languageCache.clearVariables();
         final List<LanguageVariable> vars = languageCache.getVars(1);
@@ -410,7 +413,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
         //Now let's see if the API can find all the variables
         for (Language language:languages) {
-            final List<LanguageVariable> languageVariables = languageVariableAPI.findVariables(language.getId());
+            final List<LanguageVariable> languageVariables = languageVariableAPI.findVariables(language.getId(), user);
             Assert.assertTrue(languageVariables.size() >= 3);
             for (LanguageVariable variable : languageVariables) {
                 Assert.assertEquals(language.getId(), variable.getLanguageId());
@@ -423,7 +426,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         }
 
        // Now let's see if the API can find all the variables
-        final List<LanguageVariable> languageVariables = languageVariableAPI.findAllVariables();
+        final List<LanguageVariable> languageVariables = languageVariableAPI.findAllVariables(user);
         for (LanguageVariable variable : languageVariables) {
             Assert.assertFalse(containsInode(contentlets, variable.getInode()));
         }
@@ -431,7 +434,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         for (Contentlet contentlet: contentlets) {
             contentletAPI.publish(contentlet, systemUser,false);
         }
-        final List<LanguageVariable> republished = languageVariableAPI.findAllVariables();
+        final List<LanguageVariable> republished = languageVariableAPI.findAllVariables(user);
         Assert.assertFalse(republished.isEmpty());
         for (LanguageVariable variable : republished) {
             Assert.assertTrue(containsInode(contentlets, variable.getInode()));
@@ -447,6 +450,30 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
      */
     boolean containsInode(final List<Contentlet> contentlets, final String inode) {
         return contentlets.stream().anyMatch(contentlet -> contentlet.getInode().equals(inode));
+    }
+
+    /*
+     * We're testing that the filtering function is working as expected
+     * Given scenario: Create Language Variables and pass system user
+     * Expected Results: The filter function shouldn't filter any language variable
+     */
+    @Test
+    public void testHasPermissions(){
+        final User user = APILocator.systemUser();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final List<Contentlet> list = List.of(
+                new LanguageVariableDataGen().languageId(language.getId()).key("key1")
+                        .value("value1").nextPersistedAndPublish(),
+                new LanguageVariableDataGen().languageId(language.getId()).key("key1")
+                        .value("value1").nextPersistedAndPublish()
+        );
+        Assert.assertEquals(2,list.stream().map(contentlet -> {
+            try {
+                return LangVariableImpl.fromContentlet(contentlet);
+            } catch (DotSecurityException e) {
+                throw new RuntimeException(e);
+            }
+        }).filter(new LanguageVariableAPIImpl().nonPermitted(user)).count());
     }
 
 }

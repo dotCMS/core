@@ -134,10 +134,11 @@ public interface LanguageVariableAPI {
     /**
      * Returns a list of {@link LanguageVariable} With all live language variables in the system.
      * The results os this method are stored in cache.
+     * @param user - The user performing this action.
      * @return List of {@link LanguageVariable}
      * @throws DotDataException
      */
-    List<LanguageVariable> findAllVariables() throws DotDataException;
+    List<LanguageVariable> findAllVariables(User user) throws DotDataException;
 
     /**
      * Returns a list of {@link LanguageVariable} per language Identifier. The results are stored in
@@ -145,10 +146,11 @@ public interface LanguageVariableAPI {
      * variables for the specified language.
      *
      * @param langId - The ID of the language that the variable was created for.
+     * @param user - The user performing this action.
      * @return List of {@link LanguageVariable}
      * @throws DotDataException - If there is an error retrieving the list of Language Variables.
      */
-    List<LanguageVariable> findVariables(final long langId) throws DotDataException;
+    List<LanguageVariable> findVariables(final long langId, User user) throws DotDataException;
 
 
     /**

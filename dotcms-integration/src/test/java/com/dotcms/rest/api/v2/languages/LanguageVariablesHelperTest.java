@@ -97,7 +97,7 @@ public class LanguageVariablesHelperTest {
         final User user = APILocator.systemUser();
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-        final List<LanguageVariable> allVariables = languageVariableAPI.findAllVariables();
+        final List<LanguageVariable> allVariables = languageVariableAPI.findAllVariables(APILocator.systemUser());
         for (LanguageVariable languageVariable : allVariables) {
             final Contentlet cont = (Contentlet) languageVariable;
             contentletAPI.archive(cont, user, false);
