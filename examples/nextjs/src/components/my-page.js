@@ -11,8 +11,7 @@ import Footer from './layout/footer';
 import Navigation from './layout/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { DotcmsLayout } from '@dotcms/react';
-
-import { DotcmsLayoutWithExperiments, DotExperimentsProvider } from '@dotcms/experiments';
+import { DotExperimentsProvider, DotLayoutWithExperiments } from '@dotcms/experiments';
 
 export function MyPage({ data, nav }) {
     const { refresh, replace } = useRouter();
@@ -35,7 +34,7 @@ export function MyPage({ data, nav }) {
         </Header>
       )}
       <main className="container flex flex-col gap-8 m-auto">
-        <DotcmsLayoutWithExperiments entity={data}>
+        <DotLayoutWithExperiments entity={data}>
 
           <DotcmsLayout
             entity={{
@@ -52,7 +51,7 @@ export function MyPage({ data, nav }) {
             config={{ onReload: refresh, pathname }}
           />
 
-        </DotcmsLayoutWithExperiments>
+        </DotLayoutWithExperiments>
 
       </main>
       {data.layout.footer && <Footer />}
