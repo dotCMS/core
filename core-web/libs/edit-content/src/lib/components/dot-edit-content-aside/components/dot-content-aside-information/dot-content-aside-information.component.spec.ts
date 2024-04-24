@@ -18,7 +18,8 @@ import {
 import {
     DotFormatDateServiceMock,
     EMPTY_CONTENTLET,
-    MockDotMessageService
+    MockDotMessageService,
+    dotcmsContentTypeBasicMock
 } from '@dotcms/utils-testing';
 
 import { DotContentAsideInformationComponent } from './dot-content-aside-information.component';
@@ -41,6 +42,12 @@ const BASIC_CONTENTLET = {
     modUserName: 'admin',
     ownerName: 'admin',
     createDate: '2021-01-01T00:00:00Z'
+};
+
+const CONTENT_TYPE_MOCK = {
+    ...dotcmsContentTypeBasicMock,
+    variable: 'BlogVariable',
+    name: 'Blog'
 };
 
 describe('DotContentAsideInformationComponent', () => {
@@ -80,7 +87,7 @@ describe('DotContentAsideInformationComponent', () => {
             detectChanges: false,
             props: {
                 contentlet: BASIC_CONTENTLET,
-                contentTypeName: 'Blog',
+                contentType: CONTENT_TYPE_MOCK,
                 loading: false
             }
         });
@@ -119,7 +126,7 @@ describe('DotContentAsideInformationComponent', () => {
         spectator.click(linkElement);
         spectator.detectChanges();
         tick();
-        expect(router.url).toBe(`/content-types-angular/edit/Blog`);
+        expect(router.url).toBe(`/content-types-angular/edit/BlogVariable`);
     }));
 
     it('should have a references button', () => {
