@@ -62,6 +62,7 @@ import java.util.stream.Stream;
 @Path ("/v1/osgi")
 public class OSGIResource {
 
+    public static final String DYNAMIC_PLUGINS = "dynamic-plugins";
     private final MultiPartUtils multiPartUtils = new MultiPartUtils();
     private final WebResource webResource    = new WebResource();
 
@@ -87,7 +88,7 @@ public class OSGIResource {
                                                @Context final HttpServletResponse response,
                                                @QueryParam("ignoresystembundles") final boolean ignoreSystemBundles) {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         Logger.debug(this, ()-> "Getting dot system installed bundles");
         final List<BundleMap> bundlesArray =
@@ -117,7 +118,7 @@ public class OSGIResource {
                                                @Context final HttpServletResponse response,
                                                @QueryParam("ignoresystembundles") final boolean ignoreSystemBundles) {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         Logger.debug(this, ()-> "Getting installed bundles");
         final List<BundleMap> bundlesArray =
@@ -188,7 +189,7 @@ public class OSGIResource {
                                                    @Context final HttpServletResponse response,
                                                    @PathParam ("bundle") final String bundle) {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         Logger.debug(this, ()-> "Processing exports for bundle: " + bundle);
         OSGIUtil.getInstance().processExports(bundle);
@@ -241,7 +242,7 @@ public class OSGIResource {
                                                     @Context final HttpServletResponse response,
                                                     @PathParam ("jar") final String jarName) throws BundleException, IOException {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
         Logger.debug(this, ()->"Undeploying OSGI jar " + jarName);
 
         final String sanitizeFileNameJarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
@@ -261,7 +262,7 @@ public class OSGIResource {
 
         if(to.getCanonicalPath().startsWith(undeployedPath) && to.exists()) {
 
-            final boolean deleteOk = to.delete();
+            final boolean deleteOk = Files.deleteIfExists(to.toPath());
             Logger.info(this, String.format(" File [%s] successfully un-deployed [%s].",
                     to.getCanonicalPath(), BooleanUtils.toStringYesNo(deleteOk)));
         }
@@ -321,9 +322,9 @@ public class OSGIResource {
             })
     public final ResponseEntityStringView deploy(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                   @PathParam ("jar") final String jarName) throws BundleException, IOException {
+                                   @PathParam ("jar") final String jarName) throws  IOException {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         Logger.debug(this, ()->"Deploying OSGI jar " + jarName);
         final String loadPath       = OSGIUtil.getInstance().getFelixDeployPath();
@@ -372,9 +373,9 @@ public class OSGIResource {
             })
     public final ResponseEntityStringView stop(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response,
-                                 @PathParam ("jar") final String jarName) throws BundleException, IOException {
+                                 @PathParam ("jar") final String jarName) throws BundleException {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         Logger.debug(this, ()->"Stopping OSGI jar " + jarName);
         final String sanitizeFileNameJarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
@@ -420,9 +421,9 @@ public class OSGIResource {
             })
     public final ResponseEntityStringView start(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
-                               @PathParam ("jar") final String jarName) throws BundleException, IOException {
+                               @PathParam ("jar") final String jarName) throws BundleException {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         Logger.debug(this, ()->"Starting OSGI jar " + jarName);
         final String sanitizeFileNameJarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
@@ -459,7 +460,7 @@ public class OSGIResource {
     public ResponseEntityStringView getExtraPackages (@Context HttpServletRequest request,
                                       @Context final HttpServletResponse response) {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         Logger.debug(this, ()-> "Getting extra packages");
         return new ResponseEntityStringView(OSGIUtil.getInstance().getExtraOSGIPackages());
@@ -489,7 +490,7 @@ public class OSGIResource {
                                 @Context final HttpServletResponse response,
                                 final ExtraPackagesForm extraPackagesForm)  {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         final String extraPackages = extraPackagesForm.getPackages();
 
@@ -521,9 +522,9 @@ public class OSGIResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class)))
             })
     public final ResponseEntityStringView restart(@Context final HttpServletRequest request,
-                                              @Context final HttpServletResponse response) throws BundleException, IOException {
+                                              @Context final HttpServletResponse response) {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         Logger.debug(this, ()->"Restarting the framework");
         OSGIUtil.getInstance().restartOsgiClusterWide();
@@ -592,7 +593,7 @@ public class OSGIResource {
         final File felixFolder = new File(felixUploadFolder);
         if (!felixFolder.exists() || !felixFolder.canWrite()) {
 
-            return Response.status(403).entity(new ResponseEntityView(
+            return Response.status(403).entity(new ResponseEntityView<>(
                     "Can not access the upload folder")).build();
         }
 
@@ -605,7 +606,7 @@ public class OSGIResource {
                 final String errorMsg = "Invalid OSGI Upload request:" +
                         osgiJar.getCanonicalPath() + " from:" +request.getRemoteHost();
                 SecurityLogger.logInfo(this.getClass(),  errorMsg);
-                return Response.status(403).entity(new ResponseEntityView(errorMsg)).build();
+                return Response.status(403).entity(new ResponseEntityView<>(errorMsg)).build();
             }
 
             Logger.debug(this, "Coping the file: " + uploadedBundleFile.getName() +
@@ -622,7 +623,7 @@ public class OSGIResource {
         // refresh strategy is running by schedule job
         OSGIUtil.getInstance().checkUploadFolder();
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 files.stream().map(File::getName).collect(Collectors.toSet())))
                 .build();
     }
@@ -647,7 +648,7 @@ public class OSGIResource {
     public ResponseEntityListView<String> getAvailablePlugis (@Context HttpServletRequest request,
                                                       @Context final HttpServletResponse response) {
 
-        checkUserPermissions(request, response, "dynamic-plugins");
+        checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
         Logger.debug(this, ()-> "Getting available plugins");
 
