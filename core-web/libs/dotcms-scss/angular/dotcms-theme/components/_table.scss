@@ -34,7 +34,7 @@
             border: 1px solid $color-palette-gray-300;
             border-width: 0 0 1px 0;
             color: $black;
-            font-size: $font-size-sm;
+            font-size: $font-size-xsm;
             font-weight: $font-weight-semi-bold;
             padding: $spacing-1;
             text-align: left;
@@ -42,11 +42,11 @@
             text-wrap: nowrap;
 
             &:first-child {
-                padding-left: $spacing-5;
+                padding-left: $spacing-3;
             }
 
             &:last-child {
-                padding-right: $spacing-5;
+                padding-right: $spacing-3;
             }
         }
 
@@ -115,13 +115,14 @@
                 border: 1px solid $color-palette-gray-300;
                 border-width: 0 0 1px 0;
                 padding: 0.625rem $spacing-1;
+                font-size: $font-size-smd;
 
                 &:first-child {
-                    padding-left: $spacing-5;
+                    padding-left: $spacing-3;
                 }
 
                 &:last-child {
-                    padding-right: $spacing-5;
+                    padding-right: $spacing-3;
                 }
 
                 & .p-row-toggler,
@@ -293,43 +294,4 @@
             background-color: $color-palette-primary-100;
         }
     }
-
-    // Custom styles added to the "clean" styles.
-    //&.p-datatable {
-    //    //border: 1px solid $color-palette-gray-400;
-    //    //border-radius: $border-radius-md;
-    //
-    //
-    //
-    //    .p-datatable-thead {
-    //        > tr > th {
-    //            //background-color: $color-palette-gray-200;
-    //            //color: $black;
-    //            //padding: $spacing-1;
-    //        }
-    //    }
-    //
-    //    .p-datatable-tbody {
-    //
-    //        > tr {
-    //            height: auto;
-    //
-    //            > td {
-    //                padding: 0.625rem $spacing-1;
-    //            }
-    //        }
-    //
-    //        > tr:hover {
-    //            background-color: $color-palette-primary-200;
-    //        }
-    //    }
-    //
-    //    .p-datatable-tbody td i.pi.pi-ellipsis-v {
-    //        color: $color-palette-primary-500;
-    //    }
-    //}
-    //
-    //.p-checkbox {
-    //    border: 2px solid $color-palette-gray-400;
-    //}
 }

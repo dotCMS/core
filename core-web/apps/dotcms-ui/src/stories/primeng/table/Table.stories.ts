@@ -28,7 +28,7 @@ interface WorkflowItem {
 const data = [
     {
         assignee: 'Floyd Miles',
-        name: 'saudi_riyal.flo',
+        name: 'Chronicles_of_the_Mystical_Empyrean_Expedition_Report_and_Analysis_Document_2024_Final_Version.docx',
         status: 'New',
         step: 'Published',
         date: addDays(currentDate, 1).toISOString().split('T')[0]
@@ -123,7 +123,7 @@ export const Default: StoryFn = () => ({
         <p-table [value]="data" styleClass="dotTable">
         <ng-template pTemplate="header">
             <tr>
-                <th>
+                <th style="width: 5%" >
                     <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
                 </th>
                 <th pSortableColumn="name">Title <p-sortIcon field="name"></p-sortIcon></th>
