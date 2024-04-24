@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { expect } from '@jest/globals';
+import { it, expect } from '@jest/globals';
 import { of } from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -133,14 +133,8 @@ describe('DotContentCompareComponent', () => {
         jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-
-        // spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
-        //     conf.accept();
-        // });
         const emitSpy = jest.spyOn(hostComponent.shutdown, 'emit');
         const iframeServiceSpy = jest.spyOn(dotIframeService, 'run');
-
-        // spyOn(hostComponent.shutdown, 'emit');
 
         contentCompareTableComponent.bringBack.emit('123');
 
@@ -152,7 +146,6 @@ describe('DotContentCompareComponent', () => {
                 'Are you sure you would like to replace your working version with this contentlet version?'
         });
 
-        // expect(dotIframeService.run).toHaveBeenCalledWith({
         expect(iframeServiceSpy).toHaveBeenCalledWith({
             name: 'getVersionBack',
             args: ['123']
