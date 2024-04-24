@@ -120,7 +120,7 @@ export const Default: StoryFn = () => ({
         data
     },
     template: `
-        <p-table [value]="data" styleClass="p-datatable-striped">
+        <p-table [value]="data" styleClass="dotTable">
         <ng-template pTemplate="header">
             <tr>
                 <th>
@@ -135,12 +135,12 @@ export const Default: StoryFn = () => ({
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-workflowItem>
-            <tr>
+            <tr [pSelectableRow]="workflowItem">
                 <td>
                     <p-tableCheckbox [value]="workflowItem"></p-tableCheckbox>
                 </td>
                 <td>{{ workflowItem.name }}</td>
-                <td><p-tag  class="sm p-tag-success">{{ workflowItem.status }}</p-tag></td>
+                <td><p-tag  class="sm p-tag-success" [value]="workflowItem.status"/></td>
                 <td>{{ workflowItem.assignee }}</td>
                 <td>{{ workflowItem.step }}</td>
                 <td>{{ workflowItem.date | date }}</td>
