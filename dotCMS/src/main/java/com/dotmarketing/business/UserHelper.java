@@ -212,7 +212,7 @@ public class UserHelper {
             throw new DotDataException("Length of Nick Name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
         }
         if (UtilMethods.exceedsMaxLength(birthday, MAX_FIELD_LENGTH)) {
-            throw new DotDataException("Length of birthday provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+            throw new DotDataException("Length of Birthday provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
         }
     }
 }
