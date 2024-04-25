@@ -81,12 +81,6 @@ class SiteAPIIT {
     }
 
     @Test
-    void Test_Current_Site() {
-        ResponseEntityView<Site> currentSiteResponse = clientFactory.getClient(SiteAPI.class).current();
-        Assertions.assertNotNull(currentSiteResponse);
-    }
-
-    @Test
     void Test_Default_Site() {
         ResponseEntityView<Site> defaultSiteResponse = clientFactory.getClient(SiteAPI.class).defaultSite();
         Assertions.assertNotNull(defaultSiteResponse);

@@ -77,25 +77,12 @@ public interface SiteAPI {
     ResponseEntityView<SiteView> findByName(final GetSiteByNameRequest request);
 
     @GET
-    @Path("/currentSite")
-    @Operation(
-            summary = " Returns the Site that is currently selected"
-    )
-    ResponseEntityView<Site> current();
-
-    @GET
     @Path("/defaultSite")
     @Operation(
             summary = " Returns the Site marked as default"
     )
     ResponseEntityView<Site>defaultSite();
 
-    @PUT
-    @Path ("/switch/{id}")
-    @Operation(
-            summary = " Returns the Site that is currently selected"
-    )
-    ResponseEntityView<Map<String,String>>switchSite(@PathParam("id") String id);
 
     @POST
     @Operation(
