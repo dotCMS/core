@@ -1,25 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_DOTRAW_METADATA_FIELDS;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.NO_METADATA;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
-import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
-import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
-import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -38,7 +18,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.contenttype.util.KeyValueFieldUtil;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
@@ -84,6 +63,12 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import org.elasticsearch.action.search.SearchResponse;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Matchers;
+
 import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -91,17 +76,30 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.elasticsearch.action.search.SearchResponse;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Matchers;
+
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.NO_METADATA;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
+import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
+import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author nollymar
@@ -688,7 +686,7 @@ public class ESMappingAPITest {
             final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
+                    Map.of(relationship, list(commentsContentlet)),
                     null, user, false);
 
             esMappingAPI.loadRelationshipFields(newsContentlet, esMap);
@@ -743,7 +741,7 @@ public class ESMappingAPITest {
             final Relationship relationship = relationshipAPI.byTypeValue("Comments-Comments");
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    map(relationship, list(childContentlet)),
+                    Map.of(relationship, list(childContentlet)),
                     null, user, false);
 
             esMappingAPI.loadRelationshipFields(parentContentlet, esMap);
@@ -796,7 +794,7 @@ public class ESMappingAPITest {
             final Contentlet childContentlet2 = dataGen.languageId(language.getId()).nextPersisted();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    map(relationship, list(childContentlet1, childContentlet2)),
+                    Map.of(relationship, list(childContentlet1, childContentlet2)),
                     null, user, false);
 
             final StringWriter catchAllWriter = new StringWriter();
@@ -860,8 +858,7 @@ public class ESMappingAPITest {
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             final Contentlet parentContentlet = contentletAPI
                     .checkin(parentDataGen.languageId(language.getId()).next(),
-                            CollectionsUtils
-                                    .map(relationship, CollectionsUtils.list(childContentlet)),
+                            Map.of(relationship, CollectionsUtils.list(childContentlet)),
                             null, user, false);
 
             esMappingAPI.loadRelationshipFields(childContentlet, esMap, new StringWriter());
