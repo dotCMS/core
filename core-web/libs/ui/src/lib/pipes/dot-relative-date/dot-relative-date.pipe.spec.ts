@@ -43,11 +43,12 @@ describe('DotRelativeDatePipe', () => {
     });
 
     describe('relative', () => {
+        it('should set `now` is the time is null', fakeAsync(() => {
+            expect(pipe.transform(null)).toEqual('Now');
+        }));
+
         it('should set relative date', fakeAsync(() => {
             const date = new Date();
-
-            tick(1000);
-
             expect(pipe.transform(date.getTime())).toEqual('Now');
         }));
 

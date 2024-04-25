@@ -116,8 +116,8 @@ describe('DotContentAsideInformationComponent', () => {
         spectator.detectChanges();
 
         const linkElement = spectator.query(byTestId('content-type-link'));
-        const span = linkElement.querySelector('span');
-        const label = linkElement.querySelector('label');
+        const span = linkElement.querySelector('.sidebar-card__header');
+        const label = linkElement.querySelector('.sidebar-card__label');
         expect(linkElement).not.toBeNull();
         expect(span.textContent.trim()).toBe('Content Type');
         expect(label.textContent.trim()).toBe('Blog');
