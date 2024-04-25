@@ -161,30 +161,30 @@
         
         
         var xhrArgs = {
-            url: "/api/osgi/getInstalledBundles/ignoreSystemBundles/true/type/json",
+            url: "/api/v1/osgi?ignoresystembundles=true",
             handleAs: "json",
             load: function (data) {
                 document.getElementById("bundlesTable-body").innerHTML="";
                 const showSystem=document.getElementById("ignoresystembundles").checked
-                if (data.length > 0) {
+                if (data.entity.length > 0) {
 
                     var i = 0;
-                    data.forEach(function(bundleData){
+                    data.entity.forEach(function(bundleData){
 
-                        if(!showSystem && bundleData.isSystem){
+                        if(!showSystem && bundleData.system){
                             return;
                         }
                         //First we need to destroy any existing widget with the same id
                         try {dijit.byId("popupTr" + i).destroy(true);} catch (e) {}
                         try {dijit.byId("tr" + bundleData.jarFile).destroy(true);} catch (e) {}
-                        const bundleClass = bundleData.isSystem ? 'systemBundle' : '';
+                        const bundleClass = bundleData.system ? 'systemBundle' : '';
                         var htmlContent = "<tr id='tr" + bundleData.jarFile + "' class='" + bundleClass  +"'>" +
                                 "<td>" + bundleData.symbolicName + "</td>" +
                                 "<td>" + window.states[bundleData.state] + "</td>" +
                                 "<td>" + bundleData.jarFile + "</td>";
 
                         htmlContent += "<td align=''>";
-                        if(bundleData.isSystem){
+                        if(bundleData.system){
                             htmlContent+="-";
                         }
                         else if (bundleData.state != <%=Bundle.ACTIVE%>) {
