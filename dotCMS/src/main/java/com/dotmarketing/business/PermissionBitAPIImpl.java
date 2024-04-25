@@ -34,7 +34,9 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -307,24 +309,28 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			return false;
 		}
 
-		Optional<Boolean> cachedPermission = CacheLocator.getPermissionCache().doesUserHavePermission(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
+		Optional<Boolean> cachedPermission = CacheLocator.getPermissionCache().doesUserHavePermission(permissionable, String.valueOf(permissionType), user, respectFrontendRoles, contentlet);
 		if (cachedPermission.isPresent() ) {
 			return cachedPermission.get();
 		}
 
-		boolean hasPermission = _doesUserHavePermissionInternal(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
+		boolean hasPermission = doesUserHavePermissionInternal(permissionable, permissionType, user, respectFrontendRoles, contentlet);
 
-		CacheLocator.getPermissionCache().putUserHavePermission(permissionable, permissionType, userIn, respectFrontendRoles, contentlet, hasPermission);
+		CacheLocator.getPermissionCache().putUserHavePermission(permissionable, String.valueOf(permissionType), user, respectFrontendRoles, contentlet, hasPermission);
 		return hasPermission;
 
 	}
 
+	private Lazy<Role> anonRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrElseThrow(DotRuntimeException::new));
+	private Lazy<Role> adminRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAdminRole()).getOrElseThrow(DotRuntimeException::new));
+	private Lazy<Role> ownerRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSOwnerRole()).getOrElseThrow(DotRuntimeException::new));
+
 
 
 	@CloseDBIfOpened
-	public boolean _doesUserHavePermissionInternal(final Permissionable permissionable,
+	public boolean doesUserHavePermissionInternal(final Permissionable permissionable,
 										  final int permissionType,
-										  final User user,
+										  @NotNull final User user,
 										  final boolean respectFrontendRoles,
 										  final Contentlet contentlet) throws DotDataException {
 
@@ -344,53 +350,39 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			? PERMISSION_EDIT
 			: permissionType;
 
-		Role adminRole;
-		Role anonRole;
-		Role frontEndUserRole;
-		Role cmsOwnerRole;
-		try {
-			adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
-			anonRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-			frontEndUserRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
-			cmsOwnerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
-		} catch (DotDataException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
 
-		if (APILocator.getRoleAPI().doesUserHaveRole(user, adminRole)) {
+		if (user.isAdmin()) {
 			return true;
 		}
 
-		final List<Permission> perms = getPermissions(permissionable, true);
+		final List<Permission> perms = getPermissions(permissionable, true).stream().filter(p->p.matchesPermission(expecterPermissionType)).collect(Collectors.toList());
 		final boolean isContentlet = permissionable instanceof Contentlet;
 		for(final Permission p : perms){
-			if (p.matchesPermission(expecterPermissionType)) {
-				if (respectFrontendRoles) {
-					//anonymous role should not be able to access non-live contentlet
-					if (p.getRoleId().equals(anonRole.getId()) && (!isContentlet || isLiveContentlet(permissionable))) {
-						return true;
-						//if logged in site user has permission
-					}
-                }
-				// if owner and owner has required permission return true
-				try {
-					if (p.getRoleId().equals(cmsOwnerRole.getId())
-						&& permissionable.getOwner() != null
-						&& permissionable.getOwner().equals(user.getUserId())
-						&& checkRelatedPermissions(permissionable.permissionDependencies(expecterPermissionType), user)) {
-						return true;
-					}
-				} catch (DotDataException e1) {
-					Logger.error(this, e1.getMessage(), e1);
-					throw new DotRuntimeException(e1.getMessage(), e1);
-				}
-
-				if (permissionable instanceof WorkflowAction
-					&& workflowActionHasPermission(expecterPermissionType, p, user, contentlet)) {
+			if (respectFrontendRoles) {
+				//anonymous role should not be able to access non-live contentlet
+				if (p.getRoleId().equals(anonRole.get().getId()) && (!isContentlet || isLiveContentlet(permissionable))) {
 					return true;
+					//if logged in site user has permission
 				}
 			}
+			// if owner and owner has required permission return true
+			try {
+				if (p.getRoleId().equals(ownerRole.get().getId())
+					&& permissionable.getOwner() != null
+					&& permissionable.getOwner().equals(user.getUserId())
+					&& checkRelatedPermissions(permissionable.permissionDependencies(expecterPermissionType), user)) {
+					return true;
+				}
+			} catch (DotDataException e1) {
+				Logger.error(this, e1.getMessage(), e1);
+				throw new DotRuntimeException(e1.getMessage(), e1);
+			}
+
+			if (permissionable instanceof WorkflowAction
+				&& workflowActionHasPermission(expecterPermissionType, p, user, contentlet)) {
+				return true;
+			}
+
 		}
 
         // front end users cannot read content that is not live
@@ -466,14 +458,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@WrapInTransaction
 	@Override
 	public void setDefaultCMSAnonymousPermissions(Permissionable permissionable) throws DotDataException{
-		Role cmsAnonymousRole;
-		try {
-			cmsAnonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-		} catch (DotDataException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
-
+		Role cmsAnonymousRole= anonRole.get();
 
 		Permission cmsAnonymousPermission = new Permission();
 		cmsAnonymousPermission.setRoleId(cmsAnonymousRole.getId());
