@@ -3,7 +3,7 @@
         <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
             <dot-device-selector-seo
                 #deviceSelector
-                [apiLink]="es.iframeURL"
+                [apiLink]="es.previewURL"
                 [hideSocialMedia]="!!es.clientHost"
                 (selected)="updateCurrentDevice($event)"
                 (changeSeoMedia)="onSeoMediaChange($event)"
