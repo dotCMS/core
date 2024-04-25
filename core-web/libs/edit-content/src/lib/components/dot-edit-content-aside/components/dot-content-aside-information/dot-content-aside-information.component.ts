@@ -38,4 +38,5 @@ export class DotContentAsideInformationComponent {
     @Input() contentlet!: DotCMSContentlet;
     @Input() contentType!: DotCMSContentType;
     @Input() loading!: boolean;
+    protected readonly currentDate = new Date();
 }

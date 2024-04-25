@@ -12,11 +12,8 @@ export class DotRelativeDatePipe implements PipeTransform {
         private readonly dotMessageService: DotMessageService
     ) {}
 
-    transform(
-        time: string | number = new Date().getTime(),
-        format = 'MM/dd/yyyy',
-        timeStampAfter = 7
-    ): string {
+    transform(date: string | number, format = 'MM/dd/yyyy', timeStampAfter = 7): string {
+        const time = date || new Date().getTime();
         const isMilliseconds = !isNaN(Number(time));
 
         // Sometimes the time is a string with this format 2/8/2023 - 10:08 PM
