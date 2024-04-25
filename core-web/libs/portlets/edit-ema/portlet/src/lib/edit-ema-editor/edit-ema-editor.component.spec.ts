@@ -2274,6 +2274,10 @@ describe('EditEmaEditorComponent', () => {
                     contentlet: {
                         inode: '123',
                         title: 'Hello World'
+                    },
+                    params: {
+                        language_id: 1,
+                        url: 'page-one'
                     }
                 });
             });

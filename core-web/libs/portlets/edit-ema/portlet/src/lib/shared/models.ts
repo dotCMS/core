@@ -169,3 +169,8 @@ export interface ContentTypeDragPayload extends BasePayload {
 }
 
 export type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
+
+export interface SaveInlineEditing {
+    contentlet: { [fieldName: string]: string; inode: string };
+    params: DotPageApiParams;
+}

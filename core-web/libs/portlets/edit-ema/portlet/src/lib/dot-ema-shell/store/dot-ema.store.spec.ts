@@ -27,7 +27,7 @@ import { EditEmaStore } from './dot-ema.store';
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, MOCK_RESPONSE_HEADLESS } from '../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
-import { ActionPayload } from '../../shared/models';
+import { ActionPayload, SaveInlineEditing } from '../../shared/models';
 
 const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     page: {
@@ -840,14 +840,20 @@ describe('EditEmaStore', () => {
             });
 
             it('should update inline edited contentlet', () => {
-                const payload = {
+                const payload: SaveInlineEditing = {
                     contentlet: {
                         body: '',
                         inode: '123'
+                    },
+                    params: {
+                        url: 'test',
+                        language_id: '1',
+                        'com.dotmarketing.persona.id': '123'
                     }
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
                 jest.spyOn(dotPageApiService, 'saveContentlet').mockReturnValue(of({}));
+                jest.spyOn(dotPageApiService, 'get');
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
@@ -857,7 +863,10 @@ describe('EditEmaStore', () => {
                 });
                 spectator.service.saveFromInlineEditedContentlet(payload);
 
-                expect(dotPageApiService.saveContentlet).toHaveBeenCalledWith(payload);
+                expect(dotPageApiService.saveContentlet).toHaveBeenCalledWith({
+                    contentlet: payload.contentlet
+                });
+                expect(dotPageApiService.get).toHaveBeenCalledWith(payload.params);
             });
         });
     });
