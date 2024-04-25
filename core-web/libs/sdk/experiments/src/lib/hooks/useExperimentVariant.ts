@@ -20,7 +20,7 @@ import DotExperimentsContext from '../contexts/DotExperimentsContext';
 export const useExperimentVariant = (data: {
     runningExperimentId?: string;
     viewAs: { variantId: string };
-}): { shouldWaitForVariant: () => boolean } => {
+}): { shouldWaitForVariant: boolean } => {
     const dotExperimentInstance = useContext(DotExperimentsContext);
 
     const { runningExperimentId, viewAs } = data;
@@ -51,5 +51,5 @@ export const useExperimentVariant = (data: {
         }
     }, [dotExperimentInstance, data]);
 
-    return { shouldWaitForVariant: () => shouldWaitForVariant };
+    return { shouldWaitForVariant };
 };

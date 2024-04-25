@@ -11,7 +11,7 @@ import Footer from './layout/footer';
 import Navigation from './layout/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { DotcmsLayout } from '@dotcms/react';
-import { DotExperimentsProvider, DotLayoutWithExperiments } from '@dotcms/experiments';
+import { DotExperimentsProvider, withExperiments } from '@dotcms/experiments';
 
 export function MyPage({ data, nav }) {
     const { refresh, replace } = useRouter();
@@ -23,7 +23,10 @@ export function MyPage({ data, nav }) {
     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG,
     redirectFn: replace
   }
-  
+
+  // Wrap the DotcmsLayout with the withExperiments HOC
+  const DotLayoutWithExperiments = withExperiments(DotcmsLayout);
+
   return (
     <DotExperimentsProvider config={experimentConfig}>
 
@@ -34,25 +37,19 @@ export function MyPage({ data, nav }) {
         </Header>
       )}
       <main className="container flex flex-col gap-8 m-auto">
-        <DotLayoutWithExperiments entity={data}>
-
-          <DotcmsLayout
-            entity={{
-              // These are the components that will be used to render the contentlets in the page.
-              components: {
-                webPageContent: WebPageContent,
-                Banner: Banner,
-                Activity: Activity,
-                Product: Product,
-                Image: ImageComponent,
-              },
-              ...data,
-            }}
-            config={{ onReload: refresh, pathname }}
-          />
-
+        <DotLayoutWithExperiments entity={{
+          // These are the components that will be used to render the contentlets in the page.
+          components: {
+            webPageContent: WebPageContent,
+            Banner: Banner,
+            Activity: Activity,
+            Product: Product,
+            Image: ImageComponent,
+          },
+          ...data,
+        }}
+        config={{ onReload: refresh, pathname }}>
         </DotLayoutWithExperiments>
-
       </main>
       {data.layout.footer && <Footer />}
     </div>

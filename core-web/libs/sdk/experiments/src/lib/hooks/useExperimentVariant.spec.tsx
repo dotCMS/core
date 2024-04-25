@@ -4,7 +4,7 @@ import React from 'react';
 import * as dotcmsClient from '@dotcms/client';
 import { useExperimentVariant } from '@dotcms/experiments';
 
-import MockDotExperimentsContext from '../contexts/DotExperimentsContext'; // Importación directa del mock
+import MockDotExperimentsContext from '../contexts/DotExperimentsContext';
 import { EXPERIMENT_DEFAULT_VARIANT_NAME } from '../shared/constants';
 import { LocationMock } from '../shared/mocks/mock';
 
@@ -46,7 +46,7 @@ describe('useExperimentVariant', () => {
 
             const { shouldWaitForVariant } = result.current;
 
-            expect(shouldWaitForVariant()).toBe(false);
+            expect(shouldWaitForVariant).toBe(false);
         });
 
         it(' if `runningExperimentId` is undefined', () => {
@@ -60,7 +60,7 @@ describe('useExperimentVariant', () => {
 
             const { shouldWaitForVariant } = result.current;
 
-            expect(shouldWaitForVariant()).toBe(false);
+            expect(shouldWaitForVariant).toBe(false);
         });
 
         it(' if VariantId get from `PageApi` is same of VariantAssigned', () => {
@@ -81,7 +81,7 @@ describe('useExperimentVariant', () => {
                 { wrapper }
             );
 
-            expect(result.current.shouldWaitForVariant()).toBe(false);
+            expect(result.current.shouldWaitForVariant).toBe(false);
         });
 
         describe('shouldWaitForVariant `true`', () => {
@@ -103,7 +103,7 @@ describe('useExperimentVariant', () => {
                     { wrapper }
                 );
 
-                expect(result.current.shouldWaitForVariant()).toBe(true);
+                expect(result.current.shouldWaitForVariant).toBe(true);
             });
         });
     });
