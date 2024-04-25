@@ -22,14 +22,14 @@ public abstract class PermissionCache implements Cachable{
 	abstract protected void remove(String key);
 
 	public abstract Optional<Boolean> doesUserHavePermission(Permissionable permissionable,
-			int permissionType,
+			String permissionType,
 			User userIn,
 			boolean respectFrontendRoles,
-			Contentlet contentlet) throws DotDataException;
+			Contentlet contentlet) ;
 
 	public abstract void putUserHavePermission(@NotNull Permissionable permissionable,
-			int permissionType,
+			String permissionType,
 			@NotNull User userIn,
 			boolean respectFrontendRoles,
-			@NotNull Contentlet contentlet, boolean hasPermission) throws DotDataException;
+			@NotNull Contentlet contentlet, boolean hasPermission) ;
 }

@@ -95,10 +95,10 @@ public class PermissionCacheImpl extends PermissionCache {
 
 	@Override
 	public Optional<Boolean> doesUserHavePermission(final Permissionable permissionable,
-			final int permissionType,
+			final String permissionType,
 			final User userIn,
 			final boolean respectFrontendRoles,
-			final Contentlet contentlet) throws DotDataException {
+			final Contentlet contentlet) {
 
 		if (DbConnectionFactory.inTransaction()) {
 			return Optional.empty();
@@ -120,10 +120,10 @@ public class PermissionCacheImpl extends PermissionCache {
 
 	@Override
 	public void putUserHavePermission(@NotNull final Permissionable permissionable,
-			final int permissionType,
+			final String permissionType,
 			@NotNull final User userIn,
 			final boolean respectFrontendRoles,
-			@NotNull final Contentlet contentlet, boolean hasPermission) throws DotDataException {
+			@NotNull final Contentlet contentlet, boolean hasPermission)  {
 
 
 		final Optional<String> key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
@@ -144,10 +144,10 @@ public class PermissionCacheImpl extends PermissionCache {
 	 * @throws DotDataException
 	 */
 	private Optional<String> shortLivedKey(@NotNull final Permissionable permissionable,
-			final int permissionType,
+			final String permissionType,
 			@NotNull final User userIn,
 			final boolean respectFrontendRoles,
-			@NotNull final Contentlet contentlet) throws DotDataException {
+			@NotNull final Contentlet contentlet)  {
 
 		if (DbConnectionFactory.inTransaction() ||
 				UtilMethods.isEmpty(() -> permissionable.getPermissionId()) ||
