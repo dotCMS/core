@@ -421,12 +421,11 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         for (Contentlet contentlet: contentlets) {
            contentletAPI.unpublish(contentlet, systemUser,false);
         }
-
        // Now let's see if the API can find all the variables
         final List<LanguageVariable> languageVariables = languageVariableAPI.findAllVariables(systemUser);
-        for (LanguageVariable variable : languageVariables) {
+        for (Contentlet savedVariable : contentlets) {
             Assert.assertFalse("Unpublished Variables should not appear in the contentlets first created",
-                    containsIdentifier(contentlets, variable.getIdentifier()));
+                    containsIdentifier(languageVariables, savedVariable.getIdentifier()));
         }
         //Now Republish content and make sure the content comes back
         for (Contentlet contentlet: contentlets) {
@@ -434,22 +433,21 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         }
         final List<LanguageVariable> republished = languageVariableAPI.findAllVariables(systemUser);
         Assert.assertFalse(republished.isEmpty());
-        for (LanguageVariable variable : republished) {
-            //After having re-published the contentlet they will have different inodes
+        for (Contentlet savedVariable : contentlets) {
+            //After having re-published the contentlet they will have different inodes, so we check by identifier
             Assert.assertTrue("Published item should appear in the contentlets first created.",
-                    containsIdentifier(contentlets, variable.getIdentifier()));
+                    containsIdentifier(republished, savedVariable.getIdentifier()));
         }
-
     }
 
     /**
      * helper method to check if a list of contentlets contains a contentlet with a given inode
-     * @param contentlets list of contentlets
-     * @param inode  the inode to check for
+     * @param variables list of contentlets
+     * @param identifier  the inode to check for
      * @return  true if the inode is found in the list of contentlets
      */
-    boolean containsIdentifier(final List<Contentlet> contentlets, final String identifier) {
-        return contentlets.stream().anyMatch(contentlet -> contentlet.getIdentifier().equals(identifier));
+    boolean containsIdentifier(final List<LanguageVariable> variables, final String identifier) {
+        return variables.stream().anyMatch(variable -> variable.getIdentifier().equals(identifier));
     }
 
     /*
