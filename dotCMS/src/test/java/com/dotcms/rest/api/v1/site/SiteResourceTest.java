@@ -28,6 +28,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.WebKeys;
@@ -71,6 +72,7 @@ public class SiteResourceTest extends UnitTestBase {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
+        final HostVariableAPI hostVariableAPI = mock(HostVariableAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
         final ServletContext context = mock(ServletContext.class);
@@ -93,7 +95,8 @@ public class SiteResourceTest extends UnitTestBase {
             when(request.getSession(false)).thenReturn(session);
             when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
             SiteResource siteResource =
-                    new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
+                    new SiteResource(webResource, new SiteHelper(hostAPI, hostVariableAPI),
+                            paginationUtil);
 
             final Response response = siteResource
                     .sites(request, httpServletResponse, "filter", false, false, false, page, count);
@@ -113,6 +116,7 @@ public class SiteResourceTest extends UnitTestBase {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
+        final HostVariableAPI hostVariableAPI = mock(HostVariableAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
         final ServletContext context = mock(ServletContext.class);
@@ -133,7 +137,8 @@ public class SiteResourceTest extends UnitTestBase {
             when(request.getSession(false)).thenReturn(session);
             when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
             SiteResource siteResource =
-                    new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
+                    new SiteResource(webResource, new SiteHelper(hostAPI, hostVariableAPI),
+                            paginationUtil);
 
             Response response1 = siteResource.switchSite(request, httpServletResponse);
             System.out.println(response1);
@@ -176,6 +181,7 @@ public class SiteResourceTest extends UnitTestBase {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
+        final HostVariableAPI hostVariableAPI = mock(HostVariableAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
         final ServletContext context = mock(ServletContext.class);
@@ -224,7 +230,8 @@ public class SiteResourceTest extends UnitTestBase {
             );
 
             SiteResource siteResource =
-                    new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
+                    new SiteResource(webResource, new SiteHelper(hostAPI, hostVariableAPI),
+                            paginationUtil);
 
             Response response1 = siteResource
                     .switchSite(request, httpServletResponse, "48190c8c-42c4-46af-8d1a-0cd5db894798");
@@ -264,6 +271,7 @@ public class SiteResourceTest extends UnitTestBase {
             final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 
             final HostAPI hostAPI = mock(HostAPI.class);
+            final HostVariableAPI hostVariableAPI = mock(HostVariableAPI.class);
             when(hostAPI.find(currentSiteId, user, false)).thenReturn(currentSite);
 
             final UserAPI userAPI = mock(UserAPI.class);
@@ -277,7 +285,8 @@ public class SiteResourceTest extends UnitTestBase {
             when(initDataObject.getUser()).thenReturn(user);
 
             final SiteResource siteResource =
-                    new SiteResource(webResource, new SiteHelper(hostAPI), paginationUtil);
+                    new SiteResource(webResource, new SiteHelper(hostAPI, hostVariableAPI),
+                            paginationUtil);
             final Response response = siteResource.currentSite(request, httpServletResponse);
 
             RestUtilTest.verifySuccessResponse(response);
