@@ -88,11 +88,8 @@
             }
 
             &.p-highlight {
-                background: $white;
-                color: $black;
-
                 & .p-sortable-column-icon {
-                    color: $black;
+                    color: $color-palette-primary-500;
                 }
             }
         }
@@ -284,10 +281,6 @@
             & .p-datatable-tfoot > tr > td {
                 padding: 0.9375rem 0.9375rem;
             }
-        }
-
-        & .p-sortable-column:focus {
-            background-color: $color-palette-primary-100;
         }
 
         & .p-datatable-tbody > tr:not(.p-highlight):focus {
