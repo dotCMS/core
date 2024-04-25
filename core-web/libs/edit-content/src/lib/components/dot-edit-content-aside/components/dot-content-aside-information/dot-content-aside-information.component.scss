@@ -1,10 +1,6 @@
 @use "variables" as *;
 @import "mixins";
 
-:host {
-    font-family: $font-default;
-}
-
 .content-aside__information {
     display: flex;
     padding: $spacing-3;
