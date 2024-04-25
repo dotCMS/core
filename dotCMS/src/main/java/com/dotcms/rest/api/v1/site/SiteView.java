@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.site;
 
 import java.util.Date;
+import java.util.List;
 
 public class SiteView {
 
@@ -50,6 +51,8 @@ public class SiteView {
 
     private final  String modUser;
 
+    private final List<SimpleSiteVarView> variables;
+
     private SiteView(Builder builder) {
         identifier = builder.identifier;
         inode = builder.inode;
@@ -74,6 +77,7 @@ public class SiteView {
         isWorking = builder.isWorking;
         modDate = builder.modDate;
         modUser = builder.modUser;
+        variables = builder.variables;
     }
 
     public String getIdentifier() {
@@ -168,6 +172,9 @@ public class SiteView {
         return modUser;
     }
 
+    public List<SimpleSiteVarView> getVariables() {
+        return variables;
+    }
 
     public static final class Builder {
         private String identifier;
@@ -193,6 +200,7 @@ public class SiteView {
         private boolean isWorking;
         private Date modDate;
         private String modUser;
+        private List<SimpleSiteVarView> variables;
 
         private Builder() {
         }
@@ -313,6 +321,11 @@ public class SiteView {
 
         public Builder withModUser(String val) {
             modUser = val;
+            return this;
+        }
+
+        public Builder withVariables(List<SimpleSiteVarView> val) {
+            variables = val;
             return this;
         }
 

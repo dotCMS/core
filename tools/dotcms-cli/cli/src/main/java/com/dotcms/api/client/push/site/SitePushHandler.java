@@ -155,6 +155,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
                 .embeddedDashboard(siteView.embeddedDashboard())
                 .forceExecution(forceExecution)
                 .isDefault(Boolean.TRUE.equals(siteView.isDefault()))
+                .variables(siteView.variables())
                 .build();
     }
 

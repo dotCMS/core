@@ -216,6 +216,8 @@ describe('EditEmaStore', () => {
 
                 spectator.service.editorToolbarData$.subscribe((state) => {
                     expect(state).toEqual({
+                        previewURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         bounds: [],
                         contentletArea: null,
                         clientHost: 'http://localhost:3000',

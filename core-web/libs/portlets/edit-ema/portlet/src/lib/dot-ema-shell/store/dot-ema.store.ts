@@ -112,6 +112,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         this.pageURL$,
         (clientHost, pageURL) => (clientHost ? `${clientHost}/${pageURL}` : '')
     );
+
+    private readonly previewURL$ = this.select(
+        this.clientHost$,
+        this.pageURL$,
+        (clientHost, pageURL) => (clientHost ? `${clientHost}/${pageURL}` : pageURL)
+    );
     private readonly bounds$ = this.select((state) => state.bounds);
     private readonly contentletArea$: Observable<ContentletArea> = this.select(
         (state) => state.contentletArea,
@@ -252,16 +258,21 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    readonly editorToolbarData$ = this.select(this.editorState$, (editorState) => ({
-        ...editorState,
-        showWorkflowActions:
-            editorState.editorData.mode === EDITOR_MODE.EDIT ||
-            editorState.editorData.mode === EDITOR_MODE.INLINE_EDITING,
-        showInfoDisplay:
-            !editorState.editorData.canEditPage ||
-            (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
-                editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING)
-    }));
+    readonly editorToolbarData$ = this.select(
+        this.editorState$,
+        this.previewURL$,
+        (editorState, previewURL) => ({
+            ...editorState,
+            showWorkflowActions:
+                editorState.editorData.mode === EDITOR_MODE.EDIT ||
+                editorState.editorData.mode === EDITOR_MODE.INLINE_EDITING,
+            showInfoDisplay:
+                !editorState.editorData.canEditPage ||
+                (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
+                    editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING),
+            previewURL
+        })
+    );
 
     readonly layoutProperties$ = this.select(
         this.layoutProps$,
@@ -448,7 +459,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     readonly saveFromInlineEditedContentlet = this.effect(
-        (payload$: Observable<{ contentlet: { body: string; inode: string } }>) => {
+        (payload$: Observable<{ contentlet: { [fieldName: string]: string; inode: string } }>) => {
             return payload$.pipe(
                 switchMap((contentlet) => {
                     return this.dotPageApiService.saveContentlet(contentlet).pipe(
@@ -456,9 +467,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             () => {
                                 this.messageService.add({
                                     severity: 'success',
-                                    summary: this.dotMessageService.get(
-                                        'editpage.content.update.success'
-                                    ),
+                                    summary: this.dotMessageService.get('message.content.saved'),
                                     life: 2000
                                 });
                                 this.setEditorMode(EDITOR_MODE.EDIT);
@@ -468,7 +477,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 this.messageService.add({
                                     severity: 'error',
                                     summary: this.dotMessageService.get(
-                                        'editpage.content.update.error'
+                                        'editpage.content.update.contentlet.error'
                                     ),
                                     life: 2000
                                 });

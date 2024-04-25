@@ -92,6 +92,7 @@ describe('EditEmaToolbarComponent', () => {
                         provide: EditEmaStore,
                         useValue: {
                             editorToolbarData$: of({
+                                previewURL: 'http://localhost:8080/index',
                                 favoritePageURL: 'http://localhost:8080/fav',
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
