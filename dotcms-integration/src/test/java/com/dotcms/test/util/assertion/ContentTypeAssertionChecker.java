@@ -10,15 +10,18 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link ContentType}
@@ -37,19 +40,19 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
             schemas.addAll(workflowSchemes);
             Collections.reverse(schemas);
 
-            Map<String, Object> arguments = map(
-                    "class", contentType.getClass().getName(),
-                    "content_type_name", contentType.name(),
-                    "content_type_description", contentType.description(),
-                    "content_type_id", contentType.id(),
-                    "content_type_variable", contentType.variable(),
-                    "content_type_idate", String.valueOf(contentType.iDate().getTime()),
-                    "content_type_mod_date", String.valueOf(contentType.modDate().getTime()),
-                    "host", host.getIdentifier(),
-                    "workflows_ids", schemas.stream().map(WorkflowScheme::getId).collect(Collectors.toList()),
-                    "workflows_names", schemas.stream().map(WorkflowScheme::getName).collect(Collectors.toList()),
-                    "folder_id", contentType.folder()
-            );
+            Map<String, Object> arguments = new HashMap<>();
+
+            arguments.put("class", contentType.getClass().getName());
+            arguments.put("content_type_name", contentType.name());
+            arguments.put("content_type_description", contentType.description());
+            arguments.put("content_type_id", contentType.id());
+            arguments.put("content_type_variable", contentType.variable());
+            arguments.put("content_type_idate", String.valueOf(contentType.iDate().getTime()));
+            arguments.put("content_type_mod_date", String.valueOf(contentType.modDate().getTime()));
+            arguments.put("host", host.getIdentifier());
+            arguments.put("workflows_ids", schemas.stream().map(WorkflowScheme::getId).collect(Collectors.toList()));
+            arguments.put("workflows_names", schemas.stream().map(WorkflowScheme::getName).collect(Collectors.toList()));
+            arguments.put("folder_id", contentType.folder());
 
             arguments.put("fixed", contentType.fixed());
 

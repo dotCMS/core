@@ -111,7 +111,6 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.exception.ExceptionUtil.getRootCause;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
@@ -2699,15 +2698,15 @@ public class ContentletAjax {
 				final Contentlet contentlet = conAPI.findContentletForLanguage(language.getId(), identifier);
 				if (null != contentlet) {
 					builder.add(
-							map("inode", contentlet.getInode(),
+							new HashMap<>(Map.of("inode", contentlet.getInode(),
 									"identifier", contentletIdentifier,
-									"languageId", language.getId() + "")
+									"languageId", language.getId() + ""))
 					);
 				} else {
 					builder.add(
-							map("inode", "",
+							new HashMap<>(Map.of("inode", "",
 									"identifier", contentletIdentifier,
-									"languageId", language.getId() + "")
+									"languageId", language.getId() + ""))
 					);
 				}
 			} catch (DotDataException | DotSecurityException e) {
