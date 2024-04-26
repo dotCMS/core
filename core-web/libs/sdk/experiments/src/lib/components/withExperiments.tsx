@@ -1,4 +1,4 @@
-import React, { ReactNode, Suspense } from 'react';
+import React, { ReactNode } from 'react';
 
 import { DotcmsPageProps } from '@dotcms/react';
 
@@ -28,8 +28,14 @@ export const withExperiments = (WrappedComponent: React.ComponentType<DotcmsPage
 
         const { shouldWaitForVariant } = useExperimentVariant(entity);
 
-        return (
-            <Suspense>{!shouldWaitForVariant ? <WrappedComponent {...props} /> : null}</Suspense>
-        );
+        if (shouldWaitForVariant) {
+            return (
+                <div style={{ visibility: 'hidden' }}>
+                    <WrappedComponent {...props} />
+                </div>
+            );
+        }
+
+        return <WrappedComponent {...props} />;
     };
 };
