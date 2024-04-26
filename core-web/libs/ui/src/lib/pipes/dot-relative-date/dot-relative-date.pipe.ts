@@ -1,19 +1,19 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-import { DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 
 /*
  * Custom Pipe that returns the relative date.
  */
 @Pipe({ name: 'dotRelativeDate', standalone: true })
 export class DotRelativeDatePipe implements PipeTransform {
-    constructor(private dotFormatDateService: DotFormatDateService) {}
+    constructor(
+        private readonly dotFormatDateService: DotFormatDateService,
+        private readonly dotMessageService: DotMessageService
+    ) {}
 
-    transform(
-        time: string | number = new Date().getTime(),
-        format = 'MM/dd/yyyy',
-        daysLimit = 7
-    ): string {
+    transform(date: string | number, format = 'MM/dd/yyyy', timeStampAfter = 7): string {
+        const time = date || new Date().getTime();
         const isMilliseconds = !isNaN(Number(time));
 
         // Sometimes the time is a string with this format 2/8/2023 - 10:08 PM
@@ -29,13 +29,16 @@ export class DotRelativeDatePipe implements PipeTransform {
         const finalDate = isMilliseconds ? this.dotFormatDateService.getUTC(cleanDate) : cleanDate;
 
         // Check how many days are between the final date and the current date
-        const showTimeStamp =
-            Math.abs(
-                this.dotFormatDateService.differenceInCalendarDays(
-                    finalDate,
-                    this.dotFormatDateService.getUTC()
-                )
-            ) > daysLimit;
+        const diffTime = this.dotFormatDateService.differenceInCalendarDays(
+            finalDate,
+            this.dotFormatDateService.getUTC()
+        );
+
+        const showTimeStamp = timeStampAfter ? Math.abs(diffTime) > timeStampAfter : false;
+
+        if (diffTime === 0 && !showTimeStamp) {
+            return this.dotMessageService.get('Now');
+        }
 
         return showTimeStamp
             ? this.dotFormatDateService.format(finalDate, format)

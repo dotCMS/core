@@ -1,14 +1,12 @@
 package com.dotcms.rest.api.v1.system;
 
-import java.io.Serializable;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageRuntimeException;
 
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.servlet.http.HttpServletRequest;
+import java.io.Serializable;
+import java.util.Map;
 
 /**
  * This utility class assists the {@link AppContextInitResource} in merging

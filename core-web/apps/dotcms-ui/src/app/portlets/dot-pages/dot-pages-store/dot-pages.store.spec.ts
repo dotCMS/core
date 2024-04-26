@@ -453,9 +453,7 @@ describe('DotPageStore', () => {
             header: 'create.page',
             width: '58rem',
             data: {
-                pageTypes: expectedInputArray,
-                isContentEditor2Enabled: false,
-                availableContentTypes: ['*']
+                pageTypes: expectedInputArray
             }
         });
     });

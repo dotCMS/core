@@ -1,0 +1,99 @@
+name: Master Checks
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      reuse-previous-build:
+        description: 'Indicates if the workflow should reuse the previous build'
+        type: boolean
+        default: true
+      build-on-missing-artifacts:
+        type: boolean
+        description: 'Indicates if the workflow should build on missing artifacts'
+        default: false
+      run-all-tests:
+        description: 'Run all tests'
+        type: boolean
+        default: false
+jobs:
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/reusable-initialize.yml
+    with:
+      reuse-previous-build: ${{ inputs.reuse-previous-build || github.event_name != 'workflow_dispatch' }}
+      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || github.event_name != 'workflow_dispatch' }}
+  build:
+    name: PR Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/reusable-ci-build.yml
+    permissions:
+      contents: read
+      packages: write
+  test:
+    name: PR Test
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/reusable-ci-test.yml
+    with:
+      run-all-tests: ${{ inputs.run-all-tests || false }}
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+    permissions:
+      contents: read
+      packages: write
+  sonar:
+    name: PR SonarQube
+    needs: [ initialize,test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/reusable-sonarqube.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    #
+    # Run CLI build artifacts
+    #
+  build-cli:
+    name: CLI Build
+    needs: [ test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cli-build-artifacts.yml
+    with:
+      buildNativeImage: true
+      branch: ${{ github.ref }}
+
+  deployment:
+    needs: [ initialize,build-cli,sonar,test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/reusable-deployment.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      environment: trunk
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, build-cli, test, sonar, deployment]
+    uses: ./.github/workflows/reusable-finalize.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      needsData: ${{ toJson(needs) }}
+  report:
+    name: Report
+    if: always()
+    needs: [ finalize ]
+    uses: ./.github/workflows/build-report.yml
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+

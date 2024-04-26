@@ -7,6 +7,7 @@
     [maximizable]="true"
     [modal]="true"
     (visibleChange)="resetDialog()"
+    appendTo="body"
     data-testId="dialog"
     styleClass="edit-ema-dialog">
     <ng-container [ngSwitch]="ds.type">
@@ -21,7 +22,7 @@
                 *ngIf="ds.url"
                 [style]="{
                     border: 'none',
-                    display: ds.status !== dialogStatus.INIT ? 'none' : 'block'
+                    height: ds.status !== dialogStatus.INIT ? '0' : null
                 }"
                 [src]="ds.url | safeUrl"
                 (load)="onIframeLoad()"

@@ -72,6 +72,29 @@ describe('EmaContentletToolsComponent', () => {
             expect(spectator.query(byTestId('drag-image'))).toHaveText('test');
         });
 
+        it('should close menus when contentlet @input was changed', () => {
+            const spyHideMenus = jest.spyOn(spectator.component, 'hideMenus');
+
+            const hideMenu = jest.spyOn(spectator.component.menu, 'hide');
+            // Open menu
+            spectator.click('[data-testId="menu-add"]');
+
+            //Change contentlet hover
+            spectator.setInput('contentlet', {
+                ...contentletAreaMock,
+                payload: {
+                    ...contentletAreaMock.payload,
+                    contentlet: {
+                        ...contentletAreaMock.payload.contentlet,
+                        identifier: 'new-identifier'
+                    }
+                }
+            });
+
+            expect(spyHideMenus).toHaveBeenCalled();
+            expect(hideMenu).toHaveBeenCalled();
+        });
+
         describe('events', () => {
             it('should emit delete on delete button click', () => {
                 const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
@@ -277,7 +300,13 @@ describe('EmaContentletToolsComponent', () => {
                                     title: 'Fake title',
                                     contentType: 'Fake content type'
                                 },
-                                container: undefined,
+                                container: {
+                                    uuid: '',
+                                    acceptTypes: '',
+                                    identifier: '',
+                                    maxContentlets: 0,
+                                    variantId: ''
+                                },
                                 language_id: '1',
                                 pageContainers: [],
                                 pageId: '1',

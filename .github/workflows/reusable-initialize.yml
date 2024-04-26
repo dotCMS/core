@@ -1,0 +1,139 @@
+name: Reusable Initialize
+on:
+  workflow_call:
+    inputs:
+      incremental:
+        description: 'Indicates if the workflow is incremental or not'
+        type: boolean
+        default: false
+      reuse-previous-build:
+        description: 'Indicates if the workflow should reuse the previous build'
+        type: boolean
+        default: false
+      build-on-missing-artifacts:
+        description: 'If artifacts from previous build cannot be found should we build now or error. Only applicable if reuse-previous-build is set'
+        type: boolean
+        default: false
+    outputs:
+      artifact-run-id:
+        value: ${{ jobs.check-previous-build.outputs.artifact-run-id }}
+      found_artifacts:
+        value: ${{ jobs.check-previous-build.outputs.found_artifacts }}
+      build:
+        value: ${{ jobs.changes.outputs.build }}
+      backend:
+        value: ${{ jobs.changes.outputs.backend }}
+      frontend:
+        value: ${{ jobs.changes.outputs.frontend }}
+      jvm_unit_test:
+        value: ${{ jobs.changes.outputs.jvm_unit_test }}
+      cli:
+        value: ${{ jobs.changes.outputs.cli }}
+jobs:
+  initialize: # This is used as a required check to indicate that the workflow has started and is running
+    name: Initialize
+    runs-on: ubuntu-20.04
+    if: always()
+    steps:
+      - name: Initialize
+        id: initialize
+        shell: bash
+        run: |
+          echo "Initializing..."
+  check-previous-build:
+    name: Check Previous Build
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-run-id: ${{ steps.check.outputs.run_id }}
+      found_artifacts: ${{ steps.check.outputs.found_artifacts }}
+    steps:
+      - name: Download Build Artifact
+        id: data-download
+        uses: dawidd6/action-download-artifact@v3.1.4
+        if: ${{ inputs.reuse-previous-build == true }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          #workflow: build-test-merge_group.yml
+          workflow_search: true # artifacts can come from merge_group build. Cannot specify a list of workflows without multiple calls
+          commit: ${{ github.sha }}
+          workflow_conclusion: success
+          search_artifacts: true
+          dry_run: true
+          name: maven-repo # If using the same branch for different environments artifact names must be unique
+          path: .
+          if_no_artifact_found: warn
+      - name: Set Outputs
+        id: check
+        run: |
+          build_artifact_exists=${{ steps.data-download.outputs.found_artifact }}
+          if [[ ${build_artifact_exists} == "true" ]]; then
+              run_id=`echo '${{ steps.data-download.outputs.artifacts }}' | jq -r '.[0].workflow_run.id'`
+              found_artifacts=true
+              echo "Merge Group Artifact Run id: $run_id"
+          else
+             echo "No Merge Group artifact found"
+             run_id="${{ github.run_id }}"
+             found_artifacts=false
+          fi
+          echo "run_id=$run_id" >> $GITHUB_OUTPUT
+          echo "found_artifacts=$found_artifacts" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.reuse-previous-build || 'false' }}" == "true" && "${found_artifacts}" != "true" && "${{ inputs.build-on-missing-artifacts }}" != "true" ]]; then
+            echo "build-on-missing-artifacts set to false. Failing build"
+            exit 1
+          fi
+  changes:
+    name: Check Changed Files
+    needs: [ check-previous-build ]
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.filter-rewrite.outputs.build }}
+      backend: ${{ steps.filter-rewrite.outputs.backend }}
+      frontend: ${{ steps.filter-rewrite.outputs.frontend }}
+      jvm_unit_test: ${{ steps.filter-rewrite.outputs.jvm_unit_test }}
+      cli: ${{ steps.filter-rewrite.outputs.cli }}
+    steps:
+      - uses: actions/checkout@v4
+        if: ${{ inputs.incremental }}
+      - uses: dorny/paths-filter@v3.0.1
+        if: ${{ inputs.incremental }}
+        id: filter
+        with:
+          filters: .github/filters.yaml
+          list-files: 'escape'
+      - name: Rewrite Filter
+        id: filter-rewrite
+        env:
+          CICD_SKIP_TESTS: ${{ vars.CICD_SKIP_TESTS }}
+        run: |
+          # Default action outcomes based on paths-filter action outputs
+          frontend=${{ steps.filter.outputs.frontend || 'true'}}
+          cli=${{ steps.filter.outputs.cli || 'true' }}
+          backend=${{ steps.filter.outputs.backend || 'true' }}
+          build=${{ steps.filter.outputs.build || 'true' }}
+          jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test || 'true' }}
+
+          # Check if the commit is to the master branch
+          skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
+
+          # The below line ensures that if skip_tests is true, all tests are set to false.
+          if [ "$skip_tests" == "true" ]; then
+            echo "Skipping tests as per CICD_SKIP_TESTS flag."
+            frontend=false
+            cli=false
+            backend=false
+            jvm_unit_test=false
+          fi
+          
+          echo "build=${build}"
+          echo "frontend=${frontend}"
+          echo "cli=${cli}"
+          echo "backend=${backend}"
+          echo "jvm_unit_test=${jvm_unit_test}"
+
+          # Export the outcomes as GitHub Actions outputs
+          echo "frontend=${frontend}" >> $GITHUB_OUTPUT
+          echo "cli=${cli}" >> $GITHUB_OUTPUT
+          echo "backend=${backend}" >> $GITHUB_OUTPUT
+          echo "build=${build}" >> $GITHUB_OUTPUT
+          echo "jvm_unit_test=${jvm_unit_test}" >> $GITHUB_OUTPUT

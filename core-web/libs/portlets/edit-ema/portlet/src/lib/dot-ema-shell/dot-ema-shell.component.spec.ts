@@ -1,11 +1,12 @@
 import { describe, expect } from '@jest/globals';
+import { ActivatedRouteStub } from '@ngneat/spectator';
 import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router, UrlSegment } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -13,19 +14,28 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
 import {
+    DotContentletLockerService,
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
-    DotPersonalizeService
+    DotWorkflowActionsFireService,
+    PushPublishService
 } from '@dotcms/data-access';
-import { SiteService, mockSites } from '@dotcms/dotcms-js';
+import {
+    DotcmsConfigService,
+    DotcmsEventsService,
+    LoginService,
+    SiteService,
+    mockSites
+} from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
-    DotPersonalizeServiceMock,
+    DotcmsConfigServiceMock,
+    DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -44,12 +54,30 @@ describe('DotEmaShellComponent', () => {
     let store: EditEmaStore;
     let siteService: SiteServiceMock;
     let router: Router;
+    let route: ActivatedRoute;
 
     const createComponent = createRoutingFactory({
         component: DotEmaShellComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
-        providers: [{ provide: SiteService, useClass: SiteServiceMock }],
+        firstChild: new ActivatedRouteStub({
+            url: [new UrlSegment('content', {})]
+        }),
+        providers: [
+            { provide: SiteService, useClass: SiteServiceMock },
+            {
+                provide: DotContentletLockerService,
+                useValue: {
+                    unlock: (_inode: string) => of({})
+                }
+            },
+            {
+                provide: LoginService,
+                useValue: {
+                    getCurrentUser: () => of({})
+                }
+            }
+        ],
         declarations: [MockComponent(DotEmaDialogComponent)],
         componentProviders: [
             MessageService,
@@ -58,6 +86,33 @@ describe('DotEmaShellComponent', () => {
             DotActionUrlService,
             DotMessageService,
             DialogService,
+            DotWorkflowActionsFireService,
+
+            {
+                provide: DotcmsConfigService,
+                useValue: new DotcmsConfigServiceMock()
+            },
+            {
+                provide: DotcmsEventsService,
+                useValue: new DotcmsEventsServiceMock()
+            },
+            {
+                provide: PushPublishService,
+                useValue: {
+                    getEnvironments() {
+                        return of([
+                            {
+                                id: '123',
+                                name: 'Environment 1'
+                            },
+                            {
+                                id: '456',
+                                name: 'Environment 2'
+                            }
+                        ]);
+                    }
+                }
+            },
             {
                 provide: DotExperimentsService,
                 useValue: DotExperimentsServiceMock
@@ -76,7 +131,8 @@ describe('DotEmaShellComponent', () => {
                                 identifier: '123',
                                 inode: '123',
                                 canEdit: true,
-                                canRead: true
+                                canRead: true,
+                                pageURI: 'index'
                             },
                             viewAs: {
                                 language: {
@@ -88,7 +144,10 @@ describe('DotEmaShellComponent', () => {
                                 },
                                 persona: DEFAULT_PERSONA
                             },
-                            site: mockSites[0]
+                            site: mockSites[0],
+                            template: {
+                                drawed: true
+                            }
                         });
                     },
                     save() {
@@ -109,10 +168,6 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
-            },
-            {
-                provide: DotPersonalizeService,
-                useValue: new DotPersonalizeServiceMock()
             }
         ]
     });
@@ -132,7 +187,7 @@ describe('DotEmaShellComponent', () => {
             });
             siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
             store = spectator.inject(EditEmaStore, true);
-            router = spectator.inject(Router);
+            router = spectator.inject(Router, true);
             jest.spyOn(store, 'load');
 
             spectator.triggerNavigation({
@@ -169,7 +224,8 @@ describe('DotEmaShellComponent', () => {
                         icon: 'pi-table',
                         label: 'editema.editor.navbar.layout',
                         href: 'layout',
-                        isDisabled: false
+                        isDisabled: false,
+                        tooltip: null
                     },
                     {
                         icon: 'pi-sliders-h',
@@ -180,7 +236,8 @@ describe('DotEmaShellComponent', () => {
                     {
                         iconURL: 'experiments',
                         label: 'editema.editor.navbar.experiments',
-                        href: 'experiments/123'
+                        href: 'experiments/123',
+                        isDisabled: false
                     },
                     {
                         icon: 'pi-th-large',
@@ -299,7 +356,7 @@ describe('DotEmaShellComponent', () => {
         });
     });
 
-    describe('without read permission', () => {
+    describe('with advance template', () => {
         beforeEach(() => {
             spectator = createComponent({
                 providers: [
@@ -312,8 +369,8 @@ describe('DotEmaShellComponent', () => {
                                         title: 'hello world',
                                         identifier: '123',
                                         inode: '123',
-                                        canEdit: false,
-                                        canRead: false
+                                        canEdit: true,
+                                        canRead: true
                                     },
                                     viewAs: {
                                         language: {
@@ -325,7 +382,8 @@ describe('DotEmaShellComponent', () => {
                                         },
                                         persona: DEFAULT_PERSONA
                                     },
-                                    site: mockSites[0]
+                                    site: mockSites[0],
+                                    template: { drawed: false }
                                 });
                             },
                             save() {
@@ -368,15 +426,22 @@ describe('DotEmaShellComponent', () => {
             });
         });
 
-        it('should not render components', () => {
-            spectator.detectChanges();
-            expect(spectator.query(EditEmaNavigationBarComponent)).toBeNull();
-            expect(spectator.query(ToastModule)).toBeNull();
-            expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
+        describe('DOM', () => {
+            it('should have nav bar with layout disabled and tooltip', () => {
+                const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
+
+                expect(navBarComponent.items).toContainEqual({
+                    icon: 'pi-table',
+                    label: 'editema.editor.navbar.layout',
+                    href: 'layout',
+                    isDisabled: true,
+                    tooltip: 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+                });
+            });
         });
     });
 
-    describe('without license ', () => {
+    describe('without license', () => {
         beforeEach(() => {
             spectator = createComponent({
                 providers: [
@@ -402,7 +467,8 @@ describe('DotEmaShellComponent', () => {
                                         },
                                         persona: DEFAULT_PERSONA
                                     },
-                                    site: mockSites[0]
+                                    site: mockSites[0],
+                                    template: { drawed: true }
                                 });
                             },
                             save() {
@@ -434,6 +500,74 @@ describe('DotEmaShellComponent', () => {
         it('should render not-license component', () => {
             spectator.detectChanges();
             expect(spectator.query(DotNotLicenseComponent)).toBeDefined();
+        });
+    });
+
+    describe('without read permission', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotPageApiService,
+                        useValue: {
+                            get() {
+                                return of({
+                                    page: {
+                                        title: 'hello world',
+                                        identifier: '123',
+                                        inode: '123',
+                                        canEdit: false,
+                                        canRead: false
+                                    },
+                                    viewAs: {
+                                        language: {
+                                            id: 1,
+                                            language: 'English',
+                                            countryCode: 'US',
+                                            languageCode: 'EN',
+                                            country: 'United States'
+                                        },
+                                        persona: DEFAULT_PERSONA
+                                    },
+                                    site: mockSites[0],
+                                    template: { drawed: true }
+                                });
+                            },
+                            save() {
+                                return of({});
+                            },
+                            getPersonas() {
+                                return of({
+                                    entity: [DEFAULT_PERSONA],
+                                    pagination: {
+                                        totalEntries: 1,
+                                        perPage: 10,
+                                        page: 1
+                                    }
+                                });
+                            }
+                        }
+                    },
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(true),
+                            canAccessEnterprisePortlet: () => of(true)
+                        }
+                    }
+                ]
+            });
+            route = spectator.inject(ActivatedRoute);
+            jest.spyOn(route.snapshot, 'firstChild', 'get').mockReturnValue({
+                routeConfig: { path: 'content' }
+            } as ActivatedRouteSnapshot);
+        });
+
+        it('should not render components', () => {
+            spectator.detectChanges();
+            expect(spectator.query(EditEmaNavigationBarComponent)).toBeNull();
+            expect(spectator.query(ToastModule)).toBeNull();
+            expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
         });
     });
 });

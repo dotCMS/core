@@ -26,6 +26,10 @@ export interface DotPageApiResponse {
         inode: string;
         canEdit: boolean;
         canRead: boolean;
+        canLock?: boolean;
+        locked?: boolean;
+        lockedBy?: string;
+        lockedByName?: string;
         pageURI: string;
         rendered?: string;
         contentType: string;
@@ -173,5 +177,12 @@ export class DotPageApiService {
         }
 
         return apiUrl + queryParams.toString();
+    }
+
+    saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
+        return this.http.put(
+            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
+            { contentlet }
+        );
     }
 }

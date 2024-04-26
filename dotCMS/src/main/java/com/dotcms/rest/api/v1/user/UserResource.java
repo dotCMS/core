@@ -14,7 +14,6 @@ import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.UserPaginator;
@@ -26,14 +25,12 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -46,7 +43,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -67,15 +63,13 @@ import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -240,7 +234,7 @@ public class UserResource implements Serializable {
 				userMap = userToUpdated.toMap();
 			}
 
-			response = Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
+			response = Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
 					"reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
 		} catch (final UserFirstNameException e) {
 
@@ -313,7 +307,7 @@ public class UserResource implements Serializable {
 	 * @param page             The results page or offset, for pagination purposes.
 	 * @param perPage          The size of the results page, for pagination purposes.
 	 * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
-	 *                         check {@link SQLUtil#ORDERBY_WHITELIST}.
+	 *                         check {@link SQLUtil #ORDERBY_WHITELIST(private method in SQLUtil)}.
 	 * @param direction        The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
 	 * @param includeAnonymous If the Anonymous User must be included in the results, set this to {@code true}.
 	 * @param includeDefault   If the Default User must be included in the results, set this to {@code true}.
@@ -345,13 +339,13 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
-		final Map<String, Object> extraParams = CollectionsUtils.map(
-				UserPaginator.ASSET_INODE_PARAM, assetInode,
-				UserPaginator.PERMISSION_PARAM, permission,
-				UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous,
-				UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault,
-				UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy
-		);
+		final Map<String, Object> extraParams = new HashMap<>();
+		extraParams.put(UserPaginator.ASSET_INODE_PARAM, assetInode);
+		extraParams.put(UserPaginator.PERMISSION_PARAM, permission);
+		extraParams.put(UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous);
+		extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
+		extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
+
 		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		final User user = initData.getUser();
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
@@ -414,7 +408,7 @@ public class UserResource implements Serializable {
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
-			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
+			response = Response.ok(new ResponseEntityView(Map.of("loginAs", true))).build();
 		} catch (final NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
@@ -430,7 +424,7 @@ public class UserResource implements Serializable {
 				final User user = initData.getUser();
 				response = Response.ok(new ResponseEntityView<>(
 						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
-						map("loginAs", false))).build();
+						Map.of("loginAs", false))).build();
 			} else {
 				return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 			}
@@ -574,7 +568,7 @@ public class UserResource implements Serializable {
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);
-			response = Response.ok(new ResponseEntityView(map("logoutAs", true))).build();
+			response = Response.ok(new ResponseEntityView(Map.of("logoutAs", true))).build();
 		} catch (final DotSecurityException | DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when attempting to log " +
 							"out as user '%s' by UserID '%s' / Remote IP '%s': %s", currentLoginAsUser.getUserId(),
@@ -621,12 +615,12 @@ public class UserResource implements Serializable {
 		try {
 			checkUserLoginAsRole(initData.getUser());
 			final List<Role> roles = List.of(roleAPI.loadBackEndUserRole());
-			final Map<String, Object> extraParams = Map.of(
+			final Map<String, Object> extraParams = new HashMap<>(Map.of(
 					UserPaginator.ROLES_PARAM, roles,
 					UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, false,
 					UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, false,
 					UserPaginator.REMOVE_CURRENT_USER_PARAM, true,
-					UserPaginator.REQUEST_PASSWORD_PARAM, true);
+					UserPaginator.REQUEST_PASSWORD_PARAM, true));
 			response = this.paginationUtil.getPage( httpServletRequest, user, filter, page, perPage, extraParams);
 		} catch (final Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -702,7 +696,7 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
 
-			return Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
+			return Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 
@@ -716,6 +710,7 @@ public class UserResource implements Serializable {
 
 		final String userId = UtilMethods.isSet(createUserForm.getUserId())?
 				createUserForm.getUserId(): "userId-" + UUIDUtil.uuid();
+		validateMaximumLength(createUserForm.getFirstName(),createUserForm.getLastName(),createUserForm.getEmail());
 		final User user = this.userAPI.createUser(userId, createUserForm.getEmail());
 
 		user.setFirstName(createUserForm.getFirstName());

@@ -1183,7 +1183,7 @@ public class ImportUtil {
                     try{
                         if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName()) && !preview){
                             if(null != value && UtilMethods.isSet(value.toString())){
-                                final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFileFromUrl(null,request,new URL(value.toString()),-1,-1);
+                                final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFileFromUrl(null,request,new URL(value.toString()),-1);
                                 cont.setBinary(field.getVelocityVarName(), tempFile.file);
                             }
                         } else {

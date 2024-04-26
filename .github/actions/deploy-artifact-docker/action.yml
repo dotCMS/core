@@ -11,6 +11,12 @@ inputs:
     default: 'DOCKER.IO'
   build_run_id:
     description: 'The run id of the build to pull the artifact from'
+    required: false
+  docker_context:
+    description: 'The path to the docker context to build the image from'
+    required: false
+  image_name:
+    description: 'The name of the image to build'
     required: true
   commit_id:
     description: 'The commit id that triggered the build'
@@ -18,11 +24,15 @@ inputs:
   ref:
     description: 'The branch or type of build to tag the image with'
     required: true
-  snapshot:
-    description: 'tag the image as a snapshot'
-    default: 'false'
+  docker-use-ref:
+    description: 'The branch or type of build to tag the image with'
+    required: false
+    default: 'true'
+  version:
+    description: 'The version or tag to apply to the image unless building a snapshot'
+    required: false
   latest:
-    description: 'Tag the image as latest'
+    description: 'If true, the image will be tagged as latest, usually reserved for the agile release e.g. dotcms/dotcms:latest'
     default: 'false'
   do_deploy:
     description: 'Actually do the final deploy, set to false for testing'
@@ -43,6 +53,10 @@ inputs:
   github_token:
     description: 'github token'
     required: true
+  build_args:
+    description: 'Build arguments to pass to the Docker build'
+    required: false
+    default: ''
 outputs:
   tags:
     description: "The tags that were used to build the image"
@@ -50,42 +64,72 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - run: echo 'GitHub context'
-      shell: bash
     - name: Download Docker Build Context
       uses: actions/download-artifact@v4
+      if: inputs.build_run_id # Only download the artifact if a build run id is provided
       with:
         name: docker-build-context
         path: ${{ github.workspace }}
         run-id: ${{ inputs.build_run_id }}
         github-token: ${{ inputs.github_token }}
+    - name: Setup Context
+      id: setup-context
+      env:
+        CONTEXT_TMP_PATH: /tmp/docker-context
+      run: |
+        if [ "${{ inputs.docker_context }}" != "" ]; then
+            echo "using provided docker context ${{ inputs.docker_context }}"
+            echo "docker_context=docker/${{ inputs.docker_context }}" >> $GITHUB_OUTPUT
+        else
+            echo "using artifact docker context"
+            rm -rf ${CONTEXT_TMP_PATH}
+            mkdir -p ${CONTEXT_TMP_PATH}
+            tar -xvf docker-build.tar -C ${CONTEXT_TMP_PATH}
+            echo "docker_context=${CONTEXT_TMP_PATH}" >> $GITHUB_OUTPUT
+        fi
 
+      shell: bash
     - name: Set Common Vars
       shell: bash
       id: set-common-vars
       env:
-        SNAPSHOT: ${{ inputs.snapshot }}
         LATEST: ${{ inputs.latest }}
         REF: ${{ inputs.ref }}
+        USE_REF: ${{ inputs.docker-use-ref }}
+        VERSION: ${{ inputs.version }}
       run: |
-        if [ "$REF" = "release" ]; then
-          tag_prefix=""
-        else
-          tag_prefix="${REF}_"
+        
+        # Set defaults for flags
+        enable_latest=false
+        RESULT=""
+        
+        # Determine REF_TO_USE based on USE_REF
+        REF_TO_USE=""
+        if [[ "$USE_REF" == "true" && -n "$REF" ]]; then
+          REF_TO_USE="$REF"
         fi
-    
-        # Now use environment variables instead of GitHub Actions expressions
-        if [ "$SNAPSHOT" = "true" ] && [ "$LATEST" = "true" ]; then
-          latest_snapshot="true"
+        
+        # Determine RESULT based on REF_TO_USE and VERSION
+        if [[ -n "$REF_TO_USE" && -n "$VERSION" ]]; then
+          RESULT="${REF_TO_USE}_${VERSION}"
+        elif [[ -n "$REF_TO_USE" ]]; then
+          RESULT="$REF_TO_USE"
+        elif [[ -n "$VERSION" ]]; then
+          RESULT="$VERSION"
         else
-          latest_snapshot="false"
+          echo "ERROR: No version or ref provided"
+          exit 1
+        fi
+        
+        # Conditional for setting latest version flag
+        if [[ -n "$VERSION" && "$USE_REF" != "true" && "$LATEST" == "true" ]]; then
+          enable_latest=true
         fi
         
         echo "FULL_TAGS_OUTPUT<<EOF" >> $GITHUB_ENV
-          echo "type=raw,value=${tag_prefix}{{sha}},enable=true" >> $GITHUB_ENV
-          echo "type=raw,value=${tag_prefix}latest,enable=$LATEST" >> $GITHUB_ENV
-          echo "type=raw,value=${tag_prefix}SNAPSHOT,enable=$SNAPSHOT" >> $GITHUB_ENV
-          echo "type=raw,value=${tag_prefix}latest_SNAPSHOT,enable=${latest_snapshot}" >> $GITHUB_ENV
+          echo "type=raw,value=${RESULT}_{{sha}},enable=true" >> $GITHUB_ENV
+          echo "type=raw,value=${RESULT},enable=true" >> $GITHUB_ENV
+          echo "type=raw,value=latest,enable=${enable_latest}" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
     - name: Docker.io login
@@ -114,7 +158,7 @@ runs:
       uses: docker/metadata-action@v5
       with:
         images: |
-          dotcms/dotcms
+          ${{ inputs.image_name }}
         tags: ${{ env.FULL_TAGS_OUTPUT }}
       if: success()
 
@@ -134,16 +178,12 @@ runs:
         driver-opts: |
           image=moby/buildkit:v0.12.2
 
-    - name: Setup Context
-      run: |
-        mkdir -p docker-context
-        tar -xvf docker-build.tar -C docker-context
-      shell: bash
+
 
     - name: Build/Push Docker Image
       uses: docker/build-push-action@v5
       with:
-        context: ./docker-context
+        context: ${{ steps.setup-context.outputs.docker_context }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ inputs.docker_platforms }}
@@ -151,3 +191,4 @@ runs:
         push: ${{ inputs.do_deploy }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        build-args: ${{ inputs.build_args }}

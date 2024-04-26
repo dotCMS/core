@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotUploadFileService } from '@dotcms/data-access';
+import { DotPropertiesService, DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotAssetSearchDialogComponent } from '@dotcms/ui';
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
@@ -52,10 +52,13 @@ class MockEditor {
     insertContent = jest.fn();
 }
 
+const MOCK_IMAGE_URL_PATTERN = '/dA/{shortyId}/{name}?language_id={languageId}';
+
 describe('DotWysiwygPluginService', () => {
     let spectator: SpectatorService<DotWysiwygPluginService>;
     let dialogService: DialogService;
     let dotUploadFileService: DotUploadFileService;
+    let dotPropertiesService: DotPropertiesService;
     /**
      * `any` is used here because the Editor is a complex object that we don't need to mock all the methods and properties
      * This mock also contains some custom methods to check the configuration
@@ -70,6 +73,12 @@ describe('DotWysiwygPluginService', () => {
         providers: [
             DialogService,
             {
+                provide: DotPropertiesService,
+                useValue: {
+                    getKey: jest.fn().mockReturnValue(of(MOCK_IMAGE_URL_PATTERN))
+                }
+            },
+            {
                 provide: DotUploadFileService,
                 useValue: {
                     publishContent: jest.fn()
@@ -82,7 +91,12 @@ describe('DotWysiwygPluginService', () => {
         spectator = createService();
         dialogService = spectator.inject(DialogService);
         dotUploadFileService = spectator.inject(DotUploadFileService);
+        dotPropertiesService = spectator.inject(DotPropertiesService);
         editor = new MockEditor();
+    });
+
+    it('should request the image URL pattern', () => {
+        expect(dotPropertiesService.getKey).toHaveBeenCalledWith('WYSIWYG_IMAGE_URL_PATTERN');
     });
 
     describe('dotImagePlugin', () => {
@@ -124,7 +138,7 @@ describe('DotWysiwygPluginService', () => {
 
             expect(spyDialog).toHaveBeenCalledWith(DotAssetSearchDialogComponent, dialogConfig);
             expect(spyEditorInserContent).toHaveBeenCalledWith(
-                formatDotImageNode(EMPTY_CONTENTLET)
+                formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET)
             );
         });
 
@@ -156,7 +170,7 @@ describe('DotWysiwygPluginService', () => {
                 data: dropEvent.dataTransfer.files[0]
             });
             expect(spyEditorInserContent).toHaveBeenCalledWith(
-                formatDotImageNode(EMPTY_CONTENTLET)
+                formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET)
             );
 
             expect(dropEvent.preventDefault).toHaveBeenCalled();
@@ -192,7 +206,7 @@ describe('DotWysiwygPluginService', () => {
                 data: dropEvent.dataTransfer.files[0]
             });
             expect(spyEditorInserContent).not.toHaveBeenCalledWith(
-                formatDotImageNode(EMPTY_CONTENTLET)
+                formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET)
             );
         });
     });

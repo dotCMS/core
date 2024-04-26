@@ -1,0 +1,90 @@
+name: Nightly Build-Test-Deploy
+on:
+  schedule:
+    - cron: "18 3 * * *" # every night
+  workflow_dispatch:
+    inputs:
+      reuse-previous-build:
+        description: 'Indicates if the workflow should reuse the previous build'
+        type: boolean
+        default: false
+      build-on-missing-artifacts:
+        type: boolean
+        description: 'Indicates if the workflow should build on missing artifacts'
+        default: true
+      publish-npm-package:
+        type: boolean
+        description: 'Indicates if the workflow should publish the NPM package on the registry'
+        default: false
+      run-all-tests:
+        description: 'Run all tests'
+        type: boolean
+        default: true
+jobs:
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/reusable-initialize.yml
+    with:
+      reuse-previous-build: ${{ inputs.reuse-previous-build || false }} # false unless set manually on workflow_dispatch
+      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || false }} # false unless set manually on workflow_dispatch
+  build:
+    name: Nightly Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/reusable-ci-build.yml
+    permissions:
+      contents: read
+      packages: write
+  test:
+    name: Nightly Test
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/reusable-ci-test.yml
+    with:
+      run-all-tests: ${{ inputs.run-all-tests || true }}
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+    permissions:
+      contents: read
+      packages: write
+  build-cli:
+    name: Nightly CLI Build
+    needs: [ test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cli-build-artifacts.yml
+    with:
+      buildNativeImage: true
+      branch: ${{ github.ref }}
+  deployment:
+    needs: [ initialize,build-cli,test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/reusable-deployment.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      environment: nightly
+      deploy-dev-image: true
+      publish-npm-package: ${{ ( github.event_name == 'workflow_dispatch' && inputs.publish-npm-package == true ) || github.event_name == 'schedule' }}
+      reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, build-cli, test, deployment ]
+    uses: ./.github/workflows/reusable-finalize.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      needsData: ${{ toJson(needs) }}
+  report:
+    name: Report
+    if: always()
+    needs: [ finalize ]
+    uses: ./.github/workflows/build-report.yml
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

@@ -6,9 +6,10 @@ import com.dotcms.ai.service.OpenAIChatService;
 import com.dotcms.ai.service.OpenAIChatServiceImpl;
 import com.dotcms.ai.service.OpenAIImageService;
 import com.dotcms.ai.service.OpenAIImageServiceImpl;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.json.JSONObject;
-import com.liferay.portal.model.User;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.util.PortalUtil;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -16,17 +17,41 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import java.io.IOException;
 import java.util.Map;
 
+
 public class AIViewTool implements ViewTool {
 
-    AppConfig config;
+    private AppConfig config;
     private ViewContext context;
+    private OpenAIChatService chatService;
+    private OpenAIImageService imageService;
 
     @Override
-    public void init(Object obj) {
+    public void init(final Object obj) {
         context = (ViewContext) obj;
-        this.config = ConfigService.INSTANCE.config(
-                WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(context.getRequest()));
+        config = config();
+        chatService = chatService();
+        imageService = imageService();
+    }
 
+    @VisibleForTesting
+    protected AppConfig config() {
+        return ConfigService
+                .INSTANCE
+                .config(WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(context.getRequest()));
+    }
+
+    @VisibleForTesting
+    protected OpenAIChatService chatService() {
+        return new OpenAIChatServiceImpl(config);
+    }
+
+    @VisibleForTesting
+    protected OpenAIImageService imageService() {
+        return new OpenAIImageServiceImpl(
+                config,
+                PortalUtil.getUser(context.getRequest()),
+                APILocator.getHostAPI(),
+                APILocator.getTempFileAPI());
     }
 
     /**
@@ -36,13 +61,11 @@ public class AIViewTool implements ViewTool {
      * @return JSONObject
      */
     public JSONObject generateText(final String prompt) throws IOException {
-        OpenAIChatService service = new OpenAIChatServiceImpl(config);
-        return service.sendTextPrompt(prompt);
+        return chatService.sendTextPrompt(prompt);
     }
 
     public JSONObject generateText(final Map<String, Object> prompt) throws IOException {
-        OpenAIChatService service = new OpenAIChatServiceImpl(config);
-        return service.sendRawRequest(new JSONObject(prompt));
+        return chatService.sendRawRequest(new JSONObject(prompt));
     }
 
     /**
@@ -52,13 +75,9 @@ public class AIViewTool implements ViewTool {
      * @param prompt
      * @return
      */
-    public JSONObject generateImage(String prompt) {
-        User user = PortalUtil.getUser(context.getRequest());
-        OpenAIImageService service = new OpenAIImageServiceImpl(config, user);
+    public JSONObject generateImage(final String prompt) {
         try {
-
-            return service.sendTextPrompt(prompt);
-
+            return imageService.sendTextPrompt(prompt);
         } catch (Exception e) {
             final JSONObject jsonResponse = new JSONObject();
             jsonResponse.put("response", e.getMessage());
@@ -67,12 +86,8 @@ public class AIViewTool implements ViewTool {
     }
 
     public JSONObject generateImage(final Map<String, Object> prompt) {
-        User user = PortalUtil.getUser(context.getRequest());
-        OpenAIImageService service = new OpenAIImageServiceImpl(config, user);
         try {
-
-            return service.sendRequest(new JSONObject(prompt));
-
+            return imageService.sendRequest(new JSONObject(prompt));
         } catch (Exception e) {
             final JSONObject jsonResponse = new JSONObject();
             jsonResponse.put("response", e.getMessage());
@@ -91,4 +106,5 @@ public class AIViewTool implements ViewTool {
     public CompletionsTool getCompletions() {
         return new CompletionsTool(context);
     }
+
 }

@@ -68,9 +68,12 @@
                         >{{ 'block-editor.extension.ai-image.rewritten' | dm }}
                         <i
                             class="pi pi-copy"
+                            [pTooltip]="tooltipText"
                             (click)="copyToClipboard()"
-                            data-testid="copy-to-clipboard"></i
-                    ></label>
+                            tooltipPosition="bottom"
+                            hideDelay="800"
+                            data-testid="copy-to-clipboard"></i>
+                    </label>
                     <textarea
                         class="w-full ai-image-prompt__rewritten-textarea"
                         id="prompt-rewritten"

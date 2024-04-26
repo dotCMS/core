@@ -6,15 +6,26 @@ import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { MessageService } from 'primeng/api';
+
+import {
+    DotMessageService,
+    DotWorkflowActionsFireService,
+    PushPublishService
+} from '@dotcms/data-access';
+import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    DotcmsConfigServiceMock,
+    DotcmsEventsServiceMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 
 import { DotEmaDialogComponent } from './dot-ema-dialog.component';
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
+import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { PAYLOAD_MOCK } from '../../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
 
@@ -22,9 +33,16 @@ describe('DotEmaDialogComponent', () => {
     let spectator: Spectator<DotEmaDialogComponent>;
     let component: DotEmaDialogComponent;
     let storeSpy: SpyObject<DotEmaDialogStore>;
+    let workflowActionEventHandler: SpyObject<DotEmaWorkflowActionsService>;
 
     const triggerIframeCustomEvent = (
-        customEvent = {
+        customEvent: {
+            detail: {
+                name: string;
+                payload: unknown;
+                data?: unknown;
+            };
+        } = {
             detail: {
                 name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                 payload: {
@@ -51,6 +69,34 @@ describe('DotEmaDialogComponent', () => {
         providers: [
             DotEmaDialogStore,
             HttpClient,
+            DotWorkflowActionsFireService,
+            MessageService,
+
+            {
+                provide: DotcmsConfigService,
+                useValue: new DotcmsConfigServiceMock()
+            },
+            {
+                provide: DotcmsEventsService,
+                useValue: new DotcmsEventsServiceMock()
+            },
+            {
+                provide: PushPublishService,
+                useValue: {
+                    getEnvironments() {
+                        return of([
+                            {
+                                id: '123',
+                                name: 'Environment 1'
+                            },
+                            {
+                                id: '456',
+                                name: 'Environment 2'
+                            }
+                        ]);
+                    }
+                }
+            },
             {
                 provide: DotActionUrlService,
                 useValue: {
@@ -76,6 +122,11 @@ describe('DotEmaDialogComponent', () => {
         spectator = createComponent();
         component = spectator.component;
         storeSpy = spectator.inject(DotEmaDialogStore, true);
+        workflowActionEventHandler = spectator.inject(DotEmaWorkflowActionsService, true);
+
+        jest.spyOn(workflowActionEventHandler, 'handleWorkflowAction').mockImplementation(() =>
+            of({})
+        );
     });
 
     describe('DOM', () => {
@@ -117,6 +168,41 @@ describe('DotEmaDialogComponent', () => {
     });
 
     describe('component methods', () => {
+        it("should trigger handleWorkflowEvent when the iframe's custom event is 'workflow-wizard'", () => {
+            const handleWorkflowEventSpy = jest.spyOn(component, 'handleWorkflowEvent');
+
+            component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.OPEN_WIZARD,
+                    data: {},
+                    payload: {}
+                }
+            });
+
+            expect(handleWorkflowEventSpy).toHaveBeenCalledWith({});
+        });
+
+        it("should reload the iframe when the iframe's custom event is 'save-page' and the payload is a move action", () => {
+            const reloadIframeSpy = jest.spyOn(component, 'reloadIframe');
+
+            component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                    payload: {
+                        isMoveAction: true
+                    }
+                }
+            });
+
+            expect(reloadIframeSpy).toHaveBeenCalled();
+        });
+
         it('should trigger addContentlet in the store', () => {
             const addContentletSpy = jest.spyOn(storeSpy, 'addContentlet');
 
@@ -194,12 +280,14 @@ describe('DotEmaDialogComponent', () => {
 
             component.createContentlet({
                 url: 'https://demo.dotcms.com/jsp.jsp',
-                contentType: 'test'
+                contentType: 'test',
+                payload: PAYLOAD_MOCK
             });
 
             expect(createContentletSpy).toHaveBeenCalledWith({
                 contentType: 'test',
-                url: 'https://demo.dotcms.com/jsp.jsp'
+                url: 'https://demo.dotcms.com/jsp.jsp',
+                payload: PAYLOAD_MOCK
             });
         });
 
@@ -236,6 +324,17 @@ describe('DotEmaDialogComponent', () => {
             component.showLoadingIframe();
 
             expect(resetSpy).toHaveBeenCalled();
+        });
+
+        it("should trigger openDialogOnURL in the store when it's a URL", () => {
+            const openDialogOnURLSpy = jest.spyOn(storeSpy, 'openDialogOnURL');
+
+            component.openDialogOnUrl('https://demo.dotcms.com/jsp.jsp', 'test');
+
+            expect(openDialogOnURLSpy).toHaveBeenCalledWith({
+                title: 'test',
+                url: 'https://demo.dotcms.com/jsp.jsp'
+            });
         });
     });
 });

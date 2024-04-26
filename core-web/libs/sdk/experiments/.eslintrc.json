@@ -1,10 +1,18 @@
 {
-    "extends": ["../../../.eslintrc.base.json"],
+    "extends": ["plugin:@nrwl/nx/react", "../../../.eslintrc.base.json"],
     "ignorePatterns": ["!**/*"],
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
-            "rules": {}
+            "rules": {
+                "padding-line-between-statements": [
+                    "error",
+                    { "blankLine": "always", "prev": "const", "next": "*" },
+                    { "blankLine": "always", "prev": "*", "next": "if" },
+                    { "blankLine": "always", "prev": "if", "next": "*" },
+                    { "blankLine": "always", "prev": "*", "next": "const" }
+                ]
+            }
         },
         {
             "files": ["*.ts", "*.tsx"],
@@ -13,18 +21,6 @@
         {
             "files": ["*.js", "*.jsx"],
             "rules": {}
-        },
-        {
-            "files": ["*.json"],
-            "parser": "jsonc-eslint-parser",
-            "rules": {
-                "@nx/dependency-checks": [
-                    "error",
-                    {
-                        "ignoredDependencies": ["vite", "@nx/vite", "vite-plugin-dts", "next"]
-                    }
-                ]
-            }
         }
     ]
 }

@@ -1,0 +1,373 @@
+{
+	"info": {
+		"_postman_id": "577b6e4e-8dd3-4eaa-9dbd-89631d92af49",
+		"name": "Visitor",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4500400"
+	},
+	"item": [
+		{
+			"name": "pre_ImportBundleWithPage",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Bundle uploaded sucessfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var jsonData = pm.response.json();",
+							"    console.log(jsonData);",
+							"",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"pageDisplayingVisitor.tar.gz\");",
+							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/octet-stream"
+					},
+					{
+						"key": "Content-Disposition",
+						"type": "text",
+						"value": "attachment"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/pageDisplayingVisitor.tar.gz"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/bundle/sync",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"bundle",
+						"sync"
+					],
+					"query": [
+						{
+							"key": "AUTH_TOKEN",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Imports a Bundle that includes:\n\n*   \"displayip\" page which displays the visitor's object IP address"
+			},
+			"response": []
+		},
+		{
+			"name": "Switch site to 'default'",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 \", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Valid response\", function () {",
+							"    var jsonData = pm.response.json();",
+							"",
+							"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/switch/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"switch",
+						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "invalidateSession",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logout",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update aliases of Demo Host to remove localhost",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    var aliases = pm.response.json().entity.aliases;",
+							"    pm.expect(aliases, 'FAILED:aliases').equal(\"test.dotcms.com test2.dotcms.com test3.dotcms.com\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"siteName\":\"demo.dotcms.com\",\n    \"aliases\":\"test.dotcms.com test2.dotcms.com test3.dotcms.com\",\n    \"description\": \"demoHost\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site?id=48190c8c-42c4-46af-8d1a-0cd5db894797",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "48190c8c-42c4-46af-8d1a-0cd5db894797"
+						}
+					]
+				},
+				"description": "Tries to update the siteName but the property `forceExecution` is not sent, so should return BadRequest."
+			},
+			"response": []
+		},
+		{
+			"name": "GivenX-Forwarded-ForSetToAnIp_VisitorIpShouldBeTheSame",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var response = pm.response.text(); ",
+							"",
+							"pm.test(\"Verify Visitor's IP\", function () { ",
+							"    pm.response.to.have.status(200);",
+							"    pm.expect(response).contains(\"/3.22.136.122\"); ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableCookies": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Forwarded-For",
+						"value": "3.22.136.122",
+						"type": "text"
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/application/displayip?dotcache=no",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"application",
+						"displayip"
+					],
+					"query": [
+						{
+							"key": "dotcache",
+							"value": "no"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GivenX-Forwarded-ForSetToAnInvalidIp_VisitorIpShouldBeLocalhost",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var response = pm.response.text(); ",
+							"",
+							"pm.test(\"Verify Visitor's IP\", function () { ",
+							"    pm.response.to.have.status(200);",
+							"    pm.expect(response).contains(\"/127.0.0.1\"); ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableCookies": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Forwarded-For",
+						"value": "ThisIsNotAnIP",
+						"type": "text"
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/application/displayip?dotcache=no",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"application",
+						"displayip"
+					],
+					"query": [
+						{
+							"key": "dotcache",
+							"value": "no"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

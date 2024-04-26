@@ -30,7 +30,7 @@ public class DotTempFile {
     this.mimeType=  (null != metadata && metadata.containsKey("contentType"))? (String) metadata.get("contentType"):FileAsset.UNKNOWN_MIME_TYPE;
     this.image = UtilMethods.isImage(fileName);
     this.referenceUrl = "/dA/" + id + "/tmp/" + fileName;
-    this.thumbnailUrl = this.image ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  fileName :null;
+    this.thumbnailUrl = this.image || mimeType.contains("pdf") ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  fileName :null;
     this.fileName = fileName;
     this.folder = resolveFolder();
   }

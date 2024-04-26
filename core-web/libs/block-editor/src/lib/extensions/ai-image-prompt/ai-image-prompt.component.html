@@ -23,17 +23,32 @@
                     [orientation]="vm.formValue?.size"
                     (activeIndexChange)="store.setGalleryActiveIndex($event)"
                     (regenerate)="store.generateImage()" />
-                <button
-                    class="align-self-end"
-                    *ngIf="vm.images.length || vm.isLoading"
-                    [disabled]="vm.isLoading || vm.images[vm.galleryActiveIndex].error"
-                    [label]="'block-editor.extension.ai-image.insert' | dm"
-                    (click)="store.setSelectedImage(vm.images[vm.galleryActiveIndex])"
-                    data-testid="submit-btn"
-                    pButton
-                    type="submit"
-                    icon="pi pi-check"></button>
+                <div class="dot-ai-image__buttons" *ngIf="vm.images.length || vm.isLoading">
+                    <button
+                        class="p-button-text"
+                        [label]="'Cancel' | dm"
+                        (click)="closeDialog()"
+                        data-testid="close-btn"
+                        type="button"
+                        pButton></button>
+                    <button
+                        class="align-self-end"
+                        [disabled]="vm.isLoading || vm.images[vm.galleryActiveIndex].error"
+                        [label]="'block-editor.extension.ai-image.insert' | dm"
+                        (click)="store.setSelectedImage(vm.images[vm.galleryActiveIndex])"
+                        data-testid="submit-btn"
+                        pButton
+                        type="submit"
+                        icon="pi pi-check"></button>
+                </div>
             </div>
+            <p-confirmDialog
+                [style]="{ width: '500px' }"
+                key="ai-image-prompt"
+                rejectButtonStyleClass="p-button-outlined"
+                acceptIcon="null"
+                rejectIcon="null">
+            </p-confirmDialog>
         </div>
     </p-dialog>
 </ng-container>

@@ -1,5 +1,11 @@
 import { NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    Input,
+    OnInit
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -32,7 +38,8 @@ export class DotCopyButtonComponent implements OnInit {
 
     constructor(
         private dotClipboardUtil: DotClipboardUtil,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private readonly cd: ChangeDetectorRef
     ) {}
 
     ngOnInit() {
@@ -55,10 +62,12 @@ export class DotCopyButtonComponent implements OnInit {
 
                 setTimeout(() => {
                     this.tooltipText = original;
+                    this.cd.detectChanges();
                 }, 1000);
             })
             .catch(() => {
                 this.tooltipText = 'Error';
+                this.cd.detectChanges();
             });
     }
 }

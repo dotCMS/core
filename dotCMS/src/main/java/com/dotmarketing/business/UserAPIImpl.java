@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.dotmarketing.business.UserHelper.validateMaximumLength;
+
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User
  * entities from liferay's repository. Classes within the dotCMS should use this
@@ -436,6 +438,7 @@ public class UserAPIImpl implements UserAPI {
             throw new DotSecurityException(
                     "User doesn't have permission to save the user which is trying to be saved");
         }
+        validateMaximumLength(userToSave.getFirstName(),userToSave.getLastName(),userToSave.getEmailAddress());
         userFactory.save(userToSave);
         PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
                 .getManager();

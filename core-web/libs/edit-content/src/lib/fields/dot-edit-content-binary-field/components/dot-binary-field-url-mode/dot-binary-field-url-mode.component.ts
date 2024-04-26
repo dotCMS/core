@@ -31,7 +31,7 @@ import { DotBinaryFieldUrlModeStore } from './store/dot-binary-field-url-mode.st
 import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
 
 @Component({
-    selector: 'dot-dot-binary-field-url-mode',
+    selector: 'dot-binary-field-url-mode',
     standalone: true,
     imports: [
         CommonModule,

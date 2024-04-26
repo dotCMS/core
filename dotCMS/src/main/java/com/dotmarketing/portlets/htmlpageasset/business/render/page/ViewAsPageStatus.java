@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotcms.api.APIProvider;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -18,23 +19,18 @@ public class ViewAsPageStatus {
     private final PageMode   pageMode;
     private final boolean    personalized;
     private final Visitor   visitor;
+    private String variantId;
 
 
-
-    public ViewAsPageStatus(
-        final Visitor   visitor,
-        Language language, 
-        Contentlet device, 
-        PageMode pageMode, 
-        boolean personalized
-        ) {
+    private ViewAsPageStatus(final Builder builder) {
       super();
-      this.visitor=visitor;
-      this.persona=visitor!=null ? visitor.getPersona():null;
-      this.language = language;
-      this.device = device;
-      this.pageMode = pageMode;
-      this.personalized = personalized;
+      this.visitor = builder.visitor;
+      this.persona= builder.visitor != null ? builder.visitor.getPersona():null;
+      this.language = builder.language;
+      this.device = builder.device;
+      this.pageMode = builder.pageMode;
+      this.personalized = builder.personalized;
+      this.variantId = builder.variantId;
       
     }
 
@@ -61,5 +57,53 @@ public class ViewAsPageStatus {
     
     public Visitor getVisitor() {
       return visitor;
+  }
+
+    public String getVariantId() {
+        return variantId;
+    }
+
+    public static class Builder{
+      private Language   language;
+      private Contentlet device;
+      private PageMode   pageMode;
+      private  boolean    personalized;
+      private Visitor   visitor;
+      private String variantId;
+
+      public Builder setLanguage(Language language) {
+          this.language = language;
+          return this;
+      }
+
+      public Builder setDevice(Contentlet device) {
+          this.device = device;
+          return this;
+      }
+
+      public Builder setPageMode(PageMode pageMode) {
+          this.pageMode = pageMode;
+          return this;
+      }
+
+      public Builder setPersonalized(boolean personalized) {
+          this.personalized = personalized;
+          return this;
+      }
+
+      public Builder setVariant(final String variantId) {
+          this.variantId = variantId;
+          return this;
+      }
+      public Builder setVisitor(Visitor visitor) {
+          this.visitor = visitor;
+          return this;
+      }
+
+      public ViewAsPageStatus build(){
+          return new ViewAsPageStatus(this);
+      }
+
+
   }
 }

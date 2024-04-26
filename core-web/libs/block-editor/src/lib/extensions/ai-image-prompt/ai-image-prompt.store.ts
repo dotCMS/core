@@ -132,7 +132,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                 const cleanPrompt = formValue.text?.trim() ?? '';
                 const finalPrompt =
                     formValue.type === PromptType.AUTO && editorContent
-                        ? `${cleanPrompt} to illustrate the following content: ${editorContent}`
+                        ? `illustrate the following content: ${editorContent}`
                         : cleanPrompt;
 
                 this.patchState({

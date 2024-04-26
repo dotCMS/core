@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
 /**
  * Implementation class for the {@link UserFactory} class.
  *
@@ -266,9 +267,7 @@ public class UserFactoryImpl implements UserFactory {
         if (user.getUserId() == null) {
             throw new DotRuntimeException("Can't save a user without a userId");
         } else{
-
             user.setModificationDate(new Date());
-
             final String emailAddress = user.getEmailAddress();
             if (UtilMethods.isSet(emailAddress)) {
                 user.setEmailAddress(emailAddress.trim().toLowerCase());
@@ -314,8 +313,12 @@ public class UserFactoryImpl implements UserFactory {
         } catch (JsonProcessingException e) {
             throw new DotDataException(e.getMessage(), e);
         }
-
-        dotConnect.loadResult();
+        try {
+            dotConnect.loadResult();
+        } catch (DotDataException e) {
+            Logger.debug(this, "An exception occurred while creating a user");
+            throw new DotDataException("Creating a user has failed while executing the SQL due to "+ e.getMessage(), e);
+        }
         return user;
     }
 
@@ -358,7 +361,13 @@ public class UserFactoryImpl implements UserFactory {
         }
 
         dotConnect.addParam(user.getUserId().trim().toLowerCase());
-        dotConnect.loadResult();
+        try {
+            dotConnect.loadResult();
+        } catch (DotDataException e) {
+            Logger.debug(this, "An exception occurred while updating a user");
+            throw new DotDataException("Updating a user has failed while executing the SQL due to "+ e.getMessage(), e);
+        }
+
         return user;
     }
 

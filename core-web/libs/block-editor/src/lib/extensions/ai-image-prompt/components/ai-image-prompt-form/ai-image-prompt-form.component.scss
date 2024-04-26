@@ -21,6 +21,7 @@ form {
         margin: $spacing-0 0 $spacing-1 $spacing-5;
         font-size: $font-size-sm;
         color: $color-palette-gray-700;
+        word-break: break-word;
     }
 }
 

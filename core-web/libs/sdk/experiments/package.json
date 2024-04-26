@@ -1,6 +1,6 @@
 {
     "name": "@dotcms/experiments",
-    "version": "0.0.1-alpha",
+    "version": "0.0.1-alpha.13",
     "description": "Official JavaScript library to use Experiments with DotCMS.",
     "repository": {
         "type": "git",
@@ -21,5 +21,11 @@
     "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/experiments/README.md",
     "dependencies": {
         "@jitsu/sdk-js": "^3.1.5"
+    },
+    "peerDependencies": {
+        "react": ">=18",
+        "react-dom": ">=18",
+        "@dotcms/client": "0.0.1-alpha.13"
     }
+
 }

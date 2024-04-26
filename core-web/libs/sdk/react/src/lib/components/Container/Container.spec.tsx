@@ -54,7 +54,7 @@ describe('Container', () => {
                     </MockContextRender>
                 );
 
-                expect(screen.getByTestId('empty-container')).toHaveTextContent(
+                expect(screen.getByTestId('dot-container')).toHaveTextContent(
                     'This container is empty.'
                 );
             });
@@ -73,7 +73,7 @@ describe('Container', () => {
                     </MockContextRender>
                 );
 
-                expect(screen.queryByTestId('empty-container')).toBeNull();
+                expect(screen.queryByTestId('dot-container')).toBeNull();
             });
         });
     });

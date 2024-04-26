@@ -48,15 +48,27 @@ package com.dotcms.enterprise.priv;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.CopyContentTypeBean;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.enterprise.ParentProxy;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.SiteCreatedEvent;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -66,6 +78,7 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -85,6 +98,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.HostCopyOptions;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -112,20 +126,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * This Quartz Job allows dotCMS users to copy sites. The Sites portlet also
- * allows users to select what specific pieces of the site (i.e., templates and
- * containers, folders, files, pages, content on pages, etc.) will be copied
- * over to the new site.
+ * This Quartz Job allows dotCMS users to copy sites. The Sites portlet also allows users to select
+ * what specific pieces of the site (i.e., templates and containers, folders, files, pages, content
+ * on pages, etc.) will be copied over to the new site.
  * <p>
- * Keep in mind that depending on the number of elements in a site, this
- * process can take an important amount of time. Therefore, any improvement on 
- * the performance of SQL statements is very important.
+ * Keep in mind that depending on the number of elements in a site, this process can take an
+ * important amount of time. Therefore, any improvement on the performance of SQL statements is very
+ * important.
  * </p>
  * 
  * @author root
  * @version 3.5
  * @since Jun 11, 2012
- *
  */
 public class HostAssetsJobImpl extends ParentProxy{
 
@@ -137,6 +149,9 @@ public class HostAssetsJobImpl extends ParentProxy{
 	private final ContainerAPI containerAPI;
 	private final ContentletAPI contentAPI;
 	private final MenuLinkAPI menuLinkAPI;
+	private final ContentTypeAPI contentTypeAPI;
+	private final RelationshipAPI relationshipAPI;
+	private final FieldAPI contentTypeFieldAPI;
 	private final HostAssetsJobProxy siteCopyStatus;
 	private final User SYSTEM_USER;
 	private final Host SYSTEM_HOST;
@@ -160,17 +175,20 @@ public class HostAssetsJobImpl extends ParentProxy{
 		this.contentAPI = APILocator.getContentletAPI();
 		this.menuLinkAPI = APILocator.getMenuLinkAPI();
 		this.containerAPI = APILocator.getContainerAPI();
-		this.SYSTEM_USER = Try.of(() -> userAPI.getSystemUser()).getOrNull();
+		this.SYSTEM_USER = Try.of(userAPI::getSystemUser).getOrNull();
+		this.contentTypeAPI = APILocator.getContentTypeAPI(this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
+		this.relationshipAPI = APILocator.getRelationshipAPI();
+		this.contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
 		this.SYSTEM_HOST = Try.of(() -> siteAPI.findSystemHost(this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES)).getOrNull();
-		this.SYSTEM_FOLDER = Try.of(() -> folderAPI.findSystemFolder()).getOrNull();
+		this.SYSTEM_FOLDER = Try.of(folderAPI::findSystemFolder).getOrNull();
 	}
 
 	/**
-	 * This is the initial execution point of the Site Copy Job. The Quartz Framework calls this method once the Job is
-	 * triggered.
+	 * This is the initial execution point of the Site Copy Job. The Quartz Framework calls this
+	 * method once the Job is triggered.
 	 *
-	 * @param jobContext Provides useful information about the Job and allows you to pass down specific properties to
-	 *                   the code.
+	 * @param jobContext Provides useful information about the Job and allows you to pass down
+	 *                   specific properties to the code.
 	 *
 	 * @throws JobExecutionException An error occurred when copying a Site.
 	 */
@@ -196,31 +214,42 @@ public class HostAssetsJobImpl extends ParentProxy{
 			sourceSite = this.siteAPI.DBSearch(sourceSiteId, this.userAPI.getSystemUser(), DONT_RESPECT_FRONTEND_ROLES);
 			destinationSite = this.siteAPI.DBSearch(destinationSiteId, this.userAPI.getSystemUser(), DONT_RESPECT_FRONTEND_ROLES);
 			if(QuartzUtils.getTaskProgress(jobName,jobGroup) >= 0 && QuartzUtils.getTaskProgress(jobName, jobGroup) < 100) {
-				Logger.warn(this, "Site " + sourceSite.getHostname() + " [" + sourceSite.getIdentifier() + "], is already being copied. This second request will be ignored.");
+				final String infoMsg = String.format("Site '%s' is already being copied. This copy request will be ignored.",
+						sourceSite.getHostname());
+				Logger.warn(this, infoMsg);
+				sendNotification(infoMsg, userId, NotificationLevel.WARNING);
 				return;
 			}
 
-			Logger.info(HostAssetsJobImpl.class, () -> (String.format("====> Starting Site Copy Job: '%s'", jobName)));
-			SystemMessageEventUtil.getInstance().pushSimpleTextEvent(
-					"Starting the copy of: " + sourceSite.getHostname() +
-					" to: " + destinationSite.getHostname(), userId);
+			Logger.info(this, "======================================================================");
+			Logger.info(this, String.format("  Starting Site Copy Job: '%s'", jobName));
+			Logger.info(this, "======================================================================");
+			this.sendNotification(String.format("Starting the copy of Site '%s' based off of Site '%s'.",
+					destinationSite.getHostname(), sourceSite.getHostname()), userId, NotificationLevel.INFO);
 			validateSiteInfo(sourceSite,destinationSite,sourceSiteId,destinationSiteId,jobName);
 			copySiteAssets(sourceSite, destinationSite, copyOptions);
 		} catch (final DotDataException | DotSecurityException e) {
 			final String errorMsg = String
-					.format("An error occurred when copying source Site '%s' to destination Site" +
-									" '%s': %s", sourceSite.getHostname(), destinationSite.getHostname(),
-							e.getMessage());
+					.format("An error occurred when copying source Site '%s' to destination Site '%s': %s",
+							sourceSite.getHostname(), destinationSite.getHostname(), ExceptionUtil.getErrorMessage(e));
 			Logger.error(HostAssetsJobImpl.class, errorMsg, e);
+			this.sendNotification(String.format("The copy of Site '%s' has failed. Please check the logs for more information",
+					destinationSite.getHostname()), userId, NotificationLevel.ERROR);
 			throw new JobExecutionException(errorMsg, e);
 		}
-		Logger.info(HostAssetsJobImpl.class, () -> (String.format("====> Site Copy for Job '%s' has finished " +
-				"correctly!", jobName)));
-		SystemMessageEventUtil.getInstance().pushSimpleTextEvent(
-				"The copy of: " + sourceSite.getHostname() +
-						" to: " + destinationSite.getHostname() + " has finished", userId);
+		Logger.info(this, "======================================================================");
+		Logger.info(this, String.format("  Site Copy Job '%s' for Site '%s' has finished correctly!", jobName, destinationSite.getHostname()));
+		String successMsg = "The copy of Site '%s' has finished correctly. ";
+		if (copyOptions.isCopyContentOnHost() || copyOptions.isCopyContentOnPages()) {
+			Logger.info(this, "");
+			final String contentIndexationMsg = "Now, Contentlets will be added to the ES Index. Please take this into consideration and wait for that process to finish, if required.";
+			Logger.info(this, "  " + contentIndexationMsg);
+			successMsg += contentIndexationMsg;
+		}
+		Logger.info(this, "======================================================================");
+		this.sendNotification(String.format(successMsg, destinationSite.getHostname()), userId, NotificationLevel.INFO);
 	}
-	
+
 	private HTMLPageAssetAPI.TemplateContainersReMap getMirrorTemplateContainersReMap(Template sourceTemplate)
 			throws DotDataException, DotSecurityException {
 
@@ -240,25 +269,21 @@ public class HostAssetsJobImpl extends ParentProxy{
 	}
 
 	/**
-	 * Performs the copy process of the user-specified elements from the source
-	 * site to the destination site.
+	 * Performs the copy process of the user-specified elements from the source site to the
+	 * destination site.
 	 * 
-	 * @param sourceSite
-	 *            - The {@link Host} object containing the information that will
-	 *            be copied.
-	 * @param destinationSite
-	 *            - The new {@link Host} object that will contain the
-	 *            information from the source site.
-	 * @param copyOptions
-	 *            - The preferences selected by the user regarding what elements
-	 *            of the source site will be copied over to the new site.
-	 * @throws DotDataException
-	 *             An error occurred when interacting with the database.
-	 * @throws DotSecurityException
-	 *             The current user does not have the permissions to perform
-	 *             this action.
+	 * @param sourceSite      The {@link Host} object containing the information that will be
+	 *                        copied.
+	 * @param destinationSite The new {@link Host} object that will contain the information from
+	 *                        the source site.
+	 * @param copyOptions     The preferences selected by the user regarding what elements of the
+	 *                        source site will be copied over to the new site.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The current user does not have the permissions to perform this
+	 *                              action.
 	 */
-	private void copySiteAssets(final Host sourceSite, final Host destinationSite, final HostCopyOptions copyOptions) throws DotDataException, DotSecurityException {
+	private void copySiteAssets(final Host sourceSite, final Host destinationSite, final HostCopyOptions copyOptions) throws DotDataException, DotContentletStateException, DotSecurityException {
 		try {
 			HibernateUtil.startTransaction();
 			// Global Vars
@@ -274,14 +299,19 @@ public class HostAssetsJobImpl extends ParentProxy{
 			final Map<String, FolderMapping> folderMappingsBySourceId = new HashMap<>();
 			final Map<String, ContentMapping> contentMappingsBySourceId = new HashMap<>();
 			final List<Contentlet> contentsToCopyDependencies =  new ArrayList<>();
+			final Map<String, ContentTypeMapping> copiedContentTypes = new HashMap<>();
 			
 			if (copyOptions.isCopyTemplatesAndContainers()) {
-				Logger.info(HostAssetsJobImpl.class,()->(":::: Copying Templates and containers. "));
+				Logger.info(this, "----------------------------------------------------------------------");
+				Logger.info(this, String.format(":::: Copying Templates and Containers to new Site '%s'", destinationSite.getHostname()));
 				final List<Template> sourceTemplates = this.templateAPI.findTemplatesAssignedTo(sourceSite);
+				Logger.info(this, String.format("-> Copying %d Templates", sourceTemplates.size()));
 				for (final Template sourceTemplate : sourceTemplates) {
 					try {
 						final List<Container> sourceContainers = this.templateAPI.getContainersInTemplate(sourceTemplate, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
 						final List<HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple> containerMappings = new LinkedList<>();
+						Logger.debug(this, () -> String.format("---> Copying %d Containers in Template '%s [ %s ]", sourceContainers.size(),
+								sourceTemplate.getName(), sourceTemplate.getIdentifier()));
 						for (final Container sourceContainer : sourceContainers) {
 							Container destinationContainer = copiedContainersBySourceId.get(sourceContainer.getIdentifier());
 							if(destinationContainer == null) {
@@ -292,9 +322,9 @@ public class HostAssetsJobImpl extends ParentProxy{
 											&& copyOptions.isCopyFolders()) {
 										// Containers as files are file assets that depend upon an existing folder
 										/// so we need to copy the containers folder and then copy the contentlet in it.
-										Logger.debug(HostAssetsJobImpl.class,
-												() -> (":::: Copying file-asset container "));
 										final FileAssetContainer sourceFileAssetContainer = FileAssetContainer.class.cast(sourceContainer);
+										Logger.debug(HostAssetsJobImpl.class, () -> String.format("---> Copying file-asset container '%s' [ %s ]",
+												sourceFileAssetContainer.getPath(), sourceFileAssetContainer.getIdentifier()));
 										final Contentlet sourceContent = this.contentAPI.findContentletByIdentifier(
 														sourceFileAssetContainer.getIdentifier(),
 														sourceFileAssetContainer.isLive(),
@@ -304,9 +334,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 										final Folder sourceFolder = this.folderAPI.find(sourceContent.getFolder(), this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
 										// This should store the new container destination folder into the map.
 										final Folder destinationFolder = copyFolder(sourceFolder, destinationSite, folderMappingsBySourceId);
-										Logger.debug(HostAssetsJobImpl.class, () -> String
-												.format(":::: Container-As-File destination folder path is `%s`",
-														destinationFolder.getPath()));
+										Logger.debug(HostAssetsJobImpl.class, () -> String.format("---> Container-As-File destination folder path is '%s'",
+												destinationFolder.getPath()));
 										// now create the Copy of the container as file and all its assets
 										final List<Contentlet> processedContentletsList = new ArrayList<>();
 										final List<FileAsset> sourceContainerAssets = this.fileAssetAPI
@@ -320,7 +349,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 															folderMappingsBySourceId,
 															copiedContainersBySourceId,
 															templatesMappingBySourceId,
-															contentsToCopyDependencies
+															contentsToCopyDependencies,
+															copiedContentTypes
 													)
 											);
 										}
@@ -342,7 +372,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 
 											copiedContainersBySourceId.put(identifierOrPath, newFileAssetContainer);
 											Logger.debug(HostAssetsJobImpl.class, () -> String
-													.format(":::: Source Container-As-File `%s` mapped to `%s` ",
+													.format("---> Source Container-As-File ID '%s' mapped to new ID '%s'",
 															sourceContainer.getIdentifier(),
 															newFileAssetContainer.getIdentifier()));
 										}
@@ -375,6 +405,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 				}
 				// make sure we include any other container previously skipped or ignored in case templates were not copied.
 				final List<Container> containersUnderSourceSite = this.containerAPI.findContainersUnder(sourceSite);
+				Logger.debug(HostAssetsJobImpl.class, () -> String.format("---> Copying %d Containers under Site '%s'",
+						containersUnderSourceSite.size(), sourceSite.getHostname()));
 				for (final Container cntr : containersUnderSourceSite) {
 					final FileAssetContainerUtil fileAssetContainerUtil = FileAssetContainerUtil.getInstance();
 					final String containerIdOrPath = fileAssetContainerUtil.isFileAssetContainer(cntr) ?
@@ -388,12 +420,16 @@ public class HostAssetsJobImpl extends ParentProxy{
 					}
 				}
 			} else {
-				Logger.info(HostAssetsJobImpl.class, () -> (":::: Copying Templates."));
+				Logger.info(this, "----------------------------------------------------------------------");
+				Logger.info(this, String.format(":::: Copying Templates to new Site '%s'", destinationSite.getHostname()));
 				final List<Template> sourceTemplates = this.templateAPI.findTemplatesAssignedTo(sourceSite);
+				Logger.info(this, String.format("-> Copying %d Templates", sourceTemplates.size()));
 				for (final Template sourceTemplate : sourceTemplates) {
 					try {
 						final List<Container> sourceContainers = this.templateAPI.getContainersInTemplate(sourceTemplate, this.SYSTEM_USER,
 								DONT_RESPECT_FRONTEND_ROLES);
+						Logger.debug(this, () -> String.format("---> Copying %d Containers in Template '%s [ %s ]", sourceContainers.size(),
+								sourceTemplate.getName(), sourceTemplate.getIdentifier()));
 						final List<Container> destinationContainers = sourceContainers;
 						final List<HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple> containerMappings = new LinkedList<>();
 						for (int i = 0; i < sourceContainers.size(); i++) {
@@ -423,8 +459,10 @@ public class HostAssetsJobImpl extends ParentProxy{
 			// ======================================================================
 			if (copyOptions.isCopyFolders()) {
 				this.siteCopyStatus.addMessage("copying-folders");
+				Logger.info(this, "----------------------------------------------------------------------");
+				Logger.info(this, String.format(":::: Copying Folders to new Site '%s'", destinationSite.getHostname()));
 				final List<Folder> allSourceFolders = this.folderAPI.findSubFoldersRecursively(sourceSite, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-				Logger.info(HostAssetsJobImpl.class, () -> (":::: Copying Folders."));
+				Logger.info(this, String.format("-> Copying %d Folders", allSourceFolders.size()));
 				for (final Folder sourceFolder : allSourceFolders) {
 					try {
 					    copyFolder(sourceFolder, destinationSite, folderMappingsBySourceId);
@@ -444,12 +482,14 @@ public class HostAssetsJobImpl extends ParentProxy{
 					// Copying Menu Links
 					// ======================================================================
 					this.siteCopyStatus.addMessage("copying-menu-links");
-					Logger.info(HostAssetsJobImpl.class, () -> (":::: Copying Menu Links."));
+					Logger.info(this, "----------------------------------------------------------------------");
+					Logger.info(this, String.format(":::: Copying Menu Links to new Site '%s'", destinationSite.getHostname()));
 					for (final FolderMapping folderMapping : folders) {
 						final List<Link> sourceLinks = this.menuLinkAPI.findFolderMenuLinks(folderMapping.sourceFolder);
+						Logger.debug(this, () -> String.format("-> Copying %d Menu Links from Folder '%s'", sourceLinks.size(), folderMapping.sourceFolder.getPath()));
 						for (final Link sourceLink : sourceLinks) {
 							try {
-								Logger.debug(this, "Copying menu with inode : " + sourceLink.getInode());
+								Logger.debug(this, () -> "---> Copying menu with inode : " + sourceLink.getInode());
 								this.menuLinkAPI.copy(sourceLink, folderMapping.destinationFolder, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
 							} catch (final Exception e) {
 								Logger.error(this, String.format("An error occurred when copying menu link '%s' from " +
@@ -463,7 +503,9 @@ public class HostAssetsJobImpl extends ParentProxy{
 
 				// Point templates to copied themes (if themes belong to the copied site)
 				if(copyOptions.isCopyTemplatesAndContainers()){
-					Logger.info(HostAssetsJobImpl.class, () -> (":::: Pointing Templates to copied themes."));
+					Logger.info(this, "----------------------------------------------------------------------");
+					Logger.info(this, String.format(":::: Pointing %d Templates to copied themes for new Site '%s'",
+							templatesMappingBySourceId.size(), destinationSite.getHostname()));
 					for (final String sourceTemplateId : templatesMappingBySourceId.keySet()) {
 						final Template srcTemplate = templatesMappingBySourceId.get(sourceTemplateId).getSourceTemplate();
 						if(UtilMethods.isSet(srcTemplate.getTheme()) && folderMappingsBySourceId.containsKey(srcTemplate.getTheme())){
@@ -478,7 +520,46 @@ public class HostAssetsJobImpl extends ParentProxy{
 			HibernateUtil.closeAndCommitTransaction();
 			HibernateUtil.startTransaction();
 			this.siteCopyStatus.updateProgress(70);
-			
+
+			if (Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false) && copyOptions.isCopyContentTypes()) {
+				final List<Relationship> copiedRelationships = new ArrayList<>();
+				Logger.info(this, "----------------------------------------------------------------------");
+				Logger.info(this, String.format(":::: Copying Content Types to new Site '%s'", destinationSite.getHostname()));
+				final List<ContentType> sourceContentTypes = this.contentTypeAPI.search("",
+						BaseContentType.ANY, "upper(name)", -1, 0, sourceSite.getIdentifier());
+				Logger.info(this, String.format("-> Copying %d Content Types", sourceContentTypes.size()));
+				for (final ContentType sourceContentType : sourceContentTypes) {
+					final CopyContentTypeBean.Builder builder = new CopyContentTypeBean.Builder()
+							.sourceContentType(sourceContentType)
+							.icon(sourceContentType.icon())
+							.name(sourceContentType.name())
+							.folder(sourceContentType.folder())
+							.host(destinationSite.getIdentifier());
+					final ContentType copiedContentType = this.contentTypeAPI.copyFromAndDependencies(builder.build(), destinationSite);
+					copiedContentTypes.put(sourceContentType.id(), new ContentTypeMapping(sourceContentType, copiedContentType));
+					final List<Field> relFields = copiedContentType.fields(RelationshipField.class);
+					if (!relFields.isEmpty()) {
+						for (final Field field : relFields) {
+							final Relationship relationshipFromField = this.relationshipAPI.getRelationshipFromField(field, this.SYSTEM_USER);
+							copiedRelationships.add(relationshipFromField);
+						}
+					}
+				}
+				if (!copiedRelationships.isEmpty()) {
+					for (final Relationship relationship : copiedRelationships) {
+						final String parentContentTypeId = copiedContentTypes.containsKey(relationship.getParentStructureInode()) ?
+								copiedContentTypes.get(relationship.getParentStructureInode()).destinationContentType.id() : relationship.getParentStructureInode();
+						final String childContentTypeId = copiedContentTypes.containsKey(relationship.getChildStructureInode()) ?
+								copiedContentTypes.get(relationship.getChildStructureInode()).destinationContentType.id() : relationship.getChildStructureInode();
+						relationship.setParentStructureInode(parentContentTypeId);
+						relationship.setChildStructureInode(childContentTypeId);
+						this.relationshipAPI.save(relationship);
+					}
+				}
+				HibernateUtil.closeAndCommitTransaction();
+				HibernateUtil.startTransaction();
+			}
+
 			// ======================================================================
 			// Copying content on site
 			// ======================================================================
@@ -486,21 +567,22 @@ public class HostAssetsJobImpl extends ParentProxy{
 			int contentCount = 0;
 
             // Option 1: Copy ONLY content pages WITHOUT other contents, if 
-			// copyOptions.isCopyContentOnHost() == true should be handle by option 2.
+			// copyOptions.isCopyContentOnHost() == true should be handled by option 2.
             if (!copyOptions.isCopyContentOnHost() && copyOptions.isCopyLinks()) {
-				Logger.info(HostAssetsJobImpl.class, () -> (":::: Copying Content Pages only."));
+				Logger.info(this, "----------------------------------------------------------------------");
+				Logger.info(this, String.format(":::: Copying HTML Pages - without their contents - to new Site '%s'", destinationSite.getHostname()));
                 final PaginatedContentlets sourceContentlets = this.contentAPI.findContentletsPaginatedByHost(sourceSite,
                         Arrays.asList(BaseContentType.HTMLPAGE.getType()), null, this.SYSTEM_USER,
 						DONT_RESPECT_FRONTEND_ROLES);
 
                 currentProgress = 70;
                 progressIncrement = (95 - 70) / (double) sourceContentlets.size();
-
+				Logger.info(this, String.format("-> Copying %d HTML Pages", sourceContentlets.size()));
                 for (final Contentlet sourceContent : sourceContentlets) {
                     processCopyOfContentlet(sourceContent, copyOptions,
                             destinationSite, contentMappingsBySourceId, folderMappingsBySourceId,
                             copiedContainersBySourceId, templatesMappingBySourceId,
-                            contentsToCopyDependencies);
+                            contentsToCopyDependencies, copiedContentTypes);
 
                     currentProgress += progressIncrement;
 
@@ -513,13 +595,14 @@ public class HostAssetsJobImpl extends ParentProxy{
                 }
 
                 // Copy contentlet dependencies
-                processToCopyContentletDependencies(contentsToCopyDependencies,
-                        contentMappingsBySourceId);
+				this.copyRelatedContentlets(contentsToCopyDependencies,
+                        contentMappingsBySourceId, copiedContentTypes, copyOptions);
             }
 
             // Option 2: Copy all content on site
             if (copyOptions.isCopyContentOnHost()) {
-				Logger.info(HostAssetsJobImpl.class, () -> (":::: Copying All Content."));
+				Logger.info(this, "----------------------------------------------------------------------");
+				Logger.info(this, String.format(":::: Copying ALL contents to new Site '%s'", destinationSite.getHostname()));
                 final PaginatedContentlets sourceContentlets = this.contentAPI.findContentletsPaginatedByHost(sourceSite,
 						this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
                 currentProgress = 70;
@@ -528,13 +611,14 @@ public class HostAssetsJobImpl extends ParentProxy{
                 // Process simple Contents first. This makes it easier to later 
                 // associate page contents when updating the multi-tree
                 Iterator<Contentlet> ite = sourceContentlets.iterator();
+				Logger.info(this, "-> Copying simple contents first");
                 while (ite.hasNext()) {
                 	final Contentlet sourceContent = ite.next();
                 	if (!sourceContent.isHTMLPage()) {
 	                    processCopyOfContentlet(sourceContent, copyOptions,
 	                            destinationSite, contentMappingsBySourceId, folderMappingsBySourceId,
 	                            copiedContainersBySourceId, templatesMappingBySourceId,
-	                            contentsToCopyDependencies);
+	                            contentsToCopyDependencies, copiedContentTypes);
 	                    // Update progress ONLY if the record is processed
 	                    currentProgress += progressIncrement;
 						this.siteCopyStatus.updateProgress((int) currentProgress);
@@ -546,16 +630,17 @@ public class HostAssetsJobImpl extends ParentProxy{
 	                    ite.remove();
                 	}
                 }
-                
+				Logger.info(this, String.format("-> %d simple contents have been copied", contentCount));
                 // Now process Content Pages. Updating the multi-tree will be 
                 // easier since the content is already in
+				Logger.info(this, "-> Now, copying HTML Pages");
                 ite = sourceContentlets.iterator();
                 while (ite.hasNext()) {
                 	final Contentlet sourceContent = ite.next();
                     processCopyOfContentlet(sourceContent, copyOptions,
                             destinationSite, contentMappingsBySourceId, folderMappingsBySourceId,
                             copiedContainersBySourceId, templatesMappingBySourceId,
-                            contentsToCopyDependencies);
+                            contentsToCopyDependencies, copiedContentTypes);
                     currentProgress += progressIncrement;
                     siteCopyStatus.updateProgress((int) currentProgress);
                     if (contentCount % 100 == 0) {
@@ -564,10 +649,10 @@ public class HostAssetsJobImpl extends ParentProxy{
                     }
                     contentCount++;
                 }
-
+				Logger.info(this, String.format("-> A total of %d contents have been copied", contentCount));
                 // Copy contentlet dependencies
-                processToCopyContentletDependencies(contentsToCopyDependencies,
-                        contentMappingsBySourceId);
+                this.copyRelatedContentlets(contentsToCopyDependencies,
+                        contentMappingsBySourceId, copiedContentTypes, copyOptions);
             }
 
 			this.siteCopyStatus.updateProgress(95);
@@ -575,12 +660,14 @@ public class HostAssetsJobImpl extends ParentProxy{
 			// Copying HostVariables
 			this.siteCopyStatus.addMessage("copying-host-variables");
 			if (copyOptions.isCopyHostVariables()) {
-				Logger.info(HostAssetsJobImpl.class, () -> (":::: Copying Site Variables."));
+				Logger.info(this, "----------------------------------------------------------------------");
+				Logger.info(this, String.format(":::: Copying Site Variables to new Site '%s'", destinationSite.getHostname()));
 				String variableKey = "";
 				try {
 					final HostVariableAPI hostVariablesAPI = APILocator.getHostVariableAPI();
 					final List<HostVariable> sourceVariables = hostVariablesAPI.getVariablesForHost(sourceSite
 							.getIdentifier(), this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
+					Logger.info(this, String.format("-> Copying %d Site Variables", sourceVariables.size()));
 					for (final HostVariable variable : sourceVariables) {
 						variableKey = variable.getKey();
 						hostVariablesAPI.copy(variable, destinationSite, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
@@ -599,6 +686,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			Logger.error(this, String.format("A general error has occurred when copying Site '%s' to Site '%s'. The " +
 					"Site Copy process will stop now!", sourceSite.getHostname(), destinationSite.getHostname()), e);
 			HibernateUtil.rollbackTransaction();
+			throw e;
 		} finally {
 			HibernateUtil.closeSessionSilently();
 		}
@@ -717,7 +805,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			throws DotDataException, DotSecurityException {
 		if (folderMappingsBySourceId.containsKey(sourceFolder.getInode())) {
 			Logger.debug(HostAssetsJobImpl.class, () -> String
-					.format(":::: folder `%s` has been copied already. ", sourceFolder.getPath()));
+					.format("---> Folder `%s` has been copied already. ", sourceFolder.getPath()));
 			return folderMappingsBySourceId.get(sourceFolder.getInode()).destinationFolder;
 		}
 		final Folder newFolder = this.folderAPI.createFolders(APILocator.getIdentifierAPI().find(sourceFolder.getIdentifier()).getPath(),
@@ -733,40 +821,35 @@ public class HostAssetsJobImpl extends ParentProxy{
 	}
 
 	/**
-	 * Copies a content from one site to another. At this point, it's important
-	 * to keep track of the elements that have already been copied in order to
-	 * avoid duplicating information unnecessarily.
+	 * Copies a Contentlet from one site to another. At this point, it's important to keep track of
+	 * the elements that have already been copied in order to avoid duplicating information
+	 * unnecessarily.
 	 * <p>
-	 * If the content to copy is a Content Page, then its multi-tree structure
-	 * needs to be updated, which involves updating the child references to
-	 * point to the recently copied contentlets.
+	 * If the content to copy is a Content Page, then its multi-tree structure needs to be updated,
+	 * which involves updating the child references to point to the recently copied contentlets.
 	 * </p>
 	 * 
-	 * @param sourceContent
-	 *            - The {@link Contentlet} whose data will be copied.
-	 * @param copyOptions
-	 *            - The preferences selected by the user regarding what elements
-	 *            of the source site will be copied over to the new site.
-	 * @param destinationSite
-	 *            - The new {@link Host} object that will contain the
+	 * @param sourceContent              The {@link Contentlet} whose data will be copied.
+	 * @param copyOptions                The preferences selected by the user regarding what
+	 *                                   elements of the source site will be copied over to the new
+	 *                                   site.
+	 * @param destinationSite            The new {@link Host} object that will contain the
 	 *            information from the source site.
-	 * @param contentMappingsBySourceId
-	 *            - A {@link Map} containing the references between the
-	 *            contentlet's Identifier from the source site with the
-	 *            contentlet's Identifier from the destination site. This map
-	 *            keeps both the source and the destination {@link Contentlet}
-	 *            objects.
-	 * @param folderMappingsBySourceId
-	 *            - A {@link Map} containing the references between the folder's
-	 *            Identifier from the source site with the the folder's
-	 *            Identifier from the destination site. This map keeps both the
-	 *            source and the destination {@link Folder} objects.
-	 * @param copiedContainersBySourceId
-	 *            - A {@link Map} that says what containerId from the source site has become what in the new copy-site
-	 * @param templatesMappingBySourceId
-	 *            - A {@link Map} that says what templateId from the source site has become what in the new copy-site
-	 * @param contentsToCopyDependencies
-	 *            - The dependencies of the contentlet to copy.
+	 * @param copiedContentlets          A {@link Map} containing the association between the
+	 *            						 Contentlet's Identifier in the source site and the
+	 *                                   Contentlet's Identifier in the destination site. This
+	 *                                   map keeps both the source and the destination
+	 *                                   {@link Contentlet} objects.
+	 * @param copiedFolders              A {@link Map} containing the association between the
+	 *                                   folder's Identifier from the source site with the folder's
+	 *                                   Identifier from the destination site. This map keeps both
+	 *                                   the source and the destination {@link Folder} objects.
+	 * @param copiedContainers           A {@link Map} that says what containerId from the source
+	 *                                   site has become what in the new copy-site
+	 * @param copiedTemplates            A {@link Map} that says what templateId from the source
+	 *                                   site has become what in the new copy-site
+	 * @param contentletsWithRelationships The dependencies of the contentlet to copy.
+	 * @param copiedContentTypes
 	 */
 	private Contentlet processCopyOfContentlet(final Contentlet sourceContent,
 			final HostCopyOptions copyOptions, final Host destinationSite,
@@ -774,7 +857,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 			final Map<String, FolderMapping> folderMappingsBySourceId,
 			final Map<String, Container> copiedContainersBySourceId,
 			final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> templatesMappingBySourceId,
-			final List<Contentlet> contentsToCopyDependencies) {
+			final List<Contentlet> contentsToCopyDependencies,
+		    final Map<String, ContentTypeMapping> copiedContentTypes) {
 
 		//Since certain properties are modified here we're gonna use a defensive copy to avoid cache issue.
 		final Contentlet sourceCopy = new Contentlet(sourceContent);
@@ -782,7 +866,7 @@ public class HostAssetsJobImpl extends ParentProxy{
         try {
             if (contentMappingsBySourceId.containsKey(sourceCopy.getIdentifier())) {
                 // The content has already been copied
-				Logger.debug(HostAssetsJobImpl.class,()->String.format(":::: Content identified by `%s` has been copied already.", sourceCopy.getIdentifier()));
+				Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Content identified by `%s` has been copied already.", sourceCopy.getIdentifier()));
                 return contentMappingsBySourceId.get(sourceCopy.getIdentifier()).destinationContent;
             }
 			sourceCopy.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
@@ -794,12 +878,11 @@ public class HostAssetsJobImpl extends ParentProxy{
 				//such method deals with all versions of the contentlet and it needs to know about the mapping info internally.
 				sourceCopy.getMap().put(Contentlet.TEMPLATE_MAPPINGS, templatesMappingBySourceId);
 			}
-
+			final ContentType destinationContentType = Try.of(() -> copiedContentTypes.get(sourceCopy.getContentTypeId()).destinationContentType).getOrNull();
             if (InodeUtils.isSet(sourceCopy.getFolder())
                     && !sourceCopy.getFolder().equals(this.SYSTEM_FOLDER.getInode())) {
-                // The source content has a folder assigned in the
-                // source Site we copy it to the same destination
-                // folder
+                // The source content has a folder assigned in the source Site we copy it to the
+				// same destination folder
                 final Folder sourceFolder = this.folderAPI.find(sourceCopy.getFolder(), this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
                 final Folder destinationFolder = folderMappingsBySourceId.get(sourceFolder.getInode()) != null ? folderMappingsBySourceId
                         .get(sourceFolder.getInode()).destinationFolder : null;
@@ -808,39 +891,33 @@ public class HostAssetsJobImpl extends ParentProxy{
                 }
 
                 if (destinationFolder != null) {
-                    // We have already mapped the source folder of
-                    // the content to a destination folder because
-                    // the user requested to also
-                    // copy folders
-                    newContent = this.contentAPI.copyContentlet(sourceCopy, destinationFolder, this.SYSTEM_USER,
+                    // We have already mapped the source folder of the content to a destination
+					// folder because the user requested to also copy folders
+                    newContent = this.contentAPI.copyContentlet(sourceCopy, destinationContentType, destinationFolder, this.SYSTEM_USER,
 							DONT_RESPECT_FRONTEND_ROLES);
                 } else {
-                    // We don't have a destination folder to set the
-                    // content to so we are going to set it to the
-                    // Site
-                    newContent = this.contentAPI.copyContentlet(sourceCopy, destinationSite, this.SYSTEM_USER,
+                    // We don't have a destination folder to set the content to, so we are going to
+					// set it to the Site
+                    newContent = this.contentAPI.copyContentlet(sourceCopy, destinationContentType, destinationSite, this.SYSTEM_USER,
 							DONT_RESPECT_FRONTEND_ROLES);
                 }
             } else if (InodeUtils.isSet(sourceCopy.getHost())
                     && !sourceCopy.getHost().equals(this.SYSTEM_HOST.getInode())) {
-                // The content is assigned to the source Site we
-                // assign the new content to the new Site
-                newContent = this.contentAPI.copyContentlet(sourceCopy, destinationSite, this.SYSTEM_USER,
+                // The content is assigned to the source Site, we assign the new content to the new Site
+                newContent = this.contentAPI.copyContentlet(sourceCopy, destinationContentType, destinationSite, this.SYSTEM_USER,
 						DONT_RESPECT_FRONTEND_ROLES);
             } else {
-                // The content has no folder or Site association so
-                // we create a global copy as well
+                // The content has no folder or Site association, so we create a global copy as well
                 newContent = this.contentAPI.copyContentlet(sourceCopy, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
             }
 
             if (copyOptions.isCopyContentOnPages() && newContent.isHTMLPage()) {
-				Logger.debug(HostAssetsJobImpl.class,()->String.format(":::: Copying contents from page with title `%s` and id `%s`", sourceCopy.getTitle(), sourceCopy.getIdentifier()));
+				Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Copying contents from page with title `%s` and id `%s`", sourceCopy.getTitle(), sourceCopy.getIdentifier()));
                 // Copy page-associated contentlets
                 final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(sourceCopy.getIdentifier());
 				for (final MultiTree sourceMultiTree : pageContents) {
 					String newChild = sourceMultiTree.getChild();
-					// Update the child reference to point to the previously
-					// copied content
+					// Update the child reference to point to the previously copied content
 					if (contentMappingsBySourceId.containsKey(sourceMultiTree.getChild())) {
 						newChild = contentMappingsBySourceId.get(sourceMultiTree.getChild()).destinationContent.getIdentifier();
 					}
@@ -864,7 +941,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 
             contentMappingsBySourceId.put(sourceCopy.getIdentifier(), new ContentMapping(sourceCopy, newContent));
 			final Contentlet finalNewContent = newContent;
-			Logger.debug(HostAssetsJobImpl.class,()->String.format(":::: Re-Mapping content: Identifier `%s` now points to `%s`.", sourceCopy.getIdentifier(), finalNewContent
+			Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Re-Mapping content: Identifier `%s` now points to `%s`.", sourceCopy.getIdentifier(), finalNewContent
 					.getIdentifier()));
 
             if (doesRelatedContentExists(sourceCopy)) {
@@ -879,18 +956,38 @@ public class HostAssetsJobImpl extends ParentProxy{
     }
 
 	/**
+	 * Copies the Relationship data of Contentlets that have child relationships based on the newly
+	 * assigned Identifiers after they have been copied to the new Site.
+	 * <p>If no Content Types are being copied to the new Site, the relationship data update will
+	 * only include adding the new related Contentlet copies that now live in the new Site. But, if
+	 * Content Types ARE being copied, the Content Type IDs in the relationship data must reflect
+	 * both the new related Contentlet copies, AND the new Content Type IDs.</p>
 	 *
-	 * @param contentsToCopyDependencies
-	 * @param contentMappingsBySourceId
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * @param contentsToCopyDependencies The list of {@link Contentlet} objects that are the
+	 *                                   parents of a given relationship.
+	 * @param contentMappingsBySourceId  A {@link Map} containing the association between the
+	 *                                   contentlet's Identifier from the source site and the
+	 *                                   contentlet's Identifier from the destination site. This
+	 *                                   map keeps both the source and the destination
+	 *                                   {@link Contentlet} objects.
+	 * @param copiedContentTypes         A {@link Map} containing the association between the
+	 *                                   Content Type's ID from the source site and the Content
+	 *                                   Type's ID from the destination site. This map keeps both
+	 *                                   the source and the destination {@link ContentType} objects.
+	 * @param copyOptions                The {@link HostCopyOptions} object containing what objects
+	 *                                   from the source Site must be copied to the destination
+	 *                                   Site.
+	 *
+	 * @throws DotDataException     An error occurred when updating records in the database.
+	 * @throws DotSecurityException The {@link User} accessing the APIs doesn't have the required
+	 *                              permissions to perform this action.
 	 */
-    private void processToCopyContentletDependencies(final List<Contentlet> contentsToCopyDependencies,
-            final Map<String, ContentMapping> contentMappingsBySourceId) throws DotDataException, DotSecurityException {
+    private void copyRelatedContentlets(final List<Contentlet> contentsToCopyDependencies,
+										final Map<String, ContentMapping> contentMappingsBySourceId, final Map<String, ContentTypeMapping> copiedContentTypes, final HostCopyOptions copyOptions) throws DotDataException, DotSecurityException {
         for (final Contentlet sourceContent : contentsToCopyDependencies) {
             final Contentlet destinationContent = contentMappingsBySourceId.get(sourceContent.getIdentifier()).destinationContent;
             final Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
-            final List<Relationship> rels = APILocator.getRelationshipAPI().byContentType(sourceContent.getContentType());
+            final List<Relationship> rels = this.relationshipAPI.byContentType(sourceContent.getContentType());
             for (final Relationship r : rels) {
                 if (!contentRelationships.containsKey(r)) {
                     contentRelationships.put(r, new ArrayList<>());
@@ -905,8 +1002,26 @@ public class HostAssetsJobImpl extends ParentProxy{
                         records.add(c);
                     }
                 }
-                final ContentletRelationshipRecords related = new ContentletRelationships(
-                        destinationContent).new ContentletRelationshipRecords(r, true);
+				ContentletRelationshipRecords related;
+				if (!Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false) || !copyOptions.isCopyContentTypes()) {
+					related = new ContentletRelationships(
+							destinationContent).new ContentletRelationshipRecords(r, true);
+				} else {
+					// First, we must find the parent of the relationship in order to update it using
+					// the actual relationship field in the parent Content Type. Once we have it, we
+					// can associate the recently copied Contentlets to it
+					final String relationName = UtilMethods.isSet(r.getParentRelationName())
+							? r.getParentRelationName()
+							: r.getChildRelationName();
+					final String contentTypeWithRelField = UtilMethods.isNotSet(r.getParentRelationName())
+							? r.getParentStructureInode()
+							: r.getChildStructureInode();
+					final ContentTypeMapping contentTypeMapping = copiedContentTypes.get(contentTypeWithRelField);
+					final Field relationshipField = this.contentTypeFieldAPI.byContentTypeIdAndVar(
+							contentTypeMapping.destinationContentType.id(), relationName);
+					final Relationship relationshipFromField = this.relationshipAPI.getRelationshipFromField(relationshipField, this.SYSTEM_USER);
+					related = new ContentletRelationships(destinationContent).new ContentletRelationshipRecords(relationshipFromField, true);
+				}
                 related.setRecords(records);
 				this.contentAPI.relateContent(destinationContent, related, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
             }
@@ -966,6 +1081,23 @@ public class HostAssetsJobImpl extends ParentProxy{
             this.sourceFolder = sourceFolder;
             this.destinationFolder = destinationFolder;
         }
+
+    }
+
+	/**
+	 *
+	 */
+	private static class ContentTypeMapping {
+
+		ContentType sourceContentType;
+		ContentType destinationContentType;
+
+		public ContentTypeMapping(final ContentType sourceContentType,
+								  final ContentType destinationContentType) {
+			this.sourceContentType = sourceContentType;
+			this.destinationContentType = destinationContentType;
+		}
+
     }
 
 	/**
@@ -982,7 +1114,6 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 */
 	private void validateSiteInfo(final Host sourceSite, final Host destinationSite, final String sourceSiteId, final String destinationSiteId,
 			final String jobName) throws JobExecutionException {
-		Logger.info(HostAssetsJobImpl.class, () -> ("Validating Sites Info at DB"));
 		final List<String> nullSites = new ArrayList<>();
 		if (null == sourceSite || !UtilMethods.isSet(sourceSite.getIdentifier())) {
 			nullSites.add(sourceSiteId);
@@ -998,10 +1129,41 @@ public class HostAssetsJobImpl extends ParentProxy{
 			Logger.error(HostAssetsJobImpl.class, errorMsg);
 			throw new JobExecutionException(errorMsg);
 		}
-		Logger.info(HostAssetsJobImpl.class, String.format("-> Source Site: %s (%s)", sourceSite.getHostname(),
+		Logger.info(HostAssetsJobImpl.class, String.format("-> Source Site: %s [ %s ]", sourceSite.getHostname(),
 				sourceSiteId));
-		Logger.info(HostAssetsJobImpl.class, String.format("-> Destination Site: %s (%s)", destinationSite
+		Logger.info(HostAssetsJobImpl.class, String.format("-> Destination Site: %s [ %s ]", destinationSite
 				.getHostname(), destinationSiteId));
+	}
+
+	/**
+	 * Sends a notification to both the System Events API and the Notification API.
+	 *
+	 * @param message The message to be sent to the logged-in user.
+	 * @param userId  The User Identifier that will receive the notification.
+	 * @param level   The Notification Level of the message: {@link NotificationLevel#INFO},
+	 *                {@link NotificationLevel#WARNING}, or {@link NotificationLevel#ERROR}.
+	 */
+	private void sendNotification(final String message, final String userId, final NotificationLevel level) {
+		final SystemMessageEventUtil messageEventUtil = SystemMessageEventUtil.getInstance();
+		if (NotificationLevel.ERROR.equals(level)) {
+			messageEventUtil.pushSimpleErrorEvent(new ErrorEntity(StringPool.BLANK, message));
+		} else {
+			messageEventUtil.pushSimpleTextEvent(message, userId);
+		}
+		try {
+			final User user = this.userAPI.loadUserById(userId);
+			APILocator.getNotificationAPI().generateNotification(
+					new I18NMessage("Site Copy"),
+					new I18NMessage(message),
+					null,
+					level,
+					NotificationType.GENERIC,
+					user.getUserId(),
+					user.getLocale()
+			);
+		} catch (final DotDataException | DotSecurityException e) {
+			// Notification could not be sent. Just move on
+		}
 	}
 
 }

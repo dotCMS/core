@@ -93,6 +93,7 @@ import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
+import com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
@@ -155,6 +156,7 @@ import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVers
 import com.dotmarketing.startup.runonce.Task240102AlterVarcharLengthOfRelationTypeTest;
 import com.dotmarketing.startup.runonce.Task240111AddInodeAndIdentifierLeftIndexesTest;
 import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTableTest;
+import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
@@ -170,6 +172,9 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
+        com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
+        Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
+        HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
@@ -190,7 +195,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201013AddNewColumnsToIdentifierTableTest.class,
         Task201014UpdateColumnsValuesInIdentifierTableTest.class,
         AppsInterpolationTest.class,
-        com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,

@@ -105,6 +105,7 @@
             "dependsOn": ["^build"]
         },
         "serve": {
+            "dependsOn": ["dotcms-webcomponents:build"],
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",

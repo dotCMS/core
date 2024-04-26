@@ -13,6 +13,14 @@
 
 // Selectors overlayPanel and dialog
 ::ng-deep {
+    dot-wizard {
+        dot-dialog {
+            &.active {
+                z-index: 1103 !important;
+            }
+        }
+    }
+
     .p-overlaypanel.edit-ema-selector.p-component {
         .p-overlaypanel-content {
             padding: 0;
@@ -35,6 +43,12 @@
 
         .p-dialog-footer {
             padding-top: 0;
+        }
+    }
+
+    dot-experiments-shell dot-experiments-list {
+        .dot-experiment {
+            padding: $spacing-3 $spacing-5 $spacing-5 $spacing-5 !important;
         }
     }
 }

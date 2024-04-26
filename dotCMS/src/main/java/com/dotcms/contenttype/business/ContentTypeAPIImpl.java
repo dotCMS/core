@@ -27,7 +27,11 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.EnterpriseFeature;
 import com.dotcms.util.LowerKeyMap;
+import com.dotcms.workflow.form.WorkflowSystemActionForm;
+import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -37,11 +41,14 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotCorruptedDataException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
@@ -161,45 +168,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   /**
-   * Call directly whn we want to skip CT creation through the Quartz Job
-   * Though internally the Quartz job makes use of this method
-   * @param type
-   * @throws DotDataException
-   */
-  @CloseDBIfOpened
-  private void dispose(final ContentType type) throws DotDataException {
-
-      // default structure can't be deleted
-      if (type.defaultType()) {
-        throw new DotDataException("contenttype.delete.cannot.delete.default.type");
-      }
-      if (type.system()) {
-        throw new DotDataException("contenttype.delete.cannot.delete.system.type");
-      }
-
-      //Force a database hit by removing the type from the cache
-      CacheLocator.getContentTypeCache2().remove(type);
-
-      //Refresh prior to delete
-      final ContentType dbType = Try.of(() -> find(type.id())).getOrNull();
-      if (null == dbType) {
-        Logger.warn(ContentTypeFactoryImpl.class, String.format("The ContentType with id `%s` does not exist ", type.id()));
-        return;
-      }
-
-      if (!dbType.markedForDeletion()) {
-        Logger.warn(ContentTypeFactoryImpl.class, String.format("The ContentType with id `%s` isn't marked for deletion ", type.id()));
-        return;
-      }
-
-      try {
-         APILocator.getContentTypeDestroyAPI().destroy(dbType, APILocator.systemUser());
-      } catch (DotDataException | DotSecurityException e) {
-        Logger.error(getClass(), String.format("Error Tearing down ContentType [%s]", dbType.variable()), e);
-      }
-  }
-
-  /**
    * This method will delete the content type and all the content associated to it.
    * This has been our traditional way to delete content types. and all its associated pieces of content.
    * @param type
@@ -273,14 +241,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             .variable(newName)
             .markedForDeletion(true)
             .build();
-
+    Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly", type.variable(), type.inode()));
     copy = contentTypeFactory.save(copy);
 
     //A copy is made. but we need to refresh our var since the copy returned by the method is incomplete
     copy = contentTypeFactory.find(copy.id());
-    Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy  with  name (%s) and inode (%s) will be used to dispose all contentlets in background. :::",
-            type.variable(), type.inode(), copy.variable(), copy.inode())
-    );
+    Logger.info(getClass(), String.format("::: A copy with Var Name '%s' and inode " +
+            "'%s' will be used to dispose all contentlets in background. :::", copy.variable(), copy.inode()));
     return copy;
   }
 
@@ -520,17 +487,49 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @WrapInTransaction
   @Override
-  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
+  public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
+    return copyFromAndDependencies(copyContentTypeBean, null);
+  }
 
-    if (LicenseManager.getInstance().isCommunity()) {
-
-        throw new InvalidLicenseException("An enterprise license is required to copy content type");
-    }
-
+  @WrapInTransaction
+  @Override
+  public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException {
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
-    final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType).name(copyContentTypeBean.getName())
-            .fixed(false).system(false)
-            .id(null).modDate(new Date()).variable(null);
+    final ContentType copiedContentType = copyFrom(copyContentTypeBean, destinationSite);
+    // saving workflow information
+    final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+    final List<WorkflowScheme> workflowSchemes = workflowAPI.findSchemesForContentType(find(sourceContentType.id()));
+    final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = workflowAPI.findSystemActionsByContentType(sourceContentType, user);
+    workflowAPI.saveSchemeIdsForContentType(copiedContentType, workflowSchemes.stream().map(WorkflowScheme::getId).collect(Collectors.toSet()));
+    final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+    for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping : systemActionWorkflowActionMappings) {
+      workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
+              .systemAction(systemActionWorkflowActionMapping.getSystemAction())
+              .actionId(systemActionWorkflowActionMapping.getWorkflowAction().getId())
+              .contentTypeVariable(copiedContentType.variable()).build(), user);
+    }
+    return copiedContentType;
+  }
+
+  @WrapInTransaction
+  @Override
+  @EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL, errorMsg = "An enterprise license is required in order to use this feature.")
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
+    return copyFrom(copyContentTypeBean, null);
+  }
+
+  @WrapInTransaction
+  @Override
+  @EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL, errorMsg = "An enterprise license is required in order to use this feature.")
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException {
+    final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
+    final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType)
+            .name(copyContentTypeBean.getName())
+            .fixed(false)
+            .system(false)
+            .id(null)
+            .modDate(new Date())
+            .variable(null);
 
     if (UtilMethods.isSet(copyContentTypeBean.getNewVariable())) {
       builder.variable(copyContentTypeBean.getNewVariable());
@@ -548,6 +547,15 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       builder.icon(copyContentTypeBean.getIcon());
     }
 
+    if (null != destinationSite && UtilMethods.isSet(destinationSite.getIdentifier())) {
+      // If the CT is being copied to another Site, more properties must be copied as well
+      builder.siteName(destinationSite.getHostname());
+      builder.description(sourceContentType.description());
+      builder.detailPage(sourceContentType.detailPage());
+      builder.urlMapPattern(sourceContentType.urlMapPattern());
+      builder.metadata(sourceContentType.metadata());
+    }
+
     Logger.debug(this, ()->"Creating the content type: " + copyContentTypeBean.getName()
             + ", from: " + copyContentTypeBean.getSourceContentType().variable());
 
@@ -562,7 +570,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             + ", from: " + copyContentTypeBean.getSourceContentType().variable());
 
     for (final Field sourceField : sourceFields) {
-
+        DotPreconditions.checkNotEmpty(sourceField.variable(), DotCorruptedDataException.class,
+              "Velocity Variable Name in Field ID '%s' cannot be empty", sourceField.id());
         Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
         if (null == newField) {
 
@@ -585,7 +594,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         }
     }
 
-    return newContentType;
+    return find(newContentType.id());
   }
 
   @WrapInTransaction

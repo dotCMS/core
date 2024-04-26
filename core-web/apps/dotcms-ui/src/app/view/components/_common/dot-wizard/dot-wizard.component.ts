@@ -1,12 +1,12 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectorRef,
     Component,
     ComponentFactoryResolver,
     ComponentRef,
     Input,
     OnDestroy,
-    OnInit,
     QueryList,
     Type,
     ViewChild,
@@ -35,7 +35,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss']
 })
-export class DotWizardComponent implements OnInit, OnDestroy {
+export class DotWizardComponent implements OnDestroy {
     wizardData: { [key: string]: string };
     dialogActions: DotDialogActions;
     transform = '';
@@ -57,18 +57,20 @@ export class DotWizardComponent implements OnInit, OnDestroy {
     constructor(
         private componentFactoryResolver: ComponentFactoryResolver,
         private dotMessageService: DotMessageService,
-        private dotWizardService: DotWizardService
-    ) {}
-
-    ngOnInit() {
+        private dotWizardService: DotWizardService,
+        private cd: ChangeDetectorRef
+    ) {
         this.dotWizardService.showDialog$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
             this.data = data;
+
             // need to wait to render the dotContainerReference.
+            this.cd.detectChanges();
             setTimeout(() => {
                 this.loadComponents();
                 this.setDialogActions();
+                this.cd.detectChanges();
                 this.focusFistFormElement();
-            }, 0);
+            }, 1000);
         });
     }
 
