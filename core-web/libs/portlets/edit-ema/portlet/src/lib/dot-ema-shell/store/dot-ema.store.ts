@@ -40,6 +40,7 @@ import {
     EditEmaState,
     EditorData,
     ReloadPagePayload,
+    SaveInlineEditing,
     SavePagePayload
 } from '../../shared/models';
 import {
@@ -469,10 +470,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     readonly saveFromInlineEditedContentlet = this.effect(
-        (payload$: Observable<{ contentlet: { [fieldName: string]: string; inode: string } }>) => {
+        (payload$: Observable<SaveInlineEditing>) => {
             return payload$.pipe(
-                switchMap((contentlet) => {
-                    return this.dotPageApiService.saveContentlet(contentlet).pipe(
+                tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
+                switchMap(({ contentlet, params }) => {
+                    return this.dotPageApiService.saveContentlet({ contentlet }).pipe(
                         tapResponse(
                             () => {
                                 this.messageService.add({
@@ -480,7 +482,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     summary: this.dotMessageService.get('message.content.saved'),
                                     life: 2000
                                 });
-                                this.setEditorMode(EDITOR_MODE.EDIT);
                             },
                             (e) => {
                                 console.error(e);
@@ -491,8 +492,24 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     ),
                                     life: 2000
                                 });
-
-                                this.setEditorMode(EDITOR_MODE.EDIT);
+                            }
+                        ),
+                        switchMap(() => this.dotPageApiService.get(params)),
+                        tapResponse(
+                            (pageData: DotPageApiResponse) => {
+                                this.patchState((state) => ({
+                                    ...state,
+                                    editor: pageData,
+                                    editorState: EDITOR_STATE.IDLE,
+                                    editorData: {
+                                        ...state.editorData,
+                                        mode: EDITOR_MODE.EDIT
+                                    }
+                                }));
+                            },
+                            (e) => {
+                                console.error(e);
+                                this.updateEditorState(EDITOR_STATE.ERROR);
                             }
                         )
                     );

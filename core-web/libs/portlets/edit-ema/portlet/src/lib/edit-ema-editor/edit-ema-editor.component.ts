@@ -995,7 +995,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     contentlet: {
                         inode: payload.dataset['inode'],
                         [payload.dataset.fieldName]: payload.innerHTML
-                    }
+                    },
+                    params: this.queryParams
                 });
             },
             [CUSTOMER_ACTIONS.REORDER_MENU]: () => {
@@ -1078,7 +1079,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const { contentlet } = payload;
         const { onNumberOfPages = '1', title } = contentlet;
 
-        if (!(Number(onNumberOfPages) > 1)) {
+        if (Number(onNumberOfPages) <= 1) {
             this.dialog.editContentlet(contentlet);
 
             return;
