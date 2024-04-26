@@ -28,11 +28,6 @@ public class AsyncEmailActionlet extends EmailActionlet {
     }
 
     @Override
-    public String getHowTo() {
-        return "This actionlet will send an email that can be based on the submitted content. The value of every field here is parsed velocity.  So, to send a custom email to the email address stored in a field called userEmail, put $content.userEmail in the 'to email' field and the system will replace it with the variables from the content";
-    }
-
-    @Override
     protected void sendEmail(final Mailer mail, final WorkflowProcessor processor) {
         DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
             try {
