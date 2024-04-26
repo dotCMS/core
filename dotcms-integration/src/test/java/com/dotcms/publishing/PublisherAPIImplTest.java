@@ -769,7 +769,7 @@ public class PublisherAPIImplTest {
             final StringBuffer buffer = new StringBuffer();
 
             while ((line = csvReader.readLine()) != null) {
-                System.out.println("line = " + line);
+
                 buffer.append(line + "\n");
 
                 if (nLines < manifestMetadataLines.size()) {
