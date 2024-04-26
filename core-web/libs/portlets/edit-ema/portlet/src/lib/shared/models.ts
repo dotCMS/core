@@ -191,7 +191,7 @@ export interface ContentTypeDragPayload extends BasePayload {
     };
 }
 
-export type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
+export type DraggedPayload = ContentletDragPayload | ContentTypeDragPayload | TempDragPayload;
 
 export interface SaveInlineEditing {
     contentlet: { [fieldName: string]: string; inode: string };
