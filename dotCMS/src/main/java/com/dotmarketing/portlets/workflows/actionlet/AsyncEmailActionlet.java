@@ -36,40 +36,13 @@ import java.util.Optional;
  * Same of the {@link EmailActionlet} but runs asynchronously.
  * @author jsanca
  */
-public class AsyncEmailActionlet extends WorkFlowActionlet {
+public class AsyncEmailActionlet extends EmailActionlet {
 
     private static final long serialVersionUID = 1L;
 
     protected final SystemMessageEventUtil systemMessageEventUtil =
             SystemMessageEventUtil.getInstance();
 
-    @Override
-    public List<WorkflowActionletParameter> getParameters() {
-        List<WorkflowActionletParameter> params = new ArrayList<>();
-
-        params.add(new WorkflowActionletParameter("fromEmail", "From Email", "", true));
-        params.add(new WorkflowActionletParameter("fromName", "From Name", "", true));
-        params.add(new WorkflowActionletParameter("toEmail", "To Email", "", true));
-        params.add(new WorkflowActionletParameter("toName", "To Name", "", true));
-        params.add(new WorkflowActionletParameter("cc", "Cc Email", "", false));
-        params.add(new WorkflowActionletParameter("bcc", "Bcc Email", "", false));
-        params.add(new WorkflowActionletParameter("emailSubject", "Email Subject", "", true));
-        params.add(new WorkflowActionletParameter("emailBody", "Email Body (html)", "", true));
-        params.add(new WorkflowActionletParameter("condition",
-                "Condition - email will send unless<br>velocity prints 'false'", "", false));
-        params.add(new WorkflowActionletParameter("attachment1",
-                "Path or field for attachment <br>(e.g./images/logo.png or 'fileAsset')", "", false));
-        params.add(new WorkflowActionletParameter("attachment2",
-                "Path or field for attachment <br>(e.g./images/logo.png or 'fileAsset')", "", false));
-        params.add(new WorkflowActionletParameter("attachment3",
-                "Path or field for attachment <br>(e.g./images/logo.png or 'fileAsset')", "", false));
-        params.add(new WorkflowActionletParameter("attachment4",
-                "Path or field for attachment <br>(e.g./images/logo.png or 'fileAsset')", "", false));
-        params.add(new WorkflowActionletParameter("attachment5",
-                "Path or field for attachment <br>(e.g./images/logo.png or 'fileAsset')", "", false));
-
-        return params;
-    }
 
     @Override
     public String getName() {
@@ -82,174 +55,19 @@ public class AsyncEmailActionlet extends WorkFlowActionlet {
     }
 
     @Override
-    public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params)
-            throws WorkflowActionFailureException {
+    protected void sendEmail(final Mailer mail, final WorkflowProcessor processor) {
+        DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
+            try {
+                mail.sendMessage();
+            } catch (Exception e) {
 
-        Contentlet contentlet = processor.getContentlet();
-
-        String rev = contentlet.getStringProperty("ipAddress");
-        try {
-            rev = DNSUtil.reverseDns(rev);
-            contentlet.setStringProperty("ipAddress", rev);
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "error on reverse lookup" + e.getMessage());
-        }
-
-        String toEmail = params.get("toEmail").getValue();
-        String toName = params.get("toName").getValue();
-        String fromEmail = params.get("fromEmail").getValue();
-        String fromName = params.get("fromName").getValue();
-        String emailSubject = params.get("emailSubject").getValue();
-        String emailBody = params.get("emailBody").getValue();
-        String condition = params.get("condition").getValue();
-        String cc = params.get("cc").getValue();
-        String bcc = params.get("bcc").getValue();
-
-
-        try {
-            // get the host of the content
-            Host host = APILocator.getHostAPI().find(
-                    processor.getContentlet(),
-                    APILocator.getUserAPI().getSystemUser(),
-                    false);
-            if (host.isSystemHost()) {
-                host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
+                final List<String> userList = new ArrayList<>();
+                userList.add(processor.getUser().getUserId());
+                this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder().setMessage("Error sending the email: " + e.getMessage())
+                        .setLife(5000)
+                        .setSeverity(MessageSeverity.ERROR).create(), userList);
             }
-
-            HttpServletRequest requestProxy = new FakeHttpRequest(host.getHostname(), null).request();
-            HttpServletResponse responseProxy = new BaseResponse().response();
-            org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
-            ctx.put("host", host);
-            ctx.put("host_id", host.getIdentifier());
-            ctx.put("user", processor.getUser());
-            ctx.put("workflow", processor);
-            ctx.put("stepName", processor.getStep().getName());
-            ctx.put("stepId", processor.getStep().getId());
-            ctx.put("nextAssign", processor.getNextAssign().getName());
-            ctx.put("workflowMessage", processor.getWorkflowMessage());
-            ctx.put("nextStepResolved", processor.getNextStep().isResolved());
-            ctx.put("nextStepId", processor.getNextStep().getId());
-            ctx.put("nextStepName", processor.getNextStep().getName());
-            if(UtilMethods.isSet(processor.getTask())) {
-                ctx.put("workflowTaskTitle", UtilMethods.isSet(processor.getTask().getTitle()) ? processor.getTask().getTitle() : processor.getContentlet().getTitle());
-                ctx.put("modDate", processor.getTask().getModDate());
-            }
-            else {
-                ctx.put("workflowTaskTitle",  processor.getContentlet().getTitle());
-                ctx.put("modDate",  processor.getContentlet().getModDate());
-            }
-            ctx.put("contentType", processor.getContentlet().getContentType());
-
-            ctx.put("contentlet", contentlet);
-            ctx.put("content", contentlet);
-
-
-
-            if(UtilMethods.isSet(condition)){
-                condition = VelocityUtil.eval(condition, ctx);
-                if(UtilMethods.isSet(condition) && condition.indexOf("false")>-1){
-                    Logger.info(this.getClass(), processor.getAction().getName()  + " email condition contains false, skipping email send");
-                    return;
-                }
-            }
-
-
-            if(UtilMethods.isSet(toEmail)){
-                toEmail = VelocityUtil.eval(toEmail, ctx);
-            }
-            if(UtilMethods.isSet(toName)){
-                toName = VelocityUtil.eval(toName, ctx);
-            }
-            if(UtilMethods.isSet(fromEmail)){
-                fromEmail = VelocityUtil.eval(fromEmail, ctx);
-            }
-
-            if(UtilMethods.isSet(fromName)){
-                fromName = VelocityUtil.eval(fromName, ctx);
-            }
-            if(UtilMethods.isSet(emailSubject)){
-                emailSubject = VelocityUtil.eval(emailSubject, ctx);
-            }
-            if(UtilMethods.isSet(emailBody)){
-                emailBody = VelocityUtil.eval(emailBody, ctx);
-            }
-
-            Mailer mail = new Mailer();
-            mail.setToName(toName);
-            mail.setToEmail(toEmail);
-            mail.setFromEmail(fromEmail);
-            mail.setFromName(fromName);
-            mail.setSubject(emailSubject);
-
-            mail.setHTMLAndTextBody(emailBody);
-
-
-            if(UtilMethods.isSet(cc)){
-                cc = VelocityUtil.eval(cc, ctx);
-                mail.setCc(cc);
-            }
-            if(UtilMethods.isSet(bcc)){
-                bcc = VelocityUtil.eval(bcc, ctx);
-                mail.setBcc(bcc);
-            }
-
-            for(int x =1;x<6;x++){
-                String attachment = params.get("attachment" + x).getValue();
-
-                if (UtilMethods.isSet(attachment)) {
-                    Host fileHost = host;
-                    File f = null;
-                    try {
-                        if(attachment.indexOf("/") == -1 && processor.getContentlet().getBinary(attachment).exists()){
-                            f = processor.getContentlet().getBinary(attachment);
-                        }
-                        else{
-                            String hostname = attachment;
-                            String filename = attachment;
-                            if(hostname.startsWith("//")){
-                                hostname = hostname.substring(2,hostname.length());
-                                filename = hostname.substring(hostname.indexOf("/"), hostname.length());
-                                hostname = hostname.substring(0,hostname.indexOf("/"));
-                                fileHost = WebAPILocator.getHostWebAPI().resolveHostName(hostname, processor.getUser(), true);
-
-                            }
-
-                            Identifier id = APILocator.getIdentifierAPI().find(fileHost, filename);
-                            Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),processor.getContentlet().getLanguageId());
-
-                            if(!vinfo.isPresent()) {
-                                throw new DotDataException("Unable to find version info for attachment. Identifier: " + id.getId() + ", lang: " + processor.getContentlet().getLanguageId());
-                            }
-
-                            Contentlet cont = APILocator.getContentletAPI().find(vinfo.get().getLiveInode(), processor.getUser(), true);
-                            FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
-                            f = fileAsset.getFileAsset();
-                        }
-                        if(f!=null && f.exists()){
-                            mail.addAttachment(f);
-                        }
-                    } catch (Exception e) {
-                        Logger.error(this.getClass(), "Unable to get file attachment: " + e.getMessage());
-                    }
-                }
-            }
-
-            DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
-                try {
-                    mail.sendMessage();
-                } catch (Exception e) {
-
-                    final List<String> userList = new ArrayList<>();
-                    userList.add(processor.getUser().getUserId());
-                    this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder().setMessage("Error sending the email: " + e.getMessage())
-                            .setLife(5000)
-                            .setSeverity(MessageSeverity.ERROR).create(), userList);
-                }
-            });
-        } catch (Exception e) {
-            Logger.error(EmailActionlet.class, e.getMessage(), e);
-        }
-
+        });
     }
 
 }
