@@ -27,7 +27,6 @@ import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -95,38 +94,52 @@ public class LanguageUtil {
 	 * @param languageIdORCountryCode {@link String} id or lang code or lang code + country code
 	 * @return long -1 if not possible to figure out
 	 */
-	public static long getLanguageId (final String languageIdORCountryCode) {
+	public static long getLanguageId (final String languageIdORCountryCode){
+		return internalGetLanguageId(languageIdORCountryCode, true);
+	}
+
+	/**
+	 * Returns the language id from the string representation: could be a long as a string, or could be a language code, language code + country (en, en-US, es_US)
+	 * @param languageIdORCountryCode {@link String} id or lang code or lang code + country code
+	 * @param fallbackByBaseLang {@link boolean} if true, it will try to get the language by the base language
+	 * @return long -1 if not possible to figure out
+	 */
+	public static long internalGetLanguageId(final String languageIdORCountryCode, final boolean fallbackByBaseLang) {
 
 		long languageId = -1;
-		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
 		if (UtilMethods.isSet(languageIdORCountryCode)) {
-
-			languageId = ConversionUtils.toLong(languageIdORCountryCode, -1l);
+			//Try to get the language by the id
+			languageId = ConversionUtils.toLong(languageIdORCountryCode, -1L);
+			//No language id, try to get the language by the language code
 			if (-1 == languageId) {
-
-				final Tuple2<String, String> languageCountryCode =
-						getLanguageCountryCodes(languageIdORCountryCode);
-
+				final Tuple2<String, String> languageCountryCode = getLanguageCountryCodes(languageIdORCountryCode);
 				if (null != languageCountryCode._1) {
-
-					Language language = languageAPI.getLanguage(languageCountryCode._1, languageCountryCode._2);
-
-					if ((null == language || language.getId() <= 0)) {
-
-						if(UtilMethods.isSet(languageCountryCode._2)) { // fallback by base lang
-
-							language = languageAPI.getFallbackLanguage(languageCountryCode._1);
-						}
-					}
-
-					if (null != language && language.getId() > 0) {
-
-						languageId = language.getId();
-					}
+					languageId = internalGetLanguageId(languageId, languageCountryCode._1, languageCountryCode._2, fallbackByBaseLang);
 				}
 			}
 		}
+		return languageId;
+	}
 
+	/**
+	 * Returns the language id from the string representation: could be a long as a string, or could be a language code, language code + country (en, en-US, es_US)
+	 * @param languageId {@link long} id
+	 * @param languageCode {@link String} language code
+	 * @param countryCode {@link String} country code
+	 * @param fallbackByBaseLang {@link boolean} if true, it will try to get the language by the base language
+	 * @return long -1 if not possible to figure out
+	 */
+	private static long internalGetLanguageId(long languageId, final String languageCode, final String countryCode, final boolean fallbackByBaseLang) {
+		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+		Language language = languageAPI.getLanguage(languageCode, countryCode);
+
+		//Attempt fallback by base lang
+		if ((null == language || language.getId() <= 0) && (UtilMethods.isSet(languageCode) && fallbackByBaseLang)) {
+				language = languageAPI.getFallbackLanguage(countryCode);
+		}
+		if (null != language && language.getId() > 0) {
+			languageId = language.getId();
+		}
 		return languageId;
 	}
 
@@ -308,7 +321,6 @@ public class LanguageUtil {
 	 * @param locale locale to search the messages
 	 * @return
 	 */
-	@Deprecated(since="24.04")
 	public static Map getAllMessagesByLocale(final Locale locale){
     	return MultiMessageResources.class.cast(WebAppPool.get(PublicCompanyFactory.getDefaultCompanyId(), Globals.MESSAGES_KEY)).getMessages(locale);
 	}

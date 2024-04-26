@@ -453,7 +453,9 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	}
 
 	/**
-	 *
+	 * This is the key method that helps us difference when a LanguageKey is coming from the language variable files (the messages folder)
+	 * Or the properties files that live under the webapp/WEB-INF/messages folder
+	 * If the LanguageKey is coming from the messages folder it is a LanguageVariable otherwise it is ai18n LanguageKey
 	 * @return
 	 */
 	private String getGlobalVariablesPath () {
@@ -469,12 +471,25 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		return ret+File.separator;
 	}
 
+	/**
+	 * This method reads the language keys from the properties files located under the messages folder
+	 * using only the language code
+	 * @param langCode
+	 * @return
+	 */
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode) {
 
 		return getLanguageKeys(langCode, null);
 	}
 
+	/**
+	 * This method reads the language keys from the properties files located under the messages folder
+	 * so these LanguageKeys are the ones that are editable by the user these are Legacy LanguageVariables
+	 * @param langCode
+	 * @param countryCode
+	 * @return
+	 */
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode, String countryCode) {
 
@@ -572,6 +587,10 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		return list;
 	}
 
+	/**
+	 * This method creates the language files located under the messages folder
+	 * @param lang
+	 */
 	@Override
 	protected void createLanguageFiles(final Language lang) {
 		String langCodeAndCountryCode = lang.getLanguageCode() + "_" + lang.getCountryCode();
@@ -613,7 +632,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	}
 
 	/**
-	 *
+	 * This method reads the language keys from the properties files located under the messages folder
 	 * @param fileLangName
 	 * @param keys
 	 * @param toDeleteKeys

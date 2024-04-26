@@ -122,14 +122,14 @@ public abstract class LanguageFactory {
     protected abstract boolean hasLanguage(String languageCode, String countryCode);
 
     /**
-     * 
+     * This method retrieves the keys from the .properties located under the messages folder
      * @param langCode
      * @return
      */
     protected abstract List<LanguageKey> getLanguageKeys(String langCode);
 
     /**
-     * 
+     * This method retrieves the keys from the .properties located under the messages folder
      * @param langCode
      * @param countryCode
      * @return

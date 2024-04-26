@@ -204,7 +204,11 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return factory.hasLanguage(languageCode, countryCode);
 	}
 
-	@Deprecated(since = "24.04", forRemoval = true)
+	/**
+	 * This method reads the .properties files located under the messages folder
+	 * @param langCode
+	 * @return
+	 */
     @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode) {
@@ -213,7 +217,12 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return list;
 	}
 
-	@Deprecated(since = "24.04", forRemoval = true)
+	/**
+	 * This method reads the .properties files located under the messages folder
+	 * @param langCode
+	 * @param countryCode
+	 * @return
+	 */
     @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode, final String countryCode) {
@@ -222,7 +231,11 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return list;
 	}
 
-	@Deprecated(since = "24.04", forRemoval = true)
+	/**
+	 * This method reads the .properties files located under the messages folder
+	 * @param lang
+	 * @return
+	 */
     @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final Language lang) {
@@ -288,7 +301,6 @@ public class LanguageAPIImpl implements LanguageAPI {
         }
 	}
 
-  @Deprecated(since = "24.04", forRemoval = true)
   @CloseDBIfOpened
   @Override
   public Map<String, String> getStringsAsMap(final Locale locale, final Collection<String> keys) {
@@ -322,7 +334,6 @@ public class LanguageAPIImpl implements LanguageAPI {
         return (UtilMethods.isNotSet(value) || value.equals(key)) ? this.getStringFromPropertiesFile(new Locale( lang.getLanguageCode(), countryCode ), key) : value;
     }
 
-	@Deprecated(since = "24.04", forRemoval = true)
     private String getStringFromPropertiesFile (final Locale locale, final String key) {
         String value = null;
         try {
