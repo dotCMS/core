@@ -18,7 +18,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -50,6 +49,7 @@ public class AIViewToolTest {
     private static WireMockServer wireMockServer;
 
     private User user;
+    private ViewContext viewContext;
     private AIViewTool aiViewTool;
 
     @BeforeClass
@@ -68,10 +68,9 @@ public class AIViewToolTest {
 
     @Before
     public void setup() {
-        final ViewContext viewContext = mock(ViewContext.class);
+        viewContext = mock(ViewContext.class);
         user =  new UserDataGen().nextPersisted();
         aiViewTool = prepareAIViewTool();
-        aiViewTool.init(viewContext);
     }
 
     /**
@@ -81,7 +80,7 @@ public class AIViewToolTest {
      * Then the response should contain a text about Club Atletico Boca Juniors
      */
     @Test
-    public void test_generateText_fromStringPrompt() throws IOException {
+    public void test_generateText_fromStringPrompt() {
         // given
         final String prompt = "Short text about Club Atletico Boca Juniors";
         // when
@@ -97,7 +96,7 @@ public class AIViewToolTest {
      * Then the response should contain a text about Theory of Chaos
      */
     @Test
-    public void test_generateText_fromMapPrompt() throws IOException {
+    public void test_generateText_fromMapPrompt() {
         // given
         final Map<String, Object> prompt = Map.of("prompt", "Short text about Theory of Chaos");
         // when
@@ -169,7 +168,7 @@ public class AIViewToolTest {
     }
 
     private AIViewTool prepareAIViewTool() {
-        return new AIViewTool() {
+        return new AIViewTool(viewContext) {
             @Override
             User user() {
                 return user;

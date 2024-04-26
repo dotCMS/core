@@ -23,8 +23,7 @@ public class AIToolInfo extends ServletToolInfo {
     @Override
     public Object getInstance ( Object initData ) {
 
-        AIViewTool viewTool = new AIViewTool();
-        viewTool.init( initData );
+        final AIViewTool viewTool = new AIViewTool(initData);
 
         setScope( ViewContext.REQUEST );
 

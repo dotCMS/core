@@ -48,7 +48,7 @@ public class EmbeddingsDTO implements Serializable {
 
     public static final String ALL_INDICES = "all";
 
-    private EmbeddingsDTO(Builder builder) {
+    private EmbeddingsDTO(final Builder builder) {
         this.embeddings = (builder.embeddings == null) ? new Float[0] : builder.embeddings.toArray(new Float[0]);
         this.identifier = builder.identifier;
         this.inode = builder.inode;
@@ -73,7 +73,7 @@ public class EmbeddingsDTO implements Serializable {
         this.excludeInodes = UtilMethods.isSet(builder.excludeInodes) ? builder.excludeInodes:  new String[0] ;
     }
 
-    public static Builder from(CompletionsForm form) {
+    public static Builder from(final CompletionsForm form) {
         return new Builder()
                 .withContentType(String.join(",",form.contentType))
                 .withHost(form.site)
@@ -88,9 +88,7 @@ public class EmbeddingsDTO implements Serializable {
 
     }
 
-    public static Builder from(Map<String, Object> form) {
-
-
+    public static Builder from(final Map<String, Object> form) {
         return new Builder()
                 .withContentType((String) form.get("contentType"))
                 .withLanguage(Try.of(() -> Long.parseLong((String) form.get("language"))).getOrElse(APILocator.getLanguageAPI().getDefaultLanguage().getId()))
@@ -104,12 +102,10 @@ public class EmbeddingsDTO implements Serializable {
                 .withExcludeInodes(Try.of(() -> ((String) form.get("excludeInodes")).split("\\s+,")).getOrNull())
                 .withTemperature(Try.of(() -> Float.parseFloat(form.get("temperature").toString())).getOrElse(1f))
                 .withThreshold((Try.of(() -> Float.parseFloat((String) form.get("threshold"))).getOrElse(.25f)));
-
     }
 
-    public static Builder copy(EmbeddingsDTO values) {
+    public static Builder copy(final EmbeddingsDTO values) {
         return new Builder()
-
                 .withEmbeddings((values.embeddings == null) ? List.of() : Arrays.asList(values.embeddings))
                 .withIdentifier(values.identifier)
                 .withInode(values.inode)
@@ -208,105 +204,105 @@ public class EmbeddingsDTO implements Serializable {
         private String[] showFields;
 
 
-        public Builder withEmbeddings(List<Float> embeddings) {
+        public Builder withEmbeddings(final List<Float> embeddings) {
             this.embeddings = embeddings;
             return this;
         }
 
-        public Builder withIdentifier(String identifier) {
+        public Builder withIdentifier(final String identifier) {
             this.identifier = identifier;
             return this;
         }
 
-        public Builder withHost(String host) {
+        public Builder withHost(final String host) {
             this.host = host;
             return this;
         }
 
-        public Builder withExcludeIndentifiers(String[] exclude) {
+        public Builder withExcludeIndentifiers(final String[] exclude) {
             if (exclude != null && exclude.length > 0) {
                 this.excludeIdentifiers = exclude;
             }
             return this;
         }
-        public Builder withExcludeInodes(String[] exclude) {
+        public Builder withExcludeInodes(final String[] exclude) {
             if (exclude != null && exclude.length > 0) {
                 this.excludeInodes = exclude;
             }
             return this;
         }
 
-        public Builder withTemperature(float temperature) {
+        public Builder withTemperature(final float temperature) {
             this.temperature = temperature > 0 ? 0 : temperature > 2 ? 2 : temperature;
             return this;
         }
 
-        public Builder withQuery(String query) {
+        public Builder withQuery(final String query) {
             this.query = query;
             return this;
         }
 
-        public Builder withIndexName(String indexName) {
+        public Builder withIndexName(final String indexName) {
             this.indexName = UtilMethods.isSet(indexName) ? indexName : "default";
             return this;
         }
 
-        public Builder withOperator(String distanceOperator) {
+        public Builder withOperator(final String distanceOperator) {
             this.operator = distanceOperator;
             return this;
         }
 
-        public Builder withShowFields(String[] showFields) {
+        public Builder withShowFields(final String[] showFields) {
             this.showFields = showFields;
             return this;
         }
 
-        public Builder withUser(User user) {
+        public Builder withUser(final User user) {
             this.user = user;
             return this;
         }
 
-        public Builder withThreshold(float threshold) {
+        public Builder withThreshold(final float threshold) {
             this.threshold = threshold;
             return this;
         }
 
-        public Builder withExtractedText(String extractedText) {
+        public Builder withExtractedText(final String extractedText) {
             this.extractedText = extractedText;
             return this;
         }
 
-        public Builder withInode(String inode) {
+        public Builder withInode(final String inode) {
             this.inode = inode;
             return this;
         }
 
-        public Builder withLanguage(long language) {
+        public Builder withLanguage(final long language) {
             this.language = language;
             return this;
         }
 
-        public Builder withLimit(int limit) {
+        public Builder withLimit(final int limit) {
             this.limit = limit;
             return this;
         }
 
-        public Builder withTokenCount(int tokenCount) {
+        public Builder withTokenCount(final int tokenCount) {
             this.tokenCount = tokenCount;
             return this;
         }
 
-        public Builder withOffset(int offset) {
+        public Builder withOffset(final int offset) {
             this.offset = offset;
             return this;
         }
 
-        public Builder withTitle(String title) {
+        public Builder withTitle(final String title) {
             this.title = title;
             return this;
         }
 
-        public Builder withContentType(String contentType) {
+        public Builder withContentType(final String contentType) {
             this.contentType = contentType;
             return this;
         }
