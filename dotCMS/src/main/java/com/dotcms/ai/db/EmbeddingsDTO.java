@@ -21,6 +21,7 @@ import java.util.Map;
 
 @JsonDeserialize(builder = EmbeddingsDTO.Builder.class)
 public class EmbeddingsDTO implements Serializable {
+
     public final Float[] embeddings;
     public final String identifier;
     public final String inode;
@@ -85,20 +86,21 @@ public class EmbeddingsDTO implements Serializable {
                 .withThreshold(form.threshold)
                 .withTemperature(form.temperature)
                 .withTokenCount(form.responseLengthTokens);
-
     }
 
     public static Builder from(final Map<String, Object> form) {
         return new Builder()
                 .withContentType((String) form.get("contentType"))
-                .withLanguage(Try.of(() -> Long.parseLong((String) form.get("language"))).getOrElse(APILocator.getLanguageAPI().getDefaultLanguage().getId()))
+                .withLanguage(Try.of(() -> Long.parseLong((String) form.get("language")))
+                        .getOrElse(APILocator.getLanguageAPI().getDefaultLanguage().getId()))
                 .withHost((String) form.get("host"))
                 .withQuery((String) form.get("query"))
                 .withIndexName((String) form.get("indexName"))
                 .withLimit(Try.of(() -> Integer.parseInt((String) form.get("limit"))).getOrElse(100))
                 .withOffset(Try.of(() -> Integer.parseInt((String) form.get("offset"))).getOrElse(0))
                 .withOperator((String) form.get("operator"))
-                .withExcludeIndentifiers(Try.of(() -> ((String) form.get("excludeIdentifiers")).split("\\s+,")).getOrNull())
+                .withExcludeIndentifiers(Try.of(() -> ((String) form.get("excludeIdentifiers"))
+                        .split("\\s+,")).getOrNull())
                 .withExcludeInodes(Try.of(() -> ((String) form.get("excludeInodes")).split("\\s+,")).getOrNull())
                 .withTemperature(Try.of(() -> Float.parseFloat(form.get("temperature").toString())).getOrElse(1f))
                 .withThreshold((Try.of(() -> Float.parseFloat((String) form.get("threshold"))).getOrElse(.25f)));
@@ -128,7 +130,6 @@ public class EmbeddingsDTO implements Serializable {
                 .withExcludeInodes(values.excludeInodes)
                 .withUser(values.user)
                 .withQuery(values.query);
-
     }
 
     @Override
@@ -192,17 +193,13 @@ public class EmbeddingsDTO implements Serializable {
         private String query;
         @JsonSetter(nulls = Nulls.SKIP)
         private float temperature = 1f;
-
         @JsonProperty(defaultValue = "")
         private String[] excludeIdentifiers;
-
         @JsonProperty(defaultValue = "")
         private String[] excludeInodes;
-
         private User user;
         @JsonProperty(defaultValue = "")
         private String[] showFields;
-
 
         public Builder withEmbeddings(final List<Float> embeddings) {
             this.embeddings = embeddings;
@@ -307,9 +304,10 @@ public class EmbeddingsDTO implements Serializable {
             return this;
         }
 
-
         public EmbeddingsDTO build() {
             return new EmbeddingsDTO(this);
         }
+
     }
+
 }

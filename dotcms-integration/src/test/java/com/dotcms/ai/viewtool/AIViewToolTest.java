@@ -49,7 +49,6 @@ public class AIViewToolTest {
     private static WireMockServer wireMockServer;
 
     private User user;
-    private ViewContext viewContext;
     private AIViewTool aiViewTool;
 
     @BeforeClass
@@ -182,30 +181,30 @@ public class AIViewToolTest {
 
     private static AppConfig prepareConfig() {
         return new AppConfig(
-                Map.of(
-                        AppKeys.API_URL.key,
-                        Secret.builder()
-                                .withType(Type.STRING)
-                                .withValue(String.format(API_URL, wireMockServer.port()).toCharArray())
-                                .build(),
+            Map.of(
+                AppKeys.API_URL.key,
+                Secret.builder()
+                    .withType(Type.STRING)
+                    .withValue(String.format(API_URL, wireMockServer.port()).toCharArray())
+                    .build(),
 
-                        AppKeys.API_IMAGE_URL.key,
-                        Secret.builder()
-                                .withType(Type.STRING)
-                                .withValue(String.format(API_IMAGE_URL, wireMockServer.port()).toCharArray())
-                                .build(),
+                AppKeys.API_IMAGE_URL.key,
+                Secret.builder()
+                    .withType(Type.STRING)
+                    .withValue(String.format(API_IMAGE_URL, wireMockServer.port()).toCharArray())
+                    .build(),
 
-                        AppKeys.API_KEY.key,
-                        Secret.builder().withType(Type.STRING).withValue(API_KEY.toCharArray()).build(),
+                AppKeys.API_KEY.key,
+                Secret.builder().withType(Type.STRING).withValue(API_KEY.toCharArray()).build(),
 
-                        AppKeys.MODEL.key,
-                        Secret.builder().withType(Type.STRING).withValue(MODEL.toCharArray()).build(),
+                AppKeys.MODEL.key,
+                Secret.builder().withType(Type.STRING).withValue(MODEL.toCharArray()).build(),
 
-                        AppKeys.IMAGE_MODEL.key,
-                        Secret.builder().withType(Type.STRING).withValue(IMAGE_MODEL.toCharArray()).build(),
+                AppKeys.IMAGE_MODEL.key,
+                Secret.builder().withType(Type.STRING).withValue(IMAGE_MODEL.toCharArray()).build(),
 
-                        AppKeys.IMAGE_SIZE.key,
-                        Secret.builder().withType(Type.SELECT).withValue(IMAGE_SIZE.toCharArray()).build()));
+                AppKeys.IMAGE_SIZE.key,
+                Secret.builder().withType(Type.SELECT).withValue(IMAGE_SIZE.toCharArray()).build()));
     }
 
     private static WireMockServer prepareWireMock() {

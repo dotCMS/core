@@ -1,8 +1,8 @@
 package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.api.EmbeddingsAPI;
-import com.dotcms.ai.app.AppConfig;
-import com.dotcms.ai.app.ConfigService;
+//import com.dotcms.ai.app.AppConfig;
+//import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.contenttype.model.field.Field;
@@ -23,15 +23,11 @@ import java.util.Map;
 import java.util.Optional;
 
 public class SearchTool implements ViewTool {
-    final private HttpServletRequest request;
-    final private Host host;
+
+    private final HttpServletRequest request;
+    private final Host host;
     //final private AppConfig app;
 
-    /**
-     * $ai.search
-     *
-     * @param initData
-     */
     SearchTool(final Object initData) {
         this.request = ((ViewContext) initData).getRequest();
         this.host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(this.request);
@@ -73,8 +69,6 @@ public class SearchTool implements ViewTool {
         return query(query, "default");
     }
 
-
-
     public Object related(final ContentMap contentMap, final String indexName) {
         return related(contentMap.getContentObject(), indexName);
     }
@@ -92,7 +86,7 @@ public class SearchTool implements ViewTool {
             final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()
                     .withQuery(contentToRelate.get())
                     .withIndexName(indexName)
-                    .withExcludeIndentifiers(new String[]{contentlet.getIdentifier()})
+                    .withExcludeIndentifiers(new String[] {contentlet.getIdentifier()})
                     .withUser(user)
                     .withLimit(50)
                     .withThreshold(.25f)
