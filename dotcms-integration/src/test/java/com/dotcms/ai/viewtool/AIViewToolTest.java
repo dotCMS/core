@@ -18,7 +18,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -50,6 +49,7 @@ public class AIViewToolTest {
     private static WireMockServer wireMockServer;
 
     private User user;
+    private ViewContext viewContext;
     private AIViewTool aiViewTool;
 
     @BeforeClass
@@ -79,7 +79,7 @@ public class AIViewToolTest {
      * Then the response should contain a text about Club Atletico Boca Juniors
      */
     @Test
-    public void test_generateText_fromStringPrompt() throws IOException {
+    public void test_generateText_fromStringPrompt() {
         // given
         final String prompt = "Short text about Club Atletico Boca Juniors";
         // when
@@ -95,7 +95,7 @@ public class AIViewToolTest {
      * Then the response should contain a text about Theory of Chaos
      */
     @Test
-    public void test_generateText_fromMapPrompt() throws IOException {
+    public void test_generateText_fromMapPrompt() {
         // given
         final Map<String, Object> prompt = Map.of("prompt", "Short text about Theory of Chaos");
         // when

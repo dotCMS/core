@@ -25,27 +25,31 @@ import java.util.Optional;
 public class SearchTool implements ViewTool {
     final private HttpServletRequest request;
     final private Host host;
-    final private AppConfig app;
+    //final private AppConfig app;
 
     /**
      * $ai.search
      *
      * @param initData
      */
-    SearchTool(Object initData) {
+    SearchTool(final Object initData) {
         this.request = ((ViewContext) initData).getRequest();
         this.host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(this.request);
-        this.app = ConfigService.INSTANCE.config(this.host);
+        //this.app = ConfigService.INSTANCE.config(this.host);
     }
 
     @Override
-    public void init(Object initData) {
-        /* unneeded because of constructor */
-    }
+    public void init(final Object initData) {}
 
-    public Object query(Map<String, Object> mapIn) {
-        User user = PortalUtil.getUser(request);
-        EmbeddingsDTO searcher = EmbeddingsDTO.from(mapIn).withUser(user).build();
+    public Object query(final String query, final String indexName) {
+        final User user = PortalUtil.getUser(request);
+        final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()
+                .withQuery(query)
+                .withIndexName(indexName)
+                .withUser(user)
+                .withLimit(50)
+                .withThreshold(.25f)
+                .build();
 
         try {
             return EmbeddingsAPI.impl(host).searchForContent(searcher);
@@ -54,35 +58,45 @@ public class SearchTool implements ViewTool {
         }
     }
 
-    public Object query(String query) {
+    public Object query(final Map<String, Object> mapIn) {
+        final User user = PortalUtil.getUser(request);
+        final EmbeddingsDTO searcher = EmbeddingsDTO.from(mapIn).withUser(user).build();
+
+        try {
+            return EmbeddingsAPI.impl(host).searchForContent(searcher);
+        } catch (Exception e) {
+            return Map.of("error", e.getMessage(), "stackTrace", Arrays.asList(e.getStackTrace()));
+        }
+    }
+
+    public Object query(final String query) {
         return query(query, "default");
     }
 
-    public Object query(String query, String indexName) {
-        User user = PortalUtil.getUser(request);
-        EmbeddingsDTO searcher = new EmbeddingsDTO.Builder().withQuery(query).withIndexName(indexName).withUser(user).withLimit(50).withThreshold(.25f).build();
 
-        try {
-            return EmbeddingsAPI.impl(host).searchForContent(searcher);
-        } catch (Exception e) {
-            return Map.of("error", e.getMessage(), "stackTrace", Arrays.asList(e.getStackTrace()));
-        }
-    }
 
-    public Object related(ContentMap contentMap, String indexName) {
+    public Object related(final ContentMap contentMap, final String indexName) {
         return related(contentMap.getContentObject(), indexName);
     }
 
-    public Object related(Contentlet contentlet, String indexName) {
+    public Object related(final Contentlet contentlet, final String indexName) {
         try {
-            User user = PortalUtil.getUser(request);
-            List<Field> fields = ContentToStringUtil.impl.get().guessWhatFieldsToIndex(contentlet);
+            final User user = PortalUtil.getUser(request);
+            final List<Field> fields = ContentToStringUtil.impl.get().guessWhatFieldsToIndex(contentlet);
 
-            Optional<String> contentToRelate = ContentToStringUtil.impl.get().parseFields(contentlet, fields);
+            final Optional<String> contentToRelate = ContentToStringUtil.impl.get().parseFields(contentlet, fields);
             if (contentToRelate.isEmpty()) {
                 return new JSONObject();
             }
-            EmbeddingsDTO searcher = new EmbeddingsDTO.Builder().withQuery(contentToRelate.get()).withIndexName(indexName).withExcludeIndentifiers(new String[]{contentlet.getIdentifier()}).withUser(user).withLimit(50).withThreshold(.25f).build();
+
+            final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()
+                    .withQuery(contentToRelate.get())
+                    .withIndexName(indexName)
+                    .withExcludeIndentifiers(new String[]{contentlet.getIdentifier()})
+                    .withUser(user)
+                    .withLimit(50)
+                    .withThreshold(.25f)
+                    .build();
             return EmbeddingsAPI.impl(host).searchForContent(searcher);
         } catch (Exception e) {
             return Map.of("error", e.getMessage(), "stackTrace", Arrays.asList(e.getStackTrace()));
