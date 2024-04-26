@@ -37,8 +37,8 @@ public class BulkEmbeddingsRunner implements Runnable {
                 List<Field> fields = contentlet.getContentType().fields().stream().filter(f -> embeddingsForm.fieldsAsList().contains(f.variable().toLowerCase())).collect(Collectors.toList());
 
                 // if a velocity template is passed in, use it.  Otherwise, try the fields
-                if (!EmbeddingsAPI.impl().generateEmbeddingsforContent(contentlet, embeddingsForm.velocityTemplate, embeddingsForm.indexName)) {
-                    EmbeddingsAPI.impl().generateEmbeddingsforContent(contentlet, fields, embeddingsForm.indexName);
+                if (!EmbeddingsAPI.impl().generateEmbeddingsForContent(contentlet, embeddingsForm.velocityTemplate, embeddingsForm.indexName)) {
+                    EmbeddingsAPI.impl().generateEmbeddingsForContent(contentlet, fields, embeddingsForm.indexName);
                 }
             } catch (Exception e) {
                 Logger.warn(this.getClass(), "unable to embed content:" + inode + " error:" + e.getMessage(), e);
