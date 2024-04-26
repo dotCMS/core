@@ -222,6 +222,7 @@ public class LanguageCacheImpl extends LanguageCache {
 		return "LanguageVariablesCacheGroup";
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	public void setLanguageKeys(String langCode, String countryCode, List<LanguageKey> keys) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
@@ -229,6 +230,7 @@ public class LanguageCacheImpl extends LanguageCache {
         cache.put(languageKey, keys, getPrimaryGroup());
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	public void removeLanguageKeys(String langCode, String countryCode) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
@@ -236,6 +238,7 @@ public class LanguageCacheImpl extends LanguageCache {
         cache.remove(languageKey, getPrimaryGroup());
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	public List<LanguageKey> getLanguageKeys(String langCode, String countryCode) throws DotCacheException {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();

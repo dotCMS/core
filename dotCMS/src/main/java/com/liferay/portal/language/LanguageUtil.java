@@ -101,10 +101,20 @@ public class LanguageUtil {
 	/**
 	 * Returns the language id from the string representation: could be a long as a string, or could be a language code, language code + country (en, en-US, es_US)
 	 * @param languageIdORCountryCode {@link String} id or lang code or lang code + country code
+	 * @param fallbackByBaseLan {@link boolean} if true, it will try to get the language by the base language
+	 * @return long -1 if not possible to figure out
+	 */
+	public static long getLanguageId (final String languageIdORCountryCode, final boolean fallbackByBaseLan){
+		return internalGetLanguageId(languageIdORCountryCode, fallbackByBaseLan);
+	}
+
+	/**
+	 * Returns the language id from the string representation: could be a long as a string, or could be a language code, language code + country (en, en-US, es_US)
+	 * @param languageIdORCountryCode {@link String} id or lang code or lang code + country code
 	 * @param fallbackByBaseLang {@link boolean} if true, it will try to get the language by the base language
 	 * @return long -1 if not possible to figure out
 	 */
-	public static long internalGetLanguageId(final String languageIdORCountryCode, final boolean fallbackByBaseLang) {
+	private static long internalGetLanguageId(final String languageIdORCountryCode, final boolean fallbackByBaseLang) {
 
 		long languageId = -1;
 		if (UtilMethods.isSet(languageIdORCountryCode)) {

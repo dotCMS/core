@@ -477,6 +477,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	 * @param langCode
 	 * @return
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode) {
 
@@ -490,6 +491,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	 * @param countryCode
 	 * @return
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode, String countryCode) {
 
@@ -591,6 +593,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	 * This method creates the language files located under the messages folder
 	 * @param lang
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	protected void createLanguageFiles(final Language lang) {
 		String langCodeAndCountryCode = lang.getLanguageCode() + "_" + lang.getCountryCode();
@@ -638,6 +641,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	 * @param toDeleteKeys
 	 * @throws IOException
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
 	private void saveLanguageKeys(final String fileLangName, Map<String, String> keys, final Set<String> toDeleteKeys) throws IOException {
 
 		if(keys == null)
@@ -711,6 +715,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		tempFile.delete();
 	}
 
+	@Deprecated(since = "24.04", forRemoval = true)
 	@Override
 	protected void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException {
 

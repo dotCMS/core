@@ -179,7 +179,7 @@ public class MultiMessageResources extends PropertyMessageResources {
         if (name.contains("cms_language")) {
 
             final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-            final long languageId = LanguageUtil.internalGetLanguageId(localeKey, false);
+            final long languageId = LanguageUtil.getLanguageId(localeKey, false);
             final List<LanguageVariable> vars = Try.of(()->
               languageVariableAPI.findVariables(languageId, APILocator.systemUser())
             ).getOrElse(List.of());

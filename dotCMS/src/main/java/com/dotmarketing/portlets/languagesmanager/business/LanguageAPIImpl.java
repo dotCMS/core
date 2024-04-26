@@ -209,6 +209,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	 * @param langCode
 	 * @return
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
     @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode) {
@@ -223,6 +224,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	 * @param countryCode
 	 * @return
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
     @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode, final String countryCode) {
@@ -236,6 +238,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	 * @param lang
 	 * @return
 	 */
+	@Deprecated(since = "24.04", forRemoval = true)
     @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final Language lang) {
