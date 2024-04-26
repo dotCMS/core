@@ -38,6 +38,7 @@ public class AIViewTool implements ViewTool {
 
     @Override
     public void init(final Object obj) {
+        /* unneeded because of constructor */
     }
 
     /**
@@ -47,7 +48,7 @@ public class AIViewTool implements ViewTool {
      * @return JSONObject instance
      */
     public JSONObject generateText(final String prompt) {
-        return justGenerate(prompt, p -> chatService.sendTextPrompt(p));
+        return justGenerate(prompt, chatService::sendTextPrompt);
     }
 
     /**
@@ -68,7 +69,7 @@ public class AIViewTool implements ViewTool {
      * @return JSONObject instance
      */
     public JSONObject generateImage(final String prompt) {
-        return generateHandled(prompt, p -> imageService.sendTextPrompt(p));
+        return generateHandled(prompt, imageService::sendTextPrompt);
     }
 
     /**
