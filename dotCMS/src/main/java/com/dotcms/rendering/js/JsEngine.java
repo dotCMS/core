@@ -50,6 +50,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -214,7 +215,7 @@ public class JsEngine implements ScriptEngine {
             return CollectionsUtils.toSerializableMap(resultMap); // we need to do that b.c the context will be close after the return and the resultMap won;t be usable.
         }
 
-        return CollectionsUtils.map("output", eval.asString(), DOT_JSON, dotJSON);
+        return new HashMap<>(Map.of("output", eval.asString(), DOT_JSON, dotJSON));
     }
 
     private void checkRejected(final Value eval) {

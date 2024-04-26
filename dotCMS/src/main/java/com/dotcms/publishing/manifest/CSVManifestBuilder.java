@@ -1,14 +1,12 @@
 package com.dotcms.publishing.manifest;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,6 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * CSV Manifest file builder, creae a manifest file with the headers:

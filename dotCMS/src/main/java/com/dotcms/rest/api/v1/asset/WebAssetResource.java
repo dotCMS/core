@@ -63,9 +63,9 @@ public class WebAssetResource {
                 .rejectWhenNoUser(true).init();
 
         final User user = initDataObject.getUser();
-        Logger.info(this,
-                String.format("User [%s] is requesting assets info for path [%s]", user.getUserId(),
-                        form.assetPath()));
+        Logger.debug(this,
+                String.format("User [%s] is requesting assets info for path [%s]",
+                        user.getUserId(), form.assetPath()));
         final WebAssetView asset = helper.getAssetInfo(form.assetPath(), user);
         return Response.ok(new WebAssetEntityView(asset)).build();
     }
@@ -97,8 +97,9 @@ public class WebAssetResource {
                 .rejectWhenNoUser(true).init();
 
         final User user = initDataObject.getUser();
-        Logger.info(this,
-                String.format("User [%s] is requesting asset content for download for path [%s]", user.getUserId(), form.assetPath()));
+        Logger.debug(this,
+                String.format("User [%s] is requesting asset content for download for path [%s]",
+                        user.getUserId(), form.assetPath()));
         final File file = helper.getAsset(form, user).getFileAsset();
         return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
@@ -137,7 +138,9 @@ public class WebAssetResource {
         final User user = initDataObject.getUser();
 
         final WebAssetView webAssetView = helper.saveUpdateAsset(request, form, user);
-        Logger.info(this, String.format("User [%s] is uploading asset for path [%s]", user.getUserId(), form.getAssetPath()));
+        Logger.debug(this,
+                String.format("User [%s] is uploading asset for path [%s]", user.getUserId(),
+                        form.getAssetPath()));
         return Response.ok(new WebAssetEntityView(webAssetView)).build();
     }
 
@@ -160,7 +163,7 @@ public class WebAssetResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             AssetInfoRequestForm form
-    ) throws DotSecurityException, DotDataException, IOException {
+    ) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requiredBackendUser(true)
@@ -195,7 +198,7 @@ public class WebAssetResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             AssetInfoRequestForm form
-    ) throws DotSecurityException, DotDataException, IOException {
+    ) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requiredBackendUser(true)
@@ -206,7 +209,8 @@ public class WebAssetResource {
         final User user = initDataObject.getUser();
         helper.archiveAsset(form.assetPath(), user);
         Logger.info(this,
-                String.format("User [%s] deleted asset for path [%s] ", user.getUserId(), form.assetPath()));
+                String.format("User [%s] archived asset for path [%s] ", user.getUserId(),
+                        form.assetPath()));
         return Response.ok(new ResponseEntityBooleanView(true)).build();
     }
 
@@ -230,7 +234,7 @@ public class WebAssetResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             AssetInfoRequestForm form
-    ) throws DotSecurityException, DotDataException, IOException {
+    ) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requiredBackendUser(true)
@@ -241,9 +245,8 @@ public class WebAssetResource {
         final User user = initDataObject.getUser();
         helper.deleteFolder(form.assetPath(), user);
         Logger.info(this,
-                String.format("User [%s] deleted foldr for path [%s]. ",
-                        user.getUserId(), form.assetPath()
-                ));
+                String.format("User [%s] deleted folder for path [%s]. ",
+                        user.getUserId(), form.assetPath()));
         return Response.ok(new ResponseEntityBooleanView(true)).build();
     }
 

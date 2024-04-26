@@ -1,7 +1,5 @@
 package com.dotcms.jitsu;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.http.CircuitBreakerUrl;
@@ -85,7 +83,7 @@ public class EventLogRunnable implements Runnable {
         return  CircuitBreakerUrl.builder()
             .setMethod(Method.POST)
             .setUrl(url)
-            .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
+            .setParams(Map.of("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
             .setTimeout(4000)
             .setHeaders(POSTING_HEADERS)
             .setThrowWhenNot2xx(false);
