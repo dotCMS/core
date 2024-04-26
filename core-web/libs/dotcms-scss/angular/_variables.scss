@@ -21,8 +21,8 @@ $input-border-color-focus: $color-palette-gray-500;
 $input-bg-color: $color-palette-gray-500;
 $input-bg-color-hover: $color-palette-gray-500;
 
-$bg-highlight: $color-palette-primary-op-20;
-$text-color-highlight: $black;
+$bg-highlight: $color-palette-primary-op-10;
+$text-color-highlight: $color-palette-primary;
 $border-color-highlight: $color-palette-primary-op-10;
 
 $focus-bg: $color-palette-primary-op-10;
@@ -35,10 +35,6 @@ $border-color-hover: $color-palette-primary;
 $button-text-color-disabled: $color-palette-gray-500;
 $button-text-color: $color-palette-gray-500;
 $button-shadow-focus: 0 0 0 4px $color-palette-secondary-op-20;
-
-// Tables
-$th-text-color: $color-palette-gray-500;
-$table-border-color: $color-palette-gray-500;
 
 $warn: $orange;
 $info: $color-palette-secondary;

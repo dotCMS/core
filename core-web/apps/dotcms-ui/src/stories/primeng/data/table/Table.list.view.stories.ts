@@ -121,34 +121,40 @@ export const Default: StoryFn = () => ({
     },
     template: `
         <p-table [value]="data" styleClass="dotTable">
-        <ng-template pTemplate="header">
-            <tr>
-                <th style="width: 5%" >
-                    <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-                </th>
-                <th pSortableColumn="name">Title <p-sortIcon field="name"></p-sortIcon></th>
-                <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
-                <th pSortableColumn="assignee">Assignee <p-sortIcon field="assignee"></p-sortIcon></th>
-                <th pSortableColumn="step">Step <p-sortIcon field="step"></p-sortIcon></th>
-                <th pSortableColumn="date">Last Updated <p-sortIcon field="date"></p-sortIcon></th>
-                <th>Menu</th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-workflowItem>
-            <tr [pSelectableRow]="workflowItem">
-                <td>
-                    <p-tableCheckbox [value]="workflowItem"></p-tableCheckbox>
-                </td>
-                <td>{{ workflowItem.name }}</td>
-                <td><p-tag  class="sm p-tag-success" [value]="workflowItem.status"/></td>
-                <td>{{ workflowItem.assignee }}</td>
-                <td>{{ workflowItem.step }}</td>
-                <td>{{ workflowItem.date | date }}</td>
-                <td>
-                    <i class="pi pi-ellipsis-v"></i>
-                </td>
-            </tr>
-        </ng-template>
+            <ng-template pTemplate="caption">
+                <span>List of Documents</span>
+            </ng-template>  
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="width: 5%" >
+                        <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                    </th>
+                    <th pSortableColumn="name">Title <p-sortIcon field="name"></p-sortIcon></th>
+                    <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
+                    <th pSortableColumn="assignee">Assignee <p-sortIcon field="assignee"></p-sortIcon></th>
+                    <th pSortableColumn="step">Step <p-sortIcon field="step"></p-sortIcon></th>
+                    <th pSortableColumn="date">Last Updated <p-sortIcon field="date"></p-sortIcon></th>
+                    <th>Menu</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-workflowItem>
+                <tr [pSelectableRow]="workflowItem" [pSelectableRowDisabled]="true">
+                    <td>
+                        <p-tableCheckbox [value]="workflowItem"></p-tableCheckbox>
+                    </td>
+                    <td>{{ workflowItem.name }}</td>
+                    <td><p-tag  class="sm p-tag-success" [value]="workflowItem.status"/></td>
+                    <td>{{ workflowItem.assignee }}</td>
+                    <td>{{ workflowItem.step }}</td>
+                    <td>{{ workflowItem.date | date }}</td>
+                    <td>
+                        <i class="pi pi-ellipsis-v"></i>
+                    </td>
+                </tr>
+            </ng-template>
+             <ng-template pTemplate="summary">
+                    <span>In total there are ## documents.</span>
+            </ng-template>
         </p-table>
   `
 });

@@ -6,30 +6,26 @@
 
 .dotTable {
     &.p-datatable {
-        border: 1px solid $color-palette-gray-400;
         border-radius: $border-radius-md;
 
         > .p-datatable-wrapper {
             border-radius: $border-radius-md;
+            border: 1px solid $color-palette-gray-400;
         }
 
-        & .p-paginator-top,
-        & .p-paginator-bottom {
+        .p-paginator-top,
+        .p-paginator-bottom {
             border-width: 0 0 1px 0;
             border-radius: 0;
         }
 
-        & .p-datatable-header,
-        & .p-datatable-footer {
-            background: $white;
-            color: $black;
-            border: 1px solid $table-border-color;
-            border-width: 0 0 1px 0;
-            padding: $spacing-2 $spacing-2;
-            font-weight: $font-weight-semi-bold;
+        .p-datatable-header,
+        .p-datatable-footer {
+            border: none;
+            padding: $spacing-3;
         }
 
-        & .p-datatable-thead > tr > th {
+        .p-datatable-thead > tr > th {
             background-color: $color-palette-gray-200;
             border: 1px solid $color-palette-gray-300;
             border-width: 0 0 1px 0;
@@ -50,26 +46,26 @@
             }
         }
 
-        & .p-datatable-tfoot > tr > td {
+        .p-datatable-tfoot > tr > td {
             text-align: left;
-            padding: $spacing-2 $spacing-2;
-            border: 1px solid $table-border-color;
+            padding: $spacing-2;
+            border: 1px solid $color-palette-gray-300;
             border-width: 0 0 1px 0;
             font-weight: $font-weight-semi-bold;
             color: $black;
             background: $white;
         }
 
-        & .p-sortable-column {
+        .p-sortable-column {
             outline: 0 none;
 
-            & .p-sortable-column-icon {
+            .p-sortable-column-icon {
                 display: inline-block;
                 color: $color-palette-gray-700;
                 margin-left: $spacing-1;
             }
 
-            & .p-sortable-column-badge {
+            .p-sortable-column-badge {
                 border-radius: 50%;
                 height: 1.143rem;
                 min-width: 1.143rem;
@@ -82,19 +78,19 @@
             &:not(.p-highlight):hover {
                 color: $text-color-hover;
 
-                & .p-sortable-column-icon {
+                .p-sortable-column-icon {
                     color: $black;
                 }
             }
 
             &.p-highlight {
-                & .p-sortable-column-icon {
+                .p-sortable-column-icon {
                     color: $color-palette-primary-500;
                 }
             }
         }
 
-        & .p-datatable-tbody > tr {
+        .p-datatable-tbody > tr {
             background: $white;
             color: $black;
             height: auto;
@@ -107,10 +103,9 @@
                 background-color: $color-palette-primary-200;
             }
 
-            & > td {
+            > td {
                 text-align: left;
-                border: 1px solid $color-palette-gray-300;
-                border-width: 0 0 1px 0;
+                border-bottom: 1px solid $color-palette-gray-300;
                 padding: 0.625rem $spacing-1;
                 font-size: $font-size-smd;
 
@@ -122,10 +117,10 @@
                     padding-right: $spacing-3;
                 }
 
-                & .p-row-toggler,
-                & .p-row-editor-init,
-                & .p-row-editor-save,
-                & .p-row-editor-cancel {
+                .p-row-toggler,
+                .p-row-editor-init,
+                .p-row-editor-save,
+                .p-row-editor-cancel {
                     width: $spacing-5;
                     height: $spacing-5;
                     color: $black;
@@ -147,7 +142,7 @@
                     }
                 }
 
-                & .p-row-editor-save {
+                .p-row-editor-save {
                     margin-right: $spacing-1;
                 }
 
@@ -157,8 +152,8 @@
             }
 
             &.p-highlight {
-                background: $bg-highlight;
-                color: $text-color-highlight;
+                background: $color-palette-primary-op-20;
+                color: $black;
             }
 
             &.disabled-row {
@@ -187,66 +182,66 @@
             }
         }
 
-        & .p-column-resizer-helper {
+        .p-column-resizer-helper {
             background: $color-palette-primary;
         }
 
-        & .p-datatable-scrollable-header,
-        & .p-datatable-scrollable-footer {
+        .p-datatable-scrollable-header,
+        .p-datatable-scrollable-footer {
             background: $white;
         }
 
-        & .p-datatable-loading-icon {
+        .p-datatable-loading-icon {
             font-size: $font-size-xxxl;
             color: $color-palette-secondary;
         }
 
         &.p-datatable-hoverable-rows {
-            & .p-datatable-tbody > tr:not(.p-highlight):hover {
+            .p-datatable-tbody > tr:not(.p-highlight):hover {
                 background: $color-palette-primary-100;
                 color: $text-color-hover;
                 transition: background-color ease-in $basic-speed;
             }
 
-            & .p-datatable-tbody > tr.disabled-row:hover {
+            .p-datatable-tbody > tr.disabled-row:hover {
                 background: $color-palette-gray-200;
                 color: $color-palette-gray-700;
             }
         }
 
         &.p-datatable-gridlines {
-            & .p-datatable-header {
+            .p-datatable-header {
                 border-width: 1px 1px 0 1px;
             }
 
-            & .p-datatable-footer {
+            .p-datatable-footer {
                 border-width: 0 1px 1px 1px;
             }
 
-            & .p-paginator-top {
+            .p-paginator-top {
                 border-width: 0 1px 0 1px;
             }
 
-            & .p-paginator-bottom {
+            .p-paginator-bottom {
                 border-width: 0 1px 1px 1px;
             }
 
-            & .p-datatable-thead > tr > th,
-            & .p-datatable-tbody > tr > td,
-            & .p-datatable-tfoot > tr > td {
+            .p-datatable-thead > tr > th,
+            .p-datatable-tbody > tr > td,
+            .p-datatable-tfoot > tr > td {
                 border-width: 1px;
             }
         }
 
         &.p-datatable-striped {
-            & .p-datatable-tbody > tr:nth-child(even) {
+            .p-datatable-tbody > tr:nth-child(even) {
                 background: rgba(0, 0, 0, 0.02);
 
                 &.p-highlight {
                     background: $color-palette-primary-100;
                     color: $text-color-highlight;
 
-                    & .p-row-toggler {
+                    .p-row-toggler {
                         color: $text-color-highlight;
 
                         &:hover {
@@ -258,32 +253,32 @@
         }
 
         &.p-datatable-sm {
-            & .p-datatable-header,
-            & .p-datatable-footer {
+            .p-datatable-header,
+            .p-datatable-footer {
                 padding: 0.375rem 0.375rem;
             }
 
-            & .p-datatable-thead > tr > th,
-            & .p-datatable-tbody > tr > td,
-            & .p-datatable-tfoot > tr > td {
+            .p-datatable-thead > tr > th,
+            .p-datatable-tbody > tr > td,
+            .p-datatable-tfoot > tr > td {
                 padding: 0.375rem 0.375rem;
             }
         }
 
         &.p-datatable-lg {
-            & .p-datatable-header,
-            & .p-datatable-footer {
+            .p-datatable-header,
+            .p-datatable-footer {
                 padding: 0.9375rem 0.9375rem;
             }
 
-            & .p-datatable-thead > tr > th,
-            & .p-datatable-tbody > tr > td,
-            & .p-datatable-tfoot > tr > td {
+            .p-datatable-thead > tr > th,
+            .p-datatable-tbody > tr > td,
+            .p-datatable-tfoot > tr > td {
                 padding: 0.9375rem 0.9375rem;
             }
         }
 
-        & .p-datatable-tbody > tr:not(.p-highlight):focus {
+        .p-datatable-tbody > tr:not(.p-highlight):focus {
             background-color: $color-palette-primary-100;
         }
     }

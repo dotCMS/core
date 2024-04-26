@@ -13,7 +13,7 @@
 .p-datatable .p-datatable-header {
     background: $white;
     color: $black;
-    border: 1px solid $table-border-color;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     padding: $spacing-2 $spacing-2;
     font-weight: $font-weight-semi-bold;
@@ -22,7 +22,7 @@
 .p-datatable .p-datatable-footer {
     background: $white;
     color: $black;
-    border: 1px solid $table-border-color;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     padding: $spacing-2 $spacing-2;
     font-weight: $font-weight-semi-bold;
@@ -52,7 +52,7 @@
 .p-datatable .p-datatable-tfoot > tr > td {
     text-align: left;
     padding: $spacing-2 $spacing-2;
-    border: 1px solid $table-border-color;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     font-weight: $font-weight-semi-bold;
     color: $black;
