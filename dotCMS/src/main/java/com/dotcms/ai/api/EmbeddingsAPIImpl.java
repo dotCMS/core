@@ -13,6 +13,7 @@ import com.dotcms.ai.util.OpenAIThreadPool;
 import com.dotcms.ai.util.VelocityContextFactory;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -22,7 +23,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -42,12 +45,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
-    private static final Cache<String, Tuple2<Integer, List<Float>>> embeddingCache =
+    private static final Cache<String, Tuple2<Integer, List<Float>>> EMBEDDING_CACHE =
             Caffeine.newBuilder()
                     .expireAfterWrite(
                             Duration.ofSeconds(
@@ -61,17 +65,9 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     final AppConfig config;
 
-    public EmbeddingsAPIImpl(final Host host) {
-        this.config = ConfigService.INSTANCE.config(host);
-    }
-
+    @WrapInTransaction
     @Override
-    public void shutdown() {
-        Try.run(OpenAIThreadPool::shutdown);
-    }
-
-    @Override
-    public int deleteByQuery(@NotNull final  String deleteQuery, final Optional<String> indexName, final User user) {
+    public int deleteByQuery(@NotNull final String deleteQuery, final Optional<String> indexName, final User user) {
         int total=0;
         final int limit = 100;
         int newOffset = 0;
@@ -97,7 +93,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                     final String esId = row.getId();
                     final Builder dto = new EmbeddingsDTO.Builder().withIdentifier(row.getIdentifier());
 
-                    final long languageId = Try.of(()->esId.split("_")[1]).map(Long::parseLong).getOrElse(-1L);
+                    final long languageId = Try.of(() -> esId.split("_")[1]).map(Long::parseLong).getOrElse(-1L);
                     if (languageId > 0) {
                         dto.withLanguage((int)languageId);
                     } else {
@@ -106,7 +102,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
                     indexName.ifPresent(dto::withIndexName);
 
-                    total += (EmbeddingsAPI.impl().deleteEmbedding(dto.build()) > 0) ? 1 : 0;
+                    total += (deleteEmbedding(dto.build()) > 0) ? 1 : 0;
                 }
             }
 
@@ -117,11 +113,22 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         }
     }
 
+    public EmbeddingsAPIImpl(final Host host) {
+        this.config = ConfigService.INSTANCE.config(host);
+    }
+
     @Override
+    public void shutdown() {
+        Try.run(OpenAIThreadPool::shutdown);
+    }
+
+    @Override
+    @WrapInTransaction
     public int deleteEmbedding(@NotNull final EmbeddingsDTO dto) {
         return EmbeddingsDB.impl.get().deleteEmbeddings(dto);
     }
 
+    @WrapInTransaction
     @Override
     public boolean generateEmbeddingsForContent(@NotNull final Contentlet contentlet,
                                                 final List<Field> tryFields,
@@ -177,6 +184,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         return true;
     }
 
+    @WrapInTransaction
     @Override
     public Map<String, List<Field>> parseTypesAndFields(final String typeAndFieldParam) {
         if (UtilMethods.isEmpty(typeAndFieldParam)) {
@@ -203,7 +211,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                     .of(() -> type.get()
                             .fields()
                             .stream()
-                            .filter(f -> f.variable().equalsIgnoreCase(typeOptField[1]))
+                            .filter(f -> Objects.requireNonNull(f.variable()).equalsIgnoreCase(typeOptField[1]))
                             .findFirst())
                     .getOrElse(Optional.empty());
             field.ifPresent(fields::add);
@@ -265,68 +273,6 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         return reducedResults;
     }
 
-    private JSONObject dtoToContentJson(final EmbeddingsDTO dto, final User user) {
-        return Try.of(() ->
-                ContentResource.contentletToJSON(
-                        APILocator.getContentletAPI().find(dto.inode, user, true),
-                        HttpServletRequestThreadLocal.INSTANCE.getRequest(),
-                        HttpServletResponseThreadLocal.INSTANCE.getResponse(),
-                        "false",
-                        user,
-                        false)
-        ).andThenTry(() ->
-                new JSONObject(APILocator.getContentletAPI().find(dto.inode, user, true).getMap())
-        ).andThenTry(() ->
-                new JSONObject(Map.of("inode", dto.inode,
-                        "identifier", dto.identifier,
-                        "title", dto.title,
-                        "language", dto.language,
-                        "index", dto.indexName,
-                        "contentType", new JSONArray(dto.contentType)))
-
-        ).getOrElse(JSONObject::new);
-    }
-
-    private String hashText(@NotNull final String text) {
-        return EmbeddingsDB.impl.get().hashText(text);
-    }
-
-    private void saveEmbeddingsForCache(final String content, final Tuple2<Integer, List<Float>> embeddings) {
-        final EmbeddingsDTO embeddingsDTO = new EmbeddingsDTO.Builder()
-                .withContentType(CACHE)
-                .withTokenCount(embeddings._1)
-                .withInode(CACHE)
-                .withLanguage(0)
-                .withTitle(CACHE)
-                .withIdentifier(CACHE)
-                .withHost(CACHE)
-                .withExtractedText(content)
-                .withIndexName(CACHE)
-                .withEmbeddings(embeddings._2).build();
-
-
-        EmbeddingsDB.impl.get().saveEmbeddings(embeddingsDTO);
-    }
-
-    private List<Float> sendTokensToOpenAI(@NotNull final List<Integer> tokens) {
-        final JSONObject json = new JSONObject();
-        json.put("model", config.getConfig(AppKeys.EMBEDDINGS_MODEL));
-        json.put("input", tokens);
-
-        final String responseString = OpenAIRequest.doRequest("https://api.openai.com/v1/embeddings", "post", getAPIKey(), json);
-        final JSONObject response = new JSONObject(responseString);
-        final JSONObject data = (JSONObject) response.getJSONArray("data").get(0);
-
-        return (List<Float>) data.getJSONArray("embedding").stream().map(val -> {
-            double x = (double) val;
-            return (float) x;
-        }).collect(Collectors.toList());
-    }
-
-    private String getAPIKey() {
-        return config.getApiKey();
-    }
-
     @Override
     public List<EmbeddingsDTO> getEmbeddingResults(final EmbeddingsDTO searcher) {
         final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(searcher.query)._2;
@@ -368,14 +314,15 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
      * @param content
      * @return Tuple(Count of Tokens Input, List of Embeddings Output)
      */
+    @WrapInTransaction
     @Override
     public Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(@NotNull final String content) {
         if (UtilMethods.isEmpty(content)) {
             return Tuple.of(0, List.of());
         }
 
-        final String hashed = hashText(content);
-        final Tuple2<Integer, List<Float>> cachedEmbeddings = embeddingCache.getIfPresent(hashed);
+        final String hashed = StringUtils.hashText(content);
+        final Tuple2<Integer, List<Float>> cachedEmbeddings = EMBEDDING_CACHE.getIfPresent(hashed);
         if (cachedEmbeddings != null && !cachedEmbeddings._2.isEmpty()) {
             return cachedEmbeddings;
         }
@@ -392,15 +339,77 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             if (!CACHE.equalsIgnoreCase(dbEmbeddings._1)) {
                 saveEmbeddingsForCache(content, Tuple.of(dbEmbeddings._2, dbEmbeddings._3));
             }
-            embeddingCache.put(hashed, Tuple.of(dbEmbeddings._2, dbEmbeddings._3));
+            EMBEDDING_CACHE.put(hashed, Tuple.of(dbEmbeddings._2, dbEmbeddings._3));
             return Tuple.of(dbEmbeddings._2, dbEmbeddings._3);
         }
 
         final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(tokens.size(), sendTokensToOpenAI(tokens));
         saveEmbeddingsForCache(content, openAiEmbeddings);
-        embeddingCache.put(hashed, openAiEmbeddings);
+        EMBEDDING_CACHE.put(hashed, openAiEmbeddings);
 
         return openAiEmbeddings;
+    }
+
+    private JSONObject dtoToContentJson(final EmbeddingsDTO dto, final User user) {
+        return Try.of(() ->
+                ContentResource.contentletToJSON(
+                        APILocator.getContentletAPI().find(dto.inode, user, true),
+                        HttpServletRequestThreadLocal.INSTANCE.getRequest(),
+                        HttpServletResponseThreadLocal.INSTANCE.getResponse(),
+                        "false",
+                        user,
+                        false)
+        ).andThenTry(() ->
+                new JSONObject(APILocator.getContentletAPI().find(dto.inode, user, true).getMap())
+        ).andThenTry(() ->
+                new JSONObject(Map.of("inode", dto.inode,
+                        "identifier", dto.identifier,
+                        "title", dto.title,
+                        "language", dto.language,
+                        "index", dto.indexName,
+                        "contentType", new JSONArray(dto.contentType)))
+
+        ).getOrElse(JSONObject::new);
+    }
+
+    private void saveEmbeddingsForCache(final String content, final Tuple2<Integer, List<Float>> embeddings) {
+        final EmbeddingsDTO embeddingsDTO = new EmbeddingsDTO.Builder()
+                .withContentType(CACHE)
+                .withTokenCount(embeddings._1)
+                .withInode(CACHE)
+                .withLanguage(0)
+                .withTitle(CACHE)
+                .withIdentifier(CACHE)
+                .withHost(CACHE)
+                .withExtractedText(content)
+                .withIndexName(CACHE)
+                .withEmbeddings(embeddings._2)
+                .build();
+
+        EmbeddingsDB.impl.get().saveEmbeddings(embeddingsDTO);
+    }
+
+    private List<Float> sendTokensToOpenAI(@NotNull final List<Integer> tokens) {
+        final JSONObject json = new JSONObject();
+        json.put("model", config.getConfig(AppKeys.EMBEDDINGS_MODEL));
+        json.put("input", tokens);
+
+        final String responseString = OpenAIRequest.doRequest(
+                Config.getStringProperty("OPEN_AI_EMBEDDINGS_URL", "https://api.openai.com/v1/embeddings"),
+                "post",
+                getAPIKey(),
+                json);
+        final JSONObject response = new JSONObject(responseString);
+        final JSONObject data = (JSONObject) response.getJSONArray("data").get(0);
+
+        return (List<Float>) data.getJSONArray("embedding").stream().map(val -> {
+            double x = (double) val;
+            return (float) x;
+        }).collect(Collectors.toList());
+    }
+
+    private String getAPIKey() {
+        return config.getApiKey();
     }
 
 }

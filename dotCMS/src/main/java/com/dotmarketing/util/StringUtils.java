@@ -2,13 +2,18 @@ package com.dotmarketing.util;
 
 import static org.apache.commons.lang.StringUtils.split;
 
+import com.dotcms.ai.db.EmbeddingsDB;
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.uuid.shorty.ShortyException;
+import com.google.common.hash.Hashing;
 import com.liferay.util.StringPool;
+
+import javax.validation.constraints.NotNull;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -491,6 +496,18 @@ public class StringUtils {
 
     public static char[] defensiveCopy(final char[] value) {
         return Optional.ofNullable(value).map(v -> Arrays.copyOf(v, v.length)).orElse(BLANK_CHARS);
+    }
+
+    /**
+     * This method takes a string as input and returns the SHA-256 hash of the input string.
+     *
+     * @param text The input text to be hashed
+     * @return The SHA-256 hash of the input text
+     */
+    public static String hashText(@NotNull final String text) {
+        return Hashing.sha256()
+                .hashString(text, StandardCharsets.UTF_8)
+                .toString();
     }
 
     private static char[] toCharArray(final String value, final char[] defaultChars) {

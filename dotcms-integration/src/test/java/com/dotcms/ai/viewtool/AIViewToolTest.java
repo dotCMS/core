@@ -67,7 +67,7 @@ public class AIViewToolTest {
 
     @Before
     public void setup() {
-        user =  new UserDataGen().nextPersisted();
+        user = new UserDataGen().nextPersisted();
         aiViewTool = prepareAIViewTool(mock(ViewContext.class));
     }
 

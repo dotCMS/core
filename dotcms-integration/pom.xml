@@ -65,8 +65,8 @@
         <test.db.host>localhost</test.db.host>
         <!--suppress UnresolvedMavenProperty -->
         <test.db.db>dotcms${surefire.forkNumber}</test.db.db>
-        <db.port>9207</db.port>
-        <es.port>5437</es.port>
+        <db.port>5437</db.port>
+        <es.port>9207</es.port>
         <test.db.port>${db.port}</test.db.port>
         <test.db.url>jdbc:postgresql://${test.db.host}:${test.db.port}/${test.db.db}?autosave=conservative</test.db.url>
         <!--suppress UnresolvedMavenProperty -->

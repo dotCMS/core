@@ -9,7 +9,7 @@ class EmbeddingsSQL {
     static final String DROP_EMBEDDINGS_TABLE = "drop table if exists dot_embeddings";
 
     /**
-     * Our embeddings column has 1536 dimentions because that is the number of dimentions returned by
+     * Our embeddings column has 1536 dimensions because that is the number of dimensions returned by
      * OpenAI text-embedding-ada-002.
      * <p>
      * The dimensions would change if we used a different model.

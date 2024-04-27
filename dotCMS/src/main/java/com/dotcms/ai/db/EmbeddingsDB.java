@@ -5,16 +5,14 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.hash.Hashing;
 import com.pgvector.PGvector;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
 import org.apache.commons.lang3.ArrayUtils;
 
-import javax.validation.constraints.NotNull;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,6 +21,11 @@ import java.util.*;
 
 import static com.dotcms.ai.db.EmbeddingsDTO.ALL_INDICES;
 
+/**
+ * The EmbeddingsDB class provides methods for managing and interacting with embeddings in the database.
+ * It uses the PGVector extension for PostgreSQL to store and query embeddings.
+ * This class provides methods for initializing the database table and extension, saving embeddings, searching embeddings, and deleting embeddings.
+ */
 public class EmbeddingsDB {
 
     public static final Lazy<EmbeddingsDB> impl = Lazy.of(EmbeddingsDB::new);
@@ -32,6 +35,10 @@ public class EmbeddingsDB {
         initVectorDbTable();
     }
 
+    /**
+     * Initializes the PGVector extension in the database.
+     * This method is called when the class is instantiated.
+     */
     public void initVectorExtension() {
         if (!doesExtensionExist()) {
             Logger.info(EmbeddingsDB.class, "Adding PGVector extension to database");
@@ -41,6 +48,10 @@ public class EmbeddingsDB {
         }
     }
 
+    /**
+     * Initializes the database table for storing embeddings.
+     * This method is called when the class is instantiated.
+     */
     public void initVectorDbTable() {
         try {
             internalInitVectorDbTable();
@@ -51,12 +62,20 @@ public class EmbeddingsDB {
         }
     }
 
+    /**
+     * This method renames the existing `dot_embeddings` table in the database to a new name that includes the current timestamp.
+     * This is useful when the creation of the `dot_embeddings` table fails for some reason and you want to try again without losing the existing data.
+     */
     public void moveVectorDbTable() {
         String newTableName = "dot_embeddings_" + System.currentTimeMillis();
         Logger.info(EmbeddingsDB.class, "Create Table Failed : trying to rename:" + newTableName);
         runSQL("ALTER TABLE IF EXISTS dot_embeddings RENAME TO " + newTableName);
     }
 
+    /**
+     * This method is responsible for creating the `dot_embeddings` table in the database.
+     * It first logs the action, then runs the SQL command to create the table, and finally logs the creation of indexes on the table.
+     */
     public void internalInitVectorDbTable() {
         Logger.info(EmbeddingsDB.class, "Adding table dot_embeddings to database");
         runSQL(EmbeddingsSQL.CREATE_EMBEDDINGS_TABLE);
@@ -66,9 +85,14 @@ public class EmbeddingsDB {
         }
     }
 
+    /**
+     * Drops the database table for storing embeddings.
+     * This method is used when you want to remove the embeddings table from the database.
+     */
     public void dropVectorDbTable() {
         Logger.info(EmbeddingsDB.class, "Dropping table dot_embeddings from database");
         runSQL(EmbeddingsSQL.DROP_EMBEDDINGS_TABLE);
+
     }
 
     void runSQL(final String sql) {
@@ -100,10 +124,18 @@ public class EmbeddingsDB {
         return conn;
     }
 
-    public Tuple3<String,Integer, List<Float>> searchExistingEmbeddings(final String extractedText) {
+    /**
+     * Searches for existing embeddings for the provided text in the database.
+     * The method first checks the database.
+     * If no embeddings are found, it sends a request to OpenAI to generate new embeddings.
+     *
+     * @param extractedText the text to find embeddings for
+     * @return a tuple containing the index name, token count, and list of embeddings
+     */
+    public Tuple3<String, Integer, List<Float>> searchExistingEmbeddings(final String extractedText) {
         try (final Connection conn = getPGVectorConnection(); PreparedStatement statement = conn.prepareStatement(EmbeddingsSQL.SELECT_EMBEDDING_BY_TEXT_HASH)) {
-            final String hash = hashText(extractedText);
-            statement.setObject(1, hash);
+            final String hash = StringUtils.hashText(extractedText);
+            statement.setString(1, hash);
 
             final ResultSet rs = statement.executeQuery();
             while (rs.next()) {
@@ -119,11 +151,19 @@ public class EmbeddingsDB {
         }
     }
 
+    /**
+     * Checks if embeddings exist for the provided inode, index name, and text.
+     *
+     * @param inode the inode to check
+     * @param indexName the index name to check
+     * @param extractedText the text to check
+     * @return true if embeddings exist, false otherwise
+     */
     public boolean embeddingExists(final String inode, final String indexName, final String extractedText) {
         try (final Connection conn = getPGVectorConnection();
              final PreparedStatement statement =
                      conn.prepareStatement(EmbeddingsSQL.SELECT_EMBEDDING_BY_TEXT_HASH_INODE_AND_INDEX)) {
-            final String hash = hashText(extractedText);
+            final String hash = StringUtils.hashText(extractedText);
             statement.setObject(1, hash);
             statement.setObject(2, inode);
             statement.setObject(3, indexName);
@@ -138,12 +178,11 @@ public class EmbeddingsDB {
         }
     }
 
-    public String hashText(@NotNull final String text) {
-        return Hashing.sha256()
-                .hashString(text, StandardCharsets.UTF_8)
-                .toString();
-    }
-
+    /**
+     * Saves the provided embeddings to the database.
+     *
+     * @param embeddings the embeddings to save
+     */
     public void saveEmbeddings(final EmbeddingsDTO embeddings) {
         Logger.info(EmbeddingsDB.class, "Saving embeddings for content:" + embeddings.title);
 
@@ -152,16 +191,16 @@ public class EmbeddingsDB {
              final PreparedStatement statement = conn.prepareStatement(EmbeddingsSQL.INSERT_EMBEDDINGS)) {
 
             int i = 0;
-            statement.setObject(++i, embeddings.inode);
-            statement.setObject(++i, embeddings.identifier);
-            statement.setObject(++i, embeddings.language);
-            statement.setObject(++i, embeddings.contentType[0]);
-            statement.setObject(++i, embeddings.title);
-            statement.setObject(++i, embeddings.extractedText);
-            statement.setObject(++i, hashText(embeddings.extractedText));
-            statement.setObject(++i, embeddings.host);
-            statement.setObject(++i, embeddings.indexName);
-            statement.setObject(++i, embeddings.tokenCount);
+            statement.setString(++i, embeddings.inode);
+            statement.setString(++i, embeddings.identifier);
+            statement.setLong(++i, embeddings.language);
+            statement.setString(++i, embeddings.contentType[0]);
+            statement.setString(++i, embeddings.title);
+            statement.setString(++i, embeddings.extractedText);
+            statement.setString(++i, StringUtils.hashText(embeddings.extractedText));
+            statement.setString(++i, embeddings.host);
+            statement.setString(++i, embeddings.indexName);
+            statement.setInt(++i, embeddings.tokenCount);
             statement.setObject(++i, vector);
             statement.execute();
         } catch (SQLException e) {
@@ -169,6 +208,12 @@ public class EmbeddingsDB {
         }
     }
 
+    /**
+     * Searches for embeddings in the database that match the provided DTO.
+     *
+     * @param dto the DTO to match embeddings against
+     * @return a list of DTOs that match the provided DTO
+     */
     public List<EmbeddingsDTO> searchEmbeddings(final EmbeddingsDTO dto) {
         final StringBuilder sql = new StringBuilder(
                 EmbeddingsSQL.SEARCH_EMBEDDINGS_SELECT_PREFIX
@@ -220,6 +265,14 @@ public class EmbeddingsDB {
         }
     }
 
+    /**
+     * Appends parameters to the provided StringBuilder based on the provided DTO.
+     * This method is used to build SQL queries dynamically based on the DTO.
+     *
+     * @param sql the StringBuilder to append parameters to
+     * @param dto the DTO to get parameters from
+     * @return a list of parameters
+     */
     List<Object> appendParams(final StringBuilder sql, final EmbeddingsDTO dto) {
         final List<Object> params = new ArrayList<>();
 
@@ -274,6 +327,12 @@ public class EmbeddingsDB {
         return params;
     }
 
+    /**
+     * Deletes embeddings from the database that match the provided DTO.
+     *
+     * @param dto the DTO to match embeddings against
+     * @return the number of embeddings deleted
+     */
     public int deleteEmbeddings(final EmbeddingsDTO dto) {
         final StringBuilder sql = new StringBuilder("delete from dot_embeddings where true ");
         final List<Object> params = appendParams(sql, dto);
@@ -292,6 +351,12 @@ public class EmbeddingsDB {
         }
     }
 
+    /**
+     * Counts the number of embeddings in the database that match the provided DTO.
+     *
+     * @param dto the DTO to match embeddings against
+     * @return the number of embeddings that match the provided DTO
+     */
     public long countEmbeddings(final EmbeddingsDTO dto) {
         final StringBuilder sql = new StringBuilder(
                 EmbeddingsSQL.COUNT_EMBEDDINGS_PREFIX
@@ -325,6 +390,11 @@ public class EmbeddingsDB {
         }
     }
 
+    /**
+     * Counts the number of embeddings in the database by index.
+     *
+     * @return a map of index names to counts
+     */
     public Map<String, Map<String, Object>> countEmbeddingsByIndex() {
         final StringBuilder sql = new StringBuilder(EmbeddingsSQL.COUNT_EMBEDDINGS_BY_INDEX);
 
