@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.portlet;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -23,16 +20,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -47,7 +38,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.server.JSONP;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
 
 /**
  * This Resource is for create custom portlets. These kind of custom portlets are to show diff types
@@ -114,7 +112,7 @@ public class PortletResource implements Serializable {
             final Portlet newPortlet = APILocator.getPortletAPI()
                     .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
-            return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
+            return Response.ok(new ResponseEntityView(Map.of("portlet", newPortlet.getPortletId()))).build();
 
         } catch (Exception e) {
             response = ResponseUtil.mapExceptionResponse(e);
@@ -163,7 +161,7 @@ public class PortletResource implements Serializable {
             final Portlet newPortlet = APILocator.getPortletAPI()
                     .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
-            return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
+            return Response.ok(new ResponseEntityView(Map.of("portlet", newPortlet.getPortletId()))).build();
 
         } catch (Exception e) {
             response = ResponseUtil.mapExceptionResponse(e);
@@ -249,7 +247,7 @@ public class PortletResource implements Serializable {
         layoutAPI.setPortletIdsToLayout(layout, portletIds);
 
         return Response.ok(new ResponseEntityView(
-                        map("portlet", portlet.getPortletId(), "layout", layout.getId())))
+                        Map.of("portlet", portlet.getPortletId(), "layout", layout.getId())))
                 .build();
 
     }
@@ -281,7 +279,7 @@ public class PortletResource implements Serializable {
 
             APILocator.getPortletAPI().deletePortlet(portletId);
 
-            return Response.ok(new ResponseEntityView(map("message", portletId + " deleted"))).build();
+            return Response.ok(new ResponseEntityView(Map.of("message", portletId + " deleted"))).build();
 
         } catch (Exception e) {
             return ResponseUtil.mapExceptionResponse(e);
@@ -368,7 +366,7 @@ public class PortletResource implements Serializable {
                 }
             }
 
-            return Response.ok(new ResponseEntityView(map("message", portletId + " deleted"))).build();
+            return Response.ok(new ResponseEntityView(Map.of("message", portletId + " deleted"))).build();
 
         } catch (Exception e) {
             return ResponseUtil.mapExceptionResponse(e);
@@ -405,7 +403,7 @@ public class PortletResource implements Serializable {
                     "Unable to find portlet");
         }
         return Response.ok(new ResponseEntityView(
-                map("response", portlet))).build();
+                Map.of("response", portlet))).build();
 
     }
 
@@ -429,7 +427,7 @@ public class PortletResource implements Serializable {
                 .rejectWhenNoUser(true)
                 .init();
         try {
-            return Response.ok(new ResponseEntityView(map("response", APILocator.getLayoutAPI()
+            return Response.ok(new ResponseEntityView(Map.of("response", APILocator.getLayoutAPI()
                     .doesUserHaveAccessToPortlet(portletId, initData.getUser())))).build();
         } catch (Exception e) {
             return ResponseUtil.mapExceptionResponse(e);

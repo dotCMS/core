@@ -1,27 +1,35 @@
-<div class="content-aside__workflow">
-    <div class="content-aside__workflow-column">
-        <span class="workflow-column__title">{{ 'Workflow' | dm }}</span>
-        <span class="workflow-column__title">{{ 'Step' | dm }}</span>
-        <span class="workflow-column__title">{{ 'Content-Type' | dm }}</span>
-        @if($workflowStatus()?.task ) {
-        <span class="workflow-column__title">{{ 'Assignee' | dm }}</span>
-        }
-    </div>
-    <div class="content-aside__workflow-column">
-        @if($workflowStatus()) {
-        <span class="workflow-column__description" data-testId="workflow-name">
-            {{ $workflowStatus().scheme?.name }}
-        </span>
-        <span class="workflow-column__description" data-testId="workflow-step">
-            {{ $workflowStatus().step?.name || 'New' }}
-        </span>
-        <span class="workflow-column__description" data-testId="workflow-content-type">
-            {{ contentType.name }}
-        </span>
-        @if($workflowStatus().task; as task ) {
-        <span class="workflow-column__description" data-testId="workflow-assigned">
-            {{ task.assignedTo }}
-        </span>
-        } }
-    </div>
-</div>
+<dl class="content-aside__workflow">
+    <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="workflow-title"
+        data-testId="workflow-name">
+        {{ $workflowStatus()?.scheme?.name }}
+    </dd>
+
+    <dt class="workflow-column__title" id="step-title">{{ 'Step' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="step-title"
+        data-testId="workflow-step">
+        {{ $workflowStatus()?.step?.name || 'New' }}
+    </dd>
+
+    <dt class="workflow-column__title" id="content-type-title">{{ 'Content-Type' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="content-type-title"
+        data-testId="workflow-content-type">
+        {{ contentType.name }}
+    </dd>
+
+    @if($workflowStatus()?.task ) {
+    <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="assignee-title"
+        data-testId="workflow-assigned">
+        {{ $workflowStatus().task.assignedTo }}
+    </dd>
+    }
+</dl>

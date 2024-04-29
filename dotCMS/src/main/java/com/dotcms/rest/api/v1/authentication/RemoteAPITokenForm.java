@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 @JsonDeserialize(builder = RemoteAPITokenForm.Builder.class)
 public class RemoteAPITokenForm {
     private TokenInfo token;
@@ -40,7 +38,7 @@ public class RemoteAPITokenForm {
     }
 
     public Map<String, Object> getTokenInfo(){
-        return map(
+        return Map.of(
                 "network", token.network,
                 "expirationSeconds", token.expirationSeconds,
                 "claims", token.claims,

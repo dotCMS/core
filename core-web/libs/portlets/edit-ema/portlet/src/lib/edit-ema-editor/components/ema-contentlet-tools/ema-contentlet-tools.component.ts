@@ -223,11 +223,13 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
         const currentValue = contentletChange.currentValue?.payload;
         const previousValue = contentletChange.previousValue?.payload;
 
-        const hasIdentifierChanged =
+        const hasContentletIdentifierChanged =
             currentValue?.contentlet.identifier !== previousValue?.contentlet.identifier;
         const hasUUIDChanged = currentValue?.container.uuid !== previousValue?.container.uuid;
+        const hasContainerIdentifierChanged =
+            currentValue?.container.identifier !== previousValue?.container.identifier;
 
-        return hasIdentifierChanged || hasUUIDChanged;
+        return hasContentletIdentifierChanged || hasUUIDChanged || hasContainerIdentifierChanged;
     }
 
     /**
