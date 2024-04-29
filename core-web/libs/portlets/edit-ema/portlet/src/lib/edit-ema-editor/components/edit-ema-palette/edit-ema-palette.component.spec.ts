@@ -224,33 +224,6 @@ describe('EditEmaPaletteComponent', () => {
             expect(spectator.query(EditEmaPaletteContentletsComponent)).toBeNull();
         });
 
-        it('should emit dragStart event on drag start', () => {
-            const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
-
-            spectator.triggerEventHandler(EditEmaPaletteContentTypeComponent, 'dragStart', {
-                variable: 'test',
-                name: 'Test'
-            });
-
-            expect(dragSpy).toHaveBeenCalledWith({
-                variable: 'test',
-                name: 'Test'
-            });
-        });
-
-        it('should emit dragEnd event on drag end', () => {
-            const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
-
-            spectator.triggerEventHandler(EditEmaPaletteContentTypeComponent, 'dragEnd', {
-                variable: 'test',
-                name: 'Test'
-            });
-            expect(dragSpy).toHaveBeenCalledWith({
-                variable: 'test',
-                name: 'Test'
-            });
-        });
-
         it('should show contentlets from content type', () => {
             const storeSpy = jest.spyOn(store, 'loadContentlets');
             spectator.triggerEventHandler(
@@ -331,28 +304,6 @@ describe('EditEmaPaletteComponent', () => {
             );
 
             expect(resetContentLetsSpy).toHaveBeenCalled();
-        });
-
-        it('should emit dragStart event on drag start', () => {
-            const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
-
-            spectator.triggerEventHandler(EditEmaPaletteContentletsComponent, 'dragStart', {
-                inode: '123'
-            });
-            expect(dragSpy).toHaveBeenCalledWith({
-                inode: '123'
-            });
-        });
-
-        it('should emit dragEnd event on drag end', () => {
-            const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
-
-            spectator.triggerEventHandler(EditEmaPaletteContentletsComponent, 'dragEnd', {
-                inode: '123'
-            });
-            expect(dragSpy).toHaveBeenCalledWith({
-                inode: '123'
-            });
         });
     });
 });
