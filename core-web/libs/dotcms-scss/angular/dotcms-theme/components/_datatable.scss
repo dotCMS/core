@@ -1,5 +1,9 @@
 @use "variables" as *;
 
+// DEPRECATED: This file is deprecated in favor of _table.scss.
+// If a fix is needed in legacy tables, the update should happen here,
+// but the potential fix also need to be implemented in _table.scss.
+
 .p-datatable .p-paginator-top {
     border-width: 0 0 1px 0;
     border-radius: 0;
