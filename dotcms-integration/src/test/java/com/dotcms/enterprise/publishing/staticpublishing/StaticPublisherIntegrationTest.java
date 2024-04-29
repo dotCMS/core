@@ -1,32 +1,6 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
-import static com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getContentTypeWithURlMap;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getDeletedContentWithURlMap;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getFolderWithLiveFileAssetAndPage;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getHostWithLiveFileAssetAndPage;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveContentWithURlMap;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveFileAsset;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveFileAssetDifferentLang;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveFileAssetDifferentLangIncludingJustOneg;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePage;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLang;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLangIncludingJustOne;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithCSS;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithImage;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getTwoPageDifferentHostSamePath;
-
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getURLMapPageWithImage;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingContentWithURlMap;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingFileAsset;
-import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingPage;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-
 import com.dotcms.datagen.BundleDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.FileExpected;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.TestCase;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -44,37 +18,55 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.image.focalpoint.FocalPointAPITest;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
-import com.liferay.util.FileUtilTest;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import static com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getContentTypeWithURlMap;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getFolderWithLiveFileAssetAndPage;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getHostWithLiveFileAssetAndPage;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveContentWithURlMap;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveFileAsset;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveFileAssetDifferentLang;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLiveFileAssetDifferentLangIncludingJustOneg;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePage;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLang;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLangIncludingJustOne;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithCSS;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithImage;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getTwoPageDifferentHostSamePath;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getURLMapPageWithImage;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingContentWithURlMap;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingFileAsset;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingPage;
+import static com.dotcms.util.CollectionsUtils.list;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class StaticPublisherIntegrationTest {
@@ -351,20 +343,19 @@ public class StaticPublisherIntegrationTest {
 
         final File expectedFile = FileTestUtil.getFileInResources(
                 "/bundlers-test/page/page.html.xml");
-        final Map<String, Object>  arguments = map(
-                "id", page.getIdentifier(),
-                "inode", page.getInode(),
-                "lang", page.getLanguageId(),
-                "template", page.getTemplateId(),
-                "folder_inode", page.getFolder(),
-                "host", page.getHost(),
-                "friendly_name", page.getFriendlyName(),
-                "title", page.getTitle(),
-                "url", page.getPageUrl(),
-                "content_type_inode", page.getContentTypeId(),
-                "asset_name", identifier.getAssetName()
-        );
+        final Map<String, Object>  arguments = new HashMap<>();
 
+        arguments.put("id", page.getIdentifier());
+        arguments.put("inode", page.getInode());
+        arguments.put("lang", page.getLanguageId());
+        arguments.put("template", page.getTemplateId());
+        arguments.put("folder_inode", page.getFolder());
+        arguments.put("host", page.getHost());
+        arguments.put("friendly_name", page.getFriendlyName());
+        arguments.put("title", page.getTitle());
+        arguments.put("url", page.getPageUrl());
+        arguments.put("content_type_inode", page.getContentTypeId());
+        arguments.put("asset_name", identifier.getAssetName());
         arguments.put("parent_path", identifier.getParentPath());
 
         final List<String> toRemove = getXMLFileToRemove();

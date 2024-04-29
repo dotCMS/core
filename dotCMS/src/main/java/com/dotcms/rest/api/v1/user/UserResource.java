@@ -10,7 +10,6 @@ import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.UserPaginator;
@@ -28,7 +27,6 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -39,9 +37,7 @@ import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.*;
-
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 
 /**
@@ -207,7 +203,7 @@ public class UserResource implements Serializable {
 				userMap = userToUpdated.toMap();
 			}
 
-			response = Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
+			response = Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
 					"reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
 		} catch (final UserFirstNameException e) {
 
@@ -312,13 +308,13 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
-		final Map<String, Object> extraParams = CollectionsUtils.map(
-				UserPaginator.ASSET_INODE_PARAM, assetInode,
-				UserPaginator.PERMISSION_PARAM, permission,
-				UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous,
-				UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault,
-				UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy
-		);
+		final Map<String, Object> extraParams = new HashMap<>();
+		extraParams.put(UserPaginator.ASSET_INODE_PARAM, assetInode);
+		extraParams.put(UserPaginator.PERMISSION_PARAM, permission);
+		extraParams.put(UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous);
+		extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
+		extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
+
 		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		final User user = initData.getUser();
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
@@ -381,7 +377,7 @@ public class UserResource implements Serializable {
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
-			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
+			response = Response.ok(new ResponseEntityView(Map.of("loginAs", true))).build();
 		} catch (final NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
@@ -397,7 +393,7 @@ public class UserResource implements Serializable {
 				final User user = initData.getUser();
 				response = Response.ok(new ResponseEntityView<>(
 						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
-						map("loginAs", false))).build();
+						Map.of("loginAs", false))).build();
 			} else {
 				return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 			}
@@ -541,7 +537,7 @@ public class UserResource implements Serializable {
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);
-			response = Response.ok(new ResponseEntityView(map("logoutAs", true))).build();
+			response = Response.ok(new ResponseEntityView(Map.of("logoutAs", true))).build();
 		} catch (final DotSecurityException | DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when attempting to log " +
 							"out as user '%s' by UserID '%s' / Remote IP '%s': %s", currentLoginAsUser.getUserId(),
@@ -588,12 +584,12 @@ public class UserResource implements Serializable {
 		try {
 			checkUserLoginAsRole(initData.getUser());
 			final List<Role> roles = List.of(roleAPI.loadBackEndUserRole());
-			final Map<String, Object> extraParams = Map.of(
+			final Map<String, Object> extraParams = new HashMap<>(Map.of(
 					UserPaginator.ROLES_PARAM, roles,
 					UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, false,
 					UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, false,
 					UserPaginator.REMOVE_CURRENT_USER_PARAM, true,
-					UserPaginator.REQUEST_PASSWORD_PARAM, true);
+					UserPaginator.REQUEST_PASSWORD_PARAM, true));
 			response = this.paginationUtil.getPage( httpServletRequest, user, filter, page, perPage, extraParams);
 		} catch (final Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -669,7 +665,7 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
 
-			return Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
+			return Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 

@@ -1,11 +1,15 @@
 package com.dotmarketing.portlets.hostvariable.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HostVariable    {
+@JsonIgnoreProperties(value = {
+		"map"
+})
+public class HostVariable {
 
     private static final long serialVersionUID = 1L;
     
@@ -16,6 +20,24 @@ public class HostVariable    {
     private String value = "" ;
     private String lastModifierId = "" ;
     private Date lastModDate;
+
+	public HostVariable() {
+	}
+
+	/**
+	 * Copy constructor for HostVariable objects.
+	 *
+	 * @param another The HostVariable object to copy.
+	 */
+	public HostVariable(HostVariable another) {
+		this.setId(another.getId());
+		this.setHostId(another.getHostId());
+		this.setName(another.getName());
+		this.setKey(another.getKey());
+		this.setValue(another.getValue());
+		this.setLastModifierId(another.getLastModifierId());
+		this.setLastModDate(another.getLastModDate());
+	}
     
 	public String getHostId() {
 		return hostId;

@@ -1,25 +1,11 @@
 package com.dotcms.rest.api.v1.site;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.mapAll;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.notNull;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
-import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
@@ -28,25 +14,40 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Response;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.mapAll;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.notNull;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link SiteResource} test
@@ -71,6 +72,7 @@ public class SiteResourceTest extends UnitTestBase {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
+        final HostVariableAPI hostVariableAPI = mock(HostVariableAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
         final ServletContext context = mock(ServletContext.class);
@@ -87,13 +89,14 @@ public class SiteResourceTest extends UnitTestBase {
             when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
             when(initDataObject.getUser()).thenReturn(user);
             when(paginationUtil.getPage(request, user, "filter",1, count,
-                    map("archive", false, "live", false, "system", false))).thenReturn(responseExpected);
+                    Map.of("archive", false, "live", false, "system", false))).thenReturn(responseExpected);
             when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
             when(request.getSession()).thenReturn(session);
             when(request.getSession(false)).thenReturn(session);
             when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
             SiteResource siteResource =
-                    new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
+                    new SiteResource(webResource, new SiteHelper(hostAPI, hostVariableAPI),
+                            paginationUtil);
 
             final Response response = siteResource
                     .sites(request, httpServletResponse, "filter", false, false, false, page, count);
@@ -113,6 +116,7 @@ public class SiteResourceTest extends UnitTestBase {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
+        final HostVariableAPI hostVariableAPI = mock(HostVariableAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
         final ServletContext context = mock(ServletContext.class);
@@ -133,7 +137,8 @@ public class SiteResourceTest extends UnitTestBase {
             when(request.getSession(false)).thenReturn(session);
             when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
             SiteResource siteResource =
-                    new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
+                    new SiteResource(webResource, new SiteHelper(hostAPI, hostVariableAPI),
+                            paginationUtil);
 
             Response response1 = siteResource.switchSite(request, httpServletResponse);
             System.out.println(response1);
@@ -176,6 +181,7 @@ public class SiteResourceTest extends UnitTestBase {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
+        final HostVariableAPI hostVariableAPI = mock(HostVariableAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
         final ServletContext context = mock(ServletContext.class);
@@ -187,7 +193,7 @@ public class SiteResourceTest extends UnitTestBase {
 
         Config.CONTEXT = context;
         try {
-            Map<String, Object> sessionAttributes = map(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
+            Map<String, Object> sessionAttributes = new HashMap<>(Map.of(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock"));
 
             when(initDataObject.getUser()).thenReturn(user);
             when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
@@ -224,7 +230,8 @@ public class SiteResourceTest extends UnitTestBase {
             );
 
             SiteResource siteResource =
-                    new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
+                    new SiteResource(webResource, new SiteHelper(hostAPI, hostVariableAPI),
+                            paginationUtil);
 
             Response response1 = siteResource
                     .switchSite(request, httpServletResponse, "48190c8c-42c4-46af-8d1a-0cd5db894798");
@@ -264,6 +271,7 @@ public class SiteResourceTest extends UnitTestBase {
             final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 
             final HostAPI hostAPI = mock(HostAPI.class);
+            final HostVariableAPI hostVariableAPI = mock(HostVariableAPI.class);
             when(hostAPI.find(currentSiteId, user, false)).thenReturn(currentSite);
 
             final UserAPI userAPI = mock(UserAPI.class);
@@ -277,7 +285,8 @@ public class SiteResourceTest extends UnitTestBase {
             when(initDataObject.getUser()).thenReturn(user);
 
             final SiteResource siteResource =
-                    new SiteResource(webResource, new SiteHelper(hostAPI), paginationUtil);
+                    new SiteResource(webResource, new SiteHelper(hostAPI, hostVariableAPI),
+                            paginationUtil);
             final Response response = siteResource.currentSite(request, httpServletResponse);
 
             RestUtilTest.verifySuccessResponse(response);
@@ -295,7 +304,7 @@ public class SiteResourceTest extends UnitTestBase {
      */
     private PaginatedArrayList<Host> getSite() throws DotDataException {
         Contentlet contentlet = new Contentlet(mapAll(
-                map(
+                Map.of(
                         "hostName", "system.dotcms.com",
                         "googleMap", "TEST_GOOGLE_MAP_KEY",
                         "modDate", Integer.parseInt("125466"),
@@ -306,7 +315,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "title", "system.dotcms.com",
                         "inode", "54ac9a4e-3d63-4b9a-882f-27c7ba29618f",
                         "hostname", "system.dotcms.com"),
-                map(
+                Map.of(
                         "__DOTNAME__", "system.dotcms.com",
                         "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
@@ -317,7 +326,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "runDashboard", false,
                         "languageId", 1
                 ),
-                map(
+                Map.of(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
                         "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",
@@ -348,7 +357,7 @@ public class SiteResourceTest extends UnitTestBase {
      */
     private PaginatedArrayList<Host> getSites() {
         final List<Contentlet> contentlets = list(new Contentlet(mapAll(
-                map(
+                Map.of(
                         "hostName", "demo.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0",
                         "modDate", Integer.parseInt("125466"),
@@ -359,7 +368,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "title", "demo.dotcms.com",
                         "inode", "54ac9a4e-3d63-4b9a-882f-27c7ba29618f",
                         "hostname", "demo.dotcms.com"),
-                map(
+                Map.of(
                         "__DOTNAME__", "demo.dotcms.com",
                         "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
@@ -371,7 +380,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "languageId", 1
 
                 ),
-                map(
+                Map.of(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
                         "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",
@@ -381,7 +390,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "modUser", "dotcms.org.1"
                 )
         )), new Contentlet(mapAll(
-                map(
+                Map.of(
                         "hostName", "system.dotcms.com",
                         "googleMap", "TEST_GOOGLE_MAP_KEY",
                         "modDate", Integer.parseInt("125466"),
@@ -392,7 +401,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "title", "system.dotcms.com",
                         "inode", "54ac9a4e-3d63-4b9a-882f-27c7ba29618f",
                         "hostname", "system.dotcms.com"),
-                map(
+                Map.of(
                         "__DOTNAME__", "system.dotcms.com",
                         "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
@@ -403,7 +412,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "runDashboard", false,
                         "languageId", 1
                 ),
-                map(
+                Map.of(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
                         "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",
@@ -443,7 +452,7 @@ public class SiteResourceTest extends UnitTestBase {
      */
     private PaginatedArrayList<Host> getTwoSites() {
         List<Host> temp = list(new Host(new Contentlet(mapAll(
-                map(
+                Map.of(
                         "hostName", "demo.awesome.dotcms.com",
                         "googleMap", "TEST_GOOGLE_MAP_KEY",
                         "modDate", Integer.parseInt("125466"),
@@ -454,7 +463,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "title", "system.dotcms.com",
                         "inode", "54ac9a4e-3d63-4b9a-882f-27c7dba29618f",
                         "hostname", "system.dotcms.com"),
-                map(
+                Map.of(
                         "__DOTNAME__", "demo.awesome.dotcms.com",
                         "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
@@ -465,7 +474,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "runDashboard", false,
                         "languageId", 1
                 ),
-                map(
+                Map.of(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
                         "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",
@@ -479,7 +488,7 @@ public class SiteResourceTest extends UnitTestBase {
                                        return false;
                                    }
                                }, new Host(new Contentlet(mapAll(
-                map(
+                Map.of(
                         "hostName", "demo.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0",
                         "modDate", Integer.parseInt("125466"),
@@ -490,7 +499,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "title", "demo.dotcms.com",
                         "inode", "54ac9a4e-3d63-4b9a-882f-27c7ba29618f",
                         "hostname", "demo.dotcms.com"),
-                map(
+                Map.of(
                         "__DOTNAME__", "demo.dotcms.com",
                         "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
@@ -502,7 +511,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "languageId", 1
 
                 ),
-                map(
+                Map.of(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
                         "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",

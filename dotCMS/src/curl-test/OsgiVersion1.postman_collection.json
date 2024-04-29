@@ -1,0 +1,496 @@
+{
+	"info": {
+		"_postman_id": "1f852b9d-b249-4f23-8230-6c95009772ac",
+		"name": "OsgiVersion1",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
+	},
+	"item": [
+		{
+			"name": "GetBundles",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Checking that there at least 2 bundles returned\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.length).to.be.gte(2, \"Checking that there at least 2 bundles returned\");",
+							"});",
+							"",
+							"pm.test(\"Checking that felix http bundle\", function () {",
+							"",
+							"    let bundleSystem = null;",
+							"    let bundleFelixHttp = null;",
+							"    const entity = pm.response.json().entity;",
+							"    entity.forEach(bundle => {",
+							"",
+							"        if (bundle.jarFile.includes(\"felix.http.api\")) {",
+							"",
+							"            bundleFelixHttp = bundle;",
+							"        }",
+							"",
+							"        if (bundle.jarFile.includes(\"System\")) {",
+							"",
+							"            bundleSystem = bundle;",
+							"        }",
+							"    });",
+							"",
+							"    pm.expect(bundleSystem).not.equal(null, \"bundle System can not be null\");",
+							"    pm.expect(bundleFelixHttp).not.equal(null, \"bundle Felix Http can not be null\");",
+							"",
+							"    pm.expect(bundleFelixHttp.state).equals(32, \"bundle Felix Http should started\");",
+							"    pm.expect(bundleFelixHttp.symbolicName).equals(\"org.apache.felix.http.api\", \"bundle Felix Http name should org.apache.felix.http.api\");",
+							"",
+							"    pm.environment.set('bundleFelixHttpId', bundleFelixHttp.bundleId);",
+							"    pm.environment.set('bundleFelixHttpjarFile', bundleFelixHttp.jarFile);",
+							"    pm.environment.set('bundleSystemId', bundleSystem.bundleId);",
+							"    pm.environment.set('bundleSystemjarFile', bundleSystem.jarFile);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/osgi/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"osgi",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetSystemBundles",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Checking that there at least 2 bundles returned\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.length).to.be.gte(2, \"Checking that there at least 2 bundles returned\");",
+							"});",
+							"",
+							"pm.test(\"Checking that felix http bundle\", function () {",
+							"",
+							"    let samlbundle = null;",
+							"    const entity = pm.response.json().entity;",
+							"    entity.forEach(bundle => {",
+							"",
+							"        if (bundle.jarFile.includes(\"samlbundle\")) {",
+							"",
+							"            samlbundle = bundle;",
+							"        }",
+							"    });",
+							"",
+							"    pm.expect(samlbundle).not.equal(null, \"bundle SAML can not be null\");",
+							"",
+							"    pm.expect(samlbundle.state).equals(32, \"bundle SAML should started\");",
+							"    pm.expect(samlbundle.symbolicName).equals(\"com.dotcms.samlbundle\", \"bundle Felix Http name should com.dotcms.samlbundle\");",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/osgi/dotsystem",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"osgi",
+						"dotsystem"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "InvalidUndeploy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/osgi/jar/{{bundleSystemjarFile}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"osgi",
+						"jar",
+						"{{bundleSystemjarFile}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "InvalidStop",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/osgi/jar/{{bundleSystemjarFile}}/_stop",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"osgi",
+						"jar",
+						"{{bundleSystemjarFile}}",
+						"_stop"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "InvalidStart",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/osgi/jar/{{bundleSystemjarFile}}/_start",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"osgi",
+						"jar",
+						"{{bundleSystemjarFile}}",
+						"_start"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ExtraPackages",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200); ",
+							"});",
+							"",
+							"pm.test(\"Exported packages can not be null\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity).not.equal(null, \"the exported packages can not be null\");",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/osgi/extra-packages",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"osgi",
+						"extra-packages"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "404BundleStop",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/osgi/jar/123{{bundleSystemjarFile}}/_stop",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"osgi",
+						"jar",
+						"123{{bundleSystemjarFile}}",
+						"_stop"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "404BundleStart",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/osgi/jar/1234{{bundleSystemjarFile}}/_start",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"osgi",
+						"jar",
+						"1234{{bundleSystemjarFile}}",
+						"_start"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = 'admin@dotcms.com';",
+					"        const password = 'admin';",
+					"        const basicAuth = btoa(`${username}:${password}`);",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

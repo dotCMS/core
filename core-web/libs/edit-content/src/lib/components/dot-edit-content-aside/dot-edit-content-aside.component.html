@@ -1,21 +1,21 @@
 <aside class="content-aside">
     <section class="content-aside__section">
         <div class="content-aside__header">
-            <label aria-label="Information">{{ 'Information' | dm }}</label>
+            <h2>{{ 'Information' | dm }}</h2>
         </div>
         <dot-content-aside-information
             [contentlet]="contentlet"
-            [contentTypeName]="contentType.name"
+            [contentType]="contentType"
             [loading]="loading"
             data-testId="information" />
     </section>
 
     <section class="content-aside__section">
         <div class="content-aside__header">
-            <label aria-label="Workflow">{{ 'Workflow' | dm }}</label>
+            <h2>{{ 'Workflow' | dm }}</h2>
             <div class="content-aside__icon">
-                <i class="pi pi-history"></i>
-                <label>{{ 'show-all' | dm }}</label>
+                <i class="pi pi-history" aria-hidden="true"></i>
+                <span>{{ 'show-all' | dm }}</span>
             </div>
         </div>
         <dot-content-aside-workflow
