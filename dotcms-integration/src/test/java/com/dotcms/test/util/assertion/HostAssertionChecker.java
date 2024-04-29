@@ -6,7 +6,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -16,7 +15,6 @@ import java.util.Collection;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.beans.Host.HOST_NAME_KEY;
 
 /**
@@ -33,7 +31,7 @@ public class HostAssertionChecker implements AssertionChecker<Contentlet> {
         try {
             identifier = APILocator.getIdentifierAPI().find(host.getIdentifier());
 
-            return map(
+            return Map.of(
                     "host_id", host.getIdentifier(),
                     "host_live_inode", contentletVersionInfo.getLiveInode() != null ? contentletVersionInfo.getLiveInode() : "null",
                     "host_working_inode", contentletVersionInfo.getWorkingInode(),

@@ -1,7 +1,5 @@
 package com.dotmarketing.common.db;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -14,13 +12,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.util.UUIDGenerator;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.util.Map;
 
 public class ParamsSetterTest extends BaseWorkflowIntegrationTest {
 
@@ -69,7 +69,7 @@ public class ParamsSetterTest extends BaseWorkflowIntegrationTest {
                 .setSQL("select id,role_name,role_key from cms_role where role_key = ?")
                 .addParam(UserAPI.SYSTEM_USER_ID)
                 .loadObjectResults()
-                .stream().findFirst().orElse(map("id", "2af7cde3-459a-47e1-8041-22a18aa5ed3c"))
+                .stream().findFirst().orElse(Map.of("id", "2af7cde3-459a-47e1-8041-22a18aa5ed3c"))
                 .get("id");
     }
 

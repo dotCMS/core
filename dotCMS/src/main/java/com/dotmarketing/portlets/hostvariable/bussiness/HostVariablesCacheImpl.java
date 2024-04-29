@@ -13,6 +13,9 @@ public class HostVariablesCacheImpl extends HostVariablesCache {
 	private DotCacheAdministrator cache;
 	
 	private static String primaryGroup = "HostVariablesCache";
+
+	private static final String ALL_SITE_VARIABLES_KEY = "ALL_SITE_VARIABLES";
+
     // region's name for the cache
     private static String[] groupNames = {primaryGroup};
 
@@ -21,11 +24,39 @@ public class HostVariablesCacheImpl extends HostVariablesCache {
 	}
 
 	@Override
+	protected void putVariablesForSite(final String siteId, final List<HostVariable> list) {
+		String key = primaryGroup + siteId;
+		cache.put(key, list, getPrimaryGroup());
+	}
+
+	@Override
+	protected List<HostVariable> getVariablesForSite(final String siteId) {
+
+		String key = primaryGroup + siteId;
+
+		List<HostVariable> variables = null;
+
+		try {
+			variables = (List<HostVariable>) cache.get(key, primaryGroup);
+		} catch (DotCacheException e) {
+			Logger.debug(this, "Error retrieving cache entry", e);
+		}
+
+		return variables;
+	}
+
+	@Override
+	protected void clearVariablesForSite(final String siteId) {
+		String key = primaryGroup + siteId;
+		cache.remove(key, primaryGroup);
+		cache.remove(ALL_SITE_VARIABLES_KEY, primaryGroup);
+	}
+
+	@Override
 	protected List<HostVariable> put(List<HostVariable> list) {
-		String key = primaryGroup + "all";
-		
-        // Add the key to the cache
-        cache.put(key, list, primaryGroup);
+
+		// Add the key to the cache
+		cache.put(ALL_SITE_VARIABLES_KEY, list, primaryGroup);
 
 
 		return list;
@@ -34,10 +65,10 @@ public class HostVariablesCacheImpl extends HostVariablesCache {
 	
 	@Override
 	protected List<HostVariable> getAll() {
-		String key = primaryGroup + "all";
+
 		List<HostVariable> l = null;
     	try{
-    		l = (List<HostVariable>)cache.get(key,primaryGroup);
+			l = (List<HostVariable>) cache.get(ALL_SITE_VARIABLES_KEY, primaryGroup);
     	}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}

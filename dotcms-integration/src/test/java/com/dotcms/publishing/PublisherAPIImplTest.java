@@ -1,17 +1,33 @@
 package com.dotcms.publishing;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.set;
-import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.EnvironmentDataGen;
+import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldRelationshipDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FilterDescriptorDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
+import com.dotcms.datagen.PushPublishingEndPointDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.WorkflowActionDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -68,6 +84,17 @@ import com.sun.net.httpserver.HttpServer;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -85,21 +112,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.set;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 @RunWith(DataProviderRunner.class)
@@ -197,15 +221,15 @@ public class PublisherAPIImplTest {
 
         final Template variantTemplate = APILocator.getTemplateAPI().systemTemplate();
         final Contentlet pageNewVersion = ContentletDataGen.createNewVersion(experimentPage, variant,
-                map(HTMLPageAssetAPI.TEMPLATE_FIELD,
-                        variantTemplate.getIdentifier()));
+                new HashMap<>(Map.of(HTMLPageAssetAPI.TEMPLATE_FIELD,
+                        variantTemplate.getIdentifier())));
         ContentletDataGen.publish(pageNewVersion);
 
         return new TestAsset(experiment,
-                map(
+                new HashMap<>(Map.of(
                         experiment, list(variant, experimentPage, pageNewVersion),
                         experimentPage, list(host, template, pageContentType, language)
-                ),
+                )),
                 "/bundlers-test/experiment/experiment.json", true, true);
     }
 
@@ -234,16 +258,16 @@ public class PublisherAPIImplTest {
 
         final Template variantTemplate = new TemplateDataGen().host(host).nextPersisted();
         final Contentlet pageNewVersion = ContentletDataGen.createNewVersion(experimentPage, variant,
-                map(HTMLPageAssetAPI.TEMPLATE_FIELD,
-                        variantTemplate.getIdentifier()));
+                new HashMap<>(Map.of(HTMLPageAssetAPI.TEMPLATE_FIELD,
+                        variantTemplate.getIdentifier())));
         ContentletDataGen.publish(pageNewVersion);
 
         return new TestAsset(experiment,
-                map(
+                new HashMap<>(Map.of(
                         experiment, list(variant, experimentPage, pageNewVersion),
                         variant, list(variantTemplate),
                         experimentPage, list(host, template, variantTemplate, pageContentType, language, variantTemplate)
-                ),
+                )),
                 "/bundlers-test/experiment/experiment.json", true);
     }
 
@@ -286,12 +310,12 @@ public class PublisherAPIImplTest {
                 .nextPersisted();
 
         return new TestAsset(experiment,
-                map(
+                new HashMap<>(Map.of(
                         experiment, list(variant, experimentPage, contentlet),
                         contentlet, list(languageToContentlet, contentType),
                         experimentPage, list(host, template, pageContentType, language),
                         contentType, list(host)
-                ),
+                )),
                 "/bundlers-test/experiment/experiment.json", true);
     }
 
@@ -317,10 +341,10 @@ public class PublisherAPIImplTest {
                 .orElseThrow();
 
         return new TestAsset(experiment,
-                    map(
+                    new HashMap<>(Map.of(
                             experiment, list(variant, experimentPage),
                             experimentPage, list(host, template, pageContentType, language)
-                    ),
+                    )),
                     "/bundlers-test/experiment/experiment.json", true);
     }
 
@@ -350,10 +374,10 @@ public class PublisherAPIImplTest {
                 .findSystemWorkflowScheme();
 
         return new TestAsset(workingVersion,
-                map(
+                new HashMap<>(Map.of(
                         workingVersion, list(host, contentType, defaultLanguage),
                         contentType, list(systemWorkflowScheme)
-                ),
+                )),
                 set(liveVersion),
                 "/bundlers-test/contentlet/contentlet/contentlet.content.xml");
     }
@@ -366,21 +390,21 @@ public class PublisherAPIImplTest {
         final Rule ruleWithPage = new RuleDataGen().page(htmlPageAsset).host(host).nextPersisted();
 
         return new TestAsset(ruleWithPage,
-                map(ruleWithPage, list(host)),
+                new HashMap<>(Map.of(ruleWithPage, list(host))),
                 "/bundlers-test/rule/rule.rule.xml", false);
     }
 
     private static TestAsset getUser() {
         final User user = new UserDataGen().nextPersisted();
         return new TestAsset(user,
-                map(),
+                new HashMap<>(),
                 "/bundlers-test/user/user.user.xml", false);
     }
 
     private static TestAsset getLanguageWithDependencies() {
         final Language language = new LanguageDataGen().nextPersisted();
 
-        return new TestAsset(language, map(), "/bundlers-test/language/language.language.xml");
+        return new TestAsset(language, new HashMap<>(), "/bundlers-test/language/language.language.xml");
     }
 
     private static TestAsset getHostWithDependencies() {
@@ -412,12 +436,12 @@ public class PublisherAPIImplTest {
 
 
             return new TestAsset(host,
-                    map(
+                    new HashMap<>(Map.of(
                             host, list(template, container, contentlet, containerContentType, contentType, folder, rule),
                             contentlet,list(contentType, language),
                             container,list(containerContentType),
                             folder, list(folderContentType)
-                    ),
+                    )),
                     "/bundlers-test/host/host.host.xml");
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -433,7 +457,7 @@ public class PublisherAPIImplTest {
                 .hostId(host.getIdentifier())
                 .nextPersisted();
 
-        return new TestAsset(link, map(link, list(host, folder)), "/bundlers-test/link/link.link.xml");
+        return new TestAsset(link, new HashMap<>(Map.of(link, list(host, folder))), "/bundlers-test/link/link.link.xml");
     }
 
     private static TestAsset getWorkflowWithDependencies() {
@@ -444,7 +468,7 @@ public class PublisherAPIImplTest {
                 .nextPersisted();
 
 
-        return new TestAsset(workflowScheme, map(), "/bundlers-test/workflow/workflow_with_steps_and_action.workflow.xml");
+        return new TestAsset(workflowScheme, new HashMap<>(), "/bundlers-test/workflow/workflow_with_steps_and_action.workflow.xml");
     }
 
     private static TestAsset getFolderWithDependencies() throws DotDataException, DotSecurityException {
@@ -486,7 +510,7 @@ public class PublisherAPIImplTest {
         final ContentType fileAssetContentType = contentlet.getContentType();
 
         return new TestAsset(folderWithDependencies,
-                map(
+                new HashMap<>(Map.of(
                         folderWithDependencies,
                         list(host, parentFolder, contentlet, folderContentType, link, subFolder, contentType),
                         contentlet, list(language, fileAssetContentType),
@@ -494,7 +518,7 @@ public class PublisherAPIImplTest {
                         subFolder, list(contentlet_2),
                         contentType, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme()),
                         folderContentType, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme())
-                ),
+                )),
                 "/bundlers-test/folder/folder.folder.xml");
     }
 
@@ -528,11 +552,11 @@ public class PublisherAPIImplTest {
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
         return new TestAsset(templateWithTemplateLayout,
-                map(
+                new HashMap<>(Map.of(
                         templateWithTemplateLayout, list(host, container_1, container_2, contentType),
                         container_1, list(contentType),
                         contentType, list(systemWorkflowScheme)
-                ),
+                )),
                 "/bundlers-test/template/template.template.xml");
     }
 
@@ -562,10 +586,10 @@ public class PublisherAPIImplTest {
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         return new TestAsset(contentType,
-                map(
+                new HashMap<>(Map.of(
                         contentType, list(host, workflowScheme, relationship, category, systemWorkflowScheme),
                         relationship, list(contentTypeChild)
-                ),
+                )),
                 "/bundlers-test/content_types/content_types_with_category_and_relationship.contentType.json");
     }
 
@@ -582,10 +606,10 @@ public class PublisherAPIImplTest {
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
         return new TestAsset(containerWithContentType,
-                map(
+                new HashMap<>(Map.of(
                         containerWithContentType, list(host, contentType),
                         contentType, list(systemWorkflowScheme)
-                ),
+                )),
                 "/bundlers-test/container/container.containers.container.xml");
     }
 
@@ -649,7 +673,7 @@ public class PublisherAPIImplTest {
 
             final List<ManifestItem> manifestItems = topLevelCategories.stream()
                     .map(category -> (ManifestItem) category).collect(Collectors.toList());
-            manifestLines.addDependencies(map((Category) testAsset.asset, manifestItems));
+            manifestLines.addDependencies(new HashMap<>(Map.of((Category) testAsset.asset, manifestItems)));
 
             for (Category topLevel : topLevelCategories) {
                 dependencies.add(topLevel);
@@ -663,7 +687,7 @@ public class PublisherAPIImplTest {
 
                 final List<ManifestItem> childManifestItems = children.stream()
                         .map(category -> (ManifestItem) category).collect(Collectors.toList());
-                manifestLines.addDependencies(map(topLevel, childManifestItems));
+                manifestLines.addDependencies(new HashMap<>(Map.of(topLevel, childManifestItems)));
             }
 
             dependencies.addAll(APILocator.getCategoryAPI().findAll(APILocator.systemUser(), true));
@@ -673,9 +697,9 @@ public class PublisherAPIImplTest {
 
         if (!Rule.class.isInstance(testAsset.asset) && !User.class.isInstance(testAsset.asset)) {
             if (!Category.class.isInstance(testAsset.asset)) {
-                manifestLines.addExcludes(map("Excluded System Folder/Host/Container/Template",
+                manifestLines.addExcludes(new HashMap<>(Map.of("Excluded System Folder/Host/Container/Template",
                         list(APILocator.getHostAPI().findSystemHost(),
-                                APILocator.getFolderAPI().findSystemFolder())));
+                                APILocator.getFolderAPI().findSystemFolder()))));
 
                 addLanguageVariableManifestItem(
                         manifestLines,
@@ -689,8 +713,8 @@ public class PublisherAPIImplTest {
             final File manifestFile = new File(manifestFilePath);
 
             if (testAsset.addExcludeForSystemTemplate()) {
-                manifestLines.addExcludes(map("Excluded System Folder/Host/Container/Template",
-                        list(APILocator.getTemplateAPI().systemTemplate())));
+                manifestLines.addExcludes(new HashMap<>(Map.of("Excluded System Folder/Host/Container/Template",
+                        list(APILocator.getTemplateAPI().systemTemplate()))));
             }
 
             assertManifestFile(manifestFile, manifestLines);

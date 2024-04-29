@@ -1,44 +1,55 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
-import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
-import static java.io.File.separator;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageCodeDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.PersonaDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.liferay.portal.auth.PrincipalThreadLocal;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
@@ -119,6 +130,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
@@ -127,28 +139,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.ZoneOffset;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.velocity.app.VelocityEngine;
@@ -163,6 +154,50 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
+import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
+import static java.io.File.separator;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Created by Jonathan Gamba. Date: 3/20/12 Time: 12:12 PM
@@ -5371,7 +5406,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File",
                     typeWithBinary.id());
             File textFileVersion1 = createTempFileWithText(FILE_V1_NAME, FILE_V1_NAME);
-            Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
+            Map<String, Object> fieldValues = Map.of(textField.variable(), "contentV1",
                     binaryField.variable(), textFileVersion1);
             Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(),
                     fieldValues);
@@ -5423,7 +5458,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File",
                     typeWithBinary.id());
             File textFileVersion1 = createTempFileWithText(BINARY_NAME, BINARY_CONTENT);
-            Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
+            Map<String, Object> fieldValues = Map.of(textField.variable(), "contentV1",
                     binaryField.variable(), textFileVersion1);
             Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(),
                     fieldValues);
@@ -6977,8 +7012,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet parentContent = new ContentletDataGen(parentContentType.id())
                     .languageId(languageAPI.getDefaultLanguage().getId()).next();
 
-            parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
-                    .map(relationship, CollectionsUtils.list(childContent)), user, false);
+            parentContent = contentletAPI.checkin(parentContent, Map.of(relationship, CollectionsUtils.list(childContent)), user, false);
 
             Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
                     .findContentRelationships(parentContent, user);
@@ -7047,8 +7081,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .languageId(languageAPI.getDefaultLanguage().getId()).next();
 
 
-        parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
-                .map(relationship, CollectionsUtils.list(childContent)), user, false);
+        parentContent = contentletAPI.checkin(parentContent, Map.of(relationship, CollectionsUtils.list(childContent)), user, false);
 
         Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
                 .findContentRelationships(parentContent, user);
@@ -7099,8 +7132,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .languageId(languageAPI.getDefaultLanguage().getId()).next();
 
 
-        parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
-                .map(relationship, CollectionsUtils.list(childContent)), user, false);
+        parentContent = contentletAPI.checkin(parentContent, Map.of(relationship, CollectionsUtils.list(childContent)), user, false);
 
         Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
                 .findContentRelationships(parentContent, user);
@@ -7140,8 +7172,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet parentContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
                     .next();
 
-            parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
-                    .map(relationship, CollectionsUtils.list(childContent)), user, false);
+            parentContent = contentletAPI.checkin(parentContent, Map.of(relationship, CollectionsUtils.list(childContent)), user, false);
 
             List<Contentlet> relatedContent = relationshipAPI.dbRelatedContent(relationship,
                     parentContent, true);
@@ -7201,8 +7232,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet parentContent = new ContentletDataGen(parentContentType.id())
                     .languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
 
-            childContent = contentletAPI.checkin(childContent, CollectionsUtils
-                    .map(relationship, CollectionsUtils.list(parentContent)), user, false);
+            childContent = contentletAPI.checkin(childContent, Map.of(relationship, CollectionsUtils.list(parentContent)), user, false);
 
             Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
                     .findContentRelationships(childContent, user);

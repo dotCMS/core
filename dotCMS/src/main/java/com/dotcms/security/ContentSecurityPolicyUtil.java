@@ -1,7 +1,5 @@
 package com.dotcms.security;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.org.apache.axiom.om.util.Base64;
 import com.dotmarketing.util.Config;
@@ -9,13 +7,14 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
+import org.apache.commons.lang.RandomStringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.lang.RandomStringUtils;
 
 /**
  * Provide util method to set the Content-security-Policy header. It has methos to calculate a Nonce value,
@@ -88,7 +87,7 @@ public class ContentSecurityPolicyUtil {
     private static String overwriteContentSecurityPolicyConfig;
 
     static {
-        contentSecurityPolicyResolvers = map(
+        contentSecurityPolicyResolvers = Map.of(
                 "{script-src nonce}", new ContentSecurityPolicyResolver(
                         (header) -> calculateNonceHeaderToScript(header),
                         (htmlCode) -> calculateNonceToScript(htmlCode)

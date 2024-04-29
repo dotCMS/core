@@ -1,10 +1,10 @@
 package com.dotcms.cube.filters;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.cube.filters.SimpleFilter.Operator;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -72,10 +72,14 @@ public class LogicalFilter implements Filter {
     public Map<String, Object> asMap() {
         final String logicalOperator = type.name().toLowerCase();
 
-        return map(logicalOperator,
+        final Map<String, Object> map = new HashMap<>();
+
+        map.put(logicalOperator,
                 Arrays.stream(filters)
                         .map(filter -> filter.asMap())
                         .collect(Collectors.toList()));
+
+        return map;
     }
 
     @Override
