@@ -46,24 +46,6 @@ describe('EditEmaPaletteContentletsComponent', () => {
         });
     });
 
-    it('should emit dragStart event on drag start', () => {
-        const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
-        spectator.triggerEventHandler('[data-testId="contentlet-0"]', 'dragstart', {
-            identifier: '123',
-            contentType: 'Activity'
-        });
-        expect(dragSpy).toHaveBeenCalledWith({ identifier: '123', contentType: 'Activity' });
-    });
-
-    it('should emit dragEnd event on drag end', () => {
-        const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
-        spectator.triggerEventHandler('[data-testId="contentlet-0"]', 'dragend', {
-            identifier: '123',
-            contentType: 'Activity'
-        });
-        expect(dragSpy).toHaveBeenCalledWith({ identifier: '123', contentType: 'Activity' });
-    });
-
     it('should emit showContentTypes event on backToContentTypes', () => {
         const spy = jest.spyOn(spectator.component.showContentTypes, 'emit');
         const button = spectator.query(byTestId('contentlet-back-button'));
@@ -87,10 +69,13 @@ describe('EditEmaPaletteContentletsComponent', () => {
         expect(spectator.query('[data-testId="contentlet-0"]')).toHaveAttribute('data-item');
         expect(data).toEqual({
             contentlet: {
-                identifier: CONTENTLETS_MOCK[0].identifier
+                identifier: CONTENTLETS_MOCK[0].identifier,
+                contentType: CONTENTLETS_MOCK[0].contentType,
+                baseType: CONTENTLETS_MOCK[0].baseType,
+                title: CONTENTLETS_MOCK[0].title,
+                inode: CONTENTLETS_MOCK[0].inode
             },
-            contentType: CONTENTLETS_MOCK[0].contentType,
-            baseType: CONTENTLETS_MOCK[0].baseType
+            move: false
         });
     });
 
