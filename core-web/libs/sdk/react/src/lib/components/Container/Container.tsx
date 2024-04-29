@@ -52,6 +52,7 @@ export function Container({ containerRef }: ContainerProps) {
 
         return isInsideEditor ? (
             <div
+                data-testid="dot-contentlet"
                 data-dot-object="contentlet"
                 data-dot-identifier={contentlet.identifier}
                 data-dot-basetype={contentlet.baseType}
