@@ -59,7 +59,17 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             final String format = String.format("Executing command: %s", command);
             LOGGER.info(format);
 
-           final String parentCommand = commandsChain.firstSubcommand().map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+            // If the dotCMS URL and token are set, we can proceed with the command execution, we
+            // can bypass the configuration check as we have everything we need for a remote call
+            if (commandsChain.isRemoteURLSet() && commandsChain.isTokenSet()) {
+                return underlyingStrategy.execute(parseResult);
+            } else if (commandsChain.isRemoteURLSet() && !commandsChain.isTokenSet()) {
+                throw new ExecutionException(parseResult.commandSpec().commandLine(),
+                        "The token is required when the dotCMS URL is set.");
+            }
+
+            final String parentCommand = commandsChain.firstSubcommand()
+                    .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
 
             if (!ConfigCommand.NAME.equals(parentCommand)){
                 final ServiceManager manager = getServiceManager();

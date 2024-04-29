@@ -37,6 +37,11 @@ public class SubcommandProcessor {
         boolean isShowErrors = false; //This will be true if any subcommand requested to show errors
         List<ParseResult> subcommands = new ArrayList<>();
 
+        boolean isRemoteURLSet = subcommand.expandedArgs().stream()
+                .anyMatch(arg -> arg.contains("--dotcms-url"));
+        boolean isTokenSet = subcommand.expandedArgs().stream()
+                .anyMatch(arg -> arg.contains("--token"));
+
         ParseResult current = subcommand;
         while (current != null) {
             isShowErrors = isShowErrors || (current.matchedOption("--errors") != null);
@@ -52,8 +57,16 @@ public class SubcommandProcessor {
                 .map(CommandSpec::name).collect(
                         Collectors.toList());
 
-        return Optional.of(CommandsChain.builder().subcommands(subcommands).isShowErrorsAny(isShowErrors).isHelpRequestedAny(isHelpRequestedAny)
-                .command( String.join(" ",collect) ).build());
+        return Optional.of(
+                CommandsChain.builder().
+                        subcommands(subcommands).
+                        isShowErrorsAny(isShowErrors).
+                        isHelpRequestedAny(isHelpRequestedAny).
+                        isRemoteURLSet(isRemoteURLSet).
+                        isTokenSet(isTokenSet).
+                        command(String.join(" ", collect)).
+                        build()
+        );
 
     }
 
