@@ -37,6 +37,10 @@
             transition: none;
             text-wrap: nowrap;
 
+            &:has(p-tableHeaderCheckbox) {
+                width: 40px;
+            }
+
             &:first-child {
                 padding-left: $spacing-3;
             }

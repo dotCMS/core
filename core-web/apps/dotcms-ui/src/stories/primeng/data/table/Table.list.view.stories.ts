@@ -126,7 +126,7 @@ export const Default: StoryFn = () => ({
             </ng-template>  
             <ng-template pTemplate="header">
                 <tr>
-                    <th style="width: 48px" >
+                    <th>
                         <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
                     </th>
                     <th pSortableColumn="name">Title <p-sortIcon field="name"></p-sortIcon></th>
