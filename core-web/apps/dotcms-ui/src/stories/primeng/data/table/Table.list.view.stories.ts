@@ -126,7 +126,7 @@ export const Default: StoryFn = () => ({
             </ng-template>  
             <ng-template pTemplate="header">
                 <tr>
-                    <th style="width: 5%" >
+                    <th style="width: 48px" >
                         <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
                     </th>
                     <th pSortableColumn="name">Title <p-sortIcon field="name"></p-sortIcon></th>
@@ -134,7 +134,7 @@ export const Default: StoryFn = () => ({
                     <th pSortableColumn="assignee">Assignee <p-sortIcon field="assignee"></p-sortIcon></th>
                     <th pSortableColumn="step">Step <p-sortIcon field="step"></p-sortIcon></th>
                     <th pSortableColumn="date">Last Updated <p-sortIcon field="date"></p-sortIcon></th>
-                    <th>Menu</th>
+                    <th style="width: 50px">Menu</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-workflowItem>
