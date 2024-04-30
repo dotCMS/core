@@ -36,4 +36,21 @@
                 data-testId="spinner"></dot-spinner>
         </ng-container>
     </ng-container>
+
+    <p-dialog
+        [visible]="this.$compareData()"
+        [style]="{ height: '90vh', width: '90vw' }"
+        [header]="'Compare'"
+        [draggable]="false"
+        [resizable]="false"
+        [maximizable]="true"
+        [modal]="true"
+        [maskStyleClass]="'p-dialog-mask-transparent-nested'"
+        (visibleChange)="closeCompareDialog()"
+        appendTo="body"
+        data-testId="dialog-compare">
+        <dot-content-compare
+            [data]="$compareData()"
+            (letMeBringBack)="bringBack($event)"></dot-content-compare>
+    </p-dialog>
 </p-dialog>

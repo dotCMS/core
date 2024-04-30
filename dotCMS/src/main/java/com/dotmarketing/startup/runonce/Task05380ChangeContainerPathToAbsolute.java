@@ -1,8 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.util.Constants.CONTAINER_FOLDER_PATH;
-
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotmarketing.common.db.DotConnect;
@@ -12,11 +9,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.startup.StartupTask;
-
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +26,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.StringUtils;
+
+import static com.dotmarketing.util.Constants.CONTAINER_FOLDER_PATH;
 
 /**
  * Change all the relative path into the template by absolute path, resolving them with the template's host
@@ -232,7 +231,7 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
                 String id = cleanId(splitArguments[0]);
                 String uuid = splitArguments.length > 1 ? cleanId(splitArguments[1]) : ParseContainer.DEFAULT_UUID_VALUE;
 
-                containers.add(map("identifier", id, "uuid", uuid));
+                containers.add(Map.of("identifier", id, "uuid", uuid));
             }
         }
 

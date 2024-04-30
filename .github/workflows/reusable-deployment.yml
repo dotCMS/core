@@ -37,7 +37,7 @@ on:
         DEVELOPERS_SLACK_WEBHOOK:
           required: false
           description: 'Slack webhook for developers'
-        NPM_TOKEN:
+        NPM_ORG_TOKEN:
           required: false
           description: 'NPM token'
 jobs:
@@ -100,7 +100,7 @@ jobs:
         uses: ./.github/actions/publish-npm-cli
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          npm-token: ${{ secrets.NPM_TOKEN }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           reuse-previous-build: ${{ inputs.reuse-previous-build }}
 
       # A Slack notification is sent using the 'action-slack-notify' action if the repository is 'dotcms/core'.

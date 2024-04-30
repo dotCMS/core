@@ -419,7 +419,7 @@ jobs:
       - name: 'NPM Package setup'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
-          MVN_PACKAGE_VERSION: ${{ github.event.inputs.version }}
+          MVN_PACKAGE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
         run: |
           echo "::group::NPM Package setup"
           echo "Adding bin folder with all the binaries"

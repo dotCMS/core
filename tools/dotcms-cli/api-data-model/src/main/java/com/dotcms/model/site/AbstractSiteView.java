@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Date;
+import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -103,6 +104,10 @@ public interface AbstractSiteView  {
     @Nullable
     @JsonProperty("working")
     Boolean isWorking();
+
+    @Nullable
+    @JsonProperty("variables")
+    List<SiteVariableView> variables();
 
     @Nullable
     @JsonProperty("locked")

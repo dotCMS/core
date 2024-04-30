@@ -2,18 +2,17 @@
 @import "mixins";
 
 .content-aside__workflow {
-    display: flex;
-    gap: $spacing-3;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-1 $spacing-3;
     padding: $spacing-1 $spacing-4;
-}
-
-.content-aside__workflow-column {
-    display: flex;
-    flex: 1 0 0;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: $spacing-1;
     overflow: hidden;
+    margin: 0;
+
+    dd,
+    dt {
+        margin: 0;
+    }
 }
 
 .workflow-column__title {
