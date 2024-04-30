@@ -292,9 +292,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     handleInlineEditing(e: MouseEvent) {
         const target = e.target as HTMLElement;
-        const element = target.dataset?.mode
-            ? target
-            : (target.closest('[data-mode]') as HTMLElement);
+        const element: HTMLElement = target.dataset?.mode ? target : target.closest('[data-mode]');
 
         if (!element?.dataset.mode) {
             return;
@@ -869,6 +867,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER]: () => {
                 this.dialog.resetDialog();
+                this.cd.detectChanges();
             }
         })[detail.name];
     }
