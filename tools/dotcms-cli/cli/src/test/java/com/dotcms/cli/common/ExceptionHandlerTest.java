@@ -11,6 +11,8 @@ import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAllowedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.WebApplicationException;
+import org.jboss.resteasy.specimpl.BuiltResponse;
+import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -44,32 +46,44 @@ class ExceptionHandlerTest {
         NotFoundException noise = new NotFoundException("No pineapple Flavor today");
         Exception handled = exceptionHandler.handle(noise);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        Assertions.assertTrue(handled.getMessage().contains(config.messages().get(404)));
+        BuiltResponse response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(404)));
+        //Assertions.assertTrue(handled.getMessage().contains(config.messages().get(404)));
 
         BadRequestException badRequestException = new BadRequestException("LOL");
         handled = exceptionHandler.handle(badRequestException);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        Assertions.assertTrue(handled.getMessage().contains(config.messages().get(400)));
+        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(400)));
+        //Assertions.assertTrue(handled.getMessage().contains(config.messages().get(400)));
 
         ForbiddenException forbiddenException = new ForbiddenException("LOL");
         handled = exceptionHandler.handle(forbiddenException);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        Assertions.assertTrue(handled.getMessage().contains(config.messages().get(403)));
+        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(403)));
+        //Assertions.assertTrue(handled.getMessage().contains(config.messages().get(403)));
 
         WebApplicationException unauthorized = new WebApplicationException(401);
         handled = exceptionHandler.handle(unauthorized);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        Assertions.assertTrue(handled.getMessage().contains(config.messages().get(401)));
+        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(401)));
+        //Assertions.assertTrue(handled.getMessage().contains(config.messages().get(401)));
 
         WebApplicationException internalServerError = new WebApplicationException(500);
         handled = exceptionHandler.handle(internalServerError);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        Assertions.assertTrue(handled.getMessage().contains(config.messages().get(500)));
+        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(500)));
+        //Assertions.assertTrue(handled.getMessage().contains(config.messages().get(500)));
 
         NotAllowedException moreNoise = new NotAllowedException("Not Allowed");
         handled = exceptionHandler.handle(moreNoise);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        Assertions.assertTrue(handled.getMessage().contains(config.fallback()));
+        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getReasonPhrase().contains(config.fallback()));
+        //Assertions.assertTrue(handled.getMessage().contains(config.fallback()));
 
     }
 

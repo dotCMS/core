@@ -16,6 +16,9 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import org.jboss.resteasy.specimpl.BuiltResponse;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.ColorScheme;
 import picocli.CommandLine.Model.CommandSpec;
@@ -279,8 +282,12 @@ public class OutputOptionMixin implements MessageWriter {
      */
     private String getMessage(final Exception originalException, final Exception handledEx) {
 
-        var message = abbreviate(handledEx.getMessage(), "...", 200);
-        
+        var message =  abbreviate(handledEx.getMessage(), "...", 200);
+
+        if(handledEx instanceof WebApplicationException){
+            message = getWebApplicationExceptionMessage((WebApplicationException) handledEx);
+        }
+
         if (originalException instanceof PushException ||
                 originalException instanceof PullException ||
                 originalException instanceof TraversalTaskException) {
@@ -298,6 +305,18 @@ public class OutputOptionMixin implements MessageWriter {
 
         return message != null ? message : "An exception " + handledEx.getClass().getSimpleName()
                 + " Occurred With no error message provided.";
+    }
+
+
+    String getWebApplicationExceptionMessage(final WebApplicationException ex) {
+        final Response response = ex.getResponse();
+        if (response instanceof BuiltResponse) {
+            final String reasonPhrase = ((BuiltResponse) response).getReasonPhrase();
+            if (null != reasonPhrase) {
+                return reasonPhrase;
+            }
+        }
+        return ex.getMessage();
     }
 
     @Override
