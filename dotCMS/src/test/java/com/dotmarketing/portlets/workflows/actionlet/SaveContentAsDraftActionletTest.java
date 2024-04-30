@@ -20,11 +20,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class SaveContentAsDraftActionletTest {
@@ -67,7 +71,7 @@ public class SaveContentAsDraftActionletTest {
     @UseDataProvider("respectFrontendRolesValues")
     public void shouldCallSaveDraftWithTheRightParameters(final TestCase testCase) throws DotSecurityException, DotDataException {
         final WorkflowProcessor processor = mock(WorkflowProcessor.class);
-        final Map<String, WorkflowActionClassParameter> params = map();
+        final Map<String, WorkflowActionClassParameter> params = new HashMap<>();
 
         final Contentlet contentlet = mock(Contentlet.class);
         final User user  = mock(User.class);
@@ -114,7 +118,7 @@ public class SaveContentAsDraftActionletTest {
     @UseDataProvider("respectFrontendRolesValues")
     public void shouldCallSaveDraftWithTheRightParametersWhenContentletDependenciesIsNull(final TestCase testCase) throws DotSecurityException, DotDataException {
         final WorkflowProcessor processor = mock(WorkflowProcessor.class);
-        final Map<String, WorkflowActionClassParameter> params = map();
+        final Map<String, WorkflowActionClassParameter> params = new HashMap<>();
 
         final Contentlet contentlet = mock(Contentlet.class);
         final User user  = mock(User.class);

@@ -1,7 +1,5 @@
 package com.dotcms.publisher.receiver;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.handler.BundleXMLascHandler;
@@ -42,7 +40,6 @@ import com.dotcms.publishing.manifest.CSVManifestReader;
 import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestReason;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.BundlePublisherResource;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishEndOnReceiverEvent;
@@ -60,11 +57,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarBuffer;
@@ -76,10 +71,13 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -427,7 +425,7 @@ public class BundlePublisher extends Publisher {
             final Map<String, String> assetsDetails = bundlerAssets.stream()
                     .collect(Collectors
                             .toMap(PublishQueueElement::getAsset, PublishQueueElement::getType));
-            return map(ASSET_DETAILS_KEY, assetsDetails, BUNDLER_ASSETS_KEY, bundlerAssets);
+            return Map.of(ASSET_DETAILS_KEY, assetsDetails, BUNDLER_ASSETS_KEY, bundlerAssets);
         }
 
         private Map<String, Object> getAssetsDetailsFromManifest(final File manifestFile) {
@@ -443,7 +441,7 @@ public class BundlePublisher extends Publisher {
                 }
             }
 
-            return map(ASSET_DETAILS_KEY, assetsDetails,
+            return Map.of(ASSET_DETAILS_KEY, assetsDetails,
                     BUNDLER_ASSETS_KEY, csvManifestReader.getPublishQueueElement());
         }
 
