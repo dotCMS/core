@@ -91,3 +91,4 @@ This maintenance release includes the following code fixes:
 84. https://github.com/dotCMS/core/issues/27453 : Make experience plugin into a system plugin #27453
 85. https://github.com/dotCMS/core/issues/27516 : Secrets can not find the inode on certain url #27516
 86. https://github.com/dotCMS/core/issues/28110 : Only run startup tasks if they need to be run #28110
+87. https://github.com/dotCMS/core/issues/28105 : PDF as Binary / upload field doesn't show preview #28105
