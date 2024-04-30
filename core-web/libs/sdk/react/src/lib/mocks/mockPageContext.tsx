@@ -45,7 +45,8 @@ export const mockPageContext: PageProviderContext = {
                         identifier: 'contentlet-1',
                         title: 'Contentlet 1',
                         inode: 'inode-1',
-                        onNumberOfPages: 1
+                        onNumberOfPages: 1,
+                        baseType: 'base-type-1'
                     }
                 ]
             }
