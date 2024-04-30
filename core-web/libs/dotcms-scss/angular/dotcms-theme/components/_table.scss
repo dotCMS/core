@@ -4,6 +4,29 @@
 // design system. When all tables get migrated, this class will need to be removed.
 // The legacy styles live in _datatable.scss and those styles will be removed
 
+@mixin dot-table-tooltip {
+    &[data-wont-fit]:after {
+        content: attr(data-wont-fit);
+        display: none;
+        position: absolute;
+        width: fit-content;
+        z-index: 1;
+        background-color: $white;
+        color: $black;
+        font-size: $font-size-xsm;
+        transition: opacity 0.3s ease-in-out;
+        border-radius: $border-radius-sm;
+        padding: $spacing-1;
+        text-align: center;
+        box-shadow: $shadow-l;
+    }
+    &:hover:after {
+        display: block;
+    }
+}
+
+$dot-table-cell-padding: 0.625rem $spacing-1;
+
 .dotTable {
     &.p-datatable {
         border-radius: $border-radius-md;
@@ -110,8 +133,21 @@
             > td {
                 text-align: left;
                 border-bottom: 1px solid $color-palette-gray-300;
-                padding: 0.625rem $spacing-1;
+                padding: 0 $spacing-1;
                 font-size: $font-size-smd;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 0;
+
+                span {
+                    @include dot-table-tooltip;
+                }
+
+                &:first-child:has(p-tableCheckbox) + td,
+                &:first-child:not(:has(p-tableCheckbox)) {
+                    padding: $dot-table-cell-padding;
+                }
 
                 &:first-child {
                     padding-left: $spacing-3;
@@ -256,6 +292,7 @@
             }
         }
 
+        //p-datatable-sm is not actually used for now, keep it to maintain consistency with theme
         &.p-datatable-sm {
             .p-datatable-header,
             .p-datatable-footer {
@@ -269,6 +306,7 @@
             }
         }
 
+        //p-datatable-lg is not actually used for now, keep it to maintain consistency with theme
         &.p-datatable-lg {
             .p-datatable-header,
             .p-datatable-footer {

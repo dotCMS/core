@@ -142,9 +142,9 @@ export const Default: StoryFn = () => ({
                     <td>
                         <p-tableCheckbox [value]="workflowItem"></p-tableCheckbox>
                     </td>
-                    <td>{{ workflowItem.name }}</td>
+                    <td><span [attr.data-wont-fit]="workflowItem.name">{{ workflowItem.name }}</span></td>
                     <td><p-tag  class="sm p-tag-success" [value]="workflowItem.status"/></td>
-                    <td>{{ workflowItem.assignee }}</td>
+                    <td><span [attr.data-wont-fit]="workflowItem.assignee" >{{ workflowItem.assignee }}</span></td>
                     <td>{{ workflowItem.step }}</td>
                     <td>{{ workflowItem.date | date }}</td>
                     <td>
