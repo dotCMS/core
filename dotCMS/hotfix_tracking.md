@@ -92,3 +92,4 @@ This maintenance release includes the following code fixes:
 85. https://github.com/dotCMS/core/issues/27516 : Secrets can not find the inode on certain url #27516
 86. https://github.com/dotCMS/core/issues/28110 : Only run startup tasks if they need to be run #28110
 87. https://github.com/dotCMS/core/issues/28105 : PDF as Binary / upload field doesn't show preview #28105
+88. https://github.com/dotCMS/core/issues/27563 : Site or Folder field does not show on the relate content window #27563
