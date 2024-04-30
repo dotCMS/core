@@ -1,6 +1,9 @@
 package com.dotcms.cli.common;
 
+import com.dotcms.api.client.model.AuthenticationParam;
+import com.dotcms.api.client.model.RemoteURLParam;
 import com.dotcms.cli.command.EntryCommand;
+import io.quarkus.arc.Arc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,10 +40,14 @@ public class SubcommandProcessor {
         boolean isShowErrors = false; //This will be true if any subcommand requested to show errors
         List<ParseResult> subcommands = new ArrayList<>();
 
-        boolean isRemoteURLSet = subcommand.expandedArgs().stream()
-                .anyMatch(arg -> arg.contains("--dotcms-url"));
-        boolean isTokenSet = subcommand.expandedArgs().stream()
-                .anyMatch(arg -> arg.contains("--token"));
+        // Get all instances that implement DotPush
+        final var remoteURLParam = Arc.container().instance(RemoteURLParam.class).get();
+        final var authenticationParam = Arc.container().instance(AuthenticationParam.class).get();
+
+        //This will be true if the dotCMS URL was set
+        final var isRemoteURLSet = remoteURLParam.getURL().isPresent();
+        //This will be true if the token was set
+        final var isTokenSet = authenticationParam.getToken().isPresent();
 
         ParseResult current = subcommand;
         while (current != null) {
