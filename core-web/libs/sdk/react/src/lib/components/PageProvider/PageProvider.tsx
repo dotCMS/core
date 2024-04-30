@@ -26,6 +26,7 @@ export interface ContainerData {
                 title: string;
                 inode: string;
                 onNumberOfPages: number;
+                baseType: string;
                 widgetTitle?: string;
             }[];
         };
