@@ -52,11 +52,7 @@ form {
 .ai-image-prompt__rewritten-label {
     display: flex;
     gap: $spacing-1;
-
-    i {
-        color: $color-palette-primary;
-        cursor: pointer;
-    }
+    align-items: center;
 }
 
 p-accordion {

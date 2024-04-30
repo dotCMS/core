@@ -22,18 +22,25 @@
                 [configuration]="emptyConfiguration"
                 (buttonAction)="store.generateContent(form.value.textPrompt)" />
             } @else {
-            <textarea
-                class="ai-content__generated-text"
-                [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
-                [readOnly]="true"
-                dotClipboard
-                formControlName="generatedText"
-                pInputTextarea>
-            </textarea>
+            <div class="ai-content__generated-text-wrapper">
+                <textarea
+                    class="ai-content__generated-text"
+                    #generatedText
+                    [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
+                    [readOnly]="true"
+                    formControlName="generatedText"
+                    pInputTextarea>
+                </textarea>
+
+                <dot-copy-button
+                    *ngIf="generatedText.value"
+                    [copy]="generatedText.value"
+                    customClass="p-button-rounded" />
+            </div>
 
             } @if (vm.status === ComponentStatus.LOADING) {
             <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
-            } @else{
+            } @else {
             <div class="ai-content__pagination">
                 <button
                     class="p-button-text p-button-sm p-button-rounded"
@@ -63,40 +70,40 @@
                 class="ai-content__input-text"
                 #inputTextarea
                 [placeholder]="'block-editor.extension.ai-content.ask.placeholder' | dm"
-                pInputTextarea
-                formControlName="textPrompt"></textarea>
+                formControlName="textPrompt"
+                pInputTextarea></textarea>
 
             <div class="ai-content__buttons">
                 <button
                     class="p-button-text"
                     [label]="'Cancel' | dm"
                     (click)="closeDialog()"
-                    type="button"
-                    pButton></button>
+                    pButton
+                    type="button"></button>
                 <button
                     class="ml-auto"
-                    [label]="'block-editor.extension.ai-image.insert' | dm"
                     [disabled]="
                         vm.status === ComponentStatus.LOADING ||
                         !vm.generatedContent?.length ||
                         vm.generatedContent[vm.activeIndex]?.error
                     "
+                    [label]="'block-editor.extension.ai-image.insert' | dm"
                     (click)="store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)"
-                    type="button"
-                    pButton></button>
+                    pButton
+                    type="button"></button>
                 <button
                     class="p-button-outlined"
-                    [label]="submitButtonLabel | dm"
                     [disabled]="form.invalid || vm.status === ComponentStatus.LOADING"
-                    type="submit"
-                    pButton>
+                    [label]="submitButtonLabel | dm"
+                    pButton
+                    type="submit">
                     <svg
                         *ngIf="vm.status !== ComponentStatus.LOADING; else loading"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
+                        fill="none"
                         height="22"
                         viewBox="0 0 18 22"
-                        fill="none">
+                        width="18"
+                        xmlns="http://www.w3.org/2000/svg">
                         <path
                             d="M9.48043 13.2597L5.40457 14.5046C5.29885 14.5368 5.20602 14.6037 5.13999 14.6952C5.07396 14.7868 5.03828 14.8981 5.03828 15.0124C5.03828 15.1268 5.07396 15.238 5.13999 15.3296C5.20602 15.4211 5.29885 15.488 5.40457 15.5203L9.48043 16.7651L10.6799 20.9949C10.711 21.1046 10.7755 21.2009 10.8637 21.2695C10.9519 21.338 11.0591 21.375 11.1693 21.375C11.2795 21.375 11.3867 21.338 11.4749 21.2695C11.5631 21.2009 11.6276 21.1046 11.6586 20.9949L12.8586 16.7651L16.9345 15.5203C17.0402 15.488 17.133 15.4211 17.1991 15.3296C17.2651 15.238 17.3008 15.1268 17.3008 15.0124C17.3008 14.8981 17.2651 14.7868 17.1991 14.6952C17.133 14.6037 17.0402 14.5368 16.9345 14.5046L12.8586 13.2597L11.6586 9.02989C11.6276 8.92018 11.5631 8.82385 11.4749 8.75533C11.3867 8.6868 11.2795 8.64977 11.1693 8.64977C11.0591 8.64977 10.9519 8.6868 10.8637 8.75533C10.7754 8.82385 10.711 8.92018 10.6799 9.02989L9.48043 13.2597Z"
                             fill="#426BF0" />
@@ -115,9 +122,9 @@
         </form>
         <p-confirmDialog
             [style]="{ width: '500px' }"
+            acceptIcon="null"
             key="ai-image-prompt"
             rejectButtonStyleClass="p-button-outlined"
-            acceptIcon="null"
             rejectIcon="null">
         </p-confirmDialog>
     </p-dialog>

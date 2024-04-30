@@ -18,7 +18,7 @@ import { delay, filter } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
-    DotClipboardDirective,
+    DotCopyButtonComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
     DotValidators,
@@ -48,7 +48,7 @@ interface AIContentForm {
         AsyncPipe,
         DotEmptyContainerComponent,
         ConfirmDialogModule,
-        DotClipboardDirective
+        DotCopyButtonComponent
     ],
     styleUrls: ['./ai-content-prompt.component.scss']
 })
@@ -63,12 +63,11 @@ export class AIContentPromptComponent implements OnInit {
     confirmationService = inject(ConfirmationService);
     dotMessageService = inject(DotMessageService);
     submitButtonLabel: string;
-    private destroyRef = inject(DestroyRef);
     emptyConfiguration: PrincipalConfiguration = {
         title: this.dotMessageService.get('block-editor.extension.ai-content.error'),
         icon: 'pi-exclamation-triangle'
     };
-
+    private destroyRef = inject(DestroyRef);
     @ViewChild('inputTextarea') private inputTextarea: ElementRef<HTMLTextAreaElement>;
 
     ngOnInit() {

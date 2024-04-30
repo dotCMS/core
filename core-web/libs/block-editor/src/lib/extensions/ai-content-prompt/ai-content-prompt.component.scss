@@ -28,6 +28,18 @@ form {
     }
 }
 
+.ai-content__generated-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    dot-copy-button {
+        position: absolute;
+        right: 1rem;
+        bottom: 0.25rem;
+    }
+}
+
 .ai-content__generated-text,
 dot-empty-container {
     height: 22rem;

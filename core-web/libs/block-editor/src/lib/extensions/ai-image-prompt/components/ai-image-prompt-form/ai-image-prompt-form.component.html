@@ -1,5 +1,5 @@
 <form [formGroup]="form" (ngSubmit)="generate.emit()">
-    <p-accordion [activeIndex]="0" expandIcon="pi pi-angle-down" collapseIcon="pi pi-angle-up">
+    <p-accordion [activeIndex]="0" collapseIcon="pi pi-angle-up" expandIcon="pi pi-angle-down">
         <p-accordionTab
             [disabled]="isLoading"
             [header]="'block-editor.extension.ai-image.settings' | dm"
@@ -9,8 +9,8 @@
                 <div>
                     <p-radioButton
                         formControlName="type"
-                        value="input"
-                        inputId="optionOne"></p-radioButton>
+                        inputId="optionOne"
+                        value="input"></p-radioButton>
                     <label class="ml-2" for="optionOne">{{
                         'block-editor.extension.ai-image.custom.prompt' | dm
                     }}</label>
@@ -19,8 +19,8 @@
                 <div>
                     <p-radioButton
                         formControlName="type"
-                        value="auto"
-                        inputId="option2"></p-radioButton>
+                        inputId="option2"
+                        value="auto"></p-radioButton>
                     <label class="ml-2" for="option2">{{
                         'block-editor.extension.ai-image.existing.content' | dm
                     }}</label>
@@ -48,8 +48,8 @@
                 <div class="field">
                     <label
                         *ngIf="requiredPrompt; else labelNotRequired"
-                        dotFieldRequired
                         data-testid="prompt-label"
+                        dotFieldRequired
                         for="prompt">
                         {{ promptLabel | dm }}
                     </label>
@@ -57,32 +57,27 @@
                         class="w-full ai-image-prompt__textarea"
                         id="prompt"
                         [placeholder]="promptTextAreaPlaceholder | dm"
-                        rows="11"
                         cols="30"
+                        formControlName="text"
                         pInputTextarea
-                        formControlName="text">
+                        rows="11">
                     </textarea>
                 </div>
                 <div class="field" *ngIf="aiProcessedPrompt && !isLoading">
                     <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten"
                         >{{ 'block-editor.extension.ai-image.rewritten' | dm }}
-                        <i
-                            class="pi pi-copy"
-                            [pTooltip]="tooltipText"
-                            (click)="copyToClipboard()"
-                            tooltipPosition="bottom"
-                            hideDelay="800"
-                            data-testid="copy-to-clipboard"></i>
+                        <dot-copy-button
+                            [copy]="aiProcessedPrompt"
+                            customClass="p-button-rounded" />
                     </label>
                     <textarea
                         class="w-full ai-image-prompt__rewritten-textarea"
                         id="prompt-rewritten"
                         [value]="aiProcessedPrompt"
-                        rows="11"
                         cols="30"
                         pInputTextarea
-                        dotClipboard
-                        readonly>
+                        readonly
+                        rows="11">
                     </textarea>
                 </div>
             </div>
@@ -96,11 +91,11 @@
         type="submit">
         <svg
             *ngIf="!isLoading; else loading"
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
+            fill="none"
             height="22"
             viewBox="0 0 18 22"
-            fill="none">
+            width="18"
+            xmlns="http://www.w3.org/2000/svg">
             <path
                 d="M9.48043 13.2597L5.40457 14.5046C5.29885 14.5368 5.20602 14.6037 5.13999 14.6952C5.07396 14.7868 5.03828 14.8981 5.03828 15.0124C5.03828 15.1268 5.07396 15.238 5.13999 15.3296C5.20602 15.4211 5.29885 15.488 5.40457 15.5203L9.48043 16.7651L10.6799 20.9949C10.711 21.1046 10.7755 21.2009 10.8637 21.2695C10.9519 21.338 11.0591 21.375 11.1693 21.375C11.2795 21.375 11.3867 21.338 11.4749 21.2695C11.5631 21.2009 11.6276 21.1046 11.6586 20.9949L12.8586 16.7651L16.9345 15.5203C17.0402 15.488 17.133 15.4211 17.1991 15.3296C17.2651 15.238 17.3008 15.1268 17.3008 15.0124C17.3008 14.8981 17.2651 14.7868 17.1991 14.6952C17.133 14.6037 17.0402 14.5368 16.9345 14.5046L12.8586 13.2597L11.6586 9.02989C11.6276 8.92018 11.5631 8.82385 11.4749 8.75533C11.3867 8.6868 11.2795 8.64977 11.1693 8.64977C11.0591 8.64977 10.9519 8.6868 10.8637 8.75533C10.7754 8.82385 10.711 8.92018 10.6799 9.02989L9.48043 13.2597Z"
                 fill="#426BF0" />
@@ -117,7 +112,7 @@
     </button>
 </form>
 <ng-template #labelNotRequired>
-    <label for="prompt" data-testid="prompt-label">
+    <label data-testid="prompt-label" for="prompt">
         {{ promptLabel | dm }}
     </label>
 </ng-template>
