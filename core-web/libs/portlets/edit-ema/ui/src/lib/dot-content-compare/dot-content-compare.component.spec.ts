@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { it, expect } from '@jest/globals';
 import { of } from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -7,10 +8,6 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotContentCompareTableComponent } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component';
-import { dotContentCompareTableDataMock } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component.spec';
-import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
-import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -18,27 +15,20 @@ import {
     DotFormatDateService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotContentCompareEvent } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import {
-    DotContentCompareComponent,
-    DotContentCompareEvent
-} from './dot-content-compare.component';
+import { dotContentCompareTableDataMock } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component.spec';
+import { DotContentCompareTableComponent } from './components/dot-content-compare-table/dot-content-compare-table.component';
+import { DotContentCompareComponent } from './dot-content-compare.component';
+import { DotContentCompareModule } from './dot-content-compare.module';
+import { DotContentCompareStore } from './store/dot-content-compare.store';
 
 const DotContentCompareEventMOCK = {
     inode: '1',
     identifier: '2',
     language: 'es'
 };
-
-const storeMock = jasmine.createSpyObj(
-    'DotContentCompareStore',
-    ['loadData', 'updateShowDiff', 'updateCompare', 'bringBack'],
-    {
-        vm$: of({ data: dotContentCompareTableDataMock, showDiff: false })
-    }
-);
 
 @Component({
     selector: 'dot-test-host-component',
@@ -76,7 +66,7 @@ describe('DotContentCompareComponent', () => {
                 {
                     provide: DotIframeService,
                     useValue: {
-                        run: jasmine.createSpy()
+                        run: () => ({})
                     }
                 },
                 DotFormatDateService,
@@ -97,7 +87,15 @@ describe('DotContentCompareComponent', () => {
                 }
             ]
         });
-        TestBed.overrideProvider(DotContentCompareStore, { useValue: storeMock });
+        TestBed.overrideProvider(DotContentCompareStore, {
+            useValue: {
+                vm$: of({ data: dotContentCompareTableDataMock, showDiff: false }),
+                loadData: jest.fn(),
+                updateShowDiff: jest.fn(),
+                updateCompare: jest.fn(),
+                bringBack: jest.fn()
+            }
+        });
 
         hostFixture = TestBed.createComponent(TestHostComponent);
         de = hostFixture.debugElement;
@@ -121,36 +119,37 @@ describe('DotContentCompareComponent', () => {
 
     it('should update diff flag', () => {
         contentCompareTableComponent.changeDiff.emit(true);
-        expect(dotContentCompareStore.updateShowDiff).toHaveBeenCalledOnceWith(true);
+        expect(dotContentCompareStore.updateShowDiff).toHaveBeenCalledWith(true);
     });
 
     it('should update compare content', () => {
         contentCompareTableComponent.changeVersion.emit('value' as unknown as DotCMSContentlet);
-        expect(dotContentCompareStore.updateCompare).toHaveBeenCalledOnceWith(
+        expect(dotContentCompareStore.updateCompare).toHaveBeenCalledWith(
             'value' as unknown as DotCMSContentlet
         );
     });
 
     it('should bring back version after confirm and emit shutdown', () => {
-        spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-        spyOn(hostComponent.shutdown, 'emit');
+        const emitSpy = jest.spyOn(hostComponent.shutdown, 'emit');
+        const iframeServiceSpy = jest.spyOn(dotIframeService, 'run');
 
         contentCompareTableComponent.bringBack.emit('123');
 
         expect<any>(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
-            accept: jasmine.any(Function),
-            reject: jasmine.any(Function),
+            accept: expect.any(Function),
+            reject: expect.any(Function),
             header: 'Confirm',
             message:
                 'Are you sure you would like to replace your working version with this contentlet version?'
         });
 
-        expect(dotIframeService.run).toHaveBeenCalledOnceWith({
+        expect(iframeServiceSpy).toHaveBeenCalledWith({
             name: 'getVersionBack',
             args: ['123']
         });
-        expect(hostComponent.shutdown.emit).toHaveBeenCalledOnceWith(true);
+        expect(emitSpy).toHaveBeenCalledWith(true);
     });
 });

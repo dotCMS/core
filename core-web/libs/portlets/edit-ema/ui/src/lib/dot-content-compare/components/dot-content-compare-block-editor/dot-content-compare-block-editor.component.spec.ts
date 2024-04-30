@@ -4,15 +4,14 @@ import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotDiffPipe } from '@dotcms/app/view/pipes';
-import { DotDiffPipeModule } from '@dotcms/app/view/pipes/dot-diff/dot-diff.pipe.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotDiffPipe, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { BlockEditorMockComponent } from './block-editor-mock/block-editor-mock.component';
 import { DotContentCompareBlockEditorComponent } from './dot-content-compare-block-editor.component';
+
+import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
 
 export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     working: {
@@ -222,6 +221,58 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     ]
 };
 
+//This is to mock the ClipboardEvent and DragEvent
+//to avoid tiptap implementation errors.
+class ClipboardDataMock {
+    getData: jest.Mock<string, [string]>;
+    setData: jest.Mock<void, [string, string]>;
+
+    constructor() {
+        this.getData = jest.fn();
+        this.setData = jest.fn();
+    }
+}
+
+class ClipboardEventMock extends Event {
+    clipboardData: ClipboardDataMock;
+
+    constructor(type: string, options?: EventInit) {
+        super(type, options);
+        this.clipboardData = new ClipboardDataMock();
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).ClipboardEvent = ClipboardEventMock;
+
+class DataTransferMock {
+    data: { [key: string]: string };
+
+    constructor() {
+        this.data = {};
+    }
+
+    setData(format: string, data: string): void {
+        this.data[format] = data;
+    }
+
+    getData(format: string): string {
+        return this.data[format] || '';
+    }
+}
+
+class DragEventMock extends Event {
+    dataTransfer: DataTransferMock;
+
+    constructor(type: string, options?: EventInit) {
+        super(type, options);
+        this.dataTransfer = new DataTransferMock();
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).DragEvent = DragEventMock;
+
 describe('DotContentCompareBlockEditorComponent', () => {
     let component: DotContentCompareBlockEditorComponent;
     let fixture: ComponentFixture<DotContentCompareBlockEditorComponent>;
@@ -237,7 +288,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
             schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
             imports: [
-                DotDiffPipeModule,
+                DotDiffPipe,
                 HttpClientTestingModule,
                 CommonModule,
                 BlockEditorMockComponent,

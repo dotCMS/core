@@ -61,27 +61,23 @@
                     !es.editorData.page.isLocked
                 "
                 [hide]="es.state === editorState.DRAGGING"
-                [contentlet]="es.contentletArea"
+                [contentletArea]="es.contentletArea"
                 (edit)="handleEditContentlet($event)"
                 (editVTL)="handleEditVTL($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
-                (moveStart)="moveContentlet($event)"
-                (moveStop)="onDragEnd($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
                     es.editorData.canEditVariant &&
                     !!es.bounds.length &&
-                    !!dragItem &&
                     !es.editorData.device &&
                     es.state === editorState.DRAGGING
                 "
                 [containers]="es.bounds"
-                [item]="dragItem"
-                (place)="onPlaceItem($event)"
+                [dragItem]="es.dragItem"
                 data-testId="dropzone" />
         </div>
     </div>
@@ -97,8 +93,6 @@
         "
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
-        (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
     @if(es.editorData.canEditVariant && (es.editorData.mode === editorMode.EDIT ||
@@ -106,6 +100,7 @@
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"
+        (reloadFromDialog)="reloadFromDialog()"
         data-testId="ema-dialog"></dot-edit-ema-dialog>
     <p-confirmDialog
         [style]="{
