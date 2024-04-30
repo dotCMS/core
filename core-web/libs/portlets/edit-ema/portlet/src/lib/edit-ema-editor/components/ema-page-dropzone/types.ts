@@ -1,4 +1,4 @@
-import { ActionPayload, ClientData } from '../../../shared/models';
+import { ActionPayload, ClientData, DraggedPayload } from '../../../shared/models';
 
 export interface ContentletArea {
     x: number;
@@ -36,6 +36,7 @@ export interface Column {
 export interface EmaDragItem {
     baseType: string;
     contentType: string;
+    draggedPayload: DraggedPayload;
 }
 
 export interface Row {

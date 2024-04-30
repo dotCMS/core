@@ -2,7 +2,6 @@ import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
 import {
     DotContentletService,
     DotContentTypeService,
@@ -10,6 +9,8 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { MockDotHttpErrorManagerService } from '@dotcms/utils-testing';
+
+import { DotContentCompareStore } from './dot-content-compare.store';
 
 const generateRandomString = function (length: number) {
     const words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit'];
@@ -690,17 +691,13 @@ describe('DotContentCompareStore', () => {
                 {
                     provide: DotContentTypeService,
                     useValue: {
-                        getContentType: jasmine
-                            .createSpy()
-                            .and.returnValue(of(getContentTypeMOCKResponse))
+                        getContentType: () => of(getContentTypeMOCKResponse)
                     }
                 },
                 {
                     provide: DotContentletService,
                     useValue: {
-                        getContentletVersions: jasmine
-                            .createSpy()
-                            .and.returnValue(of(getContentletVersionsMOCKResponse))
+                        getContentletVersions: () => of(getContentletVersionsMOCKResponse)
                     }
                 },
                 {
