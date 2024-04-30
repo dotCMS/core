@@ -20,6 +20,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
+    DotAlertConfirmService,
     DotContentTypeService,
     DotContentletLockerService,
     DotContentletService,
@@ -30,6 +31,7 @@ import {
     DotExperimentsService,
     DotFavoritePageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
@@ -128,6 +130,18 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             EditEmaStore,
             DotFavoritePageService,
             DotESContentService,
+            {
+                provide: DotAlertConfirmService,
+                useValue: {
+                    confirm: () => of({})
+                }
+            },
+            {
+                provide: DotIframeService,
+                useValue: {
+                    run: () => of({})
+                }
+            },
             {
                 provide: DotExperimentsService,
                 useValue: {
