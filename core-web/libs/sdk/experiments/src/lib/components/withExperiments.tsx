@@ -2,7 +2,10 @@ import React, { ReactNode } from 'react';
 
 import { DotcmsPageProps } from '@dotcms/react';
 
-import { useExperimentVariant } from '../hooks/useExperimentVariant';
+import { DotExperimentHandlingComponent } from './DotExperimentHandlingComponent';
+import { DotExperimentsProvider } from './DotExperimentsProvider';
+
+import { DotExperimentConfig } from '../shared/models';
 
 export interface PageProviderProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,31 +14,26 @@ export interface PageProviderProps {
 }
 
 /**
- * High Order Component that enhances a given component (WrappedComponent) with experiments handling.
- * This HOC uses the 'useExperimentVariant' hook to decide whether to hide the content because
- * it has an assigned experiment variant that's different from the currently displayed one.
- * If the assigned variant differs from the displayed one, the HOC hides the content, and an internal
- * effect handles the redirect. On the next render, if the assigned variant matches the displayed one,
- * the HOC shows the content of the WrappedComponent.
+ * Wraps a given component with experiment handling capabilities using the 'useExperimentVariant' hook.
+ * This HOC checks if the entity's assigned experiment variant differs from the currently displayed variant.
+ * If they differ, the content is hidden until the correct variant is displayed. Once the assigned variant
+ * matches the displayed variant, the content of the WrappedComponent is shown.
  *
- * @param {React.ComponentType} WrappedComponent - The component to be enhanced with experiments handling.
- * @returns {React.FunctionComponent} - A new component that wraps the original component and adds * experiments handling.
+ * @param {React.ComponentType<DotcmsPageProps>} WrappedComponent - The component to be enhanced.
+ * @param {DotExperimentConfig} config - Configuration for experiment handling, including any necessary
+ *        redirection functions or other settings.
+ * @returns {React.FunctionComponent<DotcmsPageProps>} A component that wraps the original component,
+ *          adding experiment handling based on the specified configuration.
  */
-
-export const withExperiments = (WrappedComponent: React.ComponentType<DotcmsPageProps>) => {
+export const withExperiments = (
+    WrappedComponent: React.ComponentType<DotcmsPageProps>,
+    config: DotExperimentConfig
+) => {
     return (props: DotcmsPageProps) => {
-        const { entity } = props;
-
-        const { shouldWaitForVariant } = useExperimentVariant(entity);
-
-        if (shouldWaitForVariant) {
-            return (
-                <div style={{ visibility: 'hidden' }}>
-                    <WrappedComponent {...props} />
-                </div>
-            );
-        }
-
-        return <WrappedComponent {...props} />;
+        return (
+            <DotExperimentsProvider config={{ ...config }}>
+                <DotExperimentHandlingComponent {...props} WrappedComponent={WrappedComponent} />
+            </DotExperimentsProvider>
+        );
     };
 };

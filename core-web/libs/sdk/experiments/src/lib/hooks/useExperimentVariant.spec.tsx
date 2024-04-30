@@ -2,7 +2,8 @@ import { renderHook } from '@testing-library/react-hooks';
 import React from 'react';
 
 import * as dotcmsClient from '@dotcms/client';
-import { useExperimentVariant } from '@dotcms/experiments';
+
+import { useExperimentVariant } from './useExperimentVariant';
 
 import MockDotExperimentsContext from '../contexts/DotExperimentsContext';
 import { EXPERIMENT_DEFAULT_VARIANT_NAME } from '../shared/constants';

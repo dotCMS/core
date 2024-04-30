@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import WebPageContent from './content-types/webPageContent';
-import Banner from './content-types/banner';
-import Activity from './content-types/activity';
-import Product from './content-types/product';
-import ImageComponent from './content-types/image';
+import WebPageContent from "./content-types/webPageContent";
+import Banner from "./content-types/banner";
+import Activity from "./content-types/activity";
+import Product from "./content-types/product";
+import ImageComponent from "./content-types/image";
 
-import Header from './layout/header';
-import Footer from './layout/footer';
-import Navigation from './layout/navigation';
-import { usePathname, useRouter } from 'next/navigation';
-import { DotcmsLayout } from '@dotcms/react';
-import { DotExperimentsProvider, withExperiments } from '@dotcms/experiments';
+import Header from "./layout/header";
+import Footer from "./layout/footer";
+import Navigation from "./layout/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { DotcmsLayout } from "@dotcms/react";
+import { withExperiments } from "@dotcms/experiments";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -34,8 +34,8 @@ const componentsMap = {
 
 
 export function MyPage({ data, nav }) {
-    const { refresh, replace } = useRouter();
-    const pathname = usePathname();
+  const { refresh, replace } = useRouter();
+  const pathname = usePathname();
 
 
   /**
@@ -44,10 +44,13 @@ export function MyPage({ data, nav }) {
    * - Replace the below line with `const DotLayoutComponent = DotcmsLayout;`
    * - Remove DotExperimentsProvider from the return statement.
    */
-  const DotLayoutComponent = experimentConfig.apiKey ? withExperiments(DotcmsLayout) : DotcmsLayout;
+  const DotLayoutComponent = experimentConfig.apiKey ? withExperiments(DotcmsLayout, {
+    ...experimentConfig,
+    redirectFn: replace
+  }) : DotcmsLayout;
 
-  // Assembling page content
-  const pageContent = (
+
+  return (
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
       {data.layout.header && (
         <Header>
@@ -64,15 +67,4 @@ export function MyPage({ data, nav }) {
     </div>
   );
 
-  // Render with experiments provider if API key is available
-  if (experimentConfig.apiKey) {
-    return (
-      <DotExperimentsProvider config={{ ...experimentConfig, redirectFn: replace }}>
-        {pageContent}
-      </DotExperimentsProvider>
-    );
-  } else {
-    // Return only the page content when not using experiments
-    return pageContent;
-  }
 }
