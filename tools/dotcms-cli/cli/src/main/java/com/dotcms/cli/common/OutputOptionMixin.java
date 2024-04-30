@@ -307,7 +307,12 @@ public class OutputOptionMixin implements MessageWriter {
                 + " Occurred With no error message provided.";
     }
 
-
+    /**
+     * On recent versions of RESTEasy, the custom message is stored in the reasonPhrase
+     * The WebApplicationException message is immutable and can't be changed 404 is always "Not Found"
+     * @param ex The exception that was thrown
+     * @return The message to display
+     */
     String getWebApplicationExceptionMessage(final WebApplicationException ex) {
         final Response response = ex.getResponse();
         if (response instanceof BuiltResponse) {
