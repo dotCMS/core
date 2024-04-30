@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
+import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotAddContentletComponent } from './components/dot-add-contentlet/dot-add-contentlet.component';
