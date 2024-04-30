@@ -1617,9 +1617,10 @@ public class WorkflowResource {
         final Contentlet basicContentlet = fireCommandOpt.isPresent()?
                 fireCommandOpt.get().fire(contentlet, this.needSave(fireActionForm), formBuilder.build()):
                 this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build());
-        final Contentlet hydratedContentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
+        final Contentlet hydratedContentlet = new DotTransformerBuilder().contentResourceOptions(false)
+                .content(basicContentlet).build().hydrate().get(0);
         return Response.ok(
-                new ResponseEntityView(this.workflowHelper.contentletToMap(hydratedContentlet))
+                new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
         ).build(); // 200
     }
 
