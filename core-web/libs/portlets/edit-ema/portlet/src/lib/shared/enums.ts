@@ -11,6 +11,7 @@ export enum NG_CUSTOM_EVENTS {
     CREATE_CONTENTLET = 'create-contentlet-from-edit-page',
     SAVE_PAGE = 'save-page',
     FORM_SELECTED = 'form-selected',
+    COMPARE_CONTENTLET = 'compare-contentlet',
     SAVE_MENU_ORDER = 'save-menu-order',
     ERROR_SAVING_MENU_ORDER = 'error-saving-menu-order',
     CANCEL_SAVING_MENU_ORDER = 'cancel-save-menu-order',

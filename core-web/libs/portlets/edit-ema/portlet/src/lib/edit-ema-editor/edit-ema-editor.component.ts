@@ -1264,6 +1264,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Reloads the component from the dialog.
+     */
+    reloadFromDialog() {
+        this.store.reload({ params: this.queryParams });
+    }
+
+    /**
      * Handle the file upload
      *
      * @private
