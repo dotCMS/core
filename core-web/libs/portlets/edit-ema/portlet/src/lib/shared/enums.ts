@@ -23,8 +23,8 @@ export enum EDITOR_STATE {
     LOADING = 'loading',
     IDLE = 'idle',
     DRAGGING = 'dragging',
-
-    ERROR = 'error'
+    ERROR = 'error',
+    OUT_OF_BOUNDS = 'out-of-bounds'
 }
 
 export enum EDITOR_MODE {

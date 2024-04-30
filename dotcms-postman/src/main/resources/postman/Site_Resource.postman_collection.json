@@ -1,15 +1,2496 @@
 {
 	"info": {
-		"_postman_id": "a324a1a7-b759-4532-8ea8-cdd63a18223c",
+		"_postman_id": "18c2b75b-baa0-4d34-94e2-92bd7ca03a8c",
 		"name": "Site Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-a324a1a7-b759-4532-8ea8-cdd63a18223c?action=share&source=collection_link&creator=5403727"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
 			"name": "Site Variables",
 			"item": [
+				{
+					"name": "In site - Empty variables",
+					"item": [
+						{
+							"name": "Create Test Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking Site's name and storing 'sitevarId' for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"sitevariables.host.com.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking that the size of the site Site Variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking that the size of the site Site Variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Archive Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}/_archive",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}",
+										"_archive"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "In site - Without ID on variables",
+					"item": [
+						{
+							"name": "Create Test Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking site variables and storing 'sitevarId' for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(3);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name\", value: \"var1Value\" },",
+											"        { key: \"var2Key\", name: \"var2Name\", value: \"var2Value\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"sitevariables.host.com.{{$timestamp}}\",\n    \"variables\":[\n        {\n           \"name\":\"var1Name\",\n            \"key\":\"var1Key\",\n            \"value\":\"var1Value\" \n        },\n        {\n           \"name\":\"var2Name\",\n            \"key\":\"var2Key\",\n            \"value\":\"var2Value\" \n        },\n        {\n           \"name\":\"var3Name\",\n            \"key\":\"var3Key\",\n            \"value\":\"var3Value\" \n        }\n    ]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(3);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(3);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name\", value: \"var1Value\" },",
+											"        { key: \"var2Key\", name: \"var2Name\", value: \"var2Value\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Site adding variables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Checking site variables\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('updated.sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(5);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name\", value: \"var1Value\" },",
+											"        { key: \"var2Key\", name: \"var2Name\", value: \"var2Value\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" },",
+											"        { key: \"var4Key\", name: \"var4Name\", value: \"var4Value\" },",
+											"        { key: \"var5Key\", name: \"var5Name\", value: \"var5Value\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"updated.sitevariables.host.com.{{$timestamp}}\",\n    \"forceExecution\": true,\n    \"variables\":[\n        {\n           \"name\":\"var1Name\",\n            \"key\":\"var1Key\",\n            \"value\":\"var1Value\" \n        },\n        {\n           \"name\":\"var2Name\",\n            \"key\":\"var2Key\",\n            \"value\":\"var2Value\" \n        },\n        {\n           \"name\":\"var3Name\",\n            \"key\":\"var3Key\",\n            \"value\":\"var3Value\" \n        },\n        {\n           \"name\":\"var4Name\",\n            \"key\":\"var4Key\",\n            \"value\":\"var4Value\" \n        },\n        {\n           \"name\":\"var5Name\",\n            \"key\":\"var5Key\",\n            \"value\":\"var5Value\" \n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site?id={{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "{{siteVarSiteId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(5);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(5);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name\", value: \"var1Value\" },",
+											"        { key: \"var2Key\", name: \"var2Name\", value: \"var2Value\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" },",
+											"        { key: \"var4Key\", name: \"var4Name\", value: \"var4Value\" },",
+											"        { key: \"var5Key\", name: \"var5Name\", value: \"var5Value\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Site modifying variables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Checking site variables\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('updated.sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(5);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name.updated\", value: \"var1Value.updated\" },",
+											"        { key: \"var2Keyupdated\", name: \"var2Name\", value: \"var2Value.updated\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" },",
+											"        { key: \"var4Keyupdated\", name: \"var4Name\", value: \"var4Value\" },",
+											"        { key: \"var5Key\", name: \"var5Name.updated\", value: \"var5Value.updated\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"updated.sitevariables.host.com.{{$timestamp}}\",\n    \"forceExecution\": true,\n    \"variables\":[\n        {\n           \"name\":\"var1Name.updated\",\n            \"key\":\"var1Key\",\n            \"value\":\"var1Value.updated\" \n        },\n        {\n           \"name\":\"var2Name\",\n            \"key\":\"var2Keyupdated\",\n            \"value\":\"var2Value.updated\" \n        },\n        {\n           \"name\":\"var3Name\",\n            \"key\":\"var3Key\",\n            \"value\":\"var3Value\" \n        },\n        {\n           \"name\":\"var4Name\",\n            \"key\":\"var4Keyupdated\",\n            \"value\":\"var4Value\" \n        },\n        {\n           \"name\":\"var5Name.updated\",\n            \"key\":\"var5Key\",\n            \"value\":\"var5Value.updated\" \n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site?id={{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "{{siteVarSiteId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(5);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(5);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name.updated\", value: \"var1Value.updated\" },",
+											"        { key: \"var2Keyupdated\", name: \"var2Name\", value: \"var2Value.updated\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" },",
+											"        { key: \"var4Keyupdated\", name: \"var4Name\", value: \"var4Value\" },",
+											"        { key: \"var5Key\", name: \"var5Name.updated\", value: \"var5Value.updated\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Site removing variables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Checking site variables\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('updated.sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(1);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"updated.sitevariables.host.com.{{$timestamp}}\",\n    \"forceExecution\": true,\n    \"variables\":[\n        {\n           \"name\":\"var3Name\",\n            \"key\":\"var3Key\",\n            \"value\":\"var3Value.updated\" \n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site?id={{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "{{siteVarSiteId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(1);",
+											"    pm.expect(jsonData.entity[0].key).to.equal(\"var3Key\");",
+											"    pm.expect(jsonData.entity[0].value).to.equal(\"var3Value.updated\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(1);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value.updated\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Archive Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}/_archive",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}",
+										"_archive"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "In site - With ID on variables",
+					"item": [
+						{
+							"name": "Create Test Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking site variables and storing 'sitevarId' for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(3);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name\", value: \"var1Value\" },",
+											"        { key: \"var2Key\", name: \"var2Name\", value: \"var2Value\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"sitevariables.host.com.{{$timestamp}}\",\n    \"variables\":[\n        {\n           \"name\":\"var1Name\",\n            \"key\":\"var1Key\",\n            \"value\":\"var1Value\" \n        },\n        {\n           \"name\":\"var2Name\",\n            \"key\":\"var2Key\",\n            \"value\":\"var2Value\" \n        },\n        {\n           \"name\":\"var3Name\",\n            \"key\":\"var3Key\",\n            \"value\":\"var3Value\" \n        }\n    ]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(3);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(3);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name\", value: \"var1Value\" },",
+											"        { key: \"var2Key\", name: \"var2Name\", value: \"var2Value\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											"",
+											"pm.test(\"Sstoring site variables ids for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.environment.set(`variableId${index + 1}`, variable.id);",
+											"    });",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Site adding variables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Checking site variables\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('updated.sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(5);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name\", value: \"var1Value\" },",
+											"        { key: \"var2Key\", name: \"var2Name\", value: \"var2Value\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" },",
+											"        { key: \"var4Key\", name: \"var4Name\", value: \"var4Value\" },",
+											"        { key: \"var5Key\", name: \"var5Name\", value: \"var5Value\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"updated.sitevariables.host.com.{{$timestamp}}\",\n    \"forceExecution\": true,\n    \"variables\":[\n        {\n            \"id\": \"{{variableId1}}\",\n            \"name\":\"var1Name\",\n            \"key\":\"var1Key\",\n            \"value\":\"var1Value\" \n        },\n        {\n            \"id\": \"{{variableId2}}\",\n            \"name\":\"var2Name\",\n            \"key\":\"var2Key\",\n            \"value\":\"var2Value\" \n        },\n        {\n            \"id\": \"{{variableId3}}\",\n            \"name\":\"var3Name\",\n            \"key\":\"var3Key\",\n            \"value\":\"var3Value\" \n        },\n        {\n           \"name\":\"var4Name\",\n            \"key\":\"var4Key\",\n            \"value\":\"var4Value\" \n        },\n        {\n           \"name\":\"var5Name\",\n            \"key\":\"var5Key\",\n            \"value\":\"var5Value\" \n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site?id={{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "{{siteVarSiteId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(5);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(5);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name\", value: \"var1Value\" },",
+											"        { key: \"var2Key\", name: \"var2Name\", value: \"var2Value\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" },",
+											"        { key: \"var4Key\", name: \"var4Name\", value: \"var4Value\" },",
+											"        { key: \"var5Key\", name: \"var5Name\", value: \"var5Value\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											"",
+											"pm.test(\"Sstoring site variables ids for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.environment.set(`variableId${index + 1}`, variable.id);",
+											"    });",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Site modifying variables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Checking site variables\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('updated.sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(5);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name.updated\", value: \"var1Value.updated\" },",
+											"        { key: \"var2Keyupdated\", name: \"var2Name\", value: \"var2Value.updated\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" },",
+											"        { key: \"var4Keyupdated\", name: \"var4Name\", value: \"var4Value\" },",
+											"        { key: \"var5Key\", name: \"var5Name.updated\", value: \"var5Value.updated\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"updated.sitevariables.host.com.{{$timestamp}}\",\n    \"forceExecution\": true,\n    \"variables\":[\n        {\n            \"id\": \"{{variableId1}}\",\n            \"name\":\"var1Name.updated\",\n            \"key\":\"var1Key\",\n            \"value\":\"var1Value.updated\" \n        },\n        {\n            \"id\": \"{{variableId2}}\",\n            \"name\":\"var2Name\",\n            \"key\":\"var2Keyupdated\",\n            \"value\":\"var2Value.updated\" \n        },\n        {\n            \"id\": \"{{variableId3}}\",\n            \"name\":\"var3Name\",\n            \"key\":\"var3Key\",\n            \"value\":\"var3Value\" \n        },\n        {\n            \"id\": \"{{variableId4}}\",\n            \"name\":\"var4Name\",\n            \"key\":\"var4Keyupdated\",\n            \"value\":\"var4Value\" \n        },\n        {\n            \"id\": \"{{variableId5}}\",\n            \"name\":\"var5Name.updated\",\n            \"key\":\"var5Key\",\n            \"value\":\"var5Value.updated\" \n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site?id={{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "{{siteVarSiteId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(5);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(5);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var1Key\", name: \"var1Name.updated\", value: \"var1Value.updated\" },",
+											"        { key: \"var2Keyupdated\", name: \"var2Name\", value: \"var2Value.updated\" },",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value\" },",
+											"        { key: \"var4Keyupdated\", name: \"var4Name\", value: \"var4Value\" },",
+											"        { key: \"var5Key\", name: \"var5Name.updated\", value: \"var5Value.updated\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											"",
+											"pm.test(\"Sstoring site variables ids for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.environment.set(`variableId${index + 1}`, variable.id);",
+											"    });",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Site removing variables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Checking site variables\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('updated.sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(1);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"updated.sitevariables.host.com.{{$timestamp}}\",\n    \"forceExecution\": true,\n    \"variables\":[\n        {\n            \"id\": \"{{variableId3}}\",\n            \"name\":\"var3Name\",\n            \"key\":\"var3Key\",\n            \"value\":\"var3Value.updated\" \n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site?id={{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "{{siteVarSiteId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(1);",
+											"    pm.expect(jsonData.entity[0].key).to.equal(\"var3Key\");",
+											"    pm.expect(jsonData.entity[0].value).to.equal(\"var3Value.updated\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking the size of the site variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(1);",
+											"});",
+											"",
+											"pm.test(\"Validate each variable's properties are correct\", function() {",
+											"    var jsonData = pm.response.json();",
+											"    var expectedVariables = [",
+											"        { key: \"var3Key\", name: \"var3Name\", value: \"var3Value.updated\" }",
+											"    ];",
+											"",
+											"    jsonData.entity.variables.forEach(function(variable, index) {",
+											"        pm.expect(variable.key).to.equal(expectedVariables[index].key, \"Key does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.name).to.equal(expectedVariables[index].name, \"Name does not match for variable \" + (index + 1));",
+											"        pm.expect(variable.value).to.equal(expectedVariables[index].value, \"Value does not match for variable \" + (index + 1));",
+											"    });",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Archive Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}/_archive",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}",
+										"_archive"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "In site - Null variables",
+					"item": [
+						{
+							"name": "Create Test Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking Site's name and storing 'sitevarId' for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteVarSiteId\", jsonData.entity.identifier);",
+											"    pm.expect(jsonData.entity.siteName).to.contains('sitevariables.host.com');",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"sitevariables.host.com.{{$timestamp}}\"\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSiteVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking that the size of the site Site Variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.length).to.equal(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/variable/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"variable",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site By Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking that the size of the site Site Variables is correct\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.variables.length).to.equal(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Archive Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}/_archive",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}",
+										"_archive"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{siteVarSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{siteVarSiteId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
 				{
 					"name": "Create Test Site",
 					"event": [
@@ -96,14 +2577,15 @@
 									"    ",
 									"    pm.expect(responseData.entity).to.be.an('object');",
 									"",
-									"    const requiredFields = ['hostId', 'id', 'key', 'lastModDate', 'lastModifierId', 'map', 'name', 'value'];",
+									"    const requiredFields = ['hostId', 'id', 'key', 'lastModDate', 'lastModifierId', 'name', 'value'];",
 									"    requiredFields.forEach(field => {",
 									"        pm.expect(responseData.entity).to.have.property(field);",
 									"    });",
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -2797,6 +5279,32 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "sitevarId",
+			"value": ""
+		},
+		{
+			"key": "sitevariableId",
+			"value": ""
+		},
+		{
+			"key": "siteId",
+			"value": ""
+		},
+		{
+			"key": "temporalFileId",
+			"value": ""
+		},
+		{
+			"key": "amountSitesPreArchive",
+			"value": ""
+		},
+		{
+			"key": "siteVarSiteId",
+			"value": ""
 		}
 	]
 }

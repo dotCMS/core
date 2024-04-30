@@ -25,7 +25,8 @@ import {
 
 import {
     Container,
-    ContentletArea
+    ContentletArea,
+    EmaDragItem
 } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import {
     DotPageApiParams,
@@ -39,6 +40,7 @@ import {
     EditEmaState,
     EditorData,
     ReloadPagePayload,
+    SaveInlineEditing,
     SavePagePayload
 } from '../../shared/models';
 import {
@@ -96,6 +98,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *******************/
 
     readonly clientHost$ = this.select((state) => state.clientHost);
+    readonly dragItem$ = this.select((state) => state.dragItem);
 
     private readonly stateLoad$ = this.select((state) => state.editorState);
     private readonly code$ = this.select((state) => state.editor.page.rendered);
@@ -111,6 +114,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         this.clientHost$,
         this.pageURL$,
         (clientHost, pageURL) => (clientHost ? `${clientHost}/${pageURL}` : '')
+    );
+
+    private readonly previewURL$ = this.select(
+        this.clientHost$,
+        this.pageURL$,
+        (clientHost, pageURL) => (clientHost ? `${clientHost}/${pageURL}` : pageURL)
     );
     private readonly bounds$ = this.select((state) => state.bounds);
     private readonly contentletArea$: Observable<ContentletArea> = this.select(
@@ -217,6 +226,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         this.iframeURL$,
         this.isEnterpriseLicense$,
         this.pageURL$,
+        this.dragItem$,
         (
             bounds,
             clientHost,
@@ -228,7 +238,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             favoritePageURL,
             iframeURL,
             isEnterpriseLicense,
-            pageURL
+            pageURL,
+            dragItem
         ) => {
             return {
                 apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
@@ -247,21 +258,27 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 favoritePageURL,
                 iframeURL,
                 isEnterpriseLicense,
-                state: currentState
+                state: currentState,
+                dragItem
             };
         }
     );
 
-    readonly editorToolbarData$ = this.select(this.editorState$, (editorState) => ({
-        ...editorState,
-        showWorkflowActions:
-            editorState.editorData.mode === EDITOR_MODE.EDIT ||
-            editorState.editorData.mode === EDITOR_MODE.INLINE_EDITING,
-        showInfoDisplay:
-            !editorState.editorData.canEditPage ||
-            (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
-                editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING)
-    }));
+    readonly editorToolbarData$ = this.select(
+        this.editorState$,
+        this.previewURL$,
+        (editorState, previewURL) => ({
+            ...editorState,
+            showWorkflowActions:
+                editorState.editorData.mode === EDITOR_MODE.EDIT ||
+                editorState.editorData.mode === EDITOR_MODE.INLINE_EDITING,
+            showInfoDisplay:
+                !editorState.editorData.canEditPage ||
+                (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
+                    editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING),
+            previewURL
+        })
+    );
 
     readonly layoutProperties$ = this.select(
         this.layoutProps$,
@@ -296,6 +313,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             };
         }
     );
+
+    readonly dragState$ = this.select(this.stateLoad$, this.dragItem$, (editorState, dragItem) => ({
+        editorState,
+        dragItem
+    }));
 
     /**
      * Concurrently loads page and license data to updat the state.
@@ -448,32 +470,46 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     readonly saveFromInlineEditedContentlet = this.effect(
-        (payload$: Observable<{ contentlet: { [fieldName: string]: string; inode: string } }>) => {
+        (payload$: Observable<SaveInlineEditing>) => {
             return payload$.pipe(
-                switchMap((contentlet) => {
-                    return this.dotPageApiService.saveContentlet(contentlet).pipe(
+                tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
+                switchMap(({ contentlet, params }) => {
+                    return this.dotPageApiService.saveContentlet({ contentlet }).pipe(
                         tapResponse(
                             () => {
                                 this.messageService.add({
                                     severity: 'success',
-                                    summary: this.dotMessageService.get(
-                                        'editpage.content.update.success'
-                                    ),
+                                    summary: this.dotMessageService.get('message.content.saved'),
                                     life: 2000
                                 });
-                                this.setEditorMode(EDITOR_MODE.EDIT);
                             },
                             (e) => {
                                 console.error(e);
                                 this.messageService.add({
                                     severity: 'error',
                                     summary: this.dotMessageService.get(
-                                        'editpage.content.update.error'
+                                        'editpage.content.update.contentlet.error'
                                     ),
                                     life: 2000
                                 });
-
-                                this.setEditorMode(EDITOR_MODE.EDIT);
+                            }
+                        ),
+                        switchMap(() => this.dotPageApiService.get(params)),
+                        tapResponse(
+                            (pageData: DotPageApiResponse) => {
+                                this.patchState((state) => ({
+                                    ...state,
+                                    editor: pageData,
+                                    editorState: EDITOR_STATE.IDLE,
+                                    editorData: {
+                                        ...state.editorData,
+                                        mode: EDITOR_MODE.EDIT
+                                    }
+                                }));
+                            },
+                            (e) => {
+                                console.error(e);
+                                this.updateEditorState(EDITOR_STATE.ERROR);
                             }
                         )
                     );
@@ -583,6 +619,23 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 )
             )
         );
+    });
+
+    readonly setDragItem = this.updater((state, dragItem: EmaDragItem) => {
+        return {
+            ...state,
+            dragItem,
+            editorState: EDITOR_STATE.DRAGGING
+        };
+    });
+
+    readonly resetDragProperties = this.updater((state) => {
+        return {
+            ...state,
+            dragItem: undefined,
+            bounds: [],
+            contentletArea: undefined
+        };
     });
 
     private createPageURL(state: EditEmaState): string {

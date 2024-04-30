@@ -13,8 +13,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * This upgrade task will creates the workflow_action_mappings and unique index for it.
  *
@@ -24,7 +22,7 @@ import static com.dotcms.util.CollectionsUtils.map;
  */
 public class Task05165CreateContentTypeWorkflowActionMappingTable extends AbstractJDBCStartupTask {
 
-    private static final Map<DbType, String> createContentTypeWorkflowActionMappingTableSQLMap = map(
+    private static final Map<DbType, String> createContentTypeWorkflowActionMappingTableSQLMap = Map.of(
 
             DbType.POSTGRESQL,   "create table workflow_action_mappings (\n" +
                     "\n" +
@@ -58,7 +56,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                     ")"
     );
 
-    private static final Map<DbType, String> createContentTypeWorkflowActionMappingTableUniqueIndexSQLMap = map(
+    private static final Map<DbType, String> createContentTypeWorkflowActionMappingTableUniqueIndexSQLMap = Map.of(
             DbType.POSTGRESQL,   "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type)",
             DbType.MYSQL,        "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type)",
             DbType.ORACLE,       "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type)",

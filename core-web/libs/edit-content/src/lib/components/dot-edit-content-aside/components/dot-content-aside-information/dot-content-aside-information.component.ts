@@ -6,7 +6,7 @@ import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotCopyButtonComponent,
     DotLinkComponent,
@@ -36,6 +36,7 @@ import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 })
 export class DotContentAsideInformationComponent {
     @Input() contentlet!: DotCMSContentlet;
-    @Input() contentTypeName!: string;
+    @Input() contentType!: DotCMSContentType;
     @Input() loading!: boolean;
+    protected readonly currentDate = new Date();
 }

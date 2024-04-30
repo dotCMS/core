@@ -87,6 +87,10 @@ a {
     }
 }
 
+button {
+    font-family: $font-default;
+}
+
 /*
 
 Dragula clone and append dragged element to the body we need to have their styles globally.
