@@ -2489,13 +2489,18 @@ public class BrowserAjax {
 	}
 
 	/**
-	 * Returns the set of IDs of Folders that are currently open in the Site Browser.
+	 * Returns the set of IDs of Folders that are currently expanded in the Site Browser's UI.
 	 *
-	 * @return The set of open folder IDs.
+	 * @return The set of expanded folder IDs.
 	 */
+	@SuppressWarnings("unchecked")
 	private Set<String> getOpenFolderIds() {
-		final Set<String> openFolderIds = (Set<String>) DwrUtil.getSession().getAttribute(OPEN_FOLDER_IDS);
-		return null != openFolderIds ? openFolderIds : new HashSet<>();
+		Set<String> openFolderIds = (Set<String>) DwrUtil.getSession().getAttribute(OPEN_FOLDER_IDS);
+		if (null == openFolderIds) {
+			openFolderIds = new HashSet<>();
+			DwrUtil.getSession().setAttribute(OPEN_FOLDER_IDS, openFolderIds);
+		}
+		return openFolderIds;
 	}
 
 	/**
