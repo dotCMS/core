@@ -21,7 +21,7 @@ import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
-class RemoteURLTest extends CommandTest {
+class RemoteURLIT extends CommandTest {
 
     @Inject
     WorkspaceManager workspaceManager;
