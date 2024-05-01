@@ -10,7 +10,8 @@ import {
     NgZone,
     Output,
     ViewChild,
-    inject
+    inject,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
@@ -23,8 +24,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
-    DotCMSWorkflowActionEvent
+    DotCMSWorkflowActionEvent,
+    DotContentCompareEvent
 } from '@dotcms/dotcms-models';
+import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import {
@@ -52,7 +55,8 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
         SafeUrlPipe,
         EmaFormSelectorComponent,
         DialogModule,
-        DotSpinnerModule
+        DotSpinnerModule,
+        DotContentCompareModule
     ],
     providers: [DotEmaDialogStore, DotEmaWorkflowActionsService]
 })
@@ -60,6 +64,9 @@ export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
 
     @Output() action = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
+    @Output() reloadFromDialog = new EventEmitter<void>();
+
+    $compareData = signal<DotContentCompareEvent | null>(null);
 
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly store = inject(DotEmaDialogStore);
@@ -248,9 +255,14 @@ export class DotEmaDialogComponent {
      * @param {unknown[]} args
      * @memberof DotEmaDialogComponent
      */
-    private callEmbeddedFunction(callback: string, args: unknown[] = []) {
+    private callEmbeddedFunction(
+        callback: string,
+        args: unknown[] = [],
+        whenFinished?: () => void
+    ) {
         this.ngZone.run(() => {
             this.iframe.nativeElement.contentWindow?.[callback]?.(...args);
+            whenFinished?.();
         });
     }
 
@@ -284,6 +296,12 @@ export class DotEmaDialogComponent {
             .subscribe((event: CustomEvent) => {
                 this.action.emit({ event, payload: this.dialogState().payload });
 
+                if (event.detail.name === NG_CUSTOM_EVENTS.COMPARE_CONTENTLET) {
+                    this.ngZone.run(() => {
+                        this.$compareData.set(<DotContentCompareEvent>event.detail.data);
+                    });
+                }
+
                 if (event.detail.name === NG_CUSTOM_EVENTS.OPEN_WIZARD) {
                     this.handleWorkflowEvent(event.detail.data);
                 } else if (
@@ -313,5 +331,25 @@ export class DotEmaDialogComponent {
         });
 
         this.action.emit({ event: customEvent, payload: this.dialogState().payload });
+    }
+
+    /**
+     * Brings back the dialog to the previous state and triggers a reload event.
+     * @param options - The options for bringing back the dialog.
+     * @param options.name - The name of the dialog.
+     * @param options.args - The arguments for the dialog.
+     */
+    bringBack({ name, args }: { name: string; args: string[] } = { name: '', args: [] }) {
+        this.$compareData.set(null);
+        this.callEmbeddedFunction(name, args, () => this.reloadFromDialog.emit());
+    }
+
+    /**
+     * Close compare dialog
+     *
+     * @memberof DotEmaDialogComponent
+     */
+    closeCompareDialog() {
+        this.$compareData.set(null);
     }
 }

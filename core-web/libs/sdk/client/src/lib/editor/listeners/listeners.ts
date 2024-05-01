@@ -113,6 +113,7 @@ export function listenHoveredContentlet() {
             contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
             inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
             widgetTitle: 'TEMP_EMPTY_CONTENTLET',
+            baseType: 'TEMP_EMPTY_CONTENTLET',
             onNumberOfPages: 1
         };
 
@@ -121,6 +122,7 @@ export function listenHoveredContentlet() {
             title: foundElement.dataset?.['dotTitle'],
             inode: foundElement.dataset?.['dotInode'],
             contentType: foundElement.dataset?.['dotType'],
+            baseType: foundElement.dataset?.['dotBasetype'],
             widgetTitle: foundElement.dataset?.['dotWidgetTitle'],
             onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages']
         };
