@@ -9,6 +9,16 @@ import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+/**
+ * This utility class is used for handling stop words in a given text.
+ * Stop words are words which are filtered out during the processing of text.
+ * When building the vocabulary of a text data, it may be a good idea to consider these words as noise.
+ *
+ * The class provides a method to remove stop words from a given string.
+ * It uses a predefined set of stop words, which are common words that do not contain important meaning and are usually removed from texts.
+ *
+ * This class is implemented as a singleton, meaning that only one instance of the class is created throughout the execution of the program.
+ */
 public class StopWordsUtil {
 
     // twitter stopwords - stopwords_twitter.txt
@@ -61,12 +71,26 @@ public class StopWordsUtil {
 
     private static final Lazy<StopWordsUtil> STOP_WORDS_UTILS = Lazy.of(StopWordsUtil::new);
 
+    /**
+     * Returns the singleton instance of the StopWordsUtil class.
+     * The instance is created only once and reused for all subsequent calls.
+     *
+     * @return the singleton instance of the StopWordsUtil class
+     */
     public static StopWordsUtil get(){
         return STOP_WORDS_UTILS.get();
     }
 
     private StopWordsUtil() {}
 
+    /**
+     * Removes all stop words from the given string.
+     * The input string is split into words, and any word that is a stop word is removed.
+     * The remaining words are joined back together with spaces in between.
+     *
+     * @param incoming the string from which to remove stop words
+     * @return a new string with all stop words removed
+     */
     public String removeStopWords(final String incoming) {
         return Optional
                 .ofNullable(incoming)

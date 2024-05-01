@@ -15,7 +15,6 @@ import org.junit.Test;
 
 import java.io.File;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -60,11 +59,7 @@ public class OpenAIImageServiceImplTest {
 
         final JSONObject result = service.sendRequest(jsonObject);
 
-        assertTrue(result.containsKey("originalPrompt"));
-        assertTrue(result.containsKey("value"));
-        assertTrue(result.containsKey("url"));
-        assertTrue(result.containsKey("tempFileName"));
-        assertTrue(result.containsKey("response"));
+        assertImageResponse(result, result.containsKey("tempFileName"));
     }
 
     /**
@@ -83,11 +78,7 @@ public class OpenAIImageServiceImplTest {
 
         final JSONObject result = service.sendRequest(jsonObject);
 
-        assertTrue(result.containsKey("originalPrompt"));
-        assertTrue(result.containsKey("value"));
-        assertTrue(result.containsKey("url"));
-        assertTrue(result.containsKey("tempFileName"));
-        assertTrue(result.containsKey("response"));
+        assertImageResponse(result, result.containsKey("tempFileName"));
     }
 
     /**
@@ -117,17 +108,13 @@ public class OpenAIImageServiceImplTest {
     public void test_sendRequest_withErrorWhenGeneratingFileName() throws Exception {
         final JSONObject jsonObject = prepareJsonObject("Hello World!");
 
-        StopWordsUtil stopWordsUtil = mock(StopWordsUtil.class);
+        final StopWordsUtil stopWordsUtil = mock(StopWordsUtil.class);
         OpenAIImageServiceImpl.setStopWordsUtil(stopWordsUtil);
         when(stopWordsUtil.removeStopWords(anyString())).thenThrow(RuntimeException.class);
 
         final JSONObject result = service.sendRequest(jsonObject);
 
-        assertTrue(result.containsKey("originalPrompt"));
-        assertTrue(result.containsKey("value"));
-        assertTrue(result.containsKey("url"));
-        assertTrue(result.getString("tempFileName").startsWith("temp_"));
-        assertTrue(result.containsKey("response"));
+        assertImageResponse(result, result.getString("tempFileName").startsWith("temp_"));
     }
 
     /**
@@ -173,11 +160,7 @@ public class OpenAIImageServiceImplTest {
 
         final JSONObject result = service.sendRawRequest(jsonObject.toString());
 
-        assertTrue(result.containsKey("originalPrompt"));
-        assertTrue(result.containsKey("value"));
-        assertTrue(result.containsKey("url"));
-        assertTrue(result.containsKey("tempFileName"));
-        assertTrue(result.containsKey("response"));
+        assertImageResponse(result, result.containsKey("tempFileName"));
     }
 
     /**
@@ -190,7 +173,7 @@ public class OpenAIImageServiceImplTest {
     @Test
     public void test_sendTextPrompt() throws Exception {
         final JSONObject jsonObject = prepareJsonObject("Hello World!");
-        AIImageRequestDTO dto = mock(AIImageRequestDTO.class);
+        final AIImageRequestDTO dto = mock(AIImageRequestDTO.class);
         when(dto.getPrompt()).thenReturn(jsonObject.getString("prompt"));
         when(dto.getSize()).thenReturn("some-image-size");
         when(dto.getNumberOfImages()).thenReturn(1);
@@ -199,18 +182,23 @@ public class OpenAIImageServiceImplTest {
 
         final JSONObject result = service.sendTextPrompt(jsonObject.toString());
 
+        assertImageResponse(result, result.containsKey("tempFileName"));
+    }
+
+    private static void assertImageResponse(JSONObject result, boolean result1) {
         assertTrue(result.containsKey("originalPrompt"));
         assertTrue(result.containsKey("value"));
         assertTrue(result.containsKey("url"));
-        assertTrue(result.containsKey("tempFileName"));
+        assertTrue(result1);
         assertTrue(result.containsKey("response"));
+        assertTrue(result.containsKey("tempFile"));
     }
 
     private OpenAIImageService prepareService(final String response,
                                               final User user) {
         return new OpenAIImageServiceImpl(config, user, hostApi, tempFileApi) {
             @Override
-            String doRequest(String urlIn, String method, String openAiAPIKey, JSONObject json) {
+            String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
                 return response;
             }
 
@@ -229,7 +217,7 @@ public class OpenAIImageServiceImplTest {
     private JSONObject prepareJsonObject(final String prompt, final boolean tempFileError) throws Exception {
         when(config.getImageModel()).thenReturn("some-image-model");
         when(config.getImageSize()).thenReturn("some-image-size");
-        File file = mock(File.class);
+        final File file = mock(File.class);
         when(file.getPath()).thenReturn("/some/path/here");
         final DotTempFile tempFile = new DotTempFile("some-id", file);
 

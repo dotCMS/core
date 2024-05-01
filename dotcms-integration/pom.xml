@@ -79,6 +79,7 @@
         <maven.failsafe.debugArgs/>
         <coreit.test.skip>true</coreit.test.skip>
         <docker.filter>database,opensearch</docker.filter>
+        <jackson.version>2.17.0</jackson.version>
     </properties>
     <dependencies>
         <dependency>
@@ -178,6 +179,29 @@
         <dependency>
             <groupId>com.tngtech.junit.dataprovider</groupId>
             <artifactId>junit4-dataprovider</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
