@@ -49,6 +49,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - uses: ./.github/actions/cleanup-runner
+
       # A Docker image is built and pushed using the 'deploy-artifact-docker' action.
       - name: Build/Push Docker Image
         id: docker_build
