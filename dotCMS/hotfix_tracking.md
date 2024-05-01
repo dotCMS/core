@@ -96,3 +96,4 @@ This maintenance release includes the following code fixes:
 89. https://github.com/dotCMS/core/issues/27878 : System Table Blocks on Load #27878
 90. https://github.com/dotCMS/core/issues/27361 : CSV Content import cannot process host or folder information #27361
 91. https://github.com/dotCMS/core/issues/26582 : [Site Browser] : Open folders get collapsed after moving away from portlet #26582
+92. https://github.com/dotCMS/core/issues/25903 : Key/Value field escaping colon and comma characters to HTML encoded version. #25903

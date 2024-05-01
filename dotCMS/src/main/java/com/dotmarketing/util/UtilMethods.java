@@ -1389,7 +1389,11 @@ public class UtilMethods {
         return "";
     }
 
-
+    public static String escapeHTMLCodeFromJSON(String json) {
+        json = json.replace("&#58;",":")
+                .replace("&#44;",",");
+        return json;
+    }
 
     // Used by the code generated in the contentletmapservices
     public static String evaluateVelocity(String vtl, Context ctx) {
