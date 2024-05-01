@@ -61,11 +61,8 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
             // If the dotCMS URL and token are set, we can proceed with the command execution, we
             // can bypass the configuration check as we have everything we need for a remote call
-            if (commandsChain.isRemoteURLSet() && commandsChain.isTokenSet()) {
+            if (isRemoteURLSet(commandsChain, parseResult.commandSpec().commandLine())) {
                 return underlyingStrategy.execute(parseResult);
-            } else if (commandsChain.isRemoteURLSet() && !commandsChain.isTokenSet()) {
-                throw new ParameterException(parseResult.commandSpec().commandLine(),
-                        "The token is required when the dotCMS URL is set.");
             }
 
             final String parentCommand = commandsChain.firstSubcommand()
@@ -88,6 +85,29 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         }
 
         return underlyingStrategy.execute(parseResult);
+    }
+
+    /**
+     * Checks if the remote URL is set in the CommandsChain object. If the remote URL and token are
+     * both set, it returns true. If the remote URL is set but the token is not set, it throws a
+     * ParameterException. If the remote URL is not set, it returns false.
+     *
+     * @param commandsChain the CommandsChain object to check
+     * @param commandLine   the CommandLine object for error handling
+     * @return true if the remote URL and token are both set, false otherwise
+     * @throws ParameterException if the remote URL is set but the token is not set
+     */
+    private boolean isRemoteURLSet(final CommandsChain commandsChain,
+            final CommandLine commandLine) {
+
+        if (commandsChain.isRemoteURLSet() && commandsChain.isTokenSet()) {
+            return true;
+        } else if (commandsChain.isRemoteURLSet() && !commandsChain.isTokenSet()) {
+            throw new ParameterException(commandLine,
+                    "The token is required when the dotCMS URL is set.");
+        }
+
+        return false;
     }
 
     /**
