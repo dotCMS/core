@@ -1,0 +1,78 @@
+name: 'Deploy Artifact to Artifactory'
+description: 'Deploy the dotCMS artifacts to Artifactory'
+inputs:
+  artifactory-repo-username:
+    description: 'Artifactory Repository Username'
+    required: true
+  artifactory-repo-password:
+    description: 'Artifactory Repository Password'
+    required: true
+  github-token:
+    description: 'GitHub Token'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: 'Set up JDK'
+      uses: actions/setup-java@v4
+      with:
+        java-version: 11
+        distribution: temurin
+
+    - name: 'Get Date'
+      id: get-date
+      run: |
+        echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Download Build Artifact
+      id: data-download
+      uses: dawidd6/action-download-artifact@v3.1.4
+      with:
+        github_token: ${{ inputs.github-token }}
+        workflow_search: true # artifacts can come from merge_group build. Cannot specify a list of workflows without multiple calls
+        commit: ${{ github.sha }}
+        workflow_conclusion: success
+        search_artifacts: true
+        dry_run: true
+        name: maven-repo # If using the same branch for different environments artifact names must be unique
+        path: .
+        if_no_artifact_found: warn
+
+    - name: 'Check if artifact exists'
+      id: check
+      run: |
+        build_artifact_exists=${{ steps.data-download.outputs.found_artifact }}
+        if [[ ${build_artifact_exists} == "true" ]]; then
+            run_id=`echo '${{ steps.data-download.outputs.artifacts }}' | jq -r '.[0].workflow_run.id'`
+            found_artifacts=true
+            echo "Artifact Run id: $run_id"
+        else
+           echo "No artifact found"
+           run_id="${{ github.run_id }}"
+           found_artifacts=false
+        fi
+        echo "run_id=$run_id" >> $GITHUB_OUTPUT
+        echo "found_artifacts=$found_artifacts" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: 'Download Maven Repo'
+      uses: actions/download-artifact@v4
+      with:
+        run-id: ${{ steps.check.outputs.run_id }}
+        github-token: ${{ inputs.github-token }}
+        name: maven-repo
+        path: ~/.m2/repository
+
+    - name: 'Maven settings.xml setup'
+      uses: whelk-io/maven-settings-xml-action@v22
+      with:
+        servers: '[{ "id": "dotcms-libs", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }, { "id": "dotcms-libs-snapshot", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }]'
+
+    # Artifact deployment in the Artifactory excluding 'dotcms-integration' and 'dotcms-postman'
+    - name: 'Deploy Artifacts'
+      run: |
+        JVM_TEST_MAVEN_OPTS="-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        eval ./mvnw -ntp deploy -Dprod=true -DskipTests=true -DskipITs=true $JVM_TEST_MAVEN_OPTS -pl \!:dotcms-integration,\!:dotcms-postman
+      shell: bash
