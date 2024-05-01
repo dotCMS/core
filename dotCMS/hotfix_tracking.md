@@ -93,3 +93,4 @@ This maintenance release includes the following code fixes:
 86. https://github.com/dotCMS/core/issues/28110 : Only run startup tasks if they need to be run #28110
 87. https://github.com/dotCMS/core/issues/28105 : PDF as Binary / upload field doesn't show preview #28105
 88. https://github.com/dotCMS/core/issues/27563 : Site or Folder field does not show on the relate content window #27563
+89. https://github.com/dotCMS/core/issues/27878 : System Table Blocks on Load #27878
