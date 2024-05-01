@@ -28,7 +28,7 @@ interface WorkflowItem {
 const data = [
     {
         assignee: 'Floyd Miles',
-        name: 'saudi_riyal.flo',
+        name: 'Chronicles_of_the_Mystical_Empyrean_Expedition_Report_and_Analysis_Document_2024_Final_Version.docx',
         status: 'New',
         step: 'Published',
         date: addDays(currentDate, 1).toISOString().split('T')[0]
@@ -99,7 +99,7 @@ const data = [
 ] as WorkflowItem[];
 
 export default {
-    title: 'PrimeNG/Tables/Basic Table',
+    title: 'PrimeNG/Data/Table/List View',
     decorators: [
         moduleMetadata({
             imports: [TableModule, CommonModule, TagModule, ButtonModule]
@@ -109,7 +109,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'Table is a container component to display data in tabular format.: https://primeng.org/table'
+                    'Table displays data in tabular format. List View Version: https://www.primefaces.org/primeng-v15-lts/table'
             }
         }
     }
@@ -120,35 +120,41 @@ export const Default: StoryFn = () => ({
         data
     },
     template: `
-        <p-table [value]="data" styleClass="p-datatable-striped">
-        <ng-template pTemplate="header">
-            <tr>
-                <th>
-                    <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-                </th>
-                <th pSortableColumn="name">Title <p-sortIcon field="name"></p-sortIcon></th>
-                <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
-                <th pSortableColumn="assignee">Assignee <p-sortIcon field="assignee"></p-sortIcon></th>
-                <th pSortableColumn="step">Step <p-sortIcon field="step"></p-sortIcon></th>
-                <th pSortableColumn="date">Last Updated <p-sortIcon field="date"></p-sortIcon></th>
-                <th>Menu</th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-workflowItem>
-            <tr>
-                <td>
-                    <p-tableCheckbox [value]="workflowItem"></p-tableCheckbox>
-                </td>
-                <td>{{ workflowItem.name }}</td>
-                <td><p-tag  class="sm p-tag-success">{{ workflowItem.status }}</p-tag></td>
-                <td>{{ workflowItem.assignee }}</td>
-                <td>{{ workflowItem.step }}</td>
-                <td>{{ workflowItem.date | date }}</td>
-                <td>
-                    <i class="pi pi-ellipsis-v"></i>
-                </td>
-            </tr>
-        </ng-template>
+        <p-table [value]="data" styleClass="dotTable">
+            <ng-template pTemplate="caption">
+                <span>List of Documents</span>
+            </ng-template>  
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>
+                        <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                    </th>
+                    <th pSortableColumn="name">Title <p-sortIcon field="name"></p-sortIcon></th>
+                    <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
+                    <th pSortableColumn="assignee">Assignee <p-sortIcon field="assignee"></p-sortIcon></th>
+                    <th pSortableColumn="step">Step <p-sortIcon field="step"></p-sortIcon></th>
+                    <th pSortableColumn="date">Last Updated <p-sortIcon field="date"></p-sortIcon></th>
+                    <th style="width: 50px">Menu</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-workflowItem>
+                <tr [pSelectableRow]="workflowItem" [pSelectableRowDisabled]="true">
+                    <td>
+                        <p-tableCheckbox [value]="workflowItem"></p-tableCheckbox>
+                    </td>
+                    <td><span [attr.data-wont-fit]="workflowItem.name">{{ workflowItem.name }}</span></td>
+                    <td><p-tag  class="sm p-tag-success" [value]="workflowItem.status"/></td>
+                    <td><span [attr.data-wont-fit]="workflowItem.assignee" >{{ workflowItem.assignee }}</span></td>
+                    <td>{{ workflowItem.step }}</td>
+                    <td>{{ workflowItem.date | date }}</td>
+                    <td>
+                        <i class="pi pi-ellipsis-v"></i>
+                    </td>
+                </tr>
+            </ng-template>
+             <ng-template pTemplate="summary">
+                    <span>In total there are ## documents.</span>
+            </ng-template>
         </p-table>
   `
 });
