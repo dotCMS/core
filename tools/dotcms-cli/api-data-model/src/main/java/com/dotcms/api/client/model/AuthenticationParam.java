@@ -12,4 +12,6 @@ public interface AuthenticationParam {
 
     Optional<char[] > getToken();
 
+    void reset();
+
 }

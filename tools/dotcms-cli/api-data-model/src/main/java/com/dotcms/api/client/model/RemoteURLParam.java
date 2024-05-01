@@ -13,4 +13,6 @@ public interface RemoteURLParam {
 
     Optional<URL> getURL();
 
+    void reset();
+    
 }

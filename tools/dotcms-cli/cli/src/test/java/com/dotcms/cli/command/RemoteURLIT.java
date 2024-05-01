@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.inject.Inject;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,16 +30,12 @@ class RemoteURLIT extends CommandTest {
     @BeforeEach
     void setUp() throws IOException {
         serviceManager.removeAll();
+        resetParams();
+    }
 
-        final var remoteURLParam = Arc.container().instance(RemoteURLParam.class);
-        if (remoteURLParam.isAvailable() && remoteURLParam.get().getURL().isPresent()) {
-            remoteURLParam.get().setURL(null);
-        }
-
-        final var authenticationParam = Arc.container().instance(AuthenticationParam.class);
-        if (authenticationParam.isAvailable() && authenticationParam.get().getToken().isPresent()) {
-            authenticationParam.get().setToken(null);
-        }
+    @AfterAll
+    static void tearDown() {
+        resetParams();
     }
 
     /**
@@ -172,6 +169,21 @@ class RemoteURLIT extends CommandTest {
 
         } finally {
             deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Resets the parameters to avoid side effects between tests.
+     */
+    static void resetParams() {
+        final var remoteURLParam = Arc.container().instance(RemoteURLParam.class);
+        if (remoteURLParam.isAvailable() && remoteURLParam.get().getURL().isPresent()) {
+            remoteURLParam.get().reset();
+        }
+
+        final var authenticationParam = Arc.container().instance(AuthenticationParam.class);
+        if (authenticationParam.isAvailable() && authenticationParam.get().getToken().isPresent()) {
+            authenticationParam.get().reset();
         }
     }
 

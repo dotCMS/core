@@ -28,4 +28,9 @@ public class RemoteURLParamContextImpl implements RemoteURLParam {
         return Optional.of(remoteURL);
     }
 
+    @Override
+    public void reset() {
+        remoteURL = null;
+    }
+
 }
