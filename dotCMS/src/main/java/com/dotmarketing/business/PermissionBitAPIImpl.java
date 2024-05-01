@@ -182,7 +182,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public boolean doesRoleHavePermission(Permissionable permissionable, int permissionType, Role role) throws DotDataException {
 
 		// if we have bad data
-		if (permissionable != null && (!InodeUtils.isSet(permissionable.getPermissionId())) || (role == null)) {
+		if (UtilMethods.isEmpty(()->permissionable.getPermissionId()) || role == null) {
 			return false;
 		}
 		
