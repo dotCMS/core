@@ -135,7 +135,7 @@ public class AWSS3Storage implements Storage {
     @Override
     public boolean existsBucket(final String bucketName) throws DotRuntimeException {
 
-        return this.s3client.doesBucketExist(bucketName);
+        return this.s3client.doesBucketExistV2(bucketName);
     } // existsBucket.
 
     @Override

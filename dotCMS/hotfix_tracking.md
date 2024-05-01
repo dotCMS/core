@@ -97,3 +97,4 @@ This maintenance release includes the following code fixes:
 90. https://github.com/dotCMS/core/issues/27361 : CSV Content import cannot process host or folder information #27361
 91. https://github.com/dotCMS/core/issues/26582 : [Site Browser] : Open folders get collapsed after moving away from portlet #26582
 92. https://github.com/dotCMS/core/issues/25903 : Key/Value field escaping colon and comma characters to HTML encoded version. #25903
+93. https://github.com/dotCMS/core/issues/24698 : Cannot push publish to S3 buckets in the us-east-2 region #24698
