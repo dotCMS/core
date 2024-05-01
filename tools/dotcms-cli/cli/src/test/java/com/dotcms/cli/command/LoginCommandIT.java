@@ -142,7 +142,7 @@ class LoginCommandIT extends CommandTest {
                 final String output = writer.toString();
                 Assertions.assertTrue(output.contains("[ERROR]"));
                 Assertions.assertTrue(output.contains(
-                        "HTTP 401 Forbidden: You don't have permission to access this resource."));
+                        "Forbidden: You don't have permission to access this resource."));
             }
         }
 
@@ -165,7 +165,7 @@ class LoginCommandIT extends CommandTest {
             final String output = writer.toString();
             Assertions.assertTrue(output.contains("[ERROR]"));
             Assertions.assertTrue(output.contains(
-                    "HTTP 401 Forbidden: You don't have permission to access this resource."));
+                    "Forbidden: You don't have permission to access this resource."));
         }
     }
 
