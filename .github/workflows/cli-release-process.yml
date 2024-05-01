@@ -21,7 +21,7 @@ defaults:
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
-  GRAALVM_VERSION: '22.1.0'
+  GRAALVM_VERSION: '22.3.3'
   MVN_PACKAGE_TYPE: 'uber-jar'
   NPM_PACKAGE_SCOPE: '@dotcms'
   NPM_PACKAGE_NAME: 'dotcli'
@@ -271,197 +271,197 @@ jobs:
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
 
-  release:
-    needs: [ precheck, build ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Check out repository'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
-
-      - uses: ./.github/actions/cleanup-runner
-
-      - name: 'Create artifacts directory'
-        run: |
-          mkdir -p ${{ github.workspace }}/artifacts
-          echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
-
-      - name: 'Download all build artifacts'
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ github.workspace }}/artifacts
-          pattern: artifacts-*
-          merge-multiple: true
-
-      - name: 'List artifacts'
-        run: |
-          ls -R
-
-      - name: 'Set up Java'
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRO }}
-
-      - name: 'Cache Maven packages'
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: maven-${{ needs.precheck.outputs.DATE }}-${{ github.run_id }}
-
-      # Creates automated releases using JReleaser
-      # Generates builds for different platforms
-      # Signs artifacts
-      # Publishes to artifact repositories
-      - name: 'JReleaser'
-        env:
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
-          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
-          JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        working-directory: ${{ github.workspace }}
-        run: |
-          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
-
-  publish-npm-package:
-    name: "Publish NPM Package"
-    if: success()  # Run only if explicitly indicated and successful
-    needs: [ precheck, build, release ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Checkout code'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.precheck.outputs.HEAD }}
-
-      - uses: ./.github/actions/cleanup-runner
-
-      - name: 'Set up Node.js'
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: 'Install Jinja2'
-        run: pip install jinja2-cli
-
-      - name: 'Download all build artifacts'
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ github.workspace }}/artifacts
-          pattern: artifacts-*
-          merge-multiple: true
-
-      # Determines the NPM package version and tag
-      # Distinguishes between snapshots and releases
-      - name: 'Dynamic configuration of NPM package Version and Tag'
-        env:
-          RELEASE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
-        run: |
-          MVN_PACKAGE_VERSION=$(echo ${{ env.RELEASE_VERSION }} | tr '[:lower:]' '[:upper:]')
-          PACKAGE_FULL_NAME=${{ env.NPM_PACKAGE_SCOPE }}/${{ env.NPM_PACKAGE_NAME }}
-
-          # Check if the npm package exists
-          if ! npm view $PACKAGE_FULL_NAME &> /dev/null; then
-            echo "::error::The package $PACKAGE_FULL_NAME does not exist on npm."
-            exit 1
-          fi
-
-          # Check if the package is a snapshot
-          REGEX="([0-9]+\.[0-9]+\.[0-9]+)-SNAPSHOT"
-
-          if [[ $MVN_PACKAGE_VERSION =~ $REGEX ]]; then
-            echo "::debug::Snapshot version found."
-
-            NPM_PACKAGE_VERSION_TAG="rc"
-            MVN_BASE_VERSION="${BASH_REMATCH[1]}"
-
-            # Use regular expression to extract version components
-            if [[ $MVN_BASE_VERSION =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-              MAJOR=$(echo "${BASH_REMATCH[1]}" | sed "s/\b0\+\([1-9]\)/\1/g")
-              MINOR=$(echo "${BASH_REMATCH[2]}" | sed "s/\b0\+\([1-9]\)/\1/g")
-              PATCH=$(echo "${BASH_REMATCH[3]}" | sed "s/\b0\+\([1-9]\)/\1/g")
-              VERSION_NPM_FORMAT="${MAJOR}.${MINOR}.${PATCH}"
-
-              echo "::debug::VERSION_NPM_FORMAT: ${VERSION_NPM_FORMAT}"
-            else
-              echo "::error::Invalid Maven version format: $MVN_BASE_VERSION"
-              exit 1
-            fi
-
-            LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq --arg filter $VERSION_NPM_FORMAT 'map(.| select(. | contains($filter)))' | jq -r 'map(select(test("-rc\\d+$"))) | max')
-
-            if [[ $LAST_RC_VERSION == "$VERSION_NPM_FORMAT"* ]]; then
-              NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
-              RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
-            else
-              RC_SUFFIX="-rc1"
-            fi;
-
-            NPM_PACKAGE_VERSION=${MVN_BASE_VERSION}${RC_SUFFIX}
-          else
-            echo "::debug::Release version found."
-            NPM_PACKAGE_VERSION_TAG="latest"
-            NPM_PACKAGE_VERSION=${MVN_PACKAGE_VERSION}
-          fi;
-          echo "::debug::NPM_PACKAGE_VERSION: $NPM_PACKAGE_VERSION"
-          echo "::debug::NPM_PACKAGE_VERSION_TAG: $NPM_PACKAGE_VERSION_TAG"
-
-          echo "NPM_PACKAGE_VERSION=$NPM_PACKAGE_VERSION" >> $GITHUB_ENV
-          echo "NPM_PACKAGE_VERSION_TAG=$NPM_PACKAGE_VERSION_TAG" >> $GITHUB_ENV
-
-      # Sets up the NPM package
-      # Creates the bin folder with the binaries
-      # Adds the postinstall.js script
-      # Generates the package.json file with Jinja2
-      - name: 'NPM Package setup'
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
-        env:
-          MVN_PACKAGE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
-        run: |
-          echo "::group::NPM Package setup"
-          echo "Adding bin folder with all the binaries"
-          mkdir -p bin
-          find ${{ github.workspace }}/artifacts/distributions/ -name "*.zip" -exec unzip -d bin {} \;
-
-          echo "Adding wrapper script"
-          mv src/postinstall.js.seed src/postinstall.js
-
-          echo "Adding README.md file"
-          cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
-
-          echo "Adding package.json file"
-          jinja2 package.j2 -D packageName=${MVN_PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} -D packageVersion=${MVN_PACKAGE_VERSION} --format json -o package.json
-          rm -f package.j2
-
-          cat package.json
-          cat src/postinstall.js
-          echo "::endgroup::"
-
-      - name: 'NPM Package tree'
-        run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
-
-      - name: 'Publish to NPM registry'
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
-        env:
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
-          npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
-
-  clean-up:
-    name: "Clean Up"
-    if: ${{ needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
-    needs: [ precheck, build, release, publish-npm-package ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.precheck.outputs.HEAD }}
-
-      - name: 'Delete release auxiliary branch - ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}'
-        run: |
-          git push origin --delete ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
+#  release:
+#    needs: [ precheck, build ]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: 'Check out repository'
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
+#
+#      - uses: ./.github/actions/cleanup-runner
+#
+#      - name: 'Create artifacts directory'
+#        run: |
+#          mkdir -p ${{ github.workspace }}/artifacts
+#          echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
+#
+#      - name: 'Download all build artifacts'
+#        uses: actions/download-artifact@v4
+#        with:
+#          path: ${{ github.workspace }}/artifacts
+#          pattern: artifacts-*
+#          merge-multiple: true
+#
+#      - name: 'List artifacts'
+#        run: |
+#          ls -R
+#
+#      - name: 'Set up Java'
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: ${{ env.JAVA_VERSION }}
+#          distribution: ${{ env.JAVA_DISTRO }}
+#
+#      - name: 'Cache Maven packages'
+#        uses: actions/cache@v4
+#        with:
+#          path: ~/.m2/repository
+#          key: maven-${{ needs.precheck.outputs.DATE }}-${{ github.run_id }}
+#
+#      # Creates automated releases using JReleaser
+#      # Generates builds for different platforms
+#      # Signs artifacts
+#      # Publishes to artifact repositories
+#      - name: 'JReleaser'
+#        env:
+#          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+#          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+#          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+#          JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+#          JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+#
+#  publish-npm-package:
+#    name: "Publish NPM Package"
+#    if: success()  # Run only if explicitly indicated and successful
+#    needs: [ precheck, build, release ]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: 'Checkout code'
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ needs.precheck.outputs.HEAD }}
+#
+#      - uses: ./.github/actions/cleanup-runner
+#
+#      - name: 'Set up Node.js'
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: ${{ env.NODE_VERSION }}
+#
+#      - name: 'Install Jinja2'
+#        run: pip install jinja2-cli
+#
+#      - name: 'Download all build artifacts'
+#        uses: actions/download-artifact@v4
+#        with:
+#          path: ${{ github.workspace }}/artifacts
+#          pattern: artifacts-*
+#          merge-multiple: true
+#
+#      # Determines the NPM package version and tag
+#      # Distinguishes between snapshots and releases
+#      - name: 'Dynamic configuration of NPM package Version and Tag'
+#        env:
+#          RELEASE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+#        run: |
+#          MVN_PACKAGE_VERSION=$(echo ${{ env.RELEASE_VERSION }} | tr '[:lower:]' '[:upper:]')
+#          PACKAGE_FULL_NAME=${{ env.NPM_PACKAGE_SCOPE }}/${{ env.NPM_PACKAGE_NAME }}
+#
+#          # Check if the npm package exists
+#          if ! npm view $PACKAGE_FULL_NAME &> /dev/null; then
+#            echo "::error::The package $PACKAGE_FULL_NAME does not exist on npm."
+#            exit 1
+#          fi
+#
+#          # Check if the package is a snapshot
+#          REGEX="([0-9]+\.[0-9]+\.[0-9]+)-SNAPSHOT"
+#
+#          if [[ $MVN_PACKAGE_VERSION =~ $REGEX ]]; then
+#            echo "::debug::Snapshot version found."
+#
+#            NPM_PACKAGE_VERSION_TAG="rc"
+#            MVN_BASE_VERSION="${BASH_REMATCH[1]}"
+#
+#            # Use regular expression to extract version components
+#            if [[ $MVN_BASE_VERSION =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+#              MAJOR=$(echo "${BASH_REMATCH[1]}" | sed "s/\b0\+\([1-9]\)/\1/g")
+#              MINOR=$(echo "${BASH_REMATCH[2]}" | sed "s/\b0\+\([1-9]\)/\1/g")
+#              PATCH=$(echo "${BASH_REMATCH[3]}" | sed "s/\b0\+\([1-9]\)/\1/g")
+#              VERSION_NPM_FORMAT="${MAJOR}.${MINOR}.${PATCH}"
+#
+#              echo "::debug::VERSION_NPM_FORMAT: ${VERSION_NPM_FORMAT}"
+#            else
+#              echo "::error::Invalid Maven version format: $MVN_BASE_VERSION"
+#              exit 1
+#            fi
+#
+#            LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq --arg filter $VERSION_NPM_FORMAT 'map(.| select(. | contains($filter)))' | jq -r 'map(select(test("-rc\\d+$"))) | max')
+#
+#            if [[ $LAST_RC_VERSION == "$VERSION_NPM_FORMAT"* ]]; then
+#              NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
+#              RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
+#            else
+#              RC_SUFFIX="-rc1"
+#            fi;
+#
+#            NPM_PACKAGE_VERSION=${MVN_BASE_VERSION}${RC_SUFFIX}
+#          else
+#            echo "::debug::Release version found."
+#            NPM_PACKAGE_VERSION_TAG="latest"
+#            NPM_PACKAGE_VERSION=${MVN_PACKAGE_VERSION}
+#          fi;
+#          echo "::debug::NPM_PACKAGE_VERSION: $NPM_PACKAGE_VERSION"
+#          echo "::debug::NPM_PACKAGE_VERSION_TAG: $NPM_PACKAGE_VERSION_TAG"
+#
+#          echo "NPM_PACKAGE_VERSION=$NPM_PACKAGE_VERSION" >> $GITHUB_ENV
+#          echo "NPM_PACKAGE_VERSION_TAG=$NPM_PACKAGE_VERSION_TAG" >> $GITHUB_ENV
+#
+#      # Sets up the NPM package
+#      # Creates the bin folder with the binaries
+#      # Adds the postinstall.js script
+#      # Generates the package.json file with Jinja2
+#      - name: 'NPM Package setup'
+#        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
+#        env:
+#          MVN_PACKAGE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+#        run: |
+#          echo "::group::NPM Package setup"
+#          echo "Adding bin folder with all the binaries"
+#          mkdir -p bin
+#          find ${{ github.workspace }}/artifacts/distributions/ -name "*.zip" -exec unzip -d bin {} \;
+#
+#          echo "Adding wrapper script"
+#          mv src/postinstall.js.seed src/postinstall.js
+#
+#          echo "Adding README.md file"
+#          cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
+#
+#          echo "Adding package.json file"
+#          jinja2 package.j2 -D packageName=${MVN_PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} -D packageVersion=${MVN_PACKAGE_VERSION} --format json -o package.json
+#          rm -f package.j2
+#
+#          cat package.json
+#          cat src/postinstall.js
+#          echo "::endgroup::"
+#
+#      - name: 'NPM Package tree'
+#        run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
+#
+#      - name: 'Publish to NPM registry'
+#        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
+#        env:
+#          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+#        run: |
+#          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+#          npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
+#
+#  clean-up:
+#    name: "Clean Up"
+#    if: ${{ needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
+#    needs: [ precheck, build, release, publish-npm-package ]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout Repository
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ needs.precheck.outputs.HEAD }}
+#
+#      - name: 'Delete release auxiliary branch - ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}'
+#        run: |
+#          git push origin --delete ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
