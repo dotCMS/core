@@ -94,3 +94,4 @@ This maintenance release includes the following code fixes:
 87. https://github.com/dotCMS/core/issues/28105 : PDF as Binary / upload field doesn't show preview #28105
 88. https://github.com/dotCMS/core/issues/27563 : Site or Folder field does not show on the relate content window #27563
 89. https://github.com/dotCMS/core/issues/27878 : System Table Blocks on Load #27878
+90. https://github.com/dotCMS/core/issues/27361 : CSV Content import cannot process host or folder information #27361
