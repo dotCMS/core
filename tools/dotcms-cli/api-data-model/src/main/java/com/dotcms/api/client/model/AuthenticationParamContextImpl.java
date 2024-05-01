@@ -16,7 +16,11 @@ public class AuthenticationParamContextImpl implements AuthenticationParam {
 
     @Override
     public void setToken(final char[] token) {
-        this.token = Arrays.copyOf(token, token.length);
+        if (null != token) {
+            this.token = Arrays.copyOf(token, token.length);
+        } else {
+            this.token = null;
+        }
     }
 
     public Optional<char[]> getToken() {
