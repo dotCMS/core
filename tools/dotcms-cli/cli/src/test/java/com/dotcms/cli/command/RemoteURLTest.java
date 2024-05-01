@@ -1,10 +1,12 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.DotCMSITProfile;
+import com.dotcms.api.client.model.AuthenticationParam;
+import com.dotcms.api.client.model.RemoteURLParam;
 import com.dotcms.cli.command.language.LanguageCommand;
 import com.dotcms.cli.command.language.LanguagePull;
 import com.dotcms.common.WorkspaceManager;
-import com.dotcms.model.config.Workspace;
+import io.quarkus.arc.Arc;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
@@ -12,6 +14,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
@@ -23,6 +26,21 @@ class RemoteURLTest extends CommandTest {
     @Inject
     WorkspaceManager workspaceManager;
 
+    @BeforeEach
+    void setUp() throws IOException {
+        serviceManager.removeAll();
+
+        final var remoteURLParam = Arc.container().instance(RemoteURLParam.class);
+        if (remoteURLParam.isAvailable() && remoteURLParam.get().getURL().isPresent()) {
+            remoteURLParam.get().setURL(null);
+        }
+
+        final var authenticationParam = Arc.container().instance(AuthenticationParam.class);
+        if (authenticationParam.isAvailable() && authenticationParam.get().getToken().isPresent()) {
+            authenticationParam.get().setToken(null);
+        }
+    }
+
     /**
      * Test case for the scenario where the dotcms-url is used but the token is missing.
      *
@@ -33,7 +51,7 @@ class RemoteURLTest extends CommandTest {
 
         // Create a temporal folder for the workspace
         var tempFolder = createTempFolder();
-        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+        workspaceManager.getOrCreate(tempFolder);
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -43,7 +61,7 @@ class RemoteURLTest extends CommandTest {
 
             // Pulling all languages
             var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
-                    "--workspace", workspace.root().toString(),
+                    "--workspace", tempFolder.toAbsolutePath().toString(),
                     "--dotcms-url", "http://localhost:8080");
             Assertions.assertEquals(ExitCode.USAGE, status);
 
@@ -52,7 +70,7 @@ class RemoteURLTest extends CommandTest {
                     output.contains("The token is required when the dotCMS URL is set"));
 
         } finally {
-            workspaceManager.destroy(workspace);
+            deleteTempDirectory(tempFolder);
         }
     }
 
@@ -66,7 +84,7 @@ class RemoteURLTest extends CommandTest {
 
         // Create a temporal folder for the workspace
         var tempFolder = createTempFolder();
-        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+        workspaceManager.getOrCreate(tempFolder);
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -76,7 +94,7 @@ class RemoteURLTest extends CommandTest {
 
             // Pulling all languages
             var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
-                    "--workspace", workspace.root().toString(),
+                    "--workspace", tempFolder.toAbsolutePath().toString(),
                     "--dotcms-url", "not valid URL");
             Assertions.assertEquals(ExitCode.USAGE, status);
 
@@ -84,7 +102,7 @@ class RemoteURLTest extends CommandTest {
             Assertions.assertTrue(output.contains("Invalid dotCMS URL"));
 
         } finally {
-            workspaceManager.destroy(workspace);
+            deleteTempDirectory(tempFolder);
         }
     }
 
@@ -100,7 +118,7 @@ class RemoteURLTest extends CommandTest {
 
         // Create a temporal folder for the workspace
         var tempFolder = createTempFolder();
-        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+        workspaceManager.getOrCreate(tempFolder);
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -110,7 +128,7 @@ class RemoteURLTest extends CommandTest {
 
             // Pulling all languages
             var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
-                    "--workspace", workspace.root().toString(),
+                    "--workspace", tempFolder.toAbsolutePath().toString(),
                     "--dotcms-url", "http://localhost:8080",
                     "--token", "invalid token");
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
@@ -119,7 +137,7 @@ class RemoteURLTest extends CommandTest {
             Assertions.assertTrue(output.contains("Invalid User"));
 
         } finally {
-            workspaceManager.destroy(workspace);
+            deleteTempDirectory(tempFolder);
         }
     }
 
@@ -135,7 +153,7 @@ class RemoteURLTest extends CommandTest {
 
         // Create a temporal folder for the workspace
         var tempFolder = createTempFolder();
-        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+        workspaceManager.getOrCreate(tempFolder);
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -145,7 +163,7 @@ class RemoteURLTest extends CommandTest {
 
             // Pulling all languages
             var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
-                    "--workspace", workspace.root().toString());
+                    "--workspace", tempFolder.toAbsolutePath().toString());
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
 
             final String output = writer.toString();
@@ -153,7 +171,7 @@ class RemoteURLTest extends CommandTest {
                     output.contains("No dotCMS configured instances were found"));
 
         } finally {
-            workspaceManager.destroy(workspace);
+            deleteTempDirectory(tempFolder);
         }
     }
 
