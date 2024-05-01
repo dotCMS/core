@@ -164,7 +164,6 @@ jobs:
           echo "ARCH=$ARCH"
           echo "INSTALLATION_PATH=$INSTALLATION_PATH"
           
-               https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.3/graalvm-ce-java11-darwin-amd64-22.3.3.tar.gz
           wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${{ env.GRAALVM_VERSION }}/graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
           sudo mkdir -p $INSTALLATION_PATH
           tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
