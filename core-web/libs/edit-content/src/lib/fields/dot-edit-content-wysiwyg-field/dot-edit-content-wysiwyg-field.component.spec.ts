@@ -46,7 +46,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             {
                 provide: HttpClient,
                 useValue: {
-                    get: () => of({})
+                    get: () => of(null)
                 }
             },
             {
@@ -154,19 +154,18 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
     describe('Systemwide TinyMCE prop', () => {
         it('should set the systemwide TinyMCE props', () => {
-            const globalConfig = {
+            const SYSTEM_WIDE_CONFIG = {
                 toolbar1: 'undo redo | bold italic',
                 theme: 'modern'
             };
 
-            jest.spyOn(httpClient, 'get').mockReturnValue(of(globalConfig));
+            jest.spyOn(httpClient, 'get').mockReturnValue(of(SYSTEM_WIDE_CONFIG));
 
             spectator.detectChanges();
 
             const editor = spectator.query(EditorComponent);
             expect(editor.init).toEqual({
-                ...DEFAULT_CONFIG,
-                ...globalConfig,
+                ...SYSTEM_WIDE_CONFIG,
                 theme: 'silver',
                 setup: expect.any(Function)
             });
@@ -186,7 +185,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         });
 
         it('should overwrite the systemwide TinyMCE props with the field variables', () => {
-            const globalConfig = {
+            const SYSTEM_WIDE_CONFIG = {
                 toolbar1: 'undo redo | bold italic'
             };
 
@@ -200,7 +199,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                 }
             ];
 
-            jest.spyOn(httpClient, 'get').mockReturnValue(of(globalConfig));
+            jest.spyOn(httpClient, 'get').mockReturnValue(of(SYSTEM_WIDE_CONFIG));
 
             spectator.setInput('field', {
                 ...WYSIWYG_MOCK,
@@ -211,8 +210,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
             const editor = spectator.query(EditorComponent);
             expect(editor.init).toEqual({
-                ...DEFAULT_CONFIG,
-                ...globalConfig,
+                ...SYSTEM_WIDE_CONFIG,
                 theme: 'silver',
                 toolbar1: 'undo redo',
                 setup: expect.any(Function)

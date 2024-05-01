@@ -122,7 +122,11 @@ public class OpenAIGenerateImageRunner implements AsyncWorkflowRunner {
             }
             String finalPrompt = VelocityUtil.eval(prompt, ctx);
 
-            OpenAIImageService service = new OpenAIImageServiceImpl(ConfigService.INSTANCE.config(host), user);
+            OpenAIImageService service = new OpenAIImageServiceImpl(
+                    ConfigService.INSTANCE.config(host),
+                    user,
+                    APILocator.getHostAPI(),
+                    APILocator.getTempFileAPI());
 
             JSONObject resp = Try.of(() -> service.sendTextPrompt(finalPrompt))
                     .onFailure(e -> Logger.warn(OpenAIGenerateImageRunner.class, "error generating image:" + e))

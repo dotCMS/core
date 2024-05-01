@@ -21,7 +21,7 @@
         <awaitility.version>3.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <glowroot.version>0.13.1</glowroot.version>
-        <jackson.version>2.13.4</jackson.version>
+        <jackson.version>2.16.1</jackson.version>
         <jersey.version>2.22.1</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
         <dotcms.tika-api.version>2023.09.8</dotcms.tika-api.version>
@@ -850,6 +850,12 @@
                 <groupId>org.elasticsearch.client</groupId>
                 <artifactId>elasticsearch-rest-high-level-client</artifactId>
                 <version>7.10.2</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.yaml</groupId>
+                        <artifactId>snakeyaml</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
 
@@ -958,6 +964,12 @@
                 <version>${jackson.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>2.2</version>
             </dependency>
 
             <dependency>
@@ -1500,6 +1512,12 @@
                 <groupId>com.tngtech.junit.dataprovider</groupId>
                 <artifactId>junit4-dataprovider</artifactId>
                 <version>2.6</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock</artifactId>
+                <version>3.5.3</version>
             </dependency>
 
             <!-- Graalvm Js Engine -->

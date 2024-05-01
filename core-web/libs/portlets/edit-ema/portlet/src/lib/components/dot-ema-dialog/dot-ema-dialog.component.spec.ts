@@ -1,5 +1,11 @@
 import { describe, it, expect } from '@jest/globals';
-import { Spectator, createComponentFactory, SpyObject, byTestId } from '@ngneat/spectator/jest';
+import {
+    Spectator,
+    createComponentFactory,
+    SpyObject,
+    byTestId,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -9,12 +15,17 @@ import { By } from '@angular/platform-browser';
 import { MessageService } from 'primeng/api';
 
 import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageService,
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import {
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,
@@ -71,7 +82,6 @@ describe('DotEmaDialogComponent', () => {
             HttpClient,
             DotWorkflowActionsFireService,
             MessageService,
-
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
@@ -114,7 +124,11 @@ describe('DotEmaDialogComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
-            }
+            },
+            mockProvider(DotContentTypeService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotAlertConfirmService),
+            mockProvider(DotIframeService)
         ]
     });
 
@@ -324,6 +338,74 @@ describe('DotEmaDialogComponent', () => {
             component.showLoadingIframe();
 
             expect(resetSpy).toHaveBeenCalled();
+        });
+
+        it("should trigger openDialogOnURL in the store when it's a URL", () => {
+            const openDialogOnURLSpy = jest.spyOn(storeSpy, 'openDialogOnURL');
+
+            component.openDialogOnUrl('https://demo.dotcms.com/jsp.jsp', 'test');
+
+            expect(openDialogOnURLSpy).toHaveBeenCalledWith({
+                title: 'test',
+                url: 'https://demo.dotcms.com/jsp.jsp'
+            });
+        });
+    });
+
+    describe('Compare dialog', () => {
+        const renderCompareDialog = () => {
+            component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent();
+
+            const dialogIframe = spectator.debugElement.query(
+                By.css('[data-testId="dialog-iframe"]')
+            );
+
+            spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+            dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: NG_CUSTOM_EVENTS.COMPARE_CONTENTLET,
+                        data: {
+                            inode: '123',
+                            identifier: 'identifier',
+                            language: '1'
+                        }
+                    }
+                })
+            );
+            spectator.detectChanges();
+        };
+
+        it('should render a compare dialog', () => {
+            renderCompareDialog();
+            expect(spectator.query(byTestId('dialog-compare'))).toBeDefined();
+            expect(spectator.query(DotContentCompareComponent)).toBeDefined();
+
+            expect(spectator.component.$compareData()).toEqual({
+                inode: '123',
+                identifier: 'identifier',
+                language: '1'
+            });
+        });
+
+        it('should trigger a bring back action', () => {
+            const bringBackSpy = jest.spyOn(component, 'bringBack');
+
+            renderCompareDialog();
+
+            spectator.triggerEventHandler(DotContentCompareComponent, 'letMeBringBack', {
+                name: 'getVersionBack',
+                args: ['123']
+            });
+
+            expect(bringBackSpy).toHaveBeenCalledWith({
+                name: 'getVersionBack',
+                args: ['123']
+            });
         });
     });
 });

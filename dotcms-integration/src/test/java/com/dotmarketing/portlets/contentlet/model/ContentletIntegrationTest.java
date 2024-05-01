@@ -1,10 +1,5 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -41,12 +36,19 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author nollymar
@@ -203,7 +205,7 @@ public class ContentletIntegrationTest {
 
             //Save related content
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)), user,
+                    Map.of(relationship, CollectionsUtils.list(childContentlet)), user,
                     false);
 
             //No cached value
@@ -265,7 +267,7 @@ public class ContentletIntegrationTest {
 
             //Save related content
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet1, childContentlet2)),
+                    Map.of(relationship, CollectionsUtils.list(childContentlet1, childContentlet2)),
                     user,
                     false);
 

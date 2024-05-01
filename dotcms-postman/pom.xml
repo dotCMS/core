@@ -28,7 +28,7 @@
         <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
         <skip.npm.install>false</skip.npm.install>
         <postman.server.url>http://localhost:${tomcat.port}</postman.server.url>
-        <postman.collection.dir>../dotCMS/src/curl-test</postman.collection.dir>
+        <postman.collection.dir>src/main/resources/postman</postman.collection.dir>
         <!-- Some tests e.g. in ApiToken_Resource.postman_collection currently fail unless docker external port is same as internal -->
         <tomcat.port>8080</tomcat.port>
         <docker.jacoco.skip>false</docker.jacoco.skip>

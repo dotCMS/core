@@ -18,8 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * This upgrade task will add the column server_id to the system_event table.
  *
@@ -29,14 +27,14 @@ import static com.dotcms.util.CollectionsUtils.map;
  */
 public class Task04355SystemEventAddServerIdColumn extends AbstractJDBCStartupTask {
 
-    private static final Map<DbType, String> selectServerIdColumnSQLMap = map(
+    private static final Map<DbType, String> selectServerIdColumnSQLMap = Map.of(
             DbType.POSTGRESQL,   "SELECT server_id FROM system_event",
             DbType.MYSQL,        "SELECT server_id FROM system_event",
             DbType.ORACLE,       "SELECT server_id FROM system_event",
             DbType.MSSQL,        "SELECT server_id FROM system_event"
             );
 
-    private static final Map<DbType, String> addServerIdColumnSQLMap = map(
+    private static final Map<DbType, String> addServerIdColumnSQLMap = Map.of(
             DbType.POSTGRESQL,   "ALTER TABLE system_event ADD server_id varchar(36)",
             DbType.MYSQL,        "ALTER TABLE system_event ADD server_id varchar(36)",
             DbType.ORACLE,       "ALTER TABLE system_event ADD server_id varchar2(36)",

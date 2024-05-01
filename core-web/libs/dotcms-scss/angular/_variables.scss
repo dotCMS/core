@@ -36,10 +36,6 @@ $button-text-color-disabled: $color-palette-gray-500;
 $button-text-color: $color-palette-gray-500;
 $button-shadow-focus: 0 0 0 4px $color-palette-secondary-op-20;
 
-// Tables
-$th-text-color: $color-palette-gray-500;
-$table-border-color: $color-palette-gray-500;
-
 $warn: $orange;
 $info: $color-palette-secondary;
 
@@ -47,6 +43,7 @@ $info: $color-palette-secondary;
 $field-tiny-height: 28px;
 $field-disabled-opacity: 0.38;
 $line-height: 1.5em;
+$line-height-relative: 140%;
 
 // ICONS
 $md-icon-size-normal: 18px;

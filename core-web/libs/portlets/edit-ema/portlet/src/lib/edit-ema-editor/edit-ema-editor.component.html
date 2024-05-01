@@ -40,7 +40,7 @@
                     pointerEvents: es.state === editorState.DRAGGING ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
-                (load)="onIframePageLoad()"
+                (load)="onIframePageLoad(es.editorData.mode)"
                 data-testId="iframe"
                 width="100%"
                 height="100%"></iframe>
@@ -61,27 +61,23 @@
                     !es.editorData.page.isLocked
                 "
                 [hide]="es.state === editorState.DRAGGING"
-                [contentlet]="es.contentletArea"
+                [contentletArea]="es.contentletArea"
                 (edit)="handleEditContentlet($event)"
                 (editVTL)="handleEditVTL($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
-                (moveStart)="moveContentlet($event)"
-                (moveStop)="onDragEnd($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
                     es.editorData.canEditVariant &&
                     !!es.bounds.length &&
-                    !!dragItem &&
                     !es.editorData.device &&
                     es.state === editorState.DRAGGING
                 "
                 [containers]="es.bounds"
-                [item]="dragItem"
-                (place)="onPlaceItem($event)"
+                [dragItem]="es.dragItem"
                 data-testId="dropzone" />
         </div>
     </div>
@@ -91,20 +87,20 @@
             es.editorData.canEditVariant &&
             es.isEnterpriseLicense &&
             (es.editorData.mode === editorMode.EDIT ||
-                es.editorData.mode === editorMode.EDIT_VARIANT) &&
-            es.editor.page.canEdit &&
-            !es.editorData.page.isLocked
+                es.editorData.mode === editorMode.EDIT_VARIANT ||
+                es.editorData.mode === editorMode.INLINE_EDITING) &&
+            es.editor.page.canEdit
         "
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
-        (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
-    @if(es.editorData.canEditVariant && es.editorData.mode === editorMode.EDIT) {
+    @if(es.editorData.canEditVariant && (es.editorData.mode === editorMode.EDIT ||
+    es.editorData.mode === editorMode.EDIT_VARIANT)) {
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"
+        (reloadFromDialog)="reloadFromDialog()"
         data-testId="ema-dialog"></dot-edit-ema-dialog>
     <p-confirmDialog
         [style]="{

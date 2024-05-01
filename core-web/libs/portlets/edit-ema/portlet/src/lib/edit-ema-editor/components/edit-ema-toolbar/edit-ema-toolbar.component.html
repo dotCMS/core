@@ -1,9 +1,9 @@
-<ng-container *ngIf="editorState$ | async as es">
+<ng-container *ngIf="editorToolbarData$ | async as es">
     <p-toolbar>
         <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
             <dot-device-selector-seo
                 #deviceSelector
-                [apiLink]="es.iframeURL"
+                [apiLink]="es.previewURL"
                 [hideSocialMedia]="!!es.clientHost"
                 (selected)="updateCurrentDevice($event)"
                 (changeSeoMedia)="onSeoMediaChange($event)"
@@ -65,7 +65,7 @@
                 (despersonalize)="onDespersonalize($event)"
                 data-testId="persona-selector" />
             <dot-edit-ema-workflow-actions
-                *ngIf="es.editorData.mode === editorMode.EDIT"
+                *ngIf="es.showWorkflowActions"
                 [inode]="es.editor.page.inode"
                 (newPage)="handleNewPage($event)" />
 
@@ -80,7 +80,7 @@
         </div>
     </p-toolbar>
     <dot-ema-info-display
-        *ngIf="!es.editorData.canEditPage || es.editorData.mode !== editorMode.EDIT"
+        *ngIf="es.showInfoDisplay"
         [editorData]="es.editorData"
         [currentExperiment]="es.currentExperiment"
         data-testId="info-display" />

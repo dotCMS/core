@@ -1,5 +1,46 @@
 package org.apache.felix.framework;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.concurrent.Debouncer;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.ClusterLockManager;
+import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ResourceCollectorUtil;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.FileUtil;
+import com.liferay.util.MathUtil;
+import io.vavr.control.Try;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.main.AutoProcessor;
+import org.apache.felix.main.Main;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.launch.Framework;
+
+import javax.servlet.ServletException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -28,47 +69,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.servlet.ServletException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.felix.framework.util.FelixConstants;
-import org.apache.felix.main.AutoProcessor;
-import org.apache.felix.main.Main;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.launch.Framework;
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
-import com.dotcms.concurrent.Debouncer;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.lock.ClusterLockManager;
-import com.dotcms.dotpubsub.DotPubSubEvent;
-import com.dotcms.dotpubsub.DotPubSubProvider;
-import com.dotcms.dotpubsub.DotPubSubProviderLocator;
-import org.apache.commons.io.IOUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ResourceCollectorUtil;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.ImmutableList;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.util.FileUtil;
-import com.liferay.util.MathUtil;
-import io.vavr.control.Try;
 
 /**
  * Created by Jonathan Gamba
@@ -204,7 +204,7 @@ public class OSGIUtil {
             return ;
         }
         
-        if("RESET".equals(extraPackages)) {
+            if("RESET".equals(extraPackages)) {
             new File(OSGIUtil.getInstance().getOsgiExtraConfigPath()).delete();
             debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
             return;
@@ -218,7 +218,7 @@ public class OSGIUtil {
         
         try(BufferedWriter writer = new BufferedWriter( new FileWriter( osgiExtraFileTmp   ) )){
             writer.write( extraPackages );
-            Logger.info( OSGIAJAX.class, "OSGI Extra Packages Saved");
+            Logger.info( this, "OSGI Extra Packages Saved");
         }
         catch(Exception e) {
             Logger.error( OSGIUtil.class, e.getMessage(), e );
@@ -394,8 +394,6 @@ public class OSGIUtil {
             Logger.debug(this, ()-> "***** Checking the upload folder for jars");
             if (this.anyJarOnUploadFolder(uploadFolderFile)) {
 
-
-
                 Logger.debug(this, ()-> "****** Has found jars on upload, folder, acquiring the lock and reloading the OSGI restart *****");
 
                 try {
@@ -412,10 +410,7 @@ public class OSGIUtil {
 
                 Logger.debug(this, ()-> "No jars on upload folder");
                 // if not jars we want to wait for the next read of the upload folder
-
-
             }
-        
     }
 
     private boolean anyJarOnUploadFolder(final File uploadFolderFile) {
@@ -561,40 +556,16 @@ public class OSGIUtil {
     private void moveNewBundlesToFelixLoadFolder(final File uploadFolderFile, final String[] pathnames) {
 
         final File deployDirectory   = new File(this.getFelixDeployPath());
-        final File undeployDirectory = new File(this.getFelixUndeployPath());
         try {
 
             if (deployDirectory.exists() && deployDirectory.canWrite()) {
 
                 for (final String pathname : pathnames) {
 
-                    final File bundle      = new File(uploadFolderFile, pathname);
-                    File bundleDestination = new File(deployDirectory, bundle.getName());
-                    if (ResourceCollectorUtil.isFragmentJar(bundle)) {
-
-                        bundleDestination = new File(undeployDirectory, bundle.getName());
-                    }
-
-                    Logger.debug(this, "Moving the bundle: " + bundle + " to " + deployDirectory);
-
-                    if (FileUtil.move(bundle, bundleDestination)) {
-
-                        Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
-                                .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(pathnames)))
-                                .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
-
-                        Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
-                    } else {
-                        Logger.debug(this, "Could not move the bundle: " + bundle + " to " + deployDirectory);
-                    }
+                    moveBundle(uploadFolderFile, pathnames, deployDirectory, pathname);
                 }
-
-                final String messageKey      = pathnames.length > 1? "new-osgi-plugins-installed":"new-osgi-plugin-installed";
-                final String successMessage  = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI()
-                        .getDefaultCompany().getLocale(), messageKey)).getOrElse(()-> "New OSGi Plugin(s) have been installed");
-                SystemMessageEventUtil.getInstance().pushMessage("OSGI_BUNDLES_LOADED",new SystemMessageBuilder().setMessage(successMessage)
-                        .setLife(DateUtil.FIVE_SECOND_MILLIS)
-                        .setSeverity(MessageSeverity.SUCCESS).create(), null);
+                
+                sendOSGIBundlesLoadedMessage(pathnames);
             } else {
 
                 Logger.warn(this, "The directory: " + this.getFelixDeployPath()
@@ -604,6 +575,52 @@ public class OSGIUtil {
 
             Logger.error(this, e.getMessage(), e);
         }
+    }
+
+    private void moveBundle(final File uploadFolderFile,
+                            final String[] pathnames,
+                            final File deployDirectory,
+                            final String pathname) throws IOException {
+
+        final File bundle      = new File(uploadFolderFile, pathname);
+        final File bundleDestination = new File(deployDirectory, bundle.getName());
+        if (ResourceCollectorUtil.isFragmentJar(bundle)) { // now we delete the bundle if it is a fragment since we already have the exported packages covered
+
+            Files.delete(bundle.toPath());
+            Logger.debug(this, "Deleted the fragment bundle: " + bundle);
+            return;
+        }
+
+        Logger.debug(this, "Moving the bundle: " + bundle + " to " + deployDirectory);
+
+        move(pathnames, deployDirectory, bundle, bundleDestination);
+    }
+
+    private void move(final String[] pathnames,
+                      final File deployDirectory,
+                      final File bundle,
+                      final File bundleDestination) throws IOException {
+
+        if (FileUtil.move(bundle, bundleDestination)) {
+
+            Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
+                    .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(pathnames)))
+                    .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+
+            Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
+        } else {
+            Logger.debug(this, "Could not move the bundle: " + bundle + " to " + deployDirectory);
+        }
+    }
+
+    private static void sendOSGIBundlesLoadedMessage(final String[] pathnames) {
+
+        final String messageKey      = pathnames.length > 1? "new-osgi-plugins-installed":"new-osgi-plugin-installed";
+        final String successMessage  = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI()
+                .getDefaultCompany().getLocale(), messageKey)).getOrElse(()-> "New OSGi Plugin(s) have been installed");
+        SystemMessageEventUtil.getInstance().pushMessage("OSGI_BUNDLES_LOADED",new SystemMessageBuilder().setMessage(successMessage)
+                .setLife(DateUtil.FIVE_SECOND_MILLIS)
+                .setSeverity(MessageSeverity.SUCCESS).create(), null);
     }
 
     /**

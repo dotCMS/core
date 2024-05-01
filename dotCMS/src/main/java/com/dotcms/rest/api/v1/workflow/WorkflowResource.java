@@ -154,7 +154,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.FAIL_ACTION_CALLBACK;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_ACTION_CALLBACK;
@@ -170,7 +169,7 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
  *     <li>Fire an action for a single content or bulk (action for a several contents).</li>
  * </ul>
  * <p>You can find more information in the
- * {@code dotCMS/src/curl-test/documentation/Workflow_Resource_Tests.json} file. It's a complete
+ * {@code dotcms-postman/src/main/resources/postman/documentation/Workflow_Resource_Tests.json} file. It's a complete
  * collection of examples on how to interact with this Resource.</p>
  *
  * @author jsanca
@@ -622,7 +621,7 @@ public class WorkflowResource {
                             (Consumer<Long>) delta -> {
                                 eventBuilder.name("success");
                                 eventBuilder.data(Map.class,
-                                        map("success", delta));
+                                        Map.of("success", delta));
                                 eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
@@ -637,7 +636,7 @@ public class WorkflowResource {
                             (BiConsumer<String, Exception>) (inode, e) -> {
                                 eventBuilder.name("failure");
                                 eventBuilder.data(Map.class,
-                                        map("failure", inode));
+                                        Map.of("failure", inode));
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
                                     eventOutput.write(event);
@@ -2128,7 +2127,7 @@ public class WorkflowResource {
             outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
 
             ResponseUtil.wrapProperty(outputStream, "summary",
-                    objectMapper.writeValueAsString(CollectionsUtils.map("time", stopWatch.getTime(),
+                    objectMapper.writeValueAsString(Map.of("time", stopWatch.getTime(),
                             "affected", futures.size(),
                             "successCount", successCount,
                             "failCount", failCount)));
@@ -2942,7 +2941,7 @@ public class WorkflowResource {
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(
-                    map("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
+                    Map.of("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
                             "permissions", permissions))).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),

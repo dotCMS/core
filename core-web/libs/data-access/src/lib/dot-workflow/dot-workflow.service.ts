@@ -43,6 +43,22 @@ export class DotWorkflowService {
     }
 
     /**
+     * Get the Workflow Schema for a ContentType given its inode
+     *
+     * @param {string} contentTypeId
+     * @return {*}
+     * @memberof DotWorkflowService
+     */
+    getSchemaContentType(contentTypeId: string): Observable<{
+        contentTypeSchemes: DotCMSWorkflow[];
+        schemes: DotCMSWorkflow[];
+    }> {
+        return this.httpClient
+            .get(`${this.WORKFLOW_URL}/schemes/schemescontenttypes/${contentTypeId}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Get the current workflow status for Contentlet given its inode
      *
      * @param {string} inode

@@ -201,6 +201,13 @@ export class DotRouterService {
         this.router.navigate([`/c/content/new/${variableName}`]);
     }
 
+    /**
+     * Redirect to edit the content type
+     *
+     * @param {string} id
+     * @param {string} portlet
+     * @memberof DotRouterService
+     */
     goToEditContentType(id: string, portlet: string): void {
         this.router.navigate([`/${portlet}/edit/${id}`]);
     }

@@ -20,6 +20,19 @@
     /**
      * Ping the editor to see if the page is inside the editor
      */ CUSTOMER_ACTIONS["PING_EDITOR"] = "ping-editor";
+    /**
+     * Tell the editor to init the inline editing editor.
+     */ CUSTOMER_ACTIONS["INIT_INLINE_EDITING"] = "init-inline-editing";
+    /**
+     * Tell the editor to open the Copy-contentlet dialog
+     * To copy a content and then edit it inline.
+     */ CUSTOMER_ACTIONS["COPY_CONTENTLET_INLINE_EDITING"] = "copy-contentlet-inline-editing";
+    /**
+     * Tell the editor to save inline edited contentlet
+     */ CUSTOMER_ACTIONS["UPDATE_CONTENTLET_INLINE_EDITING"] = "update-contentlet-inline-editing";
+    /**
+     * Tell the editor to trigger a menu reorder
+     */ CUSTOMER_ACTIONS["REORDER_MENU"] = "reorder-menu";
     CUSTOMER_ACTIONS["NOOP"] = "noop";
 })(CUSTOMER_ACTIONS || (CUSTOMER_ACTIONS = {}));
 /**
@@ -69,9 +82,9 @@
             y: containerRect.y,
             width: containerRect.width,
             height: containerRect.height,
-            payload: {
+            payload: JSON.stringify({
                 container: getContainerData(container)
-            },
+            }),
             contentlets: getContentletsBound(containerRect, contentlets)
         };
     });
@@ -144,16 +157,15 @@
  * @export
  * @param {(HTMLElement | null)} element
  * @return {*}
- */ function findContentletElement(element) {
-    var _element_dataset;
+ */ function findDotElement(element) {
+    var _element_dataset, _element_dataset1;
     if (!element) return null;
-    if (element.dataset && ((_element_dataset = element.dataset) === null || _element_dataset === void 0 ? void 0 : _element_dataset["dotObject"]) === "contentlet") {
+    if ((element === null || element === void 0 ? void 0 : (_element_dataset = element.dataset) === null || _element_dataset === void 0 ? void 0 : _element_dataset["dotObject"]) === "contentlet" || (element === null || element === void 0 ? void 0 : (_element_dataset1 = element.dataset) === null || _element_dataset1 === void 0 ? void 0 : _element_dataset1["dotObject"]) === "container" && element.children.length === 0) {
         return element;
-    } else {
-        return findContentletElement(element === null || element === void 0 ? void 0 : element["parentElement"]);
     }
+    return findDotElement(element === null || element === void 0 ? void 0 : element["parentElement"]);
 }
-function finVTLData(target) {
+function findVTLData(target) {
     var vltElements = target.querySelectorAll('[data-dot-object="vtl-file"]');
     if (!vltElements.length) {
         return null;
@@ -165,9 +177,6 @@ function finVTLData(target) {
             name: (_vltElement_dataset1 = vltElement.dataset) === null || _vltElement_dataset1 === void 0 ? void 0 : _vltElement_dataset1["dotUrl"]
         };
     });
-// if (vltElement) {
-//     return vltElement.dataset?.['dotInode'];
-// }
 }
 
 /**
@@ -227,22 +236,35 @@ function finVTLData(target) {
  * @memberof DotCMSPageEditor
  */ function listenHoveredContentlet() {
     var pointerMoveCallback = function(event) {
-        var // Here extract dot-container from contentlet if is Headless
+        var _foundElement_dataset, _foundElement_dataset1, _foundElement_dataset2, _foundElement_dataset3, _foundElement_dataset4, _foundElement_dataset5, _foundElement_dataset6, _foundElement_dataset7, // Here extract dot-container from contentlet if is Headless
         // or search in parent container if is VTL
-        _target_dataset, _target_dataset1, _target_dataset2, _target_dataset3, _target_dataset4, _target_dataset5, _target_dataset6;
-        var target = findContentletElement(event.target);
-        if (!target) return;
-        var _target_getBoundingClientRect = target.getBoundingClientRect(), x = _target_getBoundingClientRect.x, y = _target_getBoundingClientRect.y, width = _target_getBoundingClientRect.width, height = _target_getBoundingClientRect.height;
-        var vtlFiles = finVTLData(target);
+        _foundElement_dataset8, _foundElement_dataset9;
+        var foundElement = findDotElement(event.target);
+        if (!foundElement) return;
+        var _foundElement_getBoundingClientRect = foundElement.getBoundingClientRect(), x = _foundElement_getBoundingClientRect.x, y = _foundElement_getBoundingClientRect.y, width = _foundElement_getBoundingClientRect.width, height = _foundElement_getBoundingClientRect.height;
+        var isContainer = ((_foundElement_dataset = foundElement.dataset) === null || _foundElement_dataset === void 0 ? void 0 : _foundElement_dataset["dotObject"]) === "container";
+        var contentletForEmptyContainer = {
+            identifier: "TEMP_EMPTY_CONTENTLET",
+            title: "TEMP_EMPTY_CONTENTLET",
+            contentType: "TEMP_EMPTY_CONTENTLET_TYPE",
+            inode: "TEMPY_EMPTY_CONTENTLET_INODE",
+            widgetTitle: "TEMP_EMPTY_CONTENTLET",
+            baseType: "TEMP_EMPTY_CONTENTLET",
+            onNumberOfPages: 1
+        };
+        var contentlet = {
+            identifier: (_foundElement_dataset1 = foundElement.dataset) === null || _foundElement_dataset1 === void 0 ? void 0 : _foundElement_dataset1["dotIdentifier"],
+            title: (_foundElement_dataset2 = foundElement.dataset) === null || _foundElement_dataset2 === void 0 ? void 0 : _foundElement_dataset2["dotTitle"],
+            inode: (_foundElement_dataset3 = foundElement.dataset) === null || _foundElement_dataset3 === void 0 ? void 0 : _foundElement_dataset3["dotInode"],
+            contentType: (_foundElement_dataset4 = foundElement.dataset) === null || _foundElement_dataset4 === void 0 ? void 0 : _foundElement_dataset4["dotType"],
+            baseType: (_foundElement_dataset5 = foundElement.dataset) === null || _foundElement_dataset5 === void 0 ? void 0 : _foundElement_dataset5["dotBasetype"],
+            widgetTitle: (_foundElement_dataset6 = foundElement.dataset) === null || _foundElement_dataset6 === void 0 ? void 0 : _foundElement_dataset6["dotWidgetTitle"],
+            onNumberOfPages: (_foundElement_dataset7 = foundElement.dataset) === null || _foundElement_dataset7 === void 0 ? void 0 : _foundElement_dataset7["dotOnNumberOfPages"]
+        };
+        var vtlFiles = findVTLData(foundElement);
         var contentletPayload = {
-            container: ((_target_dataset = target.dataset) === null || _target_dataset === void 0 ? void 0 : _target_dataset["dotContainer"]) ? JSON.parse((_target_dataset1 = target.dataset) === null || _target_dataset1 === void 0 ? void 0 : _target_dataset1["dotContainer"]) : getClosestContainerData(target),
-            contentlet: {
-                identifier: (_target_dataset2 = target.dataset) === null || _target_dataset2 === void 0 ? void 0 : _target_dataset2["dotIdentifier"],
-                title: (_target_dataset3 = target.dataset) === null || _target_dataset3 === void 0 ? void 0 : _target_dataset3["dotTitle"],
-                inode: (_target_dataset4 = target.dataset) === null || _target_dataset4 === void 0 ? void 0 : _target_dataset4["dotInode"],
-                contentType: (_target_dataset5 = target.dataset) === null || _target_dataset5 === void 0 ? void 0 : _target_dataset5["dotType"],
-                onNumberOfPages: (_target_dataset6 = target.dataset) === null || _target_dataset6 === void 0 ? void 0 : _target_dataset6["dotOnNumberOfPages"]
-            },
+            container: ((_foundElement_dataset8 = foundElement.dataset) === null || _foundElement_dataset8 === void 0 ? void 0 : _foundElement_dataset8["dotContainer"]) ? JSON.parse((_foundElement_dataset9 = foundElement.dataset) === null || _foundElement_dataset9 === void 0 ? void 0 : _foundElement_dataset9["dotContainer"]) : getClosestContainerData(foundElement),
+            contentlet: isContainer ? contentletForEmptyContainer : contentlet,
             vtlFiles: vtlFiles
         };
         postMessageToEditor({
@@ -296,10 +318,10 @@ function finVTLData(target) {
  * Checks if the code is running inside an editor.
  * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
  */ function isInsideEditor() {
-    if (window.parent === window) {
+    if (typeof window === "undefined") {
         return false;
     }
-    return true;
+    return window.parent !== window;
 }
 
 /**

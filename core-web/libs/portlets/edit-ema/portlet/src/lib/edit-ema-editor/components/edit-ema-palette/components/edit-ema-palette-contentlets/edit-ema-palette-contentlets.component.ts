@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { JsonPipe, NgFor, NgIf } from '@angular/common';
+import { JsonPipe, NgIf } from '@angular/common';
 import {
     CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
@@ -28,7 +28,6 @@ import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
     standalone: true,
     imports: [
         NgIf,
-        NgFor,
         ReactiveFormsModule,
         DotIconModule,
         PaginatorModule,
@@ -47,8 +46,6 @@ export class EditEmaPaletteContentletsComponent implements OnInit, OnDestroy {
     @Input() contentlets;
     @Input() paletteStatus: EditEmaPaletteStoreStatus;
 
-    @Output() dragStart = new EventEmitter();
-    @Output() dragEnd = new EventEmitter();
     @Output() paginate = new EventEmitter();
     @Output() showContentTypes = new EventEmitter();
     @Output() search = new EventEmitter<string>();

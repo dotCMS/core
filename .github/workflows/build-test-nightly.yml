@@ -12,6 +12,10 @@ on:
         type: boolean
         description: 'Indicates if the workflow should build on missing artifacts'
         default: true
+      publish-npm-package:
+        type: boolean
+        description: 'Indicates if the workflow should publish the NPM package on the registry'
+        default: false
       run-all-tests:
         description: 'Run all tests'
         type: boolean
@@ -21,8 +25,8 @@ jobs:
     name: Initialize
     uses: ./.github/workflows/reusable-initialize.yml
     with:
-      reuse-previous-build: ${{ inputs.reuse-previous-build }} # false unless set manually on workflow_dispatch
-      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts }} # false unless set manually on workflow_dispatch
+      reuse-previous-build: ${{ inputs.reuse-previous-build || false }} # false unless set manually on workflow_dispatch
+      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || false }} # false unless set manually on workflow_dispatch
   build:
     name: Nightly Build
     needs: [ initialize ]
@@ -59,27 +63,28 @@ jobs:
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       environment: nightly
-      snapshot: true
-      latest: true
       deploy-dev-image: true
+      publish-npm-package: ${{ ( github.event_name == 'workflow_dispatch' && inputs.publish-npm-package == true ) || github.event_name == 'schedule' }}
+      reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize,deployment ]
+    needs: [ initialize, build, build-cli, test, deployment ]
     uses: ./.github/workflows/reusable-finalize.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      needsData: ${{ toJson(needs) }}
   report:
     name: Report
     if: always()
     needs: [ finalize ]
     uses: ./.github/workflows/build-report.yml
     secrets:
-      MASTER_BUILD_SLACK_WEBHOOK: ${{ secrets.MASTER_BUILD_SLACK_WEBHOOK }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

@@ -34,4 +34,5 @@ public interface OpenAIChatService {
      *
      */
     JSONObject sendRawRequest(JSONObject prompt);
+
 }

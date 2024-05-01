@@ -38,7 +38,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
@@ -216,8 +215,27 @@ public class ContentTypeResource implements Serializable {
 		}
 	}
 
+	/**
+	 * Copies a Content Type -- along with the new information specified for it -- as well as the
+	 * references to the Workflow Schemes that the original type is using.
+	 *
+	 * @param contentTypeAPI      The {@link ContentTypeAPI} instance to use to save the new
+	 *                            Content Type.
+	 * @param type                The original {@link ContentType} to copy.
+	 * @param copyContentTypeForm The {@link CopyContentTypeForm} containing the new information
+	 *                            for the copied type, such as, the new name, new icon, and new
+	 *                            Velocity Variable Name.
+	 * @param user                The {@link User} executing this action.
+	 *
+	 * @return An {@link ImmutableMap} containing the data from the new Content Type, its Workflow
+	 * Schemes and system action mappings.
+	 *
+	 * @throws DotDataException     An error occurred when saving the new information.
+	 * @throws DotSecurityException The specified User doesn't have the required permissions to
+	 *                              perform this action.
+	 */
 	@WrapInTransaction
-	private ImmutableMap<Object, Object> copyContentTypeAndDependencies (final ContentTypeAPI contentTypeAPI, final ContentType type,
+	private ImmutableMap<Object, Object> copyContentTypeAndDependencies(final ContentTypeAPI contentTypeAPI, final ContentType type,
 																		 final CopyContentTypeForm copyContentTypeForm, final User user)
 			throws DotDataException, DotSecurityException {
 
@@ -226,26 +244,13 @@ public class ContentTypeResource implements Serializable {
 				.newVariable(copyContentTypeForm.getVariable());
 
 		setHostAndFolderAsIdentifer(copyContentTypeForm.getFolder(), copyContentTypeForm.getHost(), user, builder);
-		final ContentType contentTypeSaved = contentTypeAPI.copyFrom(builder.build());
-
-		// saving the workflow information
-		final List<WorkflowScheme> workflowSchemes = this.workflowHelper.findSchemesByContentType(type.id(), user);
-		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = this.workflowHelper.findSystemActionsByContentType(type, user);
-
-		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowSchemes.stream().map(WorkflowScheme::getId).collect(Collectors.toSet()));
-		for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping : systemActionWorkflowActionMappings) {
-
-			this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
-					.systemAction(systemActionWorkflowActionMapping.getSystemAction())
-					.actionId(systemActionWorkflowActionMapping.getWorkflowAction().getId())
-					.contentTypeVariable(contentTypeSaved.variable()).build(), user);
-		}
+		final ContentType contentTypeSaved = contentTypeAPI.copyFromAndDependencies(builder.build());
 
 		return ImmutableMap.builder()
 				.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(contentTypeSaved.variable())).mapObject())
 				.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
 				.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user).stream()
-						.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
+						.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
 				.build();
 	}
 

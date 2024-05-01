@@ -43,8 +43,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.stream.Stream;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * This upgrade task will add the column language_id to the workflow_task, set the default language id to all of current records
  * and add an index for the language_id.
@@ -69,35 +67,35 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
     protected final List<Params>        paramsUpdate                         = new ArrayList<>();
 
 
-    private static final Map<DbType, String> selectLanguageIdColumnSQLMap   = map(
+    private static final Map<DbType, String> selectLanguageIdColumnSQLMap   = Map.of(
             DbType.POSTGRESQL,   "SELECT language_id FROM workflow_task",
             DbType.MYSQL,        "SELECT language_id FROM workflow_task",
             DbType.ORACLE,       "SELECT language_id FROM workflow_task",
             DbType.MSSQL,        "SELECT language_id FROM workflow_task"
             );
 
-    private static final Map<DbType, String> addLanguageIdColumnSQLMap      = map(
+    private static final Map<DbType, String> addLanguageIdColumnSQLMap      = Map.of(
             DbType.POSTGRESQL,   "ALTER TABLE workflow_task ADD language_id INT8",
             DbType.MYSQL,        "ALTER TABLE workflow_task ADD language_id bigint",
             DbType.ORACLE,       "ALTER TABLE workflow_task ADD language_id number(19,0)",
             DbType.MSSQL,        "ALTER TABLE workflow_task ADD language_id NUMERIC(19,0) null"
     );
 
-    private static final Map<DbType, String> updateLanguageIdColumnSQLMap   = map(
+    private static final Map<DbType, String> updateLanguageIdColumnSQLMap   = Map.of(
             DbType.POSTGRESQL,   "UPDATE workflow_task SET language_id = ? where id = ?",
             DbType.MYSQL,        "UPDATE workflow_task SET language_id = ? where id = ?",
             DbType.ORACLE,       "UPDATE workflow_task SET language_id = ? where id = ?",
             DbType.MSSQL,        "UPDATE workflow_task SET language_id = ? where id = ?"
     );
 
-    private static final Map<DbType, String> addLanguageIdIndexSQLMap       = map(
+    private static final Map<DbType, String> addLanguageIdIndexSQLMap       = Map.of(
             DbType.POSTGRESQL,   "create index idx_workflow_6 on workflow_task (language_id)",
             DbType.MYSQL,        "create index idx_workflow_6 on workflow_task (language_id)",
             DbType.ORACLE,       "create index idx_workflow_6 on workflow_task (language_id)",
             DbType.MSSQL,        "create index idx_workflow_6 on workflow_task (language_id)"
     );
 
-    private static final Map<DbType, String> addLanguageIdForeignKeySQLMap       = map(
+    private static final Map<DbType, String> addLanguageIdForeignKeySQLMap       = Map.of(
             DbType.POSTGRESQL,   "alter table workflow_task add constraint FK_workflow_task_language foreign key (language_id) references language(id)",
             DbType.MYSQL,        "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_language FOREIGN KEY (language_id) REFERENCES language(id)",
             DbType.ORACLE,       "alter table workflow_task add constraint FK_workflow_task_language foreign key (language_id) references language(id)",
@@ -284,7 +282,7 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
                 .setSQL("select id,role_name,role_key from cms_role where role_key = ?")
                 .addParam(SYSTEM_USER_ROLE_KEY)
                 .loadObjectResults()
-                .stream().findFirst().orElse(map("id", SYSTEM_USER_ID_DEFAULT))
+                .stream().findFirst().orElse(Map.of("id", SYSTEM_USER_ID_DEFAULT))
                 .get("id");
     }
 

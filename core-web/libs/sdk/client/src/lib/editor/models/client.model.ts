@@ -25,6 +25,24 @@ export enum CUSTOMER_ACTIONS {
      * Ping the editor to see if the page is inside the editor
      */
     PING_EDITOR = 'ping-editor',
+    /**
+     * Tell the editor to init the inline editing editor.
+     */
+    INIT_INLINE_EDITING = 'init-inline-editing',
+    /**
+     * Tell the editor to open the Copy-contentlet dialog
+     * To copy a content and then edit it inline.
+     */
+    COPY_CONTENTLET_INLINE_EDITING = 'copy-contentlet-inline-editing',
+    /**
+     * Tell the editor to save inline edited contentlet
+     */
+    UPDATE_CONTENTLET_INLINE_EDITING = 'update-contentlet-inline-editing',
+
+    /**
+     * Tell the editor to trigger a menu reorder
+     */
+    REORDER_MENU = 'reorder-menu',
 
     NOOP = 'noop'
 }

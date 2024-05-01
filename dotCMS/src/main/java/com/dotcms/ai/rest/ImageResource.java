@@ -7,6 +7,7 @@ import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.ai.service.OpenAIImageService;
 import com.dotcms.ai.service.OpenAIImageServiceImpl;
 import com.dotcms.rest.WebResource;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -96,8 +97,12 @@ public class ImageResource {
 
         }
 
-        OpenAIImageService service = new OpenAIImageServiceImpl(config,user);
-        JSONObject resp = service.sendRequest(aiImageRequestDTO);
+        final OpenAIImageService service = new OpenAIImageServiceImpl(
+                config,
+                user,
+                APILocator.getHostAPI(),
+                APILocator.getTempFileAPI());
+        final JSONObject resp = service.sendRequest(aiImageRequestDTO);
 
         return Response.ok(Marshaller.marshal(resp)).type(MediaType.APPLICATION_JSON_TYPE).build();
 

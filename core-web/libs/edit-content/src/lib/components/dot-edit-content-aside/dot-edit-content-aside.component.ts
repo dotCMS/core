@@ -1,22 +1,11 @@
-import { Observable, of } from 'rxjs';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { AsyncPipe, NgIf, NgSwitch, NgSwitchCase, SlicePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { ChipModule } from 'primeng/chip';
-
-import { DotWorkflowService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
-import {
-    DotApiLinkComponent,
-    DotCopyButtonComponent,
-    DotLinkComponent,
-    DotMessagePipe,
-    DotRelativeDatePipe
-} from '@dotcms/ui';
-
-import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
+import { DotContentAsideInformationComponent } from './components/dot-content-aside-information/dot-content-aside-information.component';
+import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
 
 @Component({
     selector: 'dot-edit-content-aside',
@@ -25,35 +14,14 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
     styleUrls: ['./dot-edit-content-aside.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgIf,
-        NgSwitch,
-        NgSwitchCase,
-        SlicePipe,
-        DotApiLinkComponent,
-        DotCopyButtonComponent,
-        DotRelativeDatePipe,
-        ChipModule,
+        CommonModule,
         DotMessagePipe,
-        ContentletStatusPipe,
-        RouterLink,
-        AsyncPipe,
-        DotLinkComponent
-    ],
-    providers: [DotWorkflowService]
+        DotContentAsideInformationComponent,
+        DotContentAsideWorkflowComponent
+    ]
 })
-export class DotEditContentAsideComponent implements OnInit {
-    @Input() contentLet!: DotCMSContentlet;
-    @Input() contentType!: string;
-
-    private readonly workFlowService = inject(DotWorkflowService);
-
-    workflow$!: Observable<DotCMSWorkflowStatus>;
-
-    ngOnInit() {
-        if (this.contentLet?.inode) {
-            this.workflow$ = this.workFlowService.getWorkflowStatus(this.contentLet.inode);
-        } else {
-            this.workflow$ = of({ scheme: null, step: null, task: null });
-        }
-    }
+export class DotEditContentAsideComponent {
+    @Input() contentlet!: DotCMSContentlet;
+    @Input() contentType!: DotCMSContentType;
+    @Input() loading!: boolean;
 }

@@ -60,6 +60,8 @@ public class ImportContentletsAction extends DotPortletAction {
 	private final static String languageCodeHeader = "languageCode";
 	private final static String countryCodeHeader = "countryCode";
 	public static final String ENCODE_TYPE = "encodeType";
+	public static final String ERROR = "error";
+	public static final String PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS = "portlet.ext.contentlet.import_contentlets";
 
 	/**
 	 * Handles all the actions associated to importing contentlets.
@@ -115,19 +117,24 @@ public class ImportContentletsAction extends DotPortletAction {
 
 				final ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 				if(importContentletsForm.getStructure().isEmpty()){
-					SessionMessages.add(req, "error", "structure-type-is-required");
-					setForward(req, "portlet.ext.contentlet.import_contentlets");
-				}else if (bytes == null || bytes.length == 0) {
-					SessionMessages.add(req, "error", "message.contentlet.file.required");
-					setForward(req, "portlet.ext.contentlet.import_contentlets");
+					SessionMessages.add(req, ERROR, "structure-type-is-required");
+					setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
+				}
+				else if(importContentletsForm.getWorkflowActionId().isEmpty()){
+					SessionMessages.add(req, ERROR, "Workflow-action-type-required");
+					setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
+				}
+				else if (bytes == null || bytes.length == 0) {
+					SessionMessages.add(req, ERROR, "message.contentlet.file.required");
+					setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 				} else {
 
 					final Structure hostStrucuture = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(Host.HOST_VELOCITY_VAR_NAME);
 					final boolean isHost = (hostStrucuture.getInode().equals( importContentletsForm.getStructure()));
 					if(isHost){
 						//Security measure to prevent invalid attempts to import a host.
-						SessionMessages.add(req, "error", "message.import.host.invalid");
-						setForward(req, "portlet.ext.contentlet.import_contentlets");
+						SessionMessages.add(req, ERROR, "message.import.host.invalid");
+						setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 						return;
 					}
 
@@ -162,24 +169,24 @@ public class ImportContentletsAction extends DotPortletAction {
 									}
 									
 									if ((-1 == languageCodeHeaderColumn) || (-1 == countryCodeHeaderColumn)) {
-										SessionMessages.add(req, "error", "message.import.contentlet.csv_headers.required");
-										setForward(req, "portlet.ext.contentlet.import_contentlets");
+										SessionMessages.add(req, ERROR, "message.import.contentlet.csv_headers.required");
+										setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 									} else {
 										_generatePreview(0,req, res, config, form, user, bytes, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
 										setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 									}
 								} else {
-									SessionMessages.add(req, "error", "message.import.contentlet.csv_headers.error");
-									setForward(req, "portlet.ext.contentlet.import_contentlets");
+									SessionMessages.add(req, ERROR, "message.import.contentlet.csv_headers.error");
+									setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 								}
 							} else {
-								SessionMessages.add(req, "error", "message.import.contentlet.key_field.required");
-								setForward(req, "portlet.ext.contentlet.import_contentlets");
+								SessionMessages.add(req, ERROR, "message.import.contentlet.key_field.required");
+								setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 							}
 							break;
 						case 0:
-							SessionMessages.add(req, "error", "message.import.contentlet.language.required");
-							setForward(req, "portlet.ext.contentlet.import_contentlets");
+							SessionMessages.add(req, ERROR, "message.import.contentlet.language.required");
+							setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 							break;
 						default:
 							_generatePreview(0, req, res, config, form, user, bytes, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
@@ -325,7 +332,7 @@ public class ImportContentletsAction extends DotPortletAction {
 			ImportAuditResults audits = ImportAuditUtil.loadAuditResults(user.getUserId());
 			req.setAttribute("audits", audits);			
 			session.setAttribute("importSession", importSession);
-			setForward(req, "portlet.ext.contentlet.import_contentlets");
+			setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 		}
 
 	}

@@ -5,6 +5,7 @@ import static com.dotcms.cli.command.site.SitePush.SITE_PUSH_OPTION_FORCE_EXECUT
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.PushHandler;
+import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
@@ -40,6 +41,11 @@ public class SitePushHandler implements PushHandler<SiteView> {
     @Override
     public String title() {
         return "Sites";
+    }
+
+    @Override
+    public String fileName(final SiteView site) {
+        return NamingUtils.siteFileName(site);
     }
 
     @Override
@@ -149,6 +155,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
                 .embeddedDashboard(siteView.embeddedDashboard())
                 .forceExecution(forceExecution)
                 .isDefault(Boolean.TRUE.equals(siteView.isDefault()))
+                .variables(siteView.variables())
                 .build();
     }
 

@@ -62,12 +62,12 @@ export class DotEditContentWYSIWYGFieldComponent implements OnInit {
 
         this.http
             .get<RawEditorOptions>(this.configPath)
-            .pipe(catchError(() => of({})))
-            .subscribe((GLOBAL_CONFIG = {}) => {
+            .pipe(catchError(() => of(null)))
+            .subscribe((SYTEM_WIDE_CONFIG) => {
+                const CONFIG = SYTEM_WIDE_CONFIG || DEFAULT_CONFIG;
                 this.init.set({
                     setup: (editor) => this.dotWysiwygPluginService.initializePlugins(editor),
-                    ...DEFAULT_CONFIG,
-                    ...GLOBAL_CONFIG,
+                    ...CONFIG,
                     ...variables,
                     theme: 'silver' // In the new version, there is only one theme, which is the default one. Docs: https://www.tiny.cloud/docs/tinymce/latest/editor-theme/
                 });

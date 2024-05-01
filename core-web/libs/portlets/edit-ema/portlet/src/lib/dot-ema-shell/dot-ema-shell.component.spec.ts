@@ -1,11 +1,12 @@
 import { describe, expect } from '@jest/globals';
+import { ActivatedRouteStub } from '@ngneat/spectator';
 import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router, UrlSegment } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -59,6 +60,9 @@ describe('DotEmaShellComponent', () => {
         component: DotEmaShellComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
+        firstChild: new ActivatedRouteStub({
+            url: [new UrlSegment('content', {})]
+        }),
         providers: [
             { provide: SiteService, useClass: SiteServiceMock },
             {
@@ -349,6 +353,169 @@ describe('DotEmaShellComponent', () => {
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
+
+            it('should reload content from dialog', () => {
+                const reloadSpy = jest.spyOn(store, 'reload');
+                const queryParams = {
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    language_id: 1,
+                    url: 'index',
+                    variantName: undefined
+                };
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
+
+                expect(reloadSpy).toHaveBeenCalledWith({
+                    params: queryParams
+                });
+            });
+        });
+    });
+
+    describe('with advance template', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotPageApiService,
+                        useValue: {
+                            get() {
+                                return of({
+                                    page: {
+                                        title: 'hello world',
+                                        identifier: '123',
+                                        inode: '123',
+                                        canEdit: true,
+                                        canRead: true
+                                    },
+                                    viewAs: {
+                                        language: {
+                                            id: 1,
+                                            language: 'English',
+                                            countryCode: 'US',
+                                            languageCode: 'EN',
+                                            country: 'United States'
+                                        },
+                                        persona: DEFAULT_PERSONA
+                                    },
+                                    site: mockSites[0],
+                                    template: { drawed: false }
+                                });
+                            },
+                            save() {
+                                return of({});
+                            },
+                            getPersonas() {
+                                return of({
+                                    entity: [DEFAULT_PERSONA],
+                                    pagination: {
+                                        totalEntries: 1,
+                                        perPage: 10,
+                                        page: 1
+                                    }
+                                });
+                            }
+                        }
+                    },
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(true),
+                            canAccessEnterprisePortlet: () => of(true)
+                        }
+                    }
+                ]
+            });
+
+            spectator.triggerNavigation({
+                url: [],
+                queryParams: {
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                },
+                data: {
+                    data: {
+                        url: 'http://localhost:3000'
+                    }
+                }
+            });
+        });
+
+        describe('DOM', () => {
+            it('should have nav bar with layout disabled and tooltip', () => {
+                const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
+
+                expect(navBarComponent.items).toContainEqual({
+                    icon: 'pi-table',
+                    label: 'editema.editor.navbar.layout',
+                    href: 'layout',
+                    isDisabled: true,
+                    tooltip: 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+                });
+            });
+        });
+    });
+
+    describe('without license', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotPageApiService,
+                        useValue: {
+                            get() {
+                                return of({
+                                    page: {
+                                        title: 'hello world',
+                                        identifier: '123',
+                                        inode: '123',
+                                        canEdit: false,
+                                        canRead: false
+                                    },
+                                    viewAs: {
+                                        language: {
+                                            id: 1,
+                                            language: 'English',
+                                            countryCode: 'US',
+                                            languageCode: 'EN',
+                                            country: 'United States'
+                                        },
+                                        persona: DEFAULT_PERSONA
+                                    },
+                                    site: mockSites[0],
+                                    template: { drawed: true }
+                                });
+                            },
+                            save() {
+                                return of({});
+                            },
+                            getPersonas() {
+                                return of({
+                                    entity: [DEFAULT_PERSONA],
+                                    pagination: {
+                                        totalEntries: 1,
+                                        perPage: 10,
+                                        page: 1
+                                    }
+                                });
+                            }
+                        }
+                    },
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(false),
+                            canAccessEnterprisePortlet: () => of(false)
+                        }
+                    }
+                ]
+            });
+        });
+
+        it('should render not-license component', () => {
+            spectator.detectChanges();
+            expect(spectator.query(DotNotLicenseComponent)).toBeDefined();
         });
     });
 
@@ -417,68 +584,6 @@ describe('DotEmaShellComponent', () => {
             expect(spectator.query(EditEmaNavigationBarComponent)).toBeNull();
             expect(spectator.query(ToastModule)).toBeNull();
             expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
-        });
-    });
-
-    describe('without license', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotPageApiService,
-                        useValue: {
-                            get() {
-                                return of({
-                                    page: {
-                                        title: 'hello world',
-                                        identifier: '123',
-                                        inode: '123',
-                                        canEdit: false,
-                                        canRead: false
-                                    },
-                                    viewAs: {
-                                        language: {
-                                            id: 1,
-                                            language: 'English',
-                                            countryCode: 'US',
-                                            languageCode: 'EN',
-                                            country: 'United States'
-                                        },
-                                        persona: DEFAULT_PERSONA
-                                    },
-                                    site: mockSites[0],
-                                    template: { drawed: true }
-                                });
-                            },
-                            save() {
-                                return of({});
-                            },
-                            getPersonas() {
-                                return of({
-                                    entity: [DEFAULT_PERSONA],
-                                    pagination: {
-                                        totalEntries: 1,
-                                        perPage: 10,
-                                        page: 1
-                                    }
-                                });
-                            }
-                        }
-                    },
-                    {
-                        provide: DotLicenseService,
-                        useValue: {
-                            isEnterprise: () => of(false),
-                            canAccessEnterprisePortlet: () => of(false)
-                        }
-                    }
-                ]
-            });
-        });
-
-        it('should render not-license component', () => {
-            spectator.detectChanges();
-            expect(spectator.query(DotNotLicenseComponent)).toBeDefined();
         });
     });
 });

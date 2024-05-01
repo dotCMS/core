@@ -944,7 +944,8 @@ export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
         __icon__: 'contentIcon',
         contentTypeIcon: 'event_note',
         variant: 'DEFAULT'
-    }
+    },
+    loading: false
 };
 
 /* CONTENT TYPE MOCKS */

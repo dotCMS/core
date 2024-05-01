@@ -107,7 +107,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             if (
                 isLayoutDisabled &&
-                this.activatedRoute.snapshot?.firstChild?.routeConfig.path === 'layout'
+                this.activatedRoute.firstChild.snapshot.url[0].path === 'layout'
             ) {
                 this.router.navigate(['./content'], { relativeTo: this.activatedRoute });
             }
@@ -124,9 +124,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                         label: 'editema.editor.navbar.layout',
                         href: 'layout',
                         isDisabled: isLayoutDisabled,
-                        tooltip: isLayoutDisabled
-                            ? 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                            : null
+                        tooltip: templateDrawed
+                            ? null
+                            : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
                     },
                     {
                         icon: 'pi-sliders-h',
@@ -238,6 +238,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 });
             });
         }
+    }
+
+    /**
+     * Reloads the component from the dialog.
+     */
+    reloadFromDialog() {
+        this.store.reload({ params: this.queryParams });
     }
 
     private navigate(queryParams) {

@@ -1,6 +1,6 @@
 {
     "name": "@dotcms/experiments",
-    "version": "0.0.1-alpha",
+    "version": "0.0.1-alpha.13",
     "description": "Official JavaScript library to use Experiments with DotCMS.",
     "repository": {
         "type": "git",
@@ -25,7 +25,7 @@
     "peerDependencies": {
         "react": ">=18",
         "react-dom": ">=18",
-        "@dotcms/client": "0.0.1-alpha.12"
+        "@dotcms/client": "0.0.1-alpha.13"
     }
 
 }

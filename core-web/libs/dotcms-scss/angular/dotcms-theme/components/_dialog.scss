@@ -53,8 +53,15 @@
     gap: $spacing-3;
     background: $white;
     color: $black;
-    padding: 0 $spacing-6 $spacing-6 $spacing-6;
+    padding: $spacing-4;
     word-break: break-all;
+}
+.p-dialog:has(.p-dialog-header) .p-dialog-content {
+    padding-top: 0;
+}
+
+.p-dialog:has(.p-dialog-footer) .p-dialog-content {
+    padding-bottom: 0;
 }
 
 .p-dialog .p-dialog-footer {
@@ -98,4 +105,10 @@
     background-color: transparent;
     -webkit-backdrop-filter: blur($blur-md);
     backdrop-filter: blur($blur-md);
+}
+
+.p-dialog-mask.p-dialog-mask-transparent-nested.p-component-overlay {
+    background-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }

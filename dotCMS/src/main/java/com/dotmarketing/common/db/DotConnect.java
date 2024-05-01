@@ -277,6 +277,7 @@ public class DotConnect {
         try {
             executeQuery(conn);
         } catch (Exception e) {
+            Logger.debug(this, "getResult(): unable to execute query " + e.getMessage(), e);
             throw new DotDataException(e.getMessage(), e);
         }
 
@@ -861,7 +862,6 @@ public class DotConnect {
     /**
      * Returns the correct bit AND operation syntax for a particular RDBMS
      * 
-     * @param elements
      * @return result
      */
 
@@ -889,7 +889,6 @@ public class DotConnect {
     /**
      * Returns the correct bit OR operation syntax for a particular RDBMS
      * 
-     * @param elements
      * @return result
      */
 
@@ -923,7 +922,6 @@ public class DotConnect {
     /**
      * Returns the correct bit XOR operation syntax for a particular RDBMS
      * 
-     * @param elements
      * @return result
      */
 
@@ -957,7 +955,6 @@ public class DotConnect {
     /**
      * Returns the correct bit XOR operation syntax for a particular RDBMS
      * 
-     * @param elements
      * @return result
      */
 
@@ -1236,8 +1233,6 @@ public class DotConnect {
      * atomic transaction.
      * 
      * @param preparedStatement String
-     * @param logException when an exception occurs, whether or not to log the exception as Error in log
-     *        file
      * @param parameters Object array of parameters for the preparedStatement (if it does not have any,
      *        can be null). Not any checking of them
      * @return int rows affected

@@ -1,16 +1,11 @@
 package com.dotcms.experiments.business.web;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
-
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentUrlPatternCalculator;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.TrafficProportion;
-import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -26,19 +21,22 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.util.StringPool;
+import net.bytebuddy.utility.RandomString;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
-
 import java.util.Collections;
-
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import net.bytebuddy.utility.RandomString;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
 
 
 /**
@@ -268,7 +266,8 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .map(experiment -> "'" + experiment.id().get() + "'")
                     .collect(Collectors.joining(","));
 
-            final Map<String, String> subStringToReplace = map(
+            final Map<String, String> subStringToReplace = new HashMap<>();
+            subStringToReplace.put(
                     "${running_experiments_list}", runningExperimentsId
             );
 
@@ -278,10 +277,9 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     private String replaceIntoHTMLCode(final String htmlCode, final Host host,
             final HttpServletRequest request) {
 
-        final Map<String, String> subStringToReplace = map(
-                "${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(host),
-                "${site}", getLocalServerName(request)
-        );
+        final Map<String, String> subStringToReplace = new HashMap<>();
+        subStringToReplace.put("${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(host));
+        subStringToReplace.put("${site}", getLocalServerName(request));
 
         return replace(htmlCode, subStringToReplace);
     }

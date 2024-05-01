@@ -61,6 +61,7 @@
         [contentlet]="vm.contentlet"
         [editableImage]="vm.isEnterprise && imageEditor"
         [tempFile]="vm.tempFile"
+        [fieldVariable]="variable"
         (editFile)="onEditFile()"
         (editImage)="onEditImage()"
         (removeFile)="removeFile()"
@@ -78,20 +79,19 @@
         [resizable]="false"
         [style]="vm.mode === BinaryFieldMode.EDITOR ? dialogFullScreenStyles : {}">
         <ng-container [ngSwitch]="vm.mode">
-            <dot-dot-binary-field-url-mode
+            <dot-binary-field-url-mode
                 *ngSwitchCase="BinaryFieldMode.URL"
                 (cancel)="closeDialog()"
                 (tempFileUploaded)="setTempFile($event)"
-                data-testId="url-mode"></dot-dot-binary-field-url-mode>
-            <dot-dot-binary-field-editor
+                data-testId="url-mode"></dot-binary-field-url-mode>
+            <dot-binary-field-editor
                 *ngSwitchCase="BinaryFieldMode.EDITOR"
                 [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
                 [fileContent]="vm.tempFile?.content || vm.contentlet?.content"
-                [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
                 [userMonacoOptions]="customMonacoOptions()"
                 (cancel)="closeDialog()"
                 (tempFileUploaded)="setTempFile($event)"
-                data-testId="editor-mode"></dot-dot-binary-field-editor>
+                data-testId="editor-mode"></dot-binary-field-editor>
         </ng-container>
     </p-dialog>
 </div>

@@ -178,4 +178,11 @@ export class DotPageApiService {
 
         return apiUrl + queryParams.toString();
     }
+
+    saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
+        return this.http.put(
+            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
+            { contentlet }
+        );
+    }
 }

@@ -1,12 +1,7 @@
 package com.dotcms.rest.api.v1.taillog;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.rest.InitDataObject;
-import java.util.concurrent.TimeUnit;
-import javax.ws.rs.QueryParam;
-import org.apache.commons.io.input.TailerListenerAdapter;
 import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.CloseUtils;
@@ -19,21 +14,25 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.regex.Pattern;
+import org.apache.commons.io.input.TailerListenerAdapter;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.glassfish.jersey.media.sse.SseFeature;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import org.glassfish.jersey.media.sse.EventOutput;
-import org.glassfish.jersey.media.sse.OutboundEvent;
-import org.glassfish.jersey.media.sse.SseFeature;
-import org.glassfish.jersey.server.JSONP;
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * This resource provides the endpoint used by the LogViewer functionality to display backend server logs
@@ -133,7 +132,7 @@ public class TailLogResource {
         final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
         eventBuilder.name("failure");
         eventBuilder.data(Map.class,
-                map("failure", errorMessage));
+                Map.of("failure", errorMessage));
         final OutboundEvent event = eventBuilder.build();
         try {
             eventOutput.write(event);
@@ -192,7 +191,7 @@ public class TailLogResource {
 
                         eventBuilder.name("success");
                         eventBuilder.data(Map.class,
-                                map("lines", prepWrite, "pageId", pageNumber));
+                                Map.of("lines", prepWrite, "pageId", pageNumber));
                         eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                         final OutboundEvent event = eventBuilder.build();
                         eventOutput.write(event);
@@ -208,7 +207,7 @@ public class TailLogResource {
                             Logger.debug(this.getClass(), String.format(" Thread [%s] is sending keepAlive event for file [%s] ", getName(), fileName));
                             eventBuilder.name("keepAlive");
                             eventBuilder.data(Map.class,
-                                    map("keepAlive", true ));
+                                    Map.of("keepAlive", true ));
                             eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                             final OutboundEvent event = eventBuilder.build();
                             eventOutput.write(event);

@@ -6,6 +6,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import { switchMap } from 'rxjs/operators';
@@ -36,6 +37,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotMessagePipe,
         ButtonModule,
         ToastModule,
+        MessagesModule,
         RouterLink,
         DotEditContentFormComponent,
         DotEditContentAsideComponent,
@@ -76,7 +78,8 @@ export class EditContentLayoutComponent implements OnInit {
             this.store.setState({
                 contentType,
                 actions,
-                contentlet
+                contentlet,
+                loading: false
             });
         });
     }

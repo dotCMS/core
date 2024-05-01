@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 
 

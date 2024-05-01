@@ -2,10 +2,10 @@
     class="p-button-sm p-button-text"
     [pTooltip]="tooltipText"
     (click)="copyUrlToClipboard($event)"
+    hideDelay="800"
     pButton
     type="button"
     appendTo="body"
-    hideDelay="800"
     tooltipPosition="bottom">
     <i class="pi pi-copy"></i>
     <span class="p-button-label" *ngIf="!!label">{{ label }}</span>

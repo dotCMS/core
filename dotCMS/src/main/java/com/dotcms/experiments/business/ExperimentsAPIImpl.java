@@ -1130,7 +1130,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             try {
                 final HTMLPageAsset  htmlPageAsset = getHtmlPageAsset(experiment);
                 return host.getIdentifier().equals(htmlPageAsset.getHost());
-            } catch (DotDataException e) {
+            } catch (DotStateException | DotDataException e) {
                 return false;
             }
 
