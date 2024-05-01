@@ -64,7 +64,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             if (commandsChain.isRemoteURLSet() && commandsChain.isTokenSet()) {
                 return underlyingStrategy.execute(parseResult);
             } else if (commandsChain.isRemoteURLSet() && !commandsChain.isTokenSet()) {
-                throw new ExecutionException(parseResult.commandSpec().commandLine(),
+                throw new ParameterException(parseResult.commandSpec().commandLine(),
                         "The token is required when the dotCMS URL is set.");
             }
 

@@ -47,7 +47,7 @@ import picocli.CommandLine;
 public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer>,
         DotCommand, DotPull {
 
-    static final String NAME = "pull";
+    public static final String NAME = "pull";
 
     static final String LANGUAGE_PULL_MIXIN = "languagePullMixin";
 
