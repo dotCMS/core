@@ -51,7 +51,6 @@ class ExceptionHandlerTest {
         BuiltResponse response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
         //Therefore the custom message needs to be extracted from the response
         Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(404)));
-        //Assertions.assertTrue(handled.getMessage().contains(config.messages().get(404)));
 
         BadRequestException badRequestException = new BadRequestException("LOL");
         handled = exceptionHandler.handle(badRequestException);
