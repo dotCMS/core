@@ -1,4 +1,4 @@
-# Deploy Artifact to Artifactory
+# Deploy Artifacts to Artifactory
 
 This GitHub Action streamlines the process of deploying dotCMS artifacts to Artifactory. It's particularly useful for automating the deployment workflow in projects utilizing dotCMS.
 
