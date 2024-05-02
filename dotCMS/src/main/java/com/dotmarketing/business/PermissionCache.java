@@ -25,11 +25,12 @@ public abstract class PermissionCache implements Cachable{
 			String permissionType,
 			User userIn,
 			boolean respectFrontendRoles,
-			Contentlet contentlet) ;
+			Contentlet nullableContent) ;
 
 	public abstract void putUserHavePermission(@NotNull Permissionable permissionable,
 			String permissionType,
 			@NotNull User userIn,
 			boolean respectFrontendRoles,
-			@NotNull Contentlet contentlet, boolean hasPermission) ;
+			@NotNull Contentlet nullableContent,
+			boolean hasPermission) ;
 }
