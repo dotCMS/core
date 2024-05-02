@@ -1514,6 +1514,12 @@
                 <version>2.6</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock</artifactId>
+                <version>3.5.3</version>
+            </dependency>
+
             <!-- Graalvm Js Engine -->
             <dependency>
                 <groupId>org.graalvm.sdk</groupId>

@@ -21,7 +21,7 @@ defaults:
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
-  GRAALVM_VERSION: '22.1.0'
+  GRAALVM_VERSION: '22.3.1'
   MVN_PACKAGE_TYPE: 'uber-jar'
   NPM_PACKAGE_SCOPE: '@dotcms'
   NPM_PACKAGE_NAME: 'dotcli'
