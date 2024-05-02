@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
@@ -62,6 +63,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     private static User systemUser;
     private static Template template;
 
+    private static int permissionCacheSize = 0;
     @BeforeClass
     public static void createTestHost() throws Exception {
 
@@ -94,6 +96,11 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         APILocator.getTemplateAPI().saveTemplate(template, host, systemUser, false);
         Map<String, Object> sessionAttrs = new HashMap<>();
         sessionAttrs.put("USER_ID", "dotcms.org.1");
+        permissionCacheSize = Config.getIntProperty("cache.permissionshortlived.size", 0);
+        Config.setProperty("cache.permissionshortlived.size", 0);
+        CacheLocator.getPermissionCache().flushShortTermCache();
+
+
     }
 
     @AfterClass
@@ -107,6 +114,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
         }
+        Config.setProperty("cache.permissionshortlived.size", 0);
+        CacheLocator.getPermissionCache().flushShortTermCache();
     }
    
     @Test

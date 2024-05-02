@@ -81,14 +81,14 @@ public class PermissionAPITest extends IntegrationTestBase {
     private static Host host;
     private static User sysuser;
     private static Template template;
+    private static int permissionCacheSize = 0;
 
     @BeforeClass
     public static void createTestHost() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        Config.setProperty("cache.permissionshortlived.size", 0);
-        CacheLocator.getPermissionCache().flushShortTermCache();
+
         permissionAPI =APILocator.getPermissionAPI();
         sysuser=APILocator.getUserAPI().getSystemUser();
         host = new Host();
@@ -116,6 +116,14 @@ public class PermissionAPITest extends IntegrationTestBase {
         template.setTitle("testtemplate");
         template.setBody("<html><head></head><body>en empty template just for test</body></html>");
         APILocator.getTemplateAPI().saveTemplate(template, host, sysuser, false);
+
+        permissionCacheSize = Config.getIntProperty("cache.permissionshortlived.size", 0);
+        Config.setProperty("cache.permissionshortlived.size", 0);
+        CacheLocator.getPermissionCache().flushShortTermCache();
+
+
+
+
     }
 
     @AfterClass
@@ -131,7 +139,9 @@ public class PermissionAPITest extends IntegrationTestBase {
         }finally {
             HibernateUtil.closeSessionSilently();
         }
-        
+
+        Config.setProperty("cache.permissionshortlived.size", permissionCacheSize);
+        CacheLocator.getPermissionCache().flushShortTermCache();
     }
 
     @Test
