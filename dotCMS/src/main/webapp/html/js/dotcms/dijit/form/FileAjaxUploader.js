@@ -342,6 +342,19 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 
         this.onUploadFinish(this.fileName, this);
 
+        //Shows Preview of PDF Thumbnail
+        if(fileData.fileName.toLowerCase().endsWith("pdf")){
+            var thumbnailPDF = document.createElement("img");
+            var thumbnailSrc =
+                "/contentAsset/image/" +
+                fileData.id +
+                "/" +
+                this.id +
+                "/?filter=Thumbnail&thumbnail_w=300&thumbnail_h=300";
+            thumbnailPDF.setAttribute('src', thumbnailSrc);
+            thumbnailParentDiv.appendChild(thumbnailPDF);
+        }
+
         if (!fileData.image) {
             return;
         }

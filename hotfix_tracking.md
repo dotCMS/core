@@ -233,3 +233,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.16**
 
 184. https://github.com/dotCMS/core/issues/28110 : Only run startup tasks if they need to be run #28110
+185. https://github.com/dotCMS/core/issues/28105 : PDF as Binary / upload field doesn't show preview #28105
