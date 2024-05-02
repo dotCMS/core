@@ -19,7 +19,7 @@ files-push - *dotCMS Files push*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*files push* [*-h*] [*--dry-run*] [*-ff*] [*-ra*] [*-rf*]
+*files push* [*-h*] [*--dry-run*] [*-ff*] [*-ra*] [*-rf*] [*--dotcms-url*=_<remoteURL>_]
            [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
@@ -34,6 +34,9 @@ files-push - *dotCMS Files push*
 
 // tag::picocli-generated-man-section-options[]
 == Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
 
 *--dry-run*::
   When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
