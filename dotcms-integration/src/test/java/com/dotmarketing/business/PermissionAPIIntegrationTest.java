@@ -75,7 +75,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
 		userAPI = APILocator.getUserAPI();
 
         host = new Host();
-        host.setHostname("testhost.demo.dotcms.com");
+        host.setHostname(System.currentTimeMillis() + "testhost.demo.dotcms.com");
         try{
             HibernateUtil.startTransaction();
             host=hostAPI.save(host, systemUser, false);
@@ -277,7 +277,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
 
         try {
             // Create test Host.
-            host.setHostname("permission.dotcms.com");
+            host.setHostname( System.currentTimeMillis() + "-permission.dotcms.com");
             host = hostAPI.save(host, systemUser, false);
 
             // Create the Folders needed.
@@ -289,14 +289,14 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             // Child: Product Publisher
             // Grandchild: Product Contributor
             // Create Parent Role.
-            parentRole.setName("Webmaster-Test");
+            parentRole.setName(System.currentTimeMillis() + "-Webmaster-Test");
             parentRole.setEditUsers(true);
             parentRole.setEditPermissions(true);
             parentRole.setEditLayouts(true);
             parentRole = roleAPI.save(parentRole);
 
             // Create Child Role Role.
-            childRole.setName("Product Contributor-Test");
+            childRole.setName(System.currentTimeMillis() + "-Product Contributor-Test");
             childRole.setEditUsers(true);
             childRole.setEditPermissions(true);
             childRole.setEditLayouts(true);
@@ -304,7 +304,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             childRole = roleAPI.save(childRole);
 
             // Create Grandchild Role Role.
-            grandChildRole.setName("Product Contributor-Test");
+            grandChildRole.setName(System.currentTimeMillis() + "-Product Contributor-Test");
             grandChildRole.setEditUsers(true);
             grandChildRole.setEditPermissions(true);
             grandChildRole.setEditLayouts(true);
@@ -312,7 +312,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             grandChildRole = roleAPI.save(grandChildRole);
 
             // Now lets create a user, assign the role and test basic permissions.
-            newUser = userAPI.createUser("new.user@test.com", "new.user@test.com");
+            newUser = userAPI.createUser("new.user@test.com", System.currentTimeMillis() + "-new.user@test.com");
             newUser.setFirstName("Test-11962");
             newUser.setLastName("User-11962");
             userAPI.save(newUser, systemUser, false);

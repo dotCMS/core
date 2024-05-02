@@ -33,4 +33,10 @@ public abstract class PermissionCache implements Cachable{
 			boolean respectFrontendRoles,
 			@NotNull Contentlet nullableContent,
 			boolean hasPermission) ;
+
+
+
+	public abstract void flushShortTermCache() ;
+
+
 }

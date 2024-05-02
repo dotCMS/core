@@ -155,5 +155,8 @@ public class PermissionCacheImpl extends PermissionCache {
 
 	}
 
-
+	@Override
+	public void flushShortTermCache() {
+		cache.flushGroup(shortLivedGroup);
+	}
 }

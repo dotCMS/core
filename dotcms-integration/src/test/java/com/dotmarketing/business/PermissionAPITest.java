@@ -87,18 +87,19 @@ public class PermissionAPITest extends IntegrationTestBase {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        
+        Config.setProperty("cache.permissionshortlived.size", 0);
+        CacheLocator.getPermissionCache().flushShortTermCache();
         permissionAPI =APILocator.getPermissionAPI();
         sysuser=APILocator.getUserAPI().getSystemUser();
         host = new Host();
-        host.setHostname("testhost.demo.dotcms.com");
+        host.setHostname(System.currentTimeMillis() + "testhost.demo.dotcms.com");
         try{
         	HibernateUtil.startTransaction();
             host=APILocator.getHostAPI().save(host, sysuser, false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
-        	host = APILocator.getHostAPI().findByName("testhost.demo.dotcms.com", sysuser, false);
+        	host = APILocator.getHostAPI().findByName(host.getHostname(), sysuser, false);
         	Logger.error(PermissionAPITest.class, e.getMessage());
         } finally {
             HibernateUtil.closeSessionSilently();
