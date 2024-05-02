@@ -28,10 +28,10 @@ public class PermissionCacheImpl extends PermissionCache {
 
 	private DotCacheAdministrator cache;
 
-	private String primaryGroup = "PermissionCache";
-	private String shortLivedGroup = "PermissionShortLived";
+	private final String primaryGroup = "PermissionCache";
+	private final String shortLivedGroup = "PermissionShortLived";
 	// region's name for the cache
-    private String[] groupNames = {primaryGroup,shortLivedGroup};
+    private final String[] groupNames = {primaryGroup,shortLivedGroup};
 
 	protected PermissionCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
@@ -95,41 +95,35 @@ public class PermissionCacheImpl extends PermissionCache {
 
 	@Override
 	public Optional<Boolean> doesUserHavePermission(final Permissionable permissionable,
-			final String permissionType,
-			final User userIn,
+			@NotNull final String permissionType,
+			@NotNull final User userIn,
 			final boolean respectFrontendRoles,
-			final Contentlet contentlet) {
+			final Contentlet nullableContent) {
 
 		if (DbConnectionFactory.inTransaction()) {
 			return Optional.empty();
 		}
-		if (UtilMethods.isEmpty(() -> permissionable.getPermissionId()) ||
-				UtilMethods.isEmpty(() -> userIn.getUserId())
+		if (UtilMethods.isEmpty(permissionable::getPermissionId) ||
+				UtilMethods.isEmpty(userIn::getUserId)
 		) {
 			return Optional.empty();
 		}
 
-		final Optional<String> key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
-		if(key.isEmpty()) {
-			return Optional.empty();
-		}
+		final Optional<String> key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, nullableContent);
+        return key.map(s -> (Boolean) cache.getNoThrow(s, shortLivedGroup));
 
-		return Optional.ofNullable((Boolean) cache.getNoThrow(key.get(), shortLivedGroup));
-
-	}
+    }
 
 	@Override
 	public void putUserHavePermission(@NotNull final Permissionable permissionable,
-			final String permissionType,
+			@NotNull final String permissionType,
 			@NotNull final User userIn,
 			final boolean respectFrontendRoles,
-			@NotNull final Contentlet contentlet, boolean hasPermission)  {
+			final Contentlet nullableContent, boolean hasPermission)  {
 
 
-		final Optional<String> key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, contentlet);
-		if(key.isPresent()) {
-			cache.put(key.get(), hasPermission, shortLivedGroup);
-		}
+		final Optional<String> key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, nullableContent);
+        key.ifPresent(s -> cache.put(s, hasPermission, shortLivedGroup));
 
 	}
 
@@ -139,25 +133,24 @@ public class PermissionCacheImpl extends PermissionCache {
 	 * @param permissionType
 	 * @param userIn
 	 * @param respectFrontendRoles
-	 * @param contentlet
+	 * @param nullableContent
 	 * @return
-	 * @throws DotDataException
 	 */
 	private Optional<String> shortLivedKey(@NotNull final Permissionable permissionable,
-			final String permissionType,
+			@NotNull final String permissionType,
 			@NotNull final User userIn,
 			final boolean respectFrontendRoles,
-			@NotNull final Contentlet contentlet)  {
+			final Contentlet nullableContent)  {
 
 		if (DbConnectionFactory.inTransaction() ||
-				UtilMethods.isEmpty(() -> permissionable.getPermissionId()) ||
-				UtilMethods.isEmpty(() -> userIn.getUserId())
+				UtilMethods.isEmpty(permissionable::getPermissionId) ||
+				UtilMethods.isEmpty(userIn::getUserId)
 		) {
 			return Optional.empty();
 		}
 
 		return Optional.of(permissionable.getPermissionId() + permissionType + userIn.getUserId() + respectFrontendRoles + (
-				contentlet != null ? contentlet.getIdentifier() : ""));
+				nullableContent != null ? nullableContent.getIdentifier() : ""));
 
 
 	}
