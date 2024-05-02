@@ -18,6 +18,9 @@
      * Tell the editor that the page is being scrolled
      */ CUSTOMER_ACTIONS["IFRAME_SCROLL"] = "scroll";
     /**
+     * Tell the editor that the page has stopped scrolling
+     */ CUSTOMER_ACTIONS["IFRAME_SCROLL_END"] = "scroll-end";
+    /**
      * Ping the editor to see if the page is inside the editor
      */ CUSTOMER_ACTIONS["PING_EDITOR"] = "ping-editor";
     /**
@@ -226,6 +229,14 @@ function findVTLData(target) {
                     break;
                 }
         }
+        if (event.data.name === "scroll-inside-iframe") {
+            var scrollY = event.data.direction === "up" ? -120 : 120;
+            window.scrollBy({
+                left: 0,
+                top: scrollY,
+                behavior: "smooth"
+            });
+        }
     };
     window.addEventListener("message", messageCallback);
 }
@@ -293,7 +304,13 @@ function findVTLData(target) {
         });
         window.lastScrollYPosition = window.scrollY;
     };
+    var scrollEndCallback = function() {
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.IFRAME_SCROLL_END
+        });
+    };
     window.addEventListener("scroll", scrollCallback);
+    window.addEventListener("scrollend", scrollEndCallback);
 }
 /**
  * Restores the scroll position of the window when an iframe is loaded.

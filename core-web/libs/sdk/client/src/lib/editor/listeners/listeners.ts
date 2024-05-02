@@ -80,6 +80,11 @@ export function listenEditorMessages() {
                 break;
             }
         }
+
+        if (event.data.name === 'scroll-inside-iframe') {
+            const scrollY = event.data.direction === 'up' ? -120 : 120;
+            window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
+        }
     };
 
     window.addEventListener('message', messageCallback);
@@ -175,7 +180,20 @@ export function scrollHandler() {
         window.lastScrollYPosition = window.scrollY;
     };
 
+    const scrollEndCallback = () => {
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.IFRAME_SCROLL_END
+        });
+    };
+
     window.addEventListener('scroll', scrollCallback);
+    window.addEventListener('scrollend', scrollEndCallback);
+
+    subscriptions.push({
+        type: 'listener',
+        event: 'scroll',
+        callback: scrollEndCallback
+    });
 
     subscriptions.push({
         type: 'listener',

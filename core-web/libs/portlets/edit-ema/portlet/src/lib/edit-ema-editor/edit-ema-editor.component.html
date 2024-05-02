@@ -71,12 +71,13 @@
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
                 *ngIf="
-                    es.editorData.canEditVariant &&
-                    !!es.bounds.length &&
-                    !es.editorData.device &&
-                    es.state === editorState.DRAGGING
+                    (es.editorData.canEditVariant &&
+                        !!es.bounds.length &&
+                        !es.editorData.device &&
+                        es.state === editorState.DRAGGING) ||
+                    es.state === editorState.SCROLLING
                 "
-                [containers]="es.bounds"
+                [containers]="es.state === editorState.SCROLLING ? [] : es.bounds"
                 [dragItem]="es.dragItem"
                 data-testId="dropzone" />
         </div>

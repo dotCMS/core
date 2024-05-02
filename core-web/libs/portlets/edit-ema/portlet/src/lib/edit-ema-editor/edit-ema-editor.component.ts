@@ -26,7 +26,17 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
+import {
+    takeUntil,
+    catchError,
+    filter,
+    map,
+    switchMap,
+    tap,
+    take,
+    startWith,
+    pairwise
+} from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
@@ -304,6 +314,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     handleDragEvents() {
+        this.store.currentState$.pipe(takeUntil(this.destroy$)).subscribe((state) => {
+            if (state === EDITOR_STATE.DRAGGING) {
+                this.iframe.nativeElement.contentWindow?.postMessage(
+                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+                    this.host
+                );
+            }
+        });
+
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
@@ -340,11 +359,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         } as ContentletDragPayload
                     });
                 }
-
-                this.iframe.nativeElement.contentWindow?.postMessage(
-                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-                    this.host
-                );
             });
 
         fromEvent(this.window, 'dragenter')
@@ -406,6 +420,42 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
                 event.preventDefault(); // Prevent file opening
+
+                const iframeRect = this.iframe.nativeElement.getBoundingClientRect();
+
+                const isInsideIframe =
+                    event.clientX > iframeRect.left && event.clientX < iframeRect.right;
+
+                let direction;
+
+                if (
+                    isInsideIframe &&
+                    event.clientY > iframeRect.top &&
+                    event.clientY < iframeRect.top + 100
+                ) {
+                    direction = 'up';
+                }
+
+                if (
+                    isInsideIframe &&
+                    event.clientY > iframeRect.bottom - 100 &&
+                    event.clientY <= iframeRect.bottom
+                ) {
+                    direction = 'down';
+                }
+
+                if (!direction) {
+                    this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+
+                    return;
+                }
+
+                this.store.updateEditorState(EDITOR_STATE.SCROLLING);
+
+                this.iframe.nativeElement.contentWindow?.postMessage(
+                    { name: 'scroll-inside-iframe', direction },
+                    this.host
+                );
             });
 
         fromEvent(this.window, 'drop')
@@ -499,19 +549,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     handleReloadContent() {
         this.store.contentState$
             .pipe(
+                startWith(null),
                 takeUntil(this.destroy$),
-                filter(({ state }) => state === EDITOR_STATE.IDLE)
+                pairwise(),
+                filter(([_prev, curr]) => curr?.state === EDITOR_STATE.IDLE)
             )
-            .subscribe(({ code }) => {
+            .subscribe((res) => {
                 // If we are idle then we are not dragging
                 this.resetDragProperties();
+
+                let [prev] = res;
+                prev = prev || { state: EDITOR_STATE.LOADING, code: '' };
+
+                if (prev?.state !== EDITOR_STATE.LOADING) {
+                    /** We have some EDITOR_STATE values that we don't want to reload the content
+                     * Only when the state is changed from LOADING to IDLE we need to reload the content
+                     */
+                    return;
+                }
 
                 if (!this.isVTLPage()) {
                     // Only reload if is Headless.
                     // If is VTL, the content is updated by store.code$
                     this.reloadIframe();
                 } else {
-                    this.setIframeContent(code);
+                    this.setIframeContent(res[1].code);
                 }
             });
     }
@@ -924,8 +986,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
-                this.resetDragProperties();
-                this.store.updateEditorState(EDITOR_STATE.IDLE);
+                this.store.updateEditorState(EDITOR_STATE.SCROLLING);
+            },
+            [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
+                this.store.updateEditorScrollState();
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
                 this.iframe?.nativeElement?.contentWindow.postMessage(

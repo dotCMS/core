@@ -141,9 +141,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     private readonly editor$ = this.select((state) => state.editor);
     private readonly isEnterpriseLicense$ = this.select((state) => state.isEnterpriseLicense);
-    private readonly currentState$ = this.select(
-        (state) => state.editorState ?? EDITOR_STATE.LOADING
-    );
+    readonly currentState$ = this.select((state) => state.editorState ?? EDITOR_STATE.LOADING);
     private readonly currentExperiment$ = this.select((state) => state.currentExperiment);
     private readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
     private readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
@@ -690,6 +688,20 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 ...editorData
             },
             editorState: EDITOR_STATE.IDLE
+        };
+    });
+
+    /**
+     * Updates the editor scroll state in the dot-ema store.
+     * If a drag item is present, we assume that scrolling was done during a drag and drop, and the state will automatically change to dragging.
+     * if there is no dragItem, we change the state to IDLE
+     *
+     * @returns The updated dot-ema store state.
+     */
+    readonly updateEditorScrollState = this.updater((state) => {
+        return {
+            ...state,
+            editorState: state.dragItem ? EDITOR_STATE.SCROLLING : EDITOR_STATE.IDLE
         };
     });
 

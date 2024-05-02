@@ -24,7 +24,8 @@ export enum EDITOR_STATE {
     IDLE = 'idle',
     DRAGGING = 'dragging',
     ERROR = 'error',
-    OUT_OF_BOUNDS = 'out-of-bounds'
+    OUT_OF_BOUNDS = 'out-of-bounds',
+    SCROLLING = 'scrolling'
 }
 
 export enum EDITOR_MODE {
