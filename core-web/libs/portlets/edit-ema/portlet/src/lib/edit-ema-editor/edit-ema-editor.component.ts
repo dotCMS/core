@@ -574,6 +574,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             height: 10rem;
         }
 
+        [data-dot-object="contentlet"]:not(:empty) {
+            min-height: 4rem;
+            width: 100%;
+        }
+
         [data-dot-object="contentlet"]:empty {
             width: 100%;
             display: flex;

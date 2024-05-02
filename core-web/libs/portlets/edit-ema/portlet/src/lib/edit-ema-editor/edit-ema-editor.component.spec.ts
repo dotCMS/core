@@ -2848,7 +2848,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('script and styles injection', () => {
-                    let iframe: Document;
+                    let document: Document;
                     let spy: jest.SpyInstance;
 
                     beforeEach(() => {
@@ -2860,22 +2860,25 @@ describe('EditEmaEditorComponent', () => {
 
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         spectator.component.iframe = IFRAME_MOCK as any;
-                        iframe = spectator.component.iframe.nativeElement.contentDocument;
-                        spy = jest.spyOn(iframe, 'write');
+                        document = spectator.component.iframe.nativeElement.contentDocument;
+                        spy = jest.spyOn(document, 'write');
                     });
 
                     it('should add script and styles to iframe', () => {
                         spectator.component.setIframeContent(`<head></head></body></body>`);
 
                         expect(spy).toHaveBeenCalled();
-                        expect(iframe.body.innerHTML).toContain(
+                        expect(document.body.innerHTML).toContain(
                             '<script src="/html/js/editor-js/sdk-editor.esm.js"></script>'
                         );
-                        expect(iframe.body.innerHTML).toContain(
+                        expect(document.body.innerHTML).toContain(
                             '[data-dot-object="container"]:empty'
                         );
-                        expect(iframe.body.innerHTML).toContain(
+                        expect(document.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"]:empty'
+                        );
+                        expect(document.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"]:not(:empty)'
                         );
                     });
 
@@ -2883,15 +2886,18 @@ describe('EditEmaEditorComponent', () => {
                         spectator.component.setIframeContent(`<div>Advanced Template</div>`);
 
                         expect(spy).toHaveBeenCalled();
-                        expect(iframe.body.innerHTML).toContain(
+                        expect(document.body.innerHTML).toContain(
                             '<script src="/html/js/editor-js/sdk-editor.esm.js"></script>'
                         );
 
-                        expect(iframe.body.innerHTML).toContain(
+                        expect(document.body.innerHTML).toContain(
                             '[data-dot-object="container"]:empty'
                         );
-                        expect(iframe.body.innerHTML).toContain(
+                        expect(document.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"]:empty'
+                        );
+                        expect(document.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"]:not(:empty)'
                         );
                     });
 
