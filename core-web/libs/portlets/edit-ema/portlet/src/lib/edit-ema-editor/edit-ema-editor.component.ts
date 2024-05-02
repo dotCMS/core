@@ -565,6 +565,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             height: 10rem;
         }
 
+        [data-dot-object="contentlet"]:empty {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 4rem;
+            padding: .5rem;
+        }
+
+        [data-dot-object="contentlet"]:empty::after {
+            background-color: #ECF0FD;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            content: '${this.dotMessageService.get('editpage.contentlet.is.empty')}';
+        }
+
         [data-dot-object="container"]:empty::after {
             content: '${this.dotMessageService.get('editpage.container.is.empty')}';
         }
