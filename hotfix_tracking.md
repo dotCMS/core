@@ -229,3 +229,5 @@ This maintenance release includes the following code fixes:
 181. https://github.com/dotCMS/core/issues/27910 : Log too verbose in certain situations #27910
 182. https://github.com/dotCMS/core/issues/27909 : Invalid role check when accessing resource #27909
 183. https://github.com/dotCMS/core/issues/27453 : Make experience plugin into a system plugin #27453
+
+**Release-23.01.16**
