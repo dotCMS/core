@@ -143,6 +143,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
@@ -1617,8 +1618,9 @@ public class WorkflowResource {
         final Contentlet basicContentlet = fireCommandOpt.isPresent()?
                 fireCommandOpt.get().fire(contentlet, this.needSave(fireActionForm), formBuilder.build()):
                 this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build());
-        final Contentlet hydratedContentlet = new DotTransformerBuilder().contentResourceOptions(false)
-                .content(basicContentlet).build().hydrate().get(0);
+        final Contentlet hydratedContentlet = Objects.nonNull(basicContentlet)?
+                new DotTransformerBuilder().contentResourceOptions(false)
+                    .content(basicContentlet).build().hydrate().get(0): basicContentlet;
         return Response.ok(
                 new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
         ).build(); // 200
