@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
@@ -17,7 +18,8 @@ import java.sql.SQLException;
 public class Task240102AlterVarcharLengthOfRelationType implements StartupTask {
     @Override
     public boolean forceRun() {
-        return true;
+        return !(new DotDatabaseMetaData().isColumnLengthExpected("tree",
+                "relation_type","255"));
     }
 
     @Override

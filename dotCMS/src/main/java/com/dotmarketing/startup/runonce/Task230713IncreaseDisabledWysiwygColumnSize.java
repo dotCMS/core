@@ -31,15 +31,8 @@ public class Task230713IncreaseDisabledWysiwygColumnSize implements StartupTask 
 
     @Override
     public boolean forceRun() {
-        boolean isDisabledWysiwyg1000 = false;
-        try {
-            final Map<String, String> columnData = new DotDatabaseMetaData().getModifiedColumnLength("contentlet",
-                    "disabled_wysiwyg");
-            isDisabledWysiwyg1000 = columnData.get("field_length").equals("1000");
-        } catch (Exception e) {
-            Logger.error(this.getClass(),"An error occurred when trying to pull the disabled Wysiwyg size");
-        }
-        return DbConnectionFactory.isPostgres() && !isDisabledWysiwyg1000;
+        return !(new DotDatabaseMetaData().isColumnLengthExpected("contentlet",
+                "disabled_wysiwyg", "1000"));
     }
 
     @Override

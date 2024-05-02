@@ -231,3 +231,5 @@ This maintenance release includes the following code fixes:
 183. https://github.com/dotCMS/core/issues/27453 : Make experience plugin into a system plugin #27453
 
 **Release-23.01.16**
+
+184. https://github.com/dotCMS/core/issues/28110 : Only run startup tasks if they need to be run #28110
