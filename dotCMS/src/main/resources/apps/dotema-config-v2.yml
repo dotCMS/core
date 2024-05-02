@@ -1,7 +1,7 @@
-name: "Universal Visual Editor"
+name: "UVE - Universal Visual Editor"
 iconUrl: "https://static.dotcms.com/assets/icons/apps/ema-v2-icon.png"
 allowExtraParameters: false
-description: "Universal Visual Editor, allows you to proxy your edit mode requests to a 3rd party server or web site. If that site is configured to use the dotCMS Page API then UVE enables remote content management of content, layouts and pages that are hosted remotely."
+description: "UVE - or Universal Visual Editor, allows you to proxy your edit mode requests to a 3rd party server or web site. If that site is configured to use the dotCMS Page API then UVE enables remote content management of content, layouts and pages that are hosted remotely."
 params:
   configuration:
     value: ""
