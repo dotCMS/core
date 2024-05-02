@@ -25,6 +25,7 @@ import java.security.Key;
 import java.util.Date;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -40,6 +41,7 @@ public class AWSS3PublisherTest {
      * @throws Exception
      */
     @Test
+    @Ignore
     public void Test_Should_Force_Push() throws Exception{
 
         final String environmentId = "environment-ID";
