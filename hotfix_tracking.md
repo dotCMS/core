@@ -235,3 +235,4 @@ This maintenance release includes the following code fixes:
 184. https://github.com/dotCMS/core/issues/28110 : Only run startup tasks if they need to be run #28110
 185. https://github.com/dotCMS/core/issues/28105 : PDF as Binary / upload field doesn't show preview #28105
 186. https://github.com/dotCMS/core/issues/27361 : CSV Content import cannot process host or folder information #27361
+187. https://github.com/dotCMS/core/issues/25903 : Key/Value field escaping colon and comma characters to HTML encoded version. #25903
