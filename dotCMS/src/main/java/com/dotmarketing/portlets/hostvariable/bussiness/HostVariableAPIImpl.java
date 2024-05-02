@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class HostVariableAPIImpl implements HostVariableAPI {
 
@@ -106,15 +107,17 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 			);
 		}
 
-		List<HostVariable> processedVariables = new ArrayList<>();
+		// Removing duplicates from the given list of variables
+		final var uniqueSiteVariables = getUniqueSiteVariables(siteVariables);
 
-		// First we need to get all the existing variables for the host
+		// Getting all the existing variables for the host
 		final List<HostVariable> existingVariables = getVariablesForHost(
 				siteId, user, respectFrontendRoles
 		);
 
 		// Now we need to loop through the new variables save/update them
-		for (HostVariable siteVariable : siteVariables) {
+		List<HostVariable> processedVariables = new ArrayList<>();
+		for (HostVariable siteVariable : uniqueSiteVariables) {
 
 			final HostVariable toProcess;
 
@@ -155,6 +158,23 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 		processedVariables.sort(Comparator.comparing(HostVariable::getKey));
 
 		return processedVariables;
+	}
+
+	/**
+	 * Retrieves a list of unique site variables from the given list of site variables.
+	 *
+	 * @param siteVariables The list of site variables.
+	 * @return A new ArrayList containing only the unique site variables based on their keys.
+	 */
+	private ArrayList<HostVariable> getUniqueSiteVariables(List<HostVariable> siteVariables) {
+
+		return new ArrayList<>(siteVariables.stream().
+				collect(Collectors.toMap(
+						HostVariable::getKey, // key is the HostVariable's `key`
+						hostVariable -> hostVariable,  // value is the HostVariable itself
+						(existing, replacement) -> existing)) // if there's a conflict, keep the existing
+				.values()
+		);
 	}
 
 	/**
