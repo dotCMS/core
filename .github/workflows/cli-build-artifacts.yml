@@ -19,7 +19,7 @@ on:
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
-  GRAALVM_VERSION: '22.1.0'
+  GRAALVM_VERSION: '22.3.1'
   BRANCH: ${{ inputs.branch || github.ref_name }}
   SKIP_TESTS: true
 

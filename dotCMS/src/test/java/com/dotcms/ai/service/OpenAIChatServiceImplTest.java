@@ -52,7 +52,7 @@ public class OpenAIChatServiceImplTest {
     private OpenAIChatService prepareService(final String response) {
         return new OpenAIChatServiceImpl(config) {
             @Override
-            String doRequest(String urlIn, String method, String openAiAPIKey, JSONObject json) {
+            String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
                 return response;
             }
         };
