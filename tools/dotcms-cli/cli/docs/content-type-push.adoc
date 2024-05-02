@@ -20,7 +20,8 @@ content-type-push - *Push content types*
 == Synopsis
 
 *content-type push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-rct*]
-                  [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [_path_]
+                  [*--dotcms-url*=_<remoteURL>_] [*--retry-attempts*=_<retryAttempts>_]
+                  [*-tk*=_<token>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -37,6 +38,9 @@ This command enables the pushing of content types to the server. It accommodates
 
 *-dau, --disable-auto-update*::
   Disable the default behaviour of updating the local file descriptor with the response from the server after a push. When this option is used, the local file will remain in its initial state even after a successful push.
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
 
 *--dry-run*::
   When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
