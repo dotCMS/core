@@ -540,6 +540,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     addEditorPageScript(rendered = ''): string {
         const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
+        const bodyExists = rendered.includes('</body>');
+
+        /*
+         * For advance template case. It might not include `body` tag.
+         */
+        if (!bodyExists) {
+            return rendered + scriptString;
+        }
+
         const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
@@ -590,6 +599,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         </style>
         `;
 
+        const headExists = rendered.includes('</head>');
+
+        /*
+         * For advance template case. It might not include `head` tag.
+         */
+        if (!headExists) {
+            return rendered + styles;
+        }
+
         return rendered.replace('</head>', styles + '</head>');
     }
 
@@ -602,11 +620,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private inyectCodeToVTL(rendered: string): string {
-        let newFile = this.addEditorPageScript(rendered);
+        const fileWithScript = this.addEditorPageScript(rendered);
+        const fileWithStylesAndScript = this.addCustomStyles(fileWithScript);
 
-        newFile = this.addCustomStyles(newFile);
-
-        return newFile;
+        return fileWithStylesAndScript;
     }
 
     ngOnDestroy(): void {
