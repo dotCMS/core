@@ -113,6 +113,23 @@ const messagesMock = {
     'editpage.content.add.already.message': 'This content is already added to this container'
 };
 
+const IFRAME_MOCK = {
+    nativeElement: {
+        contentDocument: {
+            getElementsByTagName: () => [],
+            querySelectorAll: () => [],
+            write: function (html) {
+                this.body.innerHTML = html;
+            },
+            body: {
+                innerHTML: ''
+            },
+            open: jest.fn(),
+            close: jest.fn()
+        }
+    }
+};
+
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
@@ -2827,6 +2844,59 @@ describe('EditEmaEditorComponent', () => {
 
                     componentsToHide.forEach((testId) => {
                         expect(spectator.query(byTestId(testId))).not.toBeNull();
+                    });
+                });
+
+                describe('script and styles injection', () => {
+                    let iframe: Document;
+                    let spy: jest.SpyInstance;
+
+                    beforeEach(() => {
+                        jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+                            cb(0); // Pass a dummy value to satisfy the expected argument count
+
+                            return 0;
+                        });
+
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        spectator.component.iframe = IFRAME_MOCK as any;
+                        iframe = spectator.component.iframe.nativeElement.contentDocument;
+                        spy = jest.spyOn(iframe, 'write');
+                    });
+
+                    it('should add script and styles to iframe', () => {
+                        spectator.component.setIframeContent(`<head></head></body></body>`);
+
+                        expect(spy).toHaveBeenCalled();
+                        expect(iframe.body.innerHTML).toContain(
+                            '<script src="/html/js/editor-js/sdk-editor.esm.js"></script>'
+                        );
+                        expect(iframe.body.innerHTML).toContain(
+                            '[data-dot-object="container"]:empty'
+                        );
+                        expect(iframe.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"]:empty'
+                        );
+                    });
+
+                    it('should add script and styles to iframe for advance templates', () => {
+                        spectator.component.setIframeContent(`<div>Advanced Template</div>`);
+
+                        expect(spy).toHaveBeenCalled();
+                        expect(iframe.body.innerHTML).toContain(
+                            '<script src="/html/js/editor-js/sdk-editor.esm.js"></script>'
+                        );
+
+                        expect(iframe.body.innerHTML).toContain(
+                            '[data-dot-object="container"]:empty'
+                        );
+                        expect(iframe.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"]:empty'
+                        );
+                    });
+
+                    afterEach(() => {
+                        (window.requestAnimationFrame as jest.Mock).mockRestore();
                     });
                 });
             });
