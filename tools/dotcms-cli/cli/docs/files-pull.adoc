@@ -19,8 +19,9 @@ files-pull - *dotCMS Files pull*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*files pull* [*-hp*] [*-ff*] [*-ie*] [*-nr*] [*-ea*=_patterns_] [*-ef*=_patterns_] [*-ia*=_patterns_]
-           [*-if*=_patterns_] [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_]
+*files pull* [*-hp*] [*-ff*] [*-ie*] [*-nr*] [*--dotcms-url*=_<remoteURL>_] [*-ea*=_patterns_]
+           [*-ef*=_patterns_] [*-ia*=_patterns_] [*-if*=_patterns_]
+           [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_]
            [*--workspace*=_<file>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
@@ -50,6 +51,9 @@ files-pull - *dotCMS Files pull*
 
 // tag::picocli-generated-man-section-options[]
 == Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
 
 *-ea, --excludeAsset*=_patterns_::
   Exclude assets matching the given glob patterns. Multiple patterns can be specified, separated by commas.
