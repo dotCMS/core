@@ -321,41 +321,67 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	}
 
-	private Lazy<Role> anonRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrElseThrow(DotRuntimeException::new));
-	private Lazy<Role> adminRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAdminRole()).getOrElseThrow(DotRuntimeException::new));
-	private Lazy<Role> ownerRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSOwnerRole()).getOrElseThrow(DotRuntimeException::new));
+	private final Lazy<Role> anonRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrElseThrow(DotRuntimeException::new));
+	private final Lazy<Role> adminRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAdminRole()).getOrElseThrow(DotRuntimeException::new));
+	private final Lazy<Role> ownerRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSOwnerRole()).getOrElseThrow(DotRuntimeException::new));
 
 
 
 	@CloseDBIfOpened
 	public boolean doesUserHavePermissionInternal(final Permissionable permissionable,
 										  final int permissionType,
-										  @NotNull final User user,
+										  @NotNull final User userIn,
 										  final boolean respectFrontendRoles,
 										  final Contentlet contentlet) throws DotDataException {
 
-
-        // short circuit for UserProxy
-        if (permissionable instanceof UserProxy) {
-            return userPermissions((UserProxy) permissionable, user);
-        }
-
-		// Folders do not have PUBLISH, use EDIT instead
-		final int expecterPermissionType = (PermissionableType
-			.FOLDERS
-			.getCanonicalName()
-			.equals(permissionable.getPermissionType()) ||
-				permissionable instanceof Identifier && ((Identifier) permissionable).getAssetType().equals("folder"))
-				&& permissionType == PERMISSION_PUBLISH
-			? PERMISSION_EDIT
-			: permissionType;
-
+		final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+		if (user.getUserId().equals(APILocator.systemUser().getUserId())){
+			return true;
+		}
 
 		if (user.isAdmin()) {
 			return true;
 		}
 
-		final List<Permission> perms = getPermissions(permissionable, true).stream().filter(p->p.matchesPermission(expecterPermissionType)).collect(Collectors.toList());
+		if (permissionable == null) {
+			Logger.warn(this, "Permissionable object is null");
+			throw new NullPointerException("Permissionable object is null");
+		}
+
+		if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			return false;
+		}
+
+		// short circuit for UserProxy
+		if (permissionable instanceof UserProxy) {
+			return userPermissions((UserProxy) permissionable, user);
+		}
+
+		// Folders do not have PUBLISH, use EDIT instead
+		final int expecterPermissionType = (PermissionableType
+				.FOLDERS
+				.getCanonicalName()
+				.equals(permissionable.getPermissionType()) ||
+				permissionable instanceof Identifier && ((Identifier) permissionable).getAssetType().equals("folder"))
+				&& permissionType == PERMISSION_PUBLISH
+				? PERMISSION_EDIT
+				: permissionType;
+
+
+		if (APILocator.getRoleAPI().doesUserHaveRole(user, adminRole.get())) {
+			return true;
+		}
+
+		final List<Permission> perms = getPermissions(permissionable, true)
+				.stream()
+				.filter(p-> p.matchesPermission(expecterPermissionType))
+				.collect(Collectors.toList());
 		final boolean isContentlet = permissionable instanceof Contentlet;
 		for(final Permission p : perms){
 			if (respectFrontendRoles) {
@@ -368,9 +394,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			// if owner and owner has required permission return true
 			try {
 				if (p.getRoleId().equals(ownerRole.get().getId())
-					&& permissionable.getOwner() != null
-					&& permissionable.getOwner().equals(user.getUserId())
-					&& checkRelatedPermissions(permissionable.permissionDependencies(expecterPermissionType), user)) {
+						&& permissionable.getOwner() != null
+						&& permissionable.getOwner().equals(user.getUserId())
+						&& checkRelatedPermissions(permissionable.permissionDependencies(expecterPermissionType), user)) {
 					return true;
 				}
 			} catch (DotDataException e1) {
@@ -379,25 +405,29 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 
 			if (permissionable instanceof WorkflowAction
-				&& workflowActionHasPermission(expecterPermissionType, p, user, contentlet)) {
+					&& workflowActionHasPermission(expecterPermissionType, p, user, contentlet)) {
 				return true;
 			}
-
 		}
 
-        // front end users cannot read content that is not live
-        if (!user.isBackendUser()
-			&& isContentlet
-			&& !isLiveContentlet(permissionable)
-			&& expecterPermissionType == PERMISSION_READ) {
-            Logger.warn(this, String.format("User '%s' cannot verify READ permissions on Contentlet '%s' because it " +
-                    "is not live.", user.getUserId(), permissionable.getPermissionId()));
-            return false;
-        }
+		// front end users cannot read content that is not live
+		if (!user.isBackendUser()
+				&& isContentlet
+				&& !isLiveContentlet(permissionable)
+				&& expecterPermissionType == PERMISSION_READ) {
+			Logger.warn(this, String.format("User '%s' cannot verify READ permissions on Contentlet '%s' because it " +
+					"is not live.", user.getUserId(), permissionable.getPermissionId()));
+			return false;
+		}
 
 		final Set<String> userRoleIds = filterUserRoles(user, respectFrontendRoles).stream().map(Role::getId).collect(Collectors.toSet());
-        
+
 		return doRolesHavePermission(userRoleIds, getPermissions(permissionable, true), expecterPermissionType);
+
+
+
+
+
 	}
 
 	/**
