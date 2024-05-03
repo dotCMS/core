@@ -27,6 +27,20 @@ public interface AbstractCommandsChain {
 
     boolean isShowErrorsAny();
 
+    /**
+     * Marks if the remote URL was set in the command line
+     *
+     * @return true if the remote URL was set
+     */
+    boolean isRemoteURLSet();
+
+    /**
+     * Marks if the token was set in the command line
+     *
+     * @return true if the token was set
+     */
+    boolean isTokenSet();
+
     String command();
 
 }
