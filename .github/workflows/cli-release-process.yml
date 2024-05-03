@@ -397,7 +397,7 @@ jobs:
             echo "LATEST_RC_VERSIONS: ${LATEST_RC_VERSIONS}"
 
             # Extract max RC version
-            MAX_RC_VERSION=$(echo $LATEST_RC_VERSIONS | jq -r --arg filter $VERSION_NPM_FORMAT-rc 'map(.| select(. | contains($filter)) | sub($filter; "") | tonumber ) | $filter+"\(max)"')
+            MAX_RC_VERSION=$(echo $LATEST_RC_VERSIONS | jq -r --arg filter $VERSION_NPM_FORMAT-rc 'map(.| select(. | contains($filter)) | sub($filter; "") | tonumber ) | max')
             echo "MAX_RC_VERSION: ${MAX_RC_VERSION}"
           
             if [[ $MAX_RC_VERSION != null ]]; then
