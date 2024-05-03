@@ -676,6 +676,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }));
 
     /**
+     * Update the editor state to scroll
+     *
+     * @memberof EditEmaStore
+     */
+    readonly setScrollingState = this.updater((state) => {
+        return {
+            ...state,
+            editorState: EDITOR_STATE.SCROLLING,
+            bounds: []
+        };
+    });
+
+    /**
      * Update the preview state
      *
      * @memberof EditEmaStore

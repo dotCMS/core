@@ -64,6 +64,9 @@
     /**
      * Received pong from the editor
      */ NOTIFY_CUSTOMER["EMA_EDITOR_PONG"] = "ema-editor-pong";
+    /**
+     * Received scroll event trigger from the editor
+     */ NOTIFY_CUSTOMER["EMA_SCROLL_INSIDE_IFRAME"] = "scroll-inside-iframe";
 })(NOTIFY_CUSTOMER || (NOTIFY_CUSTOMER = {}));
 
 /**
@@ -229,7 +232,7 @@ function findVTLData(target) {
                     break;
                 }
         }
-        if (event.data.name === "scroll-inside-iframe") {
+        if (event.data.name === NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME) {
             var scrollY = event.data.direction === "up" ? -120 : 120;
             window.scrollBy({
                 left: 0,

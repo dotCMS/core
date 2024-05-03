@@ -81,7 +81,7 @@ export function listenEditorMessages() {
             }
         }
 
-        if (event.data.name === 'scroll-inside-iframe') {
+        if (event.data.name === NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME) {
             const scrollY = event.data.direction === 'up' ? -120 : 120;
             window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
         }

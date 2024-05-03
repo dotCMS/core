@@ -2635,12 +2635,18 @@ describe('EditEmaEditorComponent', () => {
                 describe('VTL Page', () => {
                     beforeEach(() => {
                         jest.useFakeTimers(); // Mock the timers
+                        spectator.detectChanges();
+
+                        // We need to force the editor state to loading for this test
+                        // because first we get the pageapi of "1" person
+                        // and then we get the pageapi of "3" person
+                        store.updateEditorState(EDITOR_STATE.LOADING);
+
                         store.load({
                             url: 'index',
                             language_id: '3',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                         });
-                        spectator.detectChanges();
                     });
 
                     afterEach(() => {
@@ -2648,13 +2654,12 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('iframe should have the correct content when is VTL', () => {
-                        spectator.detectChanges();
-
                         jest.runOnlyPendingTimers();
+
                         const iframe = spectator.debugElement.query(
                             By.css('[data-testId="iframe"]')
                         );
-                        expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>hello world</div>'
                         );

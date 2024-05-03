@@ -77,7 +77,7 @@
                         es.state === editorState.DRAGGING) ||
                     es.state === editorState.SCROLLING
                 "
-                [containers]="es.state === editorState.SCROLLING ? [] : es.bounds"
+                [containers]="es.bounds"
                 [dragItem]="es.dragItem"
                 data-testId="dropzone" />
         </div>

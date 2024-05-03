@@ -450,10 +450,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                this.store.updateEditorState(EDITOR_STATE.SCROLLING);
+                this.store.setScrollingState();
 
                 this.iframe.nativeElement.contentWindow?.postMessage(
-                    { name: 'scroll-inside-iframe', direction },
+                    { name: NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME, direction },
                     this.host
                 );
             });
@@ -549,17 +549,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     handleReloadContent() {
         this.store.contentState$
             .pipe(
-                startWith(null),
+                startWith({ state: EDITOR_STATE.LOADING, code: '' }),
                 takeUntil(this.destroy$),
                 pairwise(),
                 filter(([_prev, curr]) => curr?.state === EDITOR_STATE.IDLE)
             )
-            .subscribe((res) => {
+            .subscribe(([prev, curr]) => {
                 // If we are idle then we are not dragging
                 this.resetDragProperties();
-
-                let [prev] = res;
-                prev = prev || { state: EDITOR_STATE.LOADING, code: '' };
 
                 if (prev?.state !== EDITOR_STATE.LOADING) {
                     /** We have some EDITOR_STATE values that we don't want to reload the content
@@ -568,12 +565,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                if (!this.isVTLPage()) {
-                    // Only reload if is Headless.
+                if (this.isVTLPage()) {
                     // If is VTL, the content is updated by store.code$
-                    this.reloadIframe();
+                    this.setIframeContent(curr.code);
                 } else {
-                    this.setIframeContent(res[1].code);
+                    // Only reload if is Headless.
+                    this.reloadIframe();
                 }
             });
     }
