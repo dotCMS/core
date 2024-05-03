@@ -162,4 +162,8 @@ dotCMS/src/main/webapp/dotcms-block-editor
 dotCMS/src/main/webapp/WEB-INF/classes
 # allow build to cache files that are not removed on clean e.g. spotless index
 .cache
+# prevent old files from other branches getting into the source
+dotCMS/settings.gradle
+dotCMS/dependencies.gradle
+
 !/examples/nextjs/.npmrc
