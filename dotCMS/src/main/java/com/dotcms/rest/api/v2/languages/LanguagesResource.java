@@ -51,6 +51,7 @@ import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -67,7 +68,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
- * Language end point
+ * Language endpoint for the v2 API
  */
 @Path("/v2/languages")
 public class LanguagesResource {
@@ -409,6 +410,30 @@ public class LanguagesResource {
 
         return Response.ok(new ResponseEntityView(result)).build();
     }
+
+    @GET
+    @Path("/variables")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getVariables(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @BeanParam final PaginationContext paginationContext) throws DotDataException {
+
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requireAdmin(true)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+
+        final LanguageVariablePageView view = new LanguageVariablesHelper()
+                .view(paginationContext, true);
+        return Response.ok(new ResponseEntityView<>(view)).build();
+    }
+
 
     private Language saveOrUpdateLanguage(final String languageId, final LanguageForm form)
             throws AlreadyExistException {

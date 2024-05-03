@@ -3,8 +3,10 @@ package com.dotcms.languagevariable.business;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Provides access to Language Variable objects in the system, which allow you to associate a key to
@@ -125,4 +127,42 @@ public interface LanguageVariableAPI {
     public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key, final long languageId, final User user, final int limit)
             throws DotDataException, DotSecurityException;
 
+
+    String ORDER_BY_DEFAULT = "contentlet.identifier";
+
+    /**
+     * Returns all the Language Variables in the system.
+     *
+     * @return List of Language Variables.
+     */
+    Map<Language, List<LanguageVariable>> findAllVariables() ;
+
+    /**
+     * Returns all the Language Variables for the specified language.
+     * @param langId - The ID of the language that the variable was created for.
+     * @return List of Language Variables.
+     * @throws DotDataException - If an error occurs while retrieving the Language Variables.
+     */
+    List<LanguageVariable> findVariables(final long langId) throws DotDataException;
+
+    /**
+     * Returns a list of {@link LanguageVariable} that the key starts with the specified key and
+     *
+     * @param offset  - The offset of the list.
+     * @param limit   - Size of the list.
+     * @param orderBy - The order by clause.
+     * @return List of {@link LanguageVariable}
+     * @throws DotDataException - If there is an error retrieving the list of Language Variables.
+     */
+    Map<String, List<LanguageVariableExt>> findVariablesGroupedByKey(int offset, int limit, String orderBy)
+            throws DotDataException;
+
+    /**
+     * Count content Variables
+     * @return
+     * @throws DotDataException
+     */
+    //int countLiveVariables() throws DotDataException;
+
+    //void invalidateLanguageVariablesCache(Contentlet contentlet);
 }

@@ -1,20 +1,27 @@
 package com.dotcms.languagevariable.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.MultilinguableFallback;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link LanguageVariableAPI}.
@@ -25,6 +32,15 @@ import java.util.List;
  *
  */
 public class LanguageVariableAPIImpl implements LanguageVariableAPI {
+
+  Lazy<ContentType> langVarContentType = Lazy.of(() -> {
+      try {
+        return APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+      } catch (DotDataException | DotSecurityException e) {
+        throw new IllegalStateException("Can't seem to find a content-type for LangVars! ", e);
+      }
+  });
 
   private final KeyValueAPI keyValueAPI;
   private final LanguageAPI languageAPI;
@@ -118,6 +134,58 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
         this.keyValueAPI.get(key, this.languageAPI.getDefaultLanguage().getId(), languageVariableContentType, user, respectFrontendRoles);
 
     return (null != keyValue) ? keyValue.getValue() : null;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Map<Language, List<LanguageVariable>> findAllVariables() {
+    final List<Language> languages = languageAPI.getLanguages();
+
+    return languages.stream()
+            .collect(Collectors.toMap(lang -> lang, lang -> {
+              try {
+                return findVariables(lang.getId());
+              } catch (DotDataException e) {
+                Logger.error(this, "Error finding language variables", e);
+                return List.of();
+              }
+            }));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @CloseDBIfOpened
+  @Override
+  public List<LanguageVariable> findVariables(final long langId) throws DotDataException {
+
+    final ContentType contentType = langVarContentType.get();
+    final LanguageCache languageCache = CacheLocator.getLanguageCache();
+    final List<LanguageVariable> cacheVars = languageCache.getVars(langId);
+    if (cacheVars != null && !cacheVars.isEmpty()) {
+        return cacheVars;
+    }
+    final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
+    final List<LanguageVariable> variables = factory.findVariables(contentType, langId, 0, 0, null);
+    languageCache.putVars(langId, variables);
+    return variables;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @CloseDBIfOpened
+  @Override
+  public Map<String, List<LanguageVariableExt>> findVariablesGroupedByKey(final int offset, final int limit, final String orderBy) throws DotDataException {
+
+    final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
+    final ContentType contentType = langVarContentType.get();
+    final List<LanguageVariableExt> variables = factory.findVariablesForPagination(contentType, offset, limit, orderBy);
+    //Group by key including the language id
+    return variables.stream()
+            .collect(Collectors.groupingBy(LanguageVariableExt::key));
   }
 
 }
