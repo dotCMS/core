@@ -459,7 +459,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragleave')
             .pipe(
                 takeUntil(this.destroy$),
-                filter((event: DragEvent) => !event.x && !event.y && !event.relatedTarget) // Just reset when is out of the window
+                filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
                 // I need to do this to hide the dropzone but maintain the current dragItem
