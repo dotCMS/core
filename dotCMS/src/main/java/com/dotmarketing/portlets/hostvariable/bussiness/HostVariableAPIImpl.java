@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -166,9 +167,9 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 	 * @param siteVariables The list of site variables.
 	 * @return A new ArrayList containing only the unique site variables based on their keys.
 	 */
-	private ArrayList<HostVariable> getUniqueSiteVariables(List<HostVariable> siteVariables) {
+	private List<HostVariable> getUniqueSiteVariables(List<HostVariable> siteVariables) {
 
-		return new ArrayList<>(siteVariables.stream().
+		return ImmutableList.copyOf(siteVariables.stream().
 				collect(Collectors.toMap(
 						HostVariable::getKey, // key is the HostVariable's `key`
 						hostVariable -> hostVariable,  // value is the HostVariable itself
