@@ -78,7 +78,7 @@ jobs:
         run: |
           echo "Creating $DOCKER_BUILD_CONTEXT"
           mkdir -p $DOCKER_BUILD_CONTEXT
-          ./mvnw -Dprod=true -Dflatten.skip=false $JVM_TEST_MAVEN_OPTS -Dcoreit.test.skip=true -Dpostman.test.skip=true -Ddocker.buildArchiveOnly=$DOCKER_BUILD_CONTEXT -Ddotcms.image.name=${DOCKER_IMAGE}:${DOCKER_TAG} --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
+          ./mvnw -Dprod=true $JVM_TEST_MAVEN_OPTS -Dcoreit.test.skip=true -Dpostman.test.skip=true -Ddocker.buildArchiveOnly=$DOCKER_BUILD_CONTEXT -Ddotcms.image.name=${DOCKER_IMAGE}:${DOCKER_TAG} --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
       - name: Persist Maven Repo
         uses: actions/upload-artifact@v4
         with:
