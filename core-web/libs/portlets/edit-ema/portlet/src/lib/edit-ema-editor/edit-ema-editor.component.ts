@@ -6,6 +6,7 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    DestroyRef,
     ElementRef,
     HostListener,
     OnDestroy,
@@ -18,7 +19,7 @@ import {
     signal,
     untracked
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
@@ -82,7 +83,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, WINDOW } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import {
     ActionPayload,
@@ -156,6 +157,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
+    private readonly destroyRef = inject(DestroyRef);
 
     readonly editorState$ = this.store.editorState$;
     readonly dragState$ = this.store.dragState$;
@@ -314,7 +316,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     handleDragEvents() {
-        this.store.currentState$.pipe(takeUntil(this.destroy$)).subscribe((state) => {
+        this.store.currentState$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
             if (state === EDITOR_STATE.DRAGGING) {
                 this.iframe.nativeElement.contentWindow?.postMessage(
                     NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
@@ -420,25 +422,26 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
                 event.preventDefault(); // Prevent file opening
-
                 const iframeRect = this.iframe.nativeElement.getBoundingClientRect();
 
                 const isInsideIframe =
                     event.clientX > iframeRect.left && event.clientX < iframeRect.right;
 
+                if (!isInsideIframe) {
+                    return;
+                }
+
                 let direction;
 
                 if (
-                    isInsideIframe &&
                     event.clientY > iframeRect.top &&
-                    event.clientY < iframeRect.top + 100
+                    event.clientY < iframeRect.top + IFRAME_SCROLL_ZONE
                 ) {
                     direction = 'up';
                 }
 
                 if (
-                    isInsideIframe &&
-                    event.clientY > iframeRect.bottom - 100 &&
+                    event.clientY > iframeRect.bottom - IFRAME_SCROLL_ZONE &&
                     event.clientY <= iframeRect.bottom
                 ) {
                     direction = 'down';
@@ -550,7 +553,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.contentState$
             .pipe(
                 startWith({ state: EDITOR_STATE.LOADING, code: '' }),
-                takeUntil(this.destroy$),
+                takeUntilDestroyed(this.destroyRef),
                 pairwise(),
                 filter(([_prev, curr]) => curr?.state === EDITOR_STATE.IDLE)
             )

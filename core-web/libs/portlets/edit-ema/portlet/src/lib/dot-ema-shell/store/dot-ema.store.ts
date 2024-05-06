@@ -714,7 +714,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly updateEditorScrollState = this.updater((state) => {
         return {
             ...state,
-            editorState: state.dragItem ? EDITOR_STATE.SCROLLING : EDITOR_STATE.IDLE
+            editorState: state.dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
         };
     });
 

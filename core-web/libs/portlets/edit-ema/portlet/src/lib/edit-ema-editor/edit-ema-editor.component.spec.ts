@@ -2604,6 +2604,86 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            describe('scroll inside iframe', () => {
+                it('should emit postMessage and change state to Scroll', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 200, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 120, enumerable: true });
+
+                    const postMessageSpy = jest.spyOn(
+                        spectator.component.iframe.nativeElement.contentWindow,
+                        'postMessage'
+                    );
+
+                    const scrollingStateSpy = jest.spyOn(store, 'setScrollingState');
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(postMessageSpy).toHaveBeenCalled();
+                    expect(scrollingStateSpy).toHaveBeenCalled();
+                });
+
+                it('should dont emit postMessage or changestate scroll when drag outside iframe', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 200, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 90, enumerable: true });
+
+                    const postMessageSpy = jest.spyOn(
+                        spectator.component.iframe.nativeElement.contentWindow,
+                        'postMessage'
+                    );
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(postMessageSpy).not.toHaveBeenCalled();
+                });
+
+                it('should change state to dragging when drag outsite scroll trigger area', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 300, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 120, enumerable: true });
+
+                    const updateEditorState = jest.spyOn(store, 'updateEditorState');
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                });
+            });
+
             describe('DOM', () => {
                 it("should not show a loader when the editor state is not 'loading'", () => {
                     spectator.detectChanges();

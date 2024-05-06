@@ -24,6 +24,7 @@ import {
 
 import { EditEmaStore } from './dot-ema.store';
 
+import { EmaDragItem } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, MOCK_RESPONSE_HEADLESS } from '../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
@@ -499,6 +500,33 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             }
                         }
+                    });
+                    done();
+                });
+            });
+
+            it('should update editor state to idle when dont have dragItem', (done) => {
+                spectator.service.updateEditorScrollState();
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        ...state,
+                        bounds: [],
+                        state: EDITOR_STATE.IDLE
+                    });
+                    done();
+                });
+            });
+
+            it('should update editor state to dragginf when  have dragItem', (done) => {
+                spectator.service.setDragItem({} as EmaDragItem);
+                spectator.service.updateEditorScrollState();
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        ...state,
+                        bounds: [],
+                        state: EDITOR_STATE.DRAGGING
                     });
                     done();
                 });
