@@ -37,9 +37,12 @@ import com.dotmarketing.util.json.JSONObject;
 import io.vavr.Tuple2;
 
 /**
+ * @deprecated This class is deprecated and will be removed in a future version. Please use {@link com.dotcms.rest.api.v1.osgi.OSGIResource}
+ * @see com.dotcms.rest.api.v1.osgi.OSGIResource
  * @author Jonathan Gamba
  *         Date: 28/05/14
  */
+@Deprecated
 @Path ("/osgi")
 public class OSGIResource  {
 

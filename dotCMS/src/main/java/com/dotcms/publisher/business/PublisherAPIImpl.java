@@ -1,7 +1,5 @@
 package com.dotcms.publisher.business;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.model.Experiment;
@@ -14,7 +12,6 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.publish.AddedToQueueEvent;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -38,6 +35,14 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.lang.StringUtils;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -47,13 +52,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.ObjectAlreadyExistsException;
-import org.quartz.Scheduler;
-import org.quartz.SimpleTrigger;
-import org.quartz.Trigger;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Provides utility methods to interact with asset information added to the
@@ -319,7 +319,7 @@ public class PublisherAPIImpl extends PublisherAPI{
               }
 		  }
 
-    	  Map<String, Object> dataMap = CollectionsUtils.map("deliveryStrategy", deliveryStrategy);
+    	  Map<String, Object> dataMap = Map.of("deliveryStrategy", deliveryStrategy);
 		  firePublisherQueueNow(dataMap);
 
 		  //Preparing and returning the response status object

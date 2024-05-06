@@ -21,7 +21,7 @@ defaults:
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
-  GRAALVM_VERSION: '22.1.0'
+  GRAALVM_VERSION: '22.3.1'
   MVN_PACKAGE_TYPE: 'uber-jar'
   NPM_PACKAGE_SCOPE: '@dotcms'
   NPM_PACKAGE_NAME: 'dotcli'
@@ -391,11 +391,17 @@ jobs:
               exit 1
             fi
 
-            LAST_RC_VERSION=$(npm view $PACKAGE_FULL_NAME versions --json | jq --arg filter $VERSION_NPM_FORMAT 'map(.| select(. | contains($filter)))' | jq -r 'map(select(test("-rc\\d+$"))) | max')
+            echo "VERSION_NPM_FORMAT: ${VERSION_NPM_FORMAT}"
+            # Get last RC versions
+            LATEST_RC_VERSIONS=$(npm view $PACKAGE_FULL_NAME versions --json)
+            echo "LATEST_RC_VERSIONS: ${LATEST_RC_VERSIONS}"
 
-            if [[ $LAST_RC_VERSION == "$VERSION_NPM_FORMAT"* ]]; then
-              NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
-              RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
+            # Extract max RC version
+            MAX_RC_VERSION=$(echo $LATEST_RC_VERSIONS | jq -r --arg filter $VERSION_NPM_FORMAT-rc 'map(.| select(. | contains($filter)) | sub($filter; "") | tonumber ) | max')
+            echo "MAX_RC_VERSION: ${MAX_RC_VERSION}"
+          
+            if [[ $MAX_RC_VERSION != null ]]; then
+              RC_SUFFIX="-rc$(( $MAX_RC_VERSION + 1 ))"
             else
               RC_SUFFIX="-rc1"
             fi;
@@ -419,7 +425,7 @@ jobs:
       - name: 'NPM Package setup'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
-          MVN_PACKAGE_VERSION: ${{ github.event.inputs.version }}
+          MVN_PACKAGE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
         run: |
           echo "::group::NPM Package setup"
           echo "Adding bin folder with all the binaries"

@@ -1,10 +1,42 @@
 package com.dotcms.rest;
 
-import static com.liferay.util.StringPool.BLANK;
-
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.rest.exception.SecurityException;
+import com.dotcms.rest.validation.ServletPreconditions;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.util.CompanyUtils;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.auth.PrincipalThreadLocal;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.glassfish.jersey.server.ContainerRequest;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -16,43 +48,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.Response;
-
-import org.apache.commons.lang.StringUtils;
-import org.glassfish.jersey.internal.util.Base64;
-import org.glassfish.jersey.server.ContainerRequest;
-
-import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
-import org.apache.commons.io.IOUtils;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
-import com.dotcms.rest.exception.SecurityException;
-import com.dotcms.rest.validation.ServletPreconditions;
-import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.CompanyUtils;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.auth.PrincipalThreadLocal;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.util.StringPool;
-
-import io.vavr.control.Try;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * The Web Resource is a helper for all authentication and get the current user logged in
@@ -259,7 +255,7 @@ public  class WebResource {
     @Deprecated
     public InitDataObject init(String userId, String password, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
         AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
-        return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), request, new EmptyHttpResponse(), access, requiredPortlet);
+        return initWithMap(new HashMap<>(Map.of("userid", userId, "pwd", password)), request, new EmptyHttpResponse(), access, requiredPortlet);
     }
 
     /**
@@ -296,7 +292,7 @@ public  class WebResource {
       
         AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
       
-        return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), request, response, access, requiredPortlet);
+        return initWithMap(new HashMap<>(Map.of("userid", userId, "pwd", password)), request, response, access, requiredPortlet);
     }
 
     private InitDataObject initWithMap(final Map<String, String> paramsMap,

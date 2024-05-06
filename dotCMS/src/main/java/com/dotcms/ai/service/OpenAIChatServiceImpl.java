@@ -33,7 +33,7 @@ public class OpenAIChatServiceImpl implements OpenAIChatService {
 
         prompt.remove("prompt");
 
-        return new JSONObject(doRequest(config.getApiUrl(), "POST", config.getApiKey(), prompt));
+        return new JSONObject(doRequest(config.getApiUrl(), config.getApiKey(), prompt));
     }
 
     @Override
@@ -44,10 +44,8 @@ public class OpenAIChatServiceImpl implements OpenAIChatService {
     }
 
     @VisibleForTesting
-    String doRequest(final String urlIn,
-                     final String method,
-                     final String openAiAPIKey,
-                     final JSONObject json) {
-        return OpenAIRequest.doRequest(urlIn, method, openAiAPIKey, json);
+    String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
+        return OpenAIRequest.doRequest(urlIn, "POST", openAiAPIKey, json);
     }
+
 }

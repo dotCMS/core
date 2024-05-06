@@ -1,16 +1,11 @@
 package com.dotcms.experiments.business.web;
 
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import com.dotcms.analytics.metrics.*;
+import com.dotcms.analytics.metrics.AbstractCondition;
+import com.dotcms.analytics.metrics.Condition;
+import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.analytics.metrics.MetricType;
+import com.dotcms.analytics.metrics.QueryParameter;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -18,14 +13,18 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.experiments.business.web.SelectedExperiment.LookBackWindow;
-import com.dotcms.experiments.model.*;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.GoalFactory;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.RunningIds.RunningId;
+import com.dotcms.experiments.model.TargetingCondition;
+import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -36,14 +35,27 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.templates.model.Template;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ExperimentWebAPIImplIntegrationTest {
 
@@ -819,7 +831,7 @@ public class ExperimentWebAPIImplIntegrationTest {
     public void experimentWithFalseRules() throws DotDataException, DotSecurityException {
         final TargetingCondition targetingCondition = TargetingCondition.builder()
                 .conditionKey("RequestAttributeConditionlet")
-                .values((Map<String, String>) map("comparison", "is", "request-attribute",
+                .values((Map<String, String>) Map.of("comparison", "is", "request-attribute",
                         "testing-attribute", "request-attribute-value", "testing"))
                 .operator(LogicalOperator.AND)
                 .build();
@@ -868,7 +880,7 @@ public class ExperimentWebAPIImplIntegrationTest {
     public void experimentWithTrueRules() throws DotDataException, DotSecurityException {
         final TargetingCondition targetingCondition = TargetingCondition.builder()
                 .conditionKey("RequestAttributeConditionlet")
-                .values((Map<String, String>) map("comparison", "is", "request-attribute",
+                .values((Map<String, String>) Map.of("comparison", "is", "request-attribute",
                         "testing-attribute", "request-attribute-value", "testing"))
                 .operator(LogicalOperator.AND)
                 .build();
@@ -917,7 +929,7 @@ public class ExperimentWebAPIImplIntegrationTest {
     public void severalExperimenstWithTrueRules() throws DotDataException, DotSecurityException {
         final TargetingCondition targetingCondition = TargetingCondition.builder()
                 .conditionKey("RequestAttributeConditionlet")
-                .values((Map<String, String>) map("comparison", "is", "request-attribute",
+                .values((Map<String, String>) Map.of("comparison", "is", "request-attribute",
                         "testing-attribute", "request-attribute-value", "testing"))
                 .operator(LogicalOperator.AND)
                 .build();

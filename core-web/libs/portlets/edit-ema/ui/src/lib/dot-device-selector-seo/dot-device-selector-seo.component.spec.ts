@@ -12,6 +12,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { WINDOW } from '@dotcms/utils';
 import {
     CurrentUserDataMock,
     DotCurrentUserServiceMock,
@@ -62,6 +63,10 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 RouterTestingModule
             ],
             providers: [
+                {
+                    provide: WINDOW,
+                    useValue: window
+                },
                 {
                     provide: DotDevicesService,
                     useClass: DotDevicesServiceMock
@@ -139,14 +144,26 @@ describe('DotDeviceSelectorSeoComponent', () => {
         expect(devicesSelector).toBeNull();
     });
 
-    it('should have link to open in a new tab', () => {
+    it('should have link to open in a new tab when origin is specified', () => {
+        fixtureHost.componentInstance.apiLink =
+            'https://the-chosen-one-page.com.es/api/v1/page/render/an/url/test?language_id=1';
         fixtureHost.detectChanges();
 
         const addContent: DebugElement = de.query(
             By.css('[data-testId="dot-device-selector-link"]')
         );
-        expect(addContent.nativeElement.href).toContain(
-            '/an/url/test?language_id=1&disabledNavigateMode=true'
+        expect(addContent.nativeElement.href).toBe(
+            'https://the-chosen-one-page.com.es/an/url/test?language_id=1&disabledNavigateMode=true&mode=LIVE'
+        );
+    });
+    it('should have link to open in a new tab when origin is not specified', () => {
+        fixtureHost.detectChanges();
+
+        const addContent: DebugElement = de.query(
+            By.css('[data-testId="dot-device-selector-link"]')
+        );
+        expect(addContent.nativeElement.href).toBe(
+            'http://localhost/an/url/test?language_id=1&disabledNavigateMode=true&mode=LIVE'
         );
     });
 
@@ -164,17 +181,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
 
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
         expect(link).toBeNull();
-    });
-
-    it('should have link to open in a new tab', () => {
-        fixtureHost.detectChanges();
-
-        const addContent: DebugElement = de.query(
-            By.css('[data-testId="dot-device-selector-link"]')
-        );
-        expect(addContent.nativeElement.href).toContain(
-            '/an/url/test?language_id=1&disabledNavigateMode=true&mode=LIVE'
-        );
     });
 
     it('should trigger the changeSeoMedia', () => {

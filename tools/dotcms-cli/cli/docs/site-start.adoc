@@ -19,7 +19,7 @@ site-start - *Use this command to start a site.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site start* [*-h*] [*-tk*=_<token>_] _idOrName_
+*site start* [*-h*] [*--dotcms-url*=_<remoteURL>_] [*-tk*=_<token>_] _idOrName_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -35,6 +35,9 @@ site-start - *Use this command to start a site.*
 
 // tag::picocli-generated-man-section-options[]
 == Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
 
 *-h*, *--help*::
   Display this help message.

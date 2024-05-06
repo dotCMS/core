@@ -5136,7 +5136,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     final Optional<ContentType> contentTypeOpt = typeStrategy.get()
                             .apply(baseContentType,
-                                    CollectionsUtils.map("user", user, "host", host,
+                                    Map.of("user", user, "host", host,
                                             "contentletMap", contentletIn.getMap(), "accessingList",
                                             accessingList));
 

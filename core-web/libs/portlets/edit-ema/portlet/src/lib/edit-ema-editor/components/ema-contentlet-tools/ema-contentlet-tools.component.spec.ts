@@ -63,7 +63,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: contentletAreaMock
+                        contentletArea: contentletAreaMock
                     }
                 }))
         );
@@ -80,7 +80,7 @@ describe('EmaContentletToolsComponent', () => {
             spectator.click('[data-testId="menu-add"]');
 
             //Change contentlet hover
-            spectator.setInput('contentlet', {
+            spectator.setInput('contentletArea', {
                 ...contentletAreaMock,
                 payload: {
                     ...contentletAreaMock.payload,
@@ -108,29 +108,20 @@ describe('EmaContentletToolsComponent', () => {
                 expect(deleteSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
             });
 
-            it('should emit move on move button drag', () => {
-                const moveSpy = jest.spyOn(spectator.component.moveStart, 'emit');
-
+            it('should set drag image', () => {
                 const dragButton = spectator.debugElement.query(
                     By.css('[data-testId="drag-button"]')
                 );
+
+                const dragImageSpy = jest.fn();
 
                 spectator.triggerEventHandler(dragButton, 'dragstart', {
                     dataTransfer: {
-                        setDragImage: jest.fn()
+                        setDragImage: dragImageSpy
                     }
                 });
 
-                expect(moveSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
-            });
-
-            it('should emit dragStop', () => {
-                const dragStopSpy = jest.spyOn(spectator.component.moveStop, 'emit');
-                const dragButton = spectator.debugElement.query(
-                    By.css('[data-testId="drag-button"]')
-                );
-                spectator.triggerEventHandler(dragButton, 'dragend', {});
-                expect(dragStopSpy).toHaveBeenCalled();
+                expect(dragImageSpy).toHaveBeenCalled();
             });
 
             describe('top button', () => {
@@ -254,7 +245,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             width: 180
                         }
@@ -290,7 +281,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             width: 180,
                             payload: {
@@ -329,7 +320,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             payload: {
                                 ...contentletAreaMock.payload,

@@ -31,7 +31,7 @@ import picocli.CommandLine;
  */
 public class LanguageCommand implements Callable<Integer>, DotCommand {
 
-    static final String NAME = "language";
+    public static final String NAME = "language";
     static final String ALIAS = "lang";
 
     @CommandLine.Mixin(name = "output")

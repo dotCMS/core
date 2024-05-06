@@ -126,7 +126,6 @@ import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -211,7 +210,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
+                    Map.of(relationship, list(commentsContentlet)),
                     null, user, false);
 
 
@@ -637,7 +636,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
+                    Map.of(relationship, list(commentsContentlet)),
                     null, user, false);
 
             CacheLocator.getContentletCache().remove(commentsContentlet);
@@ -726,7 +725,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
+                    Map.of(relationship, list(commentsContentlet)),
                     null, user, false);
 
             //archive parent
@@ -802,7 +801,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
+                    Map.of(relationship, list(commentsContentlet)),
                     null, user, false);
 
             //archive parent
@@ -2153,13 +2152,13 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final Contentlet contentletLanguage3DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1DefaultVariant.getIdentifier());
@@ -2212,17 +2211,17 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 contentletLanguage3Live);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang1SpecificVariant);
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang2SpecificVariant);
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang3SpecificVariant);
 
@@ -2286,13 +2285,13 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final Contentlet contentletLanguage3DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1DefaultVariant.getIdentifier());
@@ -2333,7 +2332,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         contentlet1Checkout = ContentletDataGen.checkout(newlyContentleLive);
         final Contentlet contentletWorking2 = ContentletDataGen.checkin(contentlet1Checkout);
 
-        return map("LIVE", newlyContentleLive, "WORKING", contentletWorking2);
+        return Map.of("LIVE", newlyContentleLive, "WORKING", contentletWorking2);
     }
 
     private static Contentlet createNewLangVersion(final Language language,
@@ -2445,7 +2444,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .setProperty("title", "Default Version")
                 .nextPersisted();
 
-        ContentletDataGen.createNewVersion(contentlet, variant, map("title", "Variant Version"));
+        ContentletDataGen.createNewVersion(contentlet, variant, Map.of("title", "Variant Version"));
 
         APILocator.getContentletAPI().copyContentToVariant(contentlet, variant.name(),
                 APILocator.systemUser());

@@ -25,7 +25,7 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.device.selector.title': 'Devices',
     'editpage.device.selector.media.tile': 'Social Media Tiles',
     'editpage.device.selector.search.engine': 'Search Engine Results Pages',
-    'editpage.device.selector.new.tab': 'Open in New Tab',
+    'editpage.device.selector.new.tab': 'Open Published Version',
     'editpage.device.selector.mobile.portrait': 'Mobile Portrait',
     'editpage.device.selector.mobile.landscape': 'Mobile Landscape',
     'editpage.device.selector.hd.monitor': 'HD Monitor',

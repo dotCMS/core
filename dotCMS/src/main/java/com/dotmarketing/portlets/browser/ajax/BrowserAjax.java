@@ -10,7 +10,6 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -70,8 +69,19 @@ import io.vavr.control.Try;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+
 import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.ACTIVE_FOLDER_ID;
 import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.OPEN_FOLDER_IDS;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
@@ -2076,15 +2086,17 @@ public class BrowserAjax {
 				false).getHostname();
 		final String fullPath = currentPath + ":/" + folder.getName();
 		final String absolutePath = "/" + folder.getName();
-		final Map<String, Object> folderMap = CollectionsUtils.map(
-				"type", "folder",
-				"name", folder.getName(),
-				"id", folder.getIdentifier(),
-				"inode", folder.getInode(),
-				"defaultFileType", folder.getDefaultFileType(),
-				"fullPath", fullPath,
-				"absolutePath", absolutePath,
-				"folderPath", folder.getPath());
+		final Map<String, Object> folderMap = new HashMap<>();
+
+		folderMap.put("type", "folder");
+		folderMap.put("name", folder.getName());
+		folderMap.put("id", folder.getIdentifier());
+		folderMap.put("inode", folder.getInode());
+		folderMap.put("defaultFileType", folder.getDefaultFileType());
+		folderMap.put("fullPath", fullPath);
+		folderMap.put("absolutePath", absolutePath);
+		folderMap.put("folderPath", folder.getPath());
+
 		return folderMap;
 	}
 

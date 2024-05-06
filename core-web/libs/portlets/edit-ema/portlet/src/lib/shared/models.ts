@@ -6,6 +6,7 @@ import {
     ClientContentletArea,
     Container,
     ContentletArea,
+    EmaDragItem,
     UpdatedContentlet
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
@@ -18,6 +19,7 @@ export interface VTLFile {
 export interface ClientData {
     contentlet?: ContentletPayload;
     container: ContainerPayload;
+    newContentlet?: ContentletPayload;
     vtlFiles?: VTLFile[];
 }
 
@@ -58,6 +60,7 @@ export interface ContentletPayload {
     inode: string;
     title: string;
     contentType: string;
+    baseType?: string;
     onNumberOfPages?: number;
 }
 
@@ -110,6 +113,7 @@ export interface EditEmaState {
     contentletArea: ContentletArea;
     editorData: EditorData;
     currentExperiment?: DotExperiment;
+    dragItem?: EmaDragItem;
 }
 
 export interface MessageInfo {
@@ -147,7 +151,11 @@ export interface InsertPayloadFromDelete {
 }
 
 export interface BasePayload {
-    type: 'contentlet' | 'content-type';
+    type: 'contentlet' | 'content-type' | 'temp';
+}
+
+export interface TempDragPayload extends BasePayload {
+    type: 'temp';
 }
 
 export interface ContentletDragPayload extends BasePayload {
@@ -159,7 +167,22 @@ export interface ContentletDragPayload extends BasePayload {
     move: boolean;
 }
 
-// Specific interface when type is 'content-type'
+export interface DragDataset extends BasePayload {
+    item: string;
+}
+
+export interface DragDatasetItem {
+    container?: ContainerPayload;
+    contentlet?: ContentletPayload;
+    contentType?: {
+        variable: string;
+        name: string;
+        baseType: string;
+    };
+    move: boolean;
+}
+
+// Specific  interface when type is 'content-type'
 export interface ContentTypeDragPayload extends BasePayload {
     type: 'content-type';
     item: {
@@ -168,4 +191,9 @@ export interface ContentTypeDragPayload extends BasePayload {
     };
 }
 
-export type DraggedPalettePayload = ContentletDragPayload | ContentTypeDragPayload;
+export type DraggedPayload = ContentletDragPayload | ContentTypeDragPayload | TempDragPayload;
+
+export interface SaveInlineEditing {
+    contentlet: { [fieldName: string]: string; inode: string };
+    params: DotPageApiParams;
+}

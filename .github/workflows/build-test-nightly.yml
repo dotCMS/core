@@ -72,7 +72,7 @@ jobs:
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
   finalize:
     name: Finalize
     if: always()
