@@ -1155,6 +1155,9 @@ public class HostAssetsJobImpl extends ParentProxy{
 						related = new ContentletRelationships(
 								destinationContent).new ContentletRelationshipRecords(r, true);
 					} else {
+						if (!copiedRelationships.containsKey(r.getInode())) {
+							continue;
+						}
 						final Relationship copiedRelationship = copiedRelationships.get(r.getInode()).destinationRelationship;
 						related = new ContentletRelationships(destinationContent).new ContentletRelationshipRecords(copiedRelationship, true);
 					}
