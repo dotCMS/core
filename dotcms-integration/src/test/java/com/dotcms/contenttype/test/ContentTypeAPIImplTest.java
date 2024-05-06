@@ -2867,8 +2867,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			// ╔══════════════╗
 			// ║  Assertions  ║
 			// ╚══════════════╝
-			assertNotEquals("Both Content Types MUST belong to different Sites",
-					sourceContentType.siteName(), copiedContentType.siteName());
+			assertEquals("Source Content Types MUST belong to System Host", "systemHost", sourceContentType.siteName());
+			assertEquals("Copied Content Types MUST belong to the second test Site", siteTwoName, copiedContentType.siteName());
 			assertEquals("The copied Content Type MUST have a different Velocity Variable Name",
 					newVariableName, copiedContentType.variable());
 			final Map<String, Field> copiedTypeFieldMap = copiedContentType.fieldMap();
