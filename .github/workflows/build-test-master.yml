@@ -2,13 +2,13 @@ name: Master Checks
 on:
   push:
     branches:
-      - master
+      - release-* # release branches
   workflow_dispatch:
     inputs:
       reuse-previous-build:
         description: 'Indicates if the workflow should reuse the previous build'
         type: boolean
-        default: true
+        default: false
       build-on-missing-artifacts:
         type: boolean
         description: 'Indicates if the workflow should build on missing artifacts'
@@ -16,7 +16,7 @@ on:
       run-all-tests:
         description: 'Run all tests'
         type: boolean
-        default: false
+        default: true
 jobs:
   initialize:
     name: Initialize
@@ -45,16 +45,16 @@ jobs:
     permissions:
       contents: read
       packages: write
-  sonar:
-    name: PR SonarQube
-    needs: [ initialize,test ]
-    if: always() && !failure() && !cancelled()
-    uses: ./.github/workflows/reusable-sonarqube.yml
-    with:
-      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+#  sonar:
+#    name: PR SonarQube
+#    needs: [ initialize,test ]
+#    if: always() && !failure() && !cancelled()
+#    uses: ./.github/workflows/reusable-sonarqube.yml
+#    with:
+#      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+#    secrets:
+#      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
     #
     # Run CLI build artifacts
     #
@@ -67,33 +67,33 @@ jobs:
       buildNativeImage: true
       branch: ${{ github.ref }}
 
-  deployment:
-    needs: [ initialize,build-cli,sonar,test ]
-    if: always() && !failure() && !cancelled()
-    uses: ./.github/workflows/reusable-deployment.yml
-    with:
-      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-      environment: trunk
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
-      DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+#  deployment:
+#    needs: [ initialize,build-cli,sonar,test ]
+#    if: always() && !failure() && !cancelled()
+#    uses: ./.github/workflows/reusable-deployment.yml
+#    with:
+#      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+#      environment: trunk
+#    secrets:
+#      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+#      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+#      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+#      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+#      DEVELOPERS_SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
 
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, sonar, deployment]
+    needs: [ initialize, build, build-cli, test]
     uses: ./.github/workflows/reusable-finalize.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       needsData: ${{ toJson(needs) }}
-  report:
-    name: Report
-    if: always()
-    needs: [ finalize ]
-    uses: ./.github/workflows/build-report.yml
-    secrets:
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+#  report:
+#    name: Report
+#    if: always()
+#    needs: [ finalize ]
+#    uses: ./.github/workflows/build-report.yml
+#    secrets:
+#      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
