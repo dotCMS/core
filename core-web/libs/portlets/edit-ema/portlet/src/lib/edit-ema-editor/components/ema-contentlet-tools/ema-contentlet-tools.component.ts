@@ -26,6 +26,9 @@ const BUTTON_WIDTH = 40;
 const BUTTON_HEIGHT = 40;
 const ACTIONS_CONTAINER_HEIGHT = 40;
 
+const ACTIONS_CONTAINER_WIDTH_WITH_VTL = 178;
+const ACTIONS_CONTAINER_WIDTH = 128;
+
 @Component({
     selector: 'dot-ema-contentlet-tools',
     standalone: true,
@@ -95,7 +98,9 @@ export class EmaContentletToolsComponent implements OnChanges {
         this.hideMenus(); // We need to hide the menu if the contentlet changes
         this.setVtlFiles(); // Set the VTL files for the component
 
-        this.ACTIONS_CONTAINER_WIDTH = this.contentletArea.payload.vtlFiles ? 178 : 128; // Set the width of the actions container
+        this.ACTIONS_CONTAINER_WIDTH = this.contentletArea.payload.vtlFiles
+            ? ACTIONS_CONTAINER_WIDTH_WITH_VTL
+            : ACTIONS_CONTAINER_WIDTH; // Set the width of the actions container
 
         // If the contentlet changed, we need to update the styles
         this.styles = {
