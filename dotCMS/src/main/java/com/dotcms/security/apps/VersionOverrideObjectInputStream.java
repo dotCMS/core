@@ -49,7 +49,7 @@ public class VersionOverrideObjectInputStream extends ObjectInputStream {
                         localSUID, streamSUID);
                 final Exception e = new InvalidClassException(overrideMessage);
                 // Report the error and override the class descriptor
-                Logger.warn(this,"Version mismatch on serialized objects, Will still attempting deserialization .", e);
+                Logger.debug(this,"Version mismatch on serialized objects, Will still attempting deserialization .", e);
                 resultClassDescriptor = localClassDescriptor; // Use local class descriptor for deserialization
             }
         }
