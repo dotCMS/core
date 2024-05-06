@@ -2878,7 +2878,7 @@ describe('EditEmaEditorComponent', () => {
                             '[data-dot-object="contentlet"]:empty'
                         );
                         expect(document.body.innerHTML).toContain(
-                            '[data-dot-object="contentlet"]:not(:empty)'
+                            '[data-dot-object="contentlet"].empty-contentlet'
                         );
                     });
 
@@ -2897,7 +2897,7 @@ describe('EditEmaEditorComponent', () => {
                             '[data-dot-object="contentlet"]:empty'
                         );
                         expect(document.body.innerHTML).toContain(
-                            '[data-dot-object="contentlet"]:not(:empty)'
+                            '[data-dot-object="contentlet"].empty-contentlet'
                         );
                     });
 
