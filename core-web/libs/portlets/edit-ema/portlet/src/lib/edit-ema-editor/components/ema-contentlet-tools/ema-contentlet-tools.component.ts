@@ -27,7 +27,7 @@ const BUTTON_HEIGHT = 40;
 const ACTIONS_CONTAINER_HEIGHT = 40;
 
 const ACTIONS_CONTAINER_WIDTH_WITH_VTL = 178;
-const ACTIONS_CONTAINER_WIDTH = 128;
+const INITIAL_ACTIONS_CONTAINER_WIDTH = 128;
 
 @Component({
     selector: 'dot-ema-contentlet-tools',
@@ -86,7 +86,7 @@ export class EmaContentletToolsComponent implements OnChanges {
 
     vtlFiles: MenuItem[] = [];
 
-    ACTIONS_CONTAINER_WIDTH = 128; // Now is dynamic based on the page type (Headless - VTL)
+    ACTIONS_CONTAINER_WIDTH = INITIAL_ACTIONS_CONTAINER_WIDTH; // Now is dynamic based on the page type (Headless - VTL)
 
     protected styles: Record<string, { [klass: string]: unknown }> = {};
 
@@ -100,7 +100,7 @@ export class EmaContentletToolsComponent implements OnChanges {
 
         this.ACTIONS_CONTAINER_WIDTH = this.contentletArea.payload.vtlFiles
             ? ACTIONS_CONTAINER_WIDTH_WITH_VTL
-            : ACTIONS_CONTAINER_WIDTH; // Set the width of the actions container
+            : INITIAL_ACTIONS_CONTAINER_WIDTH; // Set the width of the actions container
 
         // If the contentlet changed, we need to update the styles
         this.styles = {
