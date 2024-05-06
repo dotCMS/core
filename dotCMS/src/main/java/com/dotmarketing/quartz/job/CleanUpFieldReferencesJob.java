@@ -109,14 +109,23 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
 
     public static void triggerCleanUpJob(final Field field, final User user) {
 
-        final Map<String, Serializable> nextExecutionData = ImmutableMap
+        final Map<String, Serializable> nextExecutionData = Map
                 .of("field", field,
                         "deletionDate", Calendar.getInstance().getTime(),
                         "user", user);
 
-        HibernateUtil.addCommitListenerNoThrow(Sneaky.sneaked(() -> {
-                    enqueueTrigger(nextExecutionData, CleanUpFieldReferencesJob.class);
-                }
-        ));
+        HibernateUtil.addCommitListenerNoThrow(
+                () -> {
+                    try {
+                        enqueueTrigger(nextExecutionData, CleanUpFieldReferencesJob.class);
+                    } catch (final Exception e) {
+                        // Do not fail the transaction if the job can't be enqueued
+                        Logger.error(
+                                CleanUpFieldReferencesJob.class,
+                                "Error enqueuing CleanUpFieldReferencesJob for field "
+                                        + field.variable(),
+                                e);
+                    }
+                });
     }
 }

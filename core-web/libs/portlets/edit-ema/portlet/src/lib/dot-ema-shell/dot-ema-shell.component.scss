@@ -5,6 +5,7 @@
     grid-template-columns: 1fr auto;
     grid-template-rows: 100%;
     height: 100%;
+    background-color: $white;
 
     router-outlet {
         display: none;
