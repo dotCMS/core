@@ -741,15 +741,15 @@ public class HostAssetsJobImpl extends ParentProxy{
 	/**
 	 * Creates a Relationship Field in a given Content Type with a list of specific parameters, and
 	 * keeps track of the generated Relationship record. This method is very useful when Content
-	 * Types are being copied over to the new Site.
+	 * Types are being copied over to the new Site and Relationships are present.
 	 * <p>Relationship Fields must be carefully handled as the Relationship they generate must
 	 * reflect the new IDs and Velocity Variable Names from the copied Content Types while keeping
-	 * the exact same structure as the original one. Keep in mind that the API will created both
-	 * the Relationship Field, and the Relationship record. Also, the new Relationship must be
-	 * added to the Relationship tracking map.</p>
+	 * the exact same structure as the original one. Keep in mind that the API will create both the
+	 * Relationship Field and the Relationship record. It's very important that the new
+	 * Relationship be added to the Relationship tracking map.</p>
 	 *
-	 * @param contentTypeId       The ID of the Content Type that the new Relationship Field
-	 *                            will be added to.
+	 * @param contentTypeId       The ID of the Content Type where the new Relationship Field
+	 *                            will be added.
 	 * @param relationTypeValue   The Velocity Variable Name of the Content Type that the
 	 *                            Relationship Field will point to, or the existing Relation Type
 	 *                            Value in case the Relationship already exists.
@@ -759,8 +759,9 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 *                            copied Relationships.
 	 * @param copiedRelationships The map containing the copied Relationships from the source Site.
 	 *
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The current User does not have the permissions to perform this
+	 *                              action.
 	 */
 	private void createRelationshipField(final String contentTypeId,
 										 final String relationTypeValue,
@@ -779,15 +780,15 @@ public class HostAssetsJobImpl extends ParentProxy{
 	}
 
 	/**
-	 * Depending on the order in which Content Types are copied, there might be a situation in
-	 * which child Relationships are retrieved before their parent Relationship. This method takes
-	 * all the child Relationships that could not be processed yet, and copies them to the new
-	 * Content Type, either associating them to an existing Relationship, or creating a new one
-	 * altogether.
+	 * Depending on the order in which Content Types are copied, there might be a situation where
+	 * a child Relationship is retrieved before its parent Relationship has been saved. This method
+	 * takes all the child Relationships that could not be processed yet, and copies them to the new
+	 * Content Type. If their parent Relationship was added, then it will be associated to the
+	 * existing Relationship; if there's no parent Relationship, a new one will be created.
 	 *
-	 * @param sourceRelationship      The source child {@link Relationship} used to retrieve
-	 *                                information from copied Content Types. Also, it will be added
-	 *                                to the map of copied Relationships.
+	 * @param sourceRelationship      The source child {@link Relationship} used to retrieve useful
+	 *                                information from the source data. Also, it will be added to
+	 *                                the map of copied Relationships.
 	 * @param sourceContentType       The source {@link ContentType} that contains the child
 	 *                                Relationship.
 	 * @param sourceRelationshipField The source {@link RelationshipField} that represents the
@@ -797,8 +798,9 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * @param copiedContentTypes      The map containing the copied Content Types from the source
 	 *                                Site.
 	 *
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The current User does not have the permissions to perform this
+	 *                              action.
 	 */
 	private void copyChildRelationship(final Relationship sourceRelationship,
 									   final ContentType sourceContentType,
@@ -1102,19 +1104,23 @@ public class HostAssetsJobImpl extends ParentProxy{
 
 	/**
 	 * Copies the Relationship data of Contentlets that have child relationships based on the newly
-	 * assigned Identifiers after they have been copied to the new Site.
+	 * assigned Identifiers after they have been copied to the new Site; i.e., parent Contentlets.
 	 * <p>If no Content Types are being copied to the new Site, the relationship data update will
 	 * only include adding the new related Contentlet copies that now live in the new Site. But, if
-	 * Content Types ARE being copied, the Content Type IDs in the relationship data must reflect
-	 * both the new related Contentlet copies, AND the new Content Type IDs.</p>
+	 * Content Types ARE being copied, the copied Relationships must be taken into account to save
+	 * the copied Contentlets to the new Relationship records as they reflect the new IDs for the
+	 * copied Content Types as well.</p>
 	 *
 	 * @param contentsToCopyDependencies The list of {@link Contentlet} objects that are the
 	 *                                   parents of a given relationship.
-	 * @param contentMappingsBySourceId  A {@link Map} containing the association between the
+	 * @param contentMappingsBySourceId  The {@link Map} containing the association between the
 	 *                                   contentlet's Identifier from the source site and the
 	 *                                   contentlet's Identifier from the destination site. This
 	 *                                   map keeps both the source and the destination
 	 *                                   {@link Contentlet} objects.
+	 * @param copiedRelationships        The {@link Map} containing the copied Relationships from
+	 *                                   the source Site. This way, the copied Contentlets will
+	 *                                   be saved just like the original ones.
 	 * @param copyOptions                The {@link HostCopyOptions} object containing what objects
 	 *                                   from the source Site must be copied to the destination
 	 *                                   Site.
@@ -1169,15 +1175,19 @@ public class HostAssetsJobImpl extends ParentProxy{
     }
 
 	/**
-	 * Verifies if the specified {@link Contentlet} object has one or more valid related contentlets.
+	 * Verifies if the specified {@link Contentlet} object has one or more valid related
+	 * contentlets. That is, whether the Contentlet is the parent of the relationship or not. Keep
+	 * in mind that, in the case of self-related Content Types, the parent and child point to each
+	 * other, so the Tree data must be accessed and read accordingly.
 	 *
 	 * @param contentlet The Contentlet whose relationships will be verified.
 	 *
-	 * @return If the Contentlet is the parent of one or more Contentlets, returns {@code true}. Otherwise, returns
-	 * {@code false}.
+	 * @return If the Contentlet is the parent of one or more Contentlets, returns {@code true}.
+	 * Otherwise, returns {@code false}.
 	 *
 	 * @throws DotDataException     An error occurred when accessing the data source.
-	 * @throws DotSecurityException The specified user does not have the required permissions to perform this action.
+	 * @throws DotSecurityException The specified user does not have the required permissions to
+	 *                              perform this action.
 	 */
 	private boolean doesRelatedContentExists(final Contentlet contentlet) throws DotDataException, DotSecurityException{
         if(contentlet == null) {
@@ -1225,13 +1235,21 @@ public class HostAssetsJobImpl extends ParentProxy{
     }
 
 	/**
-	 *
+	 * This mapping class stores the relationship between source Content Types, and copied Content
+	 * Types. This is very useful when Content Types are copied.
 	 */
 	private static class ContentTypeMapping {
 
 		ContentType sourceContentType;
 		ContentType destinationContentType;
 
+		/**
+		 * Default class constructor.
+		 *
+		 * @param sourceContentType      The {@link ContentType} from the source/original Site.
+		 * @param destinationContentType The {@link ContentType} from the new Site that is taking
+		 *                               the copied data.
+		 */
 		public ContentTypeMapping(final ContentType sourceContentType,
 								  final ContentType destinationContentType) {
 			this.sourceContentType = sourceContentType;
@@ -1241,7 +1259,9 @@ public class HostAssetsJobImpl extends ParentProxy{
     }
 
 	/**
-	 * Stores the relationship between the source Relationship Field and its copied data.
+	 * This mapping class stores the relationship between source Relationships and copied
+	 * Relationships. This is very useful when Content Types are copied as it helps re-create the
+	 * appropriate data Relationship structures in the copied Content Types.
 	 */
 	private static class RelationshipMapping {
 
@@ -1250,17 +1270,44 @@ public class HostAssetsJobImpl extends ParentProxy{
 		final Relationship sourceRelationship;
 		final Relationship destinationRelationship;
 
+		/**
+		 * Creates a Relationship Mapping for a copied Content Type.
+		 *
+		 * @param sourceRelationship      The {@link Relationship} record from the source/original
+		 *                                Site.
+		 * @param destinationRelationship The {@link Relationship} record for the new Site that is
+		 *                                taking the copied data.
+		 */
 		public RelationshipMapping(final Relationship sourceRelationship,
 								   final Relationship destinationRelationship) {
 			this(sourceRelationship, destinationRelationship, null, null);
 		}
 
+		/**
+		 * Creates a Relationship Mapping for a copied Content Type.
+		 *
+		 * @param sourceRelationship The {@link Relationship} record from the source/original Site.
+		 * @param sourceContentType  The {@link ContentType} from the source/original Site.
+		 * @param sourceField        The {@link RelationshipField} from the source/original Content
+		 *                           Type.
+		 */
 		public RelationshipMapping(final Relationship sourceRelationship,
 								   final ContentType sourceContentType,
 								   final RelationshipField sourceField) {
 			this(sourceRelationship, null, sourceContentType, sourceField);
 		}
 
+		/**
+		 * Creates a Relationship Mapping for a copied Content Type.
+		 *
+		 * @param sourceRelationship      The {@link Relationship} record from the source/original
+		 *                                Site.
+		 * @param destinationRelationship The {@link Relationship} record for the new Site that is
+		 *                                taking the copied data.
+		 * @param sourceContentType       The {@link ContentType} from the source/original Site.
+		 * @param sourceField             The {@link RelationshipField} from the source/original
+		 *                                Content Type.
+		 */
 		public RelationshipMapping(final Relationship sourceRelationship,
 								   final Relationship destinationRelationship,
 								   final ContentType sourceContentType,

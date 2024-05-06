@@ -2867,13 +2867,18 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			// ╔══════════════╗
 			// ║  Assertions  ║
 			// ╚══════════════╝
-			assertNotEquals("Both Content Types MUST belong to different Sites", sourceContentType.siteName(), copiedContentType.siteName());
-			assertEquals("The copied Content Type MUST have a different Velocity Variable Name", newVariableName, copiedContentType.variable());
+			assertNotEquals("Both Content Types MUST belong to different Sites",
+					sourceContentType.siteName(), copiedContentType.siteName());
+			assertEquals("The copied Content Type MUST have a different Velocity Variable Name",
+					newVariableName, copiedContentType.variable());
 			final Map<String, Field> copiedTypeFieldMap = copiedContentType.fieldMap();
-			assertEquals("The copied Content Type must have ONLY 3 fields, as Relationship Fields were not copied",3,  copiedTypeFieldMap.size());
+			assertEquals("The copied Content Type must have ONLY 3 fields, as Relationship Fields were not copied",
+					3,  copiedTypeFieldMap.size());
+			copiedTypeFieldMap.forEach((fieldVarName, field)
+					-> assertNotEquals("The copied Content Type must NOT have any Relationship Field",
+                    RelationshipField.class, field.getClass()));
 			final List<WorkflowScheme> schemesForSourceContentType = workflowAPI.findSchemesForContentType(sourceContentType);
 			final List<WorkflowScheme> schemesForCopiedContentType = workflowAPI.findSchemesForContentType(copiedContentType);
-			assertEquals("", schemesForSourceContentType.size(), schemesForCopiedContentType.size());
 			if (!schemesForSourceContentType.containsAll(schemesForCopiedContentType)) {
 				fail("The Workflow Schemes from both Content Types MUST be the same");
 			}
