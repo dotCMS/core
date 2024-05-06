@@ -90,6 +90,7 @@ import {
     ReorderPayload
 } from '../shared/models';
 import {
+    SDK_EDITOR_SCRIPT_SOURCE,
     areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
@@ -539,7 +540,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
+        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
         const bodyExists = rendered.includes('</body>');
 
         /*

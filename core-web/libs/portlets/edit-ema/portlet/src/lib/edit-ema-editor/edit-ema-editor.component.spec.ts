@@ -98,6 +98,7 @@ import {
 } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
+import { SDK_EDITOR_SCRIPT_SOURCE } from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -2848,7 +2849,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('script and styles injection', () => {
-                    let document: Document;
+                    let iframeDocument: Document;
                     let spy: jest.SpyInstance;
 
                     beforeEach(() => {
@@ -2860,24 +2861,24 @@ describe('EditEmaEditorComponent', () => {
 
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         spectator.component.iframe = IFRAME_MOCK as any;
-                        document = spectator.component.iframe.nativeElement.contentDocument;
-                        spy = jest.spyOn(document, 'write');
+                        iframeDocument = spectator.component.iframe.nativeElement.contentDocument;
+                        spy = jest.spyOn(iframeDocument, 'write');
                     });
 
                     it('should add script and styles to iframe', () => {
                         spectator.component.setIframeContent(`<head></head></body></body>`);
 
                         expect(spy).toHaveBeenCalled();
-                        expect(document.body.innerHTML).toContain(
-                            '<script src="/html/js/editor-js/sdk-editor.esm.js"></script>'
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
                         );
-                        expect(document.body.innerHTML).toContain(
+                        expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="container"]:empty'
                         );
-                        expect(document.body.innerHTML).toContain(
+                        expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"]:empty'
                         );
-                        expect(document.body.innerHTML).toContain(
+                        expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"].empty-contentlet'
                         );
                     });
@@ -2886,17 +2887,17 @@ describe('EditEmaEditorComponent', () => {
                         spectator.component.setIframeContent(`<div>Advanced Template</div>`);
 
                         expect(spy).toHaveBeenCalled();
-                        expect(document.body.innerHTML).toContain(
-                            '<script src="/html/js/editor-js/sdk-editor.esm.js"></script>'
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
                         );
 
-                        expect(document.body.innerHTML).toContain(
+                        expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="container"]:empty'
                         );
-                        expect(document.body.innerHTML).toContain(
+                        expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"]:empty'
                         );
-                        expect(document.body.innerHTML).toContain(
+                        expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"].empty-contentlet'
                         );
                     });
