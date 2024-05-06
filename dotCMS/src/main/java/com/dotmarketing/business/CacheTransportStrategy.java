@@ -3,7 +3,7 @@ package com.dotmarketing.business;
 import com.dotcms.cache.transport.PubSubCacheTransport;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.cache.transport.CacheTransport;
-import com.dotmarketing.business.jgroups.NullTransport;
+import com.dotmarketing.business.cache.transport.NullTransport;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;

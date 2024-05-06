@@ -79,6 +79,8 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
         config.setPassword(dockerSecretsMap.get(DataSourceStrategyProvider.CONNECTION_DB_PASSWORD));
         config.setMaximumPoolSize(Integer.parseInt(
                 dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_MAX_TOTAL, "60")));
+        config.setConnectionTimeout(Integer.parseInt(
+                dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_CONNECTION_TIMEOUT, "5000")));
         config.setIdleTimeout(
                 Integer.parseInt(dockerSecretsMap.getOrDefault(
                         DataSourceStrategyProvider.CONNECTION_DB_MIN_IDLE, "10"))

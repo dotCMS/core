@@ -1,25 +1,31 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
 import { DotDeviceSelectorModule } from '@components/dot-device-selector/dot-device-selector.module';
-import { DotLanguageSelectorModule } from '@components/dot-language-selector/dot-language-selector.module';
+import { DotIframeDialogModule } from '@components/dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
 import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-persona.selector.module';
 import {
     DotAlertConfirmService,
     DotLicenseService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
+    CustomIframeDialogEvent,
     DotDevice,
     DotLanguage,
     DotPageMode,
@@ -27,10 +33,7 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller-seo',
@@ -43,25 +46,51 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
         FormsModule,
         TooltipModule,
         DotPersonaSelectorModule,
-        DotLanguageSelectorModule,
+        DotLanguageSelectorComponent,
         DotDeviceSelectorModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotIconModule,
-        CheckboxModule
-    ]
+        CheckboxModule,
+        ConfirmDialogModule,
+        DotIframeDialogModule,
+        DotMessagePipe
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     isEnterpriseLicense$: Observable<boolean>;
+    showEditJSPDialog = signal(false);
+    urlEditPageIframeDialog = signal('');
+
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
+    private confirmationService = inject(ConfirmationService);
+
+    private readonly customEventsHandler;
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotLicenseService: DotLicenseService,
-        public dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService
-    ) {}
+        private dotPageStateService: DotPageStateService,
+        private dotPersonalizeService: DotPersonalizeService,
+        private router: Router
+    ) {
+        this.customEventsHandler = {
+            close: ({ detail: { data } }: CustomEvent) => {
+                this.showEditJSPDialog.set(false);
+                const queryparams = {
+                    url: data.redirectUrl,
+                    language_id: data.languageId
+                };
+
+                this.router.navigate(['/edit-page/content'], {
+                    queryParams: { ...queryparams },
+                    queryParamsHandling: 'merge'
+                });
+            }
+        };
+    }
 
     ngOnInit(): void {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
@@ -70,8 +99,8 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     /**
      * Handle the changes in Persona Selector.
      *
-     * @param DotPersona persona
      * @memberof DotEditPageViewAsControllerComponent
+     * @param persona
      */
     changePersonaHandler(persona: DotPersona): void {
         this.dotPageStateService.setPersona(persona);
@@ -80,18 +109,22 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     /**
      * Handle changes in Language Selector.
      *
-     * @param DotLanguage language
      * @memberof DotEditPageViewAsControllerComponent
+     * @param language
      */
-    changeLanguageHandler({ id }: DotLanguage): void {
-        this.dotPageStateService.setLanguage(id);
+    changeLanguageHandler(language: DotLanguage): void {
+        if (language.translated) {
+            this.dotPageStateService.setLanguage(language.id);
+        } else {
+            this.askForCreateNewTranslation(language);
+        }
     }
 
     /**
      * Handle changes in Device Selector.
      *
-     * @param DotDevice device
      * @memberof DotEditPageViewAsControllerComponent
+     * @param device
      */
     changeDeviceHandler(device: DotDevice): void {
         this.dotPageStateService.setDevice(device);
@@ -124,5 +157,94 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
                     });
             }
         });
+    }
+
+    /**
+     * Removes the edit JSP dialog.
+     * Close when press the close button in the iframe
+     *
+     * @return {void}
+     */
+    removeEditJSPDialog(): void {
+        this.showEditJSPDialog.set(false);
+        this.router.navigate(['/edit-page/content'], { queryParamsHandling: 'preserve' });
+    }
+
+    /**
+     * Handle the different custom event sent by the iframe.
+     *
+     * @param {CustomIframeDialogEvent} $event - The custom iframe dialog event.
+     */
+    customIframeDialog($event: CustomIframeDialogEvent) {
+        if (this.customEventsHandler[$event.detail.name]) {
+            this.customEventsHandler[$event.detail.name]($event);
+        }
+    }
+
+    /**
+     * Asks the user for confirmation to create a new translation for a given language.
+     *
+     * @param {DotLanguage} language - The language to create a new translation for.
+     * @private
+     *
+     * @return {void}
+     */
+
+    private askForCreateNewTranslation(language: DotLanguage): void {
+        this.confirmationService.confirm({
+            key: 'lang-confirm-dialog',
+            header: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
+            ),
+            message: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            accept: () => {
+                this.urlEditPageIframeDialog.set(this.getUrlEditPageJSP(language.id));
+                // TODO: Handle the new editor
+                this.showEditJSPDialog.set(true);
+            },
+            reject: () => {
+                this.router.navigate(['/edit-page/content'], {
+                    queryParamsHandling: 'preserve'
+                });
+            }
+        });
+    }
+
+    /**
+     * Returns the URL of the edit page in JSP format with the specified new language.
+     *
+     * @param {number} newLanguage - The new language to use.
+     * @returns {string} The URL of the edit page.
+     * @private
+     */
+    private getUrlEditPageJSP(newLanguage: number): string {
+        const isLive = this.pageState.page.live;
+        const pageLiveInode = this.pageState.page.liveInode;
+        const iNode = this.pageState.page.inode;
+        const stInode = this.pageState.page.stInode;
+
+        const queryStringParts = [
+            'p_p_id=content',
+            'p_p_action=1',
+            'p_p_state=maximized',
+            'angularCurrentPortlet=pages',
+            `_content_sibbling=${isLive ? pageLiveInode : iNode}`,
+            '_content_cmd=edit',
+            `_content_sibblingStructure=${isLive ? pageLiveInode : stInode}`,
+            '_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet',
+            'inode=',
+            `lang=${newLanguage}`,
+            'populateaccept=true',
+            'reuseLastLang=true'
+        ];
+
+        const queryString = queryStringParts.join('&');
+
+        return `/c/portal/layout?${queryString}`;
     }
 }

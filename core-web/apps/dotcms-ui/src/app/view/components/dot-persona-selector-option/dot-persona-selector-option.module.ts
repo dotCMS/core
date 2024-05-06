@@ -6,9 +6,7 @@ import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 
-import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotAvatarDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 
@@ -20,7 +18,7 @@ import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option
         AvatarModule,
         BadgeModule,
         ButtonModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     declarations: [DotPersonaSelectorOptionComponent],

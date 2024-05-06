@@ -1,118 +1,100 @@
-import { Subject } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
-import {
-    AfterViewInit,
-    ChangeDetectionStrategy,
-    Component,
-    OnDestroy,
-    OnInit,
-    ViewChild
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { catchError, map, shareReplay, tap } from 'rxjs/operators';
 
-import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
+import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
 
-import { StyleClassModel } from '../../models/models';
+import { JsonClassesService } from './services/json-classes.service';
 
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, NgIf, AsyncPipe],
+    imports: [
+        AutoCompleteModule,
+        FormsModule,
+        ButtonModule,
+        DotMessagePipe,
+        NgIf,
+        AsyncPipe,
+        DotSelectItemDirective
+    ],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
+    providers: [JsonClassesService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, OnDestroy {
-    public vm$ = this.store.vm$;
-    @ViewChild(AutoComplete)
-    autoComplete: AutoComplete;
-    private autoCompleteInput: HTMLInputElement;
-    private destroy$: Subject<void> = new Subject<void>();
+export class AddStyleClassesDialogComponent implements OnInit {
+    @ViewChild(AutoComplete) autoComplete: AutoComplete;
+    filteredSuggestions = null;
+    selectedClasses: string[] = [];
+
+    isJsonClasses$: Observable<boolean>;
+    classes: string[];
 
     constructor(
-        private ref: DynamicDialogRef,
-        private store: DotAddStyleClassesDialogStore,
+        private jsonClassesService: JsonClassesService,
         public dynamicDialogConfig: DynamicDialogConfig<{
             selectedClasses: string[];
-        }>
+        }>,
+        private ref: DynamicDialogRef
     ) {}
 
     ngOnInit() {
         const { selectedClasses } = this.dynamicDialogConfig.data;
+        this.selectedClasses = selectedClasses;
 
-        this.store.init({ selectedClasses });
+        this.isJsonClasses$ = this.jsonClassesService.getClasses().pipe(
+            tap(({ classes }) => {
+                if (classes?.length) {
+                    this.classes = classes;
+                } else {
+                    this.classes = [];
+                }
+            }),
+            map(({ classes }) => {
+                return !!classes?.length;
+            }),
+            catchError(() => {
+                this.classes = [];
 
-        this.store.fetchStyleClasses();
-    }
-
-    ngAfterViewInit() {
-        this.autoCompleteInput = document.getElementById('auto-complete-input') as HTMLInputElement;
-    }
-
-    ngOnDestroy() {
-        this.destroy$.next();
-        this.destroy$.complete();
+                return of(false);
+            }),
+            shareReplay(1)
+        );
     }
 
     /**
-     * @description Filter the classes based on the query
+     * Filter the suggestions based on the query
      *
      * @param {{ query: string }} { query }
+     * @return {*}
      * @memberof AddStyleClassesDialogComponent
      */
-    filterClasses({ query }: { query: string }) {
-        this.store.filterClasses(query);
+    filterClasses({ query }: { query: string }): void {
+        /*
+            https://github.com/primefaces/primeng/blob/master/src/app/components/autocomplete/autocomplete.ts#L739
 
-        // To reset the input when the user types a comma or space
-        if (query.includes(',') || query.includes(' ')) {
-            this.autoCompleteInput.value = '';
-        }
+            Sadly we need to pass suggestions all the time, even if they are empty because on the set is where the primeng remove the loading icon
+        */
+
+        // PrimeNG autocomplete doesn't support async pipe in the suggestions
+        this.filteredSuggestions = this.classes.filter((item) => item.includes(query));
     }
 
     /**
-     * @description Closes the dialog and returns the selected classes
+     * Save the selected classes
      *
      * @memberof AddStyleClassesDialogComponent
      */
-    saveClass(selectedClasses: StyleClassModel[]): void {
-        this.ref.close(selectedClasses.map((styleClass) => styleClass.cssClass));
-    }
-
-    /**
-     * @description Selects a class and adds it to the selected classes
-     *
-     * @param {StyleClassModel} newClass
-     * @memberof AddStyleClassesDialogComponent
-     */
-    onSelect(newClass: StyleClassModel): void {
-        this.store.addClass(newClass);
-    }
-
-    /**
-     * @description Removes the last class from the selected classes
-     *
-     * @memberof AddStyleClassesDialogComponent
-     */
-    onUnselect(): void {
-        this.store.removeLastClass();
-    }
-
-    /**
-     * @description Used to listen for enter presses
-     *
-     * @param {KeyboardEvent} event
-     * @memberof AddStyleClassesDialogComponent
-     */
-    onKeyUp(event: KeyboardEvent): void {
-        if (event.key === 'Enter' && this.autoCompleteInput.value) {
-            this.autoComplete.selectItem({ cssClass: this.autoCompleteInput.value });
-        }
+    save() {
+        this.ref.close(this.selectedClasses);
     }
 }

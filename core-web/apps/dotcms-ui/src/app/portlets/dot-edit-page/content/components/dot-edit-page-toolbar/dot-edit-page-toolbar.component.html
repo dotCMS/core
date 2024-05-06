@@ -1,27 +1,26 @@
 <dot-secondary-toolbar>
     <!-- Header title and actions-->
-    <div class="main-toolbar-left flex align-items-center">
+    <div class="main-toolbar-left flex align-items-center gap-2">
         <ng-container *ngIf="variant; else defaultHeaderLeftTpl">
-            <a
-                class="flex align-items-center cursor-pointer"
+            <button
+                class="p-button-rounded p-button-text"
                 [pTooltip]="'editpage.header.back.to.experiment' | dm"
                 (click)="backToExperiment.emit(true)"
                 data-testId="goto-experiment"
-                tooltipPosition="bottom"
-            >
-                <i class="pi pi-angle-left"></i>
-            </a>
+                icon="pi pi-arrow-left"
+                pButton
+                tooltipPosition="bottom"></button>
 
             <dot-edit-page-info
                 class="dot-variant-header flex gap-3"
                 [title]="variant.variant.title"
-                [url]="variant.variant.url"
-            ></dot-edit-page-info>
+                [url]="variant.variant.url"></dot-edit-page-info>
         </ng-container>
     </div>
 
     <div class="main-toolbar-right flex align-items-center gap-3">
         <ng-container *ngIf="variant; else defaultHeaderRightTpl">
+            <dot-global-message data-testId="globalMessage" right></dot-global-message>
             <i class="pi pi-filter-fill -rotate-180"></i>
             <h2>{{ variant.experimentName }}</h2>
         </ng-container>
@@ -32,24 +31,21 @@
         <dot-edit-page-state-controller
             [pageState]="pageState"
             [variant]="variant"
-            (modeChange)="stateChange()"
-        ></dot-edit-page-state-controller>
+            (modeChange)="stateChange()"></dot-edit-page-state-controller>
 
         <p-checkbox
             class="dot-edit__what-changed-button"
             *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
             [binary]="true"
             [label]="'dot.common.whats.changed' | dm"
-            (onChange)="whatschange.emit($event.checked)"
-        ></p-checkbox>
+            (onChange)="whatschange.emit($event.checked)"></p-checkbox>
     </div>
 
     <div class="lower-toolbar-right w-5">
         <dot-edit-page-view-as-controller
             class="flex w-full gap-2"
             [pageState]="pageState"
-            [variant]="variant"
-        >
+            [variant]="variant">
         </dot-edit-page-view-as-controller>
     </div>
 </dot-secondary-toolbar>
@@ -59,8 +55,7 @@
         class="flex gap-2"
         [apiLink]="apiLink"
         [title]="pageState.page.title"
-        [url]="pageState.page.pageURI"
-    ></dot-edit-page-info>
+        [url]="pageState.page.pageURI"></dot-edit-page-info>
 
     <p-button
         class="flex gap-3"
@@ -70,8 +65,7 @@
         (click)="favoritePage.emit(true)"
         data-testId="addFavoritePageButton"
         styleClass="p-button-rounded p-button-sm p-button-text"
-        tooltipPosition="bottom"
-    ></p-button>
+        tooltipPosition="bottom"></p-button>
 </ng-template>
 
 <ng-template #defaultHeaderRightTpl>
@@ -86,15 +80,19 @@
             runningExperiment.id,
             'reports'
         ]"
-        [value]="'running' | dm | titlecase"
+        [value]="
+            ('running' | dm | titlecase) +
+            ' ' +
+            ('dot.common.until' | dm) +
+            ' ' +
+            (runningExperiment.scheduling.endDate | date : runningUntilDateFormat)
+        "
         data-testId="runningExperimentTag"
         queryParamsHandling="preserve"
-        role="button"
-    >
+        role="button">
         <i class="material-icons">science</i>
     </p-tag>
     <dot-edit-page-workflows-actions
         [page]="pageState.page"
-        (fired)="actionFired.emit($event)"
-    ></dot-edit-page-workflows-actions>
+        (fired)="actionFired.emit($event)"></dot-edit-page-workflows-actions>
 </ng-template>

@@ -1,20 +1,27 @@
 package com.dotmarketing.business;
 
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
-
+/**
+ * This class represents a Role in the system. The dotCMS permission system enables you to control
+ * user access to all dotCMS content and backend functionality through the use of both individual
+ * user permissions and Roles assigned to each user. Roles in dotCMS can be configured to be flat
+ * (where all Roles are top-level Roles that are independent from each other) or hierarchical.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Role implements Serializable,Comparable<Role> {
 
-	/**
-	 * @author Jason Tesser
-	 */
 	private static final long serialVersionUID = 4882862821671404604L;
 	
 	public static final String SYSTEM = "System";
@@ -34,10 +41,13 @@ public class Role implements Serializable,Comparable<Role> {
   public static final String CMS_OWNER_ROLE = "CMS Owner";
   public static final String CMS_ADMINISTRATOR_ROLE = "CMS Administrator";
 
+  public static final String SCRIPTING_DEVELOPER = "Scripting Developer";
+
   
   
 	public static final String DOTCMS_BACK_END_USER  = "DOTCMS_BACK_END_USER";
 	public static final String DOTCMS_FRONT_END_USER = "DOTCMS_FRONT_END_USER";
+	public static final String DBFQN_SEPARATOR = " --> ";
 
 	private String id = "";
 	private String name;
@@ -78,8 +88,8 @@ public class Role implements Serializable,Comparable<Role> {
 	public String getDescription() {
 		return description!=null?description:"";
 	}
-	public void setDescription(String descriptin) {
-		this.description = descriptin;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 	public String getRoleKey() {
 		return roleKey;
@@ -161,34 +171,33 @@ public class Role implements Serializable,Comparable<Role> {
 		this.locked = locked;
 	}
 
-	
-	// -1  means this first
-	// 1 means Role first
-	// 0 equal
-	public int compareTo(Role o) {
-		if (!(o instanceof Role))
-			return -1;
-		Role role = (Role) o;
-		if(this.getParent().equals(this.getId())){
-			return -1;
+	/**
+	 * This method is intended to sort the list of roles by the length of the {@code DB_FQN} value.
+	 * This is because Roles are hierarchical, and the parents need to be imported before the
+	 * children can be imported.
+	 *
+	 * @param role The {@link Role} object to be compared.
+	 *
+	 * @return If this object goes first, returns -1. If the Role object goes first, returns 1. If
+	 * they are equal, returns 0.
+	 */
+	@Override
+	public int compareTo(final Role role) {
+		if (!this.getId().equals(role.getId())) {
+			final List<RegExMatch> roleDBFQNElements = RegEX.find(role.getDBFQN(), DBFQN_SEPARATOR);
+			final List<RegExMatch> thisDBFQNElements = RegEX.find(this.getDBFQN(), DBFQN_SEPARATOR);
+			if (roleDBFQNElements.size() > thisDBFQNElements.size()) {
+				return -1;
+			} else if (roleDBFQNElements.size() < thisDBFQNElements.size()) {
+				return 1;
+			}
 		}
-		if(o.getId().equals(o.getParent())){
-			return 1;
-		}
-		if(RegEX.find(role.getDBFQN(), " --> ").size() > RegEX.find(this.getDBFQN(), " --> ").size()){
-			return -1;
-		}else if(RegEX.find(role.getDBFQN(), " --> ").size() < RegEX.find(this.getDBFQN(), " --> ").size()){
-			return 1;
-		}else{
-			return 0;
-		}
+		return 0;
 	}
 	
 	@Override
 	public boolean equals(final Object other) {
-
-		if (null == other || !(other instanceof Role)) {
-
+		if (!(other instanceof Role)) {
 			return false;
 		}
 
@@ -218,7 +227,6 @@ public class Role implements Serializable,Comparable<Role> {
 		return roleMap;
 	}
 
-
 	@Override
 	public String toString() {
 		return "Role{" +
@@ -236,4 +244,5 @@ public class Role implements Serializable,Comparable<Role> {
 				", system=" + system +
 				'}';
 	}
+
 }

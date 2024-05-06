@@ -17,16 +17,19 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotAlertConfirmService, DotMessageService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotRouterService,
+    PaginatorService
+} from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     MockDotMessageService,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
@@ -120,7 +123,7 @@ describe('DotAppsConfigurationComponent', () => {
                 DotAppsImportExportDialogModule,
                 DotAppsConfigurationListModule,
                 HttpClientTestingModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 MarkdownModule.forRoot()
             ],

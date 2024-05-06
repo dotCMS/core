@@ -103,6 +103,10 @@ public class OSGIHandler implements IHandler {
         //Get the felix folder on this server
         final String felixLoadFolderPath = OSGIUtil.getInstance().getFelixDeployPath();
         final File felixLoadFileFolder = new File( felixLoadFolderPath );
+
+        final String felixUploadFolderPath = OSGIUtil.getInstance().getFelixUploadPath();
+
+
         final String bundlerOSGIFolderPath = bundleFolder.getPath() + File.separator + OSGIBundler.FOLDER_BUNDLES;
 
         //Verify if on this bundler we shipped some bundles
@@ -138,10 +142,10 @@ public class OSGIHandler implements IHandler {
                                 felixLoadFolderPath + File.separator + bundleJarName, config.getId());
                     }
                 } else {
-                    //On Publish lets COPY the jar we received into the felix load folder
+                    //On Publish lets COPY the jar we received into the felix upload folder
                     final File jarFile = new File( bundlerOSGIFolderPath + File.separator + bundleJarName );
                     if ( jarFile.exists() ) {
-                        FileUtils.copyFileToDirectory( jarFile, felixLoadFileFolder, false );
+                        FileUtils.copyFileToDirectory( jarFile, new File(felixUploadFolderPath), false );
                         PushPublishLogger.log(getClass(), PushPublishHandler.OSGI, PushPublishAction.PUBLISH,
                                 felixLoadFolderPath + File.separator + bundleJarName, config.getId());
                     }

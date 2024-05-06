@@ -5,9 +5,8 @@ import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angul
 
 import { map } from 'rxjs/operators';
 
+import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-
-import { DotRouterService } from '../dot-router/dot-router.service';
 
 /**
  * Route Guard that handle the public pages, where the User don't need to be logged in.

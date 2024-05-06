@@ -158,9 +158,13 @@ public class BundleAPIImpl implements BundleAPI {
 	public void deleteBundleAndDependencies(final String bundleId, final User user) throws DotDataException {
 
 		try {
-			final PublishAuditStatus bundle = this.publishAuditAPI.getPublishAuditStatus(bundleId);
-			if (null != bundle) {
-
+			final PublishAuditStatus publishAuditStatus =
+					this.publishAuditAPI.getPublishAuditStatus(bundleId);
+			Bundle bundle = null;
+			if (!UtilMethods.isSet(publishAuditStatus)) {
+				bundle = this.getBundleById(bundleId);
+			}
+			if (UtilMethods.isSet(publishAuditStatus) || UtilMethods.isSet(bundle)) {
 				this.internalDeleteBundleAndDependencies(bundleId, user);
 			} else {
 				Logger.error(this, "The bundle id: " + bundleId + " does not exists");

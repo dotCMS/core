@@ -21,7 +21,7 @@ export interface DotExperiment {
     trafficAllocation: number;
     scheduling: RangeOfDateAndTime | null;
     creationDate: Date;
-    modDate: Date;
+    modDate: number;
     goals: Goals | null;
 }
 
@@ -75,6 +75,7 @@ export interface DotResultUniqueBySession {
 export interface DotResultDate {
     multiBySession: number;
     uniqueBySession: number;
+    conversionRate: number;
 }
 
 export interface DotResultSessions {
@@ -181,12 +182,11 @@ export enum GOAL_PARAMETERS {
 }
 
 /**
- * Default condition by type of goal in Goal Selection Sidebar
+ * Allowed condition operators by type of goal
  */
-export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, GOAL_PARAMETERS>> = {
-    [GOAL_TYPES.BOUNCE_RATE]: GOAL_PARAMETERS.URL,
-    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.REFERER,
-    [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
+export const AllowedConditionOperatorsByTypeOfGoal = {
+    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.URL,
+    [GOAL_TYPES.URL_PARAMETER]: 'queryParameter'
 };
 
 const dotCMSThemeColors = {

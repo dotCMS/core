@@ -6,23 +6,22 @@ import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotSafeUrlPipe } from '@components/_common/iframe/pipes/dot-safe-url/dot-safe-url.pipe';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     DotcmsEventsServiceMock,
     LoginServiceMock,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { IframeComponent } from './iframe.component';
 
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
-import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 
 const fakeHtmlEl = {
     hello: 'html'
@@ -47,7 +46,13 @@ describe('IframeComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
-            imports: [RouterTestingModule, DotOverlayMaskModule, DotPipesModule, DotMessagePipe],
+            imports: [
+                RouterTestingModule,
+                DotOverlayMaskModule,
+                DotSafeHtmlPipe,
+                DotMessagePipe,
+                DotSafeUrlPipe
+            ],
             providers: [
                 DotLoadingIndicatorService,
                 IframeOverlayService,

@@ -22,11 +22,12 @@ import { take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import {
+    DotEventsService,
     DotHttpErrorHandled,
-    DotHttpErrorManagerService
-} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotEventsService, DotThemesService } from '@dotcms/data-access';
+    DotHttpErrorManagerService,
+    DotRouterService,
+    DotThemesService
+} from '@dotcms/data-access';
 import {
     DotLayout,
     DotLayoutBody,

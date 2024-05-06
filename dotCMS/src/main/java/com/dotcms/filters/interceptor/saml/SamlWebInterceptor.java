@@ -163,7 +163,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                             if (null == session || !autoLoginResult.isAutoLogin() || this.samlWebUtils.isNotLogged(request)) {
 
                                 Logger.debug(this, ()-> "User is not log in, doing SAML Authentication request");
-                                this.doAuthentication(request, response, session, identityProviderConfiguration);
+                                this.doAuthentication(request, response, session, identityProviderConfiguration, host.getIdentifier());
                                 return Result.SKIP_NO_CHAIN;
                             }
                         } else {
@@ -220,7 +220,8 @@ public class SamlWebInterceptor implements WebInterceptor {
     private void doAuthentication(final HttpServletRequest request,
                                   final HttpServletResponse response,
                                   final HttpSession session,
-                                  final IdentityProviderConfiguration identityProviderConfiguration) throws IOException {
+                                  final IdentityProviderConfiguration identityProviderConfiguration,
+                                  final String siteIdentifier) throws IOException {
 
         Logger.debug(this, ()-> "There's no logged-in user. Processing SAML request...");
         this.doRequestLoginSecurityLog(request, identityProviderConfiguration);
@@ -250,8 +251,9 @@ public class SamlWebInterceptor implements WebInterceptor {
 
         try {
             // this will redirect the user to the IdP Login Page.
+            final String relayState = this.samlWebUtils.getRelayState(request, response, identityProviderConfiguration, siteIdentifier);
             DotSamlProxyFactory.getInstance().samlAuthenticationService()
-                    .authentication(request, response, identityProviderConfiguration);
+                    .authentication(request, response, identityProviderConfiguration, relayState);
         } catch (Exception exception) {
 
             Logger.error(this,  "An error occurred when redirecting to the IdP Login page: " +

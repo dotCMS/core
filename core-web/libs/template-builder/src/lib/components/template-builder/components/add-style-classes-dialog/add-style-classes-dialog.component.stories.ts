@@ -11,10 +11,10 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
-import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
+import { JsonClassesService } from './services/json-classes.service';
 
 import {
     DOT_MESSAGE_SERVICE_TB_MOCK,
@@ -23,7 +23,7 @@ import {
 } from '../../utils/mocks';
 
 export default {
-    title: 'Template Builder/Components/Add Style Classes',
+    title: 'Library/Template Builder/Components/Add Style Classes',
     component: AddStyleClassesDialogComponent,
     decorators: [
         moduleMetadata({
@@ -35,7 +35,8 @@ export default {
                 NgIf,
                 AsyncPipe,
                 HttpClientModule,
-                NoopAnimationsModule
+                NoopAnimationsModule,
+                DotSelectItemDirective
             ],
             providers: [
                 {
@@ -57,7 +58,7 @@ export default {
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
                 },
                 DynamicDialogRef,
-                DotAddStyleClassesDialogStore
+                JsonClassesService
             ]
         })
     ]

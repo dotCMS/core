@@ -1,0 +1,97 @@
+<div
+    class="binary-field__container"
+    *ngIf="vm$ | async as vm"
+    [ngClass]="{
+        'binary-field__container--uploading': vm.status === BinaryFieldStatus.UPLOADING,
+        'binary-field__container--empty': vm.status === BinaryFieldStatus.INIT
+    }">
+    <ng-container *ngIf="vm.status === BinaryFieldStatus.INIT">
+        <div
+            class="binary-field__drop-zone"
+            [ngClass]="{ 'binary-field__drop-zone--active': vm.dropZoneActive }">
+            <dot-drop-zone
+                [accept]="accept"
+                [maxFileSize]="maxFileSize"
+                (fileDragLeave)="setDropZoneActiveState(false)"
+                (fileDragOver)="setDropZoneActiveState(true)"
+                (fileDropped)="handleFileDrop($event)"
+                data-testId="dropzone">
+                <dot-binary-field-ui-message [uiMessage]="vm.uiMessage">
+                    <button
+                        class="binary-field__drop-zone-btn"
+                        (click)="openFilePicker()"
+                        data-testId="choose-file-btn"
+                        type="button">
+                        {{ 'dot.binary.field.action.choose.file' | dm }}
+                    </button>
+                </dot-binary-field-ui-message>
+            </dot-drop-zone>
+            <input
+                #inputFile
+                [accept]="accept.join(',')"
+                (change)="handleFileSelection($event)"
+                data-testId="binary-field__file-input"
+                type="file" />
+        </div>
+
+        <div class="binary-field__actions">
+            <p-button
+                *ngIf="systemOptions.allowURLImport"
+                [label]="'dot.binary.field.action.import.from.url' | dm"
+                (click)="openDialog(BinaryFieldMode.URL)"
+                data-testId="action-url-btn"
+                icon="pi pi-link"
+                styleClass="p-button-link p-button-secondary p-button-sm"></p-button>
+            <p-button
+                *ngIf="systemOptions.allowCodeWrite"
+                [label]="'dot.binary.field.action.create.new.file' | dm"
+                (click)="openDialog(BinaryFieldMode.EDITOR)"
+                data-testId="action-editor-btn"
+                icon="pi pi-code"
+                styleClass="p-button-link p-button-secondary p-button-sm"></p-button>
+        </div>
+    </ng-container>
+
+    <dot-spinner
+        *ngIf="vm.status === BinaryFieldStatus.UPLOADING"
+        data-testId="loading"></dot-spinner>
+
+    <dot-binary-field-preview
+        *ngIf="vm.status === BinaryFieldStatus.PREVIEW"
+        [contentlet]="vm.contentlet"
+        [editableImage]="vm.isEnterprise && imageEditor"
+        [tempFile]="vm.tempFile"
+        [fieldVariable]="variable"
+        (editFile)="onEditFile()"
+        (editImage)="onEditImage()"
+        (removeFile)="removeFile()"
+        data-testId="preview"></dot-binary-field-preview>
+
+    <p-dialog
+        [(visible)]="dialogOpen"
+        [appendTo]="'body'"
+        [closeOnEscape]="false"
+        [draggable]="false"
+        [header]="dialogHeaderMap[vm.mode] | dm"
+        [keepInViewport]="false"
+        [maskStyleClass]="'p-dialog-mask-transparent'"
+        [modal]="true"
+        [resizable]="false"
+        [style]="vm.mode === BinaryFieldMode.EDITOR ? dialogFullScreenStyles : {}">
+        <ng-container [ngSwitch]="vm.mode">
+            <dot-binary-field-url-mode
+                *ngSwitchCase="BinaryFieldMode.URL"
+                (cancel)="closeDialog()"
+                (tempFileUploaded)="setTempFile($event)"
+                data-testId="url-mode"></dot-binary-field-url-mode>
+            <dot-binary-field-editor
+                *ngSwitchCase="BinaryFieldMode.EDITOR"
+                [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
+                [fileContent]="vm.tempFile?.content || vm.contentlet?.content"
+                [userMonacoOptions]="customMonacoOptions()"
+                (cancel)="closeDialog()"
+                (tempFileUploaded)="setTempFile($event)"
+                data-testId="editor-mode"></dot-binary-field-editor>
+        </ng-container>
+    </p-dialog>
+</div>

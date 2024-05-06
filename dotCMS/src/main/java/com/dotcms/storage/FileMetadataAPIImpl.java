@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -55,7 +56,8 @@ import java.util.stream.Stream;
  */
 public class FileMetadataAPIImpl implements FileMetadataAPI {
 
-    public static final String BASIC_METADATA_OVERRIDE_KEYS = "BASIC_METADATA_OVERRIDE_KEYS";
+    //This property is a comma-separated list that contains all the metadata keys that will be stored as basic in addition to the ones defined in {@link BasicMetadataFields}
+    public static final String BASIC_METADATA_EXTENDED_KEYS = "BASIC_METADATA_EXTENDED_KEYS";
     private final FileStorageAPI fileStorageAPI;
     private final MetadataCache metadataCache;
 
@@ -66,14 +68,19 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     }
 
     private FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
-        this(fileStorageAPI, metadataCache, () -> Arrays.stream(
-                        Config.getStringProperty(BASIC_METADATA_OVERRIDE_KEYS,
-                                String.join(",", BasicMetadataFields.keyMap().keySet())).split(","))
-                .map(String::trim).collect(Collectors.toSet()));
+        this(fileStorageAPI, metadataCache, () -> {
+            //we are including additional keys to the basic metadata if `BASIC_METADATA_EXTENDED_KEYS` exists
+            String extendedKeys = Config.getStringProperty(BASIC_METADATA_EXTENDED_KEYS, null);
+            Set<String> basicMetadataKeys = new HashSet<>(BasicMetadataFields.keyMap().keySet());
+            if (UtilMethods.isSet(extendedKeys)){
+                basicMetadataKeys.addAll(Arrays.stream(extendedKeys.split(",")).map(String::trim).collect(Collectors.toSet()));
+            }
+            return basicMetadataKeys;
+        }
+        );
     }
 
-    @VisibleForTesting
-    FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache,
+    private FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache,
             Supplier<? extends Set<String>> basicMetadataKeySetSupplier) {
         this.fileStorageAPI = fileStorageAPI;
         this.metadataCache = metadataCache;
@@ -320,7 +327,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param generateIfAbsent  @boolean
      * @return
      */
-    private Metadata internalGetGenerateMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean generateIfAbsent, final boolean checkVersion)
+        private Metadata internalGetGenerateMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean generateIfAbsent, final boolean checkVersion)
             throws DotDataException {
 
         if(null != contentlet.get(fieldVariableName) && UtilMethods.isSet(contentlet.getInode())) {
@@ -454,9 +461,11 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonBasicMetadataFields(final Map<String, Serializable> originalMap) {
-        return originalMap.entrySet().stream().filter(entry -> basicMetadataKeySet.get()
+        return null != originalMap ?
+                originalMap.entrySet().stream().filter(entry -> basicMetadataKeySet.get()
                 .contains(entry.getKey()) || entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
-                Collectors.toMap(Entry::getKey, Entry::getValue));
+                Collectors.toMap(Entry::getKey, Entry::getValue))
+                : Map.of();
     }
 
     /**
@@ -465,8 +474,10 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonCustomMetadataFields(final Map<String, Serializable> originalMap) {
-        return originalMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
-                Collectors.toMap(Entry::getKey, Entry::getValue));
+        return null != originalMap ?
+                originalMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
+                Collectors.toMap(Entry::getKey, Entry::getValue))
+                : Map.of();
     }
 
     /**
@@ -718,7 +729,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     * Build a tmp resource path so that temp files will get created under a more suitable location
     */
     private String tempResourcePath(final String tempResourceId){
-        return File.separator + FileAssetAPI.TMP_UPLOAD + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
+        return ConfigUtils.getAssetTempPath() + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
     }
 
     /**

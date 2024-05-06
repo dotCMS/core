@@ -1,0 +1,47 @@
+<assembly xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <!-- hack to make sure these empty directories get included-->
+        <fileSet>
+            <directory>${assembly-directory}/${tomcat-dist-folder}/config</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/temp</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${assembly-directory}/${tomcat-dist-folder}/config</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/logs</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${assembly-directory}/${tomcat-dist-folder}</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}</outputDirectory>
+            <excludes>
+                <exclude>**/*.sh</exclude>
+                <exclude>**/webapps/host-manager/**</exclude>
+                <exclude>**/webapps/manager/**</exclude>
+                <exclude>**/felix-cache/**</exclude>
+                <exclude>**/webapps/cargorpc/**</exclude>
+                <exclude>**/work/**</exclude>
+                <exclude>**/logs/**</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${assembly-directory}/${tomcat-dist-folder}</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}</outputDirectory>
+            <includes>
+                <include>**/*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+    </fileSets>
+
+</assembly>

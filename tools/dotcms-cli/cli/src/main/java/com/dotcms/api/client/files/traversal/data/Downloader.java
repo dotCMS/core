@@ -5,7 +5,7 @@
 package com.dotcms.api.client.files.traversal.data;
 
 import com.dotcms.api.AssetAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.asset.AssetRequest;
 
 import javax.enterprise.context.ApplicationScoped;

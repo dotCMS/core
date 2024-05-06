@@ -7,6 +7,7 @@
 .p-button {
     border: none;
     color: $white;
+    border-radius: $border-radius-md; // Required for all buttons
 
     .p-button-label {
         color: inherit;
@@ -17,12 +18,10 @@
     .p-button-icon,
     .pi {
         color: inherit;
-        font-size: $icon-md;
     }
 
     // Shared but not icon only
     &:not(.p-button-icon-only) {
-        border-radius: $border-radius-md;
         font-size: $font-size-md;
         gap: $spacing-1;
         height: $field-height-md;
@@ -39,6 +38,14 @@
             @extend #small;
         }
     }
+
+    .p-icon-wrapper {
+        display: flex;
+        width: 20px;
+        height: 20px;
+        align-items: center;
+        justify-content: center;
+    }
 }
 
 // Shared disabled styles
@@ -48,20 +55,34 @@
     &.p-button-outlined {
         @extend #button-disabled-outlined;
     }
+
+    &.p-button-text {
+        @extend #button-disabled-text;
+    }
 }
 
 // Severity for basic button
 .p-button:enabled,
-.p-button.p-element {
+// Used for file upload button
+.p-button.p-fileupload-choose {
     @extend #main-primary-severity;
 
-    &.p-button-secondary {
-        @extend #main-secondary-severity;
+    // Button Links
+    &.p-button-link {
+        color: $color-palette-primary;
+        background: transparent;
+        border: transparent;
+    }
+
+    &.p-button-link.p-button-secondary {
+        @extend #outlined-secondary-severity;
+        border: transparent;
     }
 }
 
 // Severity for outlined button
-.p-button-outlined:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+.p-button.p-button-outlined:enabled,
+.p-button.p-button-outlined:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     @extend #outlined-primary-severity;
 
     &.p-button-sm {
@@ -95,20 +116,13 @@ a.p-button.p-button-text {
 .p-button-icon-only:not(.p-splitbutton-menubutton) {
     height: $field-height-md;
     width: $field-height-md;
+    min-width: $field-height-md;
     border: none;
-
-    .p-button-icon,
-    .pi {
-        font-size: $icon-lg;
-    }
 
     &.p-button-sm {
         height: $field-height-sm;
         width: $field-height-sm;
-
-        .p-button-icon {
-            font-size: $icon-md;
-        }
+        min-width: $field-height-sm;
     }
 }
 

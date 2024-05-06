@@ -69,6 +69,9 @@ export class SearchableDropdownComponent
     cssClass: string;
 
     @Input()
+    cssClassDataList: string;
+
+    @Input()
     totalRecords: number;
 
     @Input()

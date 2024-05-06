@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.saml.v1;
 
+import com.dotcms.filters.interceptor.saml.SamlWebUtils;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.saml.Attributes;
@@ -50,12 +51,15 @@ import java.util.List;
 public class DotSamlResource implements Serializable {
 
 	private static final long serialVersionUID = 8015545653539491684L;
+	public static final String REDIRECT_AFTER_LOGIN_CONFIG = "redirect.after.login";
 
 	private final SamlConfigurationService             samlConfigurationService;
 	private final SAMLHelper           				   samlHelper;
 	private final SamlAuthenticationService            samlAuthenticationService;
 	private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
 	private final WebResource						   webResource;
+
+	private final SamlWebUtils samlWebUtils = new SamlWebUtils();
 
 	public static final List<String> dotsamlPathSegments = Arrays.asList("login", "logout", "metadata");
 
@@ -114,9 +118,10 @@ public class DotSamlResource implements Serializable {
 					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
 					this.samlHelper.doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
 
+					final String relayState = this.samlWebUtils.getRelayState(httpServletRequest, httpServletResponse, identityProviderConfiguration, idpConfigId);
 					// This will redirect the user to the IdP Login Page.
 					this.samlAuthenticationService.authentication(httpServletRequest,
-							httpServletResponse, identityProviderConfiguration);
+							httpServletResponse, identityProviderConfiguration, relayState);
 
 					return Response.ok().build();
 				}
@@ -210,14 +215,18 @@ public class DotSamlResource implements Serializable {
 					String loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 					Logger.debug(this,"LoginPath: " + loginPath);
 					if (null == loginPath) {
-						// At this stage we cannot determine whether this was a front
-						// end or back end request since we cannot determine
-						// original request.
-						//
-						// REDIRECT_AFTER_LOGIN should have already been set in relay
-						// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
-						// session attribute.
-						loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+						if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
+							loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
+						}else {
+							// At this stage we cannot determine whether this was a front
+							// end or back end request since we cannot determine
+							// original request.
+							//
+							// REDIRECT_AFTER_LOGIN should have already been set in relay
+							// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
+							// session attribute.
+							loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+						}
 					} else {
 
 						session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);

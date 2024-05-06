@@ -40,7 +40,6 @@ public class PngImageFilter extends ImageFilter {
     			writer.write(null,new IIOImage(dst,null,null),iwp);
     			ios.flush();
     			writer.dispose();
-    			ios.close();
 			}
             if (!tempResultFile.renameTo(resultFile)) {
                 throw new DotRuntimeException("unable to create file:" + resultFile);

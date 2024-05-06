@@ -3,6 +3,7 @@ package com.dotcms.business.bytebuddy;
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.util.EnterpriseFeature;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.util.Logger;
 import net.bytebuddy.agent.ByteBuddyAgent;
@@ -23,7 +24,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static net.bytebuddy.matcher.ElementMatchers.*;
+import static net.bytebuddy.matcher.ElementMatchers.declaresMethod;
+import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
+import static net.bytebuddy.matcher.ElementMatchers.isMethod;
+import static net.bytebuddy.matcher.ElementMatchers.isSynthetic;
+import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
 
 /**
  * Initializes ByteBuddy to handle transactional annotations. This replaces AspectJ functionality
@@ -39,7 +44,8 @@ public class ByteBuddyFactory {
             WrapInTransaction.class, WrapInTransactionAdvice.class,
             CloseDB.class, CloseDBAdvice.class,
             CloseDBIfOpened.class, CloseDBIfOpenedAdvice.class,
-            LogTime.class, LogTimeAdvice.class
+            LogTime.class, LogTimeAdvice.class,
+            EnterpriseFeature.class, EnterpriseFeatureAdvice.class
     );
 
 

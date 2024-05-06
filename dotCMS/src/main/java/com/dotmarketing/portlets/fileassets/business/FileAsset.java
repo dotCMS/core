@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.fileassets.business;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.storage.model.Metadata;
+import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -18,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.awt.Dimension;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +30,22 @@ import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
 
+/**
+ * Represents a File in dotCMS.
+ * <p>File Assets are files with a specific location within the <b>Site Browser</b> tree, and which
+ * can be accessed using a URL which references the location of the file within the tree. File
+ * Assets:</p>
+ * <ul>
+ *     <li>May be accessed via a URL based on either the location of the file within the Site
+ *     Browser tree, or the Identifier of the file.</li>
+ *     <li>Can be managed via <b>WebDAV</b>, and can be used for File-based Containers and
+ *     Scripted Custom Endpoints.</li>
+ *     <li>Can be displayed directly in menus (by setting the {@code Show on Menu} property).</li>
+ * </ul>
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class FileAsset extends Contentlet implements IFileAsset {
 
     private File file;
@@ -80,12 +98,12 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 
 	public String getPath() {
-		Identifier id = null;
-		try{
-			id = APILocator.getIdentifierAPI().find(this.getIdentifier());
+		try {
+			final Identifier id = APILocator.getIdentifierAPI().find(this.getIdentifier());
 			return id.getParentPath();
-		}catch(Exception e){
-			Logger.error(this, e.getMessage(), e);
+		} catch (final Exception e) {
+			Logger.error(this, String.format("Failed to get path from File Asset with ID " +
+					"'%s': %s", this.getIdentifier(), ExceptionUtil.getErrorMessage(e)), e);
 		}
 		return null;
 	}
@@ -119,7 +137,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public boolean isImage() {
-		return Try.of(()-> getMetadata().isImage()).getOrElse(false);
+		return Try.of(()-> getMetadata().isImage()).getOrElse(UtilMethods.isImage(getUnderlyingFileName()));
 	}
 
   /**
@@ -155,7 +173,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		mimeType = APILocator.getFileAssetAPI().getMimeType(getUnderlyingFileName());
 
 		if (mimeType == null || UNKNOWN_MIME_TYPE.equals(mimeType)){
-			mimeType = "application/octet-stream";
+			mimeType = MimeTypeUtils.MIME_TYPE_APP_OCTET_STREAM;
 		}
 
 		return mimeType;
@@ -191,13 +209,14 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public File getFileAsset() {
-		// calling getBinary can be relatively expensive since it constantly verifies the existence of the file on disk.
-		// Therefore we'll keep a file reference at hand.
+		// Calling the getBinary method can be relatively expensive since it constantly verifies
+		// the existence of the file on disk. Therefore, we'll keep a file reference at hand
 		if (null == file) {
 			try {
 				file = getBinary(FileAssetAPI.BINARY_FIELD);
-			} catch (IOException e) {
-				throw new DotStateException("Unable to find the fileAsset for :" + this.getInode());
+			} catch (final IOException e) {
+				throw new DotStateException(String.format("Failed to find binary file for File Asset " +
+						"'%s' [ %s ]: %s", getFileName(), getInode(), ExceptionUtil.getErrorMessage(e)));
 			}
 		}
 		return file;
@@ -241,7 +260,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public void setFriendlyName(String friendlyName) {
-
+		// Not implemented
 	}
 
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
@@ -271,29 +290,34 @@ public class FileAsset extends Contentlet implements IFileAsset {
        return APILocator.getVersionableAPI().isLocked(this);
    }
 
-
 	public String getType(){
 		return "file_asset";
 	}
 
 	 public String getExtension(){
 		 return UtilMethods.getFileExtension(getUnderlyingFileName());
-
 	 }
 
-	 public Map<String, Object> getMap() throws DotRuntimeException {
-		Map<String,Object> map = super.getMap();
+	/**
+	 * Creates a Map with the different attributes that belong to this File Asset.
+	 *
+	 * @return A Map containing the File Asset's attributes.
+	 */
+	@Override
+	public Map<String, Object> getMap() {
+		final Map<String,Object> map = super.getMap();
 		boolean live =  false;
 		boolean working =  false;
 		boolean deleted = false;
 		boolean locked  = false;
-		try{
+		try {
 			live =  isLive();
 			working = isWorking();
 			deleted = isDeleted();
 			locked  = isLocked();
-		}catch(Exception e){
-			Logger.error(this, e.getMessage(), e);
+		} catch (final Exception e) {
+			Logger.error(this, String.format("Failed to retrieve live/working/deleted/locked status for FileAsset " +
+					"'%s' [ %s ]: %s", getFileName(), getInode(), ExceptionUtil.getErrorMessage(e)), e);
 		}
 		map.put("extension", getExtension());
 		map.put("live", live);
@@ -301,23 +325,25 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		map.put("deleted", deleted);
 		map.put("locked", locked);
 		map.put("isContent", true);
-		map.put("fileAssetType", this.getStructureInode());
+		map.put("fileAssetType", this.getContentTypeId());
 		map.put("friendlyName", getStringProperty(FileAssetAPI.DESCRIPTION));
 		map.put("mimeType", getMimeType());
 		User modUser = null;
 		try {
 			modUser = APILocator.getUserAPI().loadUserById(this.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
-		} catch (NoSuchUserException | DotDataException e) {
-			Logger.debug(this, e.getMessage());
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
+		} catch (final NoSuchUserException | DotDataException e) {
+			Logger.debug(this, String.format("Failed to retrieve 'mod_user' for FileAsset " +
+					"'%s' [ %s ]: %s", getFileName(), getInode(), ExceptionUtil.getErrorMessage(e)));
+		} catch (final Exception e) {
+			Logger.error(this, String.format("An error occurred when retrieving 'mod_user' for FileAsset " +
+					"'%s' [ %s ]: %s", getFileName(), getInode(), ExceptionUtil.getErrorMessage(e)), e);
 		}
-		if (UtilMethods.isSet(modUser) && UtilMethods.isSet(modUser.getUserId()) && !modUser.isNew())
+		if (UtilMethods.isSet(modUser) && UtilMethods.isSet(modUser.getUserId()) && !modUser.isNew()) {
 			map.put("modUserName", modUser.getFullName());
-		else
+		} else {
 			map.put("modUserName", "unknown");
-
-		 map.put("type", this.getType());
+		}
+		map.put("type", this.getType());
 		return map;
 	 }
 
@@ -329,7 +355,6 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public Date getIDate() {
-		// TODO Auto-generated method stub
 		return getModDate();
 	}
 

@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 
-import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotClipboardUtil } from '@dotcms/ui';
 
 /**
  * Icon button to copy to clipboard the string you pass to it,

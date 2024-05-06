@@ -1,0 +1,74 @@
+@use "variables" as *;
+
+:host {
+    display: grid;
+    grid-template-rows: min-content 1fr;
+    grid-template-columns: 1fr 15.5rem;
+    height: 100%;
+}
+
+dot-device-selector-seo {
+    display: none;
+}
+
+dot-ema-page-dropzone {
+    position: absolute;
+    inset: 0;
+}
+
+dot-edit-ema-toolbar {
+    grid-column: 1 / -1;
+}
+
+dot-ema-device-display {
+    grid-column: 1 / 2;
+}
+
+dot-results-seo-tool {
+    grid-column: 1 / 3;
+}
+
+.editor-content {
+    padding: $spacing-4 $spacing-3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: $spacing-1;
+    overflow: auto;
+}
+.editor-content--device {
+    grid-column: 1 / -1;
+}
+
+.editor-content--hidden {
+    display: none;
+}
+
+.iframe-wrapper {
+    position: relative;
+    overflow: hidden;
+    flex-grow: 1;
+    margin: 0 auto;
+    border: solid 1px $color-palette-gray-300;
+
+    iframe {
+        border: none;
+    }
+}
+
+.iframe-wrapper--device {
+    box-shadow: $shadow-l;
+    background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
+}
+
+a,
+a:focus,
+a:active {
+    text-decoration: none;
+}
+
+.editor-content--expanded {
+    grid-column: span 2;
+}

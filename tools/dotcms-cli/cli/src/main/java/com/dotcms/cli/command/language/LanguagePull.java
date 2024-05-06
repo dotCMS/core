@@ -1,81 +1,113 @@
 package com.dotcms.cli.command.language;
 
+import com.dotcms.api.client.pull.PullService;
+import com.dotcms.api.client.pull.language.LanguageFetcher;
+import com.dotcms.api.client.pull.language.LanguagePullHandler;
 import com.dotcms.cli.command.DotCommand;
-import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.command.DotPull;
+import com.dotcms.cli.common.ApplyCommandOrder;
+import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.ShortOutputOptionMixin;
-import com.dotcms.cli.common.WorkspaceMixin;
+import com.dotcms.cli.common.PullMixin;
+import com.dotcms.cli.common.WorkspaceParams;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
-import com.dotcms.model.language.Language;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.model.pull.PullOptions;
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import picocli.CommandLine;
-import picocli.CommandLine.Parameters;
 
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguagePull.NAME,
-        header = "@|bold,blue dotCMS Language Pull|@",
+        header = "@|bold,blue Retrieves languages descriptors|@",
         description = {
-                " This command pulls a language given its id or iso code (e.g.: en-us).",
-                " A language descriptor file will be created in the current directory.",
-                " If the language already exists, it will be overwritten.",
-                " The file name will be the language's iso code (e.g.: en-us.json).",
-                " if a lang is pulled with the same name as an existing one,",
-                " the existing one will be overwritten.",
-                "" // empty string here so we can have a new line
+                "  This command fetches and saves the descriptor information",
+                "  for languages within the dotCMS instance. By default, it",
+                "  retrieves descriptors for all languages, unless a specific",
+                "  language's ISO code or ID is provided as an argument.",
+                "  The descriptors are saved into files named after each language's",
+                "  ISO code.",
+                "",
+                "  When a languages is pulled more than once, the existing descriptor file",
+                "  is overwritten. All descriptor files are saved within the 'languages'",
+                "  folder located in the dotCMS workspace, which is created in the",
+                "  current directory by default, unless an alternative workspace is specified.",
+                "",
+                "  The output format for the descriptor files is JSON by default. However,",
+                "  you can specify the YAML format using the @|yellow --format|@ option",
+                "  if YAML is preferred.",
+                "" // empty line left here on purpose to make room at the end
         }
 )
-/**
- * Command to pull a language given its id or iso code (e.g.: en-us)
- * @author nollymar
- */
-public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer>, DotCommand {
-    static final String NAME = "pull";
+public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer>,
+        DotCommand, DotPull {
 
-    @CommandLine.Mixin(name = "format")
-    FormatOptionMixin formatOption;
+    public static final String NAME = "pull";
 
-    @CommandLine.Mixin(name = "shorten")
-    ShortOutputOptionMixin shortOutputOption;
+    static final String LANGUAGE_PULL_MIXIN = "languagePullMixin";
 
-    @CommandLine.Mixin(name = "workspace")
-    WorkspaceMixin workspaceMixin;
+    @CommandLine.Mixin
+    FullPullOptionsMixin pullMixin;
+
+    @CommandLine.Mixin(name = LANGUAGE_PULL_MIXIN)
+    LanguagePullMixin languagePullMixin;
 
     @Inject
     WorkspaceManager workspaceManager;
 
-    @Parameters(index = "0", arity = "1", paramLabel = "idOrIso", description = "Language Id or ISO Code.")
-    String languageIdOrIso;
+    @Inject
+    PullService pullService;
+
+    @Inject
+    LanguageFetcher languageProvider;
+
+    @Inject
+    LanguagePullHandler languagePullHandler;
+
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Override
     public Integer call() throws Exception {
-            final Language language = findExistingLanguage(languageIdOrIso);
-            final ObjectMapper objectMapper = formatOption.objectMapper();
 
-            if(shortOutputOption.isShortOutput()) {
-                final String asString = shortFormat(language);
-                output.info(asString);
-            } else {
-                final String asString = objectMapper.writeValueAsString(language);
-                if(output.isVerbose()) {
-                    output.info(asString);
-                }
-                final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
-                final String fileName = String.format("%s.%s", language.isoCode(), formatOption.getInputOutputFormat().getExtension());
-                final Path path = Path.of(workspace.languages().toString(),fileName);
+        // When calling from the global pull we should avoid the validation of the unmatched
+        // arguments as we may send arguments meant for other pull subcommands
+        if (!pullMixin.noValidateUnmatchedArguments) {
+            // Checking for unmatched arguments
+            output.throwIfUnmatchedArguments(spec.commandLine());
+        }
 
-                Files.writeString(path, asString);
-                output.info(String.format("Output has been written to file [%s].",path));
-            }
+        // Make sure the path is within a workspace
+        final WorkspaceParams params = this.getPullMixin().workspace();
+        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), !params.userProvided());
+
+        File languagesFolder = workspace.languages().toFile();
+        if (!languagesFolder.exists() || !languagesFolder.canRead()) {
+            throw new IOException(String.format(
+                    "Unable to access the path [%s] check that it does exist and that you have "
+                            + "read permissions on it.", languagesFolder)
+            );
+        }
+
+        // Execute the pull
+        pullService.pull(
+                PullOptions.builder().
+                        destination(languagesFolder).
+                        contentKey(Optional.ofNullable(languagePullMixin.languageIdOrIso)).
+                        outputFormat(pullMixin.inputOutputFormat().toString()).
+                        isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
+                        failFast(pullMixin.failFast).
+                        maxRetryAttempts(pullMixin.retryAttempts).
+                        build(),
+                output,
+                languageProvider,
+                languagePullHandler
+        );
 
         return CommandLine.ExitCode.OK;
     }
@@ -89,4 +121,20 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
     public OutputOptionMixin getOutput() {
         return output;
     }
+
+    @Override
+    public PullMixin getPullMixin() {
+        return pullMixin;
+    }
+
+    @Override
+    public Optional<String> getCustomMixinName() {
+        return Optional.empty();
+    }
+
+    @Override
+    public int getOrder() {
+        return ApplyCommandOrder.LANGUAGE.getOrder();
+    }
+    
 }

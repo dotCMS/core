@@ -6,10 +6,9 @@ import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.language.Language;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import org.apache.commons.lang3.BooleanUtils;
+import javax.inject.Inject;
 import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
 
@@ -38,8 +37,17 @@ public class LanguageRemove extends AbstractLanguageCommand implements Callable<
     @Parameters(index = "0", arity = "1", description = "Language Id or Iso.")
     String languageIdOrIso;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
+    @Inject
+    Prompt prompt;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         final Language language = findExistingLanguage(languageIdOrIso);
 
@@ -59,7 +67,7 @@ public class LanguageRemove extends AbstractLanguageCommand implements Callable<
 
     private boolean isDeleteConfirmed() {
         if(interactiveOption.isInteractive()){
-           return Prompt.yesOrNo(false,"Are you sure you want to continue ");
+           return prompt.yesOrNo(false,"Are you sure you want to continue ");
         }
         return true;
     }

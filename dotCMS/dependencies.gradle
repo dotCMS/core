@@ -8,7 +8,7 @@ dependencies {
     implementation (group: 'com.carrotsearch', name: 'hppc', version: '0.8.1') {
         transitive=false
     }
-    implementation (group: 'com.dotcms.core.plugins', name: 'com.dotcms.tika-api', version: '1.0.0-SNAPSHOT'){}
+    implementation (group: 'com.dotcms.core.plugins', name: 'com.dotcms.tika-api', version: '2023.09.8'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.Tidy', version: 'ukv_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version: '2.4.0-b10_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.asm', version: '3.1_2'){}
@@ -93,6 +93,7 @@ dependencies {
     implementation (group: 'com.dotcms.lib', name: 'dot.woodstox-core-lgpl', version: '4.2.0_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.xpp3-min', version: '1.1.4c_2'){}
     implementation (group: 'com.dotcms', name: 'ant-tooling', version: '1.3.2'){}
+    compileOnly (group: 'com.dotcms', name: 'dotcms-core-web', version: '1.0.0-SNAPSHOT'){}
     implementation (group: 'com.ettrema', name: 'milton-api', version: '1.8.1.4') {
         transitive=false
     }
@@ -125,6 +126,7 @@ dependencies {
         transitive=false
     }
     implementation (group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'){}
+    implementation (group: 'com.google.code.gson', name: 'gson', version: '2.10.1'){}
     implementation (group: 'com.google.errorprone', name: 'error_prone_annotations', version: '2.5.1'){}
     implementation (group: 'com.google.guava', name: 'failureaccess', version: '1.0.1'){}
     implementation (group: 'com.google.guava', name: 'guava', version: '27.0.1-android'){}
@@ -142,7 +144,9 @@ dependencies {
     implementation (group: 'com.h2database', name: 'h2', version: '2.1.214'){}
     implementation (group: 'com.impossibl.pgjdbc-ng', name: 'pgjdbc-ng', version: '0.8.9'){}
     implementation (group: 'com.impossibl.pgjdbc-ng', name: 'spy', version: '0.8.9'){}
-    implementation (group: 'com.jayway.jsonpath', name: 'json-path', version: '2.4.0'){}
+    implementation (group: 'com.jayway.jsonpath', name: 'json-path', version: '2.4.0') {
+        exclude group: 'net.minidev', module: 'json-smart'
+    }
     implementation (group: 'com.lmax', name: 'disruptor', version: '3.3.4'){}
     implementation (group: 'com.maxmind.db', name: 'maxmind-db', version: '1.0.0'){}
     implementation (group: 'com.maxmind.geoip2', name: 'geoip2', version: '2.1.0'){}
@@ -152,39 +156,39 @@ dependencies {
     implementation (group: 'com.squareup.okio', name: 'okio', version: '1.6.0'){}
     implementation (group: 'com.sun.activation', name: 'jakarta.activation', version: '1.2.1'){}
     implementation (group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'){}
-    compileOnly (group: 'com.sun.istack', name: 'istack-commons-runtime', version: '3.0.12'){}
+    implementation (group: 'com.sun.istack', name: 'istack-commons-runtime', version: '3.0.12'){}
     implementation (group: 'com.sun.mail', name: 'jakarta.mail', version: '1.6.7'){}
     implementation (group: 'com.tdunning', name: 't-digest', version: '3.2') {
         transitive=false
     }
-    implementation (group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.8') {
+    implementation (group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.20') {
         exclude group: 'xpp3', module: 'xpp3_min'
     }
     testImplementation (group: 'com.tngtech.junit.dataprovider', name: 'junit-dataprovider-core', version: '2.6'){}
     testImplementation (group: 'com.tngtech.junit.dataprovider', name: 'junit4-dataprovider', version: '2.6'){}
-    implementation (group: 'com.twelvemonkeys.common', name: 'common-image', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.common', name: 'common-io', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.common', name: 'common-lang', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-bmp', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-core', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-hdr', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-iff', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-metadata', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-pdf', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-pict', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-pnm', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-psd', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-sgi', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-webp', version: '3.7.0'){}
-    implementation (group: 'com.twelvemonkeys.servlet', name: 'servlet', version: '3.7.0'){}
+    implementation (group: 'com.twelvemonkeys.common', name: 'common-image', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.common', name: 'common-io', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.common', name: 'common-lang', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-bmp', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-core', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-hdr', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-iff', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-metadata', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-pdf', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-pict', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-pnm', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-psd', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-sgi', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.imageio', name: 'imageio-webp', version: '3.7.1'){}
+    implementation (group: 'com.twelvemonkeys.servlet', name: 'servlet', version: '3.7.1'){}
     implementation (group: 'com.zaxxer', name: 'HikariCP', version: '3.4.2'){}
     implementation (group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'){}
     implementation (group: 'commons-codec', name: 'commons-codec', version: '1.11'){}
@@ -204,6 +208,7 @@ dependencies {
     }
     implementation (group: 'fop', name: 'fop', version: '0.20.3'){}
     implementation (group: 'io.github.classgraph', name: 'classgraph', version: '4.8.138'){}
+    implementation (group: 'io.github.x-stream', name: 'mxparser', version: '1.2.2'){}
     implementation (group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'){}
     implementation (group: 'io.lettuce', name: 'lettuce-core', version: '6.1.1.RELEASE'){}
     implementation (group: 'io.netty', name: 'netty-buffer', version: '4.1.63.Final'){}
@@ -243,8 +248,8 @@ dependencies {
     implementation (group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc-internal', version: '4.33.0'){}
     implementation (group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc', version: '4.33.0'){}
     implementation (group: 'net.jodah', name: 'failsafe', version: '1.1.1'){}
-    implementation (group: 'net.minidev', name: 'accessors-smart', version: '1.2'){}
-    implementation (group: 'net.minidev', name: 'json-smart', version: '2.3'){}
+    implementation (group: 'net.minidev', name: 'accessors-smart', version: '2.4.9'){}
+    implementation (group: 'net.minidev', name: 'json-smart', version: '2.4.9'){}
     implementation (group: 'net.sf.jopt-simple', name: 'jopt-simple', version: '5.0.2') {
         transitive=false
     }
@@ -260,7 +265,7 @@ dependencies {
     implementation (group: 'org.apache.commons', name: 'commons-numbers-core', version: '1.0'){}
     implementation (group: 'org.apache.commons', name: 'commons-numbers-fraction', version: '1.0'){}
     implementation (group: 'org.apache.commons', name: 'commons-numbers-gamma', version: '1.0'){}
-    implementation (group: 'org.apache.commons', name: 'commons-pool2', version: '2.9.0'){}
+    implementation (group: 'org.apache.commons', name: 'commons-pool2', version: '2.11.1'){}
     implementation (group: 'org.apache.felix', name: 'org.apache.felix.framework', version: '7.0.5'){}
     implementation (group: 'org.apache.felix', name: 'org.apache.felix.http.api', version: '3.0.0'){}
     implementation (group: 'org.apache.felix', name: 'org.apache.felix.http.proxy', version: '3.0.6'){}
@@ -395,8 +400,8 @@ dependencies {
     implementation (group: 'org.glassfish.hk2', name: 'hk2-locator', version: '2.4.0-b31'){}
     implementation (group: 'org.glassfish.hk2', name: 'hk2-utils', version: '2.4.0-b31'){}
     implementation (group: 'org.glassfish.hk2', name: 'osgi-resource-locator', version: '1.0.1'){}
-    compileOnly (group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '2.3.8'){}
-    compileOnly (group: 'org.glassfish.jaxb', name: 'txw2', version: '2.3.8'){}
+    implementation (group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '2.3.8'){}
+    implementation (group: 'org.glassfish.jaxb', name: 'txw2', version: '2.3.8'){}
     implementation (group: 'org.glassfish.jersey.bundles.repackaged', name: 'jersey-guava', version: '2.22.1'){}
     implementation (group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.22.1'){}
     implementation (group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet-core', version: '2.22.1'){}
@@ -419,11 +424,11 @@ dependencies {
     implementation (group: 'org.javassist', name: 'javassist', version: '3.29.2-GA'){}
     implementation (group: 'org.jdom', name: 'jdom', version: '1.1.3'){}
     compileOnly (group: 'org.jetbrains', name: 'annotations', version: '16.0.1'){}
-    implementation (group: 'org.jgroups', name: 'jgroups', version: '3.6.1.Final'){}
+    implementation (group: 'org.json', name: 'json', version: '20231013'){}
     implementation (group: 'org.jvnet.mimepull', name: 'mimepull', version: '1.9.6'){}
     testImplementation (group: 'org.mockito', name: 'mockito-core', version: '2.28.2'){}
     testImplementation (group: 'org.objenesis', name: 'objenesis', version: '2.5.1'){}
-    implementation (group: 'org.ow2.asm', name: 'asm', version: '5.0.4'){}
+    implementation (group: 'org.ow2.asm', name: 'asm', version: '9.3'){}
     compileOnly (group: 'org.postgresql', name: 'postgresql', version: '42.5.1') {
         exclude group: 'org.checkerframework', module: 'checker-qual'
     }
@@ -441,7 +446,7 @@ dependencies {
         transitive=false
     }
     implementation (group: 'oro', name: 'oro', version: '2.0.8'){}
-    implementation (group: 'redis.clients', name: 'jedis', version: '2.7.3'){}
+    implementation (group: 'redis.clients', name: 'jedis', version: '4.4.6'){}
     implementation (group: 'software.amazon.ion', name: 'ion-java', version: '1.0.2'){}
     implementation (group: 'werken-xpath', name: 'werken-xpath', version: '0.9.4'){}
     implementation (group: 'xml-apis', name: 'xml-apis-ext', version: '1.3.04'){}

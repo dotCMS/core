@@ -15,13 +15,20 @@ import { Menu } from 'primeng/menu';
 import { Observable } from 'rxjs/internal/Observable';
 import { filter, skip, take, takeUntil } from 'rxjs/operators';
 
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotPageRenderService,
+    DotRouterService
+} from '@dotcms/data-access';
 import { HttpCode, SiteService } from '@dotcms/dotcms-js';
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotMessageSeverity,
+    DotMessageType
+} from '@dotcms/dotcms-models';
 
 import {
     DotPagesState,

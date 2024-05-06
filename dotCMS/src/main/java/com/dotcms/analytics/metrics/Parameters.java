@@ -1,15 +1,16 @@
 package com.dotcms.analytics.metrics;
 
-public abstract class Parameters {
+import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter.Type;
+
+public final class Parameters {
+
+    private Parameters(){}
+
     static Parameter URL = Parameter.builder()
             .name("url")
-            .valueGetter(new LowerCaseParameterValuesGetter(new EventAttributeParameterValuesGetter()))
             .build();
 
-    static Parameter REFERER = Parameter.builder()
-            .name("referer")
-            .valueGetter(new LowerCaseParameterValuesGetter(new EventAttributeParameterValuesGetter()))
+    static Parameter QUERY_PARAMETER = Parameter.builder().name("queryParameter")
+            .type(AbstractCondition.AbstractParameter.Type.QUERY_PARAMETER)
             .build();
-
-    static Parameter VISIT_BEFORE = Parameter.builder().name("visitBefore").validate(false).build();
 }

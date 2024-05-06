@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { mockProvider } from '@ngneat/spectator';
 import { throwError } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
@@ -6,25 +7,27 @@ import { fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRouterService,
+    DotFormatDateService
+} from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
+import { DotApp, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
 
 import { DotAppsService } from './dot-apps.service';
-
-import { DotFormatDateService } from '../dot-format-date-service';
-import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '../dot-router/dot-router.service';
 
 // INFO: needs to import this way so we can spy on.
 
@@ -63,13 +66,17 @@ describe('DotAppsService', () => {
                     provide: LoginService,
                     useClass: LoginServiceMock
                 },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 ConfirmationService,
                 DotAlertConfirmService,
                 DotAppsService,
-                DotHttpErrorManagerService
+                DotHttpErrorManagerService,
+                mockProvider(DotMessageService)
             ]
         });
         injector = getTestBed();
@@ -82,7 +89,7 @@ describe('DotAppsService', () => {
     it('should get apps', () => {
         const url = 'v1/apps';
 
-        dotAppsService.get().subscribe((apps: DotApps[]) => {
+        dotAppsService.get().subscribe((apps: DotApp[]) => {
             expect(apps).toEqual(mockDotApps);
         });
 
@@ -97,7 +104,7 @@ describe('DotAppsService', () => {
         const filter = 'asana';
         const url = `v1/apps?filter=${filter}`;
 
-        dotAppsService.get(filter).subscribe((apps: DotApps[]) => {
+        dotAppsService.get(filter).subscribe((apps: DotApp[]) => {
             expect(apps).toEqual([mockDotApps[1]]);
         });
 
@@ -121,7 +128,7 @@ describe('DotAppsService', () => {
         const appKey = '1';
         const url = `v1/apps/${appKey}`;
 
-        dotAppsService.getConfigurationList(appKey).subscribe((apps: DotApps) => {
+        dotAppsService.getConfigurationList(appKey).subscribe((apps: DotApp) => {
             expect(apps).toEqual(mockDotApps[1]);
         });
 

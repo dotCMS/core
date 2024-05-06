@@ -1,23 +1,31 @@
-$border-radius-xs: 0.125rem;
-$border-radius-sm: 0.25rem;
-$border-radius-md: 0.375rem;
-$border-radius-lg: 0.5rem;
-$border-radius-xl: 1rem;
+$border-radius-xs: 0.125rem; // 2px
+$border-radius-sm: 0.25rem; // 4px
+$border-radius-md: 0.375rem; // 6px
+$border-radius-lg: 0.5rem; // 8px
+$border-radius-xl: 1rem; // 16px
+$border-radius-circular: 50%;
 
 $field-border-radius: $border-radius-md;
 
-$field-height-sm: 2rem;
-$field-height-md: 2.5rem;
-$field-height-lg: 3rem;
+$field-height-sm: 2rem; // 32px
+$field-height-md: 2.5rem; // 40px
+$field-height-lg: 3rem; // 48px
 
 $field-border-size: 1.5px;
 
+// size pi icons
 $icon-sm: 14px;
+$icon-sm-box: 16px;
 $icon-md: 16px;
+$icon-md-box: 20px;
 $icon-lg: 18px;
+$icon-lg-box: 24px;
 
 // Screen sizes for media queries
 $screen-sm: 40em; // 640px
 $screen-md: 40.063em; // 641px;
 $screen-lg: 64.063em; // 1025px
 $screen-xl: 90.063em; // 1441px;
+
+// Blur
+$blur-md: 0.375rem; // 6px

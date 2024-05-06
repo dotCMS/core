@@ -21,8 +21,7 @@ import {
     GoalsLevels,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotDynamicDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
@@ -59,6 +58,7 @@ export class DotExperimentsConfigurationGoalsComponent {
         goals: Goals | null;
         status: StepStatus;
         isExperimentADraft: boolean;
+        disabledTooltipLabel: null | string;
     }> = this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );

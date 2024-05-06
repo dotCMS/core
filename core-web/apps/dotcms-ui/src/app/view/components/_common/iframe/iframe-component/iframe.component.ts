@@ -14,13 +14,12 @@ import {
 
 import { debounceTime, filter, takeUntil } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
+import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotFunctionInfo } from '@models/dot-function-info/dot-function-info.model';
 
-import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({

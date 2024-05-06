@@ -4,13 +4,12 @@ import { FormsModule } from '@angular/forms';
 
 import { MultiSelectModule } from 'primeng/multiselect';
 
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
 
 @NgModule({
-    imports: [CommonModule, MultiSelectModule, FormsModule, DotPipesModule, DotMessagePipe],
+    imports: [CommonModule, MultiSelectModule, FormsModule, DotSafeHtmlPipe, DotMessagePipe],
     declarations: [DotWorkflowsSelectorFieldComponent],
     exports: [DotWorkflowsSelectorFieldComponent]
 })

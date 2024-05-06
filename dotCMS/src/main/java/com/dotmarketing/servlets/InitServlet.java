@@ -145,7 +145,7 @@ public class InitServlet extends HttpServlet {
 
         try {
             DotInitScheduler.start();
-        } catch (SchedulerException e2) {
+        } catch (Exception e2) {
             Logger.fatal(InitServlet.class, e2.getMessage(), e2);
             throw new ServletException(e2.getMessage(), e2);
         }

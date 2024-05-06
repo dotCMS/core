@@ -1,6 +1,8 @@
 package com.dotcms.api.traversal;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -8,21 +10,37 @@ import java.util.Set;
  */
 public class TreeNodeInfo {
 
+    private String site;
     private Set<String> languages;
     private Set<String> liveLanguages;
     private Set<String> workingLanguages;
     private int assetsCount;
     private int foldersCount;
+    private Map<String, Integer> liveAssetsCountByLanguage;
+    private Map<String, Integer> workingAssetsCountByLanguage;
 
     /**
      * Constructs a new TreeNodeInfo object.
      */
-    public TreeNodeInfo() {
+    public TreeNodeInfo(final String site) {
         this.languages = new HashSet<>();
         this.liveLanguages = new HashSet<>();
         this.workingLanguages = new HashSet<>();
         this.assetsCount = 0;
         this.foldersCount = 0;
+        this.liveAssetsCountByLanguage = new HashMap<>();
+        this.workingAssetsCountByLanguage = new HashMap<>();
+
+        this.site = site;
+    }
+
+    /**
+     * Returns the site associated with this TreeNodeInfo object.
+     *
+     * @return the site
+     */
+    public String site() {
+        return this.site;
     }
 
     /**
@@ -62,12 +80,33 @@ public class TreeNodeInfo {
     }
 
     /**
+     * Retrieves the count of live assets by language.
+     *
+     * @param language the language to retrieve the count for
+     * @return the count of live assets for the specified language
+     */
+    public int liveAssetsCountByLanguage(final String language) {
+        return this.liveAssetsCountByLanguage.getOrDefault(language, 0);
+    }
+
+    /**
+     * Retrieves the count of working assets by language.
+     *
+     * @param language the language to retrieve the count for
+     * @return the count of working assets for the specified language
+     */
+    public int workingAssetsCountByLanguage(final String language) {
+        return this.workingAssetsCountByLanguage.getOrDefault(language, 0);
+    }
+
+    /**
      * Returns the count of folders in the tree node.
      *
-     * @return the count of folders
+     * @return the count of folders, or 1 if there are no folders, there is always at least
+     * one folder, the root folder
      */
     public int foldersCount() {
-        return this.foldersCount;
+        return this.foldersCount == 0 ? 1 : this.foldersCount;
     }
 
     /**
@@ -98,24 +137,6 @@ public class TreeNodeInfo {
     }
 
     /**
-     * Increments the count of assets by a specified value.
-     *
-     * @param assetsCount the value to increment the assets count by
-     */
-    public void incrementAssetsCount(int assetsCount) {
-        this.assetsCount += assetsCount;
-    }
-
-    /**
-     * Increments the count of folders by a specified value.
-     *
-     * @param foldersCount the value to increment the folders count by
-     */
-    public void incrementFoldersCount(int foldersCount) {
-        this.foldersCount += foldersCount;
-    }
-
-    /**
      * Increments the count of assets by 1.
      */
     public void incrementAssetsCount() {
@@ -128,4 +149,25 @@ public class TreeNodeInfo {
     public void incrementFoldersCount() {
         this.foldersCount++;
     }
+
+    /**
+     * Increments the count of live assets by language.
+     *
+     * @param language the language to increment the count for
+     */
+    public void incrementLiveAssetsCountByLanguage(final String language) {
+        this.liveAssetsCountByLanguage.put(language,
+                this.liveAssetsCountByLanguage(language) + 1);
+    }
+
+    /**
+     * Increments the count of working assets by language.
+     *
+     * @param language the language to increment the count for
+     */
+    public void incrementWorkingAssetsCountByLanguage(final String language) {
+        this.workingAssetsCountByLanguage.put(language,
+                this.workingAssetsCountByLanguage(language) + 1);
+    }
+
 }

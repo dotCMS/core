@@ -3,7 +3,7 @@
 
     <parent>
         <groupId>com.dotcms</groupId>
-        <artifactId>independent-projects</artifactId>
+        <artifactId>dotcms-independent-projects</artifactId>
         <version>1.0.0-SNAPSHOT</version>
 
     </parent>
@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
 
     <groupId>com.dotcms.core.plugins</groupId>
-    <artifactId>core-plugins-parent</artifactId>
+    <artifactId>dotcms-core-plugins-parent</artifactId>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

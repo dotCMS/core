@@ -1,135 +1,130 @@
 package com.dotcms.cli.command.site;
 
-import com.dotcms.api.SiteAPI;
+import com.dotcms.api.client.push.PushService;
+import com.dotcms.api.client.push.site.SiteComparator;
+import com.dotcms.api.client.push.site.SiteFetcher;
+import com.dotcms.api.client.push.site.SitePushHandler;
 import com.dotcms.cli.command.DotCommand;
-import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.common.ApplyCommandOrder;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.WorkspaceMixin;
+import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
-import com.dotcms.model.ResponseEntityView;
-import com.dotcms.model.site.CreateUpdateSiteRequest;
-import com.dotcms.model.site.GetSiteByNameRequest;
-import com.dotcms.model.site.SiteView;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.model.config.Workspace;
+import com.dotcms.model.push.PushOptions;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SitePush.NAME,
-     header = "@|bold,blue Push a Site from a given file |@",
-     description = {
-             " This command will push a site to the current active",
-             " remote instance of dotCMS from a given file.",
-             " When pulling a site from a remote dotCMS instance",
-             " the site is saved to a file.",
-             " The file name will be the site's name.",
-             " To make changes to the a Site",
-             " modify the file and push it back to the remote instance.",
-             " The file can also be used as a base to create a brand new Site.",
-             " The format can be changed using the @|yellow --format|@ option.",
-             "" // empty line left here on purpose to make room at the end
-     }
+        header = "@|bold,blue Push sites|@",
+        description = {
+                "This command enables the pushing of sites to the server. It accommodates the "
+                        + "specification of either a site file or a folder path.",
+                "" // empty string to add a new line
+        }
 )
-public class SitePush extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
+public class SitePush extends AbstractSiteCommand implements Callable<Integer>, DotCommand,
+        DotPush {
 
     static final String NAME = "push";
 
-    @CommandLine.Mixin(name = "format")
-    FormatOptionMixin formatOption;
+    public static final String SITE_PUSH_OPTION_FORCE_EXECUTION = "forceExecution";
 
-    @CommandLine.Option(names = { "-f", "--force" }, paramLabel = "force execution" ,description = "Force must me set to true to update a site name.")
-    public boolean forceExecution;
+    static final String SITE_PUSH_MIXIN = "sitePushMixin";
 
-    @CommandLine.Mixin(name = "workspace")
-    WorkspaceMixin workspaceMixin;
+    @CommandLine.Mixin
+    FullPushOptionsMixin pushMixin;
+
+    @CommandLine.Mixin(name = SITE_PUSH_MIXIN)
+    SitePushMixin sitePushMixin;
 
     @Inject
     WorkspaceManager workspaceManager;
 
-    @CommandLine.Parameters(index = "0", arity = "1", description = " The json/yaml formatted Site descriptor file to be pushed. ")
-    File siteFile;
+    @Inject
+    PushService pushService;
+
+    @Inject
+    SiteFetcher siteProvider;
+
+    @Inject
+    SiteComparator siteComparator;
+
+    @Inject
+    SitePushHandler sitePushHandler;
+
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Override
-    public Integer call() {
+    public Integer call() throws Exception {
+
+        // When calling from the global push we should avoid the validation of the unmatched
+        // arguments as we may send arguments meant for other push subcommands
+        if (!pushMixin.noValidateUnmatchedArguments) {
+            // Checking for unmatched arguments
+            output.throwIfUnmatchedArguments(spec.commandLine());
+        }
+
         return push();
     }
 
-    private int push() {
+    private int push() throws Exception {
 
-
-        if (null != siteFile) {
-            if (!siteFile.exists() || !siteFile.canRead()) {
-                output.error(String.format(
-                        "Unable to read the input file [%s] check that it does exist and that you have read permissions on it.",
-                        siteFile.getAbsolutePath()));
-                return CommandLine.ExitCode.SOFTWARE;
-            }
-
-            final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-
-            try {
-                final ObjectMapper objectMapper = formatOption.objectMapper(siteFile);
-                final SiteView in = objectMapper.readValue(siteFile, SiteView.class);
-                final String returnedSiteName = in.siteName();
-                final CreateUpdateSiteRequest createUpdateSiteRequest = toRequest(in);
-                if(update(siteAPI, createUpdateSiteRequest, returnedSiteName)){
-                    return CommandLine.ExitCode.OK;
-                }
-                output.info(String.format(" No site named [%s] was found. Will attempt to create it. ",returnedSiteName));
-                final ResponseEntityView<SiteView> response = siteAPI.create(createUpdateSiteRequest);
-                final SiteView siteView = response.entity();
-                output.info(String.format("Site @|bold,green [%s]|@ successfully created.",returnedSiteName));
-                output.info(shortFormat(siteView));
-                return CommandLine.ExitCode.OK;
-            } catch (IOException e) {
-                output.error(String.format(
-                        "Error occurred while pushing Site from file: [%s] with message: [%s].",
-                        siteFile.getAbsolutePath(), e.getMessage()));
-                return CommandLine.ExitCode.SOFTWARE;
-            }
+        // Make sure the path is within a workspace
+        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
+                this.getPushMixin().path()
+        );
+        if (workspace.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("No valid workspace found at path: [%s]",
+                            this.getPushMixin().path.toPath()));
         }
 
-        return CommandLine.ExitCode.USAGE;
-    }
-
-    CreateUpdateSiteRequest toRequest(final SiteView siteView) {
-        return CreateUpdateSiteRequest.builder()
-                .siteName(siteView.siteName())
-                .keywords(siteView.keywords())
-                .googleMap(siteView.googleMap())
-                .addThis(siteView.addThis())
-                .aliases(siteView.aliases())
-                .identifier(siteView.identifier())
-                .inode(siteView.inode())
-                .proxyUrlForEditMode(siteView.proxyUrlForEditMode())
-                .googleAnalytics(siteView.googleAnalytics())
-                .description(siteView.description())
-                .tagStorage(siteView.tagStorage())
-                .siteThumbnail(siteView.siteThumbnail())
-                .embeddedDashboard(siteView.embeddedDashboard())
-                .forceExecution(forceExecution)
-                .build();
-    }
-
-    private boolean update(SiteAPI siteAPI, CreateUpdateSiteRequest createUpdateSiteRequest, String siteName) {
-        try {
-            output.info(String.format(" Looking up site by name [%s]", siteName));
-            final ResponseEntityView<SiteView> byName = siteAPI.findByName(GetSiteByNameRequest.builder().siteName(siteName).build());
-            //Up on read failure we could try to load a yml and pass the respect
-            output.info(String.format(" A site named [%s] was found. An update will be attempted. ", siteName));
-            final ResponseEntityView<SiteView> update = siteAPI.update(byName.entity().identifier(), createUpdateSiteRequest);
-            output.info(shortFormat(update.entity()));
-            return true;
-        } catch (NotFoundException e) {
-            //Not relevant
-            output.error(String.format(" No site named [%s] was found. ", siteName));
+        File inputFile = this.getPushMixin().path().toFile();
+        if (!inputFile.isAbsolute()) {
+            inputFile = Path.of(workspace.get().sites().toString(), inputFile.getName())
+                    .toFile();
         }
-        return false;
+        if (!inputFile.exists() || !inputFile.canRead()) {
+            throw new IOException(String.format(
+                    "Unable to access the path [%s] check that it does exist and that you have "
+                            + "read permissions on it.", inputFile)
+            );
+        }
+
+        // To make sure that if the user is passing a directory we use the sites folder
+        if (inputFile.isDirectory()) {
+            inputFile = workspace.get().sites().toFile();
+        }
+
+        // Execute the push
+        pushService.push(
+                inputFile,
+                PushOptions.builder().
+                        failFast(pushMixin.failFast).
+                        allowRemove(sitePushMixin.removeSites).
+                        disableAutoUpdate(pushMixin.disableAutoUpdate).
+                        maxRetryAttempts(pushMixin.retryAttempts).
+                        dryRun(pushMixin.dryRun).
+                        build(),
+                output,
+                siteProvider,
+                siteComparator,
+                sitePushHandler,
+                Map.of(SITE_PUSH_OPTION_FORCE_EXECUTION, sitePushMixin.forceExecution)
+        );
+
+        return CommandLine.ExitCode.OK;
     }
 
     @Override
@@ -141,4 +136,20 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
     public OutputOptionMixin getOutput() {
         return output;
     }
+
+    @Override
+    public PushMixin getPushMixin() {
+        return pushMixin;
+    }
+
+    @Override
+    public Optional<String> getCustomMixinName() {
+        return Optional.of(SITE_PUSH_MIXIN);
+    }
+
+    @Override
+    public int getOrder() {
+        return ApplyCommandOrder.SITE.getOrder();
+    }
+
 }

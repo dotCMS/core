@@ -1,10 +1,11 @@
 package com.dotcms.model.site;
 
 import com.dotcms.model.annotation.ValueType;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.immutables.value.Value;
-
+import java.util.List;
 import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
 @ValueType
 @Value.Immutable
@@ -54,6 +55,13 @@ public interface AbstractCreateUpdateSiteRequest {
 
      @Nullable
      Long languageId();
+
+     @JsonProperty("default")
+     @Nullable
+     Boolean isDefault();
+
+     @Nullable
+     List<SiteVariableView> variables();
 
      @Nullable
      Boolean forceExecution();

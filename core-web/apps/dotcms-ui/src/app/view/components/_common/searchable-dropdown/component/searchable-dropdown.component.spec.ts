@@ -15,9 +15,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 
@@ -39,8 +38,7 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
         [valuePropertyName]="valuePropertyName"
         [overlayWidth]="overlayWidth"
         [width]="width"
-        [disabled]="disabled"
-    >
+        [disabled]="disabled">
     </dot-searchable-dropdown>`
 })
 class HostTestComponent {
@@ -109,7 +107,7 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
@@ -340,8 +338,8 @@ describe('SearchableDropdownComponent', () => {
         expect(hostComp.placeholder).toEqual(comp.valueString);
     });
 
-    describe('star class', () => {
-        it('should add the star css class when item has default property set to true', () => {
+    describe('selected class', () => {
+        it('should add the selected css class when item has been clicked', () => {
             hostComp.data = [
                 {
                     id: 1,
@@ -356,13 +354,14 @@ describe('SearchableDropdownComponent', () => {
 
             hostFixture.detectChanges();
 
-            const item = de.query(
-                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
-            );
+            const item = de.query(By.css('[data-testid="searchable-dropdown-data-list-item"]'));
 
-            expect(item.classes['star']).toBeTruthy();
+            item.triggerEventHandler('click', null);
+            hostFixture.detectChanges();
+
+            expect(item.classes['selected']).toBeTruthy();
         });
-        it('should not add css star class when item default property is set to false', () => {
+        it('should not add selected star class when is not clicked', () => {
             hostComp.data = [
                 {
                     id: 1,
@@ -377,10 +376,7 @@ describe('SearchableDropdownComponent', () => {
 
             hostFixture.detectChanges();
 
-            const item = de.query(
-                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
-            );
-
+            const item = de.query(By.css('[data-testid="searchable-dropdown-data-list-item"]'));
             expect(item.classes['star']).toBeFalsy();
         });
     });
@@ -402,20 +398,18 @@ describe('SearchableDropdownComponent', () => {
         [totalRecords]="totalRecords"
         [valuePropertyName]="valuePropertyName"
         [width]="width"
-    >
+        cssClassDataList="site_selector__data-list">
         <ng-template let-data="item" pTemplate="listItem">
             <div
                 class="searchable-dropdown__data-list-item templateTestItem"
-                (click)="handleClick(item)"
-            >
+                (click)="handleClick(item)">
                 {{ data.label }}
             </div>
         </ng-template>
         <ng-template let-persona="item" pTemplate="select">
             <div
                 class="dot-persona-selector__testContainer"
-                (click)="searchableDropdown.toggleOverlayPanel($event)"
-            >
+                (click)="searchableDropdown.toggleOverlayPanel($event)">
                 Test
             </div>
         </ng-template>
@@ -455,6 +449,9 @@ class HostTestExternalTemplateComponent {
 
     @Input()
     multiple: boolean;
+
+    @Input()
+    cssClassDataList: string;
 }
 
 describe('SearchableDropdownComponent', () => {
@@ -480,7 +477,7 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
@@ -565,5 +562,12 @@ describe('SearchableDropdownComponent', () => {
             By.css('.searchable-dropdown__data-list-item.templateTestItem')
         );
         expect(listItems.length).toBe(6);
+    });
+
+    it('should display as site selector data list', () => {
+        hostFixture.detectChanges();
+
+        const siteSelectorDataList: DebugElement = de.query(By.css('.site_selector__data-list'));
+        expect(siteSelectorDataList).not.toBeNull();
     });
 });

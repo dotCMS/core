@@ -113,6 +113,15 @@ public class MultiTree implements Serializable {
         return newMultiTree;
     }
 
+    public static MultiTree buildMultitree(final MultiTree multiTree,
+            final String newVariant, final String newPerzonalization) {
+        final MultiTree newMultiTree = new MultiTree(multiTree);
+        newMultiTree.setVariantId(newVariant);
+        newMultiTree.setPersonalization(newPerzonalization);
+
+        return newMultiTree;
+    }
+
     public String getVariantId() {
         return variantId != null ? variantId : VariantAPI.DEFAULT_VARIANT.name();
     }

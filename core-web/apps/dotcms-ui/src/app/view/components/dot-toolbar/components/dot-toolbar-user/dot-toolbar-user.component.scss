@@ -1,12 +1,9 @@
 @use "variables" as *;
 @import "mixins";
 
-:host {
-    display: block;
-}
-
 p-avatar {
     cursor: pointer;
+    padding: $spacing-2 0;
 }
 
 ::ng-deep #toolbar-header:hover {
@@ -25,5 +22,38 @@ p-avatar {
         white-space: nowrap;
         font-size: $font-size-lg;
         color: $black;
+    }
+}
+
+::ng-deep {
+    .toolbar-user__menu.p-menu {
+        margin-top: $spacing-0;
+        &.p-menu-overlay {
+            width: 17rem;
+        }
+    }
+}
+
+:host::ng-deep {
+    display: block;
+
+    .p-menu {
+        margin-top: $spacing-0;
+    }
+
+    .p-menu .p-menu-separator {
+        margin: $spacing-1;
+    }
+
+    .toolbar-user__logout .p-menuitem-link .p-menuitem-text {
+        color: $color-palette-gray-700;
+    }
+
+    .toolbar-user__logout .p-menuitem-link:not(.p-disabled):hover .p-menuitem-text {
+        color: $color-palette-gray-700;
+    }
+
+    .toolbar-user__logout .p-menuitem-link:not(.p-disabled):hover .p-menuitem-icon {
+        color: $color-palette-gray-700;
     }
 }

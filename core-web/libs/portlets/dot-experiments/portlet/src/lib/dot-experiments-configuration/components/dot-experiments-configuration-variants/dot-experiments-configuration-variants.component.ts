@@ -15,7 +15,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -26,14 +25,20 @@ import {
     MAX_INPUT_TITLE_LENGTH,
     MAX_VARIANTS_ALLOWED,
     StepStatus,
-    TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import {
+    DotCopyButtonComponent,
+    DotDynamicDirective,
+    DotIconModule,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
-import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import {
+    ConfigurationVariantStepViewModel,
+    DotExperimentsConfigurationStore
+} from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationItemsCountComponent } from '../dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
 import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 
@@ -45,7 +50,7 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
         DotMessagePipe,
         DotIconModule,
         DotExperimentsConfigurationVariantsAddComponent,
-        DotCopyButtonModule,
+        DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,
 
@@ -64,14 +69,10 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {
-    vm$: Observable<{
-        experimentId: string;
-        trafficProportion: TrafficProportion;
-        status: StepStatus;
-        isExperimentADraft: boolean;
-    }> = this.dotExperimentsConfigurationStore.variantsStepVm$.pipe(
-        tap(({ status }) => this.handleSidebar(status))
-    );
+    vm$: Observable<ConfigurationVariantStepViewModel> =
+        this.dotExperimentsConfigurationStore.variantsStepVm$.pipe(
+            tap(({ status }) => this.handleSidebar(status))
+        );
     dotPageMode = DotPageMode;
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
     protected readonly statusList = ComponentStatus;

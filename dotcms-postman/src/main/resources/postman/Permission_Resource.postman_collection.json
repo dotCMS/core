@@ -1,0 +1,1085 @@
+{
+	"info": {
+		"_postman_id": "f2bf3962-b283-4ba4-9539-881095ac5233",
+		"name": "Permission Resource",
+		"description": "Test for permission resources",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1549189"
+	},
+	"item": [
+		{
+			"name": "Permission By Content",
+			"item": [
+				{
+					"name": "RequestRoles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"var resultLength = jsonData.entity.length;",
+									"pm.test(\"length check\", function () {",
+									"    pm.expect(resultLength).to.greaterThan(1);",
+									"});",
+									"",
+									"",
+									"let roles = jsonData.entity;",
+									"pm.collectionVariables.set(\"roles\", roles);",
+									"",
+									"pm.collectionVariables.set(\"adminRole\", roles[0].id);",
+									"pm.collectionVariables.set(\"anonRoles\", roles[1].id);",
+									"pm.collectionVariables.set(\"ownerRoles\", roles[2].id);",
+									"pm.collectionVariables.set(\"ldapUserRoles\", roles[3].id);",
+									"pm.collectionVariables.set(\"loginAsRoles\", roles[4].id);",
+									"",
+									"pm.test(\"All IDs are unique\", function () {",
+									"  // Get all IDs from the response",
+									"  const ids = pm.response.json().entity.map(entity => entity.id);",
+									"",
+									"  // Convert the array of IDs to a Set to eliminate duplicates",
+									"  const uniqueIds = new Set(ids);",
+									"",
+									"  // Check if the length of the unique IDs set is equal to the original array",
+									"  pm.expect(uniqueIds.size).to.equal(ids.length);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/_search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"_search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"var contentType = jsonData.entity[0];",
+									"",
+									"pm.test(\"Status code should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Icon should be 360\", function() {",
+									"    pm.expect(contentType.icon).to.eql(\"360\");",
+									"});",
+									"",
+									"pm.test(\"Content type fields have expected structure\", function () {",
+									"  const createdContentType = pm.response.json().entity[0];",
+									"  const fields = createdContentType.fields;",
+									"",
+									"  fields.forEach(field => {",
+									"    pm.expect(field).to.have.property(\"clazz\");",
+									"    pm.expect(field).to.have.property(\"contentTypeId\");",
+									"    pm.expect(field).to.have.property(\"dataType\");",
+									"    pm.expect(field).to.have.property(\"fieldType\");",
+									"    pm.expect(field).to.have.property(\"fieldTypeLabel\");",
+									"    // ... Add similar checks for other field properties",
+									"  });",
+									"});",
+									"",
+									"pm.test(\"Content type has required fields\", function () {",
+									"  const createdContentType = pm.response.json().entity[0];",
+									"  const fields = createdContentType.fields;",
+									"",
+									"  // Check for specific field names and properties",
+									"  pm.expect(fields.some(field => field.name === \"Title\")).to.be.true;",
+									"  pm.expect(fields.find(field => field.name === \"Title\").dataType).to.equal(\"TEXT\");",
+									"",
+									"  // ... Add similar checks for other fields",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"defaultType\":false,\n   \"icon\":\"360\",\n   \"fixed\":false,\n   \"system\":false,\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"description\":\"\",\n   \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"name\":\"PermissionByContentTest\",\n   \"fields\": [{\n       \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n\t\t\"dataType\": \"TEXT\",\n\t\t\"fieldType\": \"Text\",\n\t\t\"fieldTypeLabel\": \"Text\",\n\t\t\"fieldVariables\": [],\n\t\t\"fixed\": false,\n\t\t\"iDate\": 1606168746000,\n\t\t\"indexed\": true,\n\t\t\"listed\": false,\n\t\t\"modDate\": 1606168746000,\n\t\t\"name\": \"Title\",\n\t\t\"readOnly\": false,\n\t\t\"required\": false,\n\t\t\"searchable\": true,\n\t\t\"sortOrder\": 1,\n\t\t\"unique\": false,\n\t\t\"variable\": \"title\"\n    }\n   ]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that WYSIWYG field is created with provided field variables."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Instance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"",
+									"   let saved = jsonData.entity.results[0];",
+									"   let props = Object.keys(saved);",
+									"   let identifierProp =  props[0];",
+									"   let contentlet = saved[identifierProp];",
+									"   pm.collectionVariables.set(\"contentlet\", contentlet);",
+									"   pm.collectionVariables.set(\"identifier\", contentlet.identifier);",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"PermissionByContentTest\",\n            \"title\":\"PermissionByContentTest\",\n            \"contentHost\":\"default\"            \n        }        \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get New Instance Permissions",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"Status code should be 200\", function() {",
+									"    pm.response.to.have.status(200);     ",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.length).to.be.gte(0);",
+									"    let perms = jsonData.entity.filter(permission => permission.inode === 'SYSTEM_HOST');",
+									"",
+									"    pm.expect(perms.length).to.be.eq(1);",
+									"",
+									"    let perm = perms[0];        ",
+									"    pm.expect(perm.inode).to.eql(\"SYSTEM_HOST\");",
+									"    pm.expect(perm.permission).to.eql(\"READ\");",
+									"    pm.expect(perm.type).to.eql(\"com.dotmarketing.portlets.contentlet.model.Contentlet\");",
+									"    pm.expect(perm.roldId).not.eql(null);",
+									"});",
+									"",
+									"pm.test(\"Each permission object has required properties\", function () {",
+									"  const permissions = pm.response.json().entity;",
+									"",
+									"  permissions.forEach(permission => {",
+									"    pm.expect(permission).to.have.property(\"permission\");",
+									"    pm.expect(permission).to.have.property(\"roleId\");",
+									"  });",
+									"});",
+									"",
+									"// Check for sensitive data exposure (customize as per your API response)",
+									"pm.test(\"No Sensitive Data Exposure\", function () {",
+									"    var sensitiveFields = [\"password\", \"token\", \"secret\"]; // Add fields to check for sensitivity",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    sensitiveFields.forEach(function (field) {",
+									"        pm.expect(jsonData.entity[field]).to.not.be.ok;",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"PermissionByContentTest\",\n            \"title\":\"PermissionByContentTest\",\n            \"contentHost\":\"default\"            \n        }        \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/_bycontent/?contentletId={{identifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"_bycontent",
+								""
+							],
+							"query": [
+								{
+									"key": "contentletId",
+									"value": "{{identifier}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get instance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"",
+									"   let saved = jsonData.entity.results[0];",
+									"   let props = Object.keys(saved);",
+									"   let identifierProp =  props[0];",
+									"   let contentlet = saved[identifierProp];",
+									"   pm.collectionVariables.set(\"instance1\", contentlet);",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"PermissionByContentTest\",\n            \"title\":\"PermissionByContentTest\",\n            \"contentHost\":\"default\"            \n        }        \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FireWithPermissions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"PermissionByContentTest\",\n        \"title\":\"Testing Permissions By contentlet\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    },\n    \"individualPermissions\": {\n        \"READ\":[\"{{anonRoles}}\",\"{{ownerRoles}}\"]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get New Instance with Individual Permissions",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"Status code should be 200\", function() {",
+									"    pm.response.to.have.status(200);     ",
+									"    let jsonData = pm.response.json();",
+									"  ",
+									"      pm.expect(jsonData.entity.length).to.be.gte(0);",
+									"    let perms = jsonData.entity.filter(permission => permission.inode === 'SYSTEM_HOST');",
+									"",
+									"    pm.expect(perms.length).to.be.eq(1);",
+									"",
+									"    let perm = perms[0];        ",
+									"    pm.expect(perm.inode).to.eql(\"SYSTEM_HOST\");",
+									"    pm.expect(perm.permission).to.eql(\"READ\");",
+									"    pm.expect(perm.type).to.eql(\"com.dotmarketing.portlets.contentlet.model.Contentlet\");",
+									"    pm.expect(perm.roldId).not.eql(null);",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"PermissionByContentTest\",\n            \"title\":\"PermissionByContentTest\",\n            \"contentHost\":\"default\"            \n        }        \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/_bycontent/?contentletId={{identifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"_bycontent",
+								""
+							],
+							"query": [
+								{
+									"key": "contentletId",
+									"value": "{{identifier}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get None Existing Content Expect 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function() {",
+									"    pm.response.to.have.status(404);     ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"PermissionByContentTest\",\n            \"title\":\"PermissionByContentTest\",\n            \"contentHost\":\"default\"            \n        }        \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/_bycontent/?contentletId=0",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"_bycontent",
+								""
+							],
+							"query": [
+								{
+									"key": "contentletId",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Invalid permission id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/permissions/_bypermissiontype?userid=dotcms.org.1&permission=xxx&permissiontype=CONTENTLETS,HTMLPAGES,STRUCTURES,TEMPLATE_LAYOUTS",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"permissions",
+						"_bypermissiontype"
+					],
+					"query": [
+						{
+							"key": "userid",
+							"value": "dotcms.org.1"
+						},
+						{
+							"key": "permission",
+							"value": "xxx"
+						},
+						{
+							"key": "permissiontype",
+							"value": "CONTENTLETS,HTMLPAGES,STRUCTURES,TEMPLATE_LAYOUTS"
+						}
+					]
+				},
+				"description": "Send an invalid permission"
+			},
+			"response": []
+		},
+		{
+			"name": "Invalid User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/permissions/_bypermissiontype?userid=invalidUser&permission=xxx&permissiontype=CONTENTLETS,HTMLPAGES,STRUCTURES,TEMPLATE_LAYOUTS",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"permissions",
+						"_bypermissiontype"
+					],
+					"query": [
+						{
+							"key": "userid",
+							"value": "invalidUser"
+						},
+						{
+							"key": "permission",
+							"value": "xxx"
+						},
+						{
+							"key": "permissiontype",
+							"value": "CONTENTLETS,HTMLPAGES,STRUCTURES,TEMPLATE_LAYOUTS"
+						}
+					]
+				},
+				"description": "Invalid  User sent"
+			},
+			"response": []
+		},
+		{
+			"name": "Get all type",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json().entity;",
+							"",
+							"pm.test(\"CATEGORY check\", function () {",
+							"    pm.expect(jsonData.CATEGORY.canRead).to.eql(true);",
+							"});",
+							"",
+							"pm.test(\"CATEGORY check\", function () {",
+							"    pm.expect(jsonData.CATEGORY.canWrite).to.eql(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/permissions/_bypermissiontype?userid=dotcms.org.1",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"permissions",
+						"_bypermissiontype"
+					],
+					"query": [
+						{
+							"key": "userid",
+							"value": "dotcms.org.1"
+						}
+					]
+				},
+				"description": "Get all the permission type for write and read"
+			},
+			"response": []
+		},
+		{
+			"name": "Get filter type and write",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json().entity;",
+							"",
+							"pm.test(\"CONTENTLETS check\", function () {",
+							"    pm.expect(jsonData.CONTENTLETS.canWrite).to.eql(true);",
+							"});",
+							"",
+							"pm.test(\"HTMLPAGES check\", function () {",
+							"    pm.expect(jsonData.HTMLPAGES.canWrite).to.eql(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/permissions/_bypermissiontype?userid=dotcms.org.1&permission=WRITE&permissiontype=CONTENTLETS,HTMLPAGES",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"permissions",
+						"_bypermissiontype"
+					],
+					"query": [
+						{
+							"key": "userid",
+							"value": "dotcms.org.1"
+						},
+						{
+							"key": "permission",
+							"value": "WRITE"
+						},
+						{
+							"key": "permissiontype",
+							"value": "CONTENTLETS,HTMLPAGES"
+						}
+					]
+				},
+				"description": "Get only write and couple types"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "role1",
+			"value": ""
+		},
+		{
+			"key": "instance1",
+			"value": ""
+		},
+		{
+			"key": "identifier",
+			"value": ""
+		},
+		{
+			"key": "contentlet",
+			"value": ""
+		},
+		{
+			"key": "roles",
+			"value": ""
+		},
+		{
+			"key": "adminRole",
+			"value": ""
+		},
+		{
+			"key": "anonRoles",
+			"value": ""
+		},
+		{
+			"key": "ownerRoles",
+			"value": ""
+		},
+		{
+			"key": "ldapUserRoles",
+			"value": ""
+		},
+		{
+			"key": "loginAsRoles",
+			"value": ""
+		}
+	]
+}

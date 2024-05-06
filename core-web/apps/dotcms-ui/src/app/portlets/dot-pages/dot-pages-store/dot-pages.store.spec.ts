@@ -7,37 +7,37 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
+    DotHttpErrorManagerService,
     DotLanguagesService,
     DotLicenseService,
     DotLocalstorageService,
+    DotMessageDisplayService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
+    DotPropertiesService,
     DotRenderMode,
+    DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
-    ESOrderDirection
+    ESOrderDirection,
+    DotGlobalMessageService,
+    DotWizardService,
+    DotIframeService,
+    DotWorkflowEventHandlerService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
+    DotPushPublishDialogService,
     LoggerService,
     LoginService,
     SiteService,
@@ -61,7 +61,10 @@ import {
     mockResponseView,
     mockWorkflowsActions,
     mockPublishAction,
-    mockLanguageArray
+    mockLanguageArray,
+    DotMessageDisplayServiceMock,
+    MockDotHttpErrorManagerService,
+    DotLicenseServiceMock
 } from '@dotcms/utils-testing';
 
 import {
@@ -71,7 +74,6 @@ import {
 } from './dot-pages.store';
 
 import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
-import { DotLicenseServiceMock } from '../../dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 import {
     CurrentUserDataMock,
     DotCurrentUserServiceMock
@@ -112,6 +114,8 @@ describe('DotPageStore', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotFavoritePageService: DotFavoritePageService;
     let dotLocalstorageService: DotLocalstorageService;
+    let dotPropertiesService: DotPropertiesService;
+    let dotPushPublishDialogService: DotPushPublishDialogService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -131,15 +135,23 @@ describe('DotPageStore', () => {
                 StringUtils,
                 DotFavoritePageService,
                 DotLocalstorageService,
+                DotPropertiesService,
+                DotPushPublishDialogService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
                 { provide: DotLanguagesService, useClass: DotLanguagesServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotHttpErrorManagerService, useClass: MockDotHttpErrorManagerService },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
+                },
                 { provide: DotESContentService, useClass: MockESPaginatorService },
                 { provide: DotLicenseService, useClass: DotLicenseServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -157,10 +169,14 @@ describe('DotPageStore', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         dotLocalstorageService = TestBed.inject(DotLocalstorageService);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
+        dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
 
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
         spyOn(dotLocalstorageService, 'getItem').and.returnValue(`true`);
+        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('*'));
+        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
 
         dotPageStore.setInitialStateData(5);
         dotPageStore.setKeyword('test');
@@ -177,8 +193,14 @@ describe('DotPageStore', () => {
             expect(data.isEnterprise).toEqual(true);
             expect(data.languages).toEqual(mockLanguageArray);
             expect(data.loggedUser.id).toEqual(CurrentUserDataMock.userId);
-            expect(data.loggedUser.canRead).toEqual({ contentlets: true, htmlPages: true });
-            expect(data.loggedUser.canWrite).toEqual({ contentlets: true, htmlPages: true });
+            expect(data.loggedUser.canRead).toEqual({
+                contentlets: true,
+                htmlPages: true
+            });
+            expect(data.loggedUser.canWrite).toEqual({
+                contentlets: true,
+                htmlPages: true
+            });
             expect(data.pages.items).toEqual([]);
             expect(data.pages.keyword).toEqual('test');
             expect(data.pages.status).toEqual(ComponentStatus.INIT);
@@ -201,8 +223,14 @@ describe('DotPageStore', () => {
             expect(data.isEnterprise).toEqual(false);
             expect(data.languages).toEqual(null);
             expect(data.loggedUser.id).toEqual(null);
-            expect(data.loggedUser.canRead).toEqual({ contentlets: null, htmlPages: null });
-            expect(data.loggedUser.canWrite).toEqual({ contentlets: null, htmlPages: null });
+            expect(data.loggedUser.canRead).toEqual({
+                contentlets: null,
+                htmlPages: null
+            });
+            expect(data.loggedUser.canWrite).toEqual({
+                contentlets: null,
+                htmlPages: null
+            });
             expect(data.pages.items).toEqual([]);
             expect(data.pages.keyword).toEqual('');
             expect(data.pages.status).toEqual(ComponentStatus.INIT);
@@ -424,7 +452,9 @@ describe('DotPageStore', () => {
         expect(dialogService.open).toHaveBeenCalledWith(DotPagesCreatePageDialogComponent, {
             header: 'create.page',
             width: '58rem',
-            data: expectedInputArray
+            data: {
+                pageTypes: expectedInputArray
+            }
         });
     });
 
@@ -518,7 +548,10 @@ describe('DotPageStore', () => {
 
         spyOn(dotESContentService, 'get').and.returnValue(of(updated));
 
-        dotPageStore.updateSinglePageData({ identifier: '123', isFavoritePage: false });
+        dotPageStore.updateSinglePageData({
+            identifier: '123',
+            isFavoritePage: false
+        });
 
         tick(3000);
 
@@ -577,12 +610,55 @@ describe('DotPageStore', () => {
         );
     });
 
+    it('should trigger push publish dialog with the correct item identifier', (done) => {
+        const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
+
+        const item = favoritePagesInitialTestData[0];
+
+        spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
+        spyOn(dotFavoritePageService, 'get').and.returnValue(
+            of({
+                contentTook: 0,
+                jsonObjectView: {
+                    contentlets: expectedInputArray as unknown as DotCMSContentlet[]
+                },
+                queryTook: 1,
+                resultsSize: 4
+            })
+        );
+
+        spyOn(dotPushPublishDialogService, 'open').and.callThrough();
+
+        dotPageStore.showActionsMenu({
+            item,
+            actionMenuDomId: 'test1'
+        });
+
+        dotPageStore.state$.subscribe((data) => {
+            const menuActions = data.pages.menuActions;
+
+            expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
+
+            menuActions[7].command();
+
+            expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
+                assetIdentifier: item.identifier,
+                title: 'contenttypes.content.push_publish'
+            });
+
+            done();
+        });
+    });
+
     it('should get all Workflow actions and static actions from a favorite page', () => {
         spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(
             of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
         );
         dotPageStore.showActionsMenu({
-            item: { ...favoritePagesInitialTestData[0], contentType: 'dotFavoritePage' },
+            item: {
+                ...favoritePagesInitialTestData[0],
+                contentType: 'dotFavoritePage'
+            },
             actionMenuDomId: 'test1'
         });
 

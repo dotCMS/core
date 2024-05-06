@@ -8,13 +8,14 @@
     position: relative;
 
     ::ng-deep .p-element.p-button:enabled {
-        justify-content: space-between;
+        gap: $spacing-1;
         text-align: left;
         padding: 0;
         padding-left: $spacing-1;
         border: $field-border-size solid $color-palette-gray-400;
 
         .p-button-label {
+            @include truncate-text;
             text-transform: none;
             color: $black;
         }
@@ -22,10 +23,17 @@
         .p-button-icon {
             @extend #field-trigger;
             @extend #field-trigger-icon;
-            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
+
+            &:before {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: $field-height-md;
+                aspect-ratio: 1/1;
+            }
         }
 
         &:hover {
@@ -58,26 +66,43 @@
 }
 
 .searchable-dropdown__data-list ::ng-deep {
+    .site_selector__data-list {
+        .p-dataview-content {
+            .searchable-dropdown__data-list-item {
+                padding: $spacing-2 $spacing-6;
+                display: flex;
+                gap: $spacing-2;
+                i {
+                    color: $color-palette-primary;
+                }
+
+                &.selected {
+                    padding-left: $spacing-1;
+                }
+
+                &.star::after {
+                    content: none;
+                }
+            }
+        }
+    }
+
     .p-dataview {
         position: unset;
     }
 
     .p-dataview-content {
         width: 100%;
-
+        max-height: 80vh;
+        overflow: auto;
         .searchable-dropdown__data-list-item {
             cursor: pointer;
             display: block;
             line-height: normal;
-            padding: $spacing-1 $spacing-3;
             transition: background-color $basic-speed ease-in;
             width: 100%;
-
+            padding: $spacing-1 $spacing-3;
             @include truncate-text;
-
-            &.selected {
-                font-weight: bold;
-            }
 
             &:hover {
                 background-color: $bg-hover;

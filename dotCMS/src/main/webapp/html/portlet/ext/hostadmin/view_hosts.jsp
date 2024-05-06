@@ -5,6 +5,7 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@ page import="com.dotmarketing.util.Config" %>
 
 <%
 	PermissionAPI permAPI = APILocator.getPermissionAPI();
@@ -216,6 +217,16 @@
 						    </div>
 						</div>
 						<div class="yui-g" style="margin-bottom: 16px;">
+							<% if (Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false)) { %>
+							<div class="yui-u first" style="text-align: left">
+								<input type="checkbox" id="copyContentTypes" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
+								<label for="copyContentTypes">
+									<%= LanguageUtil.get(pageContext, "Content Types") %>
+								</label>
+							</div>
+						    <% } else { %>
+								<input style="display: none" type="checkbox" id="copyContentTypes" disabled="true" dojoType="dijit.form.CheckBox">
+							<% } %>
 							<div class="yui-u" style="text-align: left">
 								<input type="checkbox" id="copyLinks" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
 								<label for="copyLinks">

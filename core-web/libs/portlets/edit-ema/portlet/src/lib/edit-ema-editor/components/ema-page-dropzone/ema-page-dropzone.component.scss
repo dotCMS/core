@@ -1,0 +1,36 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+}
+
+.pointer {
+    background-color: $color-palette-primary-500;
+    pointer-events: none;
+    user-select: none;
+    position: absolute;
+}
+
+[data-type="container"] {
+    outline: solid 1px $color-palette-primary-500;
+}
+
+[data-type="container"]:has(div.drop-zone_error) {
+    outline: solid 1px $error;
+}
+
+.drop-zone_error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 1;
+}
+
+.drop-zone_error > span {
+    background: $color-palette-gray-400;
+    padding: $spacing-0 $spacing-1;
+    border-radius: $border-radius-xs;
+}

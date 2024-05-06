@@ -1,7 +1,20 @@
 import { from as observableFrom, Observable, merge, Subject } from 'rxjs';
-import { reduce, mergeMap, take, map, filter, takeUntil } from 'rxjs/operators';
+
 // tslint:disable-next-line:max-file-line-count
 import { Component, EventEmitter, ViewEncapsulation, OnDestroy } from '@angular/core';
+import { ActivatedRoute, Params } from '@angular/router';
+
+import { reduce, mergeMap, take, map, filter, takeUntil } from 'rxjs/operators';
+
+import { CwError } from '@dotcms/dotcms-js';
+import { HttpCode } from '@dotcms/dotcms-js';
+import { LoggerService } from '@dotcms/dotcms-js';
+
+import { ActionService } from './services/Action';
+import { BundleService, IPublishEnvironment } from './services/bundle-service';
+import { ConditionService } from './services/Condition';
+import { ConditionGroupService } from './services/ConditionGroup';
+import { RuleViewService } from './services/dot-view-rule-service';
 import {
     RuleModel,
     RuleService,
@@ -10,17 +23,8 @@ import {
     ActionModel,
     RuleEngineState
 } from './services/Rule';
-import { CwChangeEvent } from './services/util/CwEvent';
 import { ServerSideFieldModel, ServerSideTypeModel } from './services/ServerSideFieldModel';
-import { ConditionService } from './services/Condition';
-import { ActionService } from './services/Action';
-import { ConditionGroupService } from './services/ConditionGroup';
-import { CwError } from '@dotcms/dotcms-js';
-import { BundleService, IPublishEnvironment } from './services/bundle-service';
-import { ActivatedRoute, Params } from '@angular/router';
-import { HttpCode } from '@dotcms/dotcms-js';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { RuleViewService } from './services/dot-view-rule-service';
+import { CwChangeEvent } from './services/util/CwEvent';
 
 export interface ParameterChangeEvent extends CwChangeEvent {
     rule?: RuleModel;
@@ -43,6 +47,7 @@ export interface RuleActionEvent {
         value?: string | boolean;
     };
 }
+
 export interface RuleActionActionEvent extends RuleActionEvent {
     payload: {
         rule?: RuleModel;
@@ -52,6 +57,7 @@ export interface RuleActionActionEvent extends RuleActionEvent {
         name?: string;
     };
 }
+
 export interface ConditionGroupActionEvent extends RuleActionEvent {
     payload: {
         rule?: RuleModel;
@@ -61,6 +67,7 @@ export interface ConditionGroupActionEvent extends RuleActionEvent {
         priority?: number;
     };
 }
+
 export interface ConditionActionEvent extends RuleActionEvent {
     payload: {
         rule?: RuleModel;
@@ -106,8 +113,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
             (updateConditionType)="onUpdateConditionType($event)"
             (updateConditionParameter)="onUpdateConditionParameter($event)"
             (updateConditionOperator)="onUpdateConditionOperator($event)"
-            (deleteCondition)="onDeleteCondition($event)"
-        ></cw-rule-engine>
+            (deleteCondition)="onDeleteCondition($event)"></cw-rule-engine>
     `
 })
 export class RuleEngineContainer implements OnDestroy {
@@ -178,6 +184,7 @@ export class RuleEngineContainer implements OnDestroy {
             } else {
                 x = 0;
             }
+
             return x;
         };
     }
@@ -246,12 +253,11 @@ export class RuleEngineContainer implements OnDestroy {
         if (rule._expanded) {
             let obs2: Observable<ConditionGroupModel>;
             if (rule._conditionGroups.length === 0) {
-                const obs: Observable<
-                    ConditionGroupModel[]
-                > = this._conditionGroupService.allAsArray(
-                    rule.key,
-                    Object.keys(rule.conditionGroups)
-                );
+                const obs: Observable<ConditionGroupModel[]> =
+                    this._conditionGroupService.allAsArray(
+                        rule.key,
+                        Object.keys(rule.conditionGroups)
+                    );
                 obs2 = obs.pipe(
                     mergeMap((groups: ConditionGroupModel[]) => observableFrom(groups))
                 );
@@ -269,12 +275,13 @@ export class RuleEngineContainer implements OnDestroy {
                     (group: ConditionGroupModel, conditions: ConditionModel[]) => {
                         if (conditions) {
                             conditions.forEach((condition: ConditionModel) => {
-                                condition.type = this._ruleService._conditionTypes[
-                                    condition.conditionlet
-                                ];
+                                condition.type =
+                                    this._ruleService._conditionTypes[condition.conditionlet];
                             });
                         }
+
                         group._conditions = conditions;
+
                         return group;
                     }
                 )
@@ -283,6 +290,7 @@ export class RuleEngineContainer implements OnDestroy {
             const obs4: Observable<ConditionGroupModel[]> = obs3.pipe(
                 reduce((acc: ConditionGroupModel[], group: ConditionGroupModel) => {
                     acc.push(group);
+
                     return acc;
                 }, [])
             );
@@ -382,9 +390,8 @@ export class RuleEngineContainer implements OnDestroy {
             const ruleAction = event.payload.ruleAction;
             const rule = event.payload.rule;
             const idx = event.payload.index;
-            const type: ServerSideTypeModel = this._ruleService._ruleActionTypes[
-                <string>event.payload.value
-            ];
+            const type: ServerSideTypeModel =
+                this._ruleService._ruleActionTypes[<string>event.payload.value];
             rule._ruleActions[idx] = new ActionModel(ruleAction.key, type, ruleAction.priority);
             this.patchAction(rule, ruleAction);
         } catch (e) {
@@ -460,9 +467,8 @@ export class RuleEngineContainer implements OnDestroy {
             const group = event.payload.conditionGroup;
             const rule = event.payload.rule;
             const idx = event.payload.index;
-            const type: ServerSideTypeModel = this._ruleService._conditionTypes[
-                <string>event.payload.value
-            ];
+            const type: ServerSideTypeModel =
+                this._ruleService._conditionTypes[<string>event.payload.value];
             // replace the condition rather than mutate it to force event for 'onPush' NG2 components.
             condition = new ConditionModel({
                 _type: type,
@@ -512,6 +518,7 @@ export class RuleEngineContainer implements OnDestroy {
                         (aryGroup) => aryGroup.key !== group.key
                     );
                 }
+
                 if (rule._conditionGroups.length === 0) {
                     this.loggerService.info(
                         'RuleEngineContainer',
@@ -544,6 +551,7 @@ export class RuleEngineContainer implements OnDestroy {
             );
             this.patchRule(rule, disable);
         }
+
         rule._saved = false;
         rule._saving = true;
         rule._errors = null;
@@ -564,6 +572,7 @@ export class RuleEngineContainer implements OnDestroy {
         if (disable && rule.enabled) {
             rule.enabled = false;
         }
+
         this._conditionGroupService
             .updateConditionGroup(rule.key, group)
             .subscribe((_result) => {});
@@ -574,6 +583,7 @@ export class RuleEngineContainer implements OnDestroy {
         if (disable && rule.enabled) {
             rule.enabled = false;
         }
+
         if (rule.isValid()) {
             if (rule.isPersisted()) {
                 this._ruleService.updateRule(rule.key, rule).subscribe(

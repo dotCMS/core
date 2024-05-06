@@ -1,40 +1,48 @@
 <dot-device-selector-seo
     #deviceSelector
-    [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
     [apiLink]="apiLink"
     (selected)="changeDeviceHandler($event)"
+    (changeSeoMedia)="changeSeoMedia($event)"
+    (hideOverlayPanel)="tabButtons.resetDropdownById(dotPageMode.PREVIEW)"
     appendTo="body"
-    tooltipPosition="bottom"
-    tooltipStyleClass="dot-device-selector__dialog"
-></dot-device-selector-seo>
-
+    data-testId="dot-device-selector"></dot-device-selector-seo>
+<p-menu
+    #menu
+    *ngIf="this.featureFlagEditURLContentMapIsOn"
+    [model]="menuItems"
+    [popup]="true"
+    (onHide)="tabButtons.resetDropdownById(dotPageMode.EDIT)"
+    appendTo="body">
+</p-menu>
 <dot-tab-buttons
-    [mode]="mode"
+    #tabButtons
+    [activeId]="mode"
     [options]="options"
-    (openMenu)="deviceSelector.openMenu($event)"
-    (clickOption)="stateSelectorHandler($event.target.value)"
-    data-testId="dot-tabs-buttons"
-></dot-tab-buttons>
+    (openMenu)="handleMenuOpen($event)"
+    (clickOption)="stateSelectorHandler($event)"
+    data-testId="dot-tabs-buttons"></dot-tab-buttons>
 <ng-container *ngIf="!variant">
-    <p-inputSwitch
-        #locker
-        [(ngModel)]="lock"
-        [class.warn]="lockWarn"
-        [disabled]="!pageState.page.canLock"
+    <span
         [pTooltip]="
             pageState.state.lockedByAnotherUser && pageState.page.canEdit
                 ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
-                : null
+                : ('lock.clipboard' | dm)
         "
-        [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
-        (click)="onLockerClick()"
-        (onChange)="lockPageHandler()"
-        appendTo="target"
-    ></p-inputSwitch>
+        tooltipPosition="bottom"
+        data-testId="lock-container">
+        <p-inputSwitch
+            #locker
+            [(ngModel)]="lock"
+            [class.warn]="lockWarn"
+            [disabled]="!pageState.page.canLock"
+            (click)="onLockerClick()"
+            (onChange)="lockPageHandler()"
+            data-testId="lock-switch"
+            appendTo="target"></p-inputSwitch>
+    </span>
 </ng-container>
 
 <dot-edit-page-lock-info-seo
     #pageLockInfo
     [pageState]="pageState"
-    data-testId="lockInfo"
-></dot-edit-page-lock-info-seo>
+    data-testId="lockInfo"></dot-edit-page-lock-info-seo>

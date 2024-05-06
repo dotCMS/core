@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -85,7 +84,7 @@ const InputTextAreaTemplateAutoRezise = `
 
 `;
 
-const MainTextArea: Story<never> = (props: never) => {
+const MainTextArea: Story<unknown> = (props: never) => {
     const template = InputTextAreaTemplate;
 
     return {
@@ -94,7 +93,7 @@ const MainTextArea: Story<never> = (props: never) => {
     };
 };
 
-const AutoResizeTextArea: Story<never> = (props: never) => {
+const AutoResizeTextArea: Story<unknown> = (props: never) => {
     const template = InputTextAreaTemplateAutoRezise;
 
     return {

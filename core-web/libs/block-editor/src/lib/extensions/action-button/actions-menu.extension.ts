@@ -14,22 +14,25 @@ import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggesti
 import { RemoteCustomExtensions } from '@dotcms/dotcms-models';
 
 import {
-    SuggestionPopperModifiers,
-    SuggestionsCommandProps,
-    SuggestionsComponent,
-    FloatingActionsProps,
-    FLOATING_ACTIONS_MENU_KEYBOARD,
+    clearFilter,
     CONTENT_SUGGESTION_ID,
-    ItemsType,
+    DotMenuItem,
+    findParentNode,
+    FLOATING_ACTIONS_MENU_KEYBOARD,
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
-    findParentNode,
-    DotMenuItem,
+    FloatingActionsProps,
+    ItemsType,
     suggestionOptions,
-    clearFilter
+    SuggestionPopperModifiers,
+    SuggestionsCommandProps,
+    SuggestionsComponent
 } from '../../shared';
+import { AI_CONTENT_PROMPT_EXTENSION_NAME } from '../ai-content-prompt/ai-content-prompt.extension';
+import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../ai-image-prompt/ai-image-prompt.extension';
 import { NodeTypes } from '../bubble-menu/models';
 
+const AI_BLOCK_EXTENSIONS_IDS = [AI_CONTENT_PROMPT_EXTENSION_NAME, AI_IMAGE_PROMPT_EXTENSION_NAME];
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         actionsMenu: {
@@ -136,7 +139,7 @@ function execCommand({
                     ],
                     { customClass: 'dotTableForm' }
                 )
-                .pipe(
+                .pipe?.(
                     take(1),
                     filter((value) => !!value)
                 )
@@ -172,7 +175,10 @@ function execCommand({
         image: () => editor.commands.openAssetForm({ type: 'image' }),
         subscript: () => editor.chain().setSubscript().focus().run(),
         superscript: () => editor.chain().setSuperscript().focus().run(),
-        video: () => editor.commands.openAssetForm({ type: 'video' })
+        video: () => editor.commands.openAssetForm({ type: 'video' }),
+        aiContentPrompt: () => editor.commands.openAIPrompt(),
+        aiContent: () => editor.commands.insertAINode(),
+        aiImagePrompt: () => editor.commands.openImagePrompt()
     };
 
     getCustomActions(customBlocks).forEach((option) => {
@@ -207,7 +213,8 @@ function getCustomActions(customBlocks): Array<DotMenuItem> {
 
 export const ActionsMenu = (
     viewContainerRef: ViewContainerRef,
-    customBlocks: RemoteCustomExtensions
+    customBlocks: RemoteCustomExtensions,
+    disabledExtensions: { shouldShowAIExtensions: boolean | unknown }
 ) => {
     let myTippy;
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
@@ -261,6 +268,7 @@ export const ActionsMenu = (
     function setUpSuggestionComponent(editor: Editor, range: Range) {
         const { allowedBlocks, allowedContentTypes, lang, contentletIdentifier } =
             editor.storage.dotConfig;
+
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
 
@@ -286,10 +294,27 @@ export const ActionsMenu = (
         }
     }
 
+    /**
+     * Retrieves the items for the given parameters.
+     *
+     * @param {object} options - The options for retrieving the items.
+     * @param {string[]} options.allowedBlocks - The array of allowed block IDs.
+     * @param {object} options.editor - The editor object.
+     * @param {object} options.range - The range object.
+     * @return {DotMenuItem[]} - The array of DotMenuItem objects.
+     */
     function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
+        let filteredSuggestionOptions: DotMenuItem[] = [...suggestionOptions];
+
+        if (!disabledExtensions?.shouldShowAIExtensions) {
+            filteredSuggestionOptions = suggestionOptions.filter(
+                (item) => !AI_BLOCK_EXTENSIONS_IDS.includes(item.id)
+            );
+        }
+
         const items = allowedBlocks.length
-            ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
-            : suggestionOptions;
+            ? filteredSuggestionOptions.filter((item) => allowedBlocks.includes(item.id))
+            : filteredSuggestionOptions;
 
         const customItems = [...items, ...getCustomActions(customBlocks)];
 

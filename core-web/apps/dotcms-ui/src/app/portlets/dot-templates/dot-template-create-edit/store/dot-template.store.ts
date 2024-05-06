@@ -1,4 +1,4 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import * as _ from 'lodash';
 import { Observable, of, zip } from 'rxjs';
 
@@ -18,13 +18,15 @@ import {
     withLatestFrom
 } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRouterService,
+    DotGlobalMessageService
+} from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 
 type DotTemplateType = 'design' | 'advanced';
@@ -142,22 +144,25 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
             switchMap((template: DotTemplateItem) => {
                 this.dotGlobalMessageService.loading(this.dotMessageService.get('publishing'));
 
-                return this.dotTemplateService.saveAndPublish(this.cleanTemplateItem(template));
-            }),
-            tap((template: DotTemplate) => {
-                this.dotGlobalMessageService.success(
-                    this.dotMessageService.get('message.template.published')
-                );
-                this.dotRouterService.allowRouteDeactivation();
-                this.updateTemplateState(template);
-            }),
-            catchError((err: HttpErrorResponse) => {
-                this.dotGlobalMessageService.error(err.statusText);
-                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
-                    this.dotRouterService.allowRouteDeactivation();
-                });
-
-                return of(null);
+                return this.dotTemplateService
+                    .saveAndPublish(this.cleanTemplateItem(template))
+                    .pipe(
+                        tapResponse(
+                            (template: DotTemplate) => {
+                                this.dotGlobalMessageService.success(
+                                    this.dotMessageService.get('message.template.published')
+                                );
+                                this.dotRouterService.allowRouteDeactivation();
+                                this.updateTemplateState(template);
+                            },
+                            (err: HttpErrorResponse) => {
+                                this.dotGlobalMessageService.error(err.statusText);
+                                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
+                                    this.dotRouterService.allowRouteDeactivation();
+                                });
+                            }
+                        )
+                    );
             })
         );
     });
@@ -328,9 +333,12 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         this.dotGlobalMessageService.success(
             this.dotMessageService.get('dot.common.message.saved')
         );
+
         if (this.activatedRoute?.snapshot?.params['inode']) {
             this.dotRouterService.goToEditTemplate(template.identifier);
         }
+
+        this.dotRouterService.allowRouteDeactivation();
     }
 
     private onSaveTemplateError(err: HttpErrorResponse) {

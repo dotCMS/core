@@ -23,7 +23,11 @@ interface Container {
 
 const packageType = core.getInput('package_type')
 const packageName = core.getInput('package_name')
-const deleteVersion = core.getInput('delete_version')
+const deleteTags = core
+  .getInput('delete_tags')
+  .split('\n')
+  .map(t => t.trim())
+  .filter(t => !!t)
 const accessToken = core.getInput('access_token')
 const headers: HeadersInit = {
   Accept: 'application/vnd.github+json',
@@ -40,19 +44,21 @@ export const deletePackages = async () => {
     return
   }
 
-  const finalVersion = deleteVersion.includes(':') ? deleteVersion.split(':')[1] : deleteVersion
-  const deletePackages = finalVersion
-    ? [foundPackages.find(p => p.metadata.container.tags.includes(finalVersion))]
-    : foundPackages
-  core.info(`Found packages to delete:\n${JSON.stringify(deletePackages, null, 2)}`)
+  for (const tag of deleteTags) {
+    const finalVersion = tag.includes(':') ? tag.split(':')[1] : tag
+    const deletePackages = finalVersion
+      ? [foundPackages.find(p => p.metadata.container.tags.includes(finalVersion))]
+      : foundPackages
+    core.info(`Found packages to delete:\n${JSON.stringify(deletePackages, null, 2)}`)
 
-  const versionsToDelete: number[] = deletePackages.filter(p => !!p).flatMap(p => p!.id)
-  if (!versionsToDelete || versionsToDelete.length === 0) {
-    core.error(`Rsolved package versions are empty, aborting`)
-    return
+    const versionsToDelete: number[] = deletePackages.filter(p => !!p).flatMap(p => p!.id)
+    if (!versionsToDelete || versionsToDelete.length === 0) {
+      core.error(`Rsolved package versions are empty, aborting`)
+      continue
+    }
+
+    await _deletePackages(versionsToDelete)
   }
-
-  await _deletePackages(versionsToDelete)
 }
 
 const fetchPackages = async (): Promise<Response> => {

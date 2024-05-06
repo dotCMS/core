@@ -37,4 +37,7 @@ export class DotFormatDateServiceMock {
     differenceInCalendarDays(_dateLeft: Date, _dateRight: Date): number {
         return 1;
     }
+    getDateFromTimestamp(_time: number, _userDateFormatOptions?: Intl.DateTimeFormatOptions) {
+        return '10/10/2020 10:10 PM';
+    }
 }

@@ -8,6 +8,7 @@ import java.util.concurrent.Semaphore;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.filter.ImageFilter;
+import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.ImageFilterApiImpl;
 import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
@@ -49,7 +50,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
         Class<? extends ImageFilter> errorClass = ImageFilter.class;
         try {
 
-            final Map<String,Class<? extends ImageFilter>> filters = new ImageFilterApiImpl().resolveFilters(parameters);
+            final Map<String,Class<? extends ImageFilter>> filters = ImageFilterAPI.apiInstance.apply().resolveFilters(parameters);
             parameters.put("filter", filters.keySet().toArray(new String[0]));
             parameters.put("filters", filters.keySet().toArray(new String[0]));
             

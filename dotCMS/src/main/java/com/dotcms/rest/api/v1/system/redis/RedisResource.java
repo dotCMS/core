@@ -6,7 +6,6 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -24,6 +23,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -198,7 +198,7 @@ public class RedisResource {
         final long rowsAffected  = UtilMethods.isSet(fields)?
                 this.client.deleteHash(key, fields.toArray(new String[]{})):0;
 
-        return Response.ok(new ResponseEntityView(CollectionsUtils.map("rowsAffected", rowsAffected))).build();
+        return Response.ok(new ResponseEntityView(Map.of("rowsAffected", rowsAffected))).build();
     }
 
     /////// INCREMENT

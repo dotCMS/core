@@ -1,11 +1,5 @@
 package com.dotmarketing.filters;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.filters.CMSFilter.CMS_INDEX_PAGE;
-import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
-import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
-import static java.util.stream.Collectors.toSet;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -26,11 +20,17 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -40,11 +40,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.filters.CMSFilter.CMS_INDEX_PAGE;
+import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
+import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+import static com.liferay.util.StringPool.PERIOD;
+import static com.liferay.util.StringPool.UNDERLINE;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Utilitary class used by the CMS Filter
@@ -576,4 +584,46 @@ public class CMSUrlUtil {
 			throw new DotRuntimeException(e);
 		}
 	}
+
+	/**
+	 * Tries to recover the Inode from the URL path. The URL could be a page, such as:
+	 * {@code /LIVE/27e8f845c3bd21ad1c601b8fe005caa6/dotParser_1695072095296.container} , or a call
+	 * to a resource, such as: {@code Content/27e8f845c3bd21ad1c601b8fe005caa6_1695072095296}
+	 *
+	 * @param urlPath The URL path from a Contentlet.
+	 *
+	 * @return The Inode of the Contentlet.
+	 */
+	public String getInodeFromUrlPath(final String urlPath) {
+
+		// tries the edit mode first
+		final PageMode[] modes = PageMode.values();
+		for (final PageMode mode : modes) {
+			if (urlPath.startsWith(FORWARD_SLASH + mode.name() + FORWARD_SLASH)) {
+				final String urlPathWithoutMode = urlPath.substring(mode.name().length() + 2);
+				return urlPathWithoutMode.substring(0, urlPathWithoutMode.indexOf(FORWARD_SLASH));
+			}
+			if (urlPath.startsWith(mode.name() + FORWARD_SLASH)) {
+				final String urlPathWithoutMode = urlPath.substring(mode.name().length() + 1);
+				int indexOf = urlPathWithoutMode.indexOf(FORWARD_SLASH);
+				if (indexOf == -1) {
+					indexOf = urlPathWithoutMode.indexOf(UNDERLINE);
+				}
+				if (indexOf == -1) {
+					indexOf = urlPathWithoutMode.indexOf(PERIOD);
+				}
+				return urlPathWithoutMode.substring(0, indexOf);
+			}
+		}
+
+		// tries the fe mode: /data/shared/assets/c/e/ce837ff5-dc6f-427a-8f60-d18afc395be9/fileAsset/openai-summarize.vtl
+		final Optional<String> inodeOPt = UUIDUtil.findInode(urlPath);
+		if (inodeOPt.isPresent()) {
+			return inodeOPt.get();
+		}
+
+		// tries the content mode: CONTENT/27e8f845c3bd21ad1c601b8fe005caa6_1695072095296.content
+		return urlPath.substring(urlPath.indexOf(FORWARD_SLASH) + 1, urlPath.indexOf(UNDERLINE));
+	}
+
 }

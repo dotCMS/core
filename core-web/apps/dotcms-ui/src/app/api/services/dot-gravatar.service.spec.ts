@@ -1,4 +1,4 @@
-import * as md5 from 'md5';
+import md5 from 'md5';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';

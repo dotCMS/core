@@ -1,35 +1,52 @@
 @use "variables" as *;
 
 :host {
-    display: block;
-}
-
-.add-widget {
     display: flex;
-    justify-content: center;
     align-items: center;
-    padding: $spacing-1 $spacing-3;
     gap: $spacing-3;
+    padding: $spacing-1 $spacing-3;
+    padding-left: $spacing-0;
     width: fit-content;
     background: $white;
     border: $field-border-size solid $color-palette-primary-500;
     border-radius: $border-radius-md;
+    transition: transform 100ms ease-in;
 
-    &:hover {
-        box-shadow: $md-shadow-6;
+    .material-icons {
+        font-size: $font-size-lg;
+        color: $color-palette-gray-500;
     }
 
-    .add-widget__label {
-        font-size: $font-size-md;
-        line-height: 140%;
-        color: $black;
+    &:hover:not(.ui-draggable-dragging) {
+        transform: rotate(-3.66deg) translate(0, -0.5rem);
+        box-shadow: $shadow-l;
     }
 
-    .add-widget__icon {
+    // Class added by the gridstack library when the widget is being dragged
+    &.ui-draggable-dragging {
+        transition: none;
+        transform: rotate(-3.66deg);
+        box-shadow: $shadow-l;
+    }
+
+    .add-widget-container {
         display: flex;
         justify-content: center;
         align-items: center;
-        min-width: $spacing-4;
-        min-height: $spacing-4;
+        gap: $spacing-2;
+
+        .add-widget-container__label {
+            font-size: $font-size-md;
+            line-height: 140%;
+            color: $black;
+        }
+
+        .add-widget-container__icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-width: $spacing-4;
+            min-height: $spacing-4;
+        }
     }
 }

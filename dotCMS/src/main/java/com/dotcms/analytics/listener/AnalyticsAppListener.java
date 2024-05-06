@@ -92,7 +92,7 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
 
                             // reset access token when is NOOP, is this the right place?
                             Optional
-                                .ofNullable(analyticsAPI.getAccessToken(app))
+                                .ofNullable(analyticsAPI.getCachedAccessToken(app))
                                 .filter(application -> AnalyticsHelper.get().isTokenNoop(application))
                                 .ifPresent(token -> analyticsAPI.resetAccessToken(app));
                         } catch (AnalyticsException e) {

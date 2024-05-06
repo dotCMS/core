@@ -6,7 +6,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 
 /**
  * {@link RegexUrlPatterStrategy} implementation to any Index Page but no the Root index Page,
- * it means that the page's url ends with /index but not be equalt to /index.
+ * it means that the page's url ends with /index but not be equals to /index.
  */
 public class IndexRegexUrlPatterStrategy implements RegexUrlPatterStrategy {
 

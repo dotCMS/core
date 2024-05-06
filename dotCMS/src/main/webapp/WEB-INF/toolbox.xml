@@ -36,7 +36,7 @@
 	</tool>
 	<tool>
 		<key>dotsecrets</key>
-		<scope>application</scope>
+		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.SecretTool</class>
 	</tool>
 	<tool>
@@ -317,4 +317,9 @@
         <scope>application</scope>
         <class>com.dotcms.rendering.velocity.viewtools.dotcache.DotCacheTool</class>
     </tool>
+	<tool>
+		<key>ai</key>
+		<scope>request</scope>
+		<class>com.dotcms.ai.viewtool.AIViewTool</class>
+	</tool>
 </toolbox>

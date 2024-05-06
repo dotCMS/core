@@ -1,35 +1,72 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+// How to write stories? https://storybook.js.org/docs/6.5/angular/writing-stories/introduction
+// Controls https://storybook.js.org/docs/6.5/angular/essentials/controls
+// Annotations: https://storybook.js.org/docs/6.5/angular/essentials/controls#annotation
 
-import { ButtonModule } from 'primeng/button';
+import { Meta, Story } from '@storybook/angular';
 
-import { MainTemplate, IconOnlyTemplate } from './templates';
+import { Button } from 'primeng/button';
 
 export default {
-    title: 'PrimeNG/Button/Button',
-    decorators: [
-        moduleMetadata({
-            imports: [ButtonModule]
-        })
-    ],
-    parameters: {
-        layout: 'centered',
-        docs: {
-            description: {
-                component: 'All the buttons, more information: https://primeng.org/button'
-            }
+    title: 'PrimeNG/Button',
+    component: Button,
+    args: {
+        label: 'Button',
+        disabled: false,
+        icon: false,
+        size: 'p-button-md',
+        iconPos: 'left',
+        severity: '-',
+        type: '-'
+    },
+    argTypes: {
+        size: {
+            options: ['p-button-sm', 'p-button-md', 'p-button-lg'],
+            control: { type: 'radio' }
+        },
+        severity: {
+            options: ['-', 'p-button-secondary', 'p-button-danger'],
+            control: { type: 'select' }
+        },
+        type: {
+            options: ['-', 'p-button-text', 'p-button-outlined', 'p-button-link'],
+            control: { type: 'select' }
+        },
+        iconPos: {
+            control: 'inline-radio',
+            options: ['left', 'right']
         }
     }
 } as Meta;
 
-export const Main: Story = () => {
-    return {
-        template: MainTemplate
-    };
-};
+export const Main: Story = (args) => {
+    const parts = [];
+    for (const key of Object.keys(args)) {
+        if (
+            typeof args[key] === 'string' &&
+            args[key].trim() !== '-' &&
+            args[key].trim().length > 0
+        ) {
+            parts.push(args[key].trim());
+        }
+    }
 
-export const IconOnly: Story = () => {
+    const joined = parts.join(' ');
+
     return {
-        template: IconOnlyTemplate
+        props: {
+            label: args.label,
+            classes: joined,
+            disabled: args.disabled,
+            icon: args.icon ? 'pi pi-home' : '',
+            iconPos: args.iconPos
+        },
+        template: `
+            <p-button
+                [icon]="icon"
+                [iconPos]="iconPos"
+                [disabled]="disabled"
+                [label]="label"
+                [styleClass]="classes">
+            </p-button>`
     };
 };

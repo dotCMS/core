@@ -11,6 +11,8 @@ import com.dotcms.contenttype.business.FieldFactory;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.business.RelationshipFactory;
 import com.dotcms.contenttype.business.RelationshipFactoryImpl;
+import com.dotcms.cube.CubeJSClientFactory;
+import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.RulesFactoryProxy;
 import com.dotcms.enterprise.ServerActionFactoryImplProxy;
@@ -262,6 +264,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (SystemTableFactory) getInstance(FactoryIndex.SYSTEM_TABLE_FACTORY);
     }
 
+    public static CubeJSClientFactory getCubeJSClientFactory() {
+        return (CubeJSClientFactory) getInstance(FactoryIndex.CUBEJS_CLIENT_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -338,7 +344,8 @@ enum FactoryIndex
     FileAsset_Factory,
     VARIANT_FACTORY,
     EXPERIMENTS_FACTORY,
-    SYSTEM_TABLE_FACTORY;
+    SYSTEM_TABLE_FACTORY,
+    CUBEJS_CLIENT_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -380,6 +387,7 @@ enum FactoryIndex
             case VARIANT_FACTORY:_FACTORY : return new VariantFactoryImpl();
             case EXPERIMENTS_FACTORY: return new ExperimentsFactoryImpl();
             case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
+            case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

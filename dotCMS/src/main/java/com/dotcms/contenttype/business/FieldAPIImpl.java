@@ -1,8 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
-import static com.dotcms.util.CollectionsUtils.list;
-
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -13,9 +10,9 @@ import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DateField;
@@ -28,6 +25,7 @@ import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.JSONField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
@@ -35,7 +33,9 @@ import com.dotcms.contenttype.model.field.PermissionTabField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
+import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
@@ -51,15 +51,11 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
-import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.RelationshipAPI;
@@ -72,20 +68,32 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
 import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
 import io.vavr.control.Try;
-import java.net.ConnectException;
-import java.util.*;
-
 import org.apache.commons.lang.StringUtils;
+
+import java.net.ConnectException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import static com.dotcms.util.CollectionsUtils.list;
 
 
 public class FieldAPIImpl implements FieldAPI {
@@ -258,16 +266,16 @@ public class FieldAPIImpl implements FieldAPI {
           }
 
           ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action",
-                  String.format("User %s/%s modified field %s to %s Structure.", user.getUserId(), user.getFirstName(),
-                          field.name(), structure.getName()));
+                  String.format("User %s/%s modified field '%s' to Content Type '%s'", user.getUserId(), user.getFirstName(),
+                          field.name(), structure.getVelocityVarName()));
       } else {
           //If saving a new indexed field, it should try to set an ES mapping for the field
           if (result.indexed()) {
               addESMappingForField(structure, result);
           }
           ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
-                  String.format("User %s/%s added field %s to %s Structure.", user.getUserId(), user.getFirstName(), field.name(),
-                          structure.getName()));
+                  String.format("User %s/%s added field '%s' to Content Type '%s'", user.getUserId(), user.getFirstName(), field.name(),
+                          structure.getVelocityVarName()));
       }
 
       Field finalResult = result;
@@ -289,7 +297,7 @@ public class FieldAPIImpl implements FieldAPI {
             if (indiciesInfo != null){
                 if (UtilMethods.isSet(indiciesInfo.getLive())) {
                     ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getLive());
-                    Logger.info(this.getClass(), String.format(
+                    Logger.debug(this.getClass(), () -> String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()
                                     .removeClusterIdFromName(indiciesInfo.getLive())));
@@ -297,7 +305,7 @@ public class FieldAPIImpl implements FieldAPI {
 
                 if (UtilMethods.isSet(indiciesInfo.getWorking())) {
                     ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getWorking());
-                    Logger.info(this.getClass(), String.format(
+                    Logger.debug(this.getClass(), () -> String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()
                                     .removeClusterIdFromName(indiciesInfo.getWorking())));
@@ -895,6 +903,58 @@ public class FieldAPIImpl implements FieldAPI {
         }
 
 
+    }
+
+    @Override
+    public boolean isFullScreenField(final com.dotcms.contenttype.model.field.Field field) {
+
+        if(!Config.getBooleanProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, true)){
+            return false;
+        }
+
+        try {
+            final ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(field.contentTypeId());
+
+            if (!(field instanceof WysiwygField ||
+                    field instanceof StoryBlockField ||
+                    field instanceof TextAreaField ||
+                    field instanceof CustomField ||
+                    field instanceof JSONField
+            )) {
+                return false;
+            }
+
+            boolean showFullScreen = Try.of(() -> Boolean.parseBoolean(field.fieldVariablesMap().get("showFullScreen").value())).getOrElse(true);
+            if (!showFullScreen) {
+                return false;
+            }
+
+            final List<com.dotcms.contenttype.model.field.Field> fields = type.fields();
+            com.dotcms.contenttype.model.field.Field pppField = Try.of(() -> fields.get(fields.indexOf(field) - 3)).getOrNull();
+            com.dotcms.contenttype.model.field.Field ppField = Try.of(() -> fields.get(fields.indexOf(field) - 2)).getOrNull();
+            com.dotcms.contenttype.model.field.Field pField = Try.of(() -> fields.get(fields.indexOf(field) - 1)).getOrNull();
+            com.dotcms.contenttype.model.field.Field nextField = Try.of(() -> fields.get(fields.indexOf(field) + 1)).getOrNull();
+
+            // we are either in a tab or the first field
+            if (pppField != null && !(pppField instanceof TabDividerField)) {
+                return false;
+            }
+            // we are the last field in the type or there is a column next
+            if (nextField != null && !(nextField instanceof TabDividerField)) {
+                return false;
+            }
+            // there is a row > column before us
+            if (!(ppField instanceof RowField) || !(pField instanceof ColumnField)) {
+                return false;
+            }
+
+            return true;
+
+        } catch (final Exception e) {
+            Logger.warnAndDebug(this.getClass(), "isFullScreenField failed: " + ExceptionUtil.getErrorMessage(e) + ", field: " + field, e);
+        }
+
+        return false;
     }
   
 }

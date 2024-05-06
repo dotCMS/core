@@ -47,6 +47,33 @@
     );
 
 %>
+
+<script type="text/javascript">
+
+    function addSeparator(schemeId, stepId) {
+        const xhrArgs = {
+            url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=save&stepId=" + stepId + "&schemeId=" + schemeId + "&actionId=SEPARATOR",
+            handle: function (dataOrError, ioArgs) {
+                if (dojo.isString(dataOrError)) {
+
+                    if (dataOrError.indexOf("FAILURE") === 0) {
+                        showDotCMSSystemMessage(dataOrError, true);
+                    } else {
+                        mainAdmin.refresh();
+                    }
+                } else {
+                    this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+
+                }
+            }
+        };
+
+        dojo.xhrPost(xhrArgs);
+        mainAdmin.refresh();
+    }
+
+</script>
+
 <div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>" data-first="<%=isFirst%>">
     <div class="list-item"  onmouseout="colorMeNot()">
         <div class="wfStepTitle">
@@ -59,14 +86,17 @@
             <div class="clear"></div>
         </div>
         <div class="wfActionList" id="jsNode<%=step.getId()  %>"  data-wfstep-id="<%=step.getId()%>">
-            <%for(WorkflowAction action : actions){ %>
+            <%for(WorkflowAction action : actions) {
+                String subtype = action.getMetadata() != null ? String.valueOf(action.getMetadata().get("subtype")) : "";
+                boolean isSeparator = "SEPARATOR".equals(subtype);
+            %>
             <div class="wf-action-wrapper x<%=action.getId()%>" data-wfaction-id="<%=action.getId()%>" onmouseover="colorMe('x<%=action.getId()%>')" onmouseout="colorMeNot('x<%=action.getId()%>')" >
                 <div class="handles"></div>
-                <div class="wf-action showPointer">
+                <div class="wf-action <%= isSeparator ? "showDefaultCursor" : "showPointer" %>"">
                     <div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this, <%=stepIndex%>)"><span class="deleteIcon"></span></div>
-                    <div  class="pull-left showPointer" onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');">
-                        <%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
-                    </div>
+                    <div class="pull-left" <% if(!isSeparator) { %>onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" <% } %>>
+                       <%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
+                   </div>
                 </div>
             </div>
             <%} %>
@@ -80,6 +110,9 @@
             <%
                 }
             %>
+            <div class="btn-flat btn-primary showPointer" onclick="addSeparator('<%=scheme.getId()%>', '<%=step.getId()%>');">
+                <i class="fa fa-plus" aria-hidden="true"></i> Divider
+            </div>
             <div class="btn-flat btn-primary showPointer" onclick="actionAdmin.addOrAssociatedAction('<%=scheme.getId()%>', '<%=step.getId()%>', 'step-action-<%=step.getId()%>');">
                 <i class="fa fa-plus" aria-hidden="true"></i> Add
             </div>

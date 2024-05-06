@@ -9,7 +9,7 @@
     padding-right: $spacing-4;
     transition: $basic-speed * 2;
 
-    dot-icon,
+    i,
     dot-spinner {
         margin-right: $spacing-1;
         align-self: center;
@@ -21,21 +21,21 @@
         }
     }
 
-    &.check_circle {
-        dot-icon {
-            color: $success;
+    &.success {
+        i {
+            color: $color-accessible-text-green;
         }
     }
 
     &.warning {
-        dot-icon {
-            color: $warn;
+        i {
+            color: $color-alert-yellow;
         }
     }
 
     &.error {
-        dot-icon {
-            color: $error;
+        i {
+            color: $color-accessible-text-red;
         }
     }
 }
@@ -46,4 +46,24 @@
 
 .dot-global-message__text {
     color: $color-palette-gray-700;
+}
+
+.edit-page-variant-mode :host {
+    .dot-global-message__text {
+        color: $white;
+    }
+
+    &.loading {
+        .dot-global-message__text {
+            color: $white;
+        }
+    }
+
+    &.success,
+    &.warning,
+    &.error {
+        i {
+            color: $white;
+        }
+    }
 }

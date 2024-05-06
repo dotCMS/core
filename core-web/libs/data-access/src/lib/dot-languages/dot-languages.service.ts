@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
 /**
@@ -14,7 +14,7 @@ import { DotLanguage } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class DotLanguagesService {
-    constructor(private coreWebService: CoreWebService) {}
+    private httpClient: HttpClient = inject(HttpClient);
 
     /**
      * Return languages.
@@ -22,10 +22,22 @@ export class DotLanguagesService {
      * @memberof DotLanguagesService
      */
     get(contentInode?: string): Observable<DotLanguage[]> {
-        return this.coreWebService
-            .requestView({
-                url: !contentInode ? 'v2/languages' : `v2/languages?contentInode=${contentInode}`
-            })
+        const url = !contentInode
+            ? '/api/v2/languages'
+            : `/api/v2/languages?contentInode=${contentInode}`;
+
+        return this.httpClient.get(url).pipe(pluck('entity'));
+    }
+
+    /**
+     * Retrieves the languages used on a specific page.
+     *
+     * @param {number} pageIdentifier - The identifier of the page.
+     * @return {Observable<DotLanguage[]>} An observable of the languages used on the page.
+     */
+    getLanguagesUsedPage(pageIdentifier: string): Observable<DotLanguage[]> {
+        return this.httpClient
+            .get(`/api/v1/page/${pageIdentifier}/languages`)
             .pipe(pluck('entity'));
     }
 }

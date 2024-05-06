@@ -1,16 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.dotcms</groupId>
-        <artifactId>dotcms-parent</artifactId>
+        <artifactId>dotcms-nodejs-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../parent/pom.xml</relativePath>
+        <relativePath>../nodejs-parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>core-web</artifactId>
+    <artifactId>dotcms-core-web</artifactId>
     <packaging>war</packaging>
 
     <properties>
@@ -18,12 +17,23 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <node.js.version>v16.13.2</node.js.version>
-        <npm.version>8.5.1</npm.version>
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
-        <nx.build.options>--prod</nx.build.options>
+        <nx.build.options></nx.build.options>
         <cargo.server.port>8084</cargo.server.port>
+        <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
+        <skip.npm.install>false</skip.npm.install>
+        <sonar.sources>apps,libs</sonar.sources>
+        <sonar.exclusions>**/node_modules/**,**/*.spec.ts</sonar.exclusions>
+        <sonar.tests>apps,libs</sonar.tests>
+        <sonar.test.inclusions>**/*.spec.ts</sonar.test.inclusions>
+        <skip.core-web.updates>false</skip.core-web.updates>
+        <!-- Needs to match list in husky pre-commit hook change to have common source of this -->
+        <frontend.lint.excluded.projects>dot-rules,dot-layout-grid,dot-primeng-theme-styles,dot-rules,dotcms,dotcms-field-elements,dotcms-js,dotcms-models,dotcms-webcomponents,dotcdn-e2e,dotcms-block-editor,dotcms-block-editor-e2e,dotcms-ui-e2e,utils-testing,dojo-theme</frontend.lint.excluded.projects>
+        <skip.validate>true</skip.validate>
+        <git.origin.branch>origin/master</git.origin.branch>
+        <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
+        <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
     </properties>
 
     <dependencies>
@@ -34,13 +44,18 @@
         <plugins>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>3.2.0</version>
                 <configuration>
                     <filesets>
                         <fileset>
                             <directory>dist</directory>
                             <includes>
-                                <include>*</include>
+                                <include>**/*</include>
+                            </includes>
+                        </fileset>
+                        <fileset>
+                            <directory>.nx/cache</directory>
+                            <includes>
+                                <include>*/**</include>
                             </includes>
                         </fileset>
                     </filesets>
@@ -54,7 +69,8 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <target>
-                                <echo file="${basedir}/.nvmrc" append="false">${node.js.version}</echo>
+                                echo "Using node.js ${node.js.version}"
+                                <echo append="false" file="${basedir}/.nvmrc">${node.js.version}</echo>
                                 <!--
                                 <filter token="node.js.version" value="${node.js.version}"/>
                                 <copy file="${basedir}/version-template.txt" tofile="${basedir}/.nvmrc" overwrite="true" filtering="true"/>
@@ -71,63 +87,32 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <!-- Use the latest released version:
-                https://repo1.maven.org/maven2/com/github/eirslett/frontend-maven-plugin/ -->
-                <version>1.12.1</version>
                 <configuration>
-                    <workingDirectory>${project.basedir}</workingDirectory>
-                    <installDirectory>${project.basedir}/installs</installDirectory>
-
-                    <nodeVersion>${node.js.version}</nodeVersion>
-                    <!-- <npmVersion>${npm.version}</npmVersion>-->
-                    <!--<yarnVersion>v0.16.1</yarnVersion>-->
-
-                    <!-- optional: where to download node and npm from. Defaults to https://nodejs.org/dist/ -->
-                    <!--<downloadRoot>http://myproxy.example.org/nodejs/</downloadRoot>-->
-
+                    <!-- Base config defined in dotcms-core-web-parent -->
                 </configuration>
                 <executions>
                     <execution>
-                        <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
-                        <id>install node and npm</id>
-                        <goals>
-                            <goal>install-node-and-npm</goal>
-                        </goals>
-                        <!-- optional: default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
-                    </execution>
-
-                    <execution>
-                        <id>config npm</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>config set timeout 6000000</arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
                         <id>install</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>generate-resources</phase>
 
                         <configuration>
-                            <arguments>install --registry=https://dotcms-npm.b-cdn.net</arguments>
+                            <skip>${skip.npm.install}</skip>
+                            <arguments>${yarn.install.cmd}</arguments>
                         </configuration>
                     </execution>
                     <execution>
                         <id>build dotcms-ui</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
+                        <phase>compile</phase>
 
                         <configuration>
                             <arguments>run nx build dotcms-ui -- ${nx.build.options}</arguments>
@@ -135,17 +120,45 @@
                     </execution>
 
                     <execution>
-                        <id>test</id>
+                        <id>build dotcms-block-editor</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
+                        <phase>compile</phase>
+
+                        <configuration>
+                            <arguments>run nx run dotcms-block-editor:build</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>build dotcms-binary-field-builder</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>compile</phase>
+
+                        <configuration>
+                            <arguments>run nx run dotcms-binary-field-builder:build</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>test</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>test</phase>
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <arguments>run nx test</arguments>
+                            <arguments>run nx run-many -t test --exclude='tag:skip:test'</arguments>
                         </configuration>
                     </execution>
                 </executions>
@@ -163,11 +176,23 @@
                             <targetPath>dotAdmin</targetPath>
                         </resource>
                         <resource>
-                            <directory>${project.basedir}/dist/libs</directory>
+                            <directory>${project.basedir}/dist/libs/dotcms-webcomponents/dist</directory>
                             <filtering>false</filtering>
                             <includes>
                                 <include>dotcms-webcomponents/**/*</include>
                             </includes>
+                        </resource>
+
+                        <resource>
+                            <directory>${project.basedir}/dist/apps/dotcms-binary-field-builder</directory>
+                            <filtering>false</filtering>
+                            <targetPath>dotcms-binary-field-builder</targetPath>
+                        </resource>
+
+                        <resource>
+                            <directory>${project.basedir}/dist/apps/dotcms-block-editor</directory>
+                            <filtering>false</filtering>
+                            <targetPath>dotcms-block-editor</targetPath>
                         </resource>
                     </webResources>
                 </configuration>
@@ -216,18 +241,127 @@
 
     </build>
 
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
+
     <profiles>
         <profile>
-            <id>dev</id>
+            <id>prod</id>
             <activation>
                 <property>
-                    <name>dev</name>
+                    <name>prod</name>
                 </property>
             </activation>
             <properties>
-                <nx.build.options>-dev</nx.build.options>
+                <nx.build.options>--prod</nx.build.options>
+                <yarn.install.cmd>--frozen-lockfile --silent</yarn.install.cmd>
             </properties>
+            <build/>
+        </profile>
+
+        <profile>
+            <id>validate</id>
             <build>
+                <defaultGoal>generate-resources</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <configuration>
+                            <!-- Base config defined in dotcms-core-web-parent -->
+                            <skip>${skip.validate}</skip>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>format-test</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <!-- optional: the default phase is "generate-resources" -->
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <arguments>npx nx format:check ${nx.affected.options}</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>lint-test</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <!-- optional: the default phase is "generate-resources" -->
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <arguments>npx nx affected --target=lint ${nx.affected.options} --parallel --exclude=${frontend.lint.excluded.projects}</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>is_pr</id>
+            <!-- Configuration specific to PRs -->
+            <activation>
+                <property>
+                    <name>github.event.name</name>
+                    <value>pull_request</value>
+                </property>
+            </activation>
+            <properties>
+                <git.origin.branch>origin/master</git.origin.branch>
+                <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
+                <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
+                <skip.validate>false</skip.validate>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>format</id>
+            <build>
+                <defaultGoal>generate-resources</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <configuration>
+                            <!-- Base config defined in dotcms-core-web-parent -->
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>auto-format</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <!-- optional: the default phase is "generate-resources" -->
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <skip>${skip.core-web.updates}</skip>
+                                    <arguments>run format</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>auto-lint</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <!-- optional: the default phase is "generate-resources" -->
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <skip>${skip.core-web.updates}</skip>
+                                    <arguments>ng lint</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
     </profiles>

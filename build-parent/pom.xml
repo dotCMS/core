@@ -15,7 +15,7 @@
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>build-parent</artifactId>
+    <artifactId>dotcms-build-parent</artifactId>
     <packaging>pom</packaging>
 
     <properties>
@@ -43,28 +43,6 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                <execution>
-                    <id>create-test-temp</id>
-                    <phase>generate-test-resources</phase>
-                    <configuration>
-                        <target>
-                            <mkdir dir="${test.working.dir}"/>
-                            <mkdir dir="${test.temp.dir}"/>
-                            <mkdir dir="${test.assets.dir}"/>
-
-                        </target>
-                    </configuration>
-                    <goals>
-                        <goal>run</goal>
-                    </goals>
-                </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
         </plugins>
@@ -73,7 +51,7 @@
         <dependencies>
             <dependency>
                 <groupId>com.dotcms</groupId>
-                <artifactId>application-bom</artifactId>
+                <artifactId>dotcms-application-bom</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>

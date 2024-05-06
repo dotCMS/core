@@ -9,6 +9,10 @@
     .dijitButtonNode {
         padding: 0 $spacing-3;
         margin: none;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         .dijitIcon {
             margin-right: $spacing-1;
@@ -66,13 +70,25 @@
             @include field-focus;
         }
 
-        &Disabled {
+        &DisabledFocused {
             @include btn(
                 $button-disabled-shadow,
                 $button-disabled-bgcolor,
                 $button-disabled-border,
                 $button-disabled-textcolor
             );
+            outline: none;
+        }
+
+        &Disabled.dijitDisabled {
+            @include btn(
+                $button-disabled-shadow,
+                $button-disabled-bgcolor,
+                $button-disabled-border,
+                $button-disabled-textcolor
+            );
+
+            outline: none;
         }
     }
 

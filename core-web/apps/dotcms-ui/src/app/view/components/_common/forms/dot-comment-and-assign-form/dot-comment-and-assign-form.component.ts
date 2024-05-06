@@ -38,10 +38,10 @@ interface DotCommentAndAssignValue {
 export class DotCommentAndAssignFormComponent
     implements OnInit, DotFormModel<DotCommentAndAssignData, DotCommentAndAssignValue>
 {
-    form: UntypedFormGroup;
     @Input() data: DotCommentAndAssignData;
     @Output() value = new EventEmitter<DotCommentAndAssignValue>();
     @Output() valid = new EventEmitter<boolean>();
+    form: UntypedFormGroup;
     dotRoles: SelectItem[];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();

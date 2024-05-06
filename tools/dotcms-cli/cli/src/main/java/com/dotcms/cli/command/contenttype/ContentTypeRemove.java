@@ -8,7 +8,7 @@ import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.ResponseEntityView;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import org.apache.commons.lang3.BooleanUtils;
+import javax.inject.Inject;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -34,12 +34,22 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
     @CommandLine.Parameters(index = "0", arity = "1", description = "Name Or Id.")
     String idOrVar;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
+    @Inject
+    Prompt prompt;
+
     /**
      *
      * @return
      */
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         if (output.isCliTest() || isDeleteConfirmed()) {
             final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
             final ResponseEntityView<String> responseEntityView = contentTypeAPI.delete(idOrVar);
@@ -54,7 +64,7 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
 
     private boolean isDeleteConfirmed() {
        if(interactiveOption.isInteractive()) {
-           return Prompt.yesOrNo(false, "Are you sure you want to continue ");
+           return prompt.yesOrNo(false, "Are you sure you want to continue ");
        }
        return true;
     }

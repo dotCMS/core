@@ -1,7 +1,7 @@
 package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
@@ -32,8 +32,15 @@ public class LanguageFind extends AbstractLanguageCommand implements Callable<In
     @Inject
     RestClientFactory clientFactory;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
         final List<Language> result = languageAPI.list().entity();
 

@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.util.xstream.XStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import com.dotcms.util.JsonUtil;
@@ -60,9 +61,7 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -198,14 +197,14 @@ public class ContentResource {
 
         if (UtilMethods.isSet(query)) {
 
-            final String queryDefaultVariant = query + " +variant:default";
+            final String realQuery = query.indexOf("variant:") != -1 ? query : query + " +variant:default";
 
             startAPISearchPull = Calendar.getInstance().getTimeInMillis();
-            resultsSize        = APILocator.getContentletAPI().indexCount(queryDefaultVariant, userForPull, pageMode.respectAnonPerms);
+            resultsSize        = APILocator.getContentletAPI().indexCount(realQuery, userForPull, pageMode.respectAnonPerms);
             afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
 
             startAPIPull       = Calendar.getInstance().getTimeInMillis();
-            contentlets        = ContentUtils.pull(processQuery(queryDefaultVariant), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
+            contentlets        = ContentUtils.pull(processQuery(realQuery), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
             resultJson = getJSONObject(contentlets, request, response, render, user, depth,
                     pageMode.respectAnonPerms, language, pageMode.showLive, allCategoriesInfo);
 
@@ -781,7 +780,7 @@ public class ContentResource {
             final boolean allCategoriesInfo){
 
         final StringBuilder sb = new StringBuilder();
-        final XStream xstream = new XStream(new DomDriver());
+        final XStream xstream = XStreamHandler.newXStreamInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
@@ -1024,7 +1023,7 @@ public class ContentResource {
 
 
     private String getXMLContentIds(Contentlet con) {
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamHandler.newXStreamInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         StringBuilder sb = new StringBuilder();
@@ -1463,6 +1462,7 @@ public class ContentResource {
 
         jsonObject.put("__icon__", UtilHTML.getIconClass(contentlet));
         jsonObject.put("contentTypeIcon", type.icon());
+        jsonObject.put("variant", contentlet.getVariantId());
         return jsonObject;
     }
 
@@ -2145,7 +2145,7 @@ public class ContentResource {
                 .startsWith("<?XML")) {
             throw new DotSecurityException("Invalid XML");
         }
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamHandler.newXStreamInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         Map<String, Object> root = (Map<String, Object>) xstream.fromXML(input);
@@ -2207,7 +2207,7 @@ public class ContentResource {
     protected void processJSON(final Contentlet contentlet, final InputStream input)
             throws JSONException, IOException, DotDataException, DotSecurityException {
 
-        processMap(contentlet, webResource.processJSON(input));
+        processMap(contentlet, WebResource.processJSON(input));
     }
 
     private void setRequestMetadata(Contentlet contentlet, HttpServletRequest request) {

@@ -54,6 +54,8 @@ dojo.require('dijit.form.Button');
 dojo.require('dijit.layout.BorderContainer');
 
 var isNg = new URLSearchParams(document.location.search).get('ng');
+// This variable maps to the values declared in Field.FieldType.HOST_OR_FOLDER
+const HOST_OR_FOLDER = "host or folder"
 
 dojo.declare(
     'dotcms.dijit.form.ContentSelector',
@@ -258,14 +260,28 @@ dojo.declare(
             if (dijit.byId('langcombo+' + this.dialogCounter)) {
                 dijit.byId('langcombo+' + this.dialogCounter).destroy();
             }
+            let selectedLang = null;
+            let options = ''
             this.availableLanguages = data;
+
+            for (var i = 0; i < data.length; i++) {
+                options += "<option  value='" + data[i].id + "'";
+                if (this.contentletLanguageId == data[i].id || this.languageId == data[i].id ) {
+                    options += " selected='true' ";
+                    selectedLang = data[i];
+                }
+                options +=
+                    '>' + this._getCountryLabel(data[i]) + '</option>';
+            }
+
+
             this.search_languages_table.innerHTML = '';
             var htmlstr = "<dl class='vertical'>";
             htmlstr +=
                 "<dt><label for='langcombo+" +
                 this.dialogCounter +
                 "'>" +
-                data[0].title +
+                selectedLang ? selectedLang.title : data[0].title +
                 '</label></dt>';
             htmlstr += '<dd>';
             dojo.require('dijit.form.FilteringSelect');
@@ -276,32 +292,46 @@ dojo.declare(
                 this.dialogCounter +
                 "'>";
 
-            for (var i = 0; i < data.length; i++) {
-                htmlstr += "<option  value='" + data[i].id + "'";
-                if (this.contentletLanguageId == data[i].id) {
-                    htmlstr += " selected='true' ";
-                }
-                htmlstr +=
-                    '>' +
-                    data[i].language +
-                    (data[i].country == '' ? '' : ' - ' + data[i].country) +
-                    '</option>';
-            }
-
+            htmlstr += options;
             htmlstr += '</select>';
             htmlstr += '</dd>';
             htmlstr += '</dl>';
             dojo.place(htmlstr, this.search_languages_table);
             dojo.parser.parse(this.search_languages_table);
+
+            let obj = dijit.byId('langcombo+' + this.dialogCounter);
+
+            // Set the displayed value
+            if (selectedLang) {
+                obj.set('displayedValue', this._getCountryLabel(selectedLang));
+            }
+        },
+
+        _getSiteFolderFieldDefaultHTML: function (){
+            const defaultSiteFolderField = {
+                "fieldContentlet": "system_field",
+                "fieldFieldType": HOST_OR_FOLDER,
+                "fieldName": "Site or Folder",
+                "fieldValues": "",
+                "fieldVelocityVarName": "siteOrFolder",
+            }
+
+            var htmlstr = "<dl class='vertical'>";
+            htmlstr += '<dt><label>' + this._fieldName(defaultSiteFolderField) + '</label></dt>';
+            htmlstr += '<dd>' + this._renderSearchField(defaultSiteFolderField) + '</dd>';
+            htmlstr += '</dl>';
+
+            return htmlstr;
         },
 
         _fillFields: function (data) {
             this.currentStructureFields = data;
             this.search_fields_table.innerHTML = '';
+            this.site_folder_field_pop.innerHTML = '';
             var htmlstr = "<dl class='vertical'>";
             for (var i = 0; i < data.length; i++) {
                 var type = data[i]['fieldFieldType'];
-                if (type == 'category' || type == 'hidden') {
+                if (type == 'category' || type == 'hidden' || type == HOST_OR_FOLDER) {
                     continue;
                 }
                 htmlstr +=
@@ -309,8 +339,13 @@ dojo.declare(
                 htmlstr += '<dd>' + this._renderSearchField(data[i]) + '</dd>';
             }
             htmlstr += '</dl>';
+
+            const siteFolderFieldHtml = this._getSiteFolderFieldDefaultHTML();
+            dojo.place(siteFolderFieldHtml, this.site_folder_field_pop);
             dojo.place(htmlstr, this.search_fields_table);
+
             dojo.parser.parse(this.search_fields_table);
+            dojo.parser.parse(this.site_folder_field_pop);
             eval(this.setDotFieldTypeStr);
         },
 
@@ -1062,6 +1097,7 @@ dojo.declare(
                     });
             }
 
+            const variantName = window.sessionStorage.getItem('variantName') || 'DEFAULT';
             ContentletAjax.searchContentlets(
                 searchFor,
                 fieldsValues,
@@ -1075,6 +1111,7 @@ dojo.declare(
                 this.currentSortBy,
                 null,
                 null,
+                variantName,
                 dojo.hitch(this, this._fillResults)
             );
 
@@ -1277,20 +1314,17 @@ dojo.declare(
             dojo.parser.parse(this.results_table);
 
             if (this.multiple == 'false') {
-                for (var i = 0; i < data.length; i++) {
-                    var asset = data[i];
+                data.map(asset => {
                     var selectButton = dojo.byId(
                         this.searchCounter + asset.inode
                     );
                     if (selectButton.onclick == undefined) {
-                        selectButton.onclick = dojo.hitch(
-                            this,
-                            selected,
-                            this,
-                            asset
-                        );
+                        selectButton.onclick = dojo.hitch(this, function (event) {
+                            event.stopPropagation();
+                            selected(this, asset);
+                        });
                     }
-                }
+                })
             }
 
             // Header based sorting functionality
@@ -1528,6 +1562,10 @@ dojo.declare(
             var startIndex = iconCode.indexOf('<span class') + 13;
             var endIndex = iconCode.indexOf('</span>') - 2;
             return iconCode.substring(startIndex, endIndex);
+        },
+
+        _getCountryLabel: function (data) {
+            return  data.language + (data.country === '' ? '' : ' - ' + data.country)
         },
 
         _replaceWithIcon: function (parentElement, iconName) {

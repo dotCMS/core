@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { Injectable } from '@angular/core';
@@ -122,8 +121,8 @@ export default {
     component: DotPaletteComponent,
     decorators: [
         moduleMetadata({
-            declarations: [DotPaletteComponent, DotMessagePipe],
-            imports: [CommonModule, DotIconModule, DotFilterPipeModule],
+            declarations: [DotPaletteComponent],
+            imports: [CommonModule, DotIconModule, DotFilterPipeModule, DotMessagePipe],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },
                 { provide: DotMessageService, useValue: messageServiceMock }
@@ -137,22 +136,16 @@ export default {
 
 export const Default: Story<DotPaletteComponent> = (props) => {
     return {
-        moduleMetadata: {
-            declarations: [DotPaletteComponent]
-        },
         component: DotPaletteComponent,
         props,
-        template: `<dot-palette [items]='items'></dot-content-palette>`
+        template: `<dot-palette [items]='items' />`
     };
 };
 
 export const Empty: Story<DotPaletteComponent> = (props) => {
     return {
-        moduleMetadata: {
-            declarations: [DotPaletteComponent]
-        },
         component: DotPaletteComponent,
         props,
-        template: `<dot-palette [items]='[]'></dot-content-palette>`
+        template: `<dot-palette [items]='[]' />`
     };
 };

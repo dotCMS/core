@@ -113,6 +113,15 @@ export class PaginatorService {
         this.extraParams.delete(name);
     }
 
+    /**
+     * Reset extra parameters of the eventual request.
+     *
+     * @memberof PaginatorService
+     */
+    public resetExtraParams(): void {
+        this.extraParams.clear();
+    }
+
     get extraParams(): Map<string, string> {
         return this._extraParams;
     }
@@ -320,7 +329,7 @@ export class PaginatorService {
      * @return {*}  {string}
      * @memberof PaginatorService
      */
-    private sanitizeQueryParams(url: string = '', params: Map<string, unknown>): string {
+    private sanitizeQueryParams(url = '', params: Map<string, unknown>): string {
         const urlArr = url?.split('?');
         const baseUrl = urlArr[0];
         const queryParams = urlArr[1];

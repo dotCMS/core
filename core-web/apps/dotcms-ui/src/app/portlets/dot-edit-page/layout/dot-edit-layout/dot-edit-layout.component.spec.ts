@@ -7,18 +7,19 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { EMPTY_TEMPLATE_DESIGN } from '@dotcms/app/portlets/dot-templates/dot-template-create-edit/store/dot-template.store';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPageLayoutService,
     DotPropertiesService,
-    DotSessionStorageService
+    DotRouterService,
+    DotSessionStorageService,
+    DotGlobalMessageService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import { DotCMSResponse, HttpCode, ResponseView } from '@dotcms/dotcms-js';
 import { DotLayout, DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
@@ -105,6 +106,12 @@ describe('DotEditLayoutComponent', () => {
                 DotEditLayoutService,
                 DotRouterService,
                 {
+                    provide: DotPageStateService,
+                    useValue: {
+                        state$: of(PAGE_STATE)
+                    }
+                },
+                {
                     provide: DotHttpErrorManagerService,
                     useValue: {
                         handle: jasmine.createSpy().and.returnValue(of({}))
@@ -151,7 +158,7 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotPropertiesService,
                     useValue: {
-                        getKey: () => of('false')
+                        getFeatureFlag: () => of(false)
                     }
                 }
             ]
@@ -344,7 +351,7 @@ describe('DotEditLayoutComponent', () => {
 
     describe('New Template Builder', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
             fixture.detectChanges();
         });
 
@@ -355,13 +362,6 @@ describe('DotEditLayoutComponent', () => {
             );
 
             expect(component).toBeTruthy();
-        });
-
-        it('should set the themeId @Input correctly', () => {
-            const templateBuilder = fixture.debugElement.query(
-                By.css('[data-testId="new-template-builder"]')
-            );
-            expect(templateBuilder.componentInstance.themeId).toBe(PAGE_STATE.template.theme);
         });
 
         it('should emit events from new-template-builder when the layout is changed', () => {

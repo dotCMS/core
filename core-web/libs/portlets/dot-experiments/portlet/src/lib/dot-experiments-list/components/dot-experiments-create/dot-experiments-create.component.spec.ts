@@ -7,16 +7,15 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotExperimentsListStoreMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotExperimentsService, DotMessageService } from '@dotcms/data-access';
 import {
+    DotFieldValidationMessageComponent,
     DotSidebarDirective,
+    DotSidebarHeaderComponent,
     SIDEBAR_PLACEMENT,
     SIDEBAR_SIZES
-} from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+} from '@dotcms/ui';
+import { DotExperimentsListStoreMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsCreateComponent } from './dot-experiments-create.component';
 
@@ -52,7 +51,7 @@ describe('DotExperimentsCreateComponent', () => {
             ButtonModule,
             InputTextModule,
             InputTextareaModule,
-            DotFieldValidationMessageModule
+            DotFieldValidationMessageComponent
         ],
         component: DotExperimentsCreateComponent,
         providers: [

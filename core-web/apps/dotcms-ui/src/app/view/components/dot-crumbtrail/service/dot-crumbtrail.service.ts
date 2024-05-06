@@ -5,7 +5,8 @@ import { ActivatedRoute, Data, NavigationEnd, Router } from '@angular/router';
 
 import { filter, map, switchMap, take } from 'rxjs/operators';
 
-import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
+import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+
 import {
     DotNavigationService,
     replaceSectionsMap
@@ -122,7 +123,8 @@ export class DotCrumbtrailService {
         const sections: string[] = this.splitURL(url);
         const portletId = replaceSectionsMap[sections[0]] || sections[0];
 
-        const isEditPage = sections && sections[0] == 'edit-page';
+        const isEditPage =
+            (sections && sections[0] == 'edit-page') || sections[0].includes('edit-ema');
 
         return this.getMenuLabel(portletId).pipe(
             switchMap(

@@ -1,13 +1,13 @@
 @use "variables" as *;
 
 :host {
-    box-shadow: $md-shadow-4;
+    box-shadow: $shadow-m;
     display: block;
     transition: box-shadow $basic-speed ease-in;
     border-radius: $border-radius-sm;
 
     &:hover {
-        box-shadow: $md-shadow-3;
+        box-shadow: $shadow-s;
         cursor: pointer;
     }
 
@@ -78,11 +78,12 @@
 p-header {
     display: flex;
     padding-top: $spacing-4;
+    align-items: flex-start;
 }
 
 p-avatar {
     border-radius: 50%;
-    box-shadow: $md-shadow-2;
+    box-shadow: $shadow-l;
     margin: 0 $spacing-3 0;
 }
 
@@ -92,8 +93,6 @@ p-avatar {
     flex: 1;
     font-size: $font-size-lg;
     font-weight: bold;
-    height: $spacing-3;
-    line-height: $spacing-3;
     text-overflow: ellipsis;
     transition: color $basic-speed ease;
 }

@@ -436,11 +436,12 @@ public class AnalyticsHelperTest extends UnitTestBase {
         return AnalyticsTestUtils
             .createAccessToken(
                 "a1b2c3d4e5f6",
-                "some-client-i",
+                "some-client-id",
                 "some-audience",
                 "some-scope",
                 "some-token-type",
-                tokenStatus)
+                tokenStatus,
+                null)
             .withExpiresIn(ANALYTICS_ACCESS_TOKEN_TTL);
     }
 

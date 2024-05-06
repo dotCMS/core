@@ -81,11 +81,11 @@ function checkReindexationCallback (response) {
 	var newIndexPath = response.entity.newIndexPath;
 	var reindexTimeElapsed = response.entity.reindexTimeElapsed;
     var failedRecords = response.entity.errorCount;
-    
+
     if(failedRecords > 0){
         dojo.byId("failedReindexRecordsDiv").style.display="";
         dojo.byId("failedReindexRecordsMessage").innerHTML= failedRecords;
-        
+
     }else{
         dojo.byId("failedReindexRecordsDiv").style.display="none";
     }
@@ -141,28 +141,28 @@ function deleteFailedRecords () {
 }
 
 
-/** Stops de re-indexation process and clears the database table that contains 
+/** Stops de re-indexation process and clears the database table that contains
     the remaining non re-indexed records. */
 function stopReIndexing(){
-    
+
     fetch('/api/v1/esindex/reindex?switch=false', {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data));
-    
+
 
 }
 
-/** Stops de re-indexation process and clears the database table that contains 
-    the remaining non re-indexed records. Moreover, switches the current index 
+/** Stops de re-indexation process and clears the database table that contains
+    the remaining non re-indexed records. Moreover, switches the current index
     to point to the new one. */
 function stopReIndexingAndSwitchover() {
     fetch('/api/v1/esindex/reindex?switch=true', {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data));
-    
+
 }
 
-/** Downloads the main information of the records that could not be re-indexed 
+/** Downloads the main information of the records that could not be re-indexed
     as a .CSV file*/
 function downloadFailedAsJson() {
 	var href = "/api/v1/esindex/failed";
@@ -188,25 +188,25 @@ function deleteIndex(indexName, live){
     if(live && ! confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Delete-Live-Index")) %>")){
         return;
     }
-    
+
     fetch('/api/v1/esindex/' + indexName, {method:'DELETE',cache: 'no-cache'} )
     .then(response => response.json())
     .then(()=>refreshIndexStats());
-    
+
 
 }
 
 function refreshIndexStats(){
     var x = dijit.byId("indexStatsCp");
     var y =Math.floor(Math.random()*1123213213);
-    
+
 
     x.attr( "href","/html/portlet/ext/cmsmaintenance/index_stats.jsp?r=" + y  );
-    
+
     /**
     fetch('/api/v1/index', {cache: 'no-cache'})
     .then(response => response.json())
-    .then(data =>paintStatusTable(data))   
+    .then(data =>paintStatusTable(data))
     **/
 }
 
@@ -225,7 +225,7 @@ function doReindex(){
         }
     }
     dijit.byId('structure').reset();
-        
+
     fetch('/api/v1/esindex/reindex?shards=' + shards + '&contentType=' + contentType, {method:'POST'})
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data))
@@ -267,7 +267,7 @@ function doActivateIndex(indexName){
 
     fetch('/api/v1/esindex/' + indexName, {method:'PUT'} )
     .then(response => response.json())
-    
+
     .then(()=>refreshIndexStats());
 }
 
@@ -289,32 +289,32 @@ function doDeactivateIndex(indexName){
 function toggleRollingShutdown(){
     let show = document.getElementById("rollingShutdownInfo").style.display;
     document.getElementById("rollingShutdownInfo").style.display=(show=='none') ? '':'none';
-    
+
 }
 
 function doShutdownDotcms(){
-    
+
     if(dijit.byId("agreeToShutdown") && !dijit.byId("agreeToShutdown").checked){
         alert("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Please agree with the disclaimer"))%>")
         return;
     }
-    
+
     if(dijit.byId("agreeToShutdown") && !confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "shutdown.dotcms.confirmation"))%>")){
         return;
     }
-    
+
     let rollingShutdown = false;
-    
+
     if(dijit.byId("rollingShutdown")){
         rollingShutdown = dijit.byId("rollingShutdown").getValue();
     }
 
-    
-    rollingShutdown = (rollingShutdown === 'true');
-    
 
-    
-    
+    rollingShutdown = (rollingShutdown === 'true');
+
+
+
+
     if(!rollingShutdown){
         fetch('/api/v1/maintenance/_shutdown', {method:'DELETE'} )
         .then(response => response.json())
@@ -328,9 +328,9 @@ function doShutdownDotcms(){
         alert("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Please enter a number for the restart delay"))%>")
         return;
     }
-    
+
     let rollingRestartDelay = dijit.byId("rollingRestartDelay").getValue();
-    
+
     if(isNaN(parseInt( rollingRestartDelay ))){
         rollingRestartDelay = <%=rollingRestartDelay%> ;
     }else{
@@ -345,7 +345,7 @@ function doShutdownDotcms(){
         alert('shutdown started');
         dijit.byId("rollingRestartDelay").setDisabled(true);
     });
-    
+
 
 }
 
@@ -384,14 +384,14 @@ const indexTableRowTmpl = (data) => `<tr class="${data.rowClass} showPointer" id
 </tr>`;
 
 /**
- * 
+ *
  */
 function paintStatusTable(data){
-    
+
     const indexTable = document.getElementById("indexStatsCp");
-    
+
     indexTable.innerHTML="";
-    
+
     console.log("found rows:" + indexTable.rows.length);
     data.entity.forEach(function (item, index) {
         const data = {};
@@ -399,11 +399,11 @@ function paintStatusTable(data){
         data.state = item.active ? "<%= LanguageUtil.get(pageContext,"active") %>" : item.building ? "<%= LanguageUtil.get(pageContext,"building") %>" : "";
         data.indexName = item.indexName;
         data.created = item.created;
-        data.indexColor=item.health.status; 
-        data.numberOfReplicas=item.health.numberOfReplicas; 
-        data.numberOfShards=item.health.numberOfShards; 
-        data.documentCount=(item.status === undefined) ? "n/a"  : item.status.documentCount; 
-        data.size=(item.status === undefined) ? "n/a"  : item.status.size; 
+        data.indexColor=item.health.status;
+        data.numberOfReplicas=item.health.numberOfReplicas;
+        data.numberOfShards=item.health.numberOfShards;
+        data.documentCount=(item.status === undefined) ? "n/a"  : item.status.documentCount;
+        data.size=(item.status === undefined) ? "n/a"  : item.status.size;
 
         let row  = indexTable.insertRow();
         row.outerHTML = indexTableRowTmpl(data);
@@ -842,7 +842,7 @@ function loadUsers() {
 		callback: function(sessionList) {
 		    // Append prefix to invalidate button id
 			var invalidateButtonIdPrefix = "invalidateButtonNode-";
-		    
+
             dojo.query('#loggedUsersProgress').style({display:"none"});
 
 			if(sessionList.length > 0) {
@@ -1047,7 +1047,7 @@ function updateHostList(inode, name, selectval){
 	if(row!=null){
 	   alert('<%= LanguageUtil.get(pageContext, "host-already-selected") %>');
 	}else{
-		
+
 		if(hostId == 'all'){
 			var existingHostIds=dojo.byId("assetHost").value.split(",");
 			for(var i = 0; i < existingHostIds.length; i++){
@@ -1063,8 +1063,8 @@ function updateHostList(inode, name, selectval){
 		if(nohosts!=null){
 			table.deleteRow(1);
 	    }
-	
-	
+
+
 		var newRow = table.insertRow(table.rows.length);
 		if((table.rows.length%2)==0){
 	        newRow.className = "alternate_1";
@@ -1079,7 +1079,7 @@ function updateHostList(inode, name, selectval){
 		anchor.innerHTML = '<span class="deleteIcon"></span>';
 		cell0.appendChild(anchor);
 		cell1.innerHTML = hostName;
-		
+
 		if((dojo.byId(inode).value == '') || (dojo.byId(inode).value == 'all')){
 			dojo.byId(inode).value = hostId;
 		}else if(hostId == 'all'){
@@ -1133,11 +1133,11 @@ function assetHostListTable_deleteHost(hostId){
 
 function showSystemVars(){
 
-    
-    
+
+
     const keys = ["release", "jvm", "host" ,"environment","system"];
     const currentDiv = document.getElementById("systemInfoDiv");
-    
+
     currentDiv.innerHTML="";
     fetch('/api/v1/jvm')
     .then(response => response.json())
@@ -1160,13 +1160,13 @@ function showSystemVars(){
             myDiv.appendChild(fieldSet);
             currentDiv.appendChild(myDiv);
             fieldSet.appendChild(label);
-            
+
             table.className="listingTable propTable";
             fieldSet.appendChild(table)
-            
+
             Object.entries(data[key]).forEach(([key, value]) =>{
                 const tr = document.createElement("tr");
-                
+
                 const th = document.createElement("th");
                 th.className="propTh";
                 const td = document.createElement("td");
@@ -1178,22 +1178,20 @@ function showSystemVars(){
                 td.innerHTML=value;
 
             })
-            
+
         });
-        
-        
-        
-        
+
+
+
+
     });
 }
-
-    let assetExportDialog;
 
     /**
      * When the User needs to download dotCMS assets, this function will display a dialog asking them whether they want
      * to include old versions of the assets or not.
      */
-    function createAssetExportDialog() {
+    function createAssetExportDialog(downloadUrl) {
         // Create the dialog
         assetExportDialog = new dijit.Dialog({
             title: "<%= LanguageUtil.get(pageContext, "Import/Export-dotCMS-Content") %>",
@@ -1204,16 +1202,16 @@ function showSystemVars(){
                 }
             }
         });
-        const assetDownloadUrl = "/api/v1/maintenance/_downloadAssets?oldAssets=";
         const btnContainer = document.createElement("div");
-        const btnConfirm = createDialogBtn("<%= LanguageUtil.get(pageContext, "Yes") %>", assetDownloadUrl + "true");
-        const btnReject = createDialogBtn("<%= LanguageUtil.get(pageContext, "No") %>", assetDownloadUrl + "false");
+        const btnConfirm = createDialogBtn("<%= LanguageUtil.get(pageContext, "Yes") %>", downloadUrl + "?oldAssets=true");
+        const btnReject = createDialogBtn("<%= LanguageUtil.get(pageContext, "No") %>", downloadUrl + "?oldAssets=false");
         btnContainer.className = "dialogBtnContainer";
         // Add the buttons to the container
         btnContainer.appendChild(btnConfirm.domNode)
         btnContainer.appendChild(btnReject.domNode);
         // Add the container to the dialog
         assetExportDialog.containerNode.appendChild(btnContainer);
+        assetExportDialog.show();
     }
 
     function createDialogBtn(label, href) {
@@ -1225,10 +1223,6 @@ function showSystemVars(){
                 assetExportDialog.hide();
             }
         });
-    }
-
-    function showAssetExportDialog() {
-        assetExportDialog.show();
     }
 
 </script>
@@ -1315,7 +1309,7 @@ dd.leftdl {
 </style>
 
 <div class="portlet-main" style="height: 100%;">
-	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false" style="height: 100%;">
+	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
     <html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
         <input type="hidden" name="userId"  id="userId" value="<%=user.getUserId()%>">
@@ -1331,7 +1325,7 @@ dd.leftdl {
         <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
         <!-- START Cache TAB -->
         <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-        <div id="cache" dojoType="dijit.layout.ContentPane" title="<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Cache")) %>" >
+        <div id="cache" dojoType="dijit.layout.ContentPane" title="<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Cache")) %>" style="padding-bottom: 0;" >
 
             <table class="listingTable shadowBox">
                 <tr>
@@ -1341,15 +1335,15 @@ dd.leftdl {
                 <tr>
                     <td>&nbsp;</td>
                     <td align="right" style="white-space: nowrap;">
-                        <select name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
+                        <select id="cache_list" name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
                             <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Flush-All-Caches") %></option>
                             <% Object[] caches = (Object[])CacheLocator.getCacheIndexes();
                             String[] indexValue = new String[caches.length];
                             for (int i = 0; i<caches.length; i++) {
                             	indexValue[i] = caches[i].toString();
                             }
-                            java.util.Arrays.sort(indexValue); 
-                            
+                            java.util.Arrays.sort(indexValue);
+
                             for(String c : indexValue){ %>
                                 <option><%= c %></option>
                             <% } %>
@@ -1465,7 +1459,7 @@ dd.leftdl {
                     </tr>
                     <tr>
                         <td>
-                            <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> 
+                            <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %>
                         </td>
                         <td align="right">
                             <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="optimizeIndices()">
@@ -1475,7 +1469,7 @@ dd.leftdl {
                     </tr>
                     <tr>
                         <td>
-                            <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %> 
+                            <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %>
                         </td>
                         <td align="right">
                             <button dojoType="dijit.form.Button"  onClick="flushIndiciesCache()">
@@ -1516,19 +1510,19 @@ dd.leftdl {
                 </table>
             </div>
             <div id="failedReindexRecordsDiv" style="display:none;border:1px solid silver;background-color:#ffdddd;border-radius:10px;width:50%;padding-bottom:15px;margin:auto;text-align: center">
-                
+
                 <div style="padding:15px;margin:auto;text-align: center;font-weight: bold;">
                     <span id="failedReindexRecordsMessage"></span> <%= LanguageUtil.get(pageContext,"Contents-Failed-Reindex") %>
                 </div>
-          
+
                    <button dojoType="dijit.form.Button"  onClick="downloadFailedAsJson();">
                        <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-JSON") %>
                    </button>
-                    &nbsp; &nbsp; 
+                    &nbsp; &nbsp;
                    <button dojoType="dijit.form.Button"  onClick="deleteFailedRecords();">
                        <%= LanguageUtil.get(pageContext,"Delete-Failed-Reindex-Records") %>
                    </button>
-            
+
             </div>
 
             <div id="indexStatsCp"  dojoType="dijit.layout.ContentPane"></div>
@@ -1564,7 +1558,7 @@ dd.leftdl {
                     <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
                     <td style="text-align:center;white-space:nowrap;">
                         <div class="inline-form">
-                            <button dojoType="dijit.form.Button" onclick="showAssetExportDialog()" iconClass="downloadIcon">
+                            <button dojoType="dijit.form.Button" onclick="createAssetExportDialog('/api/v1/maintenance/_downloadAssets')" iconClass="downloadIcon">
                                 <%= LanguageUtil.get(pageContext,"Download-Assets") %>
                             </button>
                         </div>
@@ -1590,7 +1584,7 @@ dd.leftdl {
                                 <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
                             </button>
 
-                            <button dojoType="dijit.form.Button" onClick="showAssetExportDialog()" iconClass="downloadIcon">
+                            <button dojoType="dijit.form.Button" onclick="createAssetExportDialog('/api/v1/maintenance/_downloadStarterWithAssets')" iconClass="downloadIcon">
                                 <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
                             </button>
                         </div>
@@ -1754,38 +1748,38 @@ dd.leftdl {
             </table>
 
             <div style="height:20px">&nbsp;</div>
-            
-            
+
+
             <table class="listingTable">
                 <tr>
                     <th><%= LanguageUtil.get(pageContext,"shutdown.dotcms.button") %></th>
                 </tr>
                 <tr>
                     <td align="center" class="warning">
-                    
+
                     <%if(System.getProperty("DOTCMS_CLUSTER_RESTART")!=null){ %>
-                    
+
                         <div style="margin:auto;width:50%;background-color:pink;padding:50px;border-radius:20px;">
                              System restarting @ <%=System.getProperty("DOTCMS_CLUSTER_RESTART")%>
                              <br>&nbsp;<br>
                             <button dojoType="dijit.form.Button" onClick="doShutdownDotcms();"  id="doShutdownDotcms">
                                <%= LanguageUtil.get(pageContext,"shutdown.dotcms.button.force") %>
                             </button>
-                             
-                             
+
+
                         </div>
-                        
+
                     <%} else { %>
-                    
+
                        <div style="margin:auto;width:55%;padding:50px;text-align: justify;line-height:1.5">
                            <%= LanguageUtil.get(pageContext,"shutdown.dotcms.disclaimer") %>
                        </div>
-                       
+
                        <div style="margin:auto;width:50%;background-color:pink;padding:50px;border-radius:20px;">
                           <div style="display:grid;grid-template-columns: 50% 50%;width:100%">
                              <div style="text-align: right;padding:10px 10px">
                                 <%= LanguageUtil.get(pageContext,"shutdown.dotcms.consent") %>:
-                             </div>  
+                             </div>
                              <div style="text-align: left;padding:10px 10px">
                                   <input dojoType="dijit.form.CheckBox" type="checkbox" id="agreeToShutdown" name="agreeToShutdown" value="true"><label for="agreeToShutdown">
                              </div>
@@ -1797,24 +1791,24 @@ dd.leftdl {
                                      <input dojoType="dijit.form.CheckBox" type="checkbox" id="rollingShutdown" value="true" name="rollingShutdown" onclick="toggleRollingShutdown()">
                                 </div>
                              <%} %>
-                             
+
                           </div>
                           <%if(System.getProperty("DOTCMS_CLUSTER_RESTART")==null){ %>
                           <div id="rollingShutdownInfo" style="display:none">
                           <div style="display:grid;grid-template-columns: 50% 50%;width:100%">
-                             <div style="text-align: right;padding:15px;vertical-align: middle;"> 
-                       
+                             <div style="text-align: right;padding:15px;vertical-align: middle;">
+
                                      Rolling Delay in Seconds:
                              </div>
                             <div style="text-align:left;align:left;padding-top:15px">
-         
-                                <input dojoType="dijit.form.NumberTextBox" 
-                                    type="text" 
-                                    id="rollingRestartDelay" 
-                                    name="rollingRestartDelay" 
-                                    value="<%=rollingRestartDelay %>"  
-                                    style="width:100px" 
-                                    invalidMessage="Please enter only numbers" 
+
+                                <input dojoType="dijit.form.NumberTextBox"
+                                    type="text"
+                                    id="rollingRestartDelay"
+                                    name="rollingRestartDelay"
+                                    value="<%=rollingRestartDelay %>"
+                                    style="width:100px"
+                                    invalidMessage="Please enter only numbers"
                                     constraints="{ min:0,max:6000,places:0,pattern:'####'}">
                                    <div style="padding:10px;font-size:95%">
                                        <%= LanguageUtil.get(pageContext,"shutdown.dotcms.rolling.message") %>
@@ -1828,14 +1822,14 @@ dd.leftdl {
                                <%= LanguageUtil.get(pageContext,"shutdown.dotcms.button") %>
                             </button>
                          </div>
-                         
+
                       <% } %>
                     </td>
                 </tr>
 
             </table>
-            
-            
+
+
             <%
             	  List<Host> hosts = new ArrayList<Host>();
             	try{
@@ -1862,7 +1856,7 @@ dd.leftdl {
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
       <div style="width:80%;margin: 0 auto;" id="systemInfoDiv">
-      
+
       </div>
 
     </div>
@@ -1944,13 +1938,13 @@ dd.leftdl {
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <!-- START SYSTEM_JOBS -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-    <div id="system_jobs" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "scheduler.system.jobs") %>">      
-        
-    
+    <div id="system_jobs" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "scheduler.system.jobs") %>">
+
+
         <%@ include file="/html/portlet/ext/cmsmaintenance/system_jobs.jsp" %>
-    
-    
-    
+
+
+
     </div>
 
 
@@ -1969,7 +1963,7 @@ dd.leftdl {
 		<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
 		<button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp;
 	</div>
-	
+
 </div>
 
 <script language="Javascript">
@@ -1978,8 +1972,6 @@ dojo.require("dijit.form.DateTextBox");
 
 		checkReindexation();
 		checkFixAsset();
-        createAssetExportDialog();
-		//indexStructureChanged();
 
 			var tab =dijit.byId("mainTabContainer");
 		   	dojo.connect(tab, 'selectChild',
@@ -1991,7 +1983,7 @@ dojo.require("dijit.form.DateTextBox");
 				  	}
 
 			});
-		//getAllThreads();
+
 		getSysInfo();
 		loadUsers();
 	});

@@ -1,48 +1,55 @@
 <div class="dot-container-code__content-tab-container" [formGroup]="fg">
     <div class="field mb-0">
-        <label class="block" dotFieldRequired>{{
-            'message.containers.create.content_type_code' | dm
-        }}</label>
+        <label class="block" dotFieldRequired>
+            {{ 'message.containers.create.content_type_code' | dm }}
+        </label>
     </div>
     <p-tabView
         [@contentCodeAnimation]
         [(activeIndex)]="activeTabIndex"
-        [scrollable]="true"
         [controlClose]="true"
+        [scrollable]="true"
         (onChange)="handleTabClick($event, $event.index)"
-        (onClose)="removeItem($event.index)"
-    >
+        (onClose)="removeItem($event.index)">
         <p-tabPanel headerStyleClass="tab-panel-btn">
             <ng-template pTemplate="header">
                 <i
-                    class="pi pi-plus pr-3 pl-3"
+                    class="pi pi-plus add-tab-icon"
                     *ngIf="contentTypes.length > 0; else contentTypesLoader"
-                    (click)="handleTabClick($event); actionsMenu.toggle($event)"
-                ></i>
+                    (click)="handleTabClick($event); actionsMenu.toggle($event)"></i>
+
                 <ng-template #contentTypesLoader>
-                    <p-skeleton borderRadius="0px" width="3rem" height="3.75rem"></p-skeleton>
+                    <p-skeleton borderRadius="0px" height="3.9rem" width="4rem"></p-skeleton>
                 </ng-template>
-                <p-menu #actionsMenu [popup]="true" [model]="menuItems" appendTo="body"></p-menu>
+                <p-menu
+                    #actionsMenu
+                    [model]="menuItems"
+                    [popup]="true"
+                    [style]="{
+                        'max-height': '300px',
+                        overflow: 'auto'
+                    }"
+                    appendTo="body"></p-menu>
             </ng-template>
             <ng-template pTemplate="content">
                 <div
-                    class="dot-container-code__empty-content flex justify-content-center align-items-center flex-column"
-                >
+                    class="dot-container-code__empty-content flex justify-content-center align-items-center flex-column">
                     <dot-icon data-testId="code" name="code" size="100"></dot-icon>
                     <div
                         class="dot-container-code__empty-content-title"
-                        data-testId="empty-content-title"
-                    >
+                        data-testId="empty-content-title">
                         {{ 'message.containers.empty.content_type_message' | dm }}
                     </div>
-                    <div
-                        class="dot-container-code__empty-content-subtitle mb-1"
-                        data-testId="empty-content-subtitle"
-                    >
-                        {{ 'message.containers.empty.content_type_need_help' | dm }}?
-                        <a href="https://www.dotcms.com/docs/latest/containers" target="_blank">{{
-                            'message.containers.empty.content_type_go_to_documentation' | dm
-                        }}</a>
+                    <div class="dot-container-code__empty-content-subtitle mb-1">
+                        <span data-testId="empty-content-subtitle">
+                            {{ 'message.containers.empty.content_type_need_help' | dm }}?
+                        </span>
+                        <a
+                            data-testId="empty-content-link"
+                            href="https://www.dotcms.com/docs/latest/containers"
+                            target="_blank">
+                            {{ 'message.containers.empty.content_type_go_to_documentation' | dm }}
+                        </a>
                     </div>
                 </div>
             </ng-template>
@@ -50,35 +57,28 @@
         <p-tabPanel
             *ngFor="let containerContent of getcontainerStructures.controls; let i = index"
             [closable]="true"
-            formArrayName="containerStructures"
-        >
+            formArrayName="containerStructures">
             <ng-template pTemplate="header">
-                <ng-container *ngIf="contentTypes.length > 0; else headerLoader">
-                    {{ contentTypeNamesById[containerContent.value.structureId] }}
-                </ng-container>
-                <ng-template #headerLoader>
-                    <p-skeleton borderRadius="0px" width="3rem" height="1.2rem"></p-skeleton>
-                </ng-template>
+                {{ contentTypeNamesById[containerContent.value.structureId] }}
             </ng-template>
+
             <div [formGroupName]="i">
                 <button
                     class="p-button-outlined dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
-                    [label]="'add-variable' | dm"
                     [disabled]="contentTypes.length === 0"
+                    [label]="'add-variable' | dm"
                     (click)="handleAddVariable(containerContent.value)"
-                    pButton
-                ></button>
+                    pButton></button>
                 <dot-textarea-content
                     #body
                     [attr.data-testid]="containerContent.value.structureId"
-                    [value]="containerContent.value.code"
+                    [customStyles]="{ border: 'none', height: '500px' }"
                     [editorName]="containerContent.value.structureId"
                     [show]="['code']"
-                    [customStyles]="{ border: 'none', height: '500px' }"
+                    [value]="containerContent.value.code"
                     (monacoInit)="monacoInit($event)"
                     formControlName="code"
-                    language="html"
-                ></dot-textarea-content>
+                    language="html"></dot-textarea-content>
             </div>
         </p-tabPanel>
     </p-tabView>

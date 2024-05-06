@@ -16,7 +16,11 @@ import { CardModule } from 'primeng/card';
 import { DropdownModule } from 'primeng/dropdown';
 import { Sidebar } from 'primeng/sidebar';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     DefaultGoalConfiguration,
     ExperimentSteps,
@@ -24,15 +28,12 @@ import {
     GOAL_PARAMETERS,
     GOAL_TYPES
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotDropdownDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiments-configuration-goal-select.component';
 
@@ -386,22 +387,20 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(reachPageOptionContent).toHaveClass('expanded');
     });
 
-    it('should emit closedSidebar when the sidebar its closed', async () => {
+    it('should emit closedSidebar when the sidebar its closed', () => {
+        spectator.detectChanges();
+
         sidebar = spectator.query(Sidebar);
         jest.spyOn(spectator.component, 'closeSidebar');
+
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.GOAL,
             isOpen: false
         });
 
         spectator.detectComponentChanges();
-        await spectator.fixture.whenStable();
 
         expect(sidebar.visible).toEqual(false);
-
-        sidebar.onHide.subscribe(() => {
-            expect(spectator.component.closeSidebar).toHaveBeenCalled();
-        });
     });
 
     it('should render coming soon placeholder', () => {

@@ -6,10 +6,11 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
+
+import javax.activation.MimeType;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import javax.activation.MimeType;
 
 /**
  * Mime Type Utils
@@ -18,6 +19,20 @@ import javax.activation.MimeType;
 public class MimeTypeUtils {
 
     public static final String ACCEPT_ALL = "*/*";
+    public static final String MIME_TYPE_APP_OCTET_STREAM = "application/octet-stream";
+
+    // defect nothing default implementation
+    private static MimeTypeDetector mimeTypeDetector = path -> null;
+
+    /**
+     * Sets a mime type detector
+     * @param mimeTypeDetector
+     */
+    public static synchronized void setMimeTypeDetector(final MimeTypeDetector mimeTypeDetector) {
+        if (null != mimeTypeDetector) {
+            MimeTypeUtils.mimeTypeDetector = mimeTypeDetector;
+        }
+    }
 
     /**
      * Gets the mime type of a file.
@@ -29,7 +44,12 @@ public class MimeTypeUtils {
             return FileAsset.UNKNOWN_MIME_TYPE;
         }
         final Path path = binary.toPath();
-        String mimeType = Try.of(() -> Files.probeContentType(path)).getOrNull();
+        String mimeType = Try.of(() -> mimeTypeDetector.detectMimeType(path)).getOrNull();
+
+        if  (!UtilMethods.isSet(mimeType)) {
+
+             mimeType = Try.of(() -> Files.probeContentType(path)).getOrNull();
+        }
 
         if  (!UtilMethods.isSet(mimeType)) {
 
@@ -39,7 +59,7 @@ public class MimeTypeUtils {
                 try {
                     mimeType = new TikaUtils().detect(binary);
                 } catch(Throwable e) {
-                    Logger.warn(MimeTypeUtils.class, "Unable to parse Mime type for : " + binary);
+                    Logger.warn(MimeTypeUtils.class, "Unable to parse MIME Type for : " + binary);
                     Logger.warn(MimeTypeUtils.class, e.getMessage() + e.getStackTrace()[0]);
                 }
 

@@ -1,26 +1,33 @@
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, ViewChild } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    OnDestroy,
+    QueryList,
+    ViewChild,
+    ViewChildren
+} from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
+import { Menu } from 'primeng/menu';
 
-import { takeUntil } from 'rxjs/operators';
+import { skip, takeUntil } from 'rxjs/operators';
 
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
     DotBulkFailItem,
     DotContainer,
     DotContentState,
-    CONTAINER_SOURCE
+    CONTAINER_SOURCE,
+    DotMessageSeverity,
+    DotMessageType
 } from '@dotcms/dotcms-models';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-container-list',
@@ -29,11 +36,15 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
     providers: [DotContainerListStore]
 })
 export class ContainerListComponent implements OnDestroy {
+    @ViewChild('actionsMenu')
+    actionsMenu: Menu;
+    @ViewChildren('tableRow')
+    tableRows: QueryList<ElementRef<HTMLTableRowElement>>;
+
     vm$ = this.store.vm$;
     notify$ = this.store.notify$;
 
-    @ViewChild('listing', { static: false })
-    listing: DotListingDataTableComponent;
+    selectedContainers: DotContainer[] = [];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -42,11 +53,16 @@ export class ContainerListComponent implements OnDestroy {
         private dotMessageService: DotMessageService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dialogService: DialogService,
-        private dotRouterService: DotRouterService
+        private siteService: SiteService
     ) {
         this.notify$.pipe(takeUntil(this.destroy$)).subscribe(({ payload, message, failsInfo }) => {
             this.notifyResult(payload, failsInfo, message);
+            this.selectedContainers = [];
         });
+
+        this.siteService.switchSite$
+            .pipe(skip(1)) // Skip initialization
+            .subscribe(({ identifier }) => this.store.getContainersByHost(identifier));
     }
 
     ngOnDestroy(): void {
@@ -60,10 +76,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     changeContentTypeSelector(value: string) {
-        value
-            ? this.listing.paginatorService.setExtraParams('content_type', value)
-            : this.listing.paginatorService.deleteExtraParams('content_type');
-        this.listing.loadFirstPage();
+        this.store.getContainersByContentType(value);
     }
 
     /**
@@ -92,25 +105,27 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     handleArchivedFilter(checked: boolean): void {
-        checked
-            ? this.listing.paginatorService.setExtraParams('archive', checked)
-            : this.listing.paginatorService.deleteExtraParams('archive');
-        this.listing.loadFirstPage();
+        this.store.getContainersByArchiveState(checked);
     }
 
     /**
-     * Keep updated the selected containers in the grid
-     * @param {DotContainer[]} containers
+     * Handle query filter
      *
+     * @param {string} query
      * @memberof ContainerListComponent
      */
-    updateSelectedContainers(containers: DotContainer[]): void {
-        const filterContainers = containers.filter(
-            (container: DotContainer) =>
-                container.identifier !== 'SYSTEM_CONTAINER' &&
-                container.source !== CONTAINER_SOURCE.FILE
-        );
-        this.store.updateSelectedContainers(filterContainers);
+    handleQueryFilter(query: string): void {
+        this.store.getContainersByQuery(query);
+    }
+
+    /**
+     * Call when click on any pagination link
+     * @param {LazyLoadEvent} event
+     *
+     * @memberof DotContainerListComponent
+     */
+    loadDataPaginationEvent({ first }: { first: number }): void {
+        this.store.getContainersWithOffset(first);
     }
 
     /**
@@ -127,25 +142,41 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
-     * Return a list of containers with disableInteraction in system items.
-     * @param {DotContainer[]} containers
-     * @returns DotContainer[]
-     * @memberof DotContainerListComponent
+     * Handle action menu click
+     *
+     * @param {MouseEvent} event
+     * @memberof ContainerListComponent
      */
-    getContainersWithDisabledEntities(containers: DotContainer[]): DotContainer[] {
-        return containers.map((container) => {
-            const copyContainer = structuredClone(container);
-            copyContainer.disableInteraction =
-                copyContainer.identifier.includes('/') ||
-                copyContainer.identifier === 'SYSTEM_CONTAINER' ||
-                copyContainer.source === CONTAINER_SOURCE.FILE;
+    handleActionMenuOpen(event: MouseEvent): void {
+        this.updateSelectedContainers();
+        this.actionsMenu.toggle(event);
+    }
 
-            if (copyContainer.path) {
-                copyContainer.pathName = new URL(`http:${container.path}`).pathname;
-            }
+    /**
+     * Focus first row if key arrow down on input
+     *
+     * @memberof ContainerListComponent
+     */
+    focusFirstRow(): void {
+        const { nativeElement: firstActiveRow } = this.tableRows.find(
+            (row) => row.nativeElement.getAttribute('data-disabled') === 'false'
+        ) || { nativeElement: null }; // To not break on destructuring
 
-            return copyContainer;
-        });
+        firstActiveRow?.focus();
+    }
+
+    /**
+     * Keep updated the selected containers in the store
+     *
+     * @memberof ContainerListComponent
+     */
+    private updateSelectedContainers(): void {
+        const filterContainers = this.selectedContainers.filter(
+            (container: DotContainer) =>
+                container.identifier !== 'SYSTEM_CONTAINER' &&
+                container.source !== CONTAINER_SOURCE.FILE
+        );
+        this.store.updateSelectedContainers(filterContainers);
     }
 
     private notifyResult(
@@ -163,8 +194,8 @@ export class ContainerListComponent implements OnDestroy {
             this.showToastNotification(message);
         }
 
-        this.listing?.clearSelection();
-        this.listing?.loadCurrentPage();
+        this.store.clearSelectedContainers();
+        this.store.loadCurrentContainersPage();
     }
 
     private showToastNotification(message: string): void {

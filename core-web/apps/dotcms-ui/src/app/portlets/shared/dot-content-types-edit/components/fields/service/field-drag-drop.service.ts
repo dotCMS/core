@@ -198,7 +198,9 @@ export class FieldDragDropService {
         if (!fieldRowBagOpts) {
             this.dragulaService.createGroup(FieldDragDropService.FIELD_ROW_BAG_NAME, {
                 copy: this.shouldCopy.bind(this),
-                moves: this.shouldMoveRow.bind(this)
+                accepts: this.shouldAccepts.bind(this),
+                moves: this.shouldMoveRow.bind(this),
+                copyItem: (item) => _.cloneDeep(item)
             });
         }
     }

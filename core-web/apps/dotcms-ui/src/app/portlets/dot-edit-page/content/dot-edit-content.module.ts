@@ -20,12 +20,14 @@ import {
     DotESContentService,
     DotLicenseService,
     DotPageRenderService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotResultsSeoToolComponent, DotSelectSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotCopyContentModalService, DotIconModule, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { DotEditPageStateControllerModule } from './components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
@@ -35,7 +37,6 @@ import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-s
 import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
-import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
@@ -58,8 +59,8 @@ const routes: Routes = [
         CheckboxModule,
         RouterModule.forChild(routes),
         DotContentletEditorModule,
+        DotSafeHtmlPipe,
         DotDirectivesModule,
-        DotPipesModule,
         DotWhatsChangedModule,
         DotFormSelectorModule,
         TooltipModule,
@@ -72,7 +73,9 @@ const routes: Routes = [
         DotPaletteModule,
         DotIconModule,
         DotEditPageToolbarSeoComponent,
-        DotShowHideFeatureDirective
+        DotShowHideFeatureDirective,
+        DotResultsSeoToolComponent,
+        DotSelectSeoToolComponent
     ],
     exports: [DotEditContentComponent],
     providers: [
@@ -91,7 +94,9 @@ const routes: Routes = [
         DotWorkflowActionsFireService,
         DotLicenseService,
         DialogService,
-        DotCopyContentModalService
+        DotCopyContentModalService,
+        DotSeoMetaTagsService,
+        DotSeoMetaTagsUtilService
     ]
 })
 export class DotEditContentModule {}

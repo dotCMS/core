@@ -1,0 +1,26 @@
+<aside class="content-aside">
+    <section class="content-aside__section">
+        <div class="content-aside__header">
+            <h2>{{ 'Information' | dm }}</h2>
+        </div>
+        <dot-content-aside-information
+            [contentlet]="contentlet"
+            [contentType]="contentType"
+            [loading]="loading"
+            data-testId="information" />
+    </section>
+
+    <section class="content-aside__section">
+        <div class="content-aside__header">
+            <h2>{{ 'Workflow' | dm }}</h2>
+            <div class="content-aside__icon">
+                <i class="pi pi-history" aria-hidden="true"></i>
+                <span>{{ 'show-all' | dm }}</span>
+            </div>
+        </div>
+        <dot-content-aside-workflow
+            [inode]="contentlet?.inode"
+            [contentType]="contentType"
+            data-testId="workflow" />
+    </section>
+</aside>

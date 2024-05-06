@@ -8,6 +8,8 @@
         "../src/**/*",
         "../../../**/template-builder/**/src/lib/**/*.stories.ts",
         "../../../**/block-editor/**/src/lib/**/*.stories.ts",
-        "../../../**/contenttype-fields/**/src/lib/**/*.stories.ts"
+        "../../../**/edit-content/**/src/lib/**/*.stories.ts",
+        "../../../**/ui/**/src/lib/**/*.stories.ts",
+        "../../../**/portlets/**/src/lib/**/*.stories.ts"
     ]
 }

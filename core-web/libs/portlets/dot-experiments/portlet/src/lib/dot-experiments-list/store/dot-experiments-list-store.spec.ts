@@ -13,7 +13,11 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
@@ -22,14 +26,12 @@ import {
     DotExperimentsWithActions,
     GroupedExperimentByStatus
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     DotExperimentsStoreMock,
     getExperimentAllMocks,
     getExperimentMock,
     PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsListStore } from './dot-experiments-list-store';
 
@@ -41,7 +43,9 @@ const ActivatedRouteMock = {
         params: {
             pageId: routerParamsPageId
         },
-        parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } }
+        parent: {
+            parent: { parent: { data: { content: { page: { title: '' } } } } }
+        }
     },
     parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
@@ -51,14 +55,16 @@ const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
 const EXPERIMENT_MOCK_ALL = getExperimentAllMocks();
 
-const MENU_ITEMS_QTY = 7;
+const MENU_ITEMS_QTY = 9;
 const MENU_ITEMS_CONFIGURATION_INDEX = 0;
-const MENU_ITEMS_CANCEL_SCHEDULE_INDEX = 1;
-const MENU_ITEMS_DELETE_INDEX = 2;
-const MENU_ITEMS_ARCHIVE_INDEX = 3;
-const MENU_ITEMS_END_INDEX = 4;
-const MENU_ITEMS_PUSH_PUBLISH_INDEX = 5;
-const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 6;
+const MENU_ITEMS_RESULTS_INDEX = 1;
+const MENU_ITEMS_CANCEL_SCHEDULE_INDEX = 2;
+const MENU_ITEMS_DELETE_INDEX = 3;
+const MENU_ITEMS_ARCHIVE_INDEX = 4;
+const MENU_ITEMS_END_INDEX = 5;
+const MENU_ITEMS_ABORT_INDEX = 6;
+const MENU_ITEMS_PUSH_PUBLISH_INDEX = 7;
+const MENU_ITEMS_ADD_T0_BUNDLE_INDEX = 8;
 
 describe('DotExperimentsListStore', () => {
     let spectator: SpectatorService<DotExperimentsListStore>;
@@ -100,39 +106,56 @@ describe('DotExperimentsListStore', () => {
         store.ngrxOnStateInit();
     });
 
-    it('should have getState$ from the store', () => {
+    it('should have getState$ from the store', (done) => {
         store.state$.subscribe((state) => {
             expect(state.status).toEqual(ComponentStatus.LOADED);
+            done();
         });
     });
 
-    it('should update status to the store', () => {
+    it('should  load initial filter status with the correct states', (done) => {
+        store.state$.subscribe(({ filterStatus }) => {
+            expect(filterStatus).toEqual([
+                DotExperimentStatus.RUNNING,
+                DotExperimentStatus.SCHEDULED,
+                DotExperimentStatus.DRAFT,
+                DotExperimentStatus.ENDED
+            ]);
+            done();
+        });
+    });
+
+    it('should update status to the store', (done) => {
         store.setComponentStatus(ComponentStatus.LOADED);
         store.state$.subscribe(({ status }) => {
             expect(status).toEqual(ComponentStatus.LOADED);
+            done();
         });
     });
-    it('should update experiments to the store', () => {
+    it('should update experiments to the store', (done) => {
         store.setExperiments([...EXPERIMENT_MOCK_ALL]);
         store.state$.subscribe(({ experiments }) => {
             expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
+            done();
         });
     });
-    it('should update status filtered to the store', () => {
+    it('should update status filtered to the store', (done) => {
         const statusSelectedMock = [DotExperimentStatus.DRAFT, DotExperimentStatus.ENDED];
         store.setFilterStatus(statusSelectedMock);
         store.state$.subscribe(({ filterStatus }) => {
             expect(filterStatus).toEqual(statusSelectedMock);
+            done();
         });
     });
 
-    it('should delete experiment by id of the store', () => {
+    it('should delete experiment by id of the store', (done) => {
         const expected: string[] = [EXPERIMENT_MOCK.id, EXPERIMENT_MOCK_2.id];
 
         store.setExperiments([...EXPERIMENT_MOCK_ALL]);
         store.deleteExperimentById(EXPERIMENT_MOCK_1.id);
         store.state$.subscribe(({ experiments }) => {
             expect(experiments.map((experiment) => experiment.id)).toEqual(expected);
+            done();
         });
     });
 
@@ -160,7 +183,7 @@ describe('DotExperimentsListStore', () => {
         });
     });
 
-    it('should get ordered experiment by status', () => {
+    it('should get ordered experiment by status', (done) => {
         const endedExperiments: DotExperimentsWithActions[] = [
             { id: '111', status: DotExperimentStatus.ENDED }
         ] as DotExperimentsWithActions[];
@@ -181,11 +204,20 @@ describe('DotExperimentsListStore', () => {
         ] as DotExperimentsWithActions[];
 
         const expected: GroupedExperimentByStatus[] = [
-            { status: DotExperimentStatus.RUNNING, experiments: [...runningExperiments] },
-            { status: DotExperimentStatus.SCHEDULED, experiments: [...scheduledExperiments] },
+            {
+                status: DotExperimentStatus.RUNNING,
+                experiments: [...runningExperiments]
+            },
+            {
+                status: DotExperimentStatus.SCHEDULED,
+                experiments: [...scheduledExperiments]
+            },
             { status: DotExperimentStatus.DRAFT, experiments: [...draftExperiments] },
             { status: DotExperimentStatus.ENDED, experiments: [...endedExperiments] },
-            { status: DotExperimentStatus.ARCHIVED, experiments: [...archivedExperiments] }
+            {
+                status: DotExperimentStatus.ARCHIVED,
+                experiments: [...archivedExperiments]
+            }
         ];
 
         store.setExperiments([
@@ -196,8 +228,14 @@ describe('DotExperimentsListStore', () => {
             ...runningExperiments
         ]);
 
-        store.getExperimentsFilteredAndGroupedByStatus$.subscribe((exp) => {
-            expect(exp).toEqual(expected);
+        store.getExperimentsFilteredAndGroupedByStatus$.subscribe((groupedExperiments) => {
+            groupedExperiments.map((groupedExperiment) => {
+                const expectedExperimentId = expected.find(
+                    (group) => group.status === groupedExperiment.status
+                ).experiments[0].id;
+                expect(groupedExperiment.experiments[0].id).toEqual(expectedExperimentId);
+            });
+            done();
         });
     });
 
@@ -226,6 +264,9 @@ describe('DotExperimentsListStore', () => {
                         experiments[0].actionsItemsMenu[MENU_ITEMS_CONFIGURATION_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['configuration'].includes(status));
                     expect(
+                        experiments[0].actionsItemsMenu[MENU_ITEMS_RESULTS_INDEX].visible
+                    ).toEqual(AllowedActionsByExperimentStatus['results'].includes(status));
+                    expect(
                         experiments[0].actionsItemsMenu[MENU_ITEMS_DELETE_INDEX].visible
                     ).toEqual(AllowedActionsByExperimentStatus['delete'].includes(status));
 
@@ -234,6 +275,9 @@ describe('DotExperimentsListStore', () => {
                     ).toEqual(AllowedActionsByExperimentStatus['archive'].includes(status));
                     expect(experiments[0].actionsItemsMenu[MENU_ITEMS_END_INDEX].visible).toEqual(
                         AllowedActionsByExperimentStatus['end'].includes(status)
+                    );
+                    expect(experiments[0].actionsItemsMenu[MENU_ITEMS_ABORT_INDEX].visible).toEqual(
+                        AllowedActionsByExperimentStatus['abort'].includes(status)
                     );
                     expect(
                         experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible
@@ -331,19 +375,21 @@ describe('DotExperimentsListStore', () => {
             });
         });
 
-        it('should update sidebar isSaving to the store', () => {
+        it('should update sidebar isSaving to the store', (done) => {
             store.setSidebarStatus({ status: ComponentStatus.SAVING, isOpen: true });
             store.isSidebarSaving$.subscribe((isSaving) => {
                 expect(isSaving).toBe(true);
+                done();
             });
         });
 
-        it('should update isOpen and isSaving to the store', () => {
+        it('should update isOpen and isSaving to the store', (done) => {
             store.setSidebarStatus({ status: ComponentStatus.IDLE, isOpen: false });
             store.createVm$.subscribe(({ sidebar, isSaving }) => {
                 expect(sidebar.isOpen).toBe(false);
                 expect(sidebar.status).toBe(ComponentStatus.IDLE);
                 expect(isSaving).toBe(false);
+                done();
             });
         });
 

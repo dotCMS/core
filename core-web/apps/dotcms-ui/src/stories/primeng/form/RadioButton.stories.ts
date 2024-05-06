@@ -1,10 +1,25 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
+import { NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { RadioButtonModule } from 'primeng/radiobutton';
+
+const cities = [
+    { name: 'Chicago', code: 'CHI' },
+    { name: 'New York', code: 'NY' },
+    { name: 'Los Angeles', code: 'LA' },
+    { name: 'Houston', code: 'HOU' },
+    { name: 'Philadelphia', code: 'PHI' },
+    { name: 'Phoenix', code: 'PHO' },
+    { name: 'San Antonio', code: 'SA' },
+    { name: 'San Diego', code: 'SD' },
+    { name: 'Dallas', code: 'DAL' },
+    { name: 'San Jose', code: 'SJ' },
+    { name: 'Austin', code: 'AUS' },
+    { name: 'Indianapolis', code: 'IND' }
+];
 
 export default {
     title: 'PrimeNG/Form/RadioButton',
@@ -18,48 +33,41 @@ export default {
     },
     decorators: [
         moduleMetadata({
-            imports: [RadioButtonModule, BrowserAnimationsModule, FormsModule]
+            imports: [RadioButtonModule, BrowserAnimationsModule, FormsModule, NgFor]
         })
     ],
     args: {
-        selectedValue: ''
+        cities: [...cities],
+        disabled: false,
+        invalid: false
+    },
+    argTypes: {
+        cities: {
+            control: 'array',
+            description: 'List of cities to display as radio buttons'
+        },
+        disabled: {
+            control: 'boolean',
+            description: 'Whether the radio buttons are disabled'
+        },
+        invalid: {
+            control: 'boolean',
+            description: 'Whether the radio buttons are invalid'
+        }
     }
 } as Meta;
 
 const RadioButtonTemplate = `
-  <div class="field-checkbox">
-    <p-radioButton name="city" value="Chicago" [(ngModel)]="city" inputId="city1"></p-radioButton>
-    <label for="city1">Chicago</label>
-  </div>
-  <div class="field-checkbox">
-    <p-radioButton name="city" value="Los Angeles" [(ngModel)]="city" inputId="city2"></p-radioButton>
-    <label for="city2">Los Angeles</label>
-  </div>
-  <div class="field-checkbox">
-    <p-radioButton name="city" value="New York" [(ngModel)]="city" inputId="city3"></p-radioButton>
-    <label for="city3">New York</label>
-  </div>
-  <div class="field-checkbox">
-    <p-radioButton name="city" value="San Francisco" [(ngModel)]="city" inputId="city4"></p-radioButton>
-    <label for="city4">San Francisco</label>
-  </div>
+<div class="flex flex-column gap-2">
+<p-radioButton *ngFor="let city of cities" name="city" [value]="city" [(ngModel)]="selectedCity" [inputId]="city.code" [label]="city.name" [disabled]="disabled" [class]="invalid ? 'ng-dirty ng-invalid' : ''"></p-radioButton>
+</div>
 `;
 
-const Template: Story<{ selectedValue: string }> = (props: { selectedValue: string }) => {
+export const Main: Story<{ selectedValue: string }> = (props: { selectedValue: string }) => {
     const template = RadioButtonTemplate;
 
     return {
         props,
         template
     };
-};
-
-export const Basic: Story = Template.bind({});
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: RadioButtonTemplate
-        }
-    }
 };

@@ -16,17 +16,16 @@ import { SelectItem } from 'primeng/api';
 
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
-import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 @Component({
     selector: 'dot-push-publish-form',

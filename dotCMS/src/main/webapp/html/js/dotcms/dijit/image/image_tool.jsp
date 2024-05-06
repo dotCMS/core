@@ -167,7 +167,7 @@
 						<% } %>
 				</button>
 				&nbsp;
-				<button dojoType="dijit.form.Button" onClick="imageEditor.closeImageWindow()" >
+				<button dojoType="dijit.form.Button" onClick="imageEditor.handleOnClose()" >
 					<%= LanguageUtil.get(pageContext, "Close") %>
 				</button>
 			</td>

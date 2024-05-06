@@ -134,7 +134,17 @@ public class SessionMonitor implements ServletRequestListener,
     public void requestDestroyed(ServletRequestEvent arg0) {
         // Not implemented
     }
-    
+
+    /**
+     * When a User has successfully logged in, that is, the {@code USER_ID} attribute is present, dotCMS will keep track
+     * of such a session in an internal in-memory Map. This is done so CMS Administrators will be able to know which
+     * Users are logged in, and be able to terminate their sessions if needed.
+     * <p>Additionally, an attribute called {@link #DOT_CLUSTER_SESSION} is added to the session in order to flag it as
+     * an authenticated session. It's present i both back-end and front-end sessions. This attribute is crucial for the
+     * Redis-based Session Manager plugin to work correctly, when enabled.</p>
+     *
+     * @param event The {@link ServletRequestEvent} instance of the event that triggered this action.
+     */
     @Override
     public void requestInitialized(final ServletRequestEvent event) {
         final HttpSession session = ((HttpServletRequest) event.getServletRequest())

@@ -95,7 +95,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                 dragHandler.setAttribute('draggable', 'true');
                 dragHandler.addEventListener('dragstart', (e) => dragStart(e, editorView));
                 dragHandler.classList.remove('visible');
-                editorView.dom.parentElement.appendChild(dragHandler);
+                editorView.dom.parentElement?.appendChild(dragHandler);
             }
 
             function hanlderScroll() {

@@ -7,8 +7,8 @@ import { ActivatedRoute } from '@angular/router';
 import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotApps, DotAppsListResolverData } from '@dotcms/dotcms-models';
+import { DotRouterService } from '@dotcms/data-access';
+import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
 
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
@@ -20,8 +20,8 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
 export class DotAppsListComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput') searchInput: ElementRef;
     @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
-    apps: DotApps[];
-    appsCopy: DotApps[];
+    apps: DotApp[];
+    appsCopy: DotApp[];
     canAccessPortlet: boolean;
     importExportDialogAction: string;
     showDialog = false;
@@ -87,7 +87,7 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
      * @memberof DotAppsListComponent
      */
     isExportButtonDisabled(): boolean {
-        return this.apps.filter((app: DotApps) => app.configurationsCount).length > 0;
+        return this.apps.filter((app: DotApp) => app.configurationsCount).length > 0;
     }
 
     /**
@@ -99,12 +99,12 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
         this.dotAppsService
             .get()
             .pipe(take(1))
-            .subscribe((apps: DotApps[]) => {
+            .subscribe((apps: DotApp[]) => {
                 this.getApps(apps);
             });
     }
 
-    private getApps(apps: DotApps[]): void {
+    private getApps(apps: DotApp[]): void {
         this.apps = apps;
         this.appsCopy = _.cloneDeep(apps);
         setTimeout(() => {
@@ -123,7 +123,7 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
     }
 
     private filterApps(searchCriteria?: string): void {
-        this.dotAppsService.get(searchCriteria).subscribe((apps: DotApps[]) => {
+        this.dotAppsService.get(searchCriteria).subscribe((apps: DotApp[]) => {
             this.appsCopy = apps;
         });
     }

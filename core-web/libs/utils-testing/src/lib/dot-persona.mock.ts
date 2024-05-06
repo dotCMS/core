@@ -9,7 +9,7 @@ export const mockDotPersona: DotPersona = {
     host: 'SYSTEM_HOST',
     hostFolder: 'SYSTEM_HOST',
     hostName: 'System Host',
-    identifier: '1c56ba62-1f41-4b81-bd62-b6eacff3ad23',
+    identifier: 'modes.persona.no.persona',
     inode: '',
     keyTag: 'dot:persona',
     languageId: 1,

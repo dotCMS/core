@@ -11,17 +11,26 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Card } from 'primeng/card';
+import { Tooltip } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, ExperimentSteps, Goals, StepStatus } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
+import {
+    ComponentStatus,
+    ExperimentSteps,
+    GOAL_TYPES,
+    Goals,
+    StepStatus
+} from '@dotcms/dotcms-models';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
     GoalsMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationGoalsComponent } from './dot-experiments-configuration-goals.component';
 
@@ -34,10 +43,35 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.add': 'button add',
     'experiments.goal.reach_page.name': 'reach_page',
     'experiments.goal.reach_page.description': 'description',
-    'experiments.configure.goals.no.seleted.goal.message': 'empty message'
+    'experiments.configure.goals.no.seleted.goal.message': 'empty message',
+    'experiments.goal.conditions.query.parameter': 'Query Parameter'
 });
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_WITH_GOAL = getExperimentMock(2);
+
+function getVmMock(
+    goals = GoalsMock,
+    disabledTooltipLabel = null
+): {
+    experimentId: string;
+    goals: Goals;
+    status: StepStatus;
+    isExperimentADraft: boolean;
+    disabledTooltipLabel: null | string;
+} {
+    return {
+        experimentId: EXPERIMENT_MOCK.id,
+        goals: goals,
+        status: {
+            status: ComponentStatus.IDLE,
+            isOpen: false,
+            experimentStep: null
+        },
+        isExperimentADraft: true,
+        disabledTooltipLabel
+    };
+}
+
 describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -101,28 +135,21 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         });
 
         test('should disable the button of add goal if a goal was selected already', () => {
-            const vmMock$: {
-                experimentId: string;
-                goals: Goals;
-                status: StepStatus;
-                isExperimentADraft: boolean;
-            } = {
-                experimentId: EXPERIMENT_MOCK.id,
-                goals: GoalsMock,
-                status: {
-                    status: ComponentStatus.IDLE,
-                    isOpen: false,
-                    experimentStep: null
-                },
-                isExperimentADraft: true
-            };
-
-            spectator.component.vm$ = of(vmMock$);
+            spectator.component.vm$ = of(getVmMock());
             spectator.detectComponentChanges();
 
             const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
             expect(addButton.disabled).toBe(true);
             expect(spectator.query(DotExperimentsDetailsTableComponent)).toExist();
+        });
+
+        test('should disable the button of add goal if there is an error', () => {
+            spectator.component.vm$ = of(getVmMock(null, 'error'));
+            spectator.detectComponentChanges();
+
+            const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
+            expect(addButton.disabled).toBe(true);
+            expect(spectator.query(Tooltip).disabled).toEqual(false);
         });
 
         test('should call openSelectGoalSidebar if you click the add goal button', () => {
@@ -173,6 +200,19 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.detectComponentChanges();
 
             expect(confirmationService.confirm).toHaveBeenCalled();
+        });
+
+        test('should render the params header correctly', () => {
+            spectator.component.vm$ = of(
+                getVmMock({
+                    ...GoalsMock,
+                    primary: { ...GoalsMock.primary, type: GOAL_TYPES.URL_PARAMETER }
+                })
+            );
+            spectator.detectComponentChanges();
+            const paramsHeader = spectator.query(byTestId('goal-header-parameter'));
+
+            expect(paramsHeader).toContainText('Query Parameter');
         });
     });
 });

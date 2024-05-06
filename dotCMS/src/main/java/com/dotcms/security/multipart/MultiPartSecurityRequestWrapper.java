@@ -1,9 +1,17 @@
 package com.dotcms.security.multipart;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableList;
+import io.vavr.Lazy;
+import org.apache.commons.io.IOUtils;
+
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -15,12 +23,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import org.apache.commons.io.IOUtils;
 
 /**
  * This request wrapper prevents DoS attacks on multipart requests
@@ -35,28 +37,29 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
     private static final SecurityUtils securityUtils = new SecurityUtils();
 
-    // if greater than 50MB, cache to disk
-    private static final long CACHE_IF_LARGER = Config.getIntProperty("MULTI_PART_CACHE_IF_LARGER",1024*1000*50);
+    /** By default, we'll always cache files greater than 50MB to disk */
+    private static final Lazy<Long> CACHE_IF_LARGER = Lazy.of(() -> Config.getLongProperty(
+            "MULTI_PART_CACHE_IF_LARGER", (long) 1024 * 1000 * 50));
 
     boolean shouldCacheToDisk(final HttpServletRequest request) {
 
         final int contentLength = request.getContentLength();
-        return contentLength <= 0 || contentLength > CACHE_IF_LARGER;
+        return contentLength <= 0 || contentLength > CACHE_IF_LARGER.get();
     }
 
     public MultiPartSecurityRequestWrapper(final HttpServletRequest request) throws IOException {
 
         super(request);
 
-        Logger.debug(this, ()-> "Creating a MultiPartSecurityRequestWrapper");
+        Logger.debug(this, "Creating a MultiPartSecurityRequestWrapper");
         if(this.shouldCacheToDisk(request)) {
 
-            Logger.debug(this, ()-> "Should Cache To Disk...");
+            Logger.debug(this, String.format("File being uploaded is greater than %d bytes. It must be cached to disk...", CACHE_IF_LARGER.get()));
             this.body = null;
-            final Path tempFilePath = Files.createTempFile(tmpdir.toPath(),"multipartSec", ".tmp");
+            final Path tempFilePath = Files.createTempFile(Path.of(ConfigUtils.getAssetTempPath(),File.separator),"multipartSec", ".tmp");
             this.tmpFile = tempFilePath.toFile();
             // security demands we add this check here
-            if (tmpFile.getCanonicalPath().startsWith(tmpdir.getCanonicalPath())) {
+            if (tmpFile.getCanonicalPath().startsWith(new File(ConfigUtils.getAssetTempPath()).getCanonicalPath())) {
                 try (final OutputStream outputStream = Files.newOutputStream(tempFilePath)) {
                     IOUtils.copy(request.getInputStream(), outputStream);
                     this.checkFile(tmpFile);
@@ -164,8 +167,12 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
     private void checkFile(final File tmpFile) throws IOException {
         //Even though this is might seem redundant. Security demands we check paths everytime we manipulate file paths
         if (tmpFile.getCanonicalPath().startsWith(tmpdir.getCanonicalPath())) {
-            try (InputStream in = new BufferedInputStream(Files.newInputStream(tmpFile.toPath()))) {
+            try (final InputStream in = new BufferedInputStream(Files.newInputStream(tmpFile.toPath()))) {
                 checkSecurityInputStream(in);
+            } catch (final Exception e) {
+                Logger.warn(this.getClass(), String.format("Could not check the path for file " +
+                        "'%s': %s", tmpFile.getCanonicalPath(), ExceptionUtil.getErrorMessage(e)), e);
+                throw e;
             }
         }
     }
@@ -182,16 +189,21 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
     }
 
+    private static final String[] checkPatterns  = {"content-disposition","form-data","filename"};
+
     private void testString(final String lineToTest) {
 
         final String lineToTestLower = lineToTest.toLowerCase();
-
-        if (!lineToTestLower.contains("content-disposition:") || ! lineToTestLower.contains("filename=")) {
-
-            return;
+        for (String p : checkPatterns) {
+            if (!lineToTestLower.contains(p)) {
+                return;
+            }
         }
 
         final String fileName = ContentDispositionFileNameParser.parse(lineToTestLower);
+        if (fileName == null) {
+            return;
+        }
         securityUtils.validateFile(fileName);
     }
 }

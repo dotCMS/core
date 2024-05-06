@@ -3,34 +3,47 @@
 
 import { of } from 'rxjs';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ConfirmationService } from 'primeng/api';
+import { AvatarModule } from 'primeng/avatar';
+import { BadgeModule } from 'primeng/badge';
+import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
 import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { LoginService, SiteService } from '@dotcms/dotcms-js';
+import {
+    DotAlertConfirmService,
+    DotEventsService,
+    DotMessageService,
+    PaginatorService,
+    DotSessionStorageService,
+    DotRouterService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService
+} from '@dotcms/data-access';
+import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
+    CoreWebServiceMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     mockDotPersona,
+    MockDotRouterService,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 
@@ -40,8 +53,7 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
         <dot-persona-selector
             [disabled]="disabled"
             (selected)="selectedPersonaHandler($event)"
-            (delete)="deletePersonaHandler($event)"
-        ></dot-persona-selector>
+            (delete)="deletePersonaHandler($event)"></dot-persona-selector>
     `
 })
 class HostTestComponent {
@@ -90,7 +102,7 @@ describe('DotPersonaSelectorComponent', () => {
     const siteServiceMock = new SiteServiceMock();
 
     beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotPersonaSelectorComponent, HostTestComponent],
             imports: [
                 BrowserAnimationsModule,
@@ -98,26 +110,40 @@ describe('DotPersonaSelectorComponent', () => {
                 DotPersonaSelectedItemModule,
                 DotPersonaSelectorOptionModule,
                 DotAddPersonaDialogModule,
-                TooltipModule,
-                DotPipesModule,
-                DotMessagePipe
+                DotMessagePipe,
+                HttpClientTestingModule,
+                DotAvatarDirective,
+                AvatarModule,
+                BadgeModule,
+                ButtonModule,
+                TooltipModule
             ],
             providers: [
+                DotSessionStorageService,
                 IframeOverlayService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
                 { provide: PaginatorService, useClass: TestPaginatorService },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 { provide: LoginService, useClass: LoginServiceMock },
-                { provide: SiteService, useValue: siteServiceMock }
+                { provide: SiteService, useValue: siteServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                DotHttpErrorManagerService,
+                ConfirmationService,
+                DotAlertConfirmService,
+                DotEventsService
             ]
         });
     }));
 
     beforeEach(() => {
-        hostFixture = DOTTestBed.createComponent(HostTestComponent);
+        hostFixture = TestBed.createComponent(HostTestComponent);
         de = hostFixture.debugElement.query(By.css('dot-persona-selector'));
         component = de.componentInstance;
         paginatorService = hostFixture.debugElement.injector.get(PaginatorService);
@@ -138,7 +164,11 @@ describe('DotPersonaSelectorComponent', () => {
 
     it('should call page change', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(of([{ ...mockDotPersona }]));
-        dropdown.triggerEventHandler('pageChange', { filter: '', first: 10, rows: 10 });
+        dropdown.triggerEventHandler('pageChange', {
+            filter: '',
+            first: 10,
+            rows: 10
+        });
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
     });
 

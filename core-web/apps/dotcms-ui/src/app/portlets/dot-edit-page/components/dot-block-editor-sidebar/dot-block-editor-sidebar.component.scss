@@ -26,9 +26,6 @@
                 height: 100%;
             }
         }
-        .p-sidebar .p-sidebar-header {
-            padding: 0;
-        }
     }
     dot-block-editor .editor-wrapper {
         height: 100% !important;
@@ -38,6 +35,7 @@
 footer {
     display: flex;
     justify-content: flex-end;
+    gap: $spacing-3;
 
     .p-button-secondary {
         margin-right: $spacing-3;

@@ -14,6 +14,7 @@ public abstract class BundleFactory {
     protected final static String INSERT_BUNDLE_ENVIRONMENT = "INSERT INTO publishing_bundle_environment (id,bundle_id,environment_id) VALUES (?,?,?)";
 
     protected final static String SELECT_UNSEND_BUNDLES = "SELECT * FROM publishing_bundle where publish_date is null and expire_date is null and owner = ? order by id desc";
+    protected final static String SELECT_UNSEND_BUNDLES_ADMIN = "SELECT * FROM publishing_bundle where publish_date is null and expire_date is null order by id desc";
 
     protected final static String SELECT_SENT_BUNDLES_BY_OWNER            = "SELECT * FROM publishing_bundle where publish_date is not null and owner = ? order by id desc";
     protected final static String SELECT_SENT_BUNDLES_BY_ADMIN            = "SELECT * FROM publishing_bundle where publish_date is not null order by id desc";

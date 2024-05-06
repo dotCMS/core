@@ -1,30 +1,44 @@
-<ng-container *ngIf="vm$ | async as vm">
-    <div class="dialog__auto-complete-container field">
-        <div class="p-fluid">
-            <p-autoComplete
-                [ngModel]="vm.selectedClasses"
-                [suggestions]="vm.filteredClasses"
-                [multiple]="true"
-                [completeOnFocus]="true"
-                [size]="446"
-                [tabindex]="1"
-                (onSelect)="onSelect($event)"
-                (onUnselect)="onUnselect()"
-                (completeMethod)="filterClasses($event)"
-                (onKeyUp)="onKeyUp($event)"
-                dataKey="cssClass"
-                field="cssClass"
-                appendTo="body"
-                inputId="auto-complete-input"
-                name="class"
-                type="text"
-            >
-            </p-autoComplete>
-        </div>
-    </div>
-    <div class="dialog__actions-container">
-        <p-button (onClick)="saveClass(vm.selectedClasses)" data-testId="update-btn">
-            {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
-        >
-    </div>
-</ng-container>
+<div class="dialog__auto-complete-container field">
+    <p-autoComplete
+        class="p-fluid"
+        [(ngModel)]="selectedClasses"
+        [unique]="true"
+        [suggestions]="filteredSuggestions"
+        [size]="446"
+        [multiple]="true"
+        [dropdown]="isJsonClasses$ | async"
+        [autofocus]="true"
+        (completeMethod)="filterClasses($event)"
+        dotSelectItem
+        data-testId="autocomplete"
+        inputId="auto-complete-input"
+        appendTo="body">
+    </p-autoComplete>
+    <ng-container *ngIf="isJsonClasses$ | async; else suggestionNotes">
+        <ul data-testId="list">
+            <li>
+                <i class="pi pi-info-circle"></i>
+                {{ 'dot.template.builder.autocomplete.has.suggestions' | dm }}
+            </li>
+        </ul>
+    </ng-container>
+
+    <ng-template #suggestionNotes>
+        <ul data-testId="list">
+            <li>
+                <i class="pi pi-info-circle"></i>
+                {{ 'dot.template.builder.autocomplete.no.suggestions' | dm }}
+            </li>
+            <li>
+                <i class="pi pi-check-circle"></i>
+                <span
+                    [innerHTML]="'dot.template.builder.autocomplete.setup.suggestions' | dm"></span>
+            </li>
+        </ul>
+    </ng-template>
+</div>
+<div class="dialog__actions-container">
+    <p-button (onClick)="save()" data-testId="update-btn">
+        {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
+    >
+</div>

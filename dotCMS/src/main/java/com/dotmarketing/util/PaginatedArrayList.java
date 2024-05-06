@@ -60,4 +60,12 @@ public class PaginatedArrayList<E> extends ArrayList<E> {
 		this.query = query;
 	}
 
+	@Override
+	public String toString() {
+		return "PaginatedArrayList{" +
+				"totalResults=" + totalResults +
+				", query='" + query + '\'' +
+				'}';
+	}
+
 }

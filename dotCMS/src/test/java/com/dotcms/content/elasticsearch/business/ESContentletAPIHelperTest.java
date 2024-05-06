@@ -37,32 +37,35 @@ public class ESContentletAPIHelperTest extends UnitTestBase {
 
         this.initMessages();
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            doAnswer(new Answer<Void>() { // if this method is called, should fail
 
-        doAnswer(new Answer<Void>() { // if this method is called, should fail
+                @Override
+                public Void answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
+                    testGenerateNotificationStartDeleting = true;
+                    return null;
+                }
+            }).when(notificationAPI).generateNotification(
+                    new I18NMessage("notification.escontentelet.cannotdelete.info.title"), //"Contentlet Notification"),
+                    new I18NMessage("notification.escontentelet.cannotdelete.info.message.", "iFieldNode1"),
+                    null,
+                    NotificationLevel.ERROR,
+                    NotificationType.GENERIC,
+                    "admin@dotcms.com",
+                    locale
+            );
 
-                testGenerateNotificationStartDeleting = true;
-                return null;
-            }
-        }).when(notificationAPI).generateNotification(
-                new I18NMessage("notification.escontentelet.cannotdelete.info.title"), //"Contentlet Notification"),
-                new I18NMessage("notification.escontentelet.cannotdelete.info.message.", "iFieldNode1"),
-                null,
-                NotificationLevel.ERROR,
-                NotificationType.GENERIC,
-                "admin@dotcms.com",
-                locale
-        );
-
-        esContentletAPIHelper.generateNotificationCanNotDelete
-                (notificationAPI, locale,
-                        "admin@dotcms.com", "iFieldNode1");
+            esContentletAPIHelper.generateNotificationCanNotDelete
+                    (notificationAPI, locale,
+                            "admin@dotcms.com", "iFieldNode1");
 
 
-        assertTrue(this.testGenerateNotificationStartDeleting);
+            assertTrue(this.testGenerateNotificationStartDeleting);
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 }

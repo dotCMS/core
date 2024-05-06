@@ -13,14 +13,12 @@
 }
 
 p-tag.sm {
-    &.sm {
-        .p-tag {
-            font-size: $font-size-sm;
-            padding: $spacing-1 $spacing-2;
+    .p-tag {
+        font-size: $font-size-xsm;
+        padding: $spacing-0 $spacing-1;
 
-            .p-tag-value {
-                line-height: $spacing-3;
-            }
+        .p-tag-value {
+            line-height: $spacing-3;
         }
     }
 }
@@ -37,12 +35,17 @@ p-tag {
     }
 
     &.p-tag-info .p-tag {
-        background-color: $color-alert-blue-light;
-        color: $color-alert-blue;
+        background-color: $color-accessible-text-blue-bg;
+        color: $color-accessible-text-blue;
     }
 
     &.p-tag-warning .p-tag {
         background-color: $color-alert-yellow-light;
         color: $color-alert-yellow;
+    }
+
+    &.p-tag-error .p-tag {
+        background-color: $color-alert-red-light;
+        color: $color-alert-red;
     }
 }

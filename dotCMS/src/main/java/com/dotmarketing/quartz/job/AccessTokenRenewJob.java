@@ -138,7 +138,7 @@ public class AccessTokenRenewJob implements StatefulJob {
      * @return tuple with two values
      */
     private AnalyticsAppWithStatus withStatus(final AnalyticsApp analyticsApp) {
-        final AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        final AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
         return new AnalyticsAppWithStatus(analyticsApp, tokenStatus);
     }
@@ -156,7 +156,7 @@ public class AccessTokenRenewJob implements StatefulJob {
         switch (tokenStatus) {
             case NONE:
                 message = String.format(
-                    "ACCESS_TOKEN for clientID %s is null or has no status, interpreting this as it needs to renew",
+                    "ACCESS_TOKEN for clientId %s is null or has no status, interpreting this as it needs to renew",
                     analyticsApp.getAnalyticsProperties().clientId());
                 break;
             case NOOP:

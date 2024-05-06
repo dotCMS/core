@@ -80,6 +80,25 @@ public interface HostAPI {
      */
     Host findByName(String siteName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Returns the Site that matches the specified Identifier or Site Key -- aka, Site Name.
+	 *
+	 * @param siteIdOrKey          The Identifier or Site Key of the Site.
+	 * @param user                 The {@link User} that is calling this method.
+	 * @param respectFrontendRoles If the User's front-end roles need to be taken into account in
+	 *                             order to perform this operation, set to {@code true}. Otherwise,
+	 *                             set to {@code false}.
+	 *
+	 * @return The {@link Host} object that matches the specified Identifier or Site Key.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the database.
+	 * @throws DotSecurityException The specified User does not have the required permissions to
+	 *                              perform this operation.
+	 */
+	Optional<Host> findByIdOrKey(final String siteIdOrKey, final User user,
+								 final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException;
+
     /**
      * Returns the Site that matches the specified alias. Depending on the existing data, the result may vary:
      * <ol>
@@ -165,9 +184,9 @@ public interface HostAPI {
     /**
      * @deprecated This method is basically duplicated code. Use one of the following methods instead:
 	 * <ul>
-	 *     <li>{{@link #findAllFromDB(User, boolean)}}</li>
-	 *     <li>{{@link #findAllFromCache(User, boolean)}</li>
-	 *     <li>{{@link #search(String, boolean, boolean, int, int, User, boolean)}</li>
+	 *     <li>{@link #findAllFromDB(User, boolean)}</li>
+	 *     <li>{@link #findAllFromCache(User, boolean)}</li>
+	 *     <li>{@link #search(String, boolean, boolean, int, int, User, boolean)}</li>
 	 * </ul>
      *
      * Retrieves the list of all hosts in the system, that the given user has permissions to see

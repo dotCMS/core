@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Date;
+import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -84,6 +85,7 @@ public interface AbstractSiteView  {
     @JsonProperty("embeddedDashboard")
     String embeddedDashboard();
 
+    @Nullable
     @JsonProperty("languageId")
     Long languageId();
 
@@ -104,12 +106,18 @@ public interface AbstractSiteView  {
     Boolean isWorking();
 
     @Nullable
+    @JsonProperty("variables")
+    List<SiteVariableView> variables();
+
+    @Nullable
     @JsonProperty("locked")
     Boolean isLocked();
 
+    @Nullable
     @JsonProperty("modDate")
     Date modDate();
 
+    @Nullable
     @JsonProperty("modUser")
     String modUser();
 

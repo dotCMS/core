@@ -39,6 +39,7 @@ import java.security.Key;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -114,7 +115,7 @@ public class Task00050LoadAppsSecrets implements StartupTask {
                                                 .get(secrets.getKey().toLowerCase());
                                         if (null != descriptor) {
                                             try {
-                                                validateForSave(mapForValidation(secrets), descriptor);
+                                                validateForSave(mapForValidation(secrets), descriptor, Optional.empty());
                                                 final char[] chars = toJsonAsChars(secrets);
                                                 final String internalKey = internalKey(secrets.getKey(), siteId);
                                                 keyStoreHelper.saveValue(internalKey, chars);

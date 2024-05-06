@@ -78,7 +78,7 @@ public class ConfigUtils {
 	}
 
 	public static String getBundlePath() {
-		final Path path = Paths.get(String.format("%s%sbundles",APILocator.getFileAssetAPI().getRealAssetsRootPath(),File.separator)).normalize();
+		final Path path = Paths.get(String.format("%s%sbundles",getAbsoluteAssetsRootPath(),File.separator)).normalize();
 		File pathDir = path.toFile();
 		if(!pathDir.exists())
 		    pathDir.mkdirs();
@@ -86,7 +86,7 @@ public class ConfigUtils {
 	}
 
 	public static String getIntegrityPath() {
-		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath();
+		String path=getAbsoluteAssetsRootPath();
 		path += (path.endsWith(File.separator) ? "" : File.separator) + "integrity";
 		File pathDir=new File(path);
 		if(!pathDir.exists())
@@ -99,7 +99,7 @@ public class ConfigUtils {
 		String path = Config.getStringProperty("TIMEMACHINE_PATH", null);
 
 		if(path == null || (path != null && path.equals("null")) ){
-			path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "timemachine";
+			path=getAbsoluteAssetsRootPath() + File.separator + "timemachine";
 			File pathDir=new File(path);
 			if(!pathDir.exists())
 			    pathDir.mkdirs();
@@ -118,7 +118,7 @@ public class ConfigUtils {
     public static String getStaticPublishPath() {
 
         final String path = Config.getStringProperty("STATIC_PUBLISHING_ROOT_PATH",
-                APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
+				getAbsoluteAssetsRootPath() + File.separator
                         + "static_publishing");
 
         final File folder = FileUtil.mkDirsIfNeeded(path);
@@ -136,20 +136,46 @@ public class ConfigUtils {
      *
      * @return the root folder of where assets are stored
      */
+	private static Lazy<String> assetPath  = Lazy.of(()->{
+		String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
+		if (UtilMethods.isSet(realPath) && !realPath.endsWith(File.separator)) {
+			return realPath + File.separator;
+		}
+
+		final String path = Try
+				.of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
+				.getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
+		return FileUtil.getRealPath(path);
+
+	});
+
+	public static String getAssetPath() {
+		return assetPath.get();
+	}
+
+	/**
+	 * @deprecated Use {@link #getAssetPath()} instead.
+	 * @return
+	 */
+	@Deprecated(forRemoval = true)
     public static String getAbsoluteAssetsRootPath() {
-        String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
-        if (UtilMethods.isSet(realPath) && !realPath.endsWith(File.separator)) {
-            realPath = realPath + File.separator;
-        }
-        if (!UtilMethods.isSet(realPath)) {
-            final String path = Try
-                    .of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
-                    .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
-            return FileUtil.getRealPath(path);
-        } else {
-            return realPath;
-        }
+		return assetPath.get();
     }
+
+
+
+	private static Lazy<String> assetTempPath  = Lazy.of(()->{
+		java.io.File adir=new java.io.File(getAbsoluteAssetsRootPath() + java.io.File.separator + "tmp_upload");
+		if(!adir.isDirectory()) {
+			adir.mkdirs();
+		}
+
+		return adir.getPath();
+
+	});
+	public static String getAssetTempPath() {
+		return assetTempPath.get();
+	}
     
 
 

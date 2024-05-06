@@ -1,0 +1,37 @@
+@use "variables" as *;
+
+:host {
+    align-items: center;
+    background-color: $white;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+    padding: $spacing-9;
+    width: 100%;
+    gap: $spacing-1;
+}
+
+h4,
+p {
+    margin: 0;
+}
+
+i {
+    font-size: 4.12rem;
+    color: $color-palette-gray-700;
+}
+h4 {
+    color: $black;
+    font-size: $font-size-xl;
+}
+p {
+    color: $color-palette-gray-700;
+}
+
+.actions {
+    display: flex;
+    gap: $spacing-4;
+    margin-top: $spacing-4;
+    align-items: center;
+}

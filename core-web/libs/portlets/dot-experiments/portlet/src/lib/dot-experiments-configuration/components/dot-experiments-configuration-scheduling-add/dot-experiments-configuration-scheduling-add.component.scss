@@ -2,20 +2,4 @@
 
 .experiment-scheduling-add__form-wrapper {
     padding: $spacing-5;
-
-    label {
-        font-weight: $font-weight-bold;
-        margin-bottom: $spacing-3;
-        font-size: $font-size-lg;
-    }
-
-    ::ng-deep .p-calendar {
-        .p-calendar-clear-icon {
-            padding-left: $spacing-1;
-        }
-
-        .p-inputtext {
-            padding-left: $spacing-5;
-        }
-    }
 }

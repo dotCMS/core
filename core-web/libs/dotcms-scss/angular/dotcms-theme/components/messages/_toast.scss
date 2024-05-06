@@ -1,0 +1,136 @@
+@use "variables" as *;
+@import "mixins";
+
+$toast-bottom-border: 8px solid;
+
+.p-component.p-toast p-toastitem .p-toast-message {
+    box-shadow: $shadow-m;
+    background-color: $white;
+    width: 23.5rem;
+    height: fit-content;
+    border-radius: $border-radius-md;
+
+    .p-toast-message-content {
+        padding: $spacing-3;
+        padding-bottom: $spacing-4;
+        display: flex;
+        align-items: flex-start;
+        gap: $spacing-1;
+        border-radius: $border-radius-md;
+        border-bottom-width: 8px;
+        border-bottom-style: solid;
+
+        .p-toast-message-icon {
+            height: 1.4rem;
+            width: $icon-lg;
+
+            &::before {
+                width: $icon-lg;
+                height: $icon-lg;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .p-icon-wrapper {
+                width: inherit;
+                height: inherit;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                .p-icon {
+                    width: $icon-lg;
+                    height: $icon-lg;
+                }
+            }
+        }
+
+        .p-toast-message-text {
+            display: flex;
+            flex-direction: column;
+            gap: $spacing-1;
+            color: $black;
+            font-size: $font-size-md;
+
+            .p-toast-summary,
+            .p-toast-detail {
+                align-self: stretch;
+                line-height: 140%;
+            }
+
+            .p-toast-summary:empty,
+            .p-toast-detail:empty {
+                display: none;
+            }
+
+            .p-toast-summary {
+                font-weight: 700;
+            }
+
+            .p-toast-detail {
+                font-weight: 400;
+            }
+        }
+
+        // This is the same as icon only button, but this is an svg so the architecture changes a bit
+        .p-toast-icon-close {
+            border-radius: 50%;
+            font-size: $font-size-sm;
+            height: $icon-lg-box;
+            width: $icon-lg-box;
+            padding: 0 $spacing-1;
+            border: none;
+            background-color: transparent;
+            color: $black;
+            overflow: hidden;
+
+            .p-icon-wrapper {
+                color: $color-palette-primary;
+            }
+
+            &:hover {
+                background-color: $color-palette-primary-op-10;
+            }
+
+            &:active {
+                background-color: $color-palette-primary-op-20;
+            }
+
+            &:focus {
+                background-color: transparent;
+                @include field-focus;
+            }
+        }
+    }
+
+    &.p-toast-message-success .p-toast-message-content {
+        border-bottom-color: $color-alert-green;
+
+        .p-toast-message-icon {
+            color: $color-alert-green;
+        }
+    }
+
+    &.p-toast-message-error .p-toast-message-content {
+        border-bottom-color: $color-alert-red;
+
+        .p-toast-message-icon {
+            color: $color-alert-red;
+        }
+    }
+
+    &.p-toast-message-info .p-toast-message-content {
+        border-bottom-color: $color-palette-primary-500;
+
+        .p-toast-message-icon {
+            color: $color-palette-primary-500;
+        }
+    }
+    &.p-toast-message-warn .p-toast-message-content {
+        border-bottom-color: $color-alert-yellow;
+
+        .p-toast-message-icon {
+            color: $color-alert-yellow;
+        }
+    }
+}

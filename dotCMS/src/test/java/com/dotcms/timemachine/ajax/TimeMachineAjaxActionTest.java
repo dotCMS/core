@@ -44,32 +44,35 @@ public class TimeMachineAjaxActionTest extends UnitTestBase {
 
         this.initMessages();
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            doAnswer(new Answer<Void>() { // if this method is called, should fail
 
-        doAnswer(new Answer<Void>() { // if this method is called, should fail
+                @Override
+                public Void answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
+                    testGenerateNotification = true;
+                    return null;
+                }
+            }).when(notificationAPI).generateNotification(
+                    new I18NMessage("notification.timemachine.created.info.title"),
+                    new I18NMessage("TIMEMACHINE-SNAPSHOT-CREATED"),
+                    null,
+                    NotificationLevel.INFO,
+                    NotificationType.GENERIC,
+                    "admin@dotcms.com",
+                    locale
+            );
 
-                testGenerateNotification = true;
-                return null;
-            }
-        }).when(notificationAPI).generateNotification(
-                new I18NMessage("notification.timemachine.created.info.title"),
-                new I18NMessage("TIMEMACHINE-SNAPSHOT-CREATED"),
-                null,
-                NotificationLevel.INFO,
-                NotificationType.GENERIC,
-                "admin@dotcms.com",
-                locale
-        );
-
-        machineAjaxAction.generateNotification
-                (locale,
-                        "admin@dotcms.com");
+            machineAjaxAction.generateNotification
+                    (locale,
+                            "admin@dotcms.com");
 
 
-        assertTrue(this.testGenerateNotification);
+            assertTrue(this.testGenerateNotification);
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 }

@@ -1,0 +1,21 @@
+# Add files here to ignore them from prettier formatting
+/dist
+/coverage
+/.nx/cache
+
+
+package.json
+package-lock.json
+dist
+dist-lib
+dist-doc
+node_modules
+.angulardoc.json
+.vscode/*
+.storybook
+karma_html
+docs
+.angular
+**/*.md
+**/*.d.ts
+decorate-angular-cli.js

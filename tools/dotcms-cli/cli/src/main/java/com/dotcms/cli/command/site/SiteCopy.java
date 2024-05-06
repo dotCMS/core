@@ -7,7 +7,6 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CopySiteRequest;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import picocli.CommandLine;
@@ -62,24 +61,40 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer>, 
                 "--template"}, paramLabel = "Templates", description = "if specified templates will be copied.", defaultValue = "false")
         boolean copyTemplateContainers;
 
-        @CommandLine.Option(names = {"-v",
-                "--var"}, paramLabel = "Variables", description = "if specified site variables will be copied.", defaultValue = "false")
+        @CommandLine.Option(names = {"-var",
+                "--variable"}, paramLabel = "Variables", description = "if specified site variables will be copied.", defaultValue = "false")
         boolean copySiteVariables;
     }
 
     @CommandLine.ArgGroup(exclusive = false,  heading = "\n@|bold,blue Individual Copy Options. |@\n")
     CopyOptions copyOptions;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         return copy();
     }
 
     private int copy() {
+
         final SiteView site = findSite(siteNameOrId);
+
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
         ResponseEntityView<SiteView> copy = siteAPI.copy(fromSite(site, copySiteName, copyAll));
-        output.info(String.format("New Copy Site is [%s].", copy.entity().hostName()));
+
+        output.info(String.format(
+                "New Copy Site is [%s]. Please note that the full replication of all site elements "
+                        + "is executed as a background job. To confirm the success of the copy "
+                        + "operation, please check the dotCMS server.",
+                copy.entity().hostName()
+        ));
+
         return CommandLine.ExitCode.OK;
     }
 

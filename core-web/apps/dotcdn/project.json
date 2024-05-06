@@ -66,34 +66,30 @@
         "serve": {
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
-                "browserTarget": "dotcdn:build",
-                "proxyConfig": "apps/dotcms-ui/proxy.conf.json"
+                "proxyConfig": "apps/dotcms-ui/proxy.conf.json",
+                "buildTarget": "dotcdn:build"
             },
             "configurations": {
                 "production": {
-                    "browserTarget": "dotcdn:build:production"
+                    "buildTarget": "dotcdn:build:production"
                 }
             }
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
             "options": {
-                "browserTarget": "dotcdn:build"
+                "buildTarget": "dotcdn:build"
             }
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "options": {
-                "lintFilePatterns": ["apps/dotcdn/src/**/*.ts", "apps/dotcdn/src/**/*.html"]
-            },
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@nrwl/jest:jest",
+            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/apps/dotcdn"],
             "options": {
                 "jestConfig": "apps/dotcdn/jest.config.ts",
-                "passWithNoTests": true,
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",

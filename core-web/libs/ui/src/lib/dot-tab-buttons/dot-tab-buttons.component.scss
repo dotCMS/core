@@ -8,6 +8,7 @@ $dot-tab-height: 2.5rem;
     flex-direction: row;
     gap: $spacing-1;
     margin-right: $spacing-5;
+    font-size: $spacing-3;
 }
 
 .dot-tab-buttons__container {
@@ -17,6 +18,11 @@ $dot-tab-height: 2.5rem;
 .dot-tab {
     display: flex;
     position: relative;
+
+    button {
+        font-size: $spacing-3;
+        cursor: pointer;
+    }
 }
 
 .dot-tab__button {
@@ -26,8 +32,16 @@ $dot-tab-height: 2.5rem;
     padding: $spacing-1 $spacing-3;
     border-radius: $border-radius-md;
     height: $dot-tab-height;
+    font-family: $font-default;
+
     &:hover {
         background: $color-palette-primary-100;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        background-color: $color-palette-gray-100;
+        color: $color-palette-gray-500;
     }
 }
 
@@ -37,7 +51,7 @@ $dot-tab-height: 2.5rem;
     border-right: 0;
 }
 
-.dot-tab__dropdow {
+.dot-tab__dropdown {
     background-color: transparent;
     border: $field-border-size solid $color-palette-gray-200;
     height: $dot-tab-height;
@@ -49,6 +63,12 @@ $dot-tab-height: 2.5rem;
 
     &:hover {
         background: $color-palette-primary-200;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        background-color: $color-palette-gray-100;
+        color: $color-palette-gray-500;
     }
 }
 
@@ -66,10 +86,10 @@ $dot-tab-height: 2.5rem;
 .dot-tab--active {
     background: $color-palette-primary-100;
     border-radius: $border-radius-md;
-    border: 0;
+    border-color: $white;
 
     &.dot-tab__button--right {
-        border: $field-border-size solid $color-palette-primary-100;
+        border-color: $white;
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }
@@ -77,11 +97,10 @@ $dot-tab-height: 2.5rem;
 
 .dot-tab-dropdown--active {
     background: $color-palette-primary-200;
-    border: $color-palette-primary-200;
+    border-color: $white;
 }
 
 .dot-tab-dropdown__icon {
-    height: $dot-tab-buttons-icon;
     width: $dot-tab-buttons-icon;
     display: flex;
     align-items: center;

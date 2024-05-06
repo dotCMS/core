@@ -2,16 +2,16 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.CachedParameterDecorator;
 import com.dotcms.mock.request.HttpServletRequestParameterDecoratorWrapper;
 import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
-import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
-import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.beans.Host;
@@ -29,10 +29,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -42,15 +40,15 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.Table;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -65,11 +63,13 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -92,6 +92,7 @@ public class PageResourceHelper implements Serializable {
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     private final UserAPI userAPI = APILocator.getUserAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    private final transient LanguageAPI languageAPI = APILocator.getLanguageAPI();
 
     /**
      * Private constructor
@@ -331,17 +332,29 @@ public class PageResourceHelper implements Serializable {
         final Contentlet checkin = APILocator.getContentletAPI()
                 .checkin(checkout, user, false);
 
-        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(checkout.getIdentifier());
-        multiTreeAPI.copyMultiTree(checkin.getIdentifier(), multiTrees, currentVariantId);
-
         return APILocator.getHTMLPageAssetAPI().fromContentlet(checkin);
     }
 
+    /**
+     * Saves the HTML Page layout -- i.e., the Template -- and its associated Containers and
+     * Contentlets.
+     *
+     * @param page     The {@link IHTMLPage} object whose layout will be saved.
+     * @param user     The {@link User} performing this action.
+     * @param pageForm The {@link PageForm} object containing the new Template's layout
+     *                 information.
+     *
+     * @return The {@link Template} object that was saved.
+     *
+     * @throws DotDataException     An error occurred when persisting the changes.
+     * @throws DotSecurityException The specified User does not have the required permission to
+     *                              execute this action.
+     */
     @WrapInTransaction
     public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
             throws DotDataException, DotSecurityException {
 
-        final Host host = getHost(pageForm.getHostId(), user);
+        final Host site = getSite(pageForm.getSiteId(), user);
         final User systemUser = userAPI.getSystemUser();
         final Template template = checkoutTemplate(page, systemUser, pageForm);
 
@@ -356,92 +369,19 @@ public class PageResourceHelper implements Serializable {
             }
 
             template.setDrawed(true);
-            updateMultiTrees(page, pageForm);
 
+            template.setModDate(new Date());
             // permissions have been updated above
-            return this.templateAPI.saveTemplate(template, host, APILocator.systemUser(), false);
+            return this.templateAPI.saveAndUpdateLayout(template, pageForm.getLayout(), site, APILocator.systemUser(), false);
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when saving Template '%s' [ %s ]: %s",
-                    template.getTitle(), template.getIdentifier(), e.getMessage());
+                    template.getTitle(), template.getIdentifier(), ExceptionUtil.getErrorMessage(e));
             throw new DotRuntimeException(errorMsg, e);
         }
     }
 
-    @WrapInTransaction
-    protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
-
-        final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
-        final Table<String, String, Set<PersonalizedContentlet>> pageContents = multiTreeAPI
-                .getPageMultiTrees(page, currentVariantId, false);
-
-        final String pageIdentifier = page.getIdentifier();
-        APILocator.getMultiTreeAPI().deleteMultiTree(pageIdentifier, currentVariantId);
-
-        final List<MultiTree> multiTrees = new ArrayList<>();
-
-        for (final String containerId : pageContents.rowKeySet()) {
-            int treeOrder = 0;
-
-            for (final String uniqueId : pageContents.row(containerId).keySet()) {
-                final Map<String, Set<PersonalizedContentlet>> row = pageContents.row(containerId);
-                final Set<PersonalizedContentlet> contents         = row.get(uniqueId);
-
-                if (!contents.isEmpty()) {
-                    final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
-
-                    for (final PersonalizedContentlet identifierPersonalization : contents) {
-                        final MultiTree multiTree = MultiTree.personalized(
-                                new MultiTree().setContainer(containerId)
-                                    .setContentlet(identifierPersonalization.getContentletId())
-                                    .setInstanceId(newUUID)
-                                    .setTreeOrder(treeOrder++)
-                                    .setHtmlPage(pageIdentifier)
-                                    .setVariantId(currentVariantId),
-                                identifierPersonalization.getPersonalization());
-
-                        multiTrees.add(multiTree);
-                    }
-                }
-            }
-        }
-
-        multiTreeAPI.saveMultiTrees(pageIdentifier, currentVariantId, multiTrees);
-    }
-
-    private String getNewUUID(final PageForm pageForm, final String containerId,
-            final String uniqueId)
-            throws DotDataException, DotSecurityException {
-
-        //If we have a FileAssetContainer we may need to search also by path
-        String containerPath = null;
-        final Container foundContainer = APILocator.getContainerAPI()
-                .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
-        if (foundContainer instanceof FileAssetContainer) {
-            containerPath = FileAssetContainerUtil.getInstance().getFullPath(
-                    FileAssetContainer.class.cast(foundContainer)
-            );
-        }
-
-        if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
-            String newlyContainerUUID = pageForm.getNewlyContainerUUID(containerId);
-            if (newlyContainerUUID == null && containerPath != null) {//Searching also by path if nothing found
-                newlyContainerUUID = pageForm.getNewlyContainerUUID(containerPath);
-            }
-            return newlyContainerUUID != null ? newlyContainerUUID
-                    : ContainerUUID.UUID_DEFAULT_VALUE;
-        } if (ParseContainer.isParserContainerUUID(uniqueId)) {
-            return uniqueId;
-        } else {
-            ContainerUUIDChanged change = pageForm.getChange(containerId, uniqueId);
-            if (change == null && containerPath != null) {//Searching also by path if nothing found
-                change = pageForm.getChange(containerPath, uniqueId);
-            }
-            return change != null ? change.getNew().getUUID() : ContainerUUID.UUID_DEFAULT_VALUE;
-        }
-    }
-
     public Template saveTemplate(final User user, final PageForm pageForm)
-            throws BadRequestException, DotDataException, DotSecurityException, IOException {
+            throws BadRequestException, DotDataException, DotSecurityException {
         return this.saveTemplate(null, user, pageForm);
     }
 
@@ -449,12 +389,13 @@ public class PageResourceHelper implements Serializable {
             throws DotDataException, DotSecurityException {
 
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+
         final Template saveTemplate;
         final boolean useByAnotherPage = this.templateAPI.getPages(page.getTemplateId()).stream()
                 .anyMatch(pageVersion -> !page.getIdentifier().equals(pageVersion.getIdentifier()) ||
                         !((HTMLPageAsset) page).getVariantId().equals(pageVersion.getVariantName()));
 
-        if (!useByAnotherPage) {
+        if (!useByAnotherPage && !oldTemplate.getIdentifier().equals(Template.SYSTEM_TEMPLATE)) {
             saveTemplate = oldTemplate;
         } else {
             saveTemplate = new Template();
@@ -463,18 +404,25 @@ public class PageResourceHelper implements Serializable {
 
         saveTemplate.setInode(null);
         saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());
-        saveTemplate.setDrawedBody(form.getLayout());
         saveTemplate.setDrawed(true);
         
         return saveTemplate;
     }
 
-    private Host getHost(final String hostId, final User user) {
+    /**
+     * Returns the {@link Host} object for the specified Site Identifier.
+     *
+     * @param siteId The Identifier of the Site whose {@link Host} object will be returned.
+     * @param user   The {@link User} performing this action.
+     *
+     * @return The {@link Host} object for the specified Site Identifier.
+     */
+    private Host getSite(final String siteId, final User user) {
         try {
-            return UtilMethods.isSet(hostId) ? hostAPI.find(hostId, user, false) :
+            return UtilMethods.isSet(siteId) ? hostAPI.find(siteId, user, false) :
                         hostWebAPI.getCurrentHost(HttpServletRequestThreadLocal.INSTANCE.getRequest());
-        } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
-            throw new DotRuntimeException(e);
+        } catch (final DotDataException | DotSecurityException | PortalException | SystemException e) {
+            throw new DotRuntimeException(String.format("Could not find Site with ID '%s'", siteId), e);
         }
     }
 
@@ -573,6 +521,33 @@ public class PageResourceHelper implements Serializable {
         Logger.debug(this, ()-> "Contentlet: " + copiedContentlet.getIdentifier() + " has been copied");
 
         return Tuple.of(copiedContentlet, currentContentlet);
+    }
+
+    /**
+     * Returns a list of ALL languages in dotCMS and, for each of them, adds a boolean indicating
+     * whether the specified HTML Page Identifier is available in such a language or not. This is
+     * particularly useful for the UI layer to be able to easily check what languages a page is
+     * available on, and what languages it is not.
+     *
+     * @param pageId The Identifier of the HTML Page whose languages are being checked.
+     * @param user   The {@link User} performing this action.
+     *
+     * @return The list of languages and the flag indicating whether the page is available in such a
+     * language or not.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    public List<ExistingLanguagesForPageView> getExistingLanguagesForPage(final String pageId, final User user) throws DotDataException {
+        DotPreconditions.checkNotNull(pageId, "Page ID cannot be null");
+        DotPreconditions.checkNotNull(user, "User cannot be null");
+        final ImmutableList.Builder<ExistingLanguagesForPageView> languagesForPage = new ImmutableList.Builder<>();
+        final Set<Long> existingPageLanguages = APILocator.getVersionableAPI().findContentletVersionInfos(pageId).stream()
+                .map(ContentletVersionInfo::getLang)
+                .collect(Collectors.toSet());
+        final List<Language> allLanguages = this.languageAPI.getLanguages();
+        allLanguages.forEach(language -> languagesForPage.add(new ExistingLanguagesForPageView(language,
+                existingPageLanguages.contains(language.getId()))));
+        return languagesForPage.build();
     }
 
 }

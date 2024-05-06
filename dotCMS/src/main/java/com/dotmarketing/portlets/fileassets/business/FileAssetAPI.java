@@ -47,7 +47,7 @@ public interface FileAssetAPI {
 	String DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME = "FileAsset";
 	String DEFAULT_FILE_ASSET_STRUCTURE_INODE = "33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d";
 
-	String TMP_UPLOAD = "tmp_upload";
+
 
 	public List<FileAsset> findFileAssetsByParentable(final Parentable parent,
 			final String sortBy, final boolean working, final boolean archived,
@@ -284,7 +284,7 @@ public interface FileAssetAPI {
 
     /**
      * This method returns the root path for assets
-     * 
+     * @deprecated use ConfigUtils.getAbsoluteAssetsRootPath()
      * @return the root folder of where assets are stored
      */
     public String getRealAssetsRootPath();
@@ -374,6 +374,10 @@ public interface FileAssetAPI {
 	 */
 	public String getMimeType (final File binary);
 
+	/**
+	 * @deprecated use ConfigUtils.getAssetTempPath()
+	 * @return
+	 */
 	public String getRealAssetPathTmpBinary();
 
 	/**

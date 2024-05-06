@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.business;
 
 import com.dotmarketing.portlets.rules.model.Rule;
 
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -9,7 +10,7 @@ import java.util.Date;
 /**
  * Created by freddyrodriguez on 28/3/16.
  */
-public class FiredRule implements Comparable<FiredRule>{
+public class FiredRule implements Comparable<FiredRule>, Serializable {
 
     private static final DateFormat SIMPLE_DATE_FORMAT = SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.SHORT);
 
@@ -70,4 +71,15 @@ public class FiredRule implements Comparable<FiredRule>{
     public long getFireTimeAsLong() {
         return fireTime;
     }
+
+    @Override
+    public String toString() {
+        return "FiredRule{" +
+                "ruleName='" + ruleName + '\'' +
+                ", fireOn=" + fireOn +
+                ", fireTime=" + fireTime +
+                ", ruleID='" + ruleID + '\'' +
+                '}';
+    }
+
 }

@@ -1,0 +1,118 @@
+name: Reusable Deployment
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'The environment to deploy to'
+        required: true
+        type: string
+      artifact-run-id:
+        default: ${{ github.run_id }}
+        type: string
+      latest:
+        default: false
+        type: boolean
+      deploy-dev-image:
+        default: false
+        type: boolean
+      reuse-previous-build:
+        default: false
+        type: boolean
+      publish-npm-package:
+        default: false
+        type: boolean
+    secrets:
+        DOCKER_USERNAME:
+          required: false
+          description: 'Docker.io username'
+        DOCKER_TOKEN:
+          required: false
+          description: 'Docker.io token'
+        EE_REPO_USERNAME:
+          required: false
+          description: 'Artifactory username'
+        EE_REPO_PASSWORD:
+          required: false
+          description: 'Artifactory password'
+        DEVELOPERS_SLACK_WEBHOOK:
+          required: false
+          description: 'Slack webhook for developers'
+        NPM_ORG_TOKEN:
+          required: false
+          description: 'NPM token'
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      # The repository is checked out using the 'actions/checkout' action.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/cleanup-runner
+
+      # A Docker image is built and pushed using the 'deploy-artifact-docker' action.
+      - name: Build/Push Docker Image
+        id: docker_build
+        uses: ./.github/actions/deploy-artifact-docker
+        with:
+          image_name: dotcms/dotcms
+          docker_platforms: linux/amd64,linux/arm64
+          build_run_id: ${{ inputs.artifact-run-id }}
+          commit_id: ${{ github.sha }}
+          ref: ${{ inputs.environment }}
+          latest: ${{ inputs.latest }}
+          do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }} # default to true, set to disable in fork
+          docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build/Push Docker Dev Image
+        id: docker_build_dev
+        if: inputs.deploy-dev-image
+        uses: ./.github/actions/deploy-artifact-docker
+        with:
+          image_name: dotcms/dotcms-dev
+          docker_platforms: linux/amd64,linux/arm64
+          docker_context: dev-env
+          commit_id: ${{ github.sha }}
+          ref: ${{ inputs.environment }}
+          latest: ${{ inputs.latest }}
+          do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }} # default to true, set to disable in fork
+          docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Make value below which is source dotcms/dotcms tag to base dev image on dynamic to use whatever tag created above
+          build_args: |
+            DOTCMS_DOCKER_TAG=${{ inputs.environment }}
+
+      # The artifacts are uploaded to Artifactory using the 'deploy-artifact-artifactory' action.
+      - name: CLI Deploy
+        id: cli_deploy
+        uses: ./.github/actions/deploy-artifact-artifactory
+        with:
+          artifactory-repo-username: ${{ secrets.EE_REPO_USERNAME }}
+          artifactory-repo-password: ${{ secrets.EE_REPO_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: CLI Publish
+        if: inputs.publish-npm-package
+        uses: ./.github/actions/publish-npm-cli
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+          reuse-previous-build: ${{ inputs.reuse-previous-build }}
+
+      # A Slack notification is sent using the 'action-slack-notify' action if the repository is 'dotcms/core'.
+      - name: Slack Notification
+        if: github.repository == 'dotcms/core'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_TITLE: "Attention dotters: Docker image built!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
+          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *${{ inputs.environment }}* with tags: [${{ steps.docker_build.outputs.tags }}] :docker:"

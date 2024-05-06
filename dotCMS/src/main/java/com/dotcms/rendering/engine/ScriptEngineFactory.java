@@ -1,16 +1,25 @@
 package com.dotcms.rendering.engine;
 
+import com.dotcms.rendering.js.JsEngine;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * This Factory provides the Velocity or Javascript engine implementations
+ * @author jsanca
+ */
 public class ScriptEngineFactory {
 
     public static final String VELOCITY_ENGINE = "velocity";
+    public static final String JAVASCRIPT_ENGINE = "javascript";
     private final Map<String, ScriptEngine> instanceMap   = new ConcurrentHashMap<>();
     private final VelocityScriptEngine      defaultEngine = new VelocityScriptEngine();
+    private final JsEngine jsScriptEngine = new JsEngine();
 
     {
         instanceMap.put(VELOCITY_ENGINE, defaultEngine);
+        instanceMap.put(JAVASCRIPT_ENGINE, jsScriptEngine);
     }
 
     private static class SingletonHolder {

@@ -16,19 +16,20 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { MenuModule } from 'primeng/menu';
 import { PasswordModule } from 'primeng/password';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { DotEventsService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotFormatDateService,
+    DotIframeService,
+    DotRouterService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -40,9 +41,8 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDialogModule, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
@@ -98,7 +98,7 @@ describe('DotToolbarUserComponent', () => {
                 SearchableDropDownModule,
                 RouterTestingModule,
                 ButtonModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
@@ -140,6 +140,7 @@ describe('DotToolbarUserComponent', () => {
 
         const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
         expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
+        expect(logoutLink.parent.classes['toolbar-user__logout']).toBe(true);
     });
     it('should have correct target in logout link', () => {
         fixture.detectChanges();
@@ -196,5 +197,28 @@ describe('DotToolbarUserComponent', () => {
 
         const loginAsLink = de.query(By.css('[data-testId="login-as"]'));
         expect(loginAsLink).toBe(null);
+    });
+
+    it('should show mask', () => {
+        fixture.detectChanges();
+        const avatarComponent = de.query(By.css('[data-testid="avatar"]')).nativeElement;
+        avatarComponent.click();
+
+        fixture.detectChanges();
+        const mask = de.query(By.css('[data-testId="dot-mask"]'));
+        expect(mask).toBeTruthy();
+    });
+
+    it('should hide mask', () => {
+        fixture.detectChanges();
+        const avatarComponent = de.query(By.css('[data-testid="avatar"]')).nativeElement;
+        avatarComponent.click();
+
+        fixture.detectChanges();
+        const mask = de.query(By.css('[data-testid="dot-mask"]'));
+        mask.nativeElement.click();
+
+        fixture.detectChanges();
+        expect(de.query(By.css('[data-testid="dot-mask"]'))).toBeFalsy();
     });
 });

@@ -1,0 +1,31 @@
+backend: &backend
+  - '.github/workflows/maven-cicd-pipeline.yml'
+  - 'bom/**'
+  - 'build-parent/**'
+  - 'core-web/pom.xml'
+  - 'dotCMS/src/main/webapp/html/**/!(*.{css,js})'
+  - 'dotCMS/!(src/main/webapp/html/)**'
+  - 'dotcms-integration/**'
+  - 'independent-projects/**'
+  - 'maven-plugins/**'
+  - 'osgi-base/**'
+  - 'parent/**'
+  - 'plugins-core/**'
+  - 'pom.xml'
+  - 'reports/**'
+
+frontend: &frontend
+  - 'core-web/**'
+  - 'dotCMS/src/main/webapp/html/**/*.{css,js}'
+
+cli: &cli
+  - 'tools/dotcms-cli/**'
+
+jvm_unit_test:
+  - *backend
+  - *cli
+
+build:
+  - *backend
+  - *cli
+  - *frontend

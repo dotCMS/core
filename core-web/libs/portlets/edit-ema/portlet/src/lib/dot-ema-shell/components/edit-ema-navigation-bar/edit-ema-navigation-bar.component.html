@@ -1,0 +1,59 @@
+<nav class="edit-ema-nav-bar">
+    <ng-container *ngFor="let item of items">
+        <ng-container
+            [ngTemplateOutlet]="item.action ? button : anchor"
+            [ngTemplateOutletContext]="{ item: item }">
+        </ng-container>
+    </ng-container>
+</nav>
+
+<ng-template #anchor let-item="item">
+    <a
+        class="edit-ema-nav-bar__item"
+        [routerLink]="item.isDisabled ? null : item.href"
+        [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
+        [pTooltip]="item.tooltip | dm"
+        data-testId="nav-bar-item"
+        routerLinkActive="edit-ema-nav-bar__item--active"
+        queryParamsHandling="merge"
+        tooltipPosition="left"
+        rel="noopener">
+        <ng-container
+            [ngTemplateOutlet]="item.icon ? icon : iconURL"
+            [ngTemplateOutletContext]="{ item: item }">
+        </ng-container>
+        <span class="item__label" data-testId="nav-bar-item-label">
+            {{ item.label | dm }}
+        </span>
+    </a>
+</ng-template>
+
+<ng-template #button let-item="item">
+    <button
+        class="edit-ema-nav-bar__item edit-ema-nav-bar__item--button"
+        [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
+        [disabled]="item.isDisabled"
+        (click)="item.isDisabled ? null : item?.action()"
+        data-testId="nav-bar-item">
+        <ng-container
+            [ngTemplateOutlet]="item.icon ? icon : iconURL"
+            [ngTemplateOutletContext]="{ item: item }">
+        </ng-container>
+        <span class="item__label" data-testId="nav-bar-item-label">
+            {{ item.label | dm }}
+        </span>
+    </button>
+</ng-template>
+
+<ng-template #icon let-item="item">
+    <i [class]="'pi ' + item.icon" data-testId="nav-bar-item-icon"></i>
+</ng-template>
+<ng-template #iconURL let-item="item">
+    <svg class="item__image" fill="currentColor" viewBox="0 0 24 24" width="24px" height="24px">
+        <use
+            data-testId="nav-bar-item-image"
+            attr.href="./assets/edit-ema/{{ item.iconURL }}.svg#{{ item.iconURL }}"
+            width="24px"
+            height="24px"></use>
+    </svg>
+</ng-template>

@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.model.field;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
@@ -19,7 +18,11 @@ public abstract class RelationshipField extends Field {
 
     @Nullable
     public abstract Relationships relationships();
+
+    @Value.Default
     @Nullable
-    public abstract Boolean skipRelationshipCreation();
+    public Boolean skipRelationshipCreation() {
+        return false;
+    }
 
 }

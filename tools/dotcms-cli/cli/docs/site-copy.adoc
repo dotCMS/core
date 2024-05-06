@@ -1,0 +1,95 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Site Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= site-copy(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+site-copy - *Use this command to copy an existing site.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*site copy* [*-ah*] [*-cn*=_copyName_] [*--dotcms-url*=_<remoteURL>_] *-in*=_idOrName_
+          [*-tk*=_<token>_] [[*-p*] [*-c*] [*-f*] [*-l*] [*-t*] [*-var*]]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ The command provides the ability to copy individually site elements such as: 
+ pages, folders, links, template containers, and site variables. 
+ Or everything at once through the use of the --all param. 
+ The new site will be created with the name specified in the param --copyName 
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-a*, *--all*::
+  if specified everything will be copied.
+
+*-cn, --copyName*=_copyName_::
+  New Site name.
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
+*-h*, *--help*::
+  Display this help message.
+
+*-in, --idOrName*=_idOrName_::
+  Site name or Id.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+== 
+*Individual Copy Options. *
+
+
+*-c*, *--content*::
+  if specified content on site will be copied.
+
+*-f*, *--folder*::
+  if specified folders will be copied.
+
+*-l*, *--link*::
+  if specified links will be copied.
+
+*-p*, *--page*::
+  if specified content on pages will be copied.
+
+*-t*, *--template*::
+  if specified templates will be copied.
+
+*-var, --variable*::
+  if specified site variables will be copied.
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

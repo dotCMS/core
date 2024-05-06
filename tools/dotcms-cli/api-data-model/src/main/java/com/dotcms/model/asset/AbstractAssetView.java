@@ -3,12 +3,13 @@ package com.dotcms.model.asset;
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.vertx.codegen.annotations.Nullable;
+import io.smallrye.common.constraint.Nullable;
 import org.immutables.value.Value;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import org.immutables.value.Value.Auxiliary;
 
 @ValueType
 @Value.Immutable
@@ -37,12 +38,7 @@ public interface AbstractAssetView {
 
     Map<String, Object> metadata();
 
-    Optional<Boolean> markForPush();
-
-    Optional<Boolean> pushTypeNew();
-
-    Optional<Boolean> pushTypeModified();
-
-    Optional<Boolean> markForDelete();
+    @Auxiliary
+    Optional<AssetSync> sync();
 
 }

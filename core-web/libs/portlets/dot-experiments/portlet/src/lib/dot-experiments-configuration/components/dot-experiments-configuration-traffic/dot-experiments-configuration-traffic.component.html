@@ -7,8 +7,7 @@
                     [ngClass]="{ isDone: vm.trafficAllocation }"
                     [size]="16"
                     data-testId="traffic-step-done"
-                    name="check_circle"
-                ></dot-icon>
+                    name="check_circle"></dot-icon>
                 {{ 'experiments.configure.traffic.name' | dm }}
             </h2>
         </ng-template>
@@ -21,18 +20,16 @@
                     }}</span>
                 </div>
                 <div
-                    [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
-                    [tooltipDisabled]="vm.isExperimentADraft"
+                    [pTooltip]="vm.disabledTooltipLabel | dm"
+                    [tooltipDisabled]="!vm.disabledTooltipLabel"
                     data-testId="tooltip-on-disabled"
-                    tooltipPosition="bottom"
-                >
+                    tooltipPosition="bottom">
                     <button
-                        class="p-button-sm p-button-text"
-                        [disabled]="!vm.isExperimentADraft"
+                        class="p-button-sm p-button-link"
+                        [disabled]="vm.disabledTooltipLabel"
                         (click)="changeTrafficAllocation()"
                         data-testId="traffic-allocation-button"
-                        pButton
-                    >
+                        pButton>
                         {{ vm.trafficAllocation }}%
                     </button>
                 </div>

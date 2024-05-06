@@ -30,7 +30,7 @@ export class DotContainersService {
     getFiltered(
         filter: string,
         perPage: number,
-        fetchSystemContainers: boolean = false
+        fetchSystemContainers = false
     ): Observable<DotContainer[]> {
         const url = `${CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=${fetchSystemContainers}`;
 

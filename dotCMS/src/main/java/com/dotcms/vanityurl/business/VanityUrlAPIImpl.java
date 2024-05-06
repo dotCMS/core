@@ -1,5 +1,6 @@
 package com.dotcms.vanityurl.business;
 
+import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
+
+import com.dotmarketing.util.URLUtils;
 import org.apache.http.HttpStatus;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -42,6 +45,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.http.client.utils.URIBuilder;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -373,9 +377,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           final int responseCode = request.getResponseCode();
 
           final String newUrl = uri + (queryString != null ? StringPool.QUESTION + queryString : StringPool.BLANK);
+
           if (responseCode == 301 || responseCode == 302) {
               response.setStatus(responseCode);
-              response.setHeader("Location", newUrl);
+              response.setHeader("Location", encodeRedirectURL(newUrl));
               return true;
           }
 
@@ -387,6 +392,72 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
       }
       return false;
   }
+
+    /**
+     * Encodes the redirect URL with the parameters from the request.
+     *
+     * @param uri          The URI to redirect to.
+     * @return The encoded redirect URL.
+     */
+    private String encodeRedirectURL(final String uri) {
+        try {
+            boolean hasProtocol = true;
+            String redirectURI = uri;
+            if (uri.startsWith("//")) {
+                hasProtocol = false;
+                redirectURI = "none:" + uri;
+            }
+            final URLUtils.ParsedURL urlToEncode = URLUtils.parseURL(redirectURI);
+            if (urlToEncode == null) {
+                throw new DotRuntimeException("Could not parse redirect URL: " + uri);
+            }
+            final URIBuilder uriBuilder = new URIBuilder();
+            if (UtilMethods.isSet(urlToEncode.getProtocol()) && hasProtocol) {
+                uriBuilder.setScheme(urlToEncode.getProtocol());
+            }
+            if (UtilMethods.isSet(urlToEncode.getHost())) {
+                final String hostWithUserInfo = urlToEncode.getHost();
+                String host = hostWithUserInfo;
+                String userInfo = "";
+                if (hostWithUserInfo.contains("@")) {
+                    userInfo = hostWithUserInfo.substring(0, hostWithUserInfo.indexOf("@"));
+                    host = hostWithUserInfo.substring(hostWithUserInfo.indexOf("@") + 1);
+                }
+                if (UtilMethods.isSet(userInfo)) {
+                    uriBuilder.setUserInfo(userInfo);
+                }
+                uriBuilder.setHost(host);
+            }
+            if (urlToEncode.getPort() > 0) {
+                uriBuilder.setPort(urlToEncode.getPort());
+            }
+            if (UtilMethods.isSet(urlToEncode.getURI())) {
+                uriBuilder.setPath(urlToEncode.getURI());
+            }
+            final Map<String, String[]> paramMap = urlToEncode.getParameters();
+            if (paramMap != null) {
+                for (final Map.Entry<String, String[]> entry : paramMap.entrySet()) {
+                    for (final String value : entry.getValue()) {
+                        uriBuilder.addParameter(entry.getKey(), value);
+                    }
+                }
+            }
+            return uriBuilder.build().toASCIIString();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public List<CachedVanityUrl> findByForward(final Host host, final Language language, final String forward,
+                                               int action) {
+        return load(host, language)
+                .stream()
+                .filter(cachedVanityUrl -> cachedVanityUrl.response == action)
+                .filter(cachedVanityUrl -> cachedVanityUrl.forwardTo.equals(forward))
+                .collect(Collectors.toList());
+    }
 
 
 }

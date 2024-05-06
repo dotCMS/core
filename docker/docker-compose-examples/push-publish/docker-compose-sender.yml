@@ -10,7 +10,7 @@ volumes:
 
 services:
   opensearch-sender:
-    image: opensearchproject/opensearch:1.3.6
+    image: opensearchproject/opensearch:1
     environment:
       - cluster.name=elastic-cluster
       - discovery.type=single-node
@@ -44,7 +44,8 @@ services:
         DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
         DOT_ES_ENDPOINTS: 'https://opensearch-sender:9200'
         DOT_INITIAL_ADMIN_PASSWORD: 'admin'
-        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+        DOT_DOTCMS_CLUSTER_ID:  'dotcms-sender'
+        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240213/starter-20240213.zip'
     depends_on:
       - opensearch-sender
       - db-sender

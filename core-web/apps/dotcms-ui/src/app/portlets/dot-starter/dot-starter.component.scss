@@ -7,6 +7,7 @@ $number-link-icon-size: 2.28rem;
     font-size: $font-size-md;
     height: 100%;
     overflow: auto;
+    background-color: $white;
 
     hr {
         border-top: 1px solid $color-palette-gray-300;
@@ -33,8 +34,8 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-description {
-        color: $color-palette-gray-700;
-        margin: 0 $spacing-3 $spacing-5 $spacing-3;
+        color: $black;
+        margin: 0 $spacing-3;
     }
 
     .dot-starter-top-content,
@@ -47,23 +48,31 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-top-main__section {
         background-color: $white;
-        box-shadow: $md-shadow-4;
         counter-reset: css-counter 0;
         flex-grow: 1;
-        margin-left: $spacing-1;
+        margin-left: 0;
         margin-bottom: $spacing-4;
         margin-right: $spacing-1;
-        overflow: hidden;
-        border-radius: $border-radius-md;
+        display: flex;
+    }
+
+    .dot-starter-offset {
+        margin-left: $spacing-5;
     }
 
     .dot-starter-top-main__block {
+        border-radius: $border-radius-md;
+        box-shadow: $shadow-l;
+
         align-content: space-between;
         border-bottom: 1px solid $color-palette-gray-300;
         display: flex;
-        margin: 0;
-        padding: $spacing-5 0;
+        flex-direction: column;
+        margin: $spacing-3;
+        padding: $spacing-5 $spacing-3;
+
         transition: background-color $basic-speed ease-in;
+        width: 25%;
 
         &:hover {
             background-color: $bg-hover;
@@ -72,17 +81,15 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-top-main__link-number {
         align-self: center;
-        margin: 0 $spacing-4;
+        margin: 0 $spacing-4 $spacing-1;
         text-align: center;
 
         span {
             align-items: center;
-            background-color: $color-palette-primary;
-            border-radius: 50%;
-            color: $white;
+            color: $color-palette-primary;
             counter-increment: css-counter 1;
             display: inline-flex;
-            font-size: $md-icon-size-normal;
+            font-size: $md-icon-size-extra-big;
             height: $number-link-icon-size;
             justify-content: center;
             width: $number-link-icon-size;
@@ -96,16 +103,18 @@ $number-link-icon-size: 2.28rem;
     .dot-starter-top-main__link-data {
         align-self: center;
         flex-grow: 1;
+        text-align: center;
 
         h4 {
-            color: $color-palette-primary;
+            color: $black;
             font-size: $font-size-lg;
-            font-weight: bold;
+            font-weight: $font-weight-semi-bold;
             margin: 0;
         }
         p {
             color: $color-palette-gray-700;
             margin: 0;
+            font-size: $font-size-md;
         }
     }
 
@@ -119,19 +128,20 @@ $number-link-icon-size: 2.28rem;
         }
     }
 
-    .dot-starter-top-secondary__section {
-        margin-left: $spacing-1;
-
-        h3 {
-            font-size: $font-size-lg;
-            font-weight: $font-weight-semi-bold;
-            margin: 0;
-        }
+    .dot-starter-top-main__title {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semi-bold;
+        margin: 0;
+        border-bottom: 1px solid $color-palette-gray-300;
+        padding-bottom: $spacing-3;
     }
-
     .dot-starter-top-secondary__block {
         display: flex;
-        padding: $spacing-3 0;
+        padding-bottom: $spacing-8;
+
+        &:last-child {
+            padding-bottom: 0;
+        }
     }
 
     .dot-starter-top-secondary__link-icon {
@@ -165,24 +175,39 @@ $number-link-icon-size: 2.28rem;
         }
     }
 
+    .dot-starter-top-secondary__link-data-apis {
+        padding: 0;
+
+        h4 {
+            color: $color-palette-primary;
+            font-size: $font-size-lg;
+            font-weight: 500;
+            margin: 0;
+            padding-bottom: $spacing-1;
+        }
+        p {
+            color: $color-palette-gray-700;
+            margin: 0;
+        }
+    }
+
     .dot-starter-bottom-content {
         flex-wrap: wrap;
-        margin-bottom: $spacing-5;
-        padding-top: $spacing-1;
+        padding: $spacing-1 0 $spacing-5 $spacing-5;
     }
 
     .dot-starter-bottom__block {
         background-color: $white;
         border-bottom: 1px solid $color-palette-gray-300;
-        box-shadow: $md-shadow-4;
+        box-shadow: $shadow-m;
         display: flex;
         flex-grow: 1;
         height: 100%;
-        margin: $spacing-3 $spacing-1 0;
         overflow: hidden;
-        padding: $spacing-3 0;
         transition: background-color $basic-speed ease-in;
         border-radius: $border-radius-md;
+        gap: $spacing-1;
+        padding: $spacing-3;
 
         &:hover {
             background-color: $bg-hover;
@@ -190,10 +215,7 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-bottom__link-icon {
-        align-self: center;
-        margin: 0 $spacing-5;
-        text-align: center;
-
+        padding-top: $spacing-0;
         span {
             color: $color-palette-primary;
             display: inline-flex;
@@ -201,7 +223,6 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-bottom__link-data {
-        align-self: center;
         margin-right: $spacing-5;
         padding: 0;
 

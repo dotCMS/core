@@ -15,19 +15,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class StringUtils {
 
-    public static final String TRUE = "true";
-
     private final static char COMMA = ',';
-    
+    public static final char[] BLANK_CHARS = StringPool.BLANK.toCharArray();
+
     // Pattern is threadsafe
     private static final Pattern camelCaseLowerPattern = Pattern.compile("^[a-z]([a-zA-Z0-9]+)*$");
     private static final Pattern camelCaseUpperPattern = Pattern.compile("^[A-Z]([a-zA-Z0-9]+)*$");
@@ -481,4 +480,21 @@ public class StringUtils {
         // return the result string
         return result.toString();
     }
+
+    public static char[] toCharArray(final String value) {
+        return toCharArray(value, null);
+    }
+
+    public static char[] toCharArraySafe(final String value) {
+        return toCharArray(value, BLANK_CHARS);
+    }
+
+    public static char[] defensiveCopy(final char[] value) {
+        return Optional.ofNullable(value).map(v -> Arrays.copyOf(v, v.length)).orElse(BLANK_CHARS);
+    }
+
+    private static char[] toCharArray(final String value, final char[] defaultChars) {
+        return Optional.ofNullable(value).map(String::toCharArray).orElse(defaultChars);
+    }
+
 }

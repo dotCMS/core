@@ -322,22 +322,7 @@
 			<column name="userId" />
 		</finder>
 	</ejb>
-	<ejb name="Release" local-manager="true">
 
-		<!-- PK fields -->
-
-		<column name="releaseId" type="String" primary="true" />
-
-		<!-- Audit fields -->
-
-		<column name="createDate" type="Date" />
-		<column name="modifiedDate" type="Date" />
-
-		<!-- Other fields -->
-
-		<column name="buildNumber" type="int" />
-		<column name="buildDate" type="Date" />
-	</ejb>
 	<ejb name="Role" local-manager="true">
 
 		<!-- PK fields -->

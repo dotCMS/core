@@ -6,6 +6,8 @@
     @extend #form-field-base;
     min-width: 13rem;
     padding-right: 0;
+    min-height: $field-height-md;
+    height: auto;
 
     &:not(.p-multiselect-open):hover {
         @extend #form-field-hover;
@@ -17,16 +19,26 @@
     }
 
     .p-multiselect-label-container {
-        padding: $spacing-1 0;
+        display: flex;
+        align-items: center;
         padding-right: $spacing-1;
+
         .p-multiselect-label:not(.p-placeholder) {
             color: $black;
             @include truncate-text;
+
+            &:has(> .p-multiselect-token) {
+                padding: $spacing-1 0;
+                height: auto;
+                flex-wrap: wrap;
+                overflow: visible;
+            }
         }
     }
 
     .p-multiselect-trigger {
         @extend #field-trigger;
+        height: auto;
 
         .p-multiselect-trigger-icon {
             @extend #field-trigger-icon;
@@ -51,24 +63,11 @@
         color: $color-palette-gray-800;
 
         .p-multiselect-label {
-            gap: $spacing-1;
-            padding: $spacing-1;
-        }
-
-        .p-multiselect-label.p-placeholder {
-            padding: $spacing-3;
+            gap: $spacing-0;
         }
 
         .p-multiselect-token {
-            align-items: center;
-            background: $color-palette-primary-op-10;
-            border-radius: $border-radius-sm;
-            color: $color-palette-primary;
-            display: flex;
-            gap: $spacing-1;
-            justify-content: center;
-            margin-right: $spacing-1;
-            padding: $spacing-1;
+            @extend #field-chip;
         }
     }
 }
@@ -90,7 +89,7 @@
         }
 
         .p-checkbox {
-            @extend #field-panel-item-checkbox;
+            margin-right: $spacing-1;
         }
 
         .p-multiselect-close {
@@ -138,10 +137,6 @@
             &.p-disabled,
             &.p-highlight.p-disabled {
                 @extend #field-panel-item-disabled;
-            }
-
-            .p-checkbox {
-                @extend #field-panel-item-checkbox;
             }
         }
 

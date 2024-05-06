@@ -31,7 +31,18 @@ import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-p
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
-    @Input() layoutProperties: DotTemplateLayoutProperties;
+    @Input() set layoutProperties(layoutProperties: DotTemplateLayoutProperties) {
+        this.group?.patchValue(
+            {
+                ...layoutProperties
+            },
+            { emitEvent: false }
+        );
+
+        this._layoutProperties = { ...layoutProperties };
+    }
+
+    private _layoutProperties: DotTemplateLayoutProperties;
 
     @Output() selectTheme: EventEmitter<void> = new EventEmitter();
 
@@ -46,11 +57,13 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.group = new UntypedFormGroup({
-            header: new UntypedFormControl(this.layoutProperties.header ?? true),
-            footer: new UntypedFormControl(this.layoutProperties.footer ?? true),
+            header: new UntypedFormControl(this._layoutProperties.header ?? true),
+            footer: new UntypedFormControl(this._layoutProperties.footer ?? true),
             sidebar: new UntypedFormControl(
-                this.layoutProperties.sidebar ?? {
-                    location: ''
+                this._layoutProperties.sidebar ?? {
+                    location: '',
+                    width: 'medium',
+                    containers: []
                 }
             )
         });

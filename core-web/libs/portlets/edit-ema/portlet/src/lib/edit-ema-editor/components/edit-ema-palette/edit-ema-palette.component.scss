@@ -1,0 +1,7 @@
+@use "variables" as *;
+
+:host {
+    overflow: auto;
+    border-left: 1px solid $color-palette-gray-200;
+    position: relative;
+}

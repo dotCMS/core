@@ -1,25 +1,32 @@
 import { ComponentStore } from '@ngrx/component-store';
+import { forkJoin } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { pluck, take } from 'rxjs/operators';
+import { pluck, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import {
     DotAlertConfirmService,
     DotMessageService,
-    DotSiteBrowserService
+    DotRouterService,
+    DotSiteBrowserService,
+    PaginatorService
 } from '@dotcms/data-access';
-import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotActionBulkResult, DotBulkFailItem, DotContainer } from '@dotcms/dotcms-models';
+import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
+import {
+    CONTAINER_SOURCE,
+    DotActionBulkResult,
+    DotBulkFailItem,
+    DotContainer
+} from '@dotcms/dotcms-models';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];
@@ -32,6 +39,9 @@ export interface DotContainerListState {
     stateLabels: { [key: string]: string };
     listing: DotListingDataTableComponent;
     notifyMessages: DotNotifyMessages;
+    containers: DotContainer[];
+    maxPageLinks: number;
+    totalRecords: number;
 }
 
 export interface DotNotifyMessages {
@@ -39,6 +49,8 @@ export interface DotNotifyMessages {
     message: string;
     failsInfo?: DotBulkFailItem[];
 }
+
+const CONTAINERS_URL = 'v1/containers';
 
 @Injectable()
 export class DotContainerListStore extends ComponentStore<DotContainerListState> {
@@ -49,33 +61,58 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         private dotPushPublishDialogService: DotPushPublishDialogService,
         private dotSiteBrowserService: DotSiteBrowserService,
         private dotAlertConfirmService: DotAlertConfirmService,
-        private dotContainersService: DotContainersService
+        private dotContainersService: DotContainersService,
+        private paginatorService: PaginatorService,
+        private dotSiteService: SiteService
     ) {
         super(null);
+        this.paginatorService.url = CONTAINERS_URL;
+        this.paginatorService.paginationPerPage = 40;
 
-        this.route.data
-            .pipe(pluck('dotContainerListResolverData'), take(1))
-            .subscribe(([isEnterprise, hasEnvironments]: [boolean, boolean]) => {
-                this.setState({
-                    containerBulkActions: this.getContainerBulkActions(
-                        hasEnvironments,
-                        isEnterprise
-                    ),
-                    tableColumns: this.getContainerColumns(),
-                    stateLabels: this.getStateLabels(),
-                    isEnterprise: isEnterprise,
-                    hasEnvironments: hasEnvironments,
-                    addToBundleIdentifier: '',
-                    selectedContainers: [],
-                    actionHeaderOptions: this.getActionHeaderOptions(),
-                    listing: {} as DotListingDataTableComponent,
-                    notifyMessages: {
-                        payload: {},
-                        message: null,
-                        failsInfo: []
-                    } as DotNotifyMessages
-                });
-            });
+        this.dotSiteService
+            .getCurrentSite()
+            .pipe(
+                take(1),
+                switchMap(({ identifier }) => {
+                    this.paginatorService.resetExtraParams();
+
+                    this.paginatorService.setExtraParams('host', identifier);
+
+                    return forkJoin([
+                        this.route.data.pipe(pluck('dotContainerListResolverData'), take(1)),
+                        this.paginatorService.get()
+                    ]);
+                })
+            )
+            .subscribe(
+                ([[isEnterprise, hasEnvironments], containers]: [
+                    [boolean, boolean],
+                    DotContainer[]
+                ]) => {
+                    this.setState({
+                        containerBulkActions: this.getContainerBulkActions(
+                            hasEnvironments,
+                            isEnterprise
+                        ),
+                        tableColumns: this.getContainerColumns(),
+                        stateLabels: this.getStateLabels(),
+                        isEnterprise: isEnterprise,
+                        hasEnvironments: hasEnvironments,
+                        addToBundleIdentifier: '',
+                        selectedContainers: [],
+                        actionHeaderOptions: this.getActionHeaderOptions(),
+                        listing: {} as DotListingDataTableComponent,
+                        notifyMessages: {
+                            payload: {},
+                            message: null,
+                            failsInfo: []
+                        } as DotNotifyMessages,
+                        containers,
+                        maxPageLinks: this.paginatorService.maxLinksPage,
+                        totalRecords: this.paginatorService.totalRecords
+                    });
+                }
+            );
     }
 
     readonly vm$ = this.select(
@@ -85,7 +122,10 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             actionHeaderOptions,
             tableColumns,
             stateLabels,
-            selectedContainers
+            selectedContainers,
+            containers,
+            totalRecords,
+            maxPageLinks
         }: DotContainerListState) => {
             return {
                 containerBulkActions,
@@ -93,7 +133,10 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                 actionHeaderOptions,
                 tableColumns,
                 stateLabels,
-                selectedContainers
+                selectedContainers,
+                containers,
+                totalRecords,
+                maxPageLinks
             };
         }
     );
@@ -120,6 +163,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         }
     );
 
+    readonly clearSelectedContainers = this.updater((state: DotContainerListState) => {
+        return {
+            ...state,
+            selectedContainers: []
+        };
+    });
+
     readonly updateListing = this.updater<DotListingDataTableComponent>(
         (state: DotContainerListState, listing: DotListingDataTableComponent) => {
             return {
@@ -143,6 +193,86 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             };
         }
     );
+
+    readonly getContainersByHost = this.effect<string>((identifier$) => {
+        return identifier$.pipe(
+            switchMap((identifier) => {
+                this.paginatorService.setExtraParams('host', identifier);
+
+                return this.paginatorService.getFirstPage();
+            }),
+            tap((containers: DotContainer[]) => {
+                this.patchContainers(containers);
+            })
+        );
+    });
+
+    readonly getContainersByContentType = this.effect<string | undefined>((contentType$) => {
+        return contentType$.pipe(
+            switchMap((contentType) => {
+                contentType
+                    ? this.paginatorService.setExtraParams('content_type', contentType)
+                    : this.paginatorService.deleteExtraParams('content_type');
+
+                return this.paginatorService.get();
+            }),
+            tap((containers: DotContainer[]) => {
+                this.patchContainers(containers);
+            })
+        );
+    });
+
+    readonly getContainersByArchiveState = this.effect<boolean>((archive$) => {
+        return archive$.pipe(
+            switchMap((archive) => {
+                archive
+                    ? this.paginatorService.setExtraParams('archive', archive)
+                    : this.paginatorService.deleteExtraParams('archive');
+
+                return this.paginatorService.get();
+            }),
+            tap((containers: DotContainer[]) => {
+                this.patchContainers(containers);
+            })
+        );
+    });
+
+    readonly getContainersByQuery = this.effect<string>((query$) => {
+        return query$.pipe(
+            switchMap((query) => {
+                query.trim().length
+                    ? this.paginatorService.setExtraParams('filter', query)
+                    : this.paginatorService.deleteExtraParams('filter');
+
+                return this.paginatorService.get();
+            }),
+            tap((containers: DotContainer[]) => {
+                this.patchContainers(containers);
+            })
+        );
+    });
+
+    readonly getContainersWithOffset = this.effect<number>((offset$) => {
+        return offset$.pipe(
+            switchMap((offset) => {
+                return this.paginatorService.getWithOffset(offset);
+            }),
+            tap((containers: DotContainer[]) => {
+                this.patchContainers(containers);
+            })
+        );
+    });
+
+    readonly loadCurrentContainersPage = this.effect((origin$) => {
+        return origin$.pipe(
+            switchMap(() => {
+                return this.paginatorService.getCurrentPage();
+            }),
+            tap((containers: DotContainer[]) => {
+                this.patchContainers(containers);
+            })
+        );
+    });
 
     /**
      * Set the actions of each container based o current state.
@@ -545,5 +675,42 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         return selectedContainers.find((container: DotContainer) => {
             return container.identifier === identifier;
         }).name;
+    }
+
+    /**
+     * Return a list of containers with disableInteraction in system items.
+     * @param {DotContainer[]} containers
+     * @returns DotContainer[]
+     * @memberof DotContainerListStore
+     */
+    private getContainersWithDisabledEntities(containers: DotContainer[]): DotContainer[] {
+        return containers.map((container) => {
+            const copyContainer = structuredClone(container);
+            copyContainer.disableInteraction =
+                copyContainer.identifier.includes('/') ||
+                copyContainer.identifier === 'SYSTEM_CONTAINER' ||
+                copyContainer.source === CONTAINER_SOURCE.FILE;
+
+            if (copyContainer.path) {
+                copyContainer.pathName = new URL(`http:${container.path}`).pathname;
+            }
+
+            return copyContainer;
+        });
+    }
+
+    /**
+     * Patch the state with the containers and pagination info.
+     *
+     * @private
+     * @param {DotContainer[]} containers
+     * @memberof DotContainerListStore
+     */
+    private patchContainers(containers: DotContainer[]): void {
+        this.patchState({
+            containers: this.getContainersWithDisabledEntities(containers),
+            maxPageLinks: this.paginatorService.maxLinksPage,
+            totalRecords: this.paginatorService.totalRecords
+        });
     }
 }

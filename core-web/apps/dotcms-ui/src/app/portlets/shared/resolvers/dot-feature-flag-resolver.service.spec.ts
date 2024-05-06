@@ -1,10 +1,11 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClientModule } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotFeatureFlagResolver } from './dot-feature-flag-resolver.service';
 
@@ -22,10 +23,13 @@ describe('DotFeatureFlagResolver', () => {
         dotConfigurationService = TestBed.inject(DotPropertiesService);
     });
 
-    it('should return an observable of boolean values', () => {
+    it('should return an observable of boolean values', (done) => {
         const route: ActivatedRouteSnapshot = {
             data: {
-                featuredFlagsToCheck: ['flag1', 'flag2']
+                featuredFlagsToCheck: [
+                    FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS,
+                    FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE
+                ]
             },
             url: [],
             params: {},
@@ -44,20 +48,23 @@ describe('DotFeatureFlagResolver', () => {
             queryParamMap: undefined
         };
 
-        const expectedFlags = {
-            flag1: 'true',
-            flag2: 'false'
+        const expectedFlagsResult: Record<string, boolean> = {
+            [FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS]: true,
+            [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: false
         };
 
-        const expectedFlagsResult = {
-            flag1: true,
-            flag2: false
-        };
+        spyOn(dotConfigurationService, 'getFeatureFlags').and.returnValue(of(expectedFlagsResult));
 
-        spyOn(dotConfigurationService, 'getKeys').and.returnValue(of(expectedFlags));
+        (resolver.resolve(route) as Observable<Record<string, boolean>>).subscribe(
+            (result: Record<string, boolean>) => {
+                expect(dotConfigurationService.getFeatureFlags).toHaveBeenCalledWith([
+                    FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS,
+                    FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE
+                ]);
 
-        resolver.resolve(route).subscribe((result) => {
-            expect(result).toEqual(expectedFlagsResult);
-        });
+                expect(result).toEqual(expectedFlagsResult);
+                done();
+            }
+        );
     });
 });

@@ -1,53 +1,55 @@
 @use "variables" as *;
 
-:host:hover {
-    box-shadow: $md-shadow-5;
-    transition: box-shadow 0.35s ease-in-out;
-}
-
-::ng-deep {
-    .p-card .p-card-header {
-        padding: 0;
+:host {
+    &:hover {
+        box-shadow: $shadow-m;
+        transition: box-shadow 0.35s ease-in-out;
     }
 
-    .p-card-content {
-        display: flex;
-    }
-
-    .dot-pages-favorite-card-content__image {
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: contain;
-        padding-bottom: 75.25%;
-        display: block;
-
-        img {
-            height: 0;
-            position: absolute;
-            width: 0;
+    ::ng-deep {
+        .p-card .p-card-header {
+            padding: 0;
         }
-    }
 
-    .dot-pages-favorite-card-content__container {
-        margin: 0 $spacing-1;
-        min-width: 0;
-    }
+        .p-card-content {
+            display: flex;
+        }
 
-    .dot-pages-favorite-card-content__title {
-        font-weight: bold;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
+        .dot-pages-favorite-card-content__image {
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+            padding-bottom: 75.25%;
+            display: block;
 
-    .dot-pages-favorite-card-content__subtitle {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
+            img {
+                height: 0;
+                position: absolute;
+                width: 0;
+            }
+        }
 
-    .p-card .p-card-body {
-        box-shadow: 0px -15px 20px -20px $color-palette-black-op-30;
-        padding: $spacing-3 $spacing-1 $spacing-3 $spacing-3;
+        .dot-pages-favorite-card-content__container {
+            margin: 0 $spacing-1;
+            min-width: 0;
+        }
+
+        .dot-pages-favorite-card-content__title {
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dot-pages-favorite-card-content__subtitle {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .p-card .p-card-body {
+            box-shadow: 0px -15px 20px -20px $color-palette-black-op-30;
+            padding: $spacing-3 $spacing-1 $spacing-3 $spacing-3;
+        }
     }
 }

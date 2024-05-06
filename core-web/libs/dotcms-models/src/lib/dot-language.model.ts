@@ -4,4 +4,7 @@ export interface DotLanguage {
     countryCode: string;
     language: string;
     country: string;
+    defaultLanguage?: boolean;
+    translated?: boolean;
+    isoCode?: string;
 }

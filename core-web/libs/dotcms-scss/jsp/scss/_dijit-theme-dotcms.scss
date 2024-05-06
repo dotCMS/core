@@ -359,30 +359,30 @@ $combobox-disabled-arrow-color: $field-disabled-arrow-color;
 $combobox-disabled-arrow-border: $combobox-disabled-border;
 
 // Checkboxes
-$check-border-width: 1px;
-$check-radius: 2px;
-$check-size: 18px;
-$check-normal-border: solid $check-border-width $font-color-base;
+$check-border-width: 2px;
+$check-radius: 4px;
+$check-size: 24px;
+$check-normal-border: solid $check-border-width $color-palette-gray-500;
 $check-normal-bgcolor: $white;
-$check-checked-border: solid 1px $color-palette-primary;
+$check-checked-border: solid 2px $color-palette-primary;
 $check-checked-bgcolor: $color-palette-primary;
-$check-checked-icon: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=";
-$check-disabled-border: solid $check-border-width transparent;
-$check-disabled-bgcolor: $color-palette-gray-500;
-$check-disabled-icon: $check-checked-icon;
+$check-checked-icon: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTZweCIgaGVpZ2h0PSIxMS4zMXB4IiB2aWV3Qm94PSIwIDAgMTAgOCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIj4gICAgICAgIDx0aXRsZT5TaGFwZTwvdGl0bGU+ICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPiAgICA8ZGVmcz48L2RlZnM+ICAgIDxnIGlkPSJTeW1ib2xzIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4gICAgICAgIDxnIGlkPSJjaGVja2JveC1hY3RpdmUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC00LjAwMDAwMCwgLTUuMDAwMDAwKSIgZmlsbD0iIzAwMDAwMCI+ICAgICAgICAgICAgPHBvbHlnb24gaWQ9IlNoYXBlIiBwb2ludHM9IjcuMzEwNzIwMzIgMTEuNDIyNDQ0OSA0Ljk4NjE5NTYzIDkuMDk3OTIwMTkgNC4xOTQ2MzA4NyA5Ljg4MzkxMDU1IDcuMzEwNzIwMzIgMTMgMTQgNi4zMTA3MjAzMiAxMy4yMTQwMDk2IDUuNTI0NzI5OTYiPjwvcG9seWdvbj4gICAgICAgIDwvZz4gICAgPC9nPjwvc3ZnPg==";
+$check-disabled-border: solid $check-border-width $color-palette-gray-400;
+$check-disabled-bgcolor: $color-palette-gray-200;
+$check-disabled-icon: "data:image/svg+xml;base64,PCEtLSBSZXBsYWNlIHRoZSBjb250ZW50cyBvZiB0aGlzIGVkaXRvciB3aXRoIHlvdXIgU1ZHIGNvZGUgLS0+Cgo8c3ZnIHdpZHRoPSIxNnB4IiBoZWlnaHQ9IjExLjMxcHgiIHZpZXdCb3g9IjAgMCAxMCA4IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPiAgICAgICAgPHRpdGxlPlNoYXBlPC90aXRsZT4gICAgPGRlc2M+Q3JlYXRlZCB3aXRoIFNrZXRjaC48L2Rlc2M+ICAgIDxkZWZzPjwvZGVmcz4gICAgPGcgaWQ9IlN5bWJvbHMiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPiAgICAgICAgPGcgaWQ9ImNoZWNrYm94LWFjdGl2ZSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTQuMDAwMDAwLCAtNS4wMDAwMDApIiBmaWxsPSIjZDFkNGRiIj4gICAgICAgICAgICA8cG9seWdvbiBpZD0iU2hhcGUiIHBvaW50cz0iNy4zMTA3MjAzMiAxMS40MjI0NDQ5IDQuOTg2MTk1NjMgOS4wOTc5MjAxOSA0LjE5NDYzMDg3IDkuODgzOTEwNTUgNy4zMTA3MjAzMiAxMyAxNCA2LjMxMDcyMDMyIDEzLjIxNDAwOTYgNS41MjQ3Mjk5NiI+PC9wb2x5Z29uPiAgICAgICAgPC9nPiAgICA8L2c+PC9zdmc+";
 
 // RadioButtons
 $radio-border-width: $check-border-width;
 $radio-radius: 2px;
-$radio-size: 18px;
-$radio-normal-border: solid $radio-border-width $font-color-base;
+$radio-size: 24px;
+$radio-normal-border: solid $radio-border-width $color-palette-gray-500;
 $radio-normal-bgcolor: $white;
 $radio-checked-color: $color-palette-primary;
 $radio-checked-border: solid $radio-border-width $radio-checked-color;
 $radio-checked-bgcolor: $white;
-$radio-checked-disabled-color: $color-palette-gray-500;
+$radio-checked-disabled-color: $color-palette-gray-400;
 $radio-disabled-border: solid $radio-border-width $color-palette-gray-400;
-$radio-disabled-bgcolor: transparent;
+$radio-disabled-bgcolor: $color-palette-gray-200;
 
 // Sliders
 $slider-bar-size: 6px;
@@ -422,7 +422,7 @@ $slider-remaining-disabled-color: $white;
 // Menus
 $menu-bgcolor: $white;
 $menu-border: none;
-$menu-shadow: $md-shadow-1;
+$menu-shadow: $shadow-xs;
 $menu-item-bgcolor: $menu-bgcolor;
 $menu-item-separator: none;
 $menu-item-hover-bgcolor: $color-palette-gray-200;
@@ -471,12 +471,12 @@ $panel-border-radius: 1px;
 $panel-title-height: $field-height-md;
 
 $panel-normal-border: none;
-$panel-normal-shadow: $md-shadow-1;
+$panel-normal-shadow: $shadow-xs;
 $panel-normal-title-bgcolor: transparent;
 $panel-normal-title-textcolor: $font-color-base;
 
 $panel-hover-border: none;
-$panel-hover-shadow: $md-shadow-2;
+$panel-hover-shadow: $shadow-s;
 $panel-hover-title-bgcolor: transparent;
 $panel-hover-title-textcolor: $font-color-base;
 
@@ -547,7 +547,7 @@ $accordion-title-hover-bgcolor: $color-palette-gray-400;
 $accordion-title-selected-bgcolor: $color-palette-gray-400;
 
 // Dialog Box
-$menu-shadow: $md-shadow-2;
+$menu-shadow: $shadow-s;
 $menu-radius: 0px;
 
 $dialog-closeicon-bgcolor: $color-palette-gray-800;
@@ -568,5 +568,5 @@ $tooltip-normal-border: solid 1px $color-palette-gray-700;
 $tooltop-normal-padding: $spacing-1;
 
 // Popup
-$popup-shadow: $md-shadow-1;
+$popup-shadow: $shadow-xs;
 $popup-border: none;

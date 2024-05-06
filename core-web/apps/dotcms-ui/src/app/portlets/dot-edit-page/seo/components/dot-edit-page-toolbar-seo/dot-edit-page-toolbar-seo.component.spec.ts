@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule, DatePipe, Location } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -17,22 +17,25 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotESContentService,
     DotEventsService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotFormatDateService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -52,9 +55,10 @@ import {
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
-    ESContent
+    ESContent,
+    RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -68,10 +72,8 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageStateControllerSeoComponent } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
@@ -84,8 +86,7 @@ import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-
     template: `
         <dot-edit-page-toolbar-seo
             [pageState]="pageState"
-            [runningExperiment]="runningExperiment"
-        ></dot-edit-page-toolbar-seo>
+            [runningExperiment]="runningExperiment"></dot-edit-page-toolbar-seo>
     `
 })
 class TestHostComponent {
@@ -115,7 +116,7 @@ class MockDotPageStateService {
 
 @Injectable()
 export class MockDotPropertiesService {
-    getKey(): Observable<true> {
+    getFeatureFlag(): Observable<true> {
         return of(true);
     }
 }
@@ -157,7 +158,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotEditPageStateControllerSeoComponent,
                 DotEditPageInfoSeoComponent,
                 DotEditPageWorkflowsActionsModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotWizardModule,
                 TooltipModule,
@@ -171,6 +172,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 ])
             ],
             providers: [
+                DotSessionStorageService,
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: DotMessageService,
@@ -179,7 +181,8 @@ describe('DotEditPageToolbarSeoComponent', () => {
                         'dot.common.cancel': 'Cancel',
                         'favoritePage.dialog.header': 'Add Favorite Page',
                         'dot.edit.page.toolbar.preliminary.results': 'Preliminary Results',
-                        running: 'Running'
+                        running: 'Running',
+                        'dot.common.until': 'until'
                     })
                 },
                 {
@@ -198,6 +201,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotEventsService,
                 DotcmsEventsService,
                 DotEventsSocket,
+                DotContentletEditorService,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -233,7 +237,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
         dotDialogService = de.injector.get(DialogService);
         dotPropertiesService = TestBed.inject(DotPropertiesService);
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
     });
 
     describe('elements', () => {
@@ -396,7 +400,14 @@ describe('DotEditPageToolbarSeoComponent', () => {
     describe('Go to Experiment results', () => {
         it('should show an experiment is running an go to results', (done) => {
             const location = de.injector.get(Location);
-            componentHost.runningExperiment = { pageId: 'pageId', id: 'id' } as DotExperiment;
+            componentHost.runningExperiment = {
+                pageId: 'pageId',
+                id: 'id',
+                scheduling: { endDate: 2 }
+            } as DotExperiment;
+
+            const expectedStatus =
+                'Running until ' + new DatePipe('en-US').transform(2, RUNNING_UNTIL_DATE_FORMAT);
 
             fixtureHost.detectChanges();
 
@@ -404,7 +415,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
 
             experimentTag.nativeElement.click();
 
-            expect(experimentTag.componentInstance.value).toEqual('Running');
+            expect(experimentTag.componentInstance.value).toEqual(expectedStatus);
             fixtureHost.whenStable().then(() => {
                 expect(location.path()).toEqual('/edit-page/experiments/pageId/id/reports');
                 done();

@@ -11,14 +11,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     getExperimentMock,
     MockDotMessageService,
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 
@@ -60,6 +59,9 @@ export class MockDotPropertiesService {
     getKey(): Observable<true> {
         return observableOf(true);
     }
+    getFeatureFlag(): Observable<boolean> {
+        return observableOf(true);
+    }
 }
 
 @Component({
@@ -99,7 +101,7 @@ describe('DotEditPageNavComponent', () => {
                 RouterTestingModule,
                 TooltipModule,
                 DotIconModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             declarations: [DotEditPageNavComponent, TestHostComponent],

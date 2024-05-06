@@ -3,13 +3,11 @@ package com.dotcms.rest.api.v1.temp;
 import static com.dotcms.storage.FileMetadataAPIImpl.*;
 
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.storage.FileMetadataAPIImpl;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -19,9 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
-import org.xbill.DNS.Address;
-import org.xbill.DNS.ExtendedResolver;
-import org.xbill.DNS.Resolver;
+
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.util.CloseUtils;
@@ -35,7 +31,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DNSUtil;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -177,6 +172,11 @@ public class TempFileAPI {
       while ((read = inputStream.read(bytes)) != -1) {
         out.write(bytes, 0, read);
       }
+
+      if (dotTempFile.metadata == null && dotTempFile.file.exists()) {
+
+        return new DotTempFile(dotTempFile.id, dotTempFile.file);
+      }
       return dotTempFile;
     } catch (IOException e) {
       final String message = APILocator.getLanguageAPI().getStringKey(WebAPILocator.getLanguageWebAPI().getLanguage(request), "temp.file.max.file.size.error").replace("{0}", UtilMethods.prettyByteify(maxLength));
@@ -199,12 +199,12 @@ public class TempFileAPI {
    * @throws DotSecurityException
    */
   public DotTempFile createTempFileFromUrl(final String incomingFileName,
-          final HttpServletRequest request, final URL url, final int timeoutSeconds,
-          final long maxLength)
+                                           final HttpServletRequest request,
+                                           final URL url,
+                                           final int timeoutSeconds)
           throws DotSecurityException, IOException {
 
       final String fileName = resolveFileName(incomingFileName, url);
-
       final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
       final File tempFile = dotTempFile.file;
 
@@ -248,8 +248,11 @@ public class TempFileAPI {
               urlGetter.doOut(out);
       }
 
-      return dotTempFile;
+      if (dotTempFile.metadata == null && dotTempFile.file.exists()) {
 
+        return new DotTempFile(dotTempFile.id, dotTempFile.file);
+      }
+      return dotTempFile;
   }
 
   /**
@@ -278,7 +281,7 @@ public class TempFileAPI {
   }
 
   private String resolveFileName(final String desiredName, final URL url) {
-    final String path=(url!=null)? url.getPath() : UUIDGenerator.shorty();
+    final String path=(url!=null &&   url.getPath().contains(StringPool.PERIOD))? url.getPath() : UUIDGenerator.shorty();
     final String tryFileName = (desiredName!=null) 
         ? desiredName 
             : path.indexOf(StringPool.FORWARD_SLASH) > -1

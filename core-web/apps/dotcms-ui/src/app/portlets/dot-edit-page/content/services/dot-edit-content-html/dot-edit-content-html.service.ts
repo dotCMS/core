@@ -1,20 +1,23 @@
 import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
 
+import { DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ElementRef, Injectable, NgZone } from '@angular/core';
+import { ElementRef, Inject, Injectable, NgZone } from '@angular/core';
 
 import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
     DotCopyContentService,
     DotEditPageService,
+    DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotGlobalMessageService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import {
     DotTreeNode,
@@ -23,13 +26,7 @@ import {
     DotPageContainer,
     DotPageContainerPersonalized,
     DotPageRenderState,
-    DotPersona
-} from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
-
-import { PageModelChangeEvent, PageModelChangeEventType } from './models';
-import {
+    DotPersona,
     DotAddContentTypePayload,
     DotAssetPayload,
     DotContentletEvent,
@@ -39,12 +36,18 @@ import {
     DotContentletEventSave,
     DotContentletEventSelect,
     DotInlineEditContent,
+    DotPageContent,
+    DotRelocatePayload,
     DotShowCopyModal,
-    DotRelocatePayload
-} from './models/dot-contentlets-events.model';
+    PageModelChangeEvent,
+    PageModelChangeEventType,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
+import { DotCopyContentModalService } from '@dotcms/ui';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
-import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
@@ -96,6 +99,7 @@ export class DotEditContentHtmlService {
     private remoteRendered: boolean;
     private askToCopy = true;
 
+    private readonly origin: string = '';
     private readonly docClickHandlers;
 
     get pagePersonalization() {
@@ -121,7 +125,10 @@ export class DotEditContentHtmlService {
         private dotLicenseService: DotLicenseService,
         private dotCopyContentModalService: DotCopyContentModalService,
         private dotCopyContentService: DotCopyContentService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService
+        private dotLoadingIndicatorService: DotLoadingIndicatorService,
+        private dotSeoMetaTagsService: DotSeoMetaTagsService,
+        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService,
+        @Inject(DOCUMENT) private document: Document
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -140,6 +147,8 @@ export class DotEditContentHtmlService {
             this.docClickHandlers = {};
             this.setGlobalClickHandlers();
         }
+
+        this.origin = this.document.location.origin;
     }
 
     /**
@@ -410,7 +419,7 @@ export class DotEditContentHtmlService {
      * @returns *
      * @memberof DotEditContentHtmlService
      */
-    getContentModel(addedContentId: string = ''): DotPageContainer[] {
+    getContentModel(addedContentId = ''): DotPageContainer[] {
         const { uuid, identifier } = this.currentContainer || {};
 
         return this.getEditPageIframe().contentWindow['getDotNgModel']({
@@ -420,9 +429,33 @@ export class DotEditContentHtmlService {
         });
     }
 
+    /**
+     *  Returns the meta tags results
+     *
+     * @returns SeoMetaTagsResult[]
+     */
+    getMetaTagsResults(): Observable<SeoMetaTagsResult[]> {
+        const pageDocument = this.getEditPageDocument();
+
+        return this.dotSeoMetaTagsService.getMetaTagsResults(pageDocument);
+    }
+
+    /**
+     * Returns the meta tags
+     *
+     * @returns SeoMetaTags
+     */
+    getMetaTags(): SeoMetaTags {
+        const pageDocument = this.getEditPageDocument();
+
+        return this.dotSeoMetaTagsUtilService.getMetaTags(pageDocument);
+    }
+
     private setMaterialIcons(): void {
         const doc = this.getEditPageDocument();
-        const link = this.dotDOMHtmlUtilService.createLinkElement(MATERIAL_ICONS_PATH);
+        const link = this.dotDOMHtmlUtilService.createLinkElement(
+            this.origin + MATERIAL_ICONS_PATH
+        );
         doc.head.appendChild(link);
     }
 
@@ -571,7 +604,7 @@ export class DotEditContentHtmlService {
         const editModeNodes = doc.querySelectorAll('[data-mode]');
 
         if (editModeNodes.length) {
-            const TINYMCE = `/html/js/tinymce/js/tinymce/tinymce.min.js`;
+            const TINYMCE = `${this.origin}/html/js/tinymce/js/tinymce/tinymce.min.js`;
             const tinyMceScript = this.dotDOMHtmlUtilService.creatExternalScriptElement(TINYMCE);
             const tinyMceInitScript: HTMLScriptElement =
                 this.dotDOMHtmlUtilService.createInlineScriptElement(INLINE_TINYMCE_SCRIPTS);
@@ -906,7 +939,7 @@ export class DotEditContentHtmlService {
         const href = url.split('/');
         href.pop();
 
-        base.href = href.join('/') + '/';
+        base.href = this.origin + href.join('/') + '/';
 
         return base;
     }
@@ -922,7 +955,7 @@ export class DotEditContentHtmlService {
     private setEditContentletStyles(): void {
         const timeStampId = `iframeId_${Math.floor(Date.now() / 100).toString()}`;
         const style = this.dotDOMHtmlUtilService.createStyleElement(
-            getEditPageCss(`#${timeStampId}`)
+            getEditPageCss(`#${timeStampId}`, this.origin)
         );
 
         const doc = this.getEditPageDocument();

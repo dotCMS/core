@@ -12,11 +12,8 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { take } from 'rxjs/operators';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { ComponentStatus, RangeOfDateAndTime, StepStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { DotMessagePipe, DotSidebarDirective, DotSidebarHeaderComponent } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
@@ -27,7 +24,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         CommonModule,
         ReactiveFormsModule,
 
-        DotFieldValidationMessageModule,
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,

@@ -3,10 +3,10 @@
 .p-sidebar {
     background: $white;
     border: 0 none;
-    box-shadow: $md-shadow-1;
+    box-shadow: $shadow-xs;
 }
 .p-sidebar .p-sidebar-header {
-    padding: $spacing-4;
+    padding: 0;
 }
 .p-sidebar .p-sidebar-header .p-sidebar-close,
 .p-sidebar .p-sidebar-header .p-sidebar-icon {

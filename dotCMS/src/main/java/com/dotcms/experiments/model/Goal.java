@@ -4,6 +4,7 @@ import com.dotcms.analytics.metrics.Metric;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.liferay.util.StringPool;
+import java.io.Serializable;
 
 
 /**
@@ -12,7 +13,7 @@ import com.liferay.util.StringPool;
  * or "Minimize the amount of Bounce Rate for a specific page".
  */
 
-public class Goal {
+public class Goal implements Serializable {
 
     public  enum GoalType {
         MINIMIZE,

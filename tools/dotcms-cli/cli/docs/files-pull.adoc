@@ -1,0 +1,119 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Files Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= files-pull(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+files-pull - *dotCMS Files pull*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*files pull* [*-hp*] [*-ff*] [*-ie*] [*-nr*] [*--dotcms-url*=_<remoteURL>_] [*-ea*=_patterns_]
+           [*-ef*=_patterns_] [*-ia*=_patterns_] [*-if*=_patterns_]
+           [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_]
+           [*--workspace*=_<file>_] [_path_]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+  This command pulls files from the dotCMS instance.
+  By default, without a specified 'path' parameter, it retrieves files from
+  all the sites within the dotCMS instance.
+
+  Providing a 'path' parameter you can pull files from a specific site,
+  directory or file.
+  The format for the 'path' parameter is:
+  //site - //site/folder - //site/folder/file.
+
+  The pulled files are saved withing the 'files' folder located in the dotCMS
+  workspace, which is created in the current directory by default, unless an
+  alternative workspace is specified.
+
+  *Note:* Omitting the 'path' parameter triggers the pulling of all
+  files from all sites, which can be a very resource-intensive and
+  time-consuming process.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
+*-ea, --excludeAsset*=_patterns_::
+  Exclude assets matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-ef, --excludeFolder*=_patterns_::
+  Exclude directories matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+
+*-h*, *--help*::
+  Display this help message.
+
+*-ia, --includeAsset*=_patterns_::
+  Include assets matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-ie, --includeEmptyFolders*::
+  When this option is enabled, the pull process will not create empty folders. By default, this option is disabled, and empty folders will not be created.
+
+*-if, --includeFolder*=_patterns_::
+  Include directories matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-nr, --non-recursive*::
+  Pulls only the specified directory and the contents under it.
+
+*-p*, *--preserve*::
+  Preserves existing files and directories, avoiding overwriting if they already exist.
+
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+*--workspace*=_<file>_::
+  The workspace directory.
++
+Current directory is used if not specified
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+[_path_]::
+  dotCMS path to a specific site, directory or file to pull. 
++
+Format: //{site} - //{site}/{folder} - //{site}/{folder}/{file}.
++
+If no path is provided, all files across all sites will be pulled, which can be a resource-intensive operation.
+
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

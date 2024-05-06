@@ -1,0 +1,69 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Content-type Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= content-type(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+content-type - *Content type operations.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*content-type* [*-h*] [COMMAND]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+Use the list of available sub-commands to manage content-types.
+Use --help to see the available subcommands.
+For help on a specific subcommand do content-type [SUBCOMMAND] --help to see all available options and params.
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-h*, *--help*::
+  Display this help message.
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+== Commands
+
+xref:content-type-find.adoc[*find*]::
+  *Use this command to find Content-types.*
+
+xref:content-type-pull.adoc[*pull*]::
+  *Retrieves Content-types descriptors*
+
+xref:content-type-push.adoc[*push*]::
+  *Push content types*
+
+xref:content-type-remove.adoc[*remove*, *rm*]::
+  *Use this command to remove Content-types.*
+
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

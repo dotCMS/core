@@ -1,13 +1,26 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.AuthenticationAPI;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
+import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.authentication.APITokenRequest;
+import com.dotcms.model.authentication.TokenEntity;
 import com.dotcms.model.config.ServiceBean;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.UUID;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
+import org.junit.jupiter.api.Assertions;
 import picocli.CommandLine;
 
 public abstract class CommandTest {
@@ -34,10 +47,13 @@ public abstract class CommandTest {
     @Inject
     ServiceManager serviceManager;
 
+    @Inject
+    RestClientFactory clientFactory;
+
     @CanIgnoreReturnValue
     protected ServiceManager resetServiceProfiles() throws IOException {
         return serviceManager.removeAll()
-                .persist(ServiceBean.builder().name("default").active(true).build());
+                .persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
     }
 
     protected CommandLine createCommand() {
@@ -53,6 +69,60 @@ public abstract class CommandTest {
     @PreDestroy
     public void  preDestroy(){
         enableAnsi();
+    }
+
+
+    /**
+     * Creates a temporary folder with a random name.
+     *
+     * @return The path to the created temporary folder.
+     * @throws IOException If an I/O error occurs while creating the temporary folder.
+     */
+    protected Path createTempFolder() throws IOException {
+
+        String randomFolderName = "folder-" + UUID.randomUUID();
+        return Files.createTempDirectory(randomFolderName);
+    }
+
+    /**
+     * Deletes a temporary directory and all its contents.
+     *
+     * @param folderPath The path to the temporary directory to be deleted.
+     * @throws IOException If an I/O error occurs while deleting the directory or its contents.
+     */
+    protected  void deleteTempDirectory(Path folderPath) throws IOException {
+        Files.walkFileTree(folderPath, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file); // Deletes the file
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException {
+                Files.delete(dir); // Deletes the directory after its content has been deleted
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+
+    /**
+     * Requests a token from the server.
+     * @return The token.
+     */
+    protected String requestToken() {
+        AuthenticationAPI authenticationAPI = clientFactory.getClient(AuthenticationAPI.class);
+        String dummyUser = "admin@dotCMS.com";
+        String dummyPassword = "admin";
+        final ResponseEntityView<TokenEntity> response = authenticationAPI.getToken(
+                APITokenRequest.builder().user(dummyUser).password(dummyPassword.toCharArray())
+                        .build());
+        Assertions.assertNotNull(response);
+        final char[] token = response.entity().token();
+        return new String(token);
     }
 
 }

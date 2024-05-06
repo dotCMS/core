@@ -20,10 +20,10 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
     imports: [
         CommonModule,
         RouterModule,
-        DotEditPageNavModule,
         DotContentletEditorModule,
         DotBlockEditorSidebarModule,
         DotEditPageNavDirective,
+        DotEditPageNavModule,
         DotExperimentClassDirective,
         OverlayPanelModule,
         DialogModule

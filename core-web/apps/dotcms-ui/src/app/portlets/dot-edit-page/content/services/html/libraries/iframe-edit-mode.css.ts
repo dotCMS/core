@@ -6,38 +6,41 @@ const mdShadow3 = '0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23
 const white = '#fff';
 const grayLight = '#c5c5c5';
 
-export const getEditPageCss = (timestampId: string): string => {
+export const getEditPageCss = (
+    timestampId: string,
+    origin: string = window.location.origin
+): string => {
     return `
     // GOOGLE FONTS
-    /* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+    /* Assistant-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
-        font-family: 'Roboto';
+        font-family: 'Assistant';
         font-style: normal;
         font-weight: 400;
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('${origin}/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('${origin}/dotAdmin/assets/Assistant-Regular.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
-    /* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+    /* Assistant-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
-        font-family: 'Roboto';
+        font-family: 'Assistant';
         font-style: normal;
         font-weight: 500;
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('${origin}/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('${origin}/dotAdmin/assets/Assistant-SemiBold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
-    /* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+    /* Assistant-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
-        font-family: 'Roboto';
+        font-family: 'Assistant';
         font-style: normal;
         font-weight: 700;
         font-display: swap;
         src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+        url('${origin}/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url('${origin}/dotAdmin/assets/Assistant-Bold.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
 
     ${timestampId} [data-dot-object="container"] {
@@ -271,7 +274,7 @@ export const getEditPageCss = (timestampId: string): string => {
         color: #000 !important;
         background-color: #ffffff !important;
         box-shadow: ${mdShadow1} !important;
-        font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
+        font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
         font-size: 13px !important;
         list-style: none !important;
         margin: 0 !important;
@@ -416,11 +419,11 @@ export const getEditPageCss = (timestampId: string): string => {
         border: 1px solid #53c2f9 !important;
         display: block;
     }
-    
+
     ${timestampId} [data-inode][data-field-name][data-block-editor-content].dotcms__inline-edit-field {
         cursor: pointer;
     }
-    
+
     ${timestampId} .dotcms__navbar-form {
         display: inline-block;
     }

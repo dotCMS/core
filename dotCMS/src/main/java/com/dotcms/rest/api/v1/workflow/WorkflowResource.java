@@ -1,11 +1,5 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.DotLambdas.not;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.FAIL_ACTION_CALLBACK;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_ACTION_CALLBACK;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -16,13 +10,10 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
@@ -42,7 +33,6 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
-import com.dotcms.util.JsonArrayToLinkedSetConverter;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireActionByNameForm;
 import com.dotcms.workflow.form.FireActionForm;
@@ -66,6 +56,7 @@ import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -88,12 +79,15 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
@@ -108,9 +102,38 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang.time.StopWatch;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.glassfish.jersey.media.sse.SseFeature;
+import org.glassfish.jersey.server.JSONP;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -129,49 +152,29 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.BeanParam;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 
-import io.vavr.control.Try;
-import org.apache.commons.lang.time.StopWatch;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.sse.EventOutput;
-import org.glassfish.jersey.media.sse.OutboundEvent;
-import org.glassfish.jersey.media.sse.SseFeature;
-import org.glassfish.jersey.server.JSONP;
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.util.DotLambdas.not;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.FAIL_ACTION_CALLBACK;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_ACTION_CALLBACK;
 
 /**
- * Encapsulates all the interaction with Workflows, can:
- * - create schemes, action into schemes, steps into schemes
- * - associated actions to steps.
- * - get schemes, steps, actions and relation information.
- * - get available actions for a content
- * - fire an action for a single content or bulk (action for a several contents)
- * - etc.
+ * Encapsulates all the interaction with dotCMS Workflows. This REST Endpoint allows you to execute
+ * operations such as:
+ * <ul>
+ *     <li>Create schemes, action into schemes, steps into schemes.</li>
+ *     <li>Associated actions to steps.</li>
+ *     <li>Get schemes, steps, actions and relation information.</li>
+ *     <li>Get available actions for a content.</li>
+ *     <li>Fire an action for a single content or bulk (action for a several contents).</li>
+ * </ul>
+ * <p>You can find more information in the
+ * {@code dotcms-postman/src/main/resources/postman/documentation/Workflow_Resource_Tests.json} file. It's a complete
+ * collection of examples on how to interact with this Resource.</p>
  *
- * You can find more information on the dotCMS/src/curl-test/documentation/Workflow Resource.json
- * It is a complete collection of examples about how to interact with the WorkflowResource
  * @author jsanca
+ * @since Dec 6th, 2017
  */
-@SuppressWarnings("serial")
 @Path("/v1/workflow")
 @Tag(name = "Workflow")
 public class WorkflowResource {
@@ -210,6 +213,7 @@ public class WorkflowResource {
     /**
      * Default constructor.
      */
+    @SuppressWarnings("unused")
     public WorkflowResource() {
         this(WorkflowHelper.getInstance(),
                 ContentHelper.getInstance(),
@@ -414,15 +418,20 @@ public class WorkflowResource {
     } // findSteps.
 
     /**
-     * Finds the available actions for an inode
+     * Finds the Workflow Actions that are available for a specific Contentlet Inode. Here's an
+     * example of how you can use this method:
+     * <pre>
+     *     GET http://localhost:8080/api/v1/workflow/contentlet/{CONTENTLET-INODE}/actions?renderMode={editing|listing}
+     * </pre>
      *
-     * @param request HttpServletRequest
-     * @param inode String
-     * @param renderMode String, this is an uncase sensitive query string (?renderMode=) optional parameter.
-     *                   By default the findAvailableAction will run on WorkflowAPI.RenderMode.EDITING, if you want to run for instance on WorkflowAPI.RenderMode.LISTING
-     *                   you can send the renderMode parameter as ?renderMode=listing
-     *                   This will be used to filter the action based on the show on configuration for each action.
-     * @return Response
+     * @param request    The current instance of the {@link HttpServletRequest}.
+     * @param inode      The Inode of the Contentlet.
+     * @param renderMode This is a case-insensitive optional parameter. By default, this method will
+     *                   run EDITING rendering mode. The available modes are specified via the
+     *                   {{@link #validRenderModeSet}} variable.
+     *
+     * @return Response A {@link Response} object that contains the available actions for the
+     * specified Contentlet.
      */
     @GET
     @Path("/contentlet/{inode}/actions")
@@ -442,13 +451,15 @@ public class WorkflowResource {
             this.workflowHelper.checkRenderMode (renderMode, initDataObject.getUser(), this.validRenderModeSet);
 
             final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(),
-                    LISTING.equalsIgnoreCase(renderMode)?WorkflowAPI.RenderMode.LISTING:WorkflowAPI.RenderMode.EDITING);
+                    LISTING.equalsIgnoreCase(renderMode)
+                            ? WorkflowAPI.RenderMode.LISTING
+                            : WorkflowAPI.RenderMode.EDITING);
             return Response.ok(new ResponseEntityView<>(actions.stream()
-                    .map(this::toWorkflowActionView).collect(Collectors.toList()))).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),
-                    "Exception on findAvailableActions, contentlet inode: " + inode +
-                            ", exception message: " + e.getMessage(), e);
+                    .map(this::toWorkflowActionView).collect(Collectors.toList()))).build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), String.format("An error occurred when finding available" +
+                            " Workflow Actions for Contentlet Inode '%s' in mode '%s': %s", inode, renderMode,
+                    ExceptionUtil.getErrorMessage(e)), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // findAvailableActions.
@@ -458,10 +469,18 @@ public class WorkflowResource {
         return convertToWorkflowActionView(workflowAction);
     }
 
+    /**
+     * Takes the information from a Workflow Action and transforms it into a View object that can
+     * display it in JSON notation appropriately. Keep in mind that any new property you add to the
+     * Workflow Action class will need to be added here as well.
+     *
+     * @param workflowAction The {@link WorkflowAction} that will be transformed.
+     *
+     * @return The {@link WorkflowActionView} that contains the information from the Workflow
+     * Action.
+     */
     public static WorkflowActionView convertToWorkflowActionView(final WorkflowAction workflowAction) {
-
         final WorkflowActionView workflowActionView = new WorkflowActionView();
-
         workflowActionView.setId(workflowAction.getId());
         workflowActionView.setName(workflowAction.getName());
         workflowActionView.setStepId(workflowAction.getSchemeId());
@@ -485,7 +504,7 @@ public class WorkflowResource {
         workflowActionView.setDestroyActionlet(workflowAction.hasDestroyActionlet());
         workflowActionView.setShowOn(workflowAction.getShowOn());
         workflowActionView.setActionInputs(createActionInputViews(workflowAction));
-
+        workflowActionView.setMetadata(workflowAction.getMetadata());
         return workflowActionView;
     }
 
@@ -602,7 +621,7 @@ public class WorkflowResource {
                             (Consumer<Long>) delta -> {
                                 eventBuilder.name("success");
                                 eventBuilder.data(Map.class,
-                                        map("success", delta));
+                                        Map.of("success", delta));
                                 eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
@@ -617,7 +636,7 @@ public class WorkflowResource {
                             (BiConsumer<String, Exception>) (inode, e) -> {
                                 eventBuilder.name("failure");
                                 eventBuilder.data(Map.class,
-                                        map("failure", inode));
+                                        Map.of("failure", inode));
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
                                     eventOutput.write(event);
@@ -2108,7 +2127,7 @@ public class WorkflowResource {
             outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
 
             ResponseUtil.wrapProperty(outputStream, "summary",
-                    objectMapper.writeValueAsString(CollectionsUtils.map("time", stopWatch.getTime(),
+                    objectMapper.writeValueAsString(Map.of("time", stopWatch.getTime(),
                             "affected", futures.size(),
                             "successCount", successCount,
                             "failCount", failCount)));
@@ -2715,6 +2734,9 @@ public class WorkflowResource {
 
             contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser(),mode);
         }
+        if (contentlet.getInode().isEmpty() && !currentContentlet.getInode().isEmpty()) {
+            contentlet.setInode(currentContentlet.getInode());
+        }
         return contentlet;
     }
 
@@ -2919,7 +2941,7 @@ public class WorkflowResource {
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(
-                    map("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
+                    Map.of("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
                             "permissions", permissions))).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),
@@ -3163,6 +3185,63 @@ public class WorkflowResource {
         }
     } // deleteScheme.
 
-
+    /**
+     * Returns the status of a specific piece of Content in the Workflow it is assigned to. In
+     * summary:
+     * <ul>
+     *     <li>The Workflow Scheme that the Contentlet is in.</li>
+     *     <li>The Step that the Contentlet is in.</li>
+     *     <li>The User assigned to such a Step.</li>
+     * </ul>
+     * Here's an example of how to use this endpoint:
+     * <pre>
+     *     http://localhost:8080/api/v1/workflow/status/{contentletInode}
+     * </pre>
+     *
+     * @param request         The current instance of the {@link HttpServletRequest}.
+     * @param response        The current instance of the {@link HttpServletResponse}.
+     * @param contentletInode The inode of the Contentlet whose status will be checked.
+     *
+     * @return The status information of the Contentlet in the Workflow it is assigned to.
+     *
+     * @throws DotDataException          The specified Contentlet Inode was not found.
+     * @throws DotSecurityException      The User calling this endpoint does not have required
+     *                                   permissions to do so.
+     * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     * @throws IllegalAccessException    Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     */
+    @GET
+    @Path("/status/{contentletInode}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final ResponseContentletWorkflowStatusView getStatusForContentlet(@Context final HttpServletRequest request,
+                                                                             @Context final HttpServletResponse response,
+                                                                             @PathParam("contentletInode") final String contentletInode)
+            throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException {
+        Logger.debug(this, String.format("Retrieving Workflow status for Contentlet with Inode " +
+                "'%s'", contentletInode));
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+        final User user = initDataObject.getUser();
+        WorkflowStep wfStep = null;
+        WorkflowScheme scheme = null;
+        WorkflowTask wfTask = new WorkflowTask();
+        final Contentlet contentlet = this.contentletAPI.find(contentletInode, user, false);
+        final Optional<WorkflowStep> stepOpt = this.workflowAPI.findCurrentStep(contentlet);
+        if (stepOpt.isPresent()) {
+            wfStep = stepOpt.get();
+            scheme = this.workflowAPI.findScheme(wfStep.getSchemeId());
+        }
+        final WorkflowTask originalTask = this.workflowAPI.findTaskByContentlet(contentlet);
+        if (null != originalTask) {
+            BeanUtils.copyProperties(wfTask, originalTask);
+            wfTask = this.workflowHelper.handleWorkflowTaskData(wfTask);
+        }
+        return new ResponseContentletWorkflowStatusView(new ContentletWorkflowStatusView(scheme,
+                wfStep, wfTask));
+    }
 
 } // E:O:F:WorkflowResource.

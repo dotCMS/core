@@ -1,4 +1,23 @@
-<form class="content-type__form p-fluid" id="content-type-form" [formGroup]="form" novalidate>
+<form
+    class="content-type__form p-fluid"
+    id="content-type-form"
+    [formGroup]="form"
+    [class.content-type__form-banner]="newContentEditorEnabled"
+    novalidate>
+    <div
+        class="content-type__new-content-banner"
+        *ngIf="newContentEditorEnabled"
+        data-test-id="content-type__new-content-banner">
+        <p-checkbox
+            class="p-checkbox-sm"
+            formControlName="newEditContent"
+            binary="true"
+            inputId="newEditContentLabel">
+        </p-checkbox>
+        <label for="newEditContentLabel"
+            ><span [innerHTML]="'content.type.form.banner.message' | dm"></span
+        ></label>
+    </div>
     <div class="field form__group--validation">
         <label dotFieldRequired for="content-type-form-name">{{ nameFieldLabel }}</label>
         <input
@@ -9,20 +28,17 @@
             type="text"
             name="name"
             formControlName="name"
-            dotAutofocus
-        />
+            dotAutofocus />
         <dot-field-validation-message
             [message]="'dot.common.message.field.required' | dm : [nameFieldLabel]"
-            [field]="form.get('name')"
-        ></dot-field-validation-message>
+            [field]="form.get('name')"></dot-field-validation-message>
     </div>
     <div class="field">
         <label for="content-type-form-description">{{ 'contenttypes.form.label.icon' | dm }}</label>
         <dot-md-icon-selector
             id="content-type-form-icon"
             [tabindex]="2"
-            formControlName="icon"
-        ></dot-md-icon-selector>
+            formControlName="icon"></dot-md-icon-selector>
     </div>
 
     <div class="field">
@@ -35,8 +51,7 @@
             pInputText
             type="text"
             name="description"
-            formControlName="description"
-        />
+            formControlName="description" />
     </div>
     <div class="field">
         <label for="content-type-form-host">{{
@@ -47,8 +62,7 @@
             [system]="true"
             [tabindex]="4"
             formControlName="host"
-            width="100%"
-        ></dot-site-selector-field>
+            width="100%"></dot-site-selector-field>
     </div>
     <div class="field">
         <label for="content-type-form-workflow">{{
@@ -57,8 +71,7 @@
         <dot-workflows-selector-field
             id="content-type-form-workflow"
             [tabindex]="5"
-            formControlName="workflows"
-        ></dot-workflows-selector-field>
+            formControlName="workflows"></dot-workflows-selector-field>
     </div>
     <div class="field" formGroupName="systemActionMappings">
         <label for="content-type-form-workflow">{{
@@ -67,8 +80,7 @@
         <dot-workflows-actions-selector-field
             [tabindex]="6"
             [workflows]="workflowsSelected$ | async"
-            formControlName="NEW"
-        ></dot-workflows-actions-selector-field>
+            formControlName="NEW"></dot-workflows-actions-selector-field>
     </div>
     <span
         class="p-field-hint form-workflow-community-message"
@@ -91,8 +103,7 @@
                 (onChange)="handleDateVarChange($event, 'publishDateVar')"
                 appendTo="body"
                 name="publishDateVar"
-                formControlName="publishDateVar"
-            ></p-dropdown>
+                formControlName="publishDateVar"></p-dropdown>
         </div>
         <div class="field">
             <label for="content-type-form-expire-date-field">{{
@@ -108,8 +119,7 @@
                 (onChange)="handleDateVarChange($event, 'expireDateVar')"
                 appendTo="body"
                 name="expireDateVar"
-                formControlName="expireDateVar"
-            ></p-dropdown>
+                formControlName="expireDateVar"></p-dropdown>
         </div>
     </div>
 
@@ -127,13 +137,11 @@
         <dot-page-selector
             id="content-type-form-detail-page"
             [tabindex]="9"
-            formControlName="detailPage"
-        ></dot-page-selector>
+            formControlName="detailPage"></dot-page-selector>
     </div>
     <div class="field form__group--helper" *ngIf="form.get('urlMapPattern')">
         <dot-field-helper
-            [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"
-        ></dot-field-helper>
+            [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"></dot-field-helper>
         <label for="content-type-form-url-map-pattern">{{
             'contenttypes.form.label.URL.pattern' | dm
         }}</label>
@@ -143,7 +151,6 @@
             pInputText
             type="text"
             name="urlMapPattern"
-            formControlName="urlMapPattern"
-        />
+            formControlName="urlMapPattern" />
     </div>
 </form>

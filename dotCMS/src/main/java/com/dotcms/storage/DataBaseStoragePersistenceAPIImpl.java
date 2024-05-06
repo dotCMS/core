@@ -1,7 +1,5 @@
 package com.dotcms.storage;
 
-import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
-
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.storage.repository.BinaryFileWrapper;
 import com.dotcms.storage.repository.FileRepositoryManager;
@@ -33,6 +31,10 @@ import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.io.output.DeferredFileOutputStream;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -56,15 +58,12 @@ import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.output.DeferredFileOutputStream;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.apache.commons.lang3.mutable.MutableObject;
+import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 
 /**
- * Represents a Storage on the database It supports big files since provides the ability to split
- * fat object in smaller pieces, see {@link FileByteSplitter} and {@link FileJoinerImpl}
- * to get more details about the process
+ * Represents a Storage Provider that uses the database to store its data. It supports big files as
+ * it provides the ability to split "fat objects" into smaller pieces. For more details, please see:
+ * {@link FileByteSplitter} and {@link FileJoinerImpl}
  *
  * @author jsanca
  */
@@ -197,9 +196,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
      * @param groupName
      * @param connection
      * @return
-     * @throws DotDataException
      */
-    private boolean existsGroup(final String groupName,final Connection connection) throws DotDataException {
+    private boolean existsGroup(final String groupName,final Connection connection) {
         final String groupNameLC = groupName.toLowerCase();
         final MutableBoolean exists = new MutableBoolean(false);
             final Number results = Try
@@ -264,25 +262,28 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return createGroup(groupName, ImmutableMap.of());
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param groupName {@link String} group name
-     * @param extraOptions {@link Map} depending on the implementation it might need extra options
-     * or not.
-     */
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions)
             throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
         return wrapInTransaction(() ->
                 Try.of(() -> {
-                    try (Connection connection = getConnection()) {
-                        new DotConnect()
-                                .setSQL(" INSERT INTO storage_group (group_name) VALUES (?) ")
-                                .addParam(groupNameLC).loadResult(
-                                connection);
-                        return true;
+                    try (final Connection connection = getConnection()) {
+
+                        boolean existsGroup = Try.of(()->new DotConnect()
+                                .setSQL(" SELECT count(*) as count from storage_group where group_name = ? ")
+                                .addParam(groupNameLC)
+                                .loadInt("count", connection)).getOrElse(-1) > 0;
+
+                        if (!existsGroup) {
+                            new DotConnect()
+                                    .setSQL(" INSERT INTO storage_group (group_name) VALUES (?) ")
+                                    .addParam(groupNameLC).loadResult(
+                                    connection);
+                                existsGroup = true;
+                        }
+
+                        return existsGroup;
                     }
                 }).getOrElseGet(throwable -> false)
         );
@@ -485,7 +486,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final Map<String, Serializable> metaData = hashFile(file, extraMeta);
         final String fileHash = (String) metaData.get(SHA256_META_KEY.key());
         final String hashRef = (String)extraMeta.get(HASH_REF);
-        Logger.debug(DataBaseStoragePersistenceAPIImpl.class, " fileHash is : " + fileHash);
+        Logger.debug(this, () -> "FileHash is : " + fileHash);
 
             return wrapInTransaction(
                     () -> {
@@ -525,7 +526,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                             }
                     ).getOrElse(0);
         final boolean found = results.intValue() > 0;
-        Logger.debug(DataBaseStoragePersistenceAPIImpl.class, String.format(" is HashReference [%s] found [%s] ", fileHash,
+        Logger.debug(this, () -> String.format(" is HashReference [%s] found [%s] ", fileHash,
                 BooleanUtils.toStringYesNo(found)));
         exists.setValue(found);
         return exists.getValue();
@@ -534,7 +535,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private Object pushFileReference(final String groupName, final String path, final String fileHash, final String hashRef, final Connection connection) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
         final String pathLC = path.toLowerCase();
-        Logger.debug(DataBaseStoragePersistenceAPIImpl.class, String.format("Pushing new reference for group [%s] path [%s] hash [%s]", groupNameLC, pathLC, hashRef));
+        Logger.debug(this, () -> String.format("Pushing new reference for group [%s] path [%s] hash [%s]", groupNameLC, pathLC, hashRef));
         try {
             UpsertDelegate.newInstance().pushObjectReference(connection, fileHash, pathLC, groupNameLC, hashRef);
             return true;
@@ -650,18 +651,6 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             if(null != file){
                file.delete();
             }
-        }
-    }
-
-    /**
-     * This will write directly from the Serializer delegate right into a file. No in memory loading
-     * takes place like this.
-     */
-    private void writeToFile(final ObjectWriterDelegate writerDelegate,
-            final Serializable object, File file) throws IOException {
-
-        try (final OutputStream outputStream = Files.newOutputStream(file.toPath())) {
-            writerDelegate.write(outputStream, object);
         }
     }
 
@@ -850,7 +839,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             final int rows = dotConnect.executeUpdate(connection,
                     storageInsertSQL.get(),
                     objectHash, path, groupName, hashRef);
-            Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushObjectReference inserted rows "+rows);
+            Logger.debug(this,() -> "pushObjectReference inserted rows "+rows);
         }
 
         /**
@@ -864,7 +853,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 throws DotDataException {
             final int rows = dotConnect.executeUpdate(connection,
                     dataInsertSQL.get(), chunkHash, data);
-            Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushDataChunk inserted rows "+rows);
+            Logger.debug(this,() -> "pushDataChunk inserted rows "+rows);
         }
 
         /**
@@ -880,7 +869,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             int order = 1;
             for (final String chunkHash : chunkHashes) {
                 final int rows = dotConnect.executeUpdate(connection, sql, objectHash, chunkHash, order++);
-                Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushHashReference inserted rows "+rows);
+                Logger.debug(this,() -> "pushHashReference inserted rows "+rows);
             }
         }
 
@@ -889,19 +878,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
          * @return
          */
         static UpsertDelegate newInstance() {
-            if(DbConnectionFactory.isPostgres()){
-               return new PostgresUpsertDelegate(new DotConnect());
-            }
-            if(DbConnectionFactory.isMySql()){
-                return new MySQLUpsertDelegate(new DotConnect());
-            }
-            if(DbConnectionFactory.isMsSql()){
-                return new MSSQLUpsertDelegate(new DotConnect());
-            }
-            if(DbConnectionFactory.isOracle()){
-                return new OracleUpsertDelegate(new DotConnect());
-            }
-            throw new DotRuntimeException("Oh snap! dunno what database I'm running on.");
+            return new PostgresUpsertDelegate(new DotConnect());
         }
 
     }
@@ -927,162 +904,13 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     }
 
-    /**
-     * My SQL Upsert
-     */
-    static class MySQLUpsertDelegate extends UpsertDelegate {
-
-        static final String STORAGE_INSERT = "INSERT INTO storage(hash, path, group_name, hash_ref) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE path = path, group_name = group_name ";
-
-        static final String STORAGE_DATA_INSERT ="INSERT INTO storage_data(hash_id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE hash_id = hash_id, mod_date = CURRENT_TIMESTAMP ";
-
-        static final String HASH_REFERENCE_INSERT = "INSERT INTO storage_x_data(storage_hash, data_hash, data_order) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE storage_hash = storage_hash, data_hash = data_hash";
-
-        /**
-         * Constructor
-         * @param dotConnect
-         */
-        MySQLUpsertDelegate(final DotConnect dotConnect) {
-            super(dotConnect, ()->STORAGE_INSERT, ()->STORAGE_DATA_INSERT, ()->HASH_REFERENCE_INSERT);
-        }
-
+    @Override
+    public String toString() {
+        return "DataBaseStoragePersistenceAPIImpl{" +
+                "DATABASE_FILE_BUFFER_SIZE=" + DATABASE_FILE_BUFFER_SIZE +
+                ", DATA_BASE_STORAGE_FILE_REPO_TYPE=" + DATA_BASE_STORAGE_FILE_REPO_TYPE +
+                ", fileRepositoryManager=" + fileRepositoryManager +
+                '}';
     }
-
-    /**
-     * MS-SQL Upsert specific
-     */
-    static class MSSQLUpsertDelegate extends UpsertDelegate {
-
-        static final String STORAGE_INSERT =
-                "MERGE storage WITH (HOLDLOCK) AS [Target] \n"
-                + "USING ( VALUES (?, ?, ?, ?) ) AS [Source] (hash, path, group_name, hash_ref) ON ([Target].path = [Source].path AND [Target].group_name = [Source].group_name)  \n"
-                + "WHEN MATCHED THEN \n"
-                + "  UPDATE SET [Target].path = [Source].path, [Target].group_name = [Source].group_name \n"
-                + "WHEN NOT MATCHED THEN \n"
-                + "  INSERT (hash, path, group_name, hash_ref) VALUES ([Source].hash, [Source].path, [Source].group_name, [Source].hash_ref);";
-
-        static final String STORAGE_DATA_INSERT =
-                "MERGE storage_data WITH (HOLDLOCK) AS [Target] \n"
-                + "USING (VALUES (?, ?) ) AS [Source] (hash_id, data) ON ([Target].hash_id = [Source].hash_id)  \n"
-                + "WHEN MATCHED THEN \n"
-                + "  UPDATE SET [Target].hash_id = [Source].hash_id, [Target].data = [Source].data, [Target].mod_date = GETDATE() \n"
-                + "WHEN NOT MATCHED THEN \n"
-                + "  INSERT (hash_id, data) VALUES ([Source].hash_id, [Source].data);";
-
-        static final String HASH_REFERENCE_INSERT =
-                "MERGE storage_x_data WITH (HOLDLOCK) AS [Target] \n"
-                + "USING ( VALUES(?, ?, ?) ) AS [Source] (storage_hash, data_hash, data_order) ON ([Target].storage_hash = [Source].storage_hash  AND  [Target].data_hash = [Source].data_hash )  \n"
-                + "WHEN MATCHED THEN \n"
-                + "  UPDATE SET [Target].storage_hash = [Source].storage_hash, [Target].data_hash = [Source].data_hash, [Target].data_order = [Source].data_order \n"
-                + "WHEN NOT MATCHED THEN \n"
-                + "  INSERT (storage_hash, data_hash, data_order) VALUES ([Source].storage_hash,[Source].data_hash,[Source].data_order);\n";
-
-        /**
-         * Constructor
-         * @param dotConnect
-         */
-        MSSQLUpsertDelegate(final DotConnect dotConnect) {
-            super(dotConnect, ()->STORAGE_INSERT, ()->STORAGE_DATA_INSERT, ()->HASH_REFERENCE_INSERT);
-        }
-
-    }
-
-    /**
-     * Oracle Upsert SQL Specific
-     */
-    static class OracleUpsertDelegate extends UpsertDelegate {
-
-        static final String STORAGE_INSERT =
-               "MERGE INTO storage Target  \n"
-                + "USING (SELECT ? PATH, ? GROUP_NAME, ? HASH FROM DUAL) Source \n"
-                + "ON (Target.PATH = Source.PATH AND Target.GROUP_NAME = Source.GROUP_NAME) WHEN MATCHED THEN \n"
-                + "  UPDATE SET Target.hash = Source.hash \n"
-                + "WHEN NOT MATCHED THEN \n"
-                + "  INSERT (hash, path, group_name, hash_ref) \n"
-                + "  VALUES (?, ?, ?, ?)\n";
-
-        static final String STORAGE_DATA_INSERT =
-
-               "MERGE INTO storage_data Target \n"
-                + "USING (SELECT ? HASH_ID, ? DATA FROM DUAL) Source \n"
-                + "ON (Target.HASH_ID = Source.HASH_ID ) WHEN MATCHED THEN \n"
-                + " UPDATE SET Target.DATA = Source.DATA, Target.MOD_DATE = CURRENT_TIMESTAMP  \n"
-                + "WHEN NOT MATCHED THEN  \n"
-                + " INSERT (hash_id, data) VALUES (?, ?)\n";
-
-        static final String HASH_REFERENCE_INSERT =
-               "MERGE INTO storage_x_data Target  \n"
-                + "USING (SELECT ? STORAGE_HASH, ? DATA_HASH, ? DATA_ORDER FROM DUAL) Source \n"
-                + "ON (Target.STORAGE_HASH = Source.STORAGE_HASH AND Target.DATA_HASH = Source.DATA_HASH ) WHEN MATCHED THEN \n"
-                + " UPDATE SET Target.DATA_ORDER = Source.DATA_ORDER, Target.MOD_DATE = CURRENT_TIMESTAMP \n"
-                + "WHEN NOT MATCHED THEN  \n"
-                + " INSERT (storage_hash, data_hash, data_order) VALUES (?, ?, ?)\n";
-
-        /**
-         * Constructor
-         * @param dotConnect
-         */
-        OracleUpsertDelegate(final DotConnect dotConnect) {
-            super(dotConnect, ()->STORAGE_INSERT, ()->STORAGE_DATA_INSERT, ()->HASH_REFERENCE_INSERT);
-        }
-
-        /**
-         * As the SQL is a bit more complex and requires more params to be replaced we need to adjust
-         * @param connection
-         * @param objectHash
-         * @param path
-         * @param groupName
-         * @param hashRef
-         * @throws DotDataException
-         */
-        @Override
-        void pushObjectReference(final Connection connection, final String objectHash, final String path, final String groupName, final String hashRef)
-                throws DotDataException {
-            final int rows = dotConnect.executeUpdate(connection,
-                    storageInsertSQL.get(),
-                    path, groupName, objectHash,
-                    objectHash, path, groupName, hashRef);
-            Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushObjectReference inserted rows "+rows);
-        }
-
-        /**
-         * As the SQL is a bit more complex and requires more params to be replaced we need to adjust
-         * @param connection
-         * @param chunkHash
-         * @param data
-         * @throws DotDataException
-         */
-        @Override
-        void pushDataChunk(final Connection connection, final String chunkHash, final byte [] data)
-                throws DotDataException {
-            final int rows = dotConnect.executeUpdate(connection,
-                    dataInsertSQL.get(),
-                    chunkHash, data,
-                    chunkHash, data);
-            Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushDataChunk inserted rows "+rows);
-        }
-
-        /**
-         * As the SQL is a bit more complex and requires more params to be replaced we need to adjust
-         * @param connection
-         * @param objectHash
-         * @param chunkHashes
-         * @throws DotDataException
-         */
-        @Override
-        void pushHashReference(final Connection connection, final String objectHash, final List<String> chunkHashes)
-                throws DotDataException {
-            final String sql = hashReferenceInsertSQL.get();
-            int order = 1;
-            for (final String chunkHash : chunkHashes) {
-                final int rows = dotConnect.executeUpdate(connection, sql,
-                        objectHash, chunkHash, order,
-                        objectHash, chunkHash, order++);
-                Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushHashReference inserted rows "+rows);
-            }
-        }
-
-    }
-
 
 }

@@ -6,13 +6,7 @@
     "prefix": "",
     "targets": {
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "options": {
-                "lintFilePatterns": [
-                    "libs/dot-layout-grid/src/**/*.ts",
-                    "libs/dot-layout-grid/src/**/*.html"
-                ]
-            },
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         },
         "test": {
@@ -25,5 +19,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

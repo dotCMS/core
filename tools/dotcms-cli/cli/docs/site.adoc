@@ -1,0 +1,87 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Site Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= site(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+site - *Site operations.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*site* [*-h*] [COMMAND]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+Use the list of available sub-commands to manage sites.
+Use --help to see the available subcommands.
+For help on a specific subcommand do site [SUBCOMMAND] --help to see all available options and params.
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-h*, *--help*::
+  Display this help message.
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+== Commands
+
+xref:site-find.adoc[*find*]::
+  *Use this command to Search / Find Sites.*
+
+xref:site-pull.adoc[*pull*]::
+  *Retrieves sites descriptors*
+
+xref:site-push.adoc[*push*]::
+  *Push sites*
+
+xref:site-create.adoc[*create*]::
+  *Quick way to create a Site *
+
+xref:site-remove.adoc[*remove*, *rm*]::
+  *Use this command to remove a site.*
+
+xref:site-copy.adoc[*copy*, *cp*]::
+  *Use this command to copy an existing site.*
+
+xref:site-start.adoc[*start*]::
+  *Use this command to start a site.*
+
+xref:site-stop.adoc[*stop*]::
+  *Use this command to stop a site.*
+
+xref:site-archive.adoc[*archive*]::
+  *Use this command to archive a site.*
+
+xref:site-unarchive.adoc[*unarchive*]::
+  *Use this command to unarchive a site.*
+
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

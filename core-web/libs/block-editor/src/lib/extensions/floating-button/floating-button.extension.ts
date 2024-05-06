@@ -4,10 +4,10 @@ import { Injector, ViewContainerRef } from '@angular/core';
 
 import { Extension } from '@tiptap/core';
 
+import { DotUploadFileService } from '@dotcms/data-access';
+
 import { FloatingButtonComponent } from './floating-button.component';
 import { DotFloatingButtonPlugin } from './plugin/floating-button.plugin';
-
-import { DotUploadFileService } from '../../shared';
 
 export const FLOATING_BUTTON_PLUGIN_KEY = new PluginKey('floating-button');
 

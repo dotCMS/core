@@ -1,0 +1,46 @@
+<p-table
+    #table
+    [value]="variableList()"
+    (keydown.enter)="$event.stopPropagation()"
+    sortField="clazz"
+    sortOrder="0"
+    dataKey="id">
+    <ng-template pTemplate="header" let-columns>
+        <tr data-testId="header">
+            <th class="dot-key-value__header-keyValue-label" scope="col">
+                {{ 'keyValue.key_header.label' | dm }}
+            </th>
+            <th class="dot-key-value__header-keyValue-label" scope="col">
+                {{ 'keyValue.value_header.label' | dm }}
+            </th>
+            <th *ngIf="showHiddenField" scope="col" cclass="dot-key-value__header-hidden-label">
+                {{ 'keyValue.hidden_header.label' | dm }}
+            </th>
+            <th class="dot-key-value__header-actions-label" scope="col">
+                {{ 'keyValue.actions_header.label' | dm }}
+            </th>
+        </tr>
+        <dot-key-value-table-input-row
+            [autoFocus]="autoFocus"
+            [showHiddenField]="showHiddenField"
+            [forbiddenkeys]="forbiddenkeys()"
+            (save)="saveVariable($event)">
+        </dot-key-value-table-input-row>
+    </ng-template>
+    <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
+        <dot-key-value-table-row
+            #tableRow
+            [showHiddenField]="showHiddenField"
+            [variable]="variable"
+            (delete)="deleteVariable(rowIndex)"
+            (save)="updateKeyValue($event, rowIndex)">
+        </dot-key-value-table-row>
+    </ng-template>
+    <ng-template pTemplate="emptymessage" let-variables>
+        <tr data-testId="no-rows">
+            <td [attr.colspan]="showHiddenField ? 4 : 3">
+                {{ 'keyValue.value_no_rows.label' | dm }}
+            </td>
+        </tr>
+    </ng-template>
+</p-table>

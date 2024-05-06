@@ -4,8 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DotEditLayoutGridModule } from '@components/dot-edit-layout-designer/components/dot-edit-layout-grid/dot-edit-layout-grid.module';
 import { DotEditLayoutSidebarModule } from '@components/dot-edit-layout-designer/components/dot-edit-layout-sidebar/dot-edit-layout-sidebar.module';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
 
@@ -14,7 +13,7 @@ import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
         CommonModule,
         DotEditLayoutSidebarModule,
         DotEditLayoutGridModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         FormsModule,
         ReactiveFormsModule,
         DotMessagePipe

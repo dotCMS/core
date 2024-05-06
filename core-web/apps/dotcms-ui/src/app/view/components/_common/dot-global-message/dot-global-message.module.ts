@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotIconModule, DotSpinnerModule } from '@dotcms/ui';
+import { DotGlobalMessageService } from '@dotcms/data-access';
+import { DotSpinnerModule } from '@dotcms/ui';
 
 import { DotGlobalMessageComponent } from './dot-global-message.component';
-import { DotGlobalMessageService } from './dot-global-message.service';
 
 @NgModule({
-    imports: [CommonModule, DotIconModule, DotSpinnerModule],
+    imports: [CommonModule, DotSpinnerModule],
     declarations: [DotGlobalMessageComponent],
     exports: [DotGlobalMessageComponent],
     providers: [DotGlobalMessageService]

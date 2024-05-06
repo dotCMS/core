@@ -61,6 +61,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -307,6 +308,10 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                 } else {
                     value = getValue(contentletFields, field);
                 }
+            }
+            //Backwards compatibility for Date Fields, should be Timestamp
+            if(value instanceof Date){
+                value = new Timestamp(((Date) value).getTime());
             }
 
             map.put(field.variable(), value);

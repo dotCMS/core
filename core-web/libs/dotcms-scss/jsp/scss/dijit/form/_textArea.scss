@@ -4,6 +4,9 @@
     color: $textarea-normal-textcolor;
     font-family: $font-default;
     padding: $field-padding;
+    font-size: $font-size-md;
+    min-height: 9.375rem;
+    resize: vertical;
 
     &Hover {
         background-color: $textarea-hover-bgcolor;

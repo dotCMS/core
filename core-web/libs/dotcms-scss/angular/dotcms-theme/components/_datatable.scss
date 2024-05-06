@@ -1,5 +1,9 @@
 @use "variables" as *;
 
+// DEPRECATED: This file is deprecated in favor of _table.scss.
+// If a fix is needed in legacy tables, the update should happen here,
+// but the potential fix also need to be implemented in _table.scss.
+
 .p-datatable .p-paginator-top {
     border-width: 0 0 1px 0;
     border-radius: 0;
@@ -13,7 +17,7 @@
 .p-datatable .p-datatable-header {
     background: $white;
     color: $black;
-    border: 1px solid $table-border-color;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     padding: $spacing-2 $spacing-2;
     font-weight: $font-weight-semi-bold;
@@ -22,7 +26,7 @@
 .p-datatable .p-datatable-footer {
     background: $white;
     color: $black;
-    border: 1px solid $table-border-color;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     padding: $spacing-2 $spacing-2;
     font-weight: $font-weight-semi-bold;
@@ -38,6 +42,7 @@
     padding: $spacing-2 $spacing-2;
     text-align: left;
     transition: none;
+    text-wrap: nowrap;
 
     &:first-child {
         padding-left: $spacing-5;
@@ -51,7 +56,7 @@
 .p-datatable .p-datatable-tfoot > tr > td {
     text-align: left;
     padding: $spacing-2 $spacing-2;
-    border: 1px solid $table-border-color;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     font-weight: $font-weight-semi-bold;
     color: $black;
@@ -63,6 +68,7 @@
 }
 
 .p-datatable .p-sortable-column .p-sortable-column-icon {
+    display: inline-block;
     color: $color-palette-gray-700;
     margin-left: $spacing-1;
 }

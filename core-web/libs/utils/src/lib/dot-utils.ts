@@ -1,4 +1,8 @@
-import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotPageToolUrlParams
+} from '@dotcms/dotcms-models';
 
 /**
  * Generate an anchor element with a Blob file to eventually be click to force a download
@@ -65,4 +69,28 @@ export function getRunnableLink(url: string, currentPageUrlParams: DotPageToolUr
         );
 
     return url;
+}
+
+/**
+ * Get the image asset URL
+ *
+ * @export
+ * @param {DotCMSContentlet} asset
+ * @return {*}  {string}
+ */
+export function getImageAssetUrl(contentlet: DotCMSContentlet): string {
+    if (!contentlet?.baseType) {
+        return contentlet.asset;
+    }
+
+    switch (contentlet?.baseType) {
+        case DotCMSBaseTypesContentTypes.FILEASSET:
+            return contentlet.fileAssetVersion || contentlet.fileAsset;
+
+        case DotCMSBaseTypesContentTypes.DOTASSET:
+            return contentlet.assetVersion || contentlet.asset;
+
+        default:
+            return contentlet?.asset || '';
+    }
 }

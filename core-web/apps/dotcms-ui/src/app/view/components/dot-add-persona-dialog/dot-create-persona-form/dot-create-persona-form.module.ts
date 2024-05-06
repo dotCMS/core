@@ -8,12 +8,15 @@ import { FileUploadModule } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotCreatePersonaFormComponent } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 
 @NgModule({
     imports: [
@@ -22,12 +25,12 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         InputTextModule,
         ReactiveFormsModule,
         SiteSelectorFieldModule,
-        DotFieldValidationMessageModule,
-        DotAutofocusModule,
+        DotFieldValidationMessageComponent,
+        DotAutofocusDirective,
         ButtonModule,
         AutoCompleteModule,
         DotAutocompleteTagsModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],

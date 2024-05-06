@@ -2,6 +2,7 @@ package com.dotcms.analytics.bayesian;
 
 import com.dotcms.analytics.bayesian.beta.BetaDistributionWrapper;
 import com.dotcms.analytics.bayesian.model.*;
+import com.dotcms.metrics.timing.TimeMetric;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -34,11 +35,17 @@ public class BayesianAPIImpl implements BayesianAPI {
      */
     @Override
     public BayesianResult doBayesian(final BayesianInput input) {
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
+
         // validate input
-        return noopFallback(input)
+        final BayesianResult bayesianResult = noopFallback(input)
             .orElseGet(() -> input.type() == ABTestingType.AB
                 ? getAbBayesianResult(input)
                 : getAbcBayesianResult(input));
+
+        timeMetric.stop();
+
+        return bayesianResult;
     }
 
     /**

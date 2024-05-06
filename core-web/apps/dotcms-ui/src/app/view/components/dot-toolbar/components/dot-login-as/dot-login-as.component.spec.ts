@@ -17,14 +17,13 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotDialogModule, DotMessagePipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils-testing';
 
 import { DotLoginAsComponent } from './dot-login-as.component';

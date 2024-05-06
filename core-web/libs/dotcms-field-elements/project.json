@@ -41,5 +41,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

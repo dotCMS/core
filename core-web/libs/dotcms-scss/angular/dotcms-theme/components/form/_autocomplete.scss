@@ -1,33 +1,91 @@
 @use "variables" as *;
 @import "common";
 
+p-autocomplete.p-inputwrapper-focus {
+    .p-autocomplete {
+        @extend #form-field-focus;
+    }
+}
+
+.p-fluid .p-autocomplete.p-component, // To override the default behavior
+.p-autocomplete.p-component {
+    display: grid;
+    align-items: center;
+    grid-template-columns: auto repeat(3, max-content); // This will make the grid to remove the columns that are not in the grid
+}
+
+.p-autocomplete-clearable
+    .p-autocomplete:not(.p-autocomplete-dd).p-component.p-autocomplete-multiple:has(
+        .p-icon-wrapper
+    ) {
+    align-items: baseline;
+    grid-template-columns: max-content auto; // When have icon, have 2 grids: icon and tags
+}
+
+//Dropdown with clear button
+.p-autocomplete-clearable
+    .p-autocomplete.p-component.p-autocomplete-dd.p-autocomplete-multiple:has(.p-icon-wrapper) {
+    grid-template-columns: max-content 1fr auto;
+}
 .p-autocomplete {
     @extend #form-field-extend;
-    min-height: $field-height-md;
     height: auto;
     padding-right: 0;
 
-    .p-autocomplete-loader {
-        right: $spacing-2;
+    .p-autocomplete-loader,
+    .p-autocomplete-clear-icon {
+        position: unset;
         color: $color-palette-primary;
+        margin: 0 $spacing-0;
     }
 
-    .p-autocomplete-input {
+    .p-autocomplete-clear-icon {
+        grid-column-start: 3;
+        grid-row-start: 1;
+    }
+
+    .p-autocomplete-loader {
+        grid-column-start: 2;
+    }
+
+    .p-autocomplete-input.p-component {
         all: unset;
+        border: none;
+        font-family: $font-default;
+        font-size: $font-size-md;
         color: $black;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        height: calc(
+            $field-height-md - (2 * $field-border-size)
+        ); // This input height is to match the 40px height, 40px - 3px of horizontal borders, because this input does not have borders
     }
 
     &.p-autocomplete-dd {
-        .p-autocomplete-loader {
+        .p-autocomplete-loader,
+        .p-autocomplete-clear-icon {
             right: $spacing-7;
+        }
+    }
+
+    .p-autocomplete-dropdown.p-button.p-element {
+        &:hover,
+        &:focus,
+        &:active {
+            outline: none;
+            background-color: $color-palette-gray-200;
         }
     }
 
     &.p-autocomplete-multiple {
         .p-autocomplete-multiple-container {
-            padding: 0.375rem $spacing-2;
+            display: flex;
+            align-items: center;
             max-height: 13rem; // 208px
             overflow: auto; // Make it scrollable
+            gap: $spacing-0;
+            padding: 7px 0 6px; // Specific padding for the tokens in multiple lines
 
             &:hover,
             &:active,
@@ -36,26 +94,17 @@
             }
 
             .p-autocomplete-token {
-                padding: 0.375rem $spacing-2;
-                margin-right: $spacing-1;
-                background: $color-palette-primary-200;
-                color: $color-palette-primary;
-                border-radius: $field-border-radius;
-
-                .p-autocomplete-token-icon {
-                    margin-left: $spacing-1;
-                }
+                @extend #field-chip;
             }
 
             .p-autocomplete-input-token {
-                padding: 0.375rem 0;
-
                 input {
                     font-family: $font-default;
                     font-size: $font-size-md;
                     color: $black;
                     padding: 0;
                     margin: 0;
+                    height: 1.5rem;
                 }
             }
         }
@@ -93,7 +142,7 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
 
 .p-autocomplete-dropdown.p-element.p-button {
     @extend #field-trigger;
-    height: inherit;
+    grid-column-start: 4;
 
     .p-button-icon {
         @extend #field-trigger-icon;

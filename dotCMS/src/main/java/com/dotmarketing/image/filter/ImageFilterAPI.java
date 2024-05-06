@@ -28,7 +28,7 @@ public interface ImageFilterAPI {
     String THUMB = "thumb";
     String WEBP = "webp";
 
-    Function0<ImageFilterApiImpl> apiInstance = Function0.of(()->{ImageIO.scanForPlugins();return new ImageFilterApiImpl();}).memoized();
+    Function0<ImageFilterApiImpl> apiInstance = Function0.of(ImageFilterApiImpl::new).memoized();
 
     default ImageFilterAPI getInstance() {
         return apiInstance.apply();

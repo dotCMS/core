@@ -5,7 +5,8 @@
         "module": "commonjs",
         "types": ["jest", "node"],
         "strict": false,
-        "noPropertyAccessFromIndexSignature": false
+        "noPropertyAccessFromIndexSignature": false,
+        "target": "es2016"
     },
     "files": ["src/test-setup.ts"],
     "include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]

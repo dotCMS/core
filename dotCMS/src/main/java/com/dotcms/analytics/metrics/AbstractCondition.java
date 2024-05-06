@@ -1,15 +1,13 @@
 package com.dotcms.analytics.metrics;
 
-import com.dotcms.analytics.metrics.ParameterValuesTransformer.Values;
-import com.dotcms.experiments.business.result.Event;
 
-import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 
-import java.util.Collection;
+import java.io.Serializable;
+import java.util.function.Supplier;
+
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -26,63 +24,25 @@ import org.immutables.value.Value.Default;
 @Value.Immutable
 @JsonSerialize(as = Condition.class)
 @JsonDeserialize(as = Condition.class)
-public interface AbstractCondition<T> {
+public interface AbstractCondition<T> extends Serializable {
     String parameter();
     Operator operator();
     T value();
 
-    /**
-     * Return true is the Condition is meet on the {@link Event} using the {@link MetricType}.
-     * The {@link Parameter}  define how is the value taken from the {@link Event} and
-     * how are this values process before by evaluate by the Condition.
-     *
-     * @param parameter
-     * @param event
-     * @return
-     */
-    @JsonIgnore
-    default boolean isValid(final Parameter parameter, final Event event){
-
-        final Collection values = parameter.getValueGetter().getValuesFromEvent(parameter, event);
-
-        final Values filterAndTransformValues = parameter.type().getTransformer()
-                .transform(values, (AbstractCondition<Object>) this);
-
-        final String conditionValue = filterAndTransformValues.getConditionValue();
-
-        final boolean conditionIsValid = filterAndTransformValues.getRealValues().stream()
-                .anyMatch(value -> operator().getFunction().apply(value, conditionValue)
-        );
-
-        return conditionIsValid;
-    }
     enum Operator {
-        EQUALS((value1, value2) -> value1.equals(value2)),
-        CONTAINS((value1, value2) -> value1.toString().contains(value2.toString())),
-        REGEX((value, regex) -> value.toString().matches(regex.toString())),
-        EXISTS((realValue, conditionValue) -> UtilMethods.isSet(realValue));
+        EQUALS(() -> "%s"),
+        CONTAINS(() -> ".*%s.*"),
+        EXISTS(() -> ".*%s");
 
-        private OperatorFunc function;
+        private Supplier<String> regexSupplier;
 
-        Operator(final OperatorFunc func){
-            this.function = func;
+        Operator(final Supplier<String> regexSupplier){
+            this.regexSupplier = regexSupplier;
         }
 
-        /**
-         * Return a {@link OperatorFunc} to check whether the condition is valid oor not.
-         * @return
-         */
-        public OperatorFunc getFunction() {
-            return function;
+        public String regex() {
+            return regexSupplier.get();
         }
-    }
-
-    /**
-     * Function to compare two values with an Operator.
-     * If return true means that the Operator is valid for this two values, in otherwise return false.
-     */
-    interface OperatorFunc {
-        boolean apply(Object value1, Object value2);
     }
 
     @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
@@ -100,29 +60,39 @@ public interface AbstractCondition<T> {
             return Type.SIMPLE;
         }
 
-        @Default
-        default ParameterValueGetter getValueGetter() {
-            return new EventAttributeParameterValuesGetter();
-        }
-
         /**
          * Type of the Parameter it set how its value is going to be handled before
          * try to check the Condition
          */
         enum Type {
-            SIMPLE(new DefaultParameterValuesTransformer()),
-            QUERY_PARAMETER(new QueryParameterValuesTransformer());
+            SIMPLE(new DefaultParameterValuesTransformer(), (conditionValue, operatorRegex) -> String.format(operatorRegex, conditionValue.toString())),
+            QUERY_PARAMETER(new QueryParameterValuesTransformer(), (conditionValue, operatorRegex) -> getQueryParameterRegex((QueryParameter) conditionValue, operatorRegex));
 
+            final RegexCalculator regexCalculator;
             final ParameterValuesTransformer parameterValuesTransformer;
-            Type (final ParameterValuesTransformer parameterValuesTransformer) {
+            Type (final ParameterValuesTransformer parameterValuesTransformer, final RegexCalculator regexCalculator) {
                 this.parameterValuesTransformer = parameterValuesTransformer;
+                this.regexCalculator = regexCalculator;
             }
 
             public <T> ParameterValuesTransformer<T> getTransformer() {
                 return parameterValuesTransformer;
             }
+
+            public String regex(final Object conditionValue, final String operatorRegex) {
+                return regexCalculator.apply(conditionValue, operatorRegex);
+            }
+
+            private static String getQueryParameterRegex(final QueryParameter queryParameter, String operatorRegex) {
+                return String.format(".*\\?(.*&)?%s=%s(&.*)*", queryParameter.getName(),
+                        String.format(operatorRegex, queryParameter.getValue()));
+            }
         }
 
+    }
+
+    interface RegexCalculator {
+        String apply(Object conditionValue, String operatorRegex);
     }
 
 }

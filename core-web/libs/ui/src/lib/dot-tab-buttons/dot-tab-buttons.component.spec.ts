@@ -1,34 +1,61 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
+import { NgClass, NgFor, NgIf } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
 
 import { SelectItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotPageMode } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTabButtonsComponent } from './dot-tab-buttons.component';
 
 describe('DotTabButtonsComponent', () => {
     let spectator: Spectator<DotTabButtonsComponent>;
+    const pointerEvent = new PointerEvent('click');
+    let editID: string;
+    let previewID: string;
+
+    const messageServiceMock = new MockDotMessageService({
+        'editpage.toolbar.edit.page.clipboard': 'Edit Page',
+        'editpage.toolbar.preview.page.clipboard': 'Preview Page'
+    });
 
     const createComponent = createComponentFactory({
-        component: DotTabButtonsComponent
+        component: DotTabButtonsComponent,
+        providers: [
+            HttpClientTestingModule,
+            DotMessagePipe,
+            { provide: DotMessageService, useValue: messageServiceMock }
+        ],
+        imports: [NgFor, ButtonModule, NgIf, NgClass, TooltipModule, DotMessagePipe]
     });
+
     const optionsMock: SelectItem[] = [
-        { label: 'Edit', value: DotPageMode.EDIT },
-        { label: 'Preview', value: DotPageMode.PREVIEW }
+        { label: 'Edit', value: { id: DotPageMode.EDIT, showDropdownButton: false } },
+        { label: 'Preview', value: { id: DotPageMode.PREVIEW, showDropdownButton: true } }
     ];
 
     beforeEach(() => {
         spectator = createComponent({
             props: {
                 options: optionsMock,
-                mode: DotPageMode.PREVIEW
+                activeId: DotPageMode.PREVIEW
             }
         });
+
+        editID = spectator.component._options[0].value.id;
+        previewID = spectator.component._options[1].value.id;
     });
 
     it('should render options', () => {
         const buttons = spectator.queryAll(byTestId('dot-tab-button-text'));
-        expect(spectator.query(byTestId('dot-tab-button-text'))).toBeDefined();
+        expect(buttons[0]).toBeDefined();
         expect(buttons.length).toEqual(2);
         buttons.forEach((button, index) => {
             expect(button.textContent.trim()).toEqual(optionsMock[index].label);
@@ -37,24 +64,100 @@ describe('DotTabButtonsComponent', () => {
 
     it('should emit openMenu event when showMenu is called', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
-        spectator.component.showMenu(null);
-        expect(openMenuSpy).toHaveBeenCalled();
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
+        const button = spectator.fixture.debugElement.queryAll(
+            By.css('[data-testId="dot-tab-button-text"]')
+        )[1];
+
+        spectator.component.onClickDropdown(
+            { ...pointerEvent, target: button.nativeElement },
+            previewID
+        );
+        expect(openMenuSpy).toHaveBeenCalledWith({
+            event: { ...pointerEvent, target: button.nativeElement },
+            menuId: previewID,
+            target: tab
+        });
+    });
+
+    it('should emit openMenu event when showMenu is called', () => {
+        const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
+
+        const button = spectator.fixture.debugElement.queryAll(
+            By.css('[data-testId="dot-tab-button-text"]')
+        )[1];
+
+        spectator.triggerEventHandler('[data-testId="dot-tab-button-dropdown"]', 'click', {
+            ...pointerEvent,
+            target: button.nativeElement
+        });
+
+        expect(openMenuSpy).toHaveBeenCalledWith({
+            event: {
+                ...pointerEvent,
+                target: button.nativeElement
+            },
+            menuId: previewID,
+            target: tab
+        });
+    });
+
+    it('should not emit openMenu event when showMenu is called and the option does not have showDropdownButton setted to true', () => {
+        const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
+        spectator.component.onClickDropdown(pointerEvent, editID);
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
+
+        expect(openMenuSpy).not.toHaveBeenCalledWith({
+            event: pointerEvent,
+            menuId: editID,
+            target: tab
+        });
     });
 
     it('should emit clickOption event when onClickOption is called with a PREVIEW value', () => {
         const clickOptionSpy = spyOn(spectator.component.clickOption, 'emit');
-        spectator.component.onClickOption({ target: { value: DotPageMode.PREVIEW } });
-        expect(clickOptionSpy).toHaveBeenCalled();
+        spectator.component.activeId = DotPageMode.EDIT;
+
+        const button = spectator.fixture.debugElement.queryAll(
+            By.css('[data-testId="dot-tab-button-text"]')
+        )[1];
+
+        spectator.triggerEventHandler(button, 'click', pointerEvent);
+
+        expect(clickOptionSpy).toHaveBeenCalledWith({
+            event: pointerEvent,
+            optionId: previewID
+        });
     });
 
-    it('should call showMenu when onClickOption is called with OPEN_MENU value', () => {
-        const showMenuSpy = spyOn(spectator.component, 'showMenu');
-        spectator.component.onClickOption({ target: { value: spectator.component.OPEN_MENU } });
-        expect(showMenuSpy).toHaveBeenCalled();
+    it('should not emit clickOption event when onClickOption is called if the user is in the same tab', () => {
+        const clickOptionSpy = spyOn(spectator.component.clickOption, 'emit');
+
+        const button = spectator.queryAll(byTestId('dot-tab-button-text'))[1];
+
+        button.dispatchEvent(new PointerEvent('click'));
+
+        expect(clickOptionSpy).not.toHaveBeenCalled();
+    });
+
+    it('should call showMenu when onClickDropdown is called ', () => {
+        const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
+
+        const button = spectator.queryAll(byTestId('dot-tab-button-dropdown'))[0];
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
+
+        button.dispatchEvent(pointerEvent);
+
+        expect(openMenuSpy).toHaveBeenCalledWith({
+            event: pointerEvent,
+            menuId: previewID,
+            target: tab
+        });
     });
 
     it('should show dot-tab-indicator when a tab is active', () => {
-        spectator.component.mode = DotPageMode.EDIT;
+        spectator.component.activeId = DotPageMode.EDIT;
 
         const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
 
@@ -62,22 +165,69 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should show dot-tab-indicator when a tab is active', () => {
-        spectator.component.mode = DotPageMode.PREVIEW;
+        spectator.component.activeId = DotPageMode.PREVIEW;
 
         const indicatorEl = spectator.queryAll(byTestId('dot-tab-indicator'));
 
         expect(indicatorEl).toBeDefined();
     });
 
-    it('should toggle icon', () => {
-        expect(spectator.component.icon).toEqual('pi pi-angle-down');
+    it('should toggle and change all dropdowns icon to original state when resetDropdowns is called', () => {
+        spectator.component.onClickDropdown(pointerEvent, previewID);
 
-        spectator.component.toggle = true;
-        spectator.component.toggleIcon();
-        expect(spectator.component.icon).toEqual('pi pi-angle-up');
+        const icon = spectator.query(byTestId('dot-tab-icon'));
 
-        spectator.component.toggle = false;
-        spectator.component.toggleIcon();
-        expect(spectator.component.icon).toEqual('pi pi-angle-down');
+        expect(spectator.component._options[1].value.toggle).toBe(true);
+
+        spectator.detectChanges();
+
+        expect(icon.classList).toContain('pi-angle-up');
+
+        spectator.component.resetDropdowns();
+
+        spectator.detectChanges();
+
+        expect(spectator.component._options[1].value.toggle).toBe(false);
+        expect(icon.classList).toContain('pi-angle-down');
+    });
+
+    it('should toggle and change one dropdown icon to original state when resetDropdownById', () => {
+        spectator.component.onClickDropdown(pointerEvent, previewID);
+
+        const icon = spectator.query(byTestId('dot-tab-icon'));
+
+        expect(spectator.component._options[1].value.toggle).toBe(true);
+
+        spectator.detectChanges();
+
+        expect(icon.classList).toContain('pi-angle-up');
+
+        spectator.component.resetDropdownById(previewID);
+
+        spectator.detectChanges();
+
+        expect(spectator.component._options[1].value.toggle).toBe(false);
+        expect(icon.classList).toContain('pi-angle-down');
+    });
+
+    describe('N tab buttons with and without dropdowns', () => {
+        beforeEach(() => {
+            spectator.setInput({
+                options: [
+                    { label: 'test-1', value: { id: 'test-1', showDropdownButton: false } },
+                    { label: 'test-2', value: { id: 'test-2', showDropdownButton: false } },
+                    { label: 'test-3', value: { id: 'test-3', showDropdownButton: true } },
+                    { label: 'test-4', value: { id: 'test-4', showDropdownButton: true } }
+                ]
+            });
+        });
+
+        it('should have 2 tab dropdowns', () => {
+            expect(spectator.queryAll(byTestId('dot-tab-button-dropdown')).length).toBe(2);
+        });
+
+        it('should have 4 tabs', () => {
+            expect(spectator.queryAll(byTestId('dot-tab-button-text')).length).toBe(4);
+        });
     });
 });

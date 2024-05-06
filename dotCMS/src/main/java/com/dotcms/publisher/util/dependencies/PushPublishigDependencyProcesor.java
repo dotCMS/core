@@ -1,11 +1,11 @@
 package com.dotcms.publisher.util.dependencies;
 
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.portlets.templates.model.Template.SYSTEM_TEMPLATE;
 
 import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
@@ -56,14 +57,16 @@ import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import org.apache.commons.math3.analysis.function.Exp;
 
 /**
  * Implementation class for the {@link DependencyProcessor} interface.
@@ -275,6 +278,10 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private void processTemplateDependencies(final Template template) {
 
         try {
+
+            if (APILocator.getTemplateAPI().systemTemplate().equals(template)) {
+                return;
+            }
 
             final Template workingTemplate = template.isWorking() ? template
                     : APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(), user, false);
@@ -656,7 +663,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private void processLanguage(final Language language) throws DotBundleException {
         try{
             final long lang = language.getId();
-            final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
+            final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME + " +languageId:" + lang;
             final List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
                     .search(keyValueQuery,0, -1, StringPool.BLANK, user, false);
 
@@ -749,32 +756,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                             .onFailure(e->Logger.warnAndDebug(DependencyManager.class, e)).getOrNull();
 
             // working template working page
-            final Template workingTemplateWP = workingPage != null ?
-                    APILocator.getTemplateAPI()
-                            .findWorkingTemplate(workingPage.getTemplateId(), user, false) : null;
-
-            if (workingTemplateWP != null) {
-
-                // Templates dependencies
-                if(!(workingTemplateWP instanceof FileAssetTemplate)) {
-                    tryToAddAsDependency(PusheableAsset.TEMPLATE, workingTemplateWP, workingPage);
-                } else {
-                    dependencyProcessor.addAsset(workingTemplateWP, PusheableAsset.TEMPLATE);
-                }
-            }
-
-            final Template liveTemplateLP = livePage != null ?
-                    APILocator.getTemplateAPI()
-                            .findLiveTemplate(livePage.getTemplateId(), user, false) : null;
-
-            // Templates dependencies
-            if (liveTemplateLP != null ) {
-                if(!(liveTemplateLP instanceof FileAssetTemplate)) {
-                    tryToAddAsDependency(PusheableAsset.TEMPLATE, liveTemplateLP, workingPage);
-                } else {
-                    dependencyProcessor.addAsset(liveTemplateLP, PusheableAsset.TEMPLATE);
-                }
-            }
+            addTemplateAsDependency(workingPage);
+            addTemplateAsDependency(livePage);
 
             // Contents dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
@@ -793,23 +776,32 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         }
     }
 
+    private void addTemplateAsDependency(final IHTMLPage page)
+            throws DotDataException, DotSecurityException {
+        final Template template = page != null ?
+                APILocator.getTemplateAPI()
+                        .findWorkingTemplate(page.getTemplateId(), user, false) : null;
+
+        if (template != null) {
+            if(!(template instanceof FileAssetTemplate)) {
+                tryToAddAsDependency(PusheableAsset.TEMPLATE, template, page);
+            } else {
+                dependencyProcessor.addAsset(template, PusheableAsset.TEMPLATE);
+            }
+        }
+    }
+
     private void processExperimentDependencies(final Experiment experiment)  {
         try {
 
-
-            final Contentlet parentPage = APILocator.getContentletAPI()
-                    .findContentletByIdentifierAnyLanguage(experiment.pageId());
+            final HTMLPageAsset parentPage = getLastModeDateVersionOfPage(experiment).orElseThrow(
+                    () -> new DotDataException(
+                            String.format("For Experiment '%s', no parent with ID '%s' could be found", experiment.id().orElse(""),
+                                    experiment.pageId())));
 
             final long languageId = parentPage.getLanguageId();
 
-            if (UtilMethods.isSet(parentPage)) {
-                tryToAddAsDependency(PusheableAsset.CONTENTLET, parentPage,
-                        experiment);
-            } else {
-                throw new DotDataException(
-                        String.format("For Experiment '%s', no parent with ID '%s' could be found", experiment.id().orElse(""),
-                                experiment.pageId()));
-            }
+            tryToAddAsDependency(PusheableAsset.CONTENTLET, parentPage, experiment);
 
             List<Variant> variants = experiment.trafficProportion().variants().stream()
                     .map((experimentVariant -> {
@@ -827,22 +819,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final List<Contentlet> contentDependencies = new ArrayList<>();
 
             for (Variant variant : variants) {
-                List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
-                        .getMultiTreesByVariant(experiment.pageId(), variant.name());
-
-                for (MultiTree multiTree : multiTrees) {
-                    Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
-                            multiTree.getContentlet(), false, languageId, variant.name(), user,
-                            false);
-
-                    if(!UtilMethods.isSet(contentlet)) {
-                        contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
-                                multiTree.getContentlet(), false, languageId, DEFAULT_VARIANT.name(), user,
-                                false);
-                    }
-
-                    contentDependencies.add(contentlet);
-                }
+                contentDependencies.addAll(getContentByMultiTree(experiment, languageId, variant));
+                addVariantTemplateAsDependecyIfNeeded(experiment, parentPage, variant);
             }
 
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentDependencies,
@@ -852,6 +830,64 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             Logger.error(this, String.format("An error occurred when processing dependencies on Experiment '%s' [%s]: %s",
                     experiment.name(), experiment.id().orElse(""), e.getMessage()), e);
         }
+    }
+
+    private Optional<HTMLPageAsset> getLastModeDateVersionOfPage(final Experiment experiment) {
+
+        final Optional<Contentlet> contentlet = experiment.trafficProportion().variants().stream()
+                .map(experimentVariant -> experimentVariant.id())
+                .map(variantId -> {
+                    try {
+                        return APILocator.getContentletAPI()
+                                .findContentletByIdentifierAnyLanguage(experiment.pageId(),
+                                        variantId);
+                    } catch (DotDataException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(Contentlet::getModDate).reversed())
+                .findFirst();
+
+        if (contentlet.isPresent()) {
+            return Optional.of(APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet.get()));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private void addVariantTemplateAsDependecyIfNeeded(Experiment experiment, HTMLPageAsset parentPage, Variant variant)
+            throws DotDataException, DotSecurityException {
+        final Contentlet variantContentlet = contentletAPI.get()
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), variant.name());
+
+        if (UtilMethods.isSet(variantContentlet)) {
+            this.addTemplateAsDependency(APILocator.getHTMLPageAssetAPI().fromContentlet(variantContentlet));
+        }
+    }
+
+    private Collection<Contentlet> getContentByMultiTree(Experiment experiment, long languageId,
+            Variant variant) throws DotDataException, DotSecurityException {
+
+        final Collection<Contentlet> result = new ArrayList<>();
+
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(experiment.pageId(), variant.name());
+
+        for (MultiTree multiTree : multiTrees) {
+            Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(
+                    multiTree.getContentlet());
+
+            if(!UtilMethods.isSet(contentlet)) {
+                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
+                        multiTree.getContentlet(), false, languageId, DEFAULT_VARIANT.name(), user,
+                        false);
+            }
+
+            result.add(contentlet);
+        }
+
+        return result;
     }
 
     @Override
@@ -879,18 +915,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             throws DotDataException, DotSecurityException {
 
         if (UtilMethods.isSet(assets)) {
-            assets.stream().forEach(asset -> {
-                try {
-                    final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset, reason);
-
-                    if (TryToAddResult.Result.INCLUDE == tryToAddResult.result ||
-                            ManifestReason.EXCLUDE_BY_FILTER != tryToAddResult.excludeReason) {
-                        dependencyProcessor.addAsset(asset, pusheableAsset);
-                    }
-                } catch (AssetExcludeException e) {
-                    dependencyProcessor.addAsset(asset, pusheableAsset);
-                }
-            });
+            assets.stream().forEach(asset -> tryToAddAndProcessDependencies(pusheableAsset, asset, reason));
         }
     }
 
@@ -940,14 +965,25 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             try {
                 final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset, reason);
 
-                if (TryToAddResult.Result.INCLUDE == tryToAddResult.result ||
-                        ManifestReason.EXCLUDE_BY_FILTER != tryToAddResult.excludeReason) {
+                if (shouldIncludeDependency(tryToAddResult)) {
                     dependencyProcessor.addAsset(asset, pusheableAsset);
                 }
             } catch (AssetExcludeException e) {
                 dependencyProcessor.addAsset(asset, pusheableAsset);
             }
         }
+    }
+
+    /**
+     * return true if for this {@link TryToAddResult} we still must add the Dependency.
+     *
+     * @param tryToAddResult
+     * @return
+     */
+    private static boolean shouldIncludeDependency(final TryToAddResult tryToAddResult) {
+        return TryToAddResult.Result.INCLUDE == tryToAddResult.result ||
+                (ManifestReason.EXCLUDE_BY_FILTER != tryToAddResult.excludeReason &&
+                ManifestReason.EXCLUDE_SYSTEM_OBJECT != tryToAddResult.excludeReason);
     }
 
     /**
@@ -1007,7 +1043,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_SYSTEM_OBJECT);
         }
 
-        if (isExcludeByFilter(pusheableAsset)) {
+        if (!isTemplateLayout(asset) && isExcludeByFilter(pusheableAsset)) {
             config.exclude(asset, pusheableAsset, ManifestReason.EXCLUDE_BY_FILTER.getMessage());
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_FILTER);
         }
@@ -1033,6 +1069,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     ManifestReason.EXCLUDE_BY_MOD_DATE.getMessage(asset.getClass()));
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_MOD_DATE);
         }
+    }
+
+    /**
+     * Determines if the provided asset is a template layout.
+     * We can identify it by the title, it always contains the acronym Template.ANONYMOUS_PREFIX
+     * @param asset The asset to check
+     * @return If the Asset is a {@link Template} object and the title
+     * contains {@code Template.ANONYMOUS_PREFIX}, return {@code true}.
+     */
+    private boolean isTemplateLayout(final Object asset){
+        return asset instanceof Template && Template.class.cast(asset).getTitle().contains(Template.ANONYMOUS_PREFIX);
     }
 
     private <T> boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
@@ -1064,7 +1111,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         try{
             //We're no longer filtering by language here..
             //The reason is We're simply collecting all available lang variables so we can infer additional languages used. see #15359
-            final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE ;
+            final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME;
             final List<Contentlet> langVariables = contentletAPI.search(langVarsQuery, 0, -1, StringPool.BLANK, user, false);
 
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, langVariables,
@@ -1101,7 +1148,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             } else if (SystemContainer.class.isInstance(dependency)) {
                 return Container.SYSTEM_CONTAINER.equals(SystemContainer.class.cast(dependency).getIdentifier());
             } else if (SystemTemplate.class.isInstance(dependency)) {
-                return Template.SYSTEM_TEMPLATE.equals(SystemTemplate.class.cast(dependency).getIdentifier());
+                return SYSTEM_TEMPLATE.equals(SystemTemplate.class.cast(dependency).getIdentifier());
             } else {
                 return false;
             }
@@ -1116,17 +1163,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             INCLUDE, EXCLUDE, ALREADY_INCLUDE;
         }
 
-        Result result;
-        ManifestReason excludeReason;
+            Result result;
+            ManifestReason excludeReason;
 
-        public TryToAddResult(final Result result) {
-            this(result, null);
-        }
+            public TryToAddResult(final Result result) {
+                this(result, null);
+            }
 
-        public TryToAddResult(final Result result, final ManifestReason excludeReason) {
-            this.result = result;
-            this.excludeReason = excludeReason;
-        }
+            public TryToAddResult(final Result result, final ManifestReason excludeReason) {
+                this.result = result;
+                this.excludeReason = excludeReason;
+            }
     }
 
 }

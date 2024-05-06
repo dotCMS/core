@@ -1,0 +1,77 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Pull Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= pull(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+pull - *dotCMS global pull*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*pull* [*-h*] [*-ff*] [*--dotcms-url*=_<remoteURL>_] [*-fmt*=_<inputOutputFormat>_]
+     [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [*--workspace*=_<file>_]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This command pull Sites, Content Types, Languages and Files from the server.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+
+*-fmt, --format*=_<inputOutputFormat>_::
+  Format for the pulled descriptor files. 
++
+Supported values: JSON, YAML, YML
+
+*-h*, *--help*::
+  Display this help message.
+
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+*--workspace*=_<file>_::
+  The workspace directory.
++
+Current directory is used if not specified
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -32,7 +31,7 @@ const TooltipSecondaryTemplate = `
   <p><span class="p-badge p-badge-secondary p-badge-xl">6</span></p>
 `;
 
-export const Primary: Story<never> = (props: never) => {
+export const Primary: Story<unknown> = (props: never) => {
     return {
         props,
         template: TooltipPrimaryTemplate

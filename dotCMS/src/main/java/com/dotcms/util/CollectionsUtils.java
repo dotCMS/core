@@ -1,15 +1,34 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.function.*;
+import java.lang.reflect.Array;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 /**
  * This utility class provides common use methods for creating and interacting
@@ -292,16 +311,6 @@ public class CollectionsUtils implements Serializable {
     } // set
 
     /**
-     * Get a new map
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map() {
-        return new HashMap<>();
-    } // map.
-
-    /**
      * Create a new map adding an array maps to it
      * @param maps {@link Map}
      * @param <K>
@@ -310,7 +319,7 @@ public class CollectionsUtils implements Serializable {
      */
     @SafeVarargs
     public static <K,V> Map<K,V> mapAll(final Map<K, V>... maps) {
-        final Map<K,V> map = map();
+        final Map<K,V> map = new HashMap<>();
 
         if (null != maps) {
             for (Map<K, V> mapItem : maps) {
@@ -319,492 +328,7 @@ public class CollectionsUtils implements Serializable {
         }
 
         return map;
-    } // map.
-
-    /**
-     * Get a new map based on a key and value
-     * @param key K
-     * @param value V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key, final V value) {
-        return mapEntries(entry(key, value));
-    } // map.
-
-    /**
-     * Get a new map based on a pair of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2) {
-        return mapEntries(entry(key1, value1), entry(key2, value2));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param key4 K
-     * @param value4 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param key4 K
-     * @param value4 V
-     * @param key5 K
-     * @param value5 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param key4 K
-     * @param value4 V
-     * @param key5 K
-     * @param value5 V
-     * @param key6 K
-     * @param value6 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
-            final K key6, final V value6) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param key4 K
-     * @param value4 V
-     * @param key5 K
-     * @param value5 V
-     * @param key6 K
-     * @param value6 V
-     * @param key7 K
-     * @param value7 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
-                                     final K key6, final V value6, final K key7, final V value7) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6), entry(key7, value7));
-    } // map.
-
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
-                                     final K key6, final V value6, final K key7, final V value7,
-                                     final K key8, final V value8) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6), entry(key7, value7), entry(key8, value8));
-    } // map.
-
-
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
-                                     final K key6, final V value6, final K key7, final V value7,
-                                     final K key8, final V value8, final K key9, final V value9) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6), entry(key7, value7), entry(key8, value8), entry(key9, value9));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param key4 K
-     * @param value4 V
-     * @param key5 K
-     * @param value5 V
-     * @param key6 K
-     * @param value6 V
-     * @param key7 K
-     * @param value7 V
-     * @param key8 K
-     * @param value8 V
-     * @param key9 K
-     * @param value9 V
-     * @param key10 K
-     * @param value10 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
-            , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8
-            , final K key9, final V value9, final K key10, final V value10) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6), entry(key7, value7), entry(key8, value8),
-                entry(key9, value9), entry(key10, value10));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param key4 K
-     * @param value4 V
-     * @param key5 K
-     * @param value5 V
-     * @param key6 K
-     * @param value6 V
-     * @param key7 K
-     * @param value7 V
-     * @param key8 K
-     * @param value8 V
-     * @param key9 K
-     * @param value9 V
-     * @param key10 K
-     * @param value10 V
-     * @param key11 K
-     * @param value11 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
-            , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8
-            , final K key9, final V value9, final K key10, final V value10, final K key11, final V value11) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6), entry(key7, value7), entry(key8, value8),
-                entry(key9, value9), entry(key10, value10), entry(key11, value11));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param key4 K
-     * @param value4 V
-     * @param key5 K
-     * @param value5 V
-     * @param key6 K
-     * @param value6 V
-     * @param key7 K
-     * @param value7 V
-     * @param key8 K
-     * @param value8 V
-     * @param key9 K
-     * @param value9 V
-     * @param key10 K
-     * @param value10 V
-     * @param key11 K
-     * @param value11 V
-     * @param key12 K
-     * @param value12 V
-     * @param key13 K
-     * @param value13 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
-            , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8
-            , final K key9, final V value9, final K key10, final V value10
-            , final K key11, final V value11, final K key12, final V value12, final K key13, final V value13) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6), entry(key7, value7), entry(key8, value8),
-                entry(key9, value9), entry(key10, value10), entry(key11, value11),
-                entry(key12, value12), entry(key13, value13));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param key4 K
-     * @param value4 V
-     * @param key5 K
-     * @param value5 V
-     * @param key6 K
-     * @param value6 V
-     * @param key7 K
-     * @param value7 V
-     * @param key8 K
-     * @param value8 V
-     * @param key9 K
-     * @param value9 V
-     * @param key10 K
-     * @param value10 V
-     * @param key11 K
-     * @param value11 V
-     * @param key12 K
-     * @param value12 V
-     * @param key13 K
-     * @param value13 V
-     * @param key14 K
-     * @param value14 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
-            , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8
-            , final K key9, final V value9, final K key10, final V value10
-            , final K key11, final V value11, final K key12, final V value12, final K key13, final V value13
-            , final K key14, final V value14) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6), entry(key7, value7), entry(key8, value8),
-                entry(key9, value9), entry(key10, value10), entry(key11, value11),
-                entry(key12, value12), entry(key13, value13), entry(key14, value14));
-    } // map.
-
-    /**
-     * Get a new map based on a list of key/value.
-     * @param key1 K
-     * @param value1 V
-     * @param key2 K
-     * @param value2 V
-     * @param key3 K
-     * @param value3 V
-     * @param key4 K
-     * @param value4 V
-     * @param key5 K
-     * @param value5 V
-     * @param key6 K
-     * @param value6 V
-     * @param key7 K
-     * @param value7 V
-     * @param key8 K
-     * @param value8 V
-     * @param key9 K
-     * @param value9 V
-     * @param key10 K
-     * @param value10 V
-     * @param key11 K
-     * @param value11 V
-     * @param key12 K
-     * @param value12 V
-     * @param key13 K
-     * @param value13 V
-     * @param key14 K
-     * @param value14 V
-     * @param key15 K
-     * @param value15 V
-     * @param key16 K
-     * @param value16 V
-     * @param <K>
-     * @param <V>
-     * @return Map
-     */
-    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
-            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
-            , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8
-            , final K key9, final V value9, final K key10, final V value10
-            , final K key11, final V value11, final K key12, final V value12, final K key13, final V value13
-            , final K key14, final V value14, final K key15, final V value15, final K key16, final V value16) {
-        return mapEntries(entry(key1, value1), entry(key2, value2),
-                entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6), entry(key7, value7), entry(key8, value8),
-                entry(key9, value9), entry(key10, value10), entry(key11, value11),
-                entry(key12, value12), entry(key13, value13), entry(key14, value14),
-                entry(key15, value15), entry(key16, value16));
-    } // map.
-
-    /**
-     * Creates a new map based on a list of key/value parameters.
-     * 
-     * @param key1
-     * @param value1
-     * @param key2
-     * @param value2
-     * @param key3
-     * @param value3
-     * @param key4
-     * @param value4
-     * @param key5
-     * @param value5
-     * @param key6
-     * @param value6
-     * @param key7
-     * @param value7
-     * @param key8
-     * @param value8
-     * @param key9
-     * @param value9
-     * @param key10
-     * @param value10
-     * @param key11
-     * @param value11
-     * @param key12
-     * @param value12
-     * @param key13
-     * @param value13
-     * @param key14
-     * @param value14
-     * @param key15
-     * @param value15
-     * @param key16
-     * @param value16
-     * @param key17
-     * @param value17
-     * @param key18
-     * @param value18
-     * @return
-     */
-    public static <K, V> Map<K, V> map(final K key1, final V value1, final K key2, final V value2, final K key3, final V value3,
-                    final K key4, final V value4, final K key5, final V value5, final K key6, final V value6, final K key7,
-                    final V value7, final K key8, final V value8, final K key9, final V value9, final K key10, final V value10,
-                    final K key11, final V value11, final K key12, final V value12, final K key13, final V value13, final K key14,
-                    final V value14, final K key15, final V value15, final K key16, final V value16, final K key17,
-                    final V value17, final K key18, final V value18) {
-        return mapEntries(entry(key1, value1), entry(key2, value2), entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                        entry(key6, value6), entry(key7, value7), entry(key8, value8), entry(key9, value9), entry(key10, value10),
-                        entry(key11, value11), entry(key12, value12), entry(key13, value13), entry(key14, value14),
-                        entry(key15, value15), entry(key16, value16), entry(key17, value17), entry(key18, value18));
-    } // map.
-
-    /**
-     * Creates a new map based on a list of key/value parameters.
-     *
-     * @param key1
-     * @param value1
-     * @param key2
-     * @param value2
-     * @param key3
-     * @param value3
-     * @param key4
-     * @param value4
-     * @param key5
-     * @param value5
-     * @param key6
-     * @param value6
-     * @param key7
-     * @param value7
-     * @param key8
-     * @param value8
-     * @param key9
-     * @param value9
-     * @param key10
-     * @param value10
-     * @param key11
-     * @param value11
-     * @param key12
-     * @param value12
-     * @param key13
-     * @param value13
-     * @param key14
-     * @param value14
-     * @param key15
-     * @param value15
-     * @param key16
-     * @param value16
-     * @param key17
-     * @param value17
-     * @param key18
-     * @param value18
-     * @return
-     */
-    public static <K, V> Map<K, V> map(final K key1, final V value1, final K key2, final V value2, final K key3, final V value3,
-                                       final K key4, final V value4, final K key5, final V value5, final K key6, final V value6, final K key7,
-                                       final V value7, final K key8, final V value8, final K key9, final V value9, final K key10, final V value10,
-                                       final K key11, final V value11, final K key12, final V value12, final K key13, final V value13, final K key14,
-                                       final V value14, final K key15, final V value15, final K key16, final V value16, final K key17,
-                                       final V value17, final K key18, final V value18 , final K key19, final V value19, final K key20, final V value20) {
-        return mapEntries(entry(key1, value1), entry(key2, value2), entry(key3, value3), entry(key4, value4), entry(key5, value5),
-                entry(key6, value6), entry(key7, value7), entry(key8, value8), entry(key9, value9), entry(key10, value10),
-                entry(key11, value11), entry(key12, value12), entry(key13, value13), entry(key14, value14),
-                entry(key15, value15), entry(key16, value16), entry(key17, value17), entry(key18, value18),
-                entry(key19, value19), entry(key20, value20));
-    } // map.
-
-
+    } // mapAll.
 
     /**
      * Returns an immutable map based on the objects entries (must be pairs otherwise will throws an {@link IllegalArgumentException})
@@ -837,7 +361,7 @@ public class CollectionsUtils implements Serializable {
      */
 	@SuppressWarnings("unchecked")
 	public static <K,V> Map<K,V> mapEntries(final Map.Entry<K, V>... entries) {
-        final Map<K,V> hashMap = map();
+        final Map<K,V> hashMap = new HashMap<>();
 
         for (Map.Entry<K, V> entry : entries) {
 
@@ -855,7 +379,7 @@ public class CollectionsUtils implements Serializable {
      * @return Map
      */
     public static <K,V> Map<K,V> mapEntries(final Collection<Map.Entry<K, V>> entries) {
-        final Map<K,V> hashMap = map();
+        final Map<K,V> hashMap = new HashMap<>();
 
         for (Map.Entry<K, V> entry : entries) {
 
@@ -997,6 +521,73 @@ public class CollectionsUtils implements Serializable {
         return Collections.unmodifiableList(result);
     }
 
+    /**
+     * Took a non serializable map and convert it and all the contents inside to a serializable map
+     * Note: if a value is a map, use recursive to create that inner map to a serializable map (if it is not already)
+     * if the value is not a map, but it is not serializable, then convert it to a string by calling toString
+     * any null value will be skipped.
+     *
+     * @param nonSerializableMap Map
+     * @return Serializable HashMap serializable
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static HashMap<Serializable, Serializable> toSerializableMap (final Map nonSerializableMap) {
+
+        final HashMap<Serializable, Serializable> serializableMap = new HashMap<>();
+
+        for (final Object key : nonSerializableMap.keySet()) {
+
+            final Object value = nonSerializableMap.get(key);
+            if (null != value) {
+                if (value instanceof Map && !(value instanceof Serializable)) {
+
+                    serializableMap.put((Serializable) key, toSerializableMap((Map) value));
+                }else if (value instanceof List && !(value instanceof Serializable)) {
+
+                    serializableMap.put((Serializable) key, toSerializableList((List) value));
+                } else {
+
+                    serializableMap.put((Serializable) key, value instanceof Serializable ? (Serializable) value : value.toString());
+                }
+            }
+        }
+
+        return serializableMap;
+    }
+
+    /**
+     * Took a non serializable list and convert it and all the contents inside to a serializable arraylist
+     * Note: if a value is a list, use recursive to create that inner list to a serializable list (if it is not already)
+     * if the value is not a list, but it is not serializable, then convert it to a string by calling toString
+     * any null value will be skipped.
+     *
+     * @param nonSerializableMap Map
+     * @return Serializable HashMap serializable
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static ArrayList<Serializable> toSerializableList(final List nonSerializableList) {
+
+        final ArrayList<Serializable> serializableList = new ArrayList<>();
+
+        for (final Object value : nonSerializableList) {
+
+            if (null != value) {
+                if (value instanceof Map && !(value instanceof Serializable)) {
+
+                    serializableList.add(toSerializableMap((Map) value));
+                }else if (value instanceof List && !(value instanceof Serializable)) {
+
+                    serializableList.add(toSerializableList((List) value));
+                } else {
+
+                    serializableList.add(value instanceof Serializable ? (Serializable) value : value.toString());
+                }
+            }
+        }
+
+        return serializableList;
+    }
+
     private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
         @Override
         public Supplier<ImmutableList.Builder<T>> supplier() {
@@ -1099,6 +690,19 @@ public class CollectionsUtils implements Serializable {
             return (current,last) -> comparator.compare(current,last) >= 0 ? current : last;
         }
 
-
     }
+
+    /**
+     * Concatenates the contents of one array into the other one.
+     *
+     * @param array1 The base array used in the concatenation.
+     * @param array2 The array that will be added to the first array.
+     *
+     * @return The resulting array
+     */
+    public static <T> T[] concat(final T[] array1, final T[] array2) {
+        return Stream.concat(Arrays.stream(array1), Arrays.stream(array2))
+                .toArray(size -> (T[]) Array.newInstance(array1.getClass().getComponentType(), size));
+    }
+
 }

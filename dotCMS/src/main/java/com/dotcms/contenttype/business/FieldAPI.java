@@ -1,9 +1,6 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.business.CloseDBIfOpened;
-
-import java.util.*;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -13,6 +10,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * 
@@ -41,7 +44,8 @@ import com.liferay.portal.model.User;
  *
  */
 public interface FieldAPI {
-	
+	String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
+
 	/**
 	 * Retrieves the list of the base Fields Types
 	 * 
@@ -149,22 +153,6 @@ public interface FieldAPI {
 	 */
 	FieldVariable save(FieldVariable fieldVar, User user) throws DotDataException, DotSecurityException;
 
-	static Set<String> RESERVED_FIELD_VARS= ImmutableSet.of(
-			Contentlet.INODE_KEY,
-			Contentlet.LANGUAGEID_KEY,
-			Contentlet.STRUCTURE_INODE_KEY,
-			Contentlet.DISABLED_WYSIWYG_KEY,
-			Contentlet.LOCKED_KEY,
-			Contentlet.ARCHIVED_KEY,
-			Contentlet.LIVE_KEY,
-			Contentlet.WORKING_KEY,
-			Contentlet.MOD_DATE_KEY,
-			Contentlet.MOD_USER_KEY,
-			Contentlet.OWNER_KEY,
-			Contentlet.IDENTIFIER_KEY,
-			Contentlet.SORT_ORDER_KEY,
-			Contentlet.HOST_KEY,
-			Contentlet.FOLDER_KEY);
 
 	/**
 	 * Returns a field based on the Content Type Id and the Field Relation Type
@@ -268,4 +256,19 @@ public interface FieldAPI {
 	 * @throws DotDataException when SQL error happens
 	 */
 	List<FieldVariable> loadVariables(Field field) throws DotDataException;
+
+	/**
+	 * Takes a field and returns if the field is a "fullScreen" if and only if:
+	 * <ul>
+	 *     <li>It's a multiline field.</li>
+	 *     <li>It's the only field on its tab.</li>
+	 *     <li>It does not have the field variable {@code fullScreenField=false}.</li>
+	 * </ul>
+	 *
+	 * @param fieldIn The {@link Field} that will be checked.
+	 *
+	 * @return If the Field can be displayed in fullscreen, returns {@code true}.
+	 */
+	boolean isFullScreenField(Field fieldIn);
+
 }

@@ -1,25 +1,21 @@
 package com.dotcms.rest.api.v1.experiments;
 
-import static com.dotcms.jitsu.EventLogRunnable.POSTING_HEADERS;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.business.ExperimentsAPI.Health;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.http.CircuitBreakerUrl;
-import com.dotcms.http.CircuitBreakerUrl.Method;
-import com.dotcms.http.CircuitBreakerUrl.Response;
-import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.jitsu.EventLogRunnable;
-import com.dotcms.jitsu.EventsPayload;
-import com.dotcms.jitsu.EventsPayload.EventPayload;
-import com.dotcms.rest.*;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.PATCH;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.DotPreconditions;
@@ -29,7 +25,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -54,6 +49,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -67,6 +63,8 @@ public class ExperimentsResource {
 
     private final WebResource webResource;
     private final ExperimentsAPI experimentsAPI;
+
+    private static final String HEALTH_KEY = "health";
 
     public ExperimentsResource() {
         webResource =  new WebResource();
@@ -468,12 +466,31 @@ public class ExperimentsResource {
      * {@link HttpServletRequest}.
      * - Then it use the {@link Experiment#trafficAllocation()} to know if the user should go into the
      * {@link Experiment}.
-     * - Finally it assing a {@link com.dotcms.experiments.model.ExperimentVariant} according to
+     * - Finally it assign a {@link com.dotcms.experiments.model.ExperimentVariant} according to
      * {@link com.dotcms.experiments.model.ExperimentVariant#weight()}
      *
-     * If exists more that one {@link Experiment} RUNNING it try to get the user into any of them
-     * one by one if finally the user is not going into any experiment then it return a
+     * If exists more than one {@link Experiment} RUNNING it try to get the user into any of them
+     * one by one if finally the user is not going into any experiment then it returned a
      * {@link com.dotcms.experiments.business.web.ExperimentWebAPI#NONE_EXPERIMENT}
+     *
+     * Also, you can include a list of excluded Experiments's id on the request payload as follows:
+     *
+     * <code>
+     * {
+     *     "exclude": ["1234", "5678"]
+     * }
+     * </code>
+     *
+     * it means that the Experiments '1234' and '5678' are not going to be taken account so they are going to be
+     * excluded from the Running Experiment list to check.
+     *
+     * Also on the response a list of excludedExperimentIdsEnded it is a List of the Experiment excluded that already
+     * are ended, so in the before Example if '1234' is ended then the response is going to include:
+     *
+     * {
+     *     ...
+     *     excludedExperimentIdsEnded: ['1234']
+     * }
      *
      * @see com.dotcms.experiments.business.web.ExperimentWebAPI#isUserIncluded(HttpServletRequest, HttpServletResponse, List)
      */
@@ -536,12 +553,19 @@ public class ExperimentsResource {
                 .getOrNull();
 
         if(analyticsApp==null) {
-            return new ResponseEntityView<>(Map.of("healthy", false));
+            return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.NOT_CONFIGURED));
         }
 
-        final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
-        return new ResponseEntityView<>(Map.of("healthy", eventLogRunnable.sendTestEvent()
-                .isPresent()));
+        try {
+            final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
+            Optional<CircuitBreakerUrl.Response<String>> responseOptional  = eventLogRunnable.sendTestEvent();
+
+            return new ResponseEntityView<>(Map.of(HEALTH_KEY, responseOptional.isPresent()
+                    && UtilMethods.isSet(responseOptional.get().getResponse())
+                    ? Health.OK:Health.CONFIGURATION_ERROR));
+        } catch (IllegalStateException e) {
+            return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.CONFIGURATION_ERROR));
+        }
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

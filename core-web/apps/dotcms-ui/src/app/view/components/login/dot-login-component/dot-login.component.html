@@ -11,8 +11,7 @@
                 [style]="{ width: '185px' }"
                 (onChange)="onLanguageChange($event.value)"
                 data-testId="language"
-                formControlName="language"
-            >
+                formControlName="language">
             </p-dropdown>
         </div>
 
@@ -24,8 +23,7 @@
             class="login__message"
             [ngClass]="{ 'p-invalid': isError, success: !isError }"
             [innerHTML]="message"
-            data-testId="message"
-        ></p>
+            data-testId="message"></p>
         <div class="field form__group--validation">
             <label dotFieldRequired data-testId="emailLabel" for="inputtext">{{
                 loginInfo.i18nMessagesMap['emailAddressLabel']
@@ -35,12 +33,10 @@
                 id="inputtext"
                 type="text"
                 pInputText
-                type="text"
                 dotAutofocus
                 formControlName="login"
                 autocomplete="username"
-                data-testId="userNameInput"
-            />
+                data-testId="userNameInput" />
 
             <dot-field-validation-message
                 [message]="
@@ -49,8 +45,7 @@
                         loginInfo.i18nMessagesMap['emailAddressLabel']
                     )
                 "
-                [field]="loginForm.get('login')"
-            >
+                [field]="loginForm.get('login')">
             </dot-field-validation-message>
         </div>
         <div class="field form__group--validation">
@@ -64,8 +59,7 @@
                 type="password"
                 formControlName="password"
                 autocomplete="current-password"
-                data-testId="password"
-            />
+                data-testId="password" />
 
             <dot-field-validation-message
                 [message]="
@@ -74,8 +68,7 @@
                         loginInfo.i18nMessagesMap['password']
                     )
                 "
-                [field]="loginForm.get('password')"
-            >
+                [field]="loginForm.get('password')">
             </dot-field-validation-message>
         </div>
         <div class="login__password-settings field">
@@ -83,12 +76,11 @@
                 [label]="loginInfo.i18nMessagesMap['remember-me']"
                 formControlName="rememberMe"
                 data-testId="rememberMe"
-                binary="true"
-            ></p-checkbox>
+                binary="true"></p-checkbox>
             <a
+                class="password-settings__forgot-password"
                 *ngIf="!isLoginInProgress"
-                (click)="goToForgotPassword()"
-                actionLink
+                [routerLink]="['/public/forgotPassword']"
                 data-testId="actionLink"
                 >{{ loginInfo.i18nMessagesMap['get-new-password'] }}</a
             >
@@ -102,8 +94,7 @@
                 [label]="loginInfo.i18nMessagesMap['sign-in']"
                 (click)="logInUser()"
                 pButton
-                data-testId="submitButton"
-            ></button>
+                data-testId="submitButton"></button>
         </div>
         <div class="login__footer">
             <span data-testId="server"
@@ -120,8 +111,7 @@
                     ' - ' +
                     loginInfo.i18nMessagesMap['angular.login.component.community.licence.message']
                 "
-                data-testId="license"
-            >
+                data-testId="license">
             </span>
         </div>
     </form>

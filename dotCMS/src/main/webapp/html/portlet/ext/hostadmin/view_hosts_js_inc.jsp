@@ -65,10 +65,11 @@
 
 	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
+
     function editContentletEvent(contInode) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "edit-contentlet",
+            name: "edit-host",
             data: {
                 inode: contInode
             }
@@ -79,9 +80,9 @@
     function createContentlet(url) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "create-contentlet",
+            name: "create-host",
             data: {
-                url: url
+                url
             }
         });
         document.dispatchEvent(customEvent);
@@ -103,7 +104,7 @@
 
 		viewHostsReferer: '<%= referer %>',
 
-		copyHostOptions: 'copy_from_host_id:{copyFromHostId};copy_all:{copyAll};copy_templates_containers:{copyTemplatesAndContainers};copy_content_on_pages:{copyContentOnPages};copy_folders:{copyFolders};copy_content_on_host:{copyContentOnHost};copy_links:{copyLinks};copy_host_variables:{copyHostVariables};copy_tag_storage:{copyTagStorage}',
+		copyHostOptions: 'copy_from_host_id:{copyFromHostId};copy_all:{copyAll};copy_templates_containers:{copyTemplatesAndContainers};copy_content_on_pages:{copyContentOnPages};copy_folders:{copyFolders};copy_content_on_host:{copyContentOnHost};copy_content_types:{copyContentTypes};copy_links:{copyLinks};copy_host_variables:{copyHostVariables};copy_tag_storage:{copyTagStorage}',
 
 		newHostURL: '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">\
 							<portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" />\
@@ -323,10 +324,11 @@
 						copyContentOnPages: dijit.byId('copyContentOnPages').attr('value'),
 						copyFolders: dijit.byId('copyFolders').attr('value'),
 						copyContentOnHost: dijit.byId('copyContentOnHost').attr('value'),
+						copyContentTypes: dijit.byId('copyContentTypes').attr('value'),
 						copyLinks: dijit.byId('copyLinks').attr('value'),
 						copyHostVariables: dijit.byId('copyHostVariables').attr('value'),
 						copyTagStorage: document.getElementById('copyTagStorage').value
-					}));				
+					}));
 				url += "&_copyOptions=" + copyHostOptions + "&referer=" + escape(this.viewHostsReferer);
 				createContentlet(url);
 			}
@@ -619,8 +621,8 @@
             var showDeleted = dijit.byId('showDeleted').attr('checked');
             var offset = (this.currentPage - 1) * this.RESULTS_PER_PAGE;
             var count = this.RESULTS_PER_PAGE;
-            var callMetaData = { 
-            		  callback:dojo.hitch(this, this.refreshAfterDeleteCallback), 
+            var callMetaData = {
+            		  callback:dojo.hitch(this, this.refreshAfterDeleteCallback),
             		  arg: identifier
             		};
             HostAjax.findHostsPaginated(filter, showDeleted, offset, count, callMetaData);

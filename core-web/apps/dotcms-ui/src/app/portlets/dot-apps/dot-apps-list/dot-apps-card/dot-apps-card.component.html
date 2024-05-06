@@ -2,30 +2,13 @@
     [ngClass]="{
         'dot-apps-card__disabled': !app.configurationsCount
     }"
-    (click)="actionFired.emit(app.key)"
->
+    (click)="actionFired.emit(app.key)">
     <p-header>
-        <p-avatar
-            *ngIf="app.configurationsCount"
-            [image]="app.iconUrl"
-            [text]="app.name"
-            size="large"
-            pBadge
-            dotAvatar
-        ></p-avatar>
-        <p-avatar
-            *ngIf="!app.configurationsCount"
-            [image]="app.iconUrl"
-            [text]="app.name"
-            size="large"
-            dotAvatar
-        ></p-avatar>
+        <p-avatar [image]="app.iconUrl" [text]="app.name" size="large" dotAvatar></p-avatar>
         <div class="dot-apps-card__label-container">
-            <span class="dot-apps-card__name">
-                {{ app.name }}
-            </span>
-            <span class="dot-apps-card__configurations"
-                >{{
+            <span class="dot-apps-card__name">{{ app.name }}</span>
+            <span class="dot-apps-card__configurations">
+                {{
                     app.configurationsCount
                         ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
                         : ('apps.no.configurations' | dm)
@@ -35,8 +18,7 @@
                 *ngIf="app.sitesWithWarnings"
                 name="warning"
                 pTooltip="{{ app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm) }}"
-                size="18"
-            ></dot-icon>
+                size="18"></dot-icon>
         </div>
     </p-header>
     <p>

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
+import { DotRouterService } from '@dotcms/data-access';
 import { CONTAINER_SOURCE, DotLayoutBody } from '@dotcms/dotcms-models';
 import { dotContainerMapMock, mockDotContainers, processedContainers } from '@dotcms/utils-testing';
 import {
@@ -7,7 +8,6 @@ import {
     DotLayoutGrid,
     DotLayoutGridBox
 } from '@models/dot-edit-layout-designer';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 
 import { DotEditLayoutService } from './dot-edit-layout.service';

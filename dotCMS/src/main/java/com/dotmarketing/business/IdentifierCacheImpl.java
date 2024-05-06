@@ -11,6 +11,7 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -159,15 +160,16 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		if(id==null) {
 			return;
 		}
-		
-		if(InodeUtils.isSet(id.getId())) {
+
+		if(UtilMethods.isSet(id::getId)) {
 		    final String key = getPrimaryGroup() + id.getId();
             cache.remove(key,  getPrimaryGroup());
 		    cache.remove(key,  get404Group());
+			cache.remove(allInfosKey(id.getId()), getVersionInfoGroup());
 		}
 		
 		final String uri = id.getURI();
-		if(UtilMethods.isSet(id.getHostId()) && UtilMethods.isSet(uri)) {
+		if(UtilMethods.isSet(id::getHostId) && UtilMethods.isSet(uri)) {
     		final String key = getPrimaryGroup() + id.getHostId() + "-" + uri;
     		cache.remove(key, getPrimaryGroup());
     		cache.remove(key, get404Group());
@@ -226,6 +228,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	 
 	 public void removeFromCacheByInode(String inode) {
 		 cache.remove(getVersionGroup() + inode, getVersionGroup());
+		 cache.remove(allInfosKey(inode), getVersionInfoGroup());
 	 }
 	
 	
@@ -295,16 +298,42 @@ public class IdentifierCacheImpl extends IdentifierCache {
     public void removeContentletVersionInfoToCache(String identifier, long lang) {
         String key = getKey(identifier, lang);
         cache.remove(getVersionInfoGroup()+key, getVersionInfoGroup());
+		cache.remove( allInfosKey(identifier) ,getVersionInfoGroup());
     }
 
 	@Override
 	public void removeContentletVersionInfoToCache(String identifier, long lang, final String variantId) {
 		String key = getKey(identifier, lang, variantId);
 		cache.remove(getVersionInfoGroup() + key , getVersionInfoGroup());
+		cache.remove( allInfosKey(identifier) ,getVersionInfoGroup());
 	}
 
     @Override
     protected void removeVersionInfoFromCache(String identifier) {
         cache.remove(getVersionInfoGroup()+identifier, getVersionInfoGroup());
+		cache.remove( allInfosKey(identifier) ,getVersionInfoGroup());
     }
+
+	private String allInfosKey(String... vals){
+		return "all-"+ String.join("-", vals);
+	}
+
+
+	@Override
+	public List<ContentletVersionInfo> getContentVersionInfos(final String identifier){
+		// we don't read from cache in transactions
+		if(DbConnectionFactory.inTransaction()){
+			return null;
+		}
+		return (List<ContentletVersionInfo>) cache.getNoThrow(allInfosKey(identifier) , getVersionInfoGroup());
+	}
+
+	@Override
+	public void putContentVersionInfos(final String identifier, final List<ContentletVersionInfo> versionInfos){
+		// we don't write cache in transactions
+		if(DbConnectionFactory.inTransaction()){
+			return;
+		}
+		cache.put(allInfosKey(identifier) ,versionInfos, getVersionInfoGroup());
+	}
 }

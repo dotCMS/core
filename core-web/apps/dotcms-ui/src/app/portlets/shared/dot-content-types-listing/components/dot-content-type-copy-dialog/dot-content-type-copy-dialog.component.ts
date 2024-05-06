@@ -20,11 +20,10 @@ import {
 
 import { map } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
+import { DotCopyContentTypeDialogFormFields, DotDialogActions } from '@dotcms/dotcms-models';
+import { DotValidators } from '@dotcms/ui';
 import { DotCMSAssetDialogCopyFields } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
-import { DotValidators } from '@shared/validators/dotValidators';
 
 @Component({
     selector: 'dot-content-type-copy-dialog',

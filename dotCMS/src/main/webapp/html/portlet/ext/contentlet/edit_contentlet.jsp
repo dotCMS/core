@@ -1,7 +1,41 @@
+<%!
+
+
+
+	public boolean isFullScreenField(com.dotcms.contenttype.model.field.Field field) {
+		return APILocator.getContentTypeFieldAPI().isFullScreenField(field);
+	}
+
+
+	public boolean isFullScreenField(Field oldField) {
+
+		try {
+
+			return isFullScreenField(LegacyFieldTransformer.from(oldField));
+		} catch (Exception e) {
+			return false;
+		}
+
+
+	}
+	public boolean isNextFieldFullScreen(Structure structure, Field oldField) {
+
+		try{
+			ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structure.getInode());
+			com.dotcms.contenttype.model.field.Field fieldIn = LegacyFieldTransformer.from(oldField);
+			com.dotcms.contenttype.model.field.Field field = type.fields().subList(type.fields().indexOf(fieldIn), type.fields().size()).stream().filter(f->!(f instanceof RowField || f instanceof ColumnField || f instanceof TabDividerField)).findFirst().get();
+			return isFullScreenField(field);
+		}
+		catch(Exception e){
+			return false;
+		}
+
+
+	}
+
+%>
 
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
-<%@page import="com.dotcms.contenttype.model.field.ColumnField"%>
-<%@page import="com.dotcms.contenttype.model.field.RowField"%>
 <%@page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer"%>
 <%@page import="com.dotmarketing.business.LayoutAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
@@ -12,7 +46,7 @@
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
-<%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%> 
+<%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
@@ -31,9 +65,23 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage"%>
 <%@ page import="com.dotmarketing.db.DbConnectionFactory" %>
+<%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.stream.Collectors" %>
+<%@ page import="com.dotcms.contenttype.model.field.*" %>
+<%@ page import="io.vavr.control.Try" %>
+<%@ page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer" %>
+<%@ page import="org.apache.poi.ss.usermodel.Row" %>
+<%@ page import="com.dotcms.contenttype.transform.field.FieldTransformer" %>
+<%@ page import="com.dotmarketing.util.Logger" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
+<!--  dotCMS Block Editor Builder -->
+	<script src="/dotcms-block-editor/polyfills.js" type="module"></script>
+	<script src="/dotcms-block-editor/generator-runtime.js" defer></script>
+	<script src="/dotcms-block-editor/main.js" type="module"></script>
+<!--   End dotCMS Block Editor -->
 
 <style>
 .dijitTree {
@@ -46,10 +94,18 @@
 
 </style>
 
-<!-- 
-	Uncomment this when we are ready to use the new content fields
-	<script src="/html/contenttype-fields.js"></script>
--->
+<%
+	String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+%>
+
+<!--  dotCMS Binary Field Builder -->
+	<script src="/dotcms-binary-field-builder/polyfills.js" type="module"></script>
+	<script src="/dotcms-binary-field-builder/generator-runtime.js" defer></script>
+	<script src="/dotcms-binary-field-builder/main.js" type="module"></script>
+<!--  dotCMS End Binary Field Builder -->
+
+<% } %>
 
 <script type="text/javascript">
 
@@ -79,11 +135,13 @@
 	}
 </script>
 
-
-
-
-
-
+<script language="javascript">
+	require(["vs/editor/editor.main"], function() {
+		// Hack to avoid MonacoEditorLoaderService to load the editor again 
+		// That service not works in `dojo` environment Dojo amdLoader. See docs: [https://dojotoolkit.org/reference-guide/1.7/loader/amd.html?highlight=packages%20location%20name%20main]
+		window.monacoEditorAlreadyInitialized = !!window.monaco;
+	});		
+</script>
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
@@ -182,8 +240,11 @@
 	request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
 	request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);
 
+	boolean fullScreenField  = isNextFieldFullScreen(structure, fields.get(0));
+	String fullScreenClass= fullScreenField ? "edit-content-full-screen": "";
+	boolean fullScreenNextField = isNextFieldFullScreen(structure, fields.get(0));
+	String fullScreenNextClass= fullScreenNextField ? "edit-content-full-screen": "";
 
-	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 100, 0,"asc");
 
 	/*### DRAW THE DYNAMIC FIELDS ###*/
 
@@ -278,13 +339,13 @@
 		<%}%>
 
         <!-- START EDIT CONTENT FORM -->
-        <div class="content-edit__form">
+        <div  class="content-edit__form <%=fullScreenNextClass%>" >
             <% if(widgetUsageField != null && UtilMethods.isSet(widgetUsageField.getValues())){ %>
                 <div class="fieldWrapper">
                     <div class="fieldName">
                         <%=widgetUsageField.getFieldName()%>
                     </div>
-                    <div class="fieldValue">
+                    <div class="fieldValue <%=fullScreenClass%>">
                         <%
                         String textValue = widgetUsageField.getValues();
                         textValue = textValue.replaceAll("&", "&amp;");
@@ -295,7 +356,7 @@
                 </div>
             <% } %>
 
-			<div class="editcontentlet__row">
+			<div>
 				<span class="editcontentlet__col">
 
             <%-- Begin Looping over fields --%>
@@ -307,9 +368,24 @@
                 boolean rowOpen = true;
                 boolean columnOpen = true;
 
+
                 for (; i < fields.size(); i++) {
+
                     Field f = fields.get(i);
                     com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(f).from();
+					fullScreenField = isFullScreenField(f);
+					fullScreenNextField = isNextFieldFullScreen(structure, f);
+
+					fullScreenClass=fullScreenField ? "edit-content-full-screen": "";
+					fullScreenNextClass=fullScreenNextField ? "edit-content-full-screen": "";
+					request.setAttribute("DOT_FULL_SCREEN_FIELD",fullScreenField );
+					request.setAttribute("DOT_FULL_SCREEN_NEXT_FIELD",fullScreenNextField );
+
+
+
+
+
+
 
                     if (fieldSetOpen &&
                         (f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
@@ -349,7 +425,7 @@
 						</div>
 
                         <div id="tab_<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
-                            <div class="content-edit__advaced-form">
+                            <div class="content-edit__advaced-form <%=fullScreenNextClass%> <%=fullScreenClass%>">
 
                     <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
                         categoriesTabFieldExists = true;%>
@@ -630,7 +706,7 @@
             }
         });
 
-<% 
+<%
     final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
 %>
         var customEvent = document.createEvent("CustomEvent");

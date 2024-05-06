@@ -11,13 +11,17 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { DotAlertConfirmService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRouterService,
+    DotIframeService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -160,7 +164,9 @@ describe('DotContentletWrapperComponent', () => {
         describe('events', () => {
             it('should call load', () => {
                 dotIframeDialog.triggerEventHandler('charge', { hello: 'world' });
-                expect(dotAddContentletService.load).toHaveBeenCalledWith({ hello: 'world' });
+                expect(dotAddContentletService.load).toHaveBeenCalledWith({
+                    hello: 'world'
+                });
             });
 
             it('should close the dialog and redirect to Edit Page', () => {

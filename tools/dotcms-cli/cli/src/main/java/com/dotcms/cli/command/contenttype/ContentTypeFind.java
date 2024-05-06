@@ -10,7 +10,8 @@ import com.dotcms.model.ResponseEntityView;
 import java.util.List;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import org.apache.commons.lang3.BooleanUtils;
+import javax.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -29,6 +30,9 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
     @CommandLine.Mixin
     InteractiveOptionMixin interactiveOption;
 
+    @Inject
+    Prompt prompt;
+
     /**
      * Here we encapsulate Filter endpoint options
      * This maps directly to POST /api/v1/contenttype/_filter
@@ -44,8 +48,17 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
         String site;
 
         @CommandLine.Option(names = {"-o", "--order"},
-                description = "Set an order by param. (variable is default) ", defaultValue = "variable")
+                description = {
+                    "Set an order by param. (variable is used default)",
+                    "Expected values that can be used are: ",
+                    "variable, name, description, modDate"
+                },
+                defaultValue = "variable")
         String orderBy;
+
+        @CommandLine.Option(names = {"-d", "--direction"},
+                description = "Set order direction. (ASC or DESC) ", defaultValue = "ASC")
+        String direction;
 
         @CommandLine.Option(names = {"-p", "--page"},
                 description = "Page Number.", defaultValue = "1")
@@ -64,8 +77,18 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
    @CommandLine.ArgGroup(exclusive = false,  heading = "\n@|bold,blue Filter/Search Options. |@\n")
    FilterOptions filter;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
+    @ConfigProperty(name = "contentType.pageSize", defaultValue = "25")
+    Integer pageSize;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         if(null != filter){
             return list(filter);
         }
@@ -75,11 +98,10 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
 
     private int list() {
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
-        final int pageSize = 10;
-        int page = 0;
+        int page = 1;
         while (true) {
             final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
-                    null, page, null, "variable", null, null, null);
+                    null, page,  pageSize, "variable", null, null, null);
             final List<ContentType> types = responseEntityView.entity();
             if (types.isEmpty()) {
                 output.info("@|yellow No content-types were returned, Check you have access permissions.|@");
@@ -93,7 +115,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
             }
             page++;
 
-            if(interactiveOption.isInteractive() && !Prompt.yesOrNo(true,"Load next page? y/n:")){
+            if(interactiveOption.isInteractive() && !prompt.yesOrNo(true,"Load next page? y/n:")){
                 break;
             }
 
@@ -106,7 +128,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
         final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
                 filter.typeName, filter.page, filter.pageSize,
-                filter.orderBy, null, null, filter.site);
+                filter.orderBy, filter.direction, null, filter.site);
 
         final List<ContentType> types = responseEntityView.entity();
         if (types.isEmpty()) {

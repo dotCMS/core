@@ -19,7 +19,6 @@ public class DotValidationException extends DotStateException {
 	
 	public final static String VALIDATION_FAILED_BADTYPE = "badType";
 	public final static String VALIDATION_FAILED_REQUIRED = "required";
-	public final static String VALIDATION_FAILED_MAXLENGTH = "length";
 	public final static String VALIDATION_FAILED_PATTERN = "pattern";
 	
 	public final static String VALIDATION_FAILED_REQUIRED_REL = "reqRel";
@@ -114,18 +113,6 @@ public class DotValidationException extends DotStateException {
 	}
 	
 	/**
-	 * Use to add a field that failed length validation
-	 * @param field
-	 */
-	public void addMaxLengthField(Field field){
-		List<Field> fields = notValidFields.get(VALIDATION_FAILED_MAXLENGTH);
-		if(fields == null)
-			fields = new ArrayList<>();
-		fields.add(field);
-		notValidFields.put(VALIDATION_FAILED_MAXLENGTH, fields);
-	}
-	
-	/**
 	 * Use to add a field that failed because it has an unknown type
 	 * @param field
 	 */
@@ -151,13 +138,6 @@ public class DotValidationException extends DotStateException {
 	
 	public boolean hasRequiredErrors(){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_REQUIRED);
-		if(fields == null || fields.isEmpty())
-			return false;
-		return true;
-	}
-	
-	public boolean hasLengthErrors(){
-		List<Field> fields = notValidFields.get(VALIDATION_FAILED_MAXLENGTH);
 		if(fields == null || fields.isEmpty())
 			return false;
 		return true;

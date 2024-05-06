@@ -8,10 +8,8 @@ import { of } from 'rxjs';
 
 import { ActivatedRouteSnapshot } from '@angular/router';
 
-import {
-    DotExperimentExperimentResolver,
-    DotExperimentsService
-} from '@dotcms/portlets/dot-experiments/data-access';
+import { DotExperimentsService } from '@dotcms/data-access';
+import { DotExperimentExperimentResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import { getExperimentMock } from '@dotcms/utils-testing';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
@@ -31,15 +29,16 @@ describe('DotExperimentExperimentResolver', () => {
         activatedRouteSnapshotMock = spectator.inject(ActivatedRouteSnapshot);
     });
 
-    it("shouldn't get a experiment by experimentId", () => {
+    it("shouldn't get a experiment by experimentId", (done) => {
         activatedRouteSnapshotMock.queryParams = {};
 
         spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
             expect(result).toBe(null);
+            done();
         });
     });
 
-    it('should get a experiment by experimentId', () => {
+    it('should get a experiment by experimentId', (done) => {
         const experimentId = '123';
         activatedRouteSnapshotMock.queryParams = { experimentId };
 
@@ -48,6 +47,7 @@ describe('DotExperimentExperimentResolver', () => {
         spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
             expect(result).toBe(EXPERIMENT_MOCK);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(experimentId);
+            done();
         });
     });
 });

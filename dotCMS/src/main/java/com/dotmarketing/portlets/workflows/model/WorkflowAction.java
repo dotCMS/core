@@ -1,20 +1,38 @@
 package com.dotmarketing.portlets.workflows.model;
 
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.collect.ImmutableList;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
- * Encapsulate the workflow action information.
- *
+ * Encapsulates the information related to a Workflow Action in dotCMS.
+ * <p>Workflow Actions define what actions a user may take on a content item in a specific step of
+ * the Workflow Scheme it has been assigned to. Each Workflow Action specifies:</p>
+ * <ul>
+ *     <li>Who has permissions to take the Action.</li>
+ *     <li>Where and when the Action is displayed to the user.</li>
+ *     <li>The Workflow Step the content will be in after the Action is taken.</li>
+ *     <li>The user or Role who will be assigned the content item after the action is taken.</li>
+ *     <li>The Workflow Sub-Actions that will be performed when the action is taken.</li>
+ * </ul>
  *
  * @author root
  * @version 1.x
@@ -27,7 +45,8 @@ public class WorkflowAction implements Permissionable, Serializable{
 	/**
 	 * Key to store when the next step is current step.
 	 */
-	public  static final String CURRENT_STEP = "currentstep";
+	public static final String CURRENT_STEP = "currentstep";
+	public static final String SEPARATOR = "SEPARATOR";
 
 	private String id;
 
@@ -57,6 +76,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean moveActionlet;
 	private boolean moveActionletHasPath;
 	private Set<WorkflowState> showOn = Collections.emptySet();
+	private Map<String, Object> metadata = new HashMap<>();
 
 	public WorkflowAction() {
 	}
@@ -484,6 +504,25 @@ public class WorkflowAction implements Permissionable, Serializable{
 	public boolean isNew(){
 		return !UtilMethods.isSet(id);
 		
+	}
+
+	/**
+	 * Returns the metadata for this Workflow Action.
+	 *
+	 * @return A Map with the Action's metadata.
+	 */
+	public Map<String, Object> getMetadata(){
+		return this.metadata;
+	}
+
+	/**
+	 * Sets the metadata for this Workflow Action, which may include different configuration
+	 * properties or simple common-use attributes for the action in a single column.
+	 *
+	 * @param metadata A Map with the Action's metadata.
+	 */
+	public void setMetadata(final Map<String, Object> metadata){
+		this.metadata = metadata;
 	}
 
 	@Override

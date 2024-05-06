@@ -1,0 +1,85 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Login Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= login(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+login - *Use this command to login to a dotCMS instance.*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+
+Usage: login
+       login [-u <user> -p <password>]
+       login [-tk <token>]
+
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+This command is used to either login with a user/password combination
+or directly using a token. These options are mutually exclusive and
+only one should be provided. If none is provided, interactive mode will be used.
+Note: For security reasons, it's recommended to use interactive mode
+for entering passwords. Input through command line may be stored in console history.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-h*, *--help*::
+  Display this help message.
+
+== 
+*Password Login Options. *
+
+
+*-p*, *--password*[=_<password>_]::
+  Passphrase
++
+If not provided in command line, interactive mode will prompt for it.
+
+*-u*, *--user*[=_<user>_]::
+  Username
++
+If not provided in command line, interactive mode will prompt for it.
+
+== 
+*Token login Options. *
+
+
+*-tk, --token*[=_<token>_]::
+  dotCMS Token
++
+A token can be used directly to authenticate with the dotCMS instance
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

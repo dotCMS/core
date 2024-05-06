@@ -7,8 +7,7 @@ import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/oper
 
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotRouterService } from '@dotcms/data-access';
 import { LoggerService, SiteService } from '@dotcms/dotcms-js';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 

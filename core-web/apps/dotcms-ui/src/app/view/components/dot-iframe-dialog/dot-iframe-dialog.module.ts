@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotDialogModule } from '@dotcms/ui';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 

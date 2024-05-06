@@ -1,18 +1,80 @@
 @use "variables" as *;
+@import "mixins";
 
-p-chip {
-    background-color: $color-palette-gray-300;
+$chip-height-sm: 1.5rem; // 24px
+$chip-height-md: 2.5rem; // 40px
+
+p-chip .p-chip {
+    background-color: $color-accessible-text-blue-bg;
+    color: $color-accessible-text-blue;
     border-radius: $border-radius-md;
-    display: inline-block;
-    padding: 0.25rem $spacing-1;
-    position: relative;
-    width: fit-content;
+    padding: 0 $spacing-1;
+    height: $chip-height-md;
+    gap: $spacing-1;
 
-    .p-chip-text {
-        font-size: $font-size-sm;
-        line-height: $spacing-4;
-        color: $color-palette-gray-700;
-        vertical-align: middle;
-        white-space: nowrap;
+    .p-chip-icon,
+    .pi-chip-remove-icon {
+        line-height: inherit;
+    }
+
+    .pi-chip-remove-icon {
+        border-radius: $border-radius-sm;
+        &:focus {
+            @include field-focus;
+        }
+    }
+
+    &.p-chip-image {
+        // Not implemented
+    }
+
+    &.p-chip-secondary {
+        background-color: $color-accessible-text-purple-bg;
+        color: $color-accessible-text-purple;
+    }
+
+    &.p-chip-warning {
+        background-color: $color-accessible-text-yellow-bg;
+        color: $color-accessible-text-yellow;
+    }
+
+    &.p-chip-success {
+        background-color: $color-accessible-text-green-bg;
+        color: $color-accessible-text-green;
+    }
+
+    &.p-chip-error {
+        background-color: $color-accessible-text-red-bg;
+        color: $color-accessible-text-red;
+    }
+
+    &.p-chip-gray {
+        background-color: $color-accessible-text-gray-bg;
+        color: $color-accessible-text-gray;
+    }
+
+    &.p-chip-pink {
+        background: $color-alert-fuchsia;
+        color: $color-accessible-text-fuchsia;
+    }
+
+    &.p-chip-blue {
+        background-color: $color-accessible-text-blue-bg;
+        color: $color-accessible-text-blue;
+    }
+
+    &.p-chip-sm {
+        gap: $spacing-0;
+        padding: 0 $spacing-1;
+        border-radius: $border-radius-sm;
+        height: $chip-height-sm;
+
+        .p-chip-text {
+            font-size: $icon-sm;
+        }
+    }
+
+    &.p-chip-rounded {
+        border-radius: $border-radius-xl;
     }
 }

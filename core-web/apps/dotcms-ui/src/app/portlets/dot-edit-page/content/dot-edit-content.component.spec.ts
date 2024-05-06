@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { mockProvider } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -15,21 +16,14 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
@@ -37,17 +31,28 @@ import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/te
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
+    DotContentTypeService,
     DotEditPageService,
     DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
     DotGenerateSecurePasswordService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPageRenderService,
     DotPropertiesService,
+    DotRouterService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
-    DotWorkflowService
+    DotWorkflowService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService,
+    DotExperimentsService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -67,15 +72,18 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotPageContainer,
+    DotPageContent,
     DotPageMode,
     DotPageRender,
-    DotPageRenderState
+    DotPageRenderState,
+    PageModelChangeEventType
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotCopyContentModalService } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
+    DotMessageDisplayServiceMock,
     DotWorkflowServiceMock,
     getExperimentMock,
     LoginServiceMock,
@@ -95,16 +103,12 @@ import {
     EDIT_BLOCK_EDITOR_CUSTOM_EVENT
 } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
-import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
-import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
-import { DotPageContent } from '../shared/models';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
 
@@ -152,6 +156,20 @@ export class MockDotFormSelectorComponent {
     template: ''
 })
 export class MockDotEditPageToolbarComponent {
+    @Input() pageState = mockDotRenderedPageState;
+    @Input() variant;
+    @Input() runningExperiment;
+    @Output() actionFired = new EventEmitter<DotCMSContentlet>();
+    @Output() cancel = new EventEmitter<boolean>();
+    @Output() favoritePage = new EventEmitter<boolean>();
+    @Output() whatschange = new EventEmitter<boolean>();
+}
+
+@Component({
+    selector: 'dot-edit-page-toolbar-seo',
+    template: ''
+})
+export class MockDotEditPageToolbarSeoComponent {
     @Input() pageState = mockDotRenderedPageState;
     @Input() variant;
     @Input() runningExperiment;
@@ -236,7 +254,8 @@ describe('DotEditContentComponent', () => {
                 MockDotIconComponent,
                 MockDotPaletteComponent,
                 HostTestComponent,
-                MockGlobalMessageComponent
+                MockGlobalMessageComponent,
+                MockDotEditPageToolbarSeoComponent
             ],
             imports: [
                 HttpClientTestingModule,
@@ -280,6 +299,9 @@ describe('DotEditContentComponent', () => {
                 DotCopyContentModalService,
                 DotFavoritePageService,
                 DotExperimentsService,
+                DotSeoMetaTagsService,
+                DotSeoMetaTagsUtilService,
+                mockProvider(DotContentTypeService),
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -314,10 +336,14 @@ describe('DotEditContentComponent', () => {
                                 mode: DotPageMode.PREVIEW
                             }
                         },
-                        data: of({})
+                        data: of({}),
+                        queryParams: of({ language_id: '1' })
                     }
                 },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 ConfirmationService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotEventsService,
@@ -364,6 +390,8 @@ describe('DotEditContentComponent', () => {
         spyOn(dotPageStateService, 'reload');
 
         spyOn(dotEditContentHtmlService, 'renderAddedForm');
+
+        spyOn(component, 'reload').and.callThrough();
     });
 
     describe('elements', () => {
@@ -529,6 +557,18 @@ describe('DotEditContentComponent', () => {
                     data: 'test'
                 });
             });
+
+            it('should reload page when triggering save-page', () => {
+                dotEditContentlet.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'save-page',
+                        payload: {}
+                    }
+                });
+                dotContentletEditorService.close$.next(true);
+
+                expect(component.reload).toHaveBeenCalledWith(null);
+            });
         });
 
         describe('dot-create-contentlet', () => {
@@ -546,6 +586,18 @@ describe('DotEditContentComponent', () => {
                 expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
                     data: 'test'
                 });
+            });
+
+            it('should reload page when triggering save-page', () => {
+                dotCreateContentlet.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'save-page',
+                        payload: {}
+                    }
+                });
+                dotContentletEditorService.close$.next(true);
+
+                expect(component.reload).toHaveBeenCalledWith(null);
             });
 
             it('should remove Contentlet Placeholder on close', () => {
@@ -640,7 +692,7 @@ describe('DotEditContentComponent', () => {
 
                 it('should add inline styles to device wrapper', (done) => {
                     setTimeout(() => {
-                        const deviceWraper = de.query(By.css('.dot-edit__device-wrapper'));
+                        const deviceWraper = de.query(By.css('.dot-edit__iframe-wrapper'));
                         expect(deviceWraper.styles.cssText).toEqual('width: 100px; height: 100px;');
                         done();
                     }, 100);
@@ -688,19 +740,24 @@ describe('DotEditContentComponent', () => {
 
                 it('should render in preview mode', fakeAsync(() => {
                     detectChangesForIframeRender(fixture);
-
+                    component.isEditMode = false;
                     expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
                         mockRenderedPageState,
                         jasmine.any(ElementRef)
                     );
+                    fixture.detectChanges();
+                    const wrapperEdit = de.query(By.css('[data-testId="edit-content-wrapper"]'));
+
                     expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
                     expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
                         mockRenderedPageState.page
                     );
+                    expect(wrapperEdit.nativeElement).toHaveClass('dot-edit-content__preview');
                 }));
 
                 it('should render in edit mode', fakeAsync(() => {
                     spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+                    component.isEditMode = true;
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
@@ -718,7 +775,9 @@ describe('DotEditContentComponent', () => {
                         content: state
                     });
                     detectChangesForIframeRender(fixture);
+                    fixture.detectChanges();
 
+                    const wrapperEdit = de.query(By.css('[data-testId="edit-content-wrapper"]'));
                     expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith(
                         state,
                         jasmine.any(ElementRef)
@@ -727,6 +786,7 @@ describe('DotEditContentComponent', () => {
                     expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
                         state.page
                     );
+                    expect(wrapperEdit.nativeElement).not.toHaveClass('dot-edit-content__preview');
                 }));
 
                 it('should show/hide content palette in edit mode with correct content', fakeAsync(() => {
@@ -1218,11 +1278,13 @@ describe('DotEditContentComponent', () => {
                         });
 
                         spyOn(dotContentletEditorService, 'getActionUrl').and.returnValue(
-                            of('/url/')
+                            of('/url/test?_content_lang=23&test=random')
                         );
+
                         spyOn(dotContentletEditorService, 'create').and.callFake((param) => {
+                            //checking the replace of lang.
                             expect(param.data).toEqual({
-                                url: '/url/'
+                                url: '/url/test?_content_lang=1&test=random'
                             });
 
                             const event: any = {

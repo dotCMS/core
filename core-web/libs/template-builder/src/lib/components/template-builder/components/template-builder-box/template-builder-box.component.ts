@@ -18,7 +18,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
+import { CONTAINER_SOURCE, DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
 import { DotContainerOptionsDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
@@ -86,11 +86,24 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     }
 
     onContainerSelect({ value }: { value: DotContainer }) {
-        this.addContainer.emit(value);
+        this.addContainer.emit({ ...value, identifier: this.getContainerReference(value) });
         this.formControl.setValue(null);
     }
 
     requestColumnDelete() {
         this.deleteColumn.emit();
+    }
+
+    /**
+     * Based on the container source, it returns the identifier that should be used as reference.
+     *
+     * @param dotContainer
+     * @returns string
+     * @memberof TemplateBuilderBoxComponent
+     */
+    private getContainerReference(dotContainer: DotContainer): string {
+        return dotContainer.source === CONTAINER_SOURCE.FILE
+            ? dotContainer.path
+            : dotContainer.identifier;
     }
 }

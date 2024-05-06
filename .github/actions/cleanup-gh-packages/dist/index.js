@@ -47,7 +47,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const node_fetch_1 = __importDefault(__nccwpck_require__(4429));
 const packageType = core.getInput('package_type');
 const packageName = core.getInput('package_name');
-const deleteVersion = core.getInput('delete_version');
+const deleteTags = core.getInput('delete_tags').split('\n').map(t => t.trim()).filter(t => !!t);
 const accessToken = core.getInput('access_token');
 const headers = {
     Accept: 'application/vnd.github+json',
@@ -61,17 +61,19 @@ const deletePackages = () => __awaiter(void 0, void 0, void 0, function* () {
         core.error(`Fetched packages were not found or they are empty, aborting`);
         return;
     }
-    const finalVersion = deleteVersion.includes(':') ? deleteVersion.split(':')[1] : deleteVersion;
-    const deletePackages = finalVersion
-        ? [foundPackages.find(p => p.metadata.container.tags.includes(finalVersion))]
-        : foundPackages;
-    core.info(`Found packages to delete:\n${JSON.stringify(deletePackages, null, 2)}`);
-    const versionsToDelete = deletePackages.filter(p => !!p).flatMap(p => p.id);
-    if (!versionsToDelete || versionsToDelete.length === 0) {
-        core.error(`Rsolved package versions are empty, aborting`);
-        return;
+    for (const tag of deleteTags) {
+        const finalVersion = tag.includes(':') ? tag.split(':')[1] : tag;
+        const deletePackages = finalVersion
+            ? [foundPackages.find(p => p.metadata.container.tags.includes(finalVersion))]
+            : foundPackages;
+        core.info(`Found packages to delete:\n${JSON.stringify(deletePackages, null, 2)}`);
+        const versionsToDelete = deletePackages.filter(p => !!p).flatMap(p => p.id);
+        if (!versionsToDelete || versionsToDelete.length === 0) {
+            core.error(`Rsolved package versions are empty, aborting`);
+            continue;
+        }
+        yield _deletePackages(versionsToDelete);
     }
-    yield _deletePackages(versionsToDelete);
 });
 exports.deletePackages = deletePackages;
 const fetchPackages = () => __awaiter(void 0, void 0, void 0, function* () {

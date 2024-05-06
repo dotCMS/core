@@ -11,5 +11,8 @@
         &:last-child a {
             pointer-events: none;
         }
+        &:nth-child(2) .p-icon-wrapper {
+            display: none;
+        }
     }
 }

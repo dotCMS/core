@@ -3,14 +3,30 @@ package com.dotcms.contenttype.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
-import com.dotcms.contenttype.model.type.*;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.Expireable;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DeterministicIdentifierAPI;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DotValidationException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -20,21 +36,37 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
-import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
 
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.COMMA;
+import static com.liferay.util.StringPool.PERCENT;
 
 /**
+ * This is the default implementation of the {@link ContentTypeFactory} interface.
+ * <p>This class provides the API with SQL-level access to retrieve different pieces of information
+ * related to Content Types in dotCMS.</p>
  *
  * @author Will Ezell
  * @since Jun 29th, 2016
@@ -202,9 +234,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
     @Override
-    public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset,final String hostId)
+    public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset,final String siteId)
             throws DotDataException {
-        return dbSearch(search, baseType, orderBy, limit, offset,hostId);
+        return UtilMethods.isSet(siteId)
+                ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId))
+                : dbSearch(search, baseType,orderBy, limit, offset, null);
     }
 
   @Override
@@ -237,6 +271,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   @Override
   public List<ContentType> search(String search, String orderBy, int limit) throws DotDataException {
     return search(search, BaseContentType.ANY, orderBy, limit, 0);
+  }
+
+  @Override
+  public List<ContentType> search(final List<String> sites, final String search, final int type,
+                                  final String orderBy, final int limit, final int offset) throws DotDataException {
+      return dbSearch(search, type, orderBy, limit, offset, sites);
   }
 
   @Override
@@ -295,8 +335,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     return type;
   }
-
-
 
   private ContentType dbSelectDefaultType() throws DotDataException {
     DotConnect dc = new DotConnect().setSQL(this.contentTypeSql.SELECT_DEFAULT_TYPE);
@@ -558,37 +596,44 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.loadResult();
   }
 
-  private void dbUpdate(ContentType type) throws DotDataException {
-    DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.UPDATE_TYPE);
-    dc.addParam(type.name());
-    dc.addParam(type.description());
-    dc.addParam(type.defaultType());
-    dc.addParam(type.detailPage());
-    dc.addParam(type.baseType().getType());
-    dc.addParam(type.system());
-    dc.addParam(type.fixed());
-    dc.addParam(type.variable());
-    dc.addParam(new CleanURLMap(type.urlMapPattern()).toString());
-    dc.addParam(type.host());
-    dc.addParam(type.folder());
-    dc.addParam(type.expireDateVar());
-    dc.addParam(type.publishDateVar());
-    dc.addParam(type.modDate());
-    dc.addParam(type.icon());
-    dc.addParam(type.sortOrder());
-    dc.addParam(type.markedForDeletion());
+    /**
+     * Updates the specified Content Type.
+     *
+     * @param type The {@link ContentType} to update.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+  private void dbUpdate(final ContentType type) throws DotDataException {
+    final DotConnect dc = new DotConnect();
+    dc.setSQL(ContentTypeSql.UPDATE_TYPE);
+    updateContentTypeFields(dc, type);
     dc.addParam(type.id());
     dc.loadResult();
   }
 
-  private void dbInsert(ContentType type) throws DotDataException {
-
-
-
-    DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.INSERT_TYPE);
+    /**
+     * Inserts the specified Content Type.
+     *
+     * @param type The {@link ContentType} to insert.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    private void dbInsert(final ContentType type) throws DotDataException {
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(ContentTypeSql.INSERT_TYPE);
     dc.addParam(type.id());
+        updateContentTypeFields(dc, type);
+        dc.loadResult();
+    }
+
+    /**
+     * Takes the "updateable" attributes of a Content Type and adds them to the {@link DotConnect}
+     * instance to save or update a Content Type.
+     *
+     * @param dc   The {@link DotConnect} instance to add the parameters to.
+     * @param type The {@link ContentType} to get the attributes from.
+     */
+    private void updateContentTypeFields(final DotConnect dc, final ContentType type) {
     dc.addParam(type.name());
     dc.addParam(type.description());
     dc.addParam(type.defaultType());
@@ -606,7 +651,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(type.icon());
     dc.addParam(type.sortOrder());
     dc.addParam(type.markedForDeletion());
-    dc.loadResult();
+    dc.addJSONParam(type.metadata());
   }
 
   private boolean dbDelete(final ContentType type) throws DotDataException {
@@ -660,53 +705,95 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   final Lazy<Boolean> LOAD_FROM_CACHE=Lazy.of(()->Config.getBooleanProperty(
           LOAD_CONTENTTYPE_DETAILS_FROM_CACHE, true));
 
-  private List<ContentType> dbSearch(final String search, final int baseType, String orderBy, int limit, final int offset,final String hostId)
-      throws DotDataException {
-    final int bottom = (baseType == 0) ? 0 : baseType;
-    final int top = (baseType == 0) ? 100000 : baseType;
-    if (limit == 0)
-      throw new DotDataException("limit param must be more than 0");
+/**
+ * Performs a SQL search for Content Types based on the specified search criteria.
+ *
+ * @param search   Allows you to add more conditions to the query via SQL code. It's internally
+ *                 sanitized by this Factory.
+ * @param baseType The Base Content Type to search for.
+ * @param orderBy  The order-by clause, which is internally sanitized by this Factory.
+ * @param limit    The maximum number of returned items in the result set, for pagination
+ *                 purposes.
+ * @param offset   The requested page number of the result set, for pagination purposes.
+ * @param siteIds  The list of one or more Sites to search for Content Types. You can pass down
+ *                 their Identifiers or Site Keys.
+ *
+ * @return The list of {@link ContentType} objects matching the specified search criteria.
+ *
+ * @throws DotDataException An error occurred when retrieving information from the database.
+ */
+ private List<ContentType> dbSearch(final String search, final int baseType, String orderBy,
+                                    int limit, final int offset, final List<String> siteIds) throws DotDataException {
+    if (limit == 0) {
+        throw new DotDataException("The 'limit' param must be greater than 0");
+    }
     limit = (limit < 0) ? 10000 : limit;
 
-    // our legacy code passes in raw sql conditions and so we need to detect
+    // Our legacy code passes in raw sql conditions. We need to detect
     // and handle those
     final SearchCondition searchCondition = new SearchCondition(search);
-    //check if order by is set, if not set it to mod_date
-    if(SQLUtil.sanitizeSortBy(orderBy).isEmpty()){
-    	orderBy = "mod_date";
+    if (SQLUtil.sanitizeSortBy(orderBy).isEmpty()) {
+    	orderBy = ContentTypeFactory.MOD_DATE_COLUMN;
     }
 
-    final String hostParam = UtilMethods.isSet(hostId) ? StringPool.PERCENT + hostId + StringPool.PERCENT : StringPool.PERCENT;
-    DotConnect dc = new DotConnect();
+    String siteIdsParam = this.formatSiteIdsToSqlQuery(siteIds);
+    siteIdsParam = UtilMethods.isSet(siteIdsParam) ? siteIdsParam : "'" + PERCENT + "'";
+    final DotConnect dc = new DotConnect();
 
-    if(LOAD_FROM_CACHE.get()) {
-        dc.setSQL( String.format( this.contentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
-    }else {
-        dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+    if (LOAD_FROM_CACHE.get()) {
+        dc.setSQL(String.format(ContentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION,
+                SQLUtil.sanitizeCondition(searchCondition.condition),
+                SQLUtil.sanitizeCondition(siteIdsParam),
+                orderBy));
+    } else {
+        dc.setSQL(String.format(ContentTypeSql.SELECT_QUERY_CONDITION,
+                SQLUtil.sanitizeCondition(searchCondition.condition),
+                SQLUtil.sanitizeCondition(siteIdsParam),
+                orderBy));
     }
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
-    dc.addParam( searchCondition.search );//inode like
-    dc.addParam(searchCondition.search.toLowerCase());//lower(name) like
-    dc.addParam( searchCondition.search );//velocity_var_name like
-    dc.addParam(hostParam);
-    dc.addParam(bottom);
-    dc.addParam(top);
+    // inode like
+    dc.addParam( searchCondition.search );
+    // lower(name) like
+    dc.addParam(searchCondition.search.toLowerCase());
+    // velocity_var_name like
+    dc.addParam( searchCondition.search );
+    // Look for types of the specified base Content Type
+    dc.addParam(baseType);
+    // If any base Content Type must be retrieved -- type 0 -- then include all base types
+    dc.addParam((baseType == 0) ? 100000 : baseType);
 
-    Logger.debug(this, ()-> "QUERY " + dc.getSQL());
+    Logger.debug(this, () -> "QUERY: " + dc.getSQL());
 
-    if(LOAD_FROM_CACHE.get()) {
+    if (LOAD_FROM_CACHE.get()) {
         return dc.loadObjectResults()
-                    .stream()
-                    .map(m-> Try.of(()->find((String) m.get("inode")))
-                            .onFailure(e->Logger.warnAndDebug(ContentTypeFactoryImpl.class,e))
-                            .getOrNull())
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-    }else {
+                .stream()
+                .map(type -> Try.of(() -> find((String) type.get(INODE_COLUMN)))
+                        .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
+                                String.format("Failed to retrieve Content Type with Inode '%s': %s",
+                                        type.get(INODE_COLUMN), ExceptionUtil.getErrorMessage(e)), e))
+                        .getOrNull())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    } else {
         return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
     }
   }
+
+    /**
+     * Appends the list of Site Identifiers to a SQL query that will allow to look for more than one
+     * Site.
+     *
+     * @param siteIds The list of Site Identifiers to search for.
+     *
+     * @return A SQL-ready string that can be used in a WHERE clause to lok for data in more than
+     * one Site.
+     */
+    private String formatSiteIdsToSqlQuery(final List<String> siteIds) {
+        return UtilMethods.isNotSet(siteIds) ? BLANK : siteIds.stream()
+                .map(site -> "'" + PERCENT + site + PERCENT +"'").collect(Collectors.joining(" OR host LIKE "));
+    }
 
   private int dbCount(String search, int baseType) throws DotDataException {
     int bottom = (baseType == 0) ? 0 : baseType;
@@ -796,41 +883,50 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
    * @author root
    *
    */
-  class SearchCondition {
+  static class SearchCondition {
     final String search;
     final String condition;
 
-
     final String appendCondition = LicenseManager.getInstance().isCommunity() 
                     ? " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType() 
-                    : "";
-    
-    
-    SearchCondition(final String searchOrCondition) {
-      if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals("%")) {
-        this.condition = appendCondition;
-        this.search = "%";
-      } else if (searchOrCondition.contains("<") || searchOrCondition.contains("=") || searchOrCondition.contains("<")
-          || searchOrCondition.contains(" like ") || searchOrCondition.contains(" is ")) {
-        this.search = "%";
-        this.condition =
-            (searchOrCondition.toLowerCase().trim().startsWith("and")) ? searchOrCondition : "and " + searchOrCondition + appendCondition;
+                    : BLANK;
 
+    SearchCondition(final String searchOrCondition) {
+      if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals(PERCENT)) {
+        this.condition = appendCondition;
+        this.search = PERCENT;
+      } else if (this.containsComparisonOperator(searchOrCondition)) {
+        this.search = PERCENT;
+        this.condition = searchOrCondition.toLowerCase().trim().startsWith("and")
+                ? searchOrCondition
+                : "AND " + searchOrCondition + appendCondition;
       } else {
         this.condition = appendCondition;
-        this.search = "%" + searchOrCondition + "%";
-
+        this.search = PERCENT + searchOrCondition + PERCENT;
       }
+    }
+
+    /**
+    *
+    * @param searchOrCondition
+    * @return
+    */
+    private boolean containsComparisonOperator(final String searchOrCondition) {
+      return searchOrCondition.contains("<")
+              || searchOrCondition.contains("=")
+              || searchOrCondition.contains(">")
+              || searchOrCondition.toLowerCase().contains(" like ")
+              || searchOrCondition.toLowerCase().contains(" is ");
     }
 
     @Override
     public String toString() {
       return "SearchCondition [search=" + search + ", condition=" + condition + "]";
     }
+
   }
 
-
-  class CleanURLMap {
+  static class CleanURLMap {
     final String urlMap;
 
     public CleanURLMap(String url) {
@@ -887,6 +983,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	 cache.remove(type);
  }
 
+    @Override
+ public long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL(this.contentTypeSql.COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW);
+        final Map results = (Map) dc.loadResults().get(0);
+        return Long.valueOf(results.get("count").toString());
+ }
  private void dbUpdateModDate(ContentType type) throws DotDataException{
 	 DotConnect dc = new DotConnect();
 	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);

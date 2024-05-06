@@ -9,8 +9,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 // App is our top level component
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -34,7 +33,7 @@ import { SharedModule } from './shared/shared.module';
         ReactiveFormsModule,
         AppRoutingModule,
         DotDirectivesModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         SharedModule.forRoot(),
         MonacoEditorModule,
         MarkdownModule.forRoot(),

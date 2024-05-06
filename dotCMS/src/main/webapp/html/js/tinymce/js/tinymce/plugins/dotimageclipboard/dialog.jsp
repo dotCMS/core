@@ -40,9 +40,9 @@ if(clipboard ==null){
     font-weight: 400;
     font-display: swap;
     src: local(''),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2')
+        url('/dotAdmin/assets/Assistant-Regular.woff2')
             format('woff2'),
-        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff')
+        url('/dotAdmin/assets/Assistant-Regular.woff')
             format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 

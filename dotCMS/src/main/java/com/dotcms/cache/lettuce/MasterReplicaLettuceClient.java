@@ -59,6 +59,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static io.lettuce.core.ScriptOutputType.STATUS;
+
 /**
  * Master replica implementation of redis cache. It works as a replicator when there is more than 1 URIs as part of the
  * {@code REDIS_LETTUCECLIENT_URLS} config. This implementation wraps keys, members and channels by prefixing them with
@@ -105,7 +107,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         this(CompressionCodec.valueCompressor(new DotObjectCodec(),
                 CompressionCodec.CompressionType.GZIP),
-                APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId()));
+                ClusterFactory.getClusterId());
     }
 
     public MasterReplicaLettuceClient(final RedisCodec<String, V> codec, final String clusterId) {
@@ -152,7 +154,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                     .map(RedisURI::create)
                     .collect(Collectors.toList());
         }
-        final String redisSessionEnabled = envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_ENABLED", "false");
+            final String redisSessionEnabled = envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_ENABLED", "false");
         if (Boolean.parseBoolean(redisSessionEnabled)) {
             final RedisURI redisURI = RedisURI.builder()
                     .withHost(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_HOST", "localhost"))
@@ -164,7 +166,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                     .build();
             return List.of(redisURI);
         }
-        return List.of(RedisURI.create("redis://password@oboxturbo"));
+        return List.of(RedisURI.create("redis://localhost"));
     }
 
     /**
@@ -898,6 +900,19 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     @Override
     public Collection<K> getChannels() {
         return channelReferenceMap.keySet().stream().map(this::unwrapKey).collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteFromPattern(final String pattern) {
+
+        try (StatefulRedisConnection<String,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                conn.async().eval("return redis.call('del', unpack(redis.call('keys', '" + pattern + "')))",
+                        STATUS, new String[0]);
+            }
+        }
     }
 
     @Override

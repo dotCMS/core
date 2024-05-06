@@ -235,16 +235,21 @@ function jumpToContentType(){
 		<%for(WorkflowAction action : wfActions){ %>
 			<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
 
-
-			<a
-			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
-			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
-				<%if(action.hasSaveActionlet()){ %>
-                    <i class="fa fa-save" style="opacity:.35;float:right"></i>
-                <%} %>
-
-			</a>
+				<!-- EXCLUDE SEPARATOR FROM ACTIONS -->
+				<%
+					String subtype = action.getMetadata() != null ? String.valueOf(action.getMetadata().get("subtype")) : "";
+					if(!"SEPARATOR".equals(subtype)) {
+				%>
+					<a
+						style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
+						onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)"
+					>
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
+						<%if(action.hasSaveActionlet()){ %>
+							<i class="fa fa-save" style="opacity:.35;float:right"></i>
+						<%} %>
+					</a>
+				<%} %>
 		<%} %>
 
 	<%}  %>

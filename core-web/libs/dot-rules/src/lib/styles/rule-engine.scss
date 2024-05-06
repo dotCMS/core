@@ -59,11 +59,11 @@ $finder-s-input: ".ui.input input";
     min-height: 100%;
 
     cw-rule-engine {
-        box-shadow: $md-shadow-4;
+        box-shadow: $shadow-m;
         padding: $spacing-3 $spacing-4;
         flex-grow: 1;
         background-color: $foreground-tertiary;
-        overflow: scroll;
+        overflow: auto;
     }
 
     .cw-message {
@@ -560,13 +560,13 @@ $finder-s-input: ".ui.input input";
         justify-content: center;
         border: none;
         background-color: $color-palette-primary;
-        box-shadow: $md-shadow-1;
+        box-shadow: $shadow-xs;
         outline: none;
         align-items: center;
 
         &:hover {
             background: $color-palette-primary-400;
-            box-shadow: $md-shadow-3;
+            box-shadow: $shadow-s;
         }
 
         &:active,

@@ -105,41 +105,46 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final ServletContext context = mock(ServletContext.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(
+                    userId,
+                    pass,
+                    false,
+                    request,
+                    response))
+                    .thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(
-                userId,
-                pass,
-                false,
-                request,
-                response))
-                .thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new NoSuchUserException();
-            }
-        });
+                    throw new NoSuchUserException();
+                }
+            });
 
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, responseUtil, authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+            final AuthenticationResource authenticationResource =
+                    new AuthenticationResource(loginService, userLocalManager, responseUtil, authenticationHelper);
+            final AuthenticationForm authenticationForm =
+                    new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+            final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
+
 
     @Test
     public void testUserEmailAddressException() throws Exception {
@@ -157,34 +162,38 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final ServletContext context = mock(ServletContext.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new UserEmailAddressException();
-            }
-        });
+                    throw new UserEmailAddressException();
+                }
+            });
 
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, responseUtil, authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+            final AuthenticationResource authenticationResource =
+                    new AuthenticationResource(loginService, userLocalManager, responseUtil, authenticationHelper);
+            final AuthenticationForm authenticationForm =
+                    new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+            final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -202,34 +211,37 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final ServletContext context = mock(ServletContext.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new AuthException();
-            }
-        });
+                    throw new AuthException();
+                }
+            });
 
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+            final AuthenticationResource authenticationResource =
+                    new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
+            final AuthenticationForm authenticationForm =
+                    new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+            final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -247,34 +259,37 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final ServletContext context = mock(ServletContext.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new UserPasswordException(UserPasswordException.PASSWORD_ALREADY_USED);
-            }
-        });
+                    throw new UserPasswordException(UserPasswordException.PASSWORD_ALREADY_USED);
+                }
+            });
 
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+            final AuthenticationResource authenticationResource =
+                    new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
+            final AuthenticationForm authenticationForm =
+                    new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+            final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -292,35 +307,37 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final ServletContext context = mock(ServletContext.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new RequiredLayoutException();
-            }
-        });
+                    throw new RequiredLayoutException();
+                }
+            });
 
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+            final AuthenticationResource authenticationResource =
+                    new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
+            final AuthenticationForm authenticationForm =
+                    new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+            final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 500);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("user-without-portlet"));
-
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 500);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("user-without-portlet"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -338,35 +355,38 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final ServletContext context = mock(ServletContext.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
+            when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+                @Override
+                public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new UserActiveException();
-            }
-        });
+                    throw new UserActiveException();
+                }
+            });
 
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).language("en").country("US").build();
+            final AuthenticationResource authenticationResource =
+                    new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
+            final AuthenticationForm authenticationForm =
+                    new AuthenticationForm.Builder().userId(userId).password(pass).language("en").country("US").build();
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+            final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("your-account-is-not-active"));
-        System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 401);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("your-account-is-not-active"));
+            System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test

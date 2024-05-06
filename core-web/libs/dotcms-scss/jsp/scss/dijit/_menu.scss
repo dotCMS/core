@@ -1,5 +1,19 @@
 .dijitMenu {
     padding: 0;
+    border: 0 none;
+
+    // Template selector in create page form
+    &#templateSel_popup {
+        .dijitMenuItem {
+            height: auto;
+            padding: $spacing-1 $spacing-2;
+            gap: $spacing-0;
+
+            small {
+                color: $color-palette-gray-700;
+            }
+        }
+    }
 
     .dijitMenuItem {
         display: flex;
@@ -46,23 +60,36 @@
     }
 }
 
+// http://localhost:8080/dotAdmin/#/c/maintenance
+// Specific to the maintenance page to prevent double scrollbars
+.dijitComboBoxMenuPopup#widget_cache_list_dropdown {
+    max-height: 17.5rem !important;
+}
+
 .dijitComboBoxMenuPopup {
     background: $white;
     color: $black;
     border: 0 none;
     border-radius: $border-radius-md;
-    box-shadow: $md-shadow-6;
+    box-shadow: $shadow-l;
     padding: $spacing-1;
     margin-top: $spacing-1;
 
     .dijitMenuItem {
-        display: flex;
-        align-items: start;
-        flex-direction: column;
-        justify-content: center;
         padding: 0 $spacing-2;
         color: $black;
         height: $field-height-md;
+
+        .dijitComboBoxHighlightMatch {
+            font-weight: $font-weight-bold;
+        }
+
+        &:has(small) {
+            display: flex;
+            align-items: start;
+            flex-direction: column;
+            justify-content: center;
+        }
     }
 
     .dijitComboBoxMenu {

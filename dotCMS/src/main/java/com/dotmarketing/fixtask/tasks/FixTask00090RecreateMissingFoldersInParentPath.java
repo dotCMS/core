@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -22,7 +23,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -208,7 +208,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
     @Override
     public List<Map<String, String>> getModifiedData() {
         if (modifiedData.size() > 0) {
-            XStream _xstream = new XStream(new DomDriver());
+            XStream xStreamInstance = XStreamHandler.newXStreamInstance();
             Date date = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             String lastmoddate = sdf.format(date);
@@ -230,7 +230,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
                 Logger.error(this, "Could not write to Fix Task status file.");
             }
             try {
-                _xstream.toXML(modifiedData, _bout);
+                xStreamInstance.toXML(modifiedData, _bout);
             } finally {
                 CloseUtils.closeQuietly(_bout);
             }

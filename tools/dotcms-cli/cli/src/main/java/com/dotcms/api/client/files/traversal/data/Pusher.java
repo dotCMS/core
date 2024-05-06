@@ -1,10 +1,15 @@
 package com.dotcms.api.client.files.traversal.data;
 
+import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteURL;
+import static com.dotcms.common.AssetsUtils.statusToBoolean;
+import static com.dotcms.common.LocationUtils.localPathFromAssetData;
+
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.FolderAPI;
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.ByPathRequest;
@@ -13,23 +18,19 @@ import com.dotcms.model.asset.FileUploadDetail;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
-import com.google.common.collect.ImmutableList;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
-
-import static com.dotcms.common.AssetsUtils.*;
-import static com.dotcms.common.LocationUtils.localPathFromAssetData;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
-public class Pusher {
+public class Pusher implements Serializable {
 
     @Inject
     protected RestClientFactory clientFactory;
@@ -87,7 +88,7 @@ public class Pusher {
 
         // Execute the REST call to create the folder
         final ResponseEntityView<List<Map<String, Object>>> response = folderAPI.makeFolders(
-                ImmutableList.of(folderPath),
+                List.of(folderPath),
                 siteName);
 
         return response.entity();
@@ -101,7 +102,7 @@ public class Pusher {
      * @return true if the folder was deleted successfully, false otherwise
      */
     @ActivateRequestContext
-    public Boolean deleteFolder(String siteName, String folderPath) {
+    public boolean deleteFolder(String siteName, String folderPath) {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
@@ -178,7 +179,7 @@ public class Pusher {
             var response = assetAPI.push(uploadForm);
             return response.entity();
         } catch (IOException e) {
-            logger.debug(String.format("Error pushing asset %s", localAssetPath), e);
+            logger.error(String.format("Error pushing asset %s", localAssetPath), e);
             throw new IllegalStateException(e);
         }
     }

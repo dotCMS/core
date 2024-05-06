@@ -1,0 +1,175 @@
+"use strict";
+
+// Dependencies
+const path = require('path');
+const fs = require('fs').promises;
+const os = require('os');
+
+// Architecture and platform mappings
+const ARCHITECTURE_MAPPING = {
+    "x64": "x86_64",
+    "arm64": "aarch_64"
+};
+
+const PLATFORM_MAPPING = {
+    "darwin": "osx",
+    "linux": "linux"
+};
+
+const EXTENSION_MAP = {
+    "win32": ".exe",
+    "default": ""
+};
+
+// Utility functions
+function getGlobalBinPath() {
+    const npmGlobalPrefix = process.env.PREFIX || process.env.npm_config_prefix || process.env.HOME;
+    return path.join(npmGlobalPrefix, 'bin');
+}
+
+function validatePackageConfig(packageJson) {
+    // Validation of package.json configuration
+    if (!packageJson.version || !packageJson.packageName || !packageJson.alias || !packageJson.binaries || typeof packageJson.binaries !== "object") {
+        throw new Error("Invalid package.json. 'version', 'packageName', 'alias' and 'binaries' must be specified.");
+    }
+}
+
+// Read and parse package.json
+async function parsePackageJson() {
+    console.log("Installing CLI");
+
+    const platform = os.platform();
+    const architecture = os.arch();
+
+    console.log("Platform: " + platform);
+    console.log("Architecture: " + architecture);
+
+    // Check installation support for platform and architecture
+    if (!(os.arch() in ARCHITECTURE_MAPPING) || !(os.platform() in PLATFORM_MAPPING)) {
+        throw new Error(`Installation is not supported for this ${platform}/${architecture} combination.`);
+    }
+
+    const packageJsonPath = path.join(".", "package.json");
+
+    try {
+        const packageJsonContent = await fs.readFile(packageJsonPath, "utf-8");
+        const packageJson = JSON.parse(packageJsonContent.toString());
+        validatePackageConfig(packageJson);
+
+        const packageName = packageJson.packageName;
+        const alias = packageJson.alias;
+        const binaries = packageJson.binaries;
+        const extension = EXTENSION_MAP[platform] || EXTENSION_MAP.default;
+        const binaryKey = `${packageName}-${platform}-${architecture}`;
+        const binaryPath = binaries[binaryKey];
+
+        if (binaryPath) {
+            console.log(`Binary found for your platform ${platform}-${architecture}: ${binaryPath}`);
+        } else {
+            throw new Error(`No binary found for your platform ${platform}-${architecture}.`);
+        }
+
+        return {
+            alias,
+            binaryKey,
+            binaryPath,
+            extension
+        };
+    } catch (error) {
+        throw new Error("Unable to read or parse package.json. Please run this script at the root of the package you want to be installed.");
+    }
+}
+
+// Create symlink for the binary
+async function createSymlink(globalBinPath, config) {
+    try {
+        console.info(`Creating symlink for the relevant binary for your platform ${os.platform()}-${os.arch()}`);
+
+        const currentDir = __dirname;
+        const targetDir = path.join(currentDir, '..');
+        const binarySource = path.join(targetDir, config.binaryPath);
+        const binaryDestination = config.alias;
+        const fullSymlinkPath = path.join(globalBinPath, binaryDestination);
+
+        await fs.symlink(binarySource, fullSymlinkPath);
+
+        console.info(`Created symlink ${fullSymlinkPath} pointing to ${binarySource}`);
+    } catch (error) {
+        console.error("Error while creating symlink:", error);
+        throw new Error("Failed to create symlink.");
+    }
+}
+
+// Remove symlink if exists
+async function removeSymlinkIfExists(globalBinPath, config) {
+    try {
+        console.info("Global bin path location:", globalBinPath);
+
+        const files = await fs.readdir(globalBinPath);
+        const symlinkFileName = config.alias + config.extension;
+        const symlinkPath = files.find(file => file === symlinkFileName);
+
+        if (!symlinkPath) {
+            console.warn(`Symlink '${symlinkFileName}' not found in the global bin directory.`);
+            return;
+        }
+
+        const fullSymlinkPath = path.join(globalBinPath, symlinkPath);
+        await fs.unlink(fullSymlinkPath);
+        console.info(`Removed symlink: ${fullSymlinkPath}`);
+    } catch (error) {
+        console.warn("Error while removing symlink:", error);
+    }
+}
+
+// Install CLI
+async function installCli() {
+    const config = await parsePackageJson();
+    const globalBinPath = getGlobalBinPath();
+
+    try{
+        await removeSymlinkIfExists(globalBinPath, config);
+        await createSymlink(globalBinPath, config);
+    } catch (ex) {
+        console.error("Error while installing:", ex);
+        throw new Error(`Failed to install ${config.alias}.`);
+    }
+
+    console.info(`${config.alias} installed successfully.`);
+}
+
+// Uninstall CLI
+async function uninstallCli() {
+    const config = await parsePackageJson();
+    const globalBinPath = getGlobalBinPath();
+
+    try {
+        await removeSymlinkIfExists(globalBinPath, config);
+    } catch (ex) {
+        console.error("Error while uninstalling:", ex);
+        throw new Error(`Failed to uninstall ${config.alias}.`);
+    }
+
+    console.info(`${config.alias} uninstalled successfully.`);
+}
+
+// Available actions
+const actions = {
+    "install": installCli,
+    "uninstall": uninstallCli
+};
+
+// Execute action based on provided command
+const [cmd] = process.argv.slice(2);
+if (cmd && actions[cmd]) {
+    actions[cmd]().then(
+        () => process.exit(0),
+        (err) => {
+            console.error(err);
+            process.exit(1);
+        }
+    );
+} else {
+    console.log("Invalid command. `install` and `uninstall` are the only supported commands");
+    process.exit(1);
+}

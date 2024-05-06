@@ -1,6 +1,10 @@
 @use "variables" as *;
 $icon-size: 24px;
 
+:host {
+    overflow: auto;
+    margin-bottom: 1.5rem;
+}
 .content-types-fields-list {
     margin: 0;
     padding: 0;

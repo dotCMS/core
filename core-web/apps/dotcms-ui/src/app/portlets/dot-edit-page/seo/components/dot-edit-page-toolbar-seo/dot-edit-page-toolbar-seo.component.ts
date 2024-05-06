@@ -20,8 +20,6 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { take } from 'rxjs/operators';
-
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
@@ -31,15 +29,17 @@ import {
     DotPageMode,
     DotPageRenderState,
     DotVariantData,
-    FeaturedFlags
+    FeaturedFlags,
+    RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotFavoritePageModule } from '@portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.module';
+import {
+    DotFavoritePageComponent,
+    DotDeviceSelectorSeoComponent
+} from '@dotcms/portlets/dot-ema/ui';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 
-import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-as-controller-seo/dot-edit-page-view-as-controller-seo.component';
@@ -60,9 +60,9 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
         FormsModule,
         ToolbarModule,
         TooltipModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotGlobalMessageModule,
-        DotFavoritePageModule,
+        DotFavoritePageComponent,
         DotIconModule,
         DotEditPageNavDirective,
         RouterLink,
@@ -88,6 +88,7 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
     pageRenderedHtml: string;
     // TODO: Remove next line when total functionality of Favorite page is done for release
     showFavoritePageStar = false;
+    runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -99,10 +100,9 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release
         this.dotConfigurationService
-            .getKey(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
-            .pipe(take(1))
-            .subscribe((enabled: string) => {
-                this.showFavoritePageStar = enabled === 'true';
+            .getFeatureFlag(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
+            .subscribe((enabled) => {
+                this.showFavoritePageStar = enabled;
             });
 
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();

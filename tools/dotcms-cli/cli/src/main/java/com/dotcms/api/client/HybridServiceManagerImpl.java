@@ -1,10 +1,12 @@
 package com.dotcms.api.client;
 
 import com.dotcms.api.client.SecurePasswordStore.StoreSecureException;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import io.quarkus.arc.Unremovable;
 import org.jboss.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -29,26 +31,32 @@ public class HybridServiceManagerImpl implements ServiceManager {
     @Inject
     Logger logger;
 
+
     @Inject
+    @Unremovable
     SecurePasswordStore passwordStore;
 
     @Override
     @CanIgnoreReturnValue
     public ServiceManager persist(ServiceBean service) throws IOException {
         CredentialsBean credentialsBean = service.credentials();
-        if (null != credentialsBean && null != credentialsBean.user() && null != credentialsBean.token()) {
+        if (null != credentialsBean && null != credentialsBean.user() && credentialsBean.loadToken().isPresent()) {
+            final Optional<char[]> token = credentialsBean.loadToken();
             //We need to split the info and save in the KeyChain the authentication token
-            try {
-                //First store the sensitive data in the keychain
-                passwordStore.setPassword(service.name(), credentialsBean.user(), new String(credentialsBean.token()));
-                // then strip any sensitive data from the info that is going to be saved into the yml/text file
-                CredentialsBean strippedTokenBean = CredentialsBean.builder().from(credentialsBean).token(EMPTY_TOKEN).build();
-                ServiceBean strippedCredentialsBean = ServiceBean.builder().from(service).credentials(strippedTokenBean).build();
-                defaultManager.persist(strippedCredentialsBean);
-            } catch (StoreSecureException  e) {
-                logger.warn(String.format("Unable to persist credentials for service [%s] using the Key-Chain. access credentials will be stored as plain text.", service.name()), e);
-                //Now upon error we need to fall back to YML file for storage
-                defaultManager.persist(service);
+            if (token.isPresent()){
+                try {
+                    //First store the sensitive data in the keychain
+                    passwordStore.setPassword(service.name(), credentialsBean.user(), new String(token.get()));
+                    // then strip any sensitive data from the info that is going to be saved into the yml/text file
+                    CredentialsBean strippedTokenBean = CredentialsBean.builder().from(credentialsBean)
+                            .token(EMPTY_TOKEN).tokenSupplier(()->EMPTY_TOKEN).build();
+                    ServiceBean strippedCredentialsBean = ServiceBean.builder().from(service).credentials(strippedTokenBean).build();
+                    defaultManager.persist(strippedCredentialsBean);
+                } catch (StoreSecureException  e) {
+                    logger.warn("Credentials are stored in plain text!");
+                    //Now upon error we need to fall back to YML file for storage
+                    defaultManager.persist(service);
+                }
             }
             return this;
         }
@@ -58,7 +66,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
     }
 
     @Override
-    public List<ServiceBean> services() {
+    public List<ServiceBean> services() throws IOException {
         //Retrieve the beans stored in the yml file
         final List<ServiceBean> services = defaultManager.services();
         final List<ServiceBean> beans = new ArrayList<>(services.size());
@@ -68,19 +76,22 @@ public class HybridServiceManagerImpl implements ServiceManager {
             if (null == credentialsBean) {
                 logger.info(String.format("Service [%s] is missing credentials.", service.name()));
             } else {
-                try {
-                    final String token = passwordStore.getPassword(service.name(), credentialsBean.user());
-                    if (null != token) {
-                        CredentialsBean newCredentialsBean = CredentialsBean.builder().from(credentialsBean).token(token.toCharArray()).build();
-                        ServiceBean bean = ServiceBean.builder().from(service).credentials(newCredentialsBean).build();
-                        beans.add(bean);
-                        continue;
-                    }
-                } catch (StoreSecureException e) {
-                    logger.warn(String.format("Unable to recover token from key-chain for service [%s]", service.name()), e);
-                    //Upon error, we need to return the original list
-                    return services;
-                }
+                final String name = service.name();
+                final String user = credentialsBean.user();
+                CredentialsBean newCredentialsBean = CredentialsBean.builder().from(credentialsBean)
+                        .tokenSupplier(() -> {
+                            try {
+                                return passwordStore.getPassword(name, user).toCharArray();
+                            } catch (Exception e) {
+                                logger.warn(
+                                        "Unable to recover token from key-chain. it probably stored as plain text.");
+                                return EMPTY_TOKEN;
+                            }
+                        }).build();
+                ServiceBean bean = ServiceBean.builder().from(service)
+                        .credentials(newCredentialsBean).build();
+                beans.add(bean);
+                continue;
             }
             //This should take off any bean that could have found an error or missing credentials
             beans.add(service);
@@ -91,7 +102,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
 
     @Override
     @CanIgnoreReturnValue
-    public ServiceManager removeAll() {
+    public ServiceManager removeAll() throws IOException {
         List<ServiceBean> services = defaultManager.services();
         for (ServiceBean service : services) {
             CredentialsBean credentialsBean = service.credentials();
@@ -99,7 +110,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
                 try {
                     passwordStore.deletePassword(service.name(), credentialsBean.user());
                 } catch (StoreSecureException e) {
-                    logger.warn(String.format("Unable to delete token from key-chain for service [%s]", service.name()), e);
+                    logger.warn("Token wasn't deleted from key-chain. it probably stored as plain text.");
                 }
             }
         }
@@ -108,7 +119,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
     }
 
     @Override
-    public Optional<ServiceBean> selected(){
+    public Optional<ServiceBean> selected() throws IOException {
         //It's cheaper if we use base impl
         return defaultManager.services().stream().filter(ServiceBean::active)
                 .findFirst();

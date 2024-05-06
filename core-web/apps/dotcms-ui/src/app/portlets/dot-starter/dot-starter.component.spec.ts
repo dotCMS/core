@@ -9,8 +9,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Checkbox, CheckboxModule } from 'primeng/checkbox';
 
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -24,7 +23,8 @@ import { DotStarterComponent } from './dot-starter.component';
 
 const messages = {
     'starter.title': 'Welcome!',
-    'starter.description': 'You are logged in as <em>{0}</em>.',
+    'starter.description':
+        'You are logged in as {0}. To help you get started building with dotCMS we provided some quick links.',
     'starter.dont.show': `Don't show this again`,
     'starter.main.link.data.model.title': 'Create data model',
     'starter.main.link.data.model.description': 'Create data model description',
@@ -131,11 +131,11 @@ describe('DotStarterComponent', () => {
         });
 
         it('should set proper labels to the main container', () => {
-            expect(de.query(By.css('.dot-starter-title')).nativeElement.innerText).toContain(
-                messageServiceMock.get('starter.title')
-            );
+            expect(
+                de.query(By.css('[data-testId="dot-starter-title"]')).nativeElement.innerText
+            ).toContain(messageServiceMock.get('starter.title'));
             expect(de.query(By.css('.dot-starter-description')).nativeElement.innerText).toContain(
-                'You are logged in as Admin'
+                'You are logged in as Admin. To help you get started building with dotCMS we provided some quick links.'
             );
             expect(
                 de.query(By.css('[data-testId="starter.main.link.data.model"] h4')).nativeElement
@@ -176,7 +176,7 @@ describe('DotStarterComponent', () => {
 
         it('should set proper labels to the side container', () => {
             expect(
-                de.query(By.css('.dot-starter-top-secondary__section h3')).nativeElement.innerText
+                de.query(By.css('[data-testId="dot-side-title"]')).nativeElement.innerText
             ).toContain(messageServiceMock.get('starter.side.title'));
             expect(
                 de.query(By.css('[data-testId="starter.side.link.graphQl"] h4')).nativeElement

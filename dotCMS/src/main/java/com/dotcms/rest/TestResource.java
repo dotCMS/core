@@ -1,12 +1,12 @@
 package com.dotcms.rest;
 
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,7 +79,7 @@ public class TestResource {
                 mapResponse.put( "param1", param1 );
                 mapResponse.put( "param2", param2 );
 
-                XStream xstream = new XStream( new DomDriver() );
+                XStream xstream = XStreamHandler.newXStreamInstance();
                 xstream.alias( "response", Map.class );
 
                 StringBuilder xmlBuilder = new StringBuilder();
@@ -170,7 +170,7 @@ public class TestResource {
                 mapResponse.put( "param1", param1 );
                 mapResponse.put( "param2", param2 );
 
-                XStream xstream = new XStream( new DomDriver() );
+                XStream xstream = XStreamHandler.newXStreamInstance();
                 xstream.alias( "response", Map.class );
 
                 StringBuilder xmlBuilder = new StringBuilder();

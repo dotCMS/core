@@ -8,22 +8,20 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 import { Checkbox, CheckboxModule } from 'primeng/checkbox';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
@@ -82,11 +80,12 @@ describe('DotLoginComponent', () => {
                 CheckboxModule,
                 DropdownModule,
                 DotLoadingIndicatorModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 RouterTestingModule,
                 FormsModule,
                 ReactiveFormsModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                RouterLink
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -117,7 +116,7 @@ describe('DotLoginComponent', () => {
     describe('Functionality', () => {
         beforeEach(() => {
             fixture.detectChanges();
-            signInButton = de.query(By.css('button[pButton]'));
+            signInButton = de.query(By.css('[data-testId="submitButton"]'));
         });
 
         it('should load form labels correctly', () => {
@@ -136,7 +135,7 @@ describe('DotLoginComponent', () => {
             expect(header.nativeElement.innerHTML).toContain('Welcome!');
             expect(emailLabel.nativeElement.innerHTML).toEqual('Email Address');
             expect(passwordLabel.nativeElement.innerHTML).toEqual('Password');
-            expect(recoverPasswordLink.nativeElement.innerHTML).toEqual('Recover Password');
+            expect(recoverPasswordLink.nativeElement.innerHTML.trim()).toEqual('Recover Password');
             expect(rememberMe.nativeElement.innerHTML).toEqual('Remember Me');
             expect(submitButton.nativeElement.innerHTML).toContain('Sign In');
             expect(serverInformation.nativeElement.innerHTML).toEqual('Server: 860173b0');
@@ -156,11 +155,11 @@ describe('DotLoginComponent', () => {
             expect(loginPageStateService.update).toHaveBeenCalledWith('es_ES');
         });
 
-        it('should navigate to the recover password screen', () => {
+        it('should have a link to forgot password', () => {
             const forgotPasswordLink: DebugElement = de.query(By.css('[data-testId="actionLink"]'));
-            spyOn(dotRouterService, 'goToForgotPassword');
-            forgotPasswordLink.triggerEventHandler('click', { value: '' });
-            expect(dotRouterService.goToForgotPassword).toHaveBeenCalledTimes(1);
+            expect(forgotPasswordLink.nativeElement.getAttribute('href')).toEqual(
+                '/public/forgotPassword'
+            );
         });
 
         it('should load initial value of the form', () => {

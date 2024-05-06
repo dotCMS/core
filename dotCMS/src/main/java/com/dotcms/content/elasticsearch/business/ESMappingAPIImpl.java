@@ -407,30 +407,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 
 			final String publishDateVar = contentType.publishDateVar();
-			if(UtilMethods.isSet(publishDateVar) && UtilMethods.isSet(contentlet.getDateProperty(publishDateVar))) {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE,
-						publishExpireESDateTimeFormat.get().format(contentlet.getDateProperty(publishDateVar)));
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(contentlet.getDateProperty(publishDateVar)));
-			}else {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE,
-						publishExpireESDateTimeFormat.get().format(dateOufOfRange));
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(dateOufOfRange));
-			}
+			final Date publishDate = UtilMethods.isSet(publishDateVar) ?
+					contentlet.getDateProperty(publishDateVar) : null;
+			loadDateTimeFieldValue(contentletMap,
+					ESMappingConstants.PUBLISH_DATE, publishDate);
 
 			final String expireDateVar = contentType.expireDateVar();
-			if(UtilMethods.isSet(expireDateVar) &&  UtilMethods.isSet(contentlet.getDateProperty(expireDateVar))) {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE,
-						publishExpireESDateTimeFormat.get().format(contentlet.getDateProperty(expireDateVar)));
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
-						datetimeFormat.format(contentlet.getDateProperty(expireDateVar)));
-			}else {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE,
-						publishExpireESDateTimeFormat.get().format(dateOufOfRange));
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
-						datetimeFormat.format(dateOufOfRange));
-			}
+			final Date expireDate = UtilMethods.isSet(expireDateVar) ?
+					contentlet.getDateProperty(expireDateVar) : null;
+			loadDateTimeFieldValue(contentletMap,
+					ESMappingConstants.EXPIRE_DATE, expireDate);
+
+			loadDateTimeFieldValue(contentletMap,
+					ESMappingConstants.SYS_PUBLISH_DATE, versionInfo.get().getPublishDate());
 
 			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
 			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.get().getVersionTs()));
@@ -997,6 +986,28 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	    }
 
 		return KeyValueFieldUtil.JSONValueToHashMap((String) valueObj);
+	}
+
+	/**
+	 * This method loads a date/time field into the map to be included in the ES index.
+	 * @param contentletMap Map to be populated with the date/time field
+	 * @param fieldName Name of the field to be populated
+	 * @param dateValue Value of the date/time field
+	 *                  If the value is null, the field will be populated with a date out of range
+	 */
+	private void loadDateTimeFieldValue(final Map<String, Object> contentletMap,
+			final String fieldName, final Date dateValue) {
+		if (UtilMethods.isSet(dateValue)) {
+			contentletMap.put(fieldName,
+					publishExpireESDateTimeFormat.get().format(dateValue));
+			contentletMap.put(fieldName + TEXT,
+					datetimeFormat.format(dateValue));
+		} else {
+			contentletMap.put(fieldName,
+					publishExpireESDateTimeFormat.get().format(dateOufOfRange));
+			contentletMap.put(fieldName + TEXT,
+					datetimeFormat.format(dateOufOfRange));
+		}
 	}
 
 	public String toJsonString(Map<String, Object> map) throws IOException{

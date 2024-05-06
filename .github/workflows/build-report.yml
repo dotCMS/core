@@ -2,8 +2,22 @@ name: CICD Reports
 run-name: Reports - ${{ github.event.workflow_run.name }}
 on:
   workflow_run:
-    workflows: ['Maven CICD Pipeline'] 
+    workflows: ['PR Check','Merge Group Check']
     types: [completed]
+  workflow_call:
+    inputs:
+      run-id:
+        description: 'The run id of the build to report on'
+        type: string
+        default: "${{ github.run_id }}"
+      slack-only-on-failure:
+        description: 'Indicates if the slack notification should only be sent on failure'
+        type: boolean
+        default: true
+    secrets:
+        SLACK_BOT_TOKEN:
+          description: 'Slack Bot Token'
+          required: false
 
 permissions:
   checks: write
@@ -11,34 +25,43 @@ permissions:
 jobs:
   report:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion != 'skipped'
-    outputs:
-      workflow-json: ${{ steps.workflow-data.outputs.json }}
     steps:
       - name: Log GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Download Worlfkow Data
+      - uses: actions/checkout@v4
+      - name: Download Workflow Data
         id: data-download
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v3.1.4
         with:
           name: 'workflow-data'
-          workflow: ${{ github.event.workflow.id }}
-          run_id: ${{ github.event.workflow_run.id }}
+          run_id: ${{ github.event.workflow_run.id || inputs.run-id }}
           if_no_artifact_found: warn
-
-      - uses: dorny/test-reporter@v1
+      - name: Download build reports
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v3.1.4
+        with:
+          name: build-reports-test-.*
+          name_is_regexp: true
+          path: /tmp/build-reports-test
+          run_id: ${{ github.event.workflow_run.id || inputs.run-id }}
+          if_no_artifact_found: warn
+      - uses: phoenix-actions/test-reporting@v14
         id: test-reporter
         if: steps.data-download.outputs.found_artifact == 'true'
         continue-on-error: true
         with:
-          artifact: /^build-reports-test-(.*)/        # artifact name
-          name: 'MVN Test Report $1'               # Name of the check run which will be created
-          path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
+          output-to: 'checks'
+          #artifact: /^build-reports-test-(.*)/        # artifact name uses runid from caller event is workflow_run
+          #name: 'MVN Test Report $1'               # Name of the check run which will be created
+          name: 'Test Report'
+          path: '/tmp/build-reports-test/**/target/**/TEST-*.xml'
+          #path: '**/target/**/TEST-*.xml'                     # Path to test results (inside artifact .zip)
           reporter: java-junit            # Format of test results
-          fail-on-error: false
-          
+          fail-on-error: true
+          list-tests: 'failed'
+
       - name: Get Workflow Data
         id: workflow-data
         run: |
@@ -46,7 +69,9 @@ jobs:
           then
             echo "::warn title=Artifact 'workflow-data' missing::Expected artifact 'workflow-data' does not exist for pull_request event."
           else
+            jq . workflow-data.json
             json=$(jq -c '.' workflow-data.json)
+            trigger_event_name=$(echo $json | jq -r '.trigger_event_name // "null"')
             status=$(echo $json | jq -r '.aggregate_status // "null"')
             pr_number=$(echo $json | jq -r '.pr_number // "null"')
             pr_author=$(echo $json | jq -r '.pr_author // "null"')
@@ -69,7 +94,7 @@ jobs:
               test_conclusion="Not Run"
               test_passed=0
               test_failed=0
-              test_skipped=9
+              test_skipped=0
               test_elapsed=0
             else
               test_conclusion=${{ steps.test-reporter.outputs.conclusion }}
@@ -77,16 +102,32 @@ jobs:
               test_failed=${{ steps.test-reporter.outputs.failed }}
               test_skipped=${{ steps.test-reporter.outputs.skipped }}
               test_elapsed=${{ steps.test-reporter.outputs.time }}
+              test_results_url=${{ steps.test-reporter.outputs.runHtmlUrl }}
             fi
-            
-            
+          
+          
             if [[ "$status" == "SUCCESS" ]]; then
               echo "status_icon=✅" >> $GITHUB_OUTPUT
+            elif [[ "$status" == "CANCELLED" ]]; then
+              echo "status_icon=🚫" >> $GITHUB_OUTPUT
             else
               echo "status_icon=❌" >> $GITHUB_OUTPUT
             fi
+          
+            if [[ "$trigger_event_name" == "pull_request" ]]; then
+              echo "report_type=PR" >> $GITHUB_OUTPUT
+            elif [[ "$trigger_event_name" == "merge_group" ]]; then
+              echo "report_type=Merge Queue" >> $GITHUB_OUTPUT
+            elif [[ "$trigger_event_name" == "push" ]]; then
+              echo "report_type=Branch Merge" >> $GITHUB_OUTPUT
+            else 
+               echo "report_type=$trigger_event_name" >> $GITHUB_OUTPUT
+            fi
+          
+          
             echo "json=$json" >> $GITHUB_OUTPUT
-            echo "has-json=true" >> $GITHUB_OUTPUT
+            echo "trigger_event_name=$trigger_event_name" >> $GITHUB_OUTPUT
+            echo "has_json=true" >> $GITHUB_OUTPUT
             echo "status=$status" >> $GITHUB_OUTPUT
             echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
             echo "pr_author=$pr_author" >> $GITHUB_OUTPUT
@@ -110,23 +151,21 @@ jobs:
             echo "test_failed=$test_failed" >> $GITHUB_OUTPUT
             echo "test_skipped=$test_skipped" >> $GITHUB_OUTPUT
             echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
-          fi
           
-      - name: Post to a Slack channel
-        if: steps.workflow-data.outputs.has-json == 'true'
-        id: slack
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
-          payload: |
-            {
-              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for run PR #${{ steps.workflow-data.outputs.pr_number }}",
+          fi
+
+      - name: Prepare Slack Message Payload
+        id: prepare-slack-message
+        run: |
+          payload=$(cat <<EOF
+          {
+              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }}",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for PR #${{ steps.workflow-data.outputs.pr_number }}",
+                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }}",
                     "emoji": true
                   }
                 },
@@ -151,7 +190,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*PR Details:* \nAuthor: ${{ steps.workflow-data.outputs.pr_author }} \nName: <${{ steps.workflow-data.outputs.pr_number_url }} | ${{ steps.workflow-data.outputs.pr_title }}> \nNumber: #${{ steps.workflow-data.outputs.pr_number }} \nBranch: <${{ steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.branch }}>"
+                    "text": "*${{ steps.workflow-data.outputs.report_type }} Details:* \nAuthor: ${{ steps.workflow-data.outputs.pr_author }} \nName: <${{ steps.workflow-data.outputs.pr_number_url || steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.pr_title || steps.workflow-data.outputs.branch }}> \nNumber: #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }} \nBranch: <${{ steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.branch }}>"
                   }
                 },
                 {
@@ -190,6 +229,16 @@ jobs:
                   }
                 }
               ]
-            }
+          }
+          EOF
+          )
+          echo "payload=$(echo $payload | jq -c .)" >> $GITHUB_OUTPUT
+          echo "payload=$payload"
+      - name: Post to Slack
+        if: steps.workflow-data.outputs.has_json == 'true' && github.repository == 'dotcms/core' && ( steps.workflow-data.outputs.status == 'FAILURE' || ( github.event_name == 'workflow_call' && inputs.slack-only-on-failure == false ) )
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
+          payload: ${{ steps.prepare-slack-message.outputs.payload }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

@@ -318,14 +318,16 @@
 		doFilter();
 	}
 
-	function editTask(event, inode, langId){
+	function editTask(event, inode, langId, contentType){
+
         event.preventDefault();
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-task",
             data: {
                 inode: inode,
-                lang: langId
+                lang: langId,
+								contentType
             }
         });
         document.dispatchEvent(customEvent);
@@ -559,19 +561,19 @@ bottom="/html/common/box_bottom.jsp">
 <!-- START Left Column -->
 	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 200px;" class="portlet-sidebar-wrapper" >
 		<div class="portlet-sidebar">
-			
+
 			<!-- START Filters -->
 			<div  id="filterTasksFrm">
-				
+
 				<input type="hidden" name="cmd" value="filterTasks">
 				<input type="hidden" name="orderBy" id="orderBy" value="mod_date desc">
-				
+
 				<dl class="vertical">
-					
+
 					<dt><label><%=LanguageUtil.get(pageContext, "Keywords")%>:</label></dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox" name="keywords" id="keywords" value="<%=UtilMethods.webifyString(searcher.getKeywords())%>" /></dd>
 					<div class="clear"></div>
-					
+
 					<dt><label><%=LanguageUtil.get(pageContext, "Assigned-To")%>:</label></dt>
 					<dd>
 						<input type="hidden" id="assignedTo" name="assignedTo" value="<%=myRole.getId() %>" />
@@ -583,14 +585,14 @@ bottom="/html/common/box_bottom.jsp">
 						</div>
 					</dd>
 					<div class="clear"></div>
-					
-					
-					
-					
+
+
+
+
 					<dt><label><%=LanguageUtil.get(pageContext, "Older_than_(days)") %></label></dt>
 					<dd><input type="text" id="daysold" name="daysold"/></dd>
 					<div class="clear"></div>
-					
+
 					<dt><label><%=LanguageUtil.get(pageContext, "Scheme")%>:</label></dt>
 					<dd>
 						<select name="schemeId" id="schemeId" dojoType="dijit.form.FilteringSelect" value="<%=UtilMethods.webifyString(searcher.getSchemeId())%>" onChange="updateSteps();doFilter();">
@@ -601,7 +603,7 @@ bottom="/html/common/box_bottom.jsp">
 						</select>
 					</dd>
 					<div class="clear"></div>
-					
+
 					<dt><label><%=LanguageUtil.get(pageContext, "Step")%>:</label></dt>
 					<dd><input type="hidden" id="stepId" name="stepId"  /></dd>
 					<div class="clear"></div>

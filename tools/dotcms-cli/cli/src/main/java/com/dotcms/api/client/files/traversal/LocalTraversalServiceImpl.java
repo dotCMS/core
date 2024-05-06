@@ -1,27 +1,30 @@
 package com.dotcms.api.client.files.traversal;
 
+import static com.dotcms.common.AssetsUtils.parseLocalPath;
+
+import com.dotcms.api.client.FileHashCalculatorService;
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
+import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTaskParams;
 import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
+import com.dotcms.api.client.files.traversal.task.PullTreeNodeTaskParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.LocalPathStructure;
 import io.quarkus.arc.DefaultBean;
-import org.apache.commons.lang3.tuple.Triple;
-import org.jboss.logging.Logger;
-
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.concurrent.CompletionException;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
-import java.io.File;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.concurrent.ForkJoinPool;
-
-import static com.dotcms.common.AssetsUtils.parseLocalPath;
+import org.eclipse.microprofile.context.ManagedExecutor;
+import org.jboss.logging.Logger;
 
 /**
  * Service for traversing a file system directory and building a hierarchical tree representation of
@@ -41,73 +44,89 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
     @Inject
     protected Downloader downloader;
 
+    @Inject
+    ManagedExecutor executor;
+
+    @Inject
+    FileHashCalculatorService fileHashCalculatorService;
+
     /**
      * Traverses the file system directory at the specified path and builds a hierarchical tree
-     * representation of its contents. The folders and contents are compared to the remote server in order to determine
-     * if there are any differences between the local and remote file system.
+     * representation of its contents. The folders and contents are compared to the remote server in
+     * order to determine if there are any differences between the local and remote file system.
      *
-     * @param output             the output option mixin
-     * @param workspace          the project workspace
-     * @param source             local the source file or directory
-     * @param removeAssets       true to allow remove assets, false otherwise
-     * @param removeFolders      true to allow remove folders, false otherwise
-     * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
-     * @param failFast           true to fail fast, false to continue on error
-     * @return a Triple containing a list of exceptions, the folder's local path structure and its corresponding
-     * root node of the hierarchical tree
+     * @param params Traverse params
+     * @return a TraverseResult corresponding root node of the hierarchical tree
      */
     @ActivateRequestContext
     @Override
-    public Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
-            OutputOptionMixin output, final File workspace, final String source,
-            final boolean removeAssets, final boolean removeFolders,
-            final boolean ignoreEmptyFolders, final boolean failFast) {
+    public TraverseResult traverseLocalFolder(final LocalTraverseParams params) {
+        final String source = params.sourcePath();
+        final File workspace = params.workspace();
 
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s",
                 source, workspace.getAbsolutePath()));
 
-        final var localPathStructure = parseLocalPath(workspace, new File(source));
+        var localPath = parseLocalPath(workspace, new File(source));
 
         // Initial check to see if the site exist
         var siteExists = true;
         try {
-            retriever.retrieveFolderInformation(localPathStructure.site(), null);
+            retriever.retrieveFolderInformation(localPath.site(), null);
         } catch (NotFoundException e) {
 
             siteExists = false;
 
             // Site doesn't exist on remote server
-            logger.debug(String.format("Local site [%s] doesn't exist on remote server.", localPathStructure.site()));
+            logger.debug(String.format("Local site [%s] doesn't exist on remote server.", localPath.site()));
         }
 
-        // Checking if the language exist
+        // Checking if the language exists
         try {
-            localPathStructure.setLanguageExists(true);
-            retriever.retrieveLanguage(localPathStructure.language());
+            final var languageResponse = retriever.retrieveLanguage(localPath.language());
+            localPath = LocalPathStructure.builder().from(localPath).
+                    languageExists(true).
+                    isDefaultLanguage(languageResponse.defaultLanguage().orElse(false)).
+                    build();
         } catch (NotFoundException e) {
+            localPath = LocalPathStructure.builder().from(localPath).languageExists(false).build();
 
-            localPathStructure.setLanguageExists(false);
-
-            // Site doesn't exist on remote server
-            logger.debug(String.format("Language [%s] doesn't exist on remote server.", localPathStructure.language()));
+            // Language doesn't exist on remote server
+            logger.debug(String.format("Language [%s] doesn't exist on remote server.", localPath.language()));
         }
-
-        var forkJoinPool = ForkJoinPool.commonPool();
 
         var task = new LocalFolderTraversalTask(
                 logger,
+                executor,
                 retriever,
-                siteExists,
-                source,
-                workspace,
-                removeAssets,
-                removeFolders,
-                ignoreEmptyFolders,
-                failFast
+                fileHashCalculatorService
         );
-        var result = forkJoinPool.invoke(task);
 
-        return Triple.of(result.getLeft(), localPathStructure, result.getRight());
+        task.setTaskParams(LocalFolderTraversalTaskParams.builder()
+                .siteExists(siteExists)
+                .sourcePath(params.sourcePath())
+                .workspace(params.workspace())
+                .removeAssets(params.removeAssets())
+                .removeFolders(params.removeFolders())
+                .ignoreEmptyFolders(params.ignoreEmptyFolders())
+                .failFast(params.failFast())
+                .build()
+        );
+
+        try {
+            var result = task.compute().join();
+            return TraverseResult.builder()
+                    .exceptions(result.exceptions())
+                    .localPaths(localPath)
+                    .treeNode(result.treeNode()).build();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
     /**
@@ -135,18 +154,34 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 rootNode.folder().host());
 
         // ---
-        var forkJoinPool = ForkJoinPool.commonPool();
         var task = new PullTreeNodeTask(
                 logger,
+                executor,
                 downloader,
-                filteredRoot,
-                rootPath.toString(),
-                overwrite,
-                generateEmptyFolders,
-                failFast,
-                language,
-                progressBar);
-        return forkJoinPool.invoke(task);
+                fileHashCalculatorService
+        );
+
+        task.setTaskParams(PullTreeNodeTaskParams.builder()
+                .rootNode(filteredRoot)
+                .destination(rootPath.toString())
+                .overwrite(overwrite)
+                .generateEmptyFolders(generateEmptyFolders)
+                .failFast(failFast)
+                .language(language)
+                .progressBar(progressBar)
+                .build()
+        );
+
+        try {
+            return task.compute().join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
 }

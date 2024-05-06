@@ -1,6 +1,7 @@
 import {
     ChangeDetectorRef,
     Component,
+    ElementRef,
     HostListener,
     Input,
     OnInit,
@@ -12,11 +13,13 @@ import { MenuItem } from 'primeng/api';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotLanguagesService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentType, DotLanguage } from '@dotcms/dotcms-models';
 
 import { DEFAULT_LANG_ID } from '../../../extensions';
-import { DotLanguageService, Languages, SuggestionsService } from '../../services';
+import { SuggestionsService } from '../../services';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
+
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;
     type: { name: string; level?: number };
@@ -43,6 +46,7 @@ export enum ItemsType {
 })
 export class SuggestionsComponent implements OnInit {
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
+    @ViewChild('list', { static: false, read: ElementRef }) listElement: ElementRef;
 
     @Input() onSelectContentlet: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];
@@ -54,7 +58,7 @@ export class SuggestionsComponent implements OnInit {
 
     private itemsLoaded: ItemsType;
     private selectedContentType: DotCMSContentType;
-    private dotLangs: Languages;
+    private dotLangs: { [key: string]: DotLanguage } = {};
     private initialItems: DotMenuItem[];
 
     isFilterActive = false;
@@ -72,17 +76,19 @@ export class SuggestionsComponent implements OnInit {
 
     constructor(
         private suggestionsService: SuggestionsService,
-        private dotLanguageService: DotLanguageService,
+        private dotLanguagesService: DotLanguagesService,
         private cd: ChangeDetectorRef
     ) {}
 
     ngOnInit(): void {
         this.initialItems = this.items;
         this.itemsLoaded = ItemsType.BLOCK;
-        this.dotLanguageService
-            .getLanguages()
+        this.dotLanguagesService
+            .get()
             .pipe(take(1))
-            .subscribe((dotLang) => (this.dotLangs = dotLang));
+            .subscribe((dotLang) => {
+                dotLang.forEach((lang) => (this.dotLangs[lang.id] = lang));
+            });
     }
 
     /**
@@ -145,7 +151,7 @@ export class SuggestionsComponent implements OnInit {
      * @param {string} filter
      * @memberof SuggestionsComponent
      */
-    filterItems(filter: string = '') {
+    filterItems(filter = '') {
         switch (this.itemsLoaded) {
             case ItemsType.BLOCK:
                 this.items = this.initialItems.filter((item) =>

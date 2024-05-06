@@ -1,9 +1,9 @@
 package com.dotcms.publisher.business;
 
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
@@ -113,7 +113,7 @@ public class PublishAuditHistory implements Serializable {
 		}
 	}
 	
-	static XStream xstream=new XStream(new DomDriver());
+	static XStream xstream = XStreamHandler.newXStreamInstance();
 	public String getSerialized() {
 
 

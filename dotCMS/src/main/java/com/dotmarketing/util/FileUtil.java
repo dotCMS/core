@@ -9,6 +9,11 @@ import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.nio.file.StandardCopyOption;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,13 +35,37 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 
+/**
+ * Provide utility methods to work with binary files in dotCMS.
+ *
+ * @author root
+ * @since Mar22nd, 2012
+ */
 public class FileUtil {
 
 	private static final int BUFFER_SIZE = Config.getIntProperty("FILE_BUFFER", 4096);
-	private static Set<String> extensions = new HashSet<>();
+	private static final Set<String> extensions = new HashSet<>();
+	private static final Lazy<Set<String>> EDITABLE_AS_TEXT_FILE_TYPES = Lazy.of(FileUtil::getEditableAsTextFileTypes);
+
+	/**
+	 * Returns the MIME Types of files whose contents can be safely edited inside the dotCMS Edit
+	 * Mode. You can add your own types via the {@code DOT_EDITABLE_AS_TEXT_FILE_TYPES}
+	 * configuration property.
+	 *
+	 * @return The MIME Types of editable files.
+	 */
+	private static Set<String> getEditableAsTextFileTypes() {
+		final Set<String> editableTypes = new HashSet<>();
+		editableTypes.addAll(Set.of(
+				"application/xml",
+				"application/json",
+				"application/x-yaml",
+				"application/x-sql"));
+		editableTypes.addAll(new HashSet<>(Arrays.asList(Config.getStringArrayProperty(
+				"EDITABLE_AS_TEXT_FILE_TYPES", new String[]{}))));
+		return editableTypes;
+	}
 
 	/**
 	 * Creates a temporal file with unique name
@@ -144,28 +173,6 @@ public class FileUtil {
 			return x;
 		} else {
 			return "ukn";
-		}
-
-	}
-
-	/**
-	 * This will return the full path to the file asset as a String
-	 * 
-	 * @param inode
-	 * @param extenstion
-	 * @return
-	 */
-	public static String getAbsoluteFileAssetPath(String inode, String extenstion) {
-		String _inode = inode;
-		String path = "";
-		String realPath = Config.getStringProperty("ASSET_REAL_PATH");
-		String assetPath = Config.getStringProperty("ASSET_PATH");
-		path = java.io.File.separator + _inode.charAt(0) + java.io.File.separator + _inode.charAt(1) + java.io.File.separator + _inode
-				+ "." + extenstion;
-		if (UtilMethods.isSet(realPath)) {
-			return realPath + path;
-		} else {
-			return com.liferay.util.FileUtil.getRealPath(assetPath + path);
 		}
 
 	}
@@ -397,6 +404,46 @@ public class FileUtil {
 		final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		final URL initFileURL = classLoader.getResource(path);
 		return new String (com.liferay.util.FileUtil.getBytes(new File(initFileURL.getPath())));
+	}
+
+	/**
+	 * Determines whether the specified MIME Type belongs to a file whose contents can be edited as
+	 * text or not. Users can add additional MIME Types to the list of editable as text file types
+	 * via the {@code DOT_EDITABLE_AS_TEXT_FILE_TYPES} configuration property.
+	 *
+	 * @param mimeType The MIME Type to check.
+	 *
+	 * @return If the file can be edited as text, returns {@code true}.
+	 */
+	public static boolean isFileEditableAsText(final String mimeType) {
+		return UtilMethods.isSet(mimeType) && (mimeType.startsWith("text/") || EDITABLE_AS_TEXT_FILE_TYPES.get().contains(mimeType));
+	}
+
+	/**
+	 * NIO based method to copy a directory from one location to another
+	 * @param src source directory
+	 * @param dest destination directory
+	 */
+	public static void copyDir(Path src, Path dest)  {
+		try (Stream<Path> stream = Files.walk(src)) {
+			// Iterate over each Path object in the stream
+			stream.forEach(source -> {
+				// Get the relative path from the source directory
+				Path relativePath = src.relativize(source);
+
+				// Get the corresponding path in the destination directory
+				Path destination = dest.resolve(relativePath);
+
+				try {
+					// Copy each Path object from source to destination
+					Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+				} catch (IOException e) {
+					Logger.debug(FileUtil.class, e.getMessage(), e);
+				}
+			});
+		} catch (IOException e) {
+			Logger.debug(FileUtil.class, e.getMessage(), e);
+		}
 	}
 
 }

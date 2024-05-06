@@ -40,6 +40,15 @@ THIS FILE AND ITS INCLUDES
 
     <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
     <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
+	<link rel="stylesheet" href="/dotcms-block-editor/styles.css" />
+	<link rel="stylesheet" href="/html/assets/monaco-editor/min/vs/editor/editor.main.css" />
+
+	<%
+		String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+		if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+	%>
+		<link rel="stylesheet" href="/dotcms-binary-field-builder/styles.css" />
+	<% } %>
 
 
 	<!--[if IE]>
@@ -60,8 +69,11 @@ THIS FILE AND ITS INCLUDES
 			useXDomain: false,
 			isDebug: false,
 			<%=dojoLocaleConfig%>
-			modulePaths: { dotcms: "/html/js/dotcms" }
-	   };
+			modulePaths: {
+				dotcms: "/html/js/dotcms",
+				vs: "/html/assets/monaco-editor/min/vs"
+			}
+	   };	   
 
 	   	function isInodeSet(x){
 			return (x && x != undefined && x!="" && x.length>15);

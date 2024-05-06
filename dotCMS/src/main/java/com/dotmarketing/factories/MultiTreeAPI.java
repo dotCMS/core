@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.templates.design.bean.LayoutChanges;
 import com.google.common.collect.Table;
 
 import java.util.Collection;
@@ -171,7 +172,8 @@ public interface MultiTreeAPI {
      * @return List MultiTree
      * @throws DotDataException
      */
-    List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId, final String personalization) throws DotDataException;
+    List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId,
+            final String personalization, final String targetVariantName) throws DotDataException;
 
     /**
      * Gets a list of all MultiTrees on a page (even if they are bad)
@@ -369,6 +371,16 @@ public interface MultiTreeAPI {
     Set<String> getPersonalizationsForPage(final IHTMLPage page) throws DotDataException;
 
     /**
+     * Get an unique set of the personalization for a page for a specific variant, this set include
+     * all the Persona that has version on the page for the Specific Variant and the Default Variant.
+     *
+     * @param pageId String Page's Id
+     * @return unique Set of personalization values per the page
+     */
+    Set<String> getPersonalizationsForPage(final IHTMLPage page, final String variantName) throws DotDataException;
+
+
+    /**
      * Get an unique set of the personalization for a page
      * @param pageID
      * @return
@@ -397,7 +409,8 @@ public interface MultiTreeAPI {
      * @param newPersonalization String this is the new personalization for the set of containers
      * @return List MultiTree
      */
-    List<MultiTree> copyPersonalizationForPage (String pageId, String basePersonalization, String newPersonalization) throws DotDataException;
+    List<MultiTree> copyPersonalizationForPage (String pageId, String basePersonalization,
+            String newPersonalization, final String targetVariantName ) throws DotDataException;
 
     /**
      * Take a set of containers with a based personalization (the default one) and set to new personalization, for a page.
@@ -405,9 +418,12 @@ public interface MultiTreeAPI {
      * @param newPersonalization String this is the new personalization for the set of containers
      * @return List MultiTree
      */
-    default List<MultiTree> copyPersonalizationForPage (final String pageId, final String newPersonalization) throws DotDataException {
+    default List<MultiTree> copyPersonalizationForPage (final String pageId, final String newPersonalization,
+            final String targetVariantName)
+                throws DotDataException {
 
-        return this.copyPersonalizationForPage(pageId, MultiTree.DOT_PERSONALIZATION_DEFAULT, newPersonalization);
+        return this.copyPersonalizationForPage(pageId, MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                newPersonalization, targetVariantName);
     }
 
     /**
@@ -415,7 +431,7 @@ public interface MultiTreeAPI {
      * @param pageId {@link String} page id
      * @param personalization {@link String} personalization
      */
-    void deletePersonalizationForPage(String pageId, String personalization) throws DotDataException;
+    void deletePersonalizationForPage(String pageId, String personalization, String variantName) throws DotDataException;
 
     /**
      * Overrides: removes the current multitrees by page + personalization and adds the multiTress
@@ -497,23 +513,25 @@ public interface MultiTreeAPI {
     int getAllContentletReferencesCount(final String contentletId) throws DotDataException;
 
     /**
-     * Update the UUID of a set of MultiTree to a new UUID value
-     *
-     * @param pagesId Set of page's id to be updated
-     * @param containerId Container's id to be updated
-     * @param oldValue old UUID value to be updated
-     * @param newValue new value to set
-     *
-     * @throws DotDataException
-     */
-    void updateMultiTrees(final Collection<String> pagesId, final String containerId,
-            final String oldValue, final String newValue) throws DotDataException;
-
-    /**
      * Return all the {@link MultiTree} for a {@link Variant}
      *
      * @param variant
      * @return
      */
     List<MultiTree> getMultiTrees(final Variant variant) throws DotDataException;
+
+    /**
+     * After layout changes, this method updates the UUID (relation_type field) of a set of pages in a
+     * MultiTree according to changes in the layout.
+     *
+     * For example, if you have a layout with one instance of a container,
+     * the UUID for this container is initially set to 1. If later you add a second instance on top of the layout,
+     * the UUID of the original instance will change from 1 to 2. Consequently, the MultiTree of the pages using
+     * this layout needs to be updated as well.
+     *
+     * @param layoutChanges
+     * @param pageIds
+     * @throws DotDataException
+     */
+    void updateMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds) throws DotDataException;
 }

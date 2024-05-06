@@ -1,36 +1,107 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 /**
- * Enum that summarises the list of "commands" that can be interpreted by the transforming classes
+ * This Enum summarises the list of "commands" that can be interpreted by the transforming classes.
+ * These options allow developers to tell dotCMS what specific groups of data attributes or single
+ * attributes must be included when transforming a Contentlet into a data Map, and how they need
+ * to be included.
+ *
+ * @author Fabrizzio Araya
+ * @since Jun 11th, 2020
  */
 public enum TransformOptions {
 
-    COMMON_PROPS(true), // Common stuff present in all content.
-    CONSTANTS(true), //This instructs strategies to include fields of type constant.
-    VERSION_INFO(true), //This will include stuff like (live,working,archived, hasLiveVersion)
-    LANGUAGE_PROPS(true), // Instructs the DefaultStrategy to include extra language props such as (languageCode, country, isoCode)
-    BINARIES(true),   //This instructs strategies to transform and include binaries. The absence of this will cause the binaries to still make it into the final contentlet.
-    FILTER_BINARIES(true), //This one is used to simply prevent the binaries from making it into the final resulting map.
-    CATEGORIES_NAME(true), //This instructs to render only the category name (key=name)
-    CATEGORIES_INFO(true), //This instructs rendering much more info.
-    TAGS(true), //This instructs rendering much more info.
-    USE_ALIAS(true),  //This will include stuff like ('live' and 'isLive')
-
-    LOAD_META, // If this is on meta data will be included for FileAssets.
-    //Plug additional stuff to manipulate the outcome as a particular type of view.
-    IDENTIFIER_VIEW, //This instructs the transformer to emulate the old IdentifierToMapTransformer.
-    LANGUAGE_VIEW, //This instructs the transformer to emulate the old IdentifierToMapTransformer.
-    BINARIES_VIEW, //This Emulates the old BinaryToMapTransformer.
+    /**
+     * Instructs the Strategy to include common stuff present in all content.
+     */
+    COMMON_PROPS(true),
+    /**
+     * Instructs the Strategy to include fields of type constant.
+     */
+    CONSTANTS(true),
+    /**
+     * Instructs the Strategy to include information such as: 'live', 'working', 'archived',
+     * 'hasLiveVersion', etc.
+     */
+    VERSION_INFO(true),
+    /**
+     * Instructs the Strategy to include extra language properties such as: 'languageCode',
+     * 'country', 'isoCode', etc.
+     */
+    LANGUAGE_PROPS(true),
+    /**
+     * Instructs the Strategy to transform and include binaries. The absence of this will cause the
+     * binaries to still make it into the final contentlet.
+     */
+    BINARIES(true),
+    /**
+     * Instructs the Strategy to simply prevent the binaries from making it into the final resulting
+     * map.
+     */
+    FILTER_BINARIES(true),
+    /**
+     * Instructs the Strategy to render only the category name: (key=name)
+     */
+    CATEGORIES_NAME(true),
+    /**
+     * Instructs the Strategy to render much more Categories info.
+     */
+    CATEGORIES_INFO(true),
+    /**
+     * Instructs the Strategy to render much more Tags info
+     */
+    TAGS(true),
+    /**
+     * Instructs the Strategy to include alias properties such as: 'live' and 'isLive'.
+     */
+    USE_ALIAS(true),
+    /**
+     * Instructs the Strategy to include MetaData for File Assets.
+     */
+    LOAD_META,
+    /**
+     * Instructs the Strategy to emulate the old IdentifierToMapTransformer.
+     */
+    IDENTIFIER_VIEW,
+    /**
+     * Instructs the Strategy to emulate the old IdentifierToMapTransformer.
+     */
+    LANGUAGE_VIEW,
+    /**
+     * Instructs the Strategy to emulate the old BinaryToMapTransformer.
+     */
+    BINARIES_VIEW,
+    /**
+     * Instructs the Strategy to include Key/Value data.
+     */
     KEY_VALUE_VIEW,
-    CATEGORIES_VIEW, //This emulates the Category To MapTransformer.
+    /**
+     * Instructs the Strategy to emulate the Category To MapTransformer.
+     */
+    CATEGORIES_VIEW,
+    /**
+     * Instructs the Strategy to include File Asset data.
+     */
     FILEASSET_VIEW,
+    /**
+     * Instructs the Strategy to include Site data.
+     */
     SITE_VIEW,
+    /**
+     * Instructs the Strategy to include Story Block data
+     */
     STORY_BLOCK_VIEW,
-
     AVOID_MAP_SUFFIX_FOR_VIEWS,
-    RENDER_FIELDS, // will velocity-render the render-able fields
+    /**
+     * Instructs the Strategy to velocity-render the render-able fields
+     */
+    RENDER_FIELDS,
     JSON_VIEW,
     DATETIME_FIELDS_TO_TIMESTAMP;
+
+    // -----------------------------------------------------------------------------------------
+    // Plug additional Transform Options to manipulate the outcome as a particular type of view
+    // -----------------------------------------------------------------------------------------
 
     private boolean defaultProperty;
 

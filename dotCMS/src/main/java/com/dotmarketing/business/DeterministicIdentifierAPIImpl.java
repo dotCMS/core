@@ -1,7 +1,5 @@
 package com.dotmarketing.business;
 
-import static com.dotmarketing.util.UUIDUtil.isUUID;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -33,15 +31,23 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.codec.digest.DigestUtils;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.codec.digest.DigestUtils;
 
+import static com.dotmarketing.util.UUIDUtil.isUUID;
 
+/**
+ * This class is an implementation of the {@link DeterministicIdentifierAPI} interface.
+ *
+ * @author Fabrizzio Araya
+ * @since Jun 24th, 2021
+ */
 public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAPI {
 
     static final String GENERATE_DETERMINISTIC_IDENTIFIERS = "GENERATE_DETERMINISTIC_IDENTIFIERS";
@@ -288,7 +294,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         if(UtilMethods.isNotSet(name)){
             name = field.variable();
         }
-        return name;
+        //amplify the dispersion of the seed by adding the field type
+        return  String.format("%s:%s", name, field.typeName());
     }
 
     /**
@@ -324,8 +331,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      */
     private String hash(final String stringToHash) {
         final String hashed = hashFunction.apply(stringToHash).substring(0, 32);
-        Logger.info(DeterministicIdentifierAPIImpl.class,
-                "hashing id: " + stringToHash + " to " + hashed);
+        Logger.debug(DeterministicIdentifierAPIImpl.class,
+                () -> "hashing id: " + stringToHash + " to " + hashed);
         return hashed;
     }
 

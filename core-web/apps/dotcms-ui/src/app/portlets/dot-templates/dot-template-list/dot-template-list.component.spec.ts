@@ -19,22 +19,18 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
-import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import {
     DotAlertConfirmService,
+    DotFormatDateService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
+    DotRouterService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
 import {
@@ -48,8 +44,14 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotActionBulkResult, DotContentState, DotTemplate } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotActionBulkResult,
+    DotContentState,
+    DotMessageSeverity,
+    DotMessageType,
+    DotTemplate
+} from '@dotcms/dotcms-models';
+import { DotAddToBundleComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -76,7 +78,28 @@ const templatesMock: DotTemplate[] = [
         canWrite: true,
         canPublish: true,
         hasLiveVersion: true,
-        working: true
+        working: true,
+        theme: 'test',
+        themeInfo: {
+            identifier: '123',
+            name: 'test',
+            title: 'test',
+            inode: '123',
+            themeThumbnail: 'test',
+            hostId: '123',
+            host: {
+                hostName: 'test',
+                inode: '123',
+                identifier: '123'
+            },
+            defaultFileType: 'test',
+            filesMasks: 'test',
+            modDate: 123,
+            path: 'test',
+            sortOrder: 123,
+            showOnMenu: true,
+            type: 'test'
+        }
     },
     {
         anonymous: false,
@@ -94,7 +117,28 @@ const templatesMock: DotTemplate[] = [
         canWrite: true,
         canPublish: true,
         hasLiveVersion: true,
-        working: true
+        working: true,
+        theme: 'System Theme',
+        themeInfo: {
+            identifier: '123',
+            name: 'System Theme',
+            title: 'System Theme',
+            inode: 'SYSTEM_THEME',
+            themeThumbnail: 'System Theme',
+            hostId: '123',
+            host: {
+                hostName: 'System Theme',
+                inode: '123',
+                identifier: '123'
+            },
+            defaultFileType: 'System Theme',
+            filesMasks: 'System Theme',
+            modDate: 123,
+            path: 'System Theme',
+            sortOrder: 123,
+            showOnMenu: true,
+            type: 'System Theme'
+        }
     },
     {
         anonymous: false,
@@ -111,7 +155,28 @@ const templatesMock: DotTemplate[] = [
         canWrite: true,
         canPublish: true,
         hasLiveVersion: false,
-        working: true
+        working: true,
+        theme: 'test-2',
+        themeInfo: {
+            identifier: '123',
+            name: 'test-2',
+            title: 'test-2',
+            inode: '123',
+            themeThumbnail: 'test-2',
+            hostId: '123',
+            host: {
+                hostName: 'test-2',
+                inode: '123',
+                identifier: '123'
+            },
+            defaultFileType: 'test-2',
+            filesMasks: 'test-2',
+            modDate: 123,
+            path: 'test-2',
+            sortOrder: 123,
+            showOnMenu: true,
+            type: 'test-2'
+        }
     },
     {
         anonymous: false,
@@ -127,7 +192,28 @@ const templatesMock: DotTemplate[] = [
         canWrite: true,
         canPublish: true,
         hasLiveVersion: false,
-        working: false
+        working: false,
+        theme: 'test-3',
+        themeInfo: {
+            identifier: '123',
+            name: 'test-3',
+            title: 'test-3',
+            inode: '123',
+            themeThumbnail: 'test-3',
+            hostId: '123',
+            host: {
+                hostName: 'test-3',
+                inode: '123',
+                identifier: '123'
+            },
+            defaultFileType: 'test-3',
+            filesMasks: 'test-3',
+            modDate: 123,
+            path: 'test-3',
+            sortOrder: 123,
+            showOnMenu: true,
+            type: 'test-3'
+        }
     },
     {
         anonymous: false,
@@ -144,7 +230,46 @@ const templatesMock: DotTemplate[] = [
         canWrite: true,
         canPublish: true,
         hasLiveVersion: true,
-        working: true
+        working: true,
+        theme: 'test-4',
+        themeInfo: {
+            identifier: '123',
+            name: 'test-4',
+            title: 'test-4',
+            inode: '123',
+            themeThumbnail: 'test-4',
+            hostId: '123',
+            host: {
+                hostName: 'test-4',
+                inode: '123',
+                identifier: '123'
+            },
+            defaultFileType: 'test-4',
+            filesMasks: 'test-4',
+            modDate: 123,
+            path: 'test-4',
+            sortOrder: 123,
+            showOnMenu: true,
+            type: 'test-4'
+        }
+    },
+    {
+        anonymous: false,
+        friendlyName: 'template without theme',
+        identifier: '//dir/asFile',
+        inode: '1asFile',
+        name: 'template without theme',
+        type: 'type',
+        versionType: 'type',
+        deleted: false,
+        live: true,
+        layout: null,
+        canEdit: true,
+        canWrite: true,
+        canPublish: true,
+        hasLiveVersion: true,
+        working: true,
+        theme: 'test-4'
     }
 ];
 
@@ -175,6 +300,7 @@ const messages = {
     'templates.fieldName.description': 'Description',
     'templates.fieldName.lastEdit': 'Last Edit',
     'templates.fieldName.name': 'Name',
+    'templates.fieldName.theme': 'Theme',
     'templates.fieldName.status': 'Status',
     'Delete-Template': 'Delete Template',
     Archive: 'Archive',
@@ -204,6 +330,10 @@ const columnsMock = [
         width: '8%'
     },
     {
+        fieldName: 'theme',
+        header: 'Theme'
+    },
+    {
         fieldName: 'friendlyName',
         header: 'Description'
     },
@@ -211,7 +341,8 @@ const columnsMock = [
         fieldName: 'modDate',
         format: 'date',
         header: 'Last Edit',
-        sortable: true
+        sortable: true,
+        textAlign: 'left'
     }
 ];
 
@@ -272,6 +403,7 @@ describe('DotTemplateListComponent', () => {
     let dotAlertConfirmService: DotAlertConfirmService;
     let coreWebService: CoreWebService;
     let dotSiteBrowserService: DotSiteBrowserService;
+    let mockGoToFolder: jasmine.Spy;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -314,14 +446,17 @@ describe('DotTemplateListComponent', () => {
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                LoginService,
                 DotcmsEventsService,
                 DotEventsSocket,
                 DotcmsConfigService,
                 DotMessageDisplayService,
                 DialogService,
                 DotSiteBrowserService,
-                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
+                }
             ],
             imports: [
                 DotListingDataTableModule,
@@ -334,7 +469,7 @@ describe('DotTemplateListComponent', () => {
                 ButtonModule,
                 DotActionButtonModule,
                 DotActionMenuButtonModule,
-                DotAddToBundleModule,
+                DotAddToBundleComponent,
                 HttpClientTestingModule,
                 DynamicDialogModule,
                 BrowserAnimationsModule
@@ -382,6 +517,8 @@ describe('DotTemplateListComponent', () => {
             spyOn<any>(dialogService, 'open').and.returnValue({
                 onClose: dialogRefClose
             });
+
+            mockGoToFolder = spyOn(comp, 'goToFolder');
         }));
 
         it('should reload portlet only when the site change', () => {
@@ -399,6 +536,65 @@ describe('DotTemplateListComponent', () => {
             expect(dotListingDataTable.actions).toEqual([]);
             expect(dotListingDataTable.checkbox).toEqual(true);
             expect(dotListingDataTable.dataKey).toEqual('inode');
+        });
+
+        it('should have links for theme folder', () => {
+            const links = fixture.debugElement.queryAll(
+                By.css('[data-testid="theme-folder-link"]')
+            );
+
+            const templatesWithoutSystem = templatesMock.filter(
+                (template) => template.theme !== 'System Theme'
+            );
+
+            expect(links.length).toEqual(4);
+            expect(links[0].attributes['target']).toEqual('_self');
+            expect(
+                links.every(
+                    (link, i) =>
+                        link.nativeElement.textContent === templatesWithoutSystem[i].themeInfo.title
+                )
+            ).toBe(true);
+        });
+
+        it('should trigger goToFolder whem clicking on a theme link', () => {
+            const link = fixture.debugElement.query(By.css('[data-testid="theme-folder-link"]'));
+
+            link.nativeElement.click();
+
+            expect(mockGoToFolder).toHaveBeenCalledWith(new PointerEvent('click'), 'test');
+        });
+
+        it("should render 'System Theme' when the theme is SYSTEM_THEME", () => {
+            const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+
+            expect(cells[1].nativeElement.textContent.trim()).toEqual('System Theme');
+        });
+
+        it('should not trigger goToFolder when the theme is SYSTEM_THEME', () => {
+            const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+
+            cells[1].nativeElement.click();
+
+            expect(mockGoToFolder).not.toHaveBeenCalled();
+        });
+
+        it('should render empty when the theme is undefined or null', () => {
+            const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+
+            const lastCell = cells.pop();
+
+            expect(lastCell.nativeElement.textContent.trim()).toEqual('');
+        });
+
+        it('should not trigger goToFolder when the theme is null or undefined', () => {
+            const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+
+            const lastCell = cells.pop();
+
+            lastCell.nativeElement.click();
+
+            expect(mockGoToFolder).not.toHaveBeenCalled();
         });
 
         it('should set Action Header options correctly', () => {
@@ -439,8 +635,12 @@ describe('DotTemplateListComponent', () => {
                     By.css('[data-testid="123Published"]')
                 ).componentInstance;
                 const actions = setBasicOptions();
-                actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
-                actions.push({ menuItem: { label: 'Copy', command: jasmine.any(Function) } });
+                actions.push({
+                    menuItem: { label: 'Unpublish', command: jasmine.any(Function) }
+                });
+                actions.push({
+                    menuItem: { label: 'Copy', command: jasmine.any(Function) }
+                });
 
                 expect(publishTemplate.actions).toEqual(actions);
             });
@@ -450,8 +650,12 @@ describe('DotTemplateListComponent', () => {
                     By.css('[data-testid="123Locked"]')
                 ).componentInstance;
                 const actions = setBasicOptions();
-                actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
-                actions.push({ menuItem: { label: 'Copy', command: jasmine.any(Function) } });
+                actions.push({
+                    menuItem: { label: 'Unpublish', command: jasmine.any(Function) }
+                });
+                actions.push({
+                    menuItem: { label: 'Copy', command: jasmine.any(Function) }
+                });
 
                 expect(lockedTemplate.actions).toEqual(actions);
             });
@@ -461,8 +665,12 @@ describe('DotTemplateListComponent', () => {
                     By.css('[data-testid="123Unpublish"]')
                 ).componentInstance;
                 const actions = setBasicOptions();
-                actions.push({ menuItem: { label: 'Archive', command: jasmine.any(Function) } });
-                actions.push({ menuItem: { label: 'Copy', command: jasmine.any(Function) } });
+                actions.push({
+                    menuItem: { label: 'Archive', command: jasmine.any(Function) }
+                });
+                actions.push({
+                    menuItem: { label: 'Copy', command: jasmine.any(Function) }
+                });
 
                 expect(unPublishTemplate.actions).toEqual(actions);
             });

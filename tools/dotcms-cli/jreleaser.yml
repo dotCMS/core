@@ -1,0 +1,86 @@
+# Generated with JReleaser 1.8.0 at 2023-09-05T09:49:01.355976+02:00
+project:
+  name: dotcms-cli
+  description: app -- DotCMS CLI
+  longDescription: app -- DotCMS Quarkus CLI application
+  versionPattern: 'CUSTOM'
+  java:
+    multiProject: true
+  copyright: |
+    <p>© 2021 dotCMS Inc. All rights reserved.</p>
+    <p>dotCMS is a registered trademark of dotCMS Inc.</p>
+    <p>dotCMS is licensed under Apache License 2.0.</p>
+    <p>For details, see https://dotcms.com/legal</p>
+  license: Apache-2.0
+  authors:
+    - dotCMS
+  links:
+    homepage: https://dotcms.com
+    documentation: https://dotcms.com/docs/latest
+
+  snapshot:
+    pattern: .*-SNAPSHOT
+    label: 'dotcms-cli-{{projectVersion}}'
+    fullChangelog: true
+
+release:
+  github:
+    tagName: 'dotcms-cli-{{projectVersion}}'
+    releaseName: 'dotcms-cli - {{projectVersion}}'
+    overwrite: false
+    changelog:
+      formatted: ALWAYS
+      format: '- {{commitShortHash}} {{commitTitle}}'
+      preset: conventional-commits
+      contributors:
+        format: '- {{contributorName}}'
+      hide:
+        categories:
+          - merge
+        contributors:
+          - GitHub
+          - dependabot
+
+distributions:
+  dotcms-cli-tool-provider:
+    type: SINGLE_JAR
+    active: ALWAYS
+    stereotype: CLI
+    artifacts:
+      - path: '{{artifactsDir}}/dotcms-cli-{{projectVersion}}-runner.jar'
+        transform: '{{artifactsDir}}/dotcms-cli-{{projectVersion}}.jar'
+  dotcms-cli-native:
+    type: BINARY
+    artifacts:
+      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-aarch_64.zip'
+        platform: 'osx-aarch_64'
+        extraProperties:
+          optional: 'true'
+      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-x86_64.zip'
+        platform: 'osx-x86_64'
+        extraProperties:
+          optional: 'true'
+      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-linux-x86_64.zip'
+        platform: 'linux-x86_64'
+        extraProperties:
+          optional: 'true'
+
+upload:
+  artifactory:
+    dotcms-cli:
+      active: ALWAYS
+      authorization: BASIC
+      host: 'https://repo.dotcms.com/artifactory'
+      repositories:
+        - path: 'libs-snapshot-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
+          active: SNAPSHOT
+          fileTypes:
+            - JAR
+            - ZIP
+            - TAR_GZ
+        - path: 'libs-release-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
+          active: RELEASE
+          fileTypes:
+            - JAR
+            - ZIP
+            - TAR_GZ

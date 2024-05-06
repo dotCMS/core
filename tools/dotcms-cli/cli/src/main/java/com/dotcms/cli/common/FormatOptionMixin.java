@@ -11,12 +11,7 @@ public class FormatOptionMixin {
     @CommandLine.Option(names = {"-fmt", "--format"}, description = "Enum values: ${COMPLETION-CANDIDATES}")
     InputOutputFormat inputOutputFormat = InputOutputFormat.defaultFormat();
 
-    private ObjectMapper objectMapper;
-
     public ObjectMapper objectMapper(final File file) {
-        if (null != objectMapper) {
-            return objectMapper;
-        }
 
         if (null != file){
             if (isJSONFile(file)){
@@ -26,6 +21,7 @@ public class FormatOptionMixin {
             }
         }
 
+        ObjectMapper objectMapper;
         if (inputOutputFormat == InputOutputFormat.JSON) {
             objectMapper = new ClientObjectMapper().getContext(null);
         } else {

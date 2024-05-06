@@ -3,8 +3,8 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 import { ButtonDirective } from 'primeng/button';
 import { Inplace } from 'primeng/inplace';
 
-import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsInlineEditTextComponent } from './dot-experiments-inline-edit-text.component';
@@ -21,7 +21,7 @@ const LONG_TEXT =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed condimentum eros sit amet malesuada mattis. Morbi ac congue lectus, ut vestibulum velit. Ut sed ornare metus. Proin a orci lacus. Aenean odio lacus, fringilla eu ipsum non, pellentesque sagittis purus. Integer non.';
 const NEW_EXPERIMENT_DESCRIPTION = 'new experiment description';
 
-describe('DotExperimentsExperimentSummaryComponent', () => {
+describe('DotExperimentsInlineEditTextComponent', () => {
     let spectator: Spectator<DotExperimentsInlineEditTextComponent>;
     const createComponent = createComponentFactory({
         component: DotExperimentsInlineEditTextComponent,
@@ -174,6 +174,17 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
                 spectator.setInput('isLoading', false);
 
                 expect(deactivate).toHaveBeenCalled();
+            });
+
+            it('should deactivate the textControl if isLoading input has `currentValue = true` ', () => {
+                spectator.dispatchMouseEvent(byTestId('text-input'), 'click');
+
+                const input = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
+
+                expect(input.disabled).toBe(false);
+
+                spectator.setInput('isLoading', true);
+                expect(input.disabled).toBe(true);
             });
 
             it('should show `dot-field-validation-message` message error by default', () => {

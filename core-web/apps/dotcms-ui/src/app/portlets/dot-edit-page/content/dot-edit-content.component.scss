@@ -2,7 +2,7 @@
 @import "mixins";
 
 :host {
-    background-color: $color-palette-gray-200;
+    background-color: $white;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -13,22 +13,18 @@ dot-whats-changed,
 .dot-edit__iframe {
     background: $white;
     border-radius: $border-radius-xs;
-    box-shadow: $md-shadow-4;
+    box-shadow: $shadow-m;
     flex-grow: 1;
     overflow: hidden;
 }
 
 .dot-edit__page-wrapper {
-    background-color: $color-palette-gray-200;
+    background-color: $white;
     height: 100%;
     max-width: 100%;
     padding: $spacing-5;
     width: 100%;
     overflow: auto;
-
-    &.dot-edit__page-wrapper--deviced {
-        padding: $spacing-9;
-    }
 }
 
 .device-info {
@@ -44,8 +40,11 @@ dot-whats-changed,
     flex-direction: row;
     flex-grow: 1;
     z-index: 1;
-
     padding-right: 80px;
+
+    &.dot-edit-content__preview {
+        flex-direction: column;
+    }
 }
 
 .dot-edit__device-wrapper {
@@ -53,48 +52,18 @@ dot-whats-changed,
     display: flex;
     flex-direction: column;
     border: solid 1px $color-palette-gray-300;
+    height: 100%;
 
     .dot-edit__page-wrapper--deviced & {
         flex-grow: 0;
         border-radius: 10px;
-        border: 2px solid #ddd;
-        box-shadow: 4px 4px 15px $color-palette-black-op-10;
+        box-shadow: $shadow-l;
         background: $white;
         background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
-        padding: 0 10px;
-
-        &:before {
-            content: "";
-            display: block;
-            height: 5px;
-            width: 70px;
-            border: 1px solid #ddd;
-            background-color: #e6e6e6;
-            border-radius: 3px;
-            margin: 35px auto;
-        }
-
-        &:after {
-            content: "";
-            display: block;
-            height: 45px;
-            width: 45px;
-            border: 1px solid #ddd;
-            background-color: #e6e6e6;
-            border-radius: 45px;
-            margin: 15px auto 20px auto;
-            background: rgba(242, 239, 242, 1);
-            background: linear-gradient(
-                135deg,
-                rgba(242, 239, 242, 1) 0%,
-                rgba(242, 239, 242, 1) 9%,
-                $white 76%,
-                $white 100%
-            );
-            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f2eff2', endColorstr='#ffffff', GradientType=1);
-        }
+        width: fit-content;
+        height: fit-content;
     }
 
     .dot-edit__iframe-wrapper {

@@ -10,7 +10,12 @@ import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -46,7 +51,11 @@ import org.immutables.value.Value.Default;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @JsonTypeInfo(
@@ -83,7 +92,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
   }
 
-  static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
   Boolean hasStoryBlockFields = null;
 
@@ -221,6 +230,12 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Default
   public int sortOrder() {
     return 0;
+  }
+
+  @Nullable
+  @Value.Default
+  public Map<String, ? extends Object> metadata() {
+    return null;
   }
 
   @JsonIgnore

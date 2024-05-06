@@ -54,11 +54,10 @@
 <%@ page import="com.liferay.portal.servlet.PortalSessionContext" %>
 <%@ page import="com.liferay.portal.util.UserTrackerModifiedDateComparator" %>
 <%@ page import="com.liferay.portlet.admin.action.DeleteUserAction" %>
-<%@ page import="com.liferay.portlet.admin.action.UpdateUserConfigAction" %>
+
 
 <%@ page import="org.apache.logging.log4j.Level" %>
 <%@ page import="org.apache.logging.log4j.core.Logger" %>
 <%@ page import="org.apache.logging.log4j.LogManager" %>
 
 <portlet:defineObjects />
-

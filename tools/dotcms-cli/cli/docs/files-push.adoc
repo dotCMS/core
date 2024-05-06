@@ -1,0 +1,81 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Files Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= files-push(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+files-push - *dotCMS Files push*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*files push* [*-h*] [*--dry-run*] [*-ff*] [*-ra*] [*-rf*] [*--dotcms-url*=_<remoteURL>_]
+           [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [_path_]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This command push files to the server.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
+*--dry-run*::
+  When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
+
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+
+*-h*, *--help*::
+  Display this help message.
+
+*-ra, --removeAssets*::
+  When this option is enabled, the push process allows the deletion of assets in the remote server. By default, this option is disabled, and assets will not be removed on the remote server.
+
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
+
+*-rf, --removeFolders*::
+  When this option is enabled, the push process allows the deletion of folders in the remote server. By default, this option is disabled, and folders will not be removed on the remote server.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+[_path_]::
+  local directory or file to push
+
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

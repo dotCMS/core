@@ -1,7 +1,5 @@
 package com.dotcms.jitsu;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.http.CircuitBreakerUrl;
@@ -9,7 +7,6 @@ import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.jitsu.EventsPayload.EventPayload;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
@@ -61,7 +58,6 @@ public class EventLogRunnable implements Runnable {
     public void run() {
 
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
-
         final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
 
         for (EventPayload payload : eventPayload.payloads()) {
@@ -75,24 +71,26 @@ public class EventLogRunnable implements Runnable {
                                     url,
                                     response.getStatusCode(),
                                     response.getResponse()));
-                    Logger.warn(this.getClass(), String.format("Failed log: " + payload.toString()));
+                    Logger.warn(this.getClass(), String.format("Failed log: %s", payload));
                 }
             });
         }
 
     }
 
+
     private CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilder(String url) {
-        final CircuitBreakerUrlBuilder builder = CircuitBreakerUrl.builder()
-                .setMethod(Method.POST)
-                .setUrl(url)
-                .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
-                .setTimeout(4000)
-                .setHeaders(POSTING_HEADERS);
-        return builder;
+        return  CircuitBreakerUrl.builder()
+            .setMethod(Method.POST)
+            .setUrl(url)
+            .setParams(Map.of("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
+            .setTimeout(4000)
+            .setHeaders(POSTING_HEADERS)
+            .setThrowWhenNot2xx(false);
     }
 
-    public Optional<Response> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
+
+    public Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
         final CircuitBreakerUrl postLog = builder
                 .setRawData(payload.toString())
                 .build();
@@ -103,7 +101,7 @@ public class EventLogRunnable implements Runnable {
                                 .getOrElse(CircuitBreakerUrl.EMPTY_RESPONSE));
     }
 
-    public Optional<Response> sendTestEvent() {
+    public Optional<Response<String>> sendTestEvent() {
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
         final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
 
@@ -113,5 +111,4 @@ public class EventLogRunnable implements Runnable {
                 new EventPayload(new JSONObject(testObject)));
 
     }
-
 }

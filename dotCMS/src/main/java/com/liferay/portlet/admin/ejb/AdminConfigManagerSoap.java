@@ -36,10 +36,8 @@ public class AdminConfigManagerSoap {
 		java.lang.String companyId, java.lang.String type)
 		throws RemoteException {
 		try {
-			java.util.List returnValue = AdminConfigManagerUtil.getAdminConfig(companyId,
-					type);
 
-			return (com.liferay.portlet.admin.model.AdminConfig[])returnValue.toArray(new com.liferay.portlet.admin.model.AdminConfig[0]);
+			return new com.liferay.portlet.admin.model.AdminConfig[0];
 		}
 		catch (Exception e) {
 			throw new RemoteException(e.getMessage(),e);
@@ -50,10 +48,9 @@ public class AdminConfigManagerSoap {
 		java.lang.String companyId, java.lang.String portletId)
 		throws RemoteException {
 		try {
-			com.liferay.portlet.admin.model.JournalConfig returnValue = AdminConfigManagerUtil.getJournalConfig(companyId,
-					portletId);
 
-			return returnValue;
+
+			return new com.liferay.portlet.admin.model.JournalConfig();
 		}
 		catch (Exception e) {
 			throw new RemoteException(e.getMessage(),e);
@@ -63,9 +60,8 @@ public class AdminConfigManagerSoap {
 	public static com.liferay.portlet.admin.model.ShoppingConfig getShoppingConfig(
 		java.lang.String companyId) throws RemoteException {
 		try {
-			com.liferay.portlet.admin.model.ShoppingConfig returnValue = AdminConfigManagerUtil.getShoppingConfig(companyId);
 
-			return returnValue;
+			return new com.liferay.portlet.admin.model.ShoppingConfig();
 		}
 		catch (Exception e) {
 			throw new RemoteException(e.getMessage(),e);
@@ -75,9 +71,8 @@ public class AdminConfigManagerSoap {
 	public static com.liferay.portlet.admin.model.UserConfig getUserConfig(
 		java.lang.String companyId) throws RemoteException {
 		try {
-			com.liferay.portlet.admin.model.UserConfig returnValue = AdminConfigManagerUtil.getUserConfig(companyId);
 
-			return returnValue;
+			return new com.liferay.portlet.admin.model.UserConfig();
 		}
 		catch (Exception e) {
 			throw new RemoteException(e.getMessage(),e);
@@ -87,33 +82,18 @@ public class AdminConfigManagerSoap {
 	public static void updateJournalConfig(
 		com.liferay.portlet.admin.model.JournalConfig journalConfig,
 		java.lang.String portletId) throws RemoteException {
-		try {
-			AdminConfigManagerUtil.updateJournalConfig(journalConfig, portletId);
-		}
-		catch (Exception e) {
-			throw new RemoteException(e.getMessage(),e);
-		}
+
 	}
 
 	public static void updateShoppingConfig(
 		com.liferay.portlet.admin.model.ShoppingConfig shoppingConfig)
 		throws RemoteException {
-		try {
-			AdminConfigManagerUtil.updateShoppingConfig(shoppingConfig);
-		}
-		catch (Exception e) {
-			throw new RemoteException(e.getMessage(),e);
-		}
+
 	}
 
 	public static void updateUserConfig(
 		com.liferay.portlet.admin.model.UserConfig userConfig)
 		throws RemoteException {
-		try {
-			AdminConfigManagerUtil.updateUserConfig(userConfig);
-		}
-		catch (Exception e) {
-			throw new RemoteException(e.getMessage(),e);
-		}
+
 	}
 }

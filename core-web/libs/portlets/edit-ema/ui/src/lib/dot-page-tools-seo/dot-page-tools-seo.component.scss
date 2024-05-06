@@ -1,0 +1,91 @@
+@use "variables" as *;
+
+.page-tools {
+    width: 26.3rem;
+}
+
+.page-tools-list {
+    list-style: none;
+    padding: 0;
+    margin-top: $spacing-0;
+}
+
+.page-tools-list__item {
+    display: flex;
+    flex-direction: row;
+    padding: $spacing-3;
+    border-radius: $border-radius-md;
+
+    &:hover {
+        background-color: $color-palette-primary-100;
+    }
+}
+
+.page-tools-list__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: $spacing-3;
+}
+
+.page-tools-list__title {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semi-bold;
+    line-height: $line-height;
+    margin-bottom: $spacing-1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-tools-list__chips {
+    display: flex;
+    gap: $spacing-1;
+    margin-top: $spacing-1;
+}
+
+.page-tools-list__link {
+    color: $black;
+    text-decoration: none;
+    display: flex;
+}
+
+.page-tools-list__description {
+    margin: 0;
+    line-height: $line-height;
+}
+
+.page-tools-external-link {
+    color: $color-palette-primary-500;
+}
+
+::ng-deep {
+    .page-tools-dialog {
+        &.p-dialog-right {
+            .p-dialog {
+                margin-right: $spacing-9;
+            }
+        }
+
+        .p-dialog {
+            .p-dialog-header {
+                padding: $spacing-4;
+                border-bottom: 1px solid $color-palette-gray-300;
+
+                .p-dialog-header-icon {
+                    opacity: 0;
+                }
+            }
+
+            .p-dialog-content {
+                padding: 0 $spacing-3;
+            }
+        }
+
+        &.p-dialog-mask.p-component-overlay {
+            background-color: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+    }
+}

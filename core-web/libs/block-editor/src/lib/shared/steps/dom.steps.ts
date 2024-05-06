@@ -17,7 +17,7 @@ export class SetDocAttrStep extends Step {
         return this.STEP_TYPE;
     }
 
-    static fromJSON(_schema, json) {
+    static override fromJSON(_schema, json) {
         return new SetDocAttrStep(json.key, json.value);
     }
 

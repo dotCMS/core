@@ -1,10 +1,6 @@
 package com.dotcms.api.client.files.traversal;
 
-import com.dotcms.api.traversal.TreeNode;
-import com.dotcms.cli.common.ConsoleProgressBar;
-import com.dotcms.common.AssetsUtils;
-import org.apache.commons.lang3.tuple.Pair;
-
+import com.dotcms.api.client.files.traversal.task.TraverseTaskResult;
 import java.util.List;
 import java.util.Set;
 
@@ -30,7 +26,7 @@ public interface RemoteTraversalService {
      * @return A Pair object containing a list of exceptions encountered during traversal and the resulting
      * TreeNode representing the directory tree rooted at the specified path.
      */
-    Pair<List<Exception>, TreeNode> traverseRemoteFolder(
+    TraverseTaskResult traverseRemoteFolder(
             final String path,
             final Integer depth,
             final boolean failFast,
@@ -41,20 +37,13 @@ public interface RemoteTraversalService {
     );
 
     /**
-     * Pushes the contents of the specified tree node to the remote server. The push operation is performed
-     * asynchronously using a ForkJoinPool, and the progress is tracked and displayed using the provided
-     * console progress bar.
+     * Pushes the contents of the specified tree node to the remote server. The push operation is
+     * performed asynchronously using a ForkJoinPool, and the progress is tracked and displayed
+     * using the provided console progress bar.
      *
-     * @param workspace          the local workspace path
-     * @param localPathStructure the local path structure of the folder being pushed
-     * @param treeNode           the tree node representing the folder and its contents with all the push
-     *                           information for each file and folder
-     * @param failFast           true to fail fast, false to continue on error
-     * @param isRetry            true if this is a retry attempt, false otherwise
-     * @param progressBar        the console progress bar to track and display the push progress
+     * @param traverseParams All the parameters needed to traverse the tree
      * @return A list of exceptions encountered during the push process.
      */
-    List<Exception> pushTreeNode(String workspace, AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
-                                 final boolean failFast, final boolean isRetry, ConsoleProgressBar progressBar);
+    List<Exception> pushTreeNode(PushTraverseParams traverseParams);
 
 }

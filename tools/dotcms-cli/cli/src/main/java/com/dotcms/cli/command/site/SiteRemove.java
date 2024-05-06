@@ -7,10 +7,9 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import org.apache.commons.lang3.BooleanUtils;
+import javax.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -41,8 +40,17 @@ public class SiteRemove extends AbstractSiteCommand implements Callable<Integer>
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
+    @Inject
+    Prompt prompt;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         return delete();
     }
@@ -75,7 +83,7 @@ public class SiteRemove extends AbstractSiteCommand implements Callable<Integer>
             final String confirmation = String.format(
                     "%nPlease confirm that you want to remove the site [%s] ",
                     siteName);
-            return Prompt.yesOrNo(false, confirmation);
+            return prompt.yesOrNo(false, confirmation);
         }
         return true;
     }

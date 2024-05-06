@@ -47,12 +47,19 @@ package com.dotcms.enterprise.license;
 
 import java.io.IOException;
 
-public class DotInvalidLicenseException extends Exception {
+public class DotInvalidLicenseException extends RuntimeException {
+
+	private static final long serialVersionUID = 1L;
+
 	String message;
+
 	@Override
 	public String getMessage() {
-		// TODO Auto-generated method stub
 		return message;
+	}
+
+	public DotInvalidLicenseException(final String string) {
+		this.message = string;
 	}
 
 	public DotInvalidLicenseException(String string, IOException e) {
@@ -60,13 +67,4 @@ public class DotInvalidLicenseException extends Exception {
 		initCause(e);
 	}
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
-
-
-
-	
 }

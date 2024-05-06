@@ -1,12 +1,12 @@
 <p-toolbar>
-    <div class="p-toolbar-group-left" data-testId="leftGroup">
+    <div class="p-toolbar-group-start" data-testId="leftGroup">
         <h3 *ngIf="title" data-testId="title">{{ title }}</h3>
         <div class="dot-portlet-toolbar__extra-left">
             <ng-content select="[left]"></ng-content>
         </div>
     </div>
 
-    <div class="p-toolbar-group-right" data-testId="rightGroup">
+    <div class="p-toolbar-group-end" data-testId="rightGroup">
         <div class="dot-portlet-toolbar__extra-right">
             <ng-content select="[right]"></ng-content>
         </div>
@@ -18,8 +18,7 @@
                 [label]="cancelButtonLabel || ('cancel' | dm)"
                 (click)="onCancelClick($event)"
                 data-testId="actionsCancelButton"
-                pButton
-            ></button>
+                pButton></button>
 
             <ng-container *ngIf="actions?.primary?.length">
                 <button
@@ -28,8 +27,7 @@
                     [disabled]="actions?.primary[0]?.disabled"
                     (click)="onPrimaryClick($event)"
                     data-testId="actionsPrimaryButton"
-                    pButton
-                ></button>
+                    pButton></button>
             </ng-container>
         </div>
     </div>
@@ -42,7 +40,6 @@
         data-testId="actionsMenuButton"
         pButton
         icon="pi pi-chevron-down"
-        iconPos="right"
-    ></button>
+        iconPos="right"></button>
     <p-menu #menu [popup]="true" [model]="actions?.primary" data-testId="actionsMenu"></p-menu>
 </ng-template>

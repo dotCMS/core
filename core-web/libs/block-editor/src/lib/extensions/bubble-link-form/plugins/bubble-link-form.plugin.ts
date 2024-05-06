@@ -185,12 +185,16 @@ export class BubbleLinkFormView {
     }
 
     setLinkValues({ link, blank = false }) {
-        if (link.length > 0) {
-            const href = this.formatLink(link);
-            this.isImageNode()
-                ? this.editor.commands.setImageLink({ href })
-                : this.editor.commands.setLink({ href, target: blank ? '_blank' : '_top' });
+        if (!link.length) {
+            return;
         }
+
+        const href = this.formatLink(link);
+        const linkValue = { href, target: blank ? '_blank' : '_top' };
+
+        this.isImageNode()
+            ? this.editor.commands.setImageLink(linkValue)
+            : this.editor.commands.setLink(linkValue);
     }
 
     removeLink() {
@@ -239,10 +243,10 @@ export class BubbleLinkFormView {
     }
 
     getLinkProps(): NodeProps {
-        const { href: link = '', target } = this.editor.isActive('link')
+        const { href: link = '', target = '_top' } = this.editor.isActive('link')
             ? this.editor.getAttributes('link')
             : this.editor.getAttributes(ImageNode.name);
-        const blank = target ? target === '_blank' : true;
+        const blank = target === '_blank';
 
         return { link, blank };
     }
@@ -338,7 +342,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 if (!editor.isActive('link') || !pos) {
                     lastNode = node;
 
-                    return;
+                    return null;
                 }
 
                 // If we click again in the same link node,
@@ -346,7 +350,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 if (isEqual(lastNode, node)) {
                     editor.chain().setTextSelection(pos).closeLinkForm().run();
 
-                    return;
+                    return null;
                 }
 
                 openFormLinkOnclik({ editor, view, pos });
@@ -360,7 +364,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
 
                 // same node here
                 if (!editor.isActive('link')) {
-                    return;
+                    return null;
                 }
 
                 openFormLinkOnclik({ editor, view, pos });

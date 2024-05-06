@@ -26,9 +26,9 @@ describe('PagesGuardService', () => {
 
     it('should allow access to Pages Portlets', () => {
         let result: boolean;
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
-        expect(dotPropertiesService.getKey).toHaveBeenCalledWith(
+        expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
             FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE
         );
         expect(result).toBe(true);
@@ -36,9 +36,9 @@ describe('PagesGuardService', () => {
 
     it('should deny access to Pages Portlets', () => {
         let result: boolean;
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('false'));
+        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
-        expect(dotPropertiesService.getKey).toHaveBeenCalledWith(
+        expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
             FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE
         );
         expect(result).toBe(false);

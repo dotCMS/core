@@ -73,7 +73,7 @@ describe('AddWidgetComponent', () => {
             const img = de.query(By.css('img'));
             img.triggerEventHandler('error', null);
             fixture.detectChanges();
-            const icon = de.query(By.css('.material-icons'));
+            const icon = de.query(By.css('[data-testId="material-icons-fallback"]'));
             expect(icon?.nativeElement.textContent).toContain('add');
         });
     });

@@ -154,6 +154,13 @@ public class ExperimentHandler implements IHandler {
 	        	if(experimentWrapper.getOperation().equals(Operation.UNPUBLISH)) {
 	        		// delete operation
 	        	    if(localExperiment.isPresent()) {
+
+						if(localExperiment.get().status()==Status.RUNNING ||
+							localExperiment.get().status()==Status.SCHEDULED) {
+							experimentsAPI.cancel(localExperiment.get().id().orElseThrow()
+									, APILocator.systemUser());
+						}
+
 						experimentsAPI.delete(localExperiment.orElseThrow().id().orElseThrow(),
 								APILocator.systemUser());
 					}
@@ -162,11 +169,23 @@ public class ExperimentHandler implements IHandler {
 					if(experiment.status()== Status.RUNNING || experiment.status()== Status.SCHEDULED) {
 						Experiment asDraft = Experiment.builder().from(experiment)
 								.status(Status.DRAFT).build();
+
+						final Optional<Scheduling> schedulingOptional = asDraft.scheduling();
+
 						if(experiment.status()==Status.RUNNING) {
 							asDraft = asDraft.withScheduling(Optional.empty());
 						}
+
 						asDraft = experimentsAPI.save(asDraft, APILocator.systemUser());
-						experimentsAPI.forceStart(asDraft.id().orElseThrow(), APILocator.systemUser());
+
+						if(experiment.status()==Status.RUNNING) {
+							experimentsAPI.forceStart(asDraft.id().orElseThrow(),
+									APILocator.systemUser(), schedulingOptional.get());
+						} else {
+							experimentsAPI.forceScheduled(asDraft.id().orElseThrow(),
+									APILocator.systemUser(), schedulingOptional.get());
+						}
+
 					} else if(experiment.status()==Status.ENDED && localExperiment.isPresent()
 							&& localExperiment.get().status()==Status.RUNNING) {
 						experimentsAPI.end(localExperiment.orElseThrow().id().orElseThrow(),

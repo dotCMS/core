@@ -1,84 +1,113 @@
 package com.dotcms.cli.command.contenttype;
 
-import com.dotcms.api.ContentTypeAPI;
+import com.dotcms.api.client.pull.PullService;
+import com.dotcms.api.client.pull.contenttype.ContentTypeFetcher;
+import com.dotcms.api.client.pull.contenttype.ContentTypePullHandler;
 import com.dotcms.cli.command.DotCommand;
-import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.command.DotPull;
+import com.dotcms.cli.common.ApplyCommandOrder;
+import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.ShortOutputOptionMixin;
-import com.dotcms.cli.common.WorkspaceMixin;
+import com.dotcms.cli.common.PullMixin;
+import com.dotcms.cli.common.WorkspaceParams;
 import com.dotcms.common.WorkspaceManager;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.model.pull.PullOptions;
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import picocli.CommandLine;
-import picocli.CommandLine.Parameters;
 
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePull.NAME,
-        header = "@|bold,blue Retrieves a Content-type descriptor from a given name or Id.|@",
+        header = "@|bold,blue Retrieves Content-types descriptors|@",
         description = {
-                " This gets you a Content-type from a given Id or Name.",
-                " The content-type descriptor will be retried and saved to a file.",
-                " The file name will be the content-type's variable name.",
-                " if a file is pulled more than once",
-                " the file gets override.",
-                " By default files are saved to the current directory. in json format.",
-                " The format can be changed using the @|yellow --format|@ option.",
-                " format can be either @|yellow JSON|@ or @|yellow YAML|@.",
+                "  This command fetches and saves the descriptor information",
+                "  for Content-types within the dotCMS instance. By default, it",
+                "  retrieves descriptors for all Content-types, unless a specific",
+                "  Content-type's name or ID is provided as an argument.",
+                "  The descriptors are saved into files named after each Content-type's",
+                "  variable name.",
+                "",
+                "  When a Content-type is pulled more than once, the existing descriptor file",
+                "  is overwritten. All descriptor files are saved within the 'content-types'",
+                "  folder located in the dotCMS workspace, which is created in the",
+                "  current directory by default, unless an alternative workspace is specified.",
+                "",
+                "  The output format for the descriptor files is JSON by default. However,",
+                "  you can specify the YAML format using the @|yellow --format|@ option",
+                "  if YAML is preferred.",
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer>, DotCommand {
+public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer>,
+        DotCommand, DotPull {
 
     static final String NAME = "pull";
-    @CommandLine.Mixin(name = "format")
-    FormatOptionMixin formatOption;
 
-    @CommandLine.Mixin(name = "shorten")
-    ShortOutputOptionMixin shortOutputOption;
+    static final String CONTENT_TYPE_PULL_MIXIN = "contentTypePullMixin";
 
-    @CommandLine.Mixin(name = "workspace")
-    WorkspaceMixin workspaceMixin;
+    @CommandLine.Mixin
+    FullPullOptionsMixin pullMixin;
+
+    @CommandLine.Mixin(name = CONTENT_TYPE_PULL_MIXIN)
+    ContentTypePullMixin contentTypePullMixin;
 
     @Inject
     WorkspaceManager workspaceManager;
 
-    @Parameters( paramLabel = "idOrName", index = "0", arity = "1", description = "Identifier or Name.")
-    String idOrVar;
+    @Inject
+    PullService pullService;
+
+    @Inject
+    ContentTypeFetcher contentTypeProvider;
+
+    @Inject
+    ContentTypePullHandler contentTypePullHandler;
+
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Override
     public Integer call() throws IOException {
 
-        final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+        // When calling from the global pull we should avoid the validation of the unmatched
+        // arguments as we may send arguments meant for other pull subcommands
+        if (!pullMixin.noValidateUnmatchedArguments) {
+            // Checking for unmatched arguments
+            output.throwIfUnmatchedArguments(spec.commandLine());
+        }
 
-                final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(idOrVar, null, null);
-                final ContentType contentType = responseEntityView.entity();
-                final ObjectMapper objectMapper = formatOption.objectMapper();
+        // Make sure the path is within a workspace
+        final WorkspaceParams params = this.getPullMixin().workspace();
+        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), !params.userProvided());
 
-                if(shortOutputOption.isShortOutput()) {
-                    final String asString = shortFormat(contentType);
-                    output.info(asString);
-                } else {
-                    final String asString = objectMapper.writeValueAsString(contentType);
-                    if(output.isVerbose()) {
-                        output.info(asString);
-                    }
-                    final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
-                    final String fileName = String.format("%s.%s",contentType.variable(), formatOption.getInputOutputFormat().getExtension());
-                    final Path path = Path.of(workspace.contentTypes().toString(), fileName);
+        File contentTypesFolder = workspace.contentTypes().toFile();
+        if (!contentTypesFolder.exists() || !contentTypesFolder.canRead()) {
+            throw new IOException(String.format(
+                    "Unable to access the path [%s] check that it does exist and that you have "
+                            + "read permissions on it.", contentTypesFolder)
+            );
+        }
 
-                    Files.writeString(path, asString);
-                    output.info(String.format("Output has been written to file [%s].",path));
-                }
+        // Execute the pull
+        pullService.pull(
+                PullOptions.builder().
+                        destination(contentTypesFolder).
+                        contentKey(Optional.ofNullable(contentTypePullMixin.idOrVar)).
+                        outputFormat(pullMixin.inputOutputFormat().toString()).
+                        isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
+                        failFast(pullMixin.failFast).
+                        maxRetryAttempts(pullMixin.retryAttempts).
+                        build(),
+                output,
+                contentTypeProvider,
+                contentTypePullHandler
+        );
 
         return CommandLine.ExitCode.OK;
     }
@@ -91,6 +120,21 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
     @Override
     public OutputOptionMixin getOutput() {
         return output;
+    }
+
+    @Override
+    public PullMixin getPullMixin() {
+        return pullMixin;
+    }
+
+    @Override
+    public Optional<String> getCustomMixinName() {
+        return Optional.empty();
+    }
+
+    @Override
+    public int getOrder() {
+        return ApplyCommandOrder.CONTENT_TYPE.getOrder();
     }
 
 }

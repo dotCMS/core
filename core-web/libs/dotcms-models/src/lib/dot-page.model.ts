@@ -55,6 +55,7 @@ export interface DotPage {
     versionId?: string;
     versionType: string;
     working?: boolean;
+    stInode?: string;
 }
 
 // Extra properties from renderHTML

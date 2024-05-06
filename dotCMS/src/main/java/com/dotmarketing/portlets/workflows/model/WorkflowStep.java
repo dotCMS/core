@@ -1,13 +1,21 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotmarketing.util.UtilMethods;
-
+/**
+ * Represents a Workflow Step in dotCMS.
+ * <p>A Workflow Step defines the step that a Contentlet may go through within a Workflow. When a
+ * content item is in a Workflow Step, users may only take Workflow Actions that exist in that
+ * Workflow Step.</p>
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class WorkflowStep implements Serializable {
 
 	private static final long serialVersionUID = 1L;

@@ -3,7 +3,7 @@ export interface DotCMSWorkflow {
     creationDate: Date;
     defaultScheme: boolean;
     description: string;
-    entryActionId: string;
+    entryActionId: string | null;
     id: string;
     mandatory: boolean;
     modDate: Date;
@@ -37,5 +37,40 @@ export interface DotProcessedWorkflowPayload {
     pushActionSelected?: string;
     timezoneId: string;
     pathToMove: string;
-    contentlet: Record<string, unknown>;
+    contentlet?: Record<string, unknown>;
+}
+
+export interface DotCMSWorkflowStatus {
+    scheme: DotCMSWorkflow;
+    step: WorkflowStep;
+    task: WorkflowTask;
+}
+
+export interface WorkflowStep {
+    creationDate: number;
+    enableEscalation: boolean;
+    escalationAction: string | null;
+    escalationTime: number;
+    id: string;
+    myOrder: number;
+    name: string;
+    resolved: boolean;
+    schemeId: string;
+}
+
+export interface WorkflowTask {
+    assignedTo: string;
+    belongsTo: string | null;
+    createdBy: string;
+    creationDate: number;
+    description: string;
+    dueDate: string | null;
+    id: string;
+    inode: string;
+    languageId: number;
+    modDate: number;
+    new: boolean;
+    status: string;
+    title: string;
+    webasset: string;
 }

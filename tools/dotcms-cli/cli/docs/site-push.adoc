@@ -1,0 +1,84 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Site Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= site-push(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+site-push - *Push sites*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*site push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-fse*] [*-rs*] [*--dotcms-url*=_<remoteURL>_]
+          [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [_path_]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+This command enables the pushing of sites to the server. It accommodates the specification of either a site file or a folder path.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-dau, --disable-auto-update*::
+  Disable the default behaviour of updating the local file descriptor with the response from the server after a push. When this option is used, the local file will remain in its initial state even after a successful push.
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
+*--dry-run*::
+  When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
+
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+
+*-fse, --forceSiteExecution*::
+  Force must me set to true to update a site name.
+
+*-h*, *--help*::
+  Display this help message.
+
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
+
+*-rs, --removeSites*::
+  When this option is enabled, the push process allows the deletion of sites in the remote server. By default, this option is disabled, and sites will not be removed on the remote server.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+[_path_]::
+  local directory or file to push
+
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

@@ -32,7 +32,7 @@ public final class CreateUserForm extends Validated  {
     private final String email;
     private final boolean male;
     private final String  birthday;
-    private final long    languageId;
+    private final String    languageId;
     private final String  timeZoneId;
     private final char[] password;
 
@@ -99,7 +99,7 @@ public final class CreateUserForm extends Validated  {
         return birthday;
     }
 
-    public long getLanguageId() {
+    public String getLanguageId() {
         return languageId;
     }
 
@@ -129,7 +129,7 @@ public final class CreateUserForm extends Validated  {
         @JsonProperty private String email;
         @JsonProperty private boolean male;
         @JsonProperty private String  birthday;
-        @JsonProperty private long    languageId = -1l;
+        @JsonProperty private String    languageId ="en-US";
         @JsonProperty private String    timeZoneId;
         @JsonProperty private char[]    password;
         @JsonProperty private Map<String, Object>    additionalInfo;
@@ -187,7 +187,7 @@ public final class CreateUserForm extends Validated  {
             return this;
         }
 
-        public Builder languageId(long languageId) {
+        public Builder languageId(String languageId) {
             this.languageId = languageId;
             return this;
         }

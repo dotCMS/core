@@ -38,28 +38,30 @@ public class LogoutResourceTest extends UnitTestBase {
         final ServletContext context = mock(ServletContext.class);
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session); //
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-
-        Mockito.doNothing().when(loginService).doActionLogout(
-                request,
-                response);
+            Mockito.doNothing().when(loginService).doActionLogout(
+                    request,
+                    response);
 
 
-        final LogoutResource logoutResource =
-                new LogoutResource(loginService, webResource);
+            final LogoutResource logoutResource =
+                    new LogoutResource(loginService, webResource);
 
-        final Response response1 = logoutResource.logout(request, response);
+            final Response response1 = logoutResource.logout(request, response);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 200);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertTrue("Logout successfully".equals(ResponseEntityView.class.cast(response1.getEntity()).getEntity()));
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
-
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), 200);
+            assertNotNull(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertTrue("Logout successfully".equals(ResponseEntityView.class.cast(response1.getEntity()).getEntity()));
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
 }

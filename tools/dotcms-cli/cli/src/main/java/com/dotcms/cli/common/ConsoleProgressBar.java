@@ -80,6 +80,13 @@ public class ConsoleProgressBar implements Runnable {
     }
 
     /**
+     * Just add a next line marker when done.
+     */
+    public synchronized void done(){
+        this.out.print("\n");
+    }
+
+    /**
      * Runs the progress bar animation until the associated future result is done.
      */
     @Override
@@ -99,6 +106,9 @@ public class ConsoleProgressBar implements Runnable {
             Thread.currentThread().interrupt();
         } finally {
             if (currentStep >= totalSteps) {
+
+                // If there were no steps to run, we still need to show the progress bar as completed
+                totalSteps = totalSteps > 0 ? totalSteps : 1;
 
                 builder = initBuilder(builder);
 

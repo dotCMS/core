@@ -1,10 +1,25 @@
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
+import { NgFor } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { Checkbox, CheckboxModule } from 'primeng/checkbox';
+import { CheckboxModule } from 'primeng/checkbox';
+
+const cities = [
+    { name: 'Chicago', code: 'CHI' },
+    { name: 'New York', code: 'NY' },
+    { name: 'Los Angeles', code: 'LA' },
+    { name: 'Houston', code: 'HOU' },
+    { name: 'Philadelphia', code: 'PHI' },
+    { name: 'Phoenix', code: 'PHO' },
+    { name: 'San Antonio', code: 'SA' },
+    { name: 'San Diego', code: 'SD' },
+    { name: 'Dallas', code: 'DAL' },
+    { name: 'San Jose', code: 'SJ' },
+    { name: 'Austin', code: 'AUS' },
+    { name: 'Indianapolis', code: 'IND' }
+];
 
 export default {
     title: 'PrimeNG/Form/Checkbox',
@@ -12,52 +27,47 @@ export default {
         docs: {
             description: {
                 component:
-                    'Basic checkbox with label, more information: https://primeng.org/checkbox'
+                    'Checkbox is an extension to standard checkbox element with theming: https://primeng.org/checkbox'
             }
         }
     },
-    component: Checkbox,
     decorators: [
         moduleMetadata({
-            imports: [CheckboxModule, BrowserAnimationsModule]
+            imports: [CheckboxModule, BrowserAnimationsModule, FormsModule, NgFor]
         })
     ],
-    args: {}
+    args: {
+        cities: [...cities],
+        disabled: false,
+        invalid: false
+    },
+    argTypes: {
+        cities: {
+            control: 'array',
+            description: 'List of cities to display as radio buttons'
+        },
+        disabled: {
+            control: 'boolean',
+            description: 'Whether the radio buttons are disabled'
+        },
+        invalid: {
+            control: 'boolean',
+            description: 'Whether the radio buttons are invalid'
+        }
+    }
 } as Meta;
 
-const CheckboxTemplate = `
-<div class="field-checkbox">
-  <p-checkbox name="group1" value="New York" inputId="ny"></p-checkbox>
-  <label for="ny">New York</label>
-</div>
-<div class="field-checkbox">
-  <p-checkbox name="group1" value="San Francisco" inputId="sf"></p-checkbox>
-  <label for="sf">San Francisco</label>
-</div>
-<div class="field-checkbox">
-  <p-checkbox name="group1" value="Los Angeles" inputId="la"></p-checkbox>
-  <label for="la">Los Angeles</label>
-</div>
-<div class="field-checkbox">
-  <p-checkbox name="group1" value="Chicago" inputId="ch"></p-checkbox>
-  <label for="ch">Chicago</label>
+const checkboxTemplate = `
+<div class="flex flex-column gap-2">
+<p-checkbox  *ngFor="let city of cities" name="city" [value]="city" [(ngModel)]="selectedCity" [inputId]="city.code" [label]="city.name" [disabled]="disabled" [class]="invalid ? 'ng-dirty ng-invalid' : ''"></p-checkbox>
 </div>
 `;
-const Template: Story<Checkbox> = (props: Checkbox) => {
-    const template = CheckboxTemplate;
+
+export const Main: Story<{ selectedValue: string }> = (props: { selectedValue: string }) => {
+    const template = checkboxTemplate;
 
     return {
         props,
         template
     };
-};
-
-export const Primary: Story = Template.bind({});
-
-Primary.parameters = {
-    docs: {
-        source: {
-            code: CheckboxTemplate
-        }
-    }
 };

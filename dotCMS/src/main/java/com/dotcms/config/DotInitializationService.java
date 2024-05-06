@@ -2,13 +2,18 @@ package com.dotcms.config;
 
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
+import com.dotcms.business.SystemTableInitializer;
 import com.dotcms.contenttype.business.ContentTypeInitializer;
 import com.dotcms.rendering.velocity.events.ExceptionHandlersInitializer;
 import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.variant.business.DefaultVariantInitializer;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import org.apache.commons.lang.time.StopWatch;
 
 import java.io.Serializable;
@@ -20,15 +25,19 @@ import java.util.Set;
 import static com.dotcms.util.CollectionsUtils.linkSet;
 
 /**
- * This class is in charge of the Services, Factories or any eager Component to be initialized
- *
- * It use three approaches:
- *
- * 1) {@link java.util.ServiceLoader} will use the standard java extension mechanism, the class to extends will be {@link DotInitializer}
- * 2) List of class names comma separated on the  dotmarketing-config.properties by using the property: dotcms.initializationservice.services
- * 3) You can extends this class and override on the  dotmarketing-config.properties by using the property: dotcms.initializationservice.classname
+ * This class is in charge of the Services, Factories and any other eager Component that needs to be
+ * initialized. It uses three approaches:
+ * <ol>
+ *     <li>The {@link java.util.ServiceLoader} , which uses the standard Java extension mechanism.
+ *      The class to extend will be {@link DotInitializer}.</li>
+ *     <li>A list of comma-separated class names in the {@code dotmarketing-config.properties}
+ *     file via the {@code dotcms.initializationservice.services} property.</li>
+ *     <li>You can extend this class and override it in the {@code dotmarketing-config
+ *     .properties} file via the {@code dotcms.initializationservice.classname} property.</li>
+ * </ol>
  *
  * @author jsanca
+ * @since Sept 27th, 2016
  */
 public class DotInitializationService implements Serializable {
 
@@ -118,7 +127,8 @@ public class DotInitializationService implements Serializable {
                 (DotInitializer)APILocator.getThemeAPI(),
                 (DotInitializer)APILocator.getTemplateAPI(),
                 new ContentTypeInitializer(),
-                new DefaultVariantInitializer()
+                new DefaultVariantInitializer(),
+                new SystemTableInitializer()
         );
     } // getInternalInitializers.
 
@@ -210,7 +220,7 @@ public class DotInitializationService implements Serializable {
         final String customImpl = Config.getStringProperty
                 (INITIALIZATION_SERVICE_CLASSNAME_KEY, null);
 
-        // if has a custom implemention use it.
+        // if it has a custom implementation, use it
         if (UtilMethods.isSet(customImpl)) {
 
             service = (DotInitializationService)

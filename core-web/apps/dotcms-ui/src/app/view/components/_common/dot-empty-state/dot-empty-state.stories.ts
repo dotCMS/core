@@ -1,10 +1,9 @@
 /* eslint-disable no-console */
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEmptyStateModule } from './dot-empty-state.module';
 
@@ -19,7 +18,7 @@ export default {
     title: 'DotCMS/Structure/Empty State',
     decorators: [
         moduleMetadata({
-            imports: [DotEmptyStateModule, DotPipesModule],
+            imports: [DotEmptyStateModule, DotSafeHtmlPipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         })
     ],

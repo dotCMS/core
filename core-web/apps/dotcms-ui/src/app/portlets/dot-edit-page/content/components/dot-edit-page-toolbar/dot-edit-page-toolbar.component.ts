@@ -10,8 +10,6 @@ import {
     Output
 } from '@angular/core';
 
-import { take } from 'rxjs/operators';
-
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -19,7 +17,8 @@ import {
     DotPageMode,
     DotPageRenderState,
     DotVariantData,
-    FeaturedFlags
+    FeaturedFlags,
+    RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
 
 @Component({
@@ -42,6 +41,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     pageRenderedHtml: string;
     // TODO: Remove next line when total functionality of Favorite page is done for release
     showFavoritePageStar = false;
+    runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -53,10 +53,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release
         this.dotConfigurationService
-            .getKey(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
-            .pipe(take(1))
-            .subscribe((enabled: string) => {
-                this.showFavoritePageStar = enabled === 'true';
+            .getFeatureFlag(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
+            .subscribe((enabled) => {
+                this.showFavoritePageStar = enabled;
             });
 
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();

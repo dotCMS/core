@@ -1,12 +1,15 @@
 package com.liferay.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.util.Config;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -331,6 +334,19 @@ public class FileUtilTest {
                 Assert.assertFalse(subPaths.isEmpty());
             }
         }
+    }
+
+    @Test
+    public void test_no_NPE_on_copy() throws Exception {
+
+        try{
+            com.liferay.util.FileUtil.copyFile(null, null, false);
+        }catch(Exception e){
+            assertTrue("Error is an IOException", e instanceof IOException);
+            return;
+        }
+        fail("This should have thrown an error");
+
     }
 
 }

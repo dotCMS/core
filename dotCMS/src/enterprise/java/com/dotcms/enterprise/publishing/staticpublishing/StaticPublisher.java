@@ -144,7 +144,7 @@ public class StaticPublisher extends Publisher {
      */
     private void checkLicense() {
         if (LicenseUtil.getLevel() < REQUIRED_LICENSE_LEVEL) {
-            throw new RuntimeException("Need an Platform license to run this functionality");
+            throw new RuntimeException("Need a Platform license to run this functionality");
         }
     } //checkLicense.
 

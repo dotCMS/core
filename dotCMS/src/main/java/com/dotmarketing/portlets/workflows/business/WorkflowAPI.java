@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.workflow.form.AdditionalParamsBean;
 import com.dotmarketing.beans.Permission;
@@ -322,6 +324,10 @@ public interface WorkflowAPI {
 	 * @throws AlreadyExistException
 	 */
 	public Future<WorkflowScheme> deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
+
+	@WrapInTransaction
+	@VisibleForTesting
+	WorkflowScheme deleteSchemeTask(WorkflowScheme scheme, User user);
 
 	/**
 	 * Find the steps associated to the scheme
@@ -994,6 +1000,17 @@ public interface WorkflowAPI {
 	 */
 	List<SystemActionWorkflowActionMapping> findSystemActionsByScheme(final WorkflowScheme workflowScheme, final User user)  throws DotSecurityException, DotDataException;
 
+
+	/**
+	 * Retrieve a system action wf mapping by system action and workflow scheme
+	 * @param systemAction
+	 * @param workflowScheme
+	 * @param user
+	 * @return Opt of SystemActionWorkflowActionMapping
+	 */
+	Optional<SystemActionWorkflowActionMapping> findSystemActionByScheme(SystemAction systemAction, WorkflowScheme workflowScheme, User user)   throws DotSecurityException, DotDataException;
+
+
 	/**
 	 * Tries to find a {@link WorkflowAction} based on a {@link Contentlet} and {@link SystemAction}, first will find a workflow action
 	 * associated to the {@link Contentlet} {@link ContentType}, if there is not any match, will tries to find by {@link WorkflowScheme}
@@ -1089,6 +1106,34 @@ public interface WorkflowAPI {
 	boolean hasDestroyActionlet(final WorkflowAction action);
 
 	/**
+	 * Return the count of Steps in all Schemas
+	 *
+	 * @return
+	 */
+	long countAllSchemasSteps(User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return the count of Action in all not archived Schemas
+	 *
+	 * @return
+	 */
+	long countAllSchemasActions(User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return the count of SubAction in all Action
+	 *
+	 * @return
+	 */
+	long countAllSchemasSubActions(User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return the count of unique subaction in all Workflow Actiona
+	 *
+	 * @return the count of unique subactions
+	 */
+	long countAllSchemasUniqueSubActions(User user) throws DotDataException, DotSecurityException;
+
+	/**
 	 * This method creates a WorkflowTask (does not persists it) based on the information on the contentlet (id + lang),
 	 * user (role to assign, and created by), workflowStep (status 'current step'), title and description
 	 *
@@ -1128,7 +1173,22 @@ public interface WorkflowAPI {
 			final ConcurrentMap<String,Object> context,
 			final int sleep);
 
+
 	/**
+	 * Returns the count of {@link WorkflowScheme}s in the system.
+	 * @param user the user requesting the count
+	 * @return
+	 */
+	int countWorkflowSchemes(User user);
+
+	/**
+	 * Returns the count of {@link WorkflowScheme}s in the system including archived ones.
+	 * @param user the user requesting the count
+	 * @return
+	 */
+	int countWorkflowSchemesIncludeArchived(User user);
+
+    /**
 	 * Render mode for the available actions
 	 */
     enum RenderMode {

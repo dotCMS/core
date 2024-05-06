@@ -4,6 +4,7 @@
 
 :host {
     padding: $spacing-1;
+    min-width: 150px;
 
     &::ng-deep {
         .p-dropdown {

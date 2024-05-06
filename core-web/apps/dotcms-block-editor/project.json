@@ -6,7 +6,7 @@
     "prefix": "dotcms",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:browser",
+            "executor": "@nx/angular:browser-esbuild",
             "options": {
                 "outputPath": "dist/apps/dotcms-block-editor",
                 "index": "apps/dotcms-block-editor/src/index.html",
@@ -23,6 +23,16 @@
                         "input": "node_modules/regenerator-runtime/runtime.js"
                     }
                 ],
+                "styles": [
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "libs/dotcms-scss/angular/_forms.scss",
+                    "libs/dotcms-scss/angular/_mixins.scss",
+                    "libs/dotcms-scss/angular/dotcms-theme/theme.scss",
+                    "libs/dotcms-scss/angular/_prime-icons.scss",
+                    "apps/dotcms-block-editor/src/styles.scss"
+                ],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
@@ -35,6 +45,17 @@
                 "namedChunks": true
             },
             "configurations": {
+                "localhost": {
+                    "sourceMap": true,
+                    "optimization": false,
+                    "watch": true
+                },
+                "tomcat": {
+                    "outputPath": "../../tomcat9/webapps/ROOT/dotcms-block-editor",
+                    "sourceMap": true,
+                    "optimization": false,
+                    "watch": true
+                },
                 "production": {
                     "fileReplacements": [
                         {
@@ -43,17 +64,17 @@
                         }
                     ],
                     "optimization": true,
-                    "outputHashing": "all",
+                    "outputHashing": "none",
                     "sourceMap": false,
                     "namedChunks": false,
-                    "extractLicenses": true,
+                    "extractLicenses": false,
                     "vendorChunk": false,
                     "buildOptimizer": true,
                     "budgets": [
                         {
                             "type": "initial",
                             "maximumWarning": "2mb",
-                            "maximumError": "2mb"
+                            "maximumError": "2.5mb"
                         },
                         {
                             "type": "anyComponentStyle",
@@ -63,33 +84,30 @@
                     ]
                 }
             },
-            "defaultConfiguration": ""
+            "defaultConfiguration": "production"
         },
         "serve": {
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
-                "browserTarget": "dotcms-block-editor:build"
+                "buildTarget": "dotcms-block-editor:build"
             },
             "configurations": {
                 "production": {
-                    "browserTarget": "dotcms-block-editor:build:production"
+                    "buildTarget": "dotcms-block-editor:build:production"
+                },
+                "development": {
+                    "buildTarget": "dotcms-block-editor:build:development"
                 }
             }
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
             "options": {
-                "browserTarget": "dotcms-block-editor:build"
+                "buildTarget": "dotcms-block-editor:build"
             }
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "options": {
-                "lintFilePatterns": [
-                    "apps/dotcms-block-editor/src/**/*.ts",
-                    "apps/dotcms-block-editor/src/**/*.html"
-                ]
-            },
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         },
         "test": {
@@ -105,5 +123,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

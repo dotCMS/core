@@ -2,6 +2,10 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import io.vavr.API;
 import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 
@@ -110,8 +114,9 @@ public class ContainerWebAPI implements ViewTool {
 	 * @return
 	 */
     public List<String> getPersonalizedContentList(String pageId, String containerId, String uuid) {
-        Set<String> availablePersonalizations = UtilMethods.isSet(pageId)
-                        ? Try.of(() -> APILocator.getMultiTreeAPI().getPersonalizationsForPage(pageId))
+
+		Set<String> availablePersonalizations = UtilMethods.isSet(pageId)
+                        ? Try.of(() -> getPageById(pageId))
                                         .getOrElse(ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT))
                         : ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT);
 
@@ -151,6 +156,24 @@ public class ContainerWebAPI implements ViewTool {
         
         return new ArrayList<>();
     }
+
+	private Set<String> getPageById(final String pageId) throws DotDataException {
+		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+
+		final IHTMLPage htmlPageAsset = getHtmlPageAsset(pageId);
+
+		return APILocator.getMultiTreeAPI().getPersonalizationsForPage(htmlPageAsset, currentVariantId);
+	}
+
+	private static HTMLPageAsset getHtmlPageAsset(String pageId)  {
+		try {
+			return APILocator.getHTMLPageAssetAPI()
+					.fromContentlet(APILocator.getContentletAPI()
+							.findContentletByIdentifierAnyLanguage(pageId));
+		} catch (DotDataException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 	private List<String> getContentsIdByUUID(final String containerId, final String pTag, final String uuid, final PageMode pageMode) {
 

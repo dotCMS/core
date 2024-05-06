@@ -3,6 +3,7 @@
 @forward "../shared/fonts";
 @forward "../shared/shadows";
 @forward "../shared/spacing";
+@forward "../shared/mixins";
 
 @use "sass:math";
 @use "../shared/common" as *;
@@ -10,6 +11,7 @@
 @use "../shared/fonts" as *;
 @use "../shared/shadows" as *;
 @use "../shared/spacing" as *;
+@use "../shared/mixins" as *;
 
 $input-border-color-hover: $color-palette-primary;
 $input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
@@ -34,17 +36,14 @@ $button-text-color-disabled: $color-palette-gray-500;
 $button-text-color: $color-palette-gray-500;
 $button-shadow-focus: 0 0 0 4px $color-palette-secondary-op-20;
 
-// Tables
-$th-text-color: $color-palette-gray-500;
-$table-border-color: $color-palette-gray-500;
-
 $warn: $orange;
 $info: $color-palette-secondary;
 
 // Basic stuffs
 $field-tiny-height: 28px;
-$field-disabled-opacity: 0.7;
+$field-disabled-opacity: 0.38;
 $line-height: 1.5em;
+$line-height-relative: 140%;
 
 // ICONS
 $md-icon-size-normal: 18px;
@@ -63,7 +62,6 @@ $navigation-item-height: 48px;
 $navigation-width: 220px;
 $navigation-width-collased: 70px;
 $content-palette-width: 16rem;
-$experiment-header-height: 60px;
 
 //Dot Secondary Toolbar
 $dot-secondary-toolbar-height: 52px;
@@ -101,9 +99,6 @@ $confirm-popup-column-gap: 5px;
 
 // CARDS
 $card-min-height: 42px;
-
-// TabView
-$tabView-scroll-btn-width: 40px;
 
 // Tag
 $tag-radius-md: 7px;

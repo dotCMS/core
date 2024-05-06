@@ -6,7 +6,7 @@ import {
     parseFromGridStackToDotObject,
     willBoxFitInRow
 } from './gridstack-utils';
-import { EMPTY_ROWS_VALUE, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
+import { EMPTY_ROWS_VALUE, FULL_DATA_MOCK_UNSORTED, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -66,6 +66,29 @@ describe('parseFromGridStackToDotObject', () => {
         const result = parseFromGridStackToDotObject(gridstack);
 
         expect(result).toEqual(data);
+    });
+
+    it('should sort all colums by leftOffset', () => {
+        const data = FULL_DATA_MOCK_UNSORTED;
+
+        const gridstack = parseFromDotObjectToGridStack(data);
+        const result = parseFromGridStackToDotObject(gridstack);
+
+        let sorted = true;
+
+        result.rows.forEach(({ columns }) => {
+            if (columns.length <= 1) return;
+
+            columns.reduce((prev, curr) => {
+                if (prev.leftOffset > curr.leftOffset) {
+                    sorted = false;
+                }
+
+                return curr;
+            });
+        });
+
+        expect(sorted).toBeTruthy();
     });
 
     it('should return an empty DotBodyLayour when no rows are provided', () => {

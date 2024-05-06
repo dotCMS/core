@@ -1,16 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { of } from 'rxjs';
 
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotKeyValueModule } from '@components/dot-key-value-ng/dot-key-value-ng.module';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageDisplayService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotKeyValueComponent } from '@dotcms/ui';
 import {
     dotcmsContentTypeFieldBasicMock,
     DotFieldVariablesServiceMock,
@@ -46,7 +44,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [TestHostComponent, DotContentTypeFieldsVariablesComponent],
-            imports: [DotKeyValueModule],
+            imports: [DotKeyValueComponent],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
                 {
@@ -77,8 +75,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         fixtureHost.detectChanges();
 
-        const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
-        dotKeyValue.save.emit(response);
+        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
+        dotKeyValue.triggerEventHandler('save', response);
+
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(
             comp.field,
             mockFieldVariables[0]
@@ -86,16 +85,37 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         expect(comp.fieldVariables[0]).toEqual(mockFieldVariables[0]);
     });
 
+    it('should update variable a variable', () => {
+        const variable = {
+            ...mockFieldVariables[0],
+            value: 'test'
+        };
+
+        spyOn(dotFieldVariableService, 'save').and.returnValue(of(variable));
+
+        fixtureHost.detectChanges();
+
+        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
+        dotKeyValue.triggerEventHandler('update', {
+            variable,
+            oldVariable: mockFieldVariables[0]
+        });
+
+        expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, variable);
+
+        expect(comp.fieldVariables[0]).toEqual(variable);
+    });
+
     it('should delete a variable from the server', () => {
         const variableToDelete = mockFieldVariables[0];
-        spyOn<any>(dotFieldVariableService, 'delete').and.returnValue(of([]));
+        spyOn<DotFieldVariablesService>(dotFieldVariableService, 'delete').and.returnValue(of([]));
         const deletedCollection = mockFieldVariables.filter(
             (item: DotFieldVariable) => variableToDelete.key !== item.key
         );
         fixtureHost.detectChanges();
 
-        const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
-        dotKeyValue.delete.emit(variableToDelete);
+        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
+        dotKeyValue.triggerEventHandler('delete', variableToDelete);
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
         expect(comp.fieldVariables).toEqual(deletedCollection);

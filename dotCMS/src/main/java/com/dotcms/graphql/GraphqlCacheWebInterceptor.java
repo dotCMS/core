@@ -66,6 +66,8 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
     private final DotGraphQLHttpServlet graphQLHttpServlet = new DotGraphQLHttpServlet();
 
+    private final Lazy<Integer> defaultTTL = Lazy.of(()->Config.getIntProperty("cache.graphqlquerycache.seconds", 15));
+
     @Override
     public String[] getFilters() {
         return new String[] {API_CALL + "*"};
@@ -173,7 +175,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             ).getOrElse(Optional.empty());
         }
 
-        return Optional.empty();
+        return Optional.of(defaultTTL.get());
     }
 
     @Override

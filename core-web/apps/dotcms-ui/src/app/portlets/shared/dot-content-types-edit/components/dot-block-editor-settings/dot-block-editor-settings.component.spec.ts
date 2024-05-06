@@ -8,9 +8,8 @@ import { By } from '@angular/platform-browser';
 
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { getEditorBlockOptions } from '@dotcms/block-editor';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
 
 import { DotBlockEditorSettingsComponent } from './dot-block-editor-settings.component';

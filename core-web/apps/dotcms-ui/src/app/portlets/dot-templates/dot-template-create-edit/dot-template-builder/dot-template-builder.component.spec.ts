@@ -22,11 +22,15 @@ import { DotGlobalMessageComponent } from '@components/_common/dot-global-messag
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
-import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
+import {
+    DotEventsService,
+    DotMessageService,
+    DotPropertiesService,
+    DotRouterService
+} from '@dotcms/data-access';
+import { DotLayout, DotTemplate, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import {
     AUTOSAVE_DEBOUNCE_TIME,
@@ -47,7 +51,7 @@ import {
 })
 class TemplateBuilderMockComponent {
     @Input() layout: DotLayout;
-    @Input() themeId: string;
+    @Input() template: Partial<DotTemplate>;
     @Output() templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 }
 
@@ -181,7 +185,7 @@ describe('DotTemplateBuilderComponent', () => {
                 {
                     provide: DotPropertiesService,
                     useValue: {
-                        getKey: () => of('false')
+                        getFeatureFlag: () => of(false)
                     }
                 },
                 DotEventsService,
@@ -240,19 +244,17 @@ describe('DotTemplateBuilderComponent', () => {
             const builder = de.query(By.css('dot-edit-layout-designer'));
 
             builder.triggerEventHandler('save', EMPTY_TEMPLATE_DESIGN);
-            builder.triggerEventHandler('updateTemplate', EMPTY_TEMPLATE_DESIGN);
 
             expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
-            expect(component.updateTemplate.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
         });
 
-        it('should emit save and publish event from dot-edit-layout-designer automatically on template updates', () => {
+        it('should emit save event from dot-edit-layout-designer automatically on template updates', () => {
             fakeAsync(() => {
-                spyOn(component.saveAndPublish, 'emit');
+                spyOn(component.save, 'emit');
                 const builder = de.query(By.css('dot-edit-layout-designer'));
-                builder.triggerEventHandler('saveAndPublish', EMPTY_TEMPLATE_DESIGN);
+                builder.triggerEventHandler('save', EMPTY_TEMPLATE_DESIGN);
                 tick(AUTOSAVE_DEBOUNCE_TIME);
-                expect(component.saveAndPublish.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
+                expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
             });
         });
     });
@@ -264,7 +266,7 @@ describe('DotTemplateBuilderComponent', () => {
                 theme: '123',
                 live: true
             };
-            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
             fixture.detectChanges();
         });
 
@@ -278,18 +280,23 @@ describe('DotTemplateBuilderComponent', () => {
 
         it('should set the themeId @Input correctly', () => {
             const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
-            expect(templateBuilder.componentInstance.themeId).toBe('123');
+            expect(templateBuilder.componentInstance.template.themeId).toBe('123');
         });
 
-        it('should emit events from new-template-builder when the layout is changed', () => {
+        it('should trigger onTemplateItemChange new-template-builder when the layout is changed', () => {
             const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
             const template = {
                 layout: EMPTY_TEMPLATE_DESIGN.layout,
-                themeId: '123'
-            } as DotTemplateDesigner;
+                theme: '123',
+                friendlyName: 'test',
+                identifier: '123',
+                title: 'test'
+            } as DotTemplateItem;
+
+            spyOn(component, 'onTemplateItemChange');
 
             templateBuilder.triggerEventHandler('templateChange', template);
-            expect(component.updateTemplate.emit).toHaveBeenCalled();
+            expect(component.onTemplateItemChange).toHaveBeenCalledWith(template);
         });
 
         it('should add style classes if new template builder feature flag is on', () => {
@@ -351,17 +358,21 @@ describe('DotTemplateBuilderComponent', () => {
         });
 
         it('should set iframe permissions url', () => {
-            const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
-            expect(permissions.componentInstance.src).toBe(
-                '/html/templates/permissions.jsp?templateId=123&popup=true'
-            );
+            fixture.whenStable().then(() => {
+                const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
+                expect(permissions.componentInstance.src).toBe(
+                    '/html/templates/permissions.jsp?templateId=123&popup=true'
+                );
+            });
         });
 
         it('should set iframe history url', () => {
-            const historyIframe = de.query(By.css('[data-testId="historyIframe"]'));
-            expect(historyIframe.componentInstance.src).toBe(
-                '/html/templates/push_history.jsp?templateId=123&popup=true'
-            );
+            fixture.whenStable().then(() => {
+                const historyIframe = de.query(By.css('[data-testId="historyIframe"]'));
+                expect(historyIframe.componentInstance.src).toBe(
+                    '/html/templates/push_history.jsp?templateId=123&popup=true'
+                );
+            });
         });
 
         it('should reload iframe when changes in the template happens', () => {
@@ -402,19 +413,22 @@ describe('DotTemplateBuilderComponent', () => {
 
         it('should handle custom event', () => {
             spyOn(component.custom, 'emit');
-            const permissions: IframeMockComponent = de.query(
-                By.css('[data-testId="historyIframe"]')
-            ).componentInstance;
-            const customEvent = document.createEvent('CustomEvent');
-            customEvent.initCustomEvent('ng-event', false, false, {
-                name: 'edit-template',
-                data: {
-                    id: 'id',
-                    inode: 'inode'
-                }
+
+            fixture.whenStable().then(() => {
+                const permissions: IframeMockComponent = de.query(
+                    By.css('[data-testId="historyIframe"]')
+                ).componentInstance;
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'edit-template',
+                    data: {
+                        id: 'id',
+                        inode: 'inode'
+                    }
+                });
+                permissions.custom.emit(customEvent);
+                expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
             });
-            permissions.custom.emit(customEvent);
-            expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
         });
     });
 });

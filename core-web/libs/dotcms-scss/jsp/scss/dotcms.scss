@@ -28,6 +28,11 @@
 //@import "backend/legacy"; // THINGS WE ARE GOING TO GET RID OFF
 @import "backend/common";
 
+// Include font faces
+@include assistant-font-face(400, "Regular");
+@include assistant-font-face(500, "SemiBold");
+@include assistant-font-face(700, "Bold");
+
 @font-face {
     font-family: "Material Icons";
     font-style: normal;
@@ -44,47 +49,6 @@
 
 #structure_inode_popup .dijitMenuItem:has(> .separator) {
     border-top: 1px solid $color-palette-gray-400;
-}
-
-// GOOGLE FONTS
-/* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-    font-family: "Roboto";
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: local(""),
-        url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-    font-family: "Roboto";
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: local(""),
-        url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-/* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-@font-face {
-    font-family: "Roboto";
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: local(""),
-        url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
 html {
@@ -113,4 +77,16 @@ body {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     -moz-osx-font-smoothing: grayscale;
+}
+
+.edit-content-full-screen {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0px;
+    max-height: none;
+    padding: 0;
+    height: calc(
+        100vh - 3rem - 20px - 1rem - 0.5rem - 20px - 61px - 1rem
+    ); // This calculation represents all the elements that surrounds the element we want to make fullscreen,
+    // this way we make it occupy all the available space
 }

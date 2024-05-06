@@ -18,14 +18,22 @@ export class DotContentletThumbnail {
     @Prop({ reflect: true })
     iconSize = '';
 
+    // JSP elements need the image to be rendered as a background image because of the way they are styled
+    // New elements should use the default image tag for accessibility
     @Prop({ reflect: true })
-    cover = true;
+    backgroundImage = false;
 
     @Prop()
     showVideoThumbnail = true;
 
     @Prop()
+    playableVideo = false;
+
+    @Prop()
     contentlet: DotContentletItem;
+
+    @Prop({ reflect: true })
+    fieldVariable = '';
 
     @State() renderImage: boolean;
 
@@ -43,15 +51,23 @@ export class DotContentletThumbnail {
     }
 
     render() {
-        const image = this.contentlet && this.cover ? `url(${this.getImageURL()})` : '';
-        const imgClass = this.cover ? 'cover' : '';
+        const backgroundImageURL =
+            this.contentlet && this.backgroundImage ? `url(${this.getImageURL()})` : '';
+        const imgClass = this.backgroundImage ? 'background-image' : '';
 
         return (
             <Host>
                 {this.shouldShowVideoThumbnail() ? (
-                    <dot-video-thumbnail contentlet={this.contentlet} cover={this.cover} />
+                    <dot-video-thumbnail
+                        contentlet={this.contentlet}
+                        variable={this.fieldVariable}
+                        cover={this.backgroundImage}
+                        playable={this.playableVideo}
+                    />
                 ) : this.renderImage ? (
-                    <div class={`thumbnail ${imgClass}`} style={{ 'background-image': image }}>
+                    <div
+                        class={`thumbnail ${imgClass}`}
+                        style={{ 'background-image': backgroundImageURL }}>
                         <img
                             src={this.getImageURL()}
                             alt={this.alt}
@@ -72,8 +88,20 @@ export class DotContentletThumbnail {
 
     private getImageURL(): string {
         return this.contentlet.mimeType === 'application/pdf'
-            ? `/contentAsset/image/${this.contentlet.inode}/${this.contentlet.titleImage}/pdf_page/1/resize_w/250/quality_q/45`
-            : `/dA/${this.contentlet.inode}/500w/50q?r=${this.contentlet.modDateMilis}`;
+            ? `/contentAsset/image/${this.contentlet.inode}/${
+                  this.fieldVariable || this.contentlet.titleImage
+              }/pdf_page/1/resize_w/250/quality_q/45`
+            : `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
+                  this.contentlet.modDateMilis || this.contentlet.modDate
+              }`;
+    }
+
+    private fieldVariablePath(): string {
+        if (!this.fieldVariable) {
+            return '';
+        }
+
+        return `${this.fieldVariable || this.contentlet.titleImage}/`;
     }
 
     private switchToIcon(): any {

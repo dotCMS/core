@@ -1,0 +1,677 @@
+{
+	"info": {
+		"_postman_id": "64b9b9d6-e494-4b2d-826f-519689676d6c",
+		"name": "ContainerResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20130511"
+	},
+	"item": [
+		{
+			"name": "Add Form inside Page",
+			"item": [
+				{
+					"name": "Create a Form",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"addFormInsidePage_formId\", jsonData.entity[0].id);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"defaultType\":false,\n    \"icon\":null,\n    \"fixed\":false,\n    \"system\":false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFormContentType\",\n    \"description\":\"\",\n    \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\":\"SYSTEM_FOLDER\",\n    \"name\":\"FORM_Add_form_in_page_test\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}\n\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Field to Form",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"layout\":[\n        {\"divider\":{\n            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\":\"{{addFormInsidePage_formId}}\",\n            \"dataType\":\"SYSTEM\",\n            \"fieldContentTypeProperties\":[],\n            \"fieldType\":\"Row\",\n            \"fieldTypeLabel\":\"Row\",\n            \"fieldVariables\":[],\n            \"fixed\":false,\n            \"iDate\":1667572217000,\n            \"indexed\":false,\n            \"listed\":false,\n            \"modDate\":1667572217000,\n            \"name\":\"Row Field\",\n            \"readOnly\":false,\n            \"required\":false,\n            \"searchable\":false,\n            \"sortOrder\":-1,\n            \"unique\":false},\n            \"columns\":[\n                {\n                    \"columnDivider\":{\n                        \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\":\"{{contentTypeIdAddSpanishContent}}\",\n                        \"dataType\":\"SYSTEM\",\n                        \"fieldContentTypeProperties\":[],\n                        \"fieldType\":\"Column\",\n                        \"fieldTypeLabel\":\"Column\",\n                        \"fieldVariables\":[],\n                        \"fixed\":false,\n                        \"iDate\":1667572217000,\n                        \"indexed\":false,\n                        \"listed\":false,\n                        \"modDate\":1667572217000,\n                        \"name\":\"Column Field\",\n                        \"readOnly\":false,\n                        \"required\":false,\n                        \"searchable\":false,\n                        \"sortOrder\":-1,\n                        \"unique\":false\n                    },\n                    \"fields\":[\n                        {\n                            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"name\":\"title\",\n                            \"dataType\":\"TEXT\",\n                            \"regexCheck\":\"\",\n                            \"defaultValue\":\"\",\n                            \"hint\":\"\",\n                            \"required\":false,\n                            \"searchable\":false,\n                            \"indexed\":false,\n                            \"listed\":false,\n                            \"unique\":false,\n                            \"id\":null\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v3/contenttype/{{addFormInsidePage_formId}}/fields/move",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v3",
+								"contenttype",
+								"{{addFormInsidePage_formId}}",
+								"fields",
+								"move"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"addFormInsidePage_ContainerId\", jsonData.entity.identifier);",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"CONTAINER_Add_form_in_page_test\",\n    \"friendlyName\": \"Container to add form in page test\",\n    \"maxContentlets\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"addFormInsidePage_templateId\", jsonData.entity.identifier);",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":12,\n                            \"containers\":[\n                                {\"identifier\":\"{{addFormInsidePage_ContainerId}}\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"friendlyName\": \"\",\n    \"title\": \"TEMPLATE_Add_form_in_page_test\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pubish Templates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{addFormInsidePage_templateId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create page 1 And Publish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"addFormInsidePage_pageId\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"PAGE_Add_form_in_page_test\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"PAGE_Add_form_in_page_test\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"{{addFormInsidePage_templateId}}\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Form Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"addFormInsidePage_CONTENT_Id\", jsonData.entity.content.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/form/{{addFormInsidePage_formId}}?containerId={{addFormInsidePage_ContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"form",
+								"{{addFormInsidePage_formId}}"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{addFormInsidePage_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Form on Page",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"contentletsId\": [\"{{addFormInsidePage_CONTENT_Id}}\"],\n        \"identifier\": \"{{addFormInsidePage_ContainerId}}\",\n        \"uuid\": \"1\"\n    }\n]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{addFormInsidePage_pageId}}/content?variantName=DEFAULT",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{addFormInsidePage_pageId}}",
+								"content"
+							],
+							"query": [
+								{
+									"key": "variantName",
+									"value": "DEFAULT"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Upload $dotPageContent_test bundle",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Bundle uploaded sucessfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var jsonData = pm.response.json();",
+							"    console.log(jsonData);",
+							"",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"_dotPageContent_test-01FNRS68FETJPPDHY6PJ9SA9ZQ.tar.gz\");",
+							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/octet-stream"
+					},
+					{
+						"key": "Content-Disposition",
+						"type": "text",
+						"value": "attachment"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"contentType": "application/tar+gzip ",
+							"type": "file",
+							"src": "resources/ContainerResource/_dotPageContent_test-01FNRS68FETJPPDHY6PJ9SA9ZQ.tar.gz"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/bundle/sync",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"bundle",
+						"sync"
+					],
+					"query": [
+						{
+							"key": "AUTH_TOKEN",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Contentlet in Container",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Render contentlet in container\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var jsonData = pm.response.json();",
+							"    console.log(jsonData);",
+							"",
+							"    pm.expect(jsonData[\"entity\"]['render']).to.contains('dotPageContent object has the expected values');",
+							"",
+							"        pm.expect(jsonData[\"entity\"]['render']).to.not.contains('data-dot-object=\"container\"');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers/content/0207b411-b66a-4bcf-8da1-e3ab81db47c3?containerId=067682378f271bec7fa17795192e7f59&pageInode=0cd9101a-fa6c-41b0-8149-e8eb6b444033",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers",
+						"content",
+						"0207b411-b66a-4bcf-8da1-e3ab81db47c3"
+					],
+					"query": [
+						{
+							"key": "containerId",
+							"value": "067682378f271bec7fa17795192e7f59"
+						},
+						{
+							"key": "pageInode",
+							"value": "0cd9101a-fa6c-41b0-8149-e8eb6b444033"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = 'admin@dotcms.com';",
+					"        const password = 'admin';",
+					"        const basicAuth = btoa(`${username}:${password}`);",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "contentTypeIdAddSpanishContent",
+			"value": ""
+		},
+		{
+			"key": "addFormInsidePage_formId",
+			"value": ""
+		},
+		{
+			"key": "addFormInsidePage_ContainerId",
+			"value": ""
+		},
+		{
+			"key": "addFormInsidePage_templateId",
+			"value": ""
+		},
+		{
+			"key": "addFormInsidePage_pageId",
+			"value": ""
+		},
+		{
+			"key": "spanish_content_content1_id",
+			"value": ""
+		},
+		{
+			"key": "addFormInsidePage_CONTENT_Id",
+			"value": ""
+		}
+	]
+}

@@ -9,12 +9,17 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SidebarModule } from 'primeng/sidebar';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    DotTrimInputDirective,
+    DotValidators
+} from '@dotcms/ui';
 
 import {
     DotExperimentsListStore,
@@ -37,14 +42,15 @@ interface CreateForm {
         DotSidebarDirective,
         DotSidebarHeaderComponent,
         DotMessagePipe,
-        DotFieldValidationMessageModule,
-        DotAutofocusModule,
+        DotFieldValidationMessageComponent,
+        DotAutofocusDirective,
         // PrimeNg
         InputTextareaModule,
         InputTextModule,
         SidebarModule,
         ButtonModule,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        DotTrimInputDirective
     ],
     templateUrl: './dot-experiments-create.component.html',
     styleUrls: ['./dot-experiments-create.component.scss'],
@@ -93,10 +99,14 @@ export class DotExperimentsCreateComponent implements OnInit {
             }),
             name: new FormControl<string>('', {
                 nonNullable: true,
-                validators: [Validators.required, Validators.maxLength(this.maxNameLength)]
+                validators: [
+                    Validators.required,
+                    Validators.maxLength(this.maxNameLength),
+                    DotValidators.noWhitespace
+                ]
             }),
             description: new FormControl<string>('', {
-                validators: [Validators.maxLength(255)]
+                validators: [Validators.maxLength(255), DotValidators.noWhitespace]
             })
         });
     }

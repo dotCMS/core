@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
@@ -22,11 +21,13 @@ import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
+import com.dotcms.rendering.js.JsCache;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
+import com.dotcms.storage.Chainable404StorageCache;
 import com.dotcms.test.TestUtil;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
@@ -90,8 +91,6 @@ import com.dotmarketing.util.WebKeys;
  * @since 1.6
  */
 public class CacheLocator extends Locator<CacheIndex>{
-
-
 
 	private static CacheLocator instance;
 	private static DotCacheAdministrator adminCache;
@@ -171,7 +170,12 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static DotResourceCache getVeloctyResourceCache(){
         return (DotResourceCache)getInstance(CacheIndex.Velocity2);
     }
-    public static LogMapperCache getLogMapperCache () {
+
+	public static JsCache getJavascriptCache() {
+		return (JsCache) getInstance(CacheIndex.Javascript);
+	}
+
+	public static LogMapperCache getLogMapperCache () {
         return ( LogMapperCache ) getInstance( CacheIndex.LogMapper );
     }
 
@@ -300,6 +304,15 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (GraphQLCache) getInstance(CacheIndex.GraphQLCache);
 	}
     
+	/**
+	 * Returns the current instance of the {@link Chainable404StorageCache} class.
+	 *
+	 * @return The {@link Chainable404StorageCache} instance.
+	 */
+	public static Chainable404StorageCache getChainable404StorageCache() {
+		return (Chainable404StorageCache) getInstance(CacheIndex.CHAINABLE_404_STORAGE_CACHE);
+	}
+
     /**
      * 
      * @return
@@ -348,15 +361,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	 * @return
 	 */
 	public static ExperimentsCache getExperimentsCache() {
-		return (ExperimentsCache) getInstance(CacheIndex.ExperimentsCache);
-	}
-
-	/**
-	 * This will get you an instance of the {@link AnalyticsCache} singleton cache.
-	 * @return
-	 */
-	public static AnalyticsCache getAnalyticsCache() {
-		return (AnalyticsCache) getInstance(CacheIndex.AnalyticsCache);
+		return (ExperimentsCache) getInstance(CacheIndex.EXPERIMENTS_CACHE);
 	}
 
 	/**
@@ -387,6 +392,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 		return serviceRef;
 	 }
+
 
 	@Override
 	protected Object createService(CacheIndex enumObj) {
@@ -468,8 +474,10 @@ enum CacheIndex
 	Metadata("Metadata"),
 	GraphQLCache("GraphQLCache"),
 	VariantCache("VariantCache"),
-	ExperimentsCache("ExperimentsCache"),
-	AnalyticsCache("AnalyticsCache");
+	EXPERIMENTS_CACHE("ExperimentsCache"),
+	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache"),
+
+	Javascript("Javascript");
 
 	Cachable create() {
 		switch(this) {
@@ -522,8 +530,9 @@ enum CacheIndex
 			case Metadata: return new MetadataCacheImpl();
 			case GraphQLCache: return new GraphQLCache();
 			case VariantCache: return new VariantCacheImpl();
-			case ExperimentsCache: return new ExperimentsCacheImpl();
-			case AnalyticsCache: return new AnalyticsCache();
+			case EXPERIMENTS_CACHE: return new ExperimentsCacheImpl();
+			case CHAINABLE_404_STORAGE_CACHE: return new Chainable404StorageCache();
+			case Javascript: return new JsCache();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

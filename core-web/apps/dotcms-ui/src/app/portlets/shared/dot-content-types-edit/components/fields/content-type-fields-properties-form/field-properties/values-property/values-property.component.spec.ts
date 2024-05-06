@@ -12,9 +12,8 @@ import { By } from '@angular/platform-browser';
 
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ValuesPropertyComponent } from './index';
 
@@ -74,7 +73,7 @@ describe('ValuesPropertyComponent', () => {
                 ValuesPropertyComponent,
                 DotTextareaContentMockComponent
             ],
-            imports: [DotFieldHelperModule, ReactiveFormsModule, DotPipesModule, DotMessagePipe],
+            imports: [DotFieldHelperModule, ReactiveFormsModule, DotSafeHtmlPipe, DotMessagePipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
 

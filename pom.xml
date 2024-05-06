@@ -1,55 +1,109 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <parent>
+        <groupId>com.dotcms</groupId>
+        <artifactId>dotcms-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>parent</relativePath>
+    </parent>
+
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.dotcms</groupId>
     <artifactId>dotcms-root</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <description>DotCMS</description>
-    <properties>
-        <sonar.host.url>http://localhost:9000/</sonar.host.url>
-        <sonar.login>admin</sonar.login>
-        <sonar.password>admin2</sonar.password>
-        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
-        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/reports/target/site/jacoco-aggregate</sonar.coverage.jacoco.xmlReportPaths>
-    </properties>
     <modules>
         <!-- This is an aggregator pom, we make it separate than the parent pom
         as the aggregate will always build last and we want to make sure the
         parent pom is built first. -->
         <module>parent</module>
         <module>independent-projects</module>
-        <module>maven-plugins</module>
         <module>bom</module>
+        <module>nodejs-parent</module>
         <module>core-web</module>
         <module>osgi-base</module>
+        <module>plugins-core</module>
         <module>build-parent</module>
         <module>dotCMS</module>
-        <module>dotcms-war</module>
+        <module>tools/dotcms-cli</module>
         <module>dotcms-integration</module>
-        <module>plugins-core</module>
+        <module>dotcms-postman</module>
         <module>reports</module>
     </modules>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>dotcms-libs</id>
+            <url>https://repo.dotcms.com/artifactory/libs-release</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>jitpack</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
     <distributionManagement>
+        <site>
+            <id>local-site-deployment</id>
+            <url>file://${project.build.directory}/staging</url>
+        </site>
         <repository>
             <id>dotcms-libs</id>
             <name>DotCMS libs Release</name>
             <url>https://repo.dotcms.com/artifactory/libs-release</url>
         </repository>
+        <!--
         <snapshotRepository>
             <id>dotcms-libs-snapshot</id>
-            <name>IDotCMS libs Snapshots</name>
+            <name>DotCMS libs Snapshots</name>
             <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
         </snapshotRepository>
+        -->
     </distributionManagement>
 
     <reporting>
         <plugins>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <configuration>
+                    <aggregate>true</aggregate>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
         </plugins>
     </reporting>
 
     <build>
+        <plugins>
+
+        </plugins>
         <extensions>
             <extension>
                 <groupId>io.quarkus.bot</groupId>
@@ -58,4 +112,5 @@
             </extension>
         </extensions>
     </build>
+
 </project>

@@ -1,0 +1,35 @@
+@use "variables" as *;
+
+:host {
+    display: grid;
+    grid-template-areas:
+        "topBar topBar"
+        "header sidebar"
+        "body sidebar";
+    grid-template-columns: 1fr 21.875rem;
+    grid-template-rows: auto auto 1fr;
+    padding-bottom: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.topBar {
+    grid-area: topBar;
+
+    .pi {
+        font-size: $font-size-lg;
+        margin-right: $spacing-1;
+    }
+}
+
+.header {
+    grid-area: header;
+}
+
+.body {
+    grid-area: body;
+}
+
+.sidebar {
+    grid-area: sidebar;
+}

@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
 
@@ -14,7 +15,8 @@ import {
 
 @Injectable()
 export class DotContentTypeService {
-    constructor(private coreWebService: CoreWebService) {}
+    private readonly coreWebService = inject(CoreWebService);
+    private readonly http = inject(HttpClient);
 
     /**
      * Get a content type by id or variable name
@@ -67,10 +69,7 @@ export class DotContentTypeService {
      * @return {*}  {Observable<DotCMSContentType[]>}
      * @memberof DotContentTypeService
      */
-    filterContentTypes(
-        filter: string = '',
-        allowedTypes: string = ''
-    ): Observable<DotCMSContentType[]> {
+    filterContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
         return this.coreWebService
             .requestView({
                 body: {
@@ -141,6 +140,21 @@ export class DotContentTypeService {
                 method: 'POST',
                 url: `/api/v1/contenttype/${variable}/_copy`
             })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Get content type by types
+     *
+     * @param {string} type
+     * @return {*}  {Observable<DotCMSContentType[]>}
+     * @memberof DotContentTypeService
+     */
+    getByTypes(type: string, per_page = 100): Observable<DotCMSContentType[]> {
+        return this.http
+            .get<{ entity: DotCMSContentType[] }>(
+                `/api/v1/contenttype?type=${type}&per_page=${per_page}`
+            )
             .pipe(pluck('entity'));
     }
 

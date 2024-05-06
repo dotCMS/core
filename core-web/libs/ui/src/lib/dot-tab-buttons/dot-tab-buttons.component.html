@@ -1,31 +1,39 @@
 <div class="dot-tab-buttons">
-    <div class="dot-tab-buttons__container" *ngFor="let item of options">
-        <div class="dot-tab" (click)="onClickOption($event)" data-testId="dot-tab-container">
+    <div class="dot-tab-buttons__container" *ngFor="let item of _options">
+        <div class="dot-tab" data-testId="dot-tab-container">
             <button
                 class="dot-tab__button"
                 [ngClass]="{
-                    'dot-tab--active': mode === item.value,
-                    'dot-tab__button--right': item.value === pageMode.PREVIEW
+                    'dot-tab--active': activeId === item.value.id,
+                    'dot-tab__button--right': item.value.showDropdownButton
                 }"
-                [value]="item.value"
+                [value]="item.value.id"
                 [disabled]="item.disabled"
+                [item.disabled]="item.disabled"
+                [pTooltip]="'editpage.toolbar.' + item.label.toLowerCase() + '.page.clipboard' | dm"
+                (click)="onClickOption($event, item.value.id)"
                 data-testId="dot-tab-button-text"
-            >
+                tooltipPosition="bottom">
                 {{ item.label }}
             </button>
 
             <button
-                class="dot-tab__dropdow"
-                *ngIf="item.value === pageMode.PREVIEW"
-                [ngClass]="{ 'dot-tab-dropdown--active': mode === pageMode.PREVIEW }"
-            >
-                <i class="dot-tab-dropdown__icon" [value]="'openMenu'" [class]="icon"></i>
+                class="dot-tab__dropdown"
+                *ngIf="item.value.showDropdownButton"
+                [disabled]="item.disabled"
+                [aria-disabled]="item.disabled"
+                [ngClass]="{ 'dot-tab-dropdown--active': activeId === item.value.id }"
+                (click)="onClickDropdown($event, item.value.id)"
+                data-testId="dot-tab-button-dropdown">
+                <i
+                    class="dot-tab-dropdown__icon pi"
+                    [class]="item.value.toggle ? dropDownOpenIcon : dropDownCloseIcon"
+                    data-testId="dot-tab-icon"></i>
             </button>
         </div>
         <div
             class="dot-tab-indicator"
-            *ngIf="mode === item.value"
-            data-testId="dot-tab-button"
-        ></div>
+            *ngIf="activeId === item.value.id"
+            data-testId="dot-tab-button"></div>
     </div>
 </div>

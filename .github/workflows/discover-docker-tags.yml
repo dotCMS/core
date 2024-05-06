@@ -14,7 +14,7 @@ on:
         required: false
         default: 'false'
 jobs:
-  publish_image:
+  discover_tags:
     name: Discover DotCMS docker tags
     runs-on: ubuntu-latest
     steps:
@@ -39,7 +39,7 @@ jobs:
           echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
       - name: Discover docker tags
         id: discover-docker-tags
-        uses: dotcms/discover-docker-tags-action@main
+        uses: dotcms/discover-docker-tags-action@v2.0
         with:
           version: ${{ ENV.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}

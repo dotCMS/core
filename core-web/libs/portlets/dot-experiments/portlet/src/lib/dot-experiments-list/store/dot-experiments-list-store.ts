@@ -9,21 +9,23 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DotEnvironment,
     DotExperiment,
     DotExperimentStatus,
     DotExperimentsWithActions,
     GroupedExperimentByStatus,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsStore } from '../../dot-experiments-shell/store/dot-experiments.store';
 
@@ -43,8 +45,7 @@ const initialState: DotExperimentsState = {
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.SCHEDULED,
         DotExperimentStatus.DRAFT,
-        DotExperimentStatus.ENDED,
-        DotExperimentStatus.ARCHIVED
+        DotExperimentStatus.ENDED
     ],
     status: ComponentStatus.INIT,
     sidebar: {
@@ -132,6 +133,10 @@ export class DotExperimentsListStore
                                 });
                             }
                         });
+
+                    grouped.forEach((group) => {
+                        group.experiments.sort((a, b) => b.modDate - a.modDate);
+                    });
                 }
 
                 return grouped.filter((item) => !!item.experiments.length);
@@ -218,7 +223,12 @@ export class DotExperimentsListStore
     readonly addExperiments = this.effect(
         (experiment$: Observable<Pick<DotExperiment, 'pageId' | 'name' | 'description'>>) => {
             return experiment$.pipe(
-                tap(() => this.setSidebarStatus({ status: ComponentStatus.SAVING, isOpen: true })),
+                tap(() =>
+                    this.setSidebarStatus({
+                        status: ComponentStatus.SAVING,
+                        isOpen: true
+                    })
+                ),
                 switchMap((experiment) =>
                     this.dotExperimentsService.add(experiment).pipe(
                         tapResponse(
@@ -303,6 +313,33 @@ export class DotExperimentsListStore
                                 ),
                                 detail: this.dotMessageService.get(
                                     'experiments.notification.cancel.schedule',
+                                    experiment.name
+                                )
+                            });
+                            this.loadExperiments(this.dotExperimentsStore.getPageId$);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
+    readonly abortExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.cancelSchedule(experiment.id).pipe(
+                    tapResponse(
+                        () => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.notification.abort.title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.notification.abort',
                                     experiment.name
                                 )
                             });
@@ -458,6 +495,24 @@ export class DotExperimentsListStore
                     experimentId: null
                 }
             },
+            // Go to Results Action
+            {
+                id: 'dot-experiments-go-to-results',
+                label: this.dotMessageService.get('experiments.action.view.results'),
+                visible: AllowedActionsByExperimentStatus['results'].includes(experiment.status),
+                routerLink: [
+                    '/edit-page/experiments/',
+                    experiment.pageId,
+                    experiment.id,
+                    'reports'
+                ],
+                queryParamsHandling: 'merge',
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                }
+            },
             // Cancel Scheduling
             {
                 id: 'dot-experiments-cancel-scheduling',
@@ -527,6 +582,28 @@ export class DotExperimentsListStore
                     });
                 }
             },
+            // Abort experiment
+            {
+                label: this.dotMessageService.get('experiments.action.abort.experiment'),
+                visible: AllowedActionsByExperimentStatus['abort'].includes(experiment.status),
+                command: () => {
+                    this.confirmationService.confirm({
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get('experiments.action.abort.experiment'),
+                        message: this.dotMessageService.get(
+                            'experiments.action.abort.confirm.message'
+                        ),
+                        acceptLabel: this.dotMessageService.get(
+                            'experiments.action.abort.experiment'
+                        ),
+                        rejectLabel: this.dotMessageService.get('experiments.action.cancel'),
+                        rejectButtonStyleClass: 'p-button-outlined',
+                        accept: () => {
+                            this.abortExperiment(experiment);
+                        }
+                    });
+                }
+            },
 
             // Push Publish Action
             {
@@ -551,7 +628,7 @@ export class DotExperimentsListStore
 
     private getConfigurationOptionLabel(status: DotExperimentStatus): string {
         return status === DotExperimentStatus.DRAFT
-            ? this.dotMessageService.get('experiments.action.edit')
-            : this.dotMessageService.get('experiments.action.view');
+            ? this.dotMessageService.get('experiments.action.edit.configuration')
+            : this.dotMessageService.get('experiments.action.view.configuration');
     }
 }

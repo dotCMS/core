@@ -7,9 +7,7 @@ import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
 
@@ -23,7 +21,7 @@ import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.com
         BadgeModule,
         ButtonModule,
         TooltipModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     declarations: [DotPersonaSelectedItemComponent],

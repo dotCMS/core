@@ -5,6 +5,10 @@
     height: 100%;
 }
 
+:host ::ng-deep dot-portlet-box {
+    height: 100%;
+}
+
 .dot-apps__header {
     border-bottom: 1px solid $color-palette-gray-200;
     display: flex;
@@ -44,13 +48,15 @@
     grid-gap: $spacing-4;
     grid-template-columns: repeat(auto-fill, minmax(23.42rem, 1fr));
     padding: $spacing-4;
+    overflow: auto;
 }
 
 .dot-apps__container {
-    background-color: $white;
-    box-shadow: $md-shadow-4;
-    overflow-y: auto;
-    padding-top: $spacing-4;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
     height: 100%;
+    overflow-y: hidden;
+    background-color: $white;
+    box-shadow: $shadow-m;
+    padding-top: $spacing-4;
 }

@@ -29,6 +29,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
@@ -52,11 +53,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import static com.dotmarketing.util.UtilMethods.isNotSet;
 
 /**
  * <a href="LanguageUtil.java.html"><b><i>View Source</i></b></a>
@@ -68,6 +73,22 @@ import org.apache.commons.logging.LogFactory;
 public class LanguageUtil {
 
 	public static final String DEFAULT_ENCODING = "UTF-8";
+
+	/**
+	 * Returns the locale (if could) from the string representation: could be a language code, language code + country (en, en-US, es_US)
+	 * @param languageTag {@link String} ilang code or lang code + country code
+	 * @return locale otherwise DoesNotExistException
+	 */
+	public static Locale validateLanguageTag(final String languageTag) throws DoesNotExistException {
+		final Locale locale = Locale.forLanguageTag(languageTag);
+		final boolean validCountry = (isNotSet(locale.getCountry()) || Stream.of(Locale.getISOCountries()).collect(Collectors.toSet()).contains(locale.getCountry()));
+		final boolean validLang = Stream.of(Locale.getISOLanguages()).collect(Collectors.toSet()).contains(locale.getLanguage());
+		if(validLang && validCountry) {
+			return locale;
+		} else {
+			throw new DoesNotExistException(String.format(" `%s` is an invalid language tag ", languageTag));
+		}
+	}
 
 	/**
 	 * Returns the language id from the string representation: could be a long as a string, or could be a language code, language code + country (en, en-US, es_US)

@@ -16,6 +16,7 @@ export interface DotPageState {
     lockedByAnotherUser?: boolean;
     mode: DotPageMode;
     runningExperiment: DotExperiment;
+    seoMedia: string;
 }
 
 export class DotPageRenderState extends DotPageRender {
@@ -34,7 +35,8 @@ export class DotPageRenderState extends DotPageRender {
             locked: locked,
             lockedByAnotherUser: lockedByAnotherUser,
             mode: dotRenderedPage.viewAs.mode,
-            runningExperiment: runningExperiment
+            runningExperiment: runningExperiment,
+            seoMedia: null
         };
     }
 
@@ -90,5 +92,13 @@ export class DotPageRenderState extends DotPageRender {
 
     set runningExperiment(runningExperiment: DotExperiment) {
         this._state.runningExperiment = runningExperiment;
+    }
+
+    get seoMedia(): string {
+        return this._state.seoMedia;
+    }
+
+    set seoMedia(seoMedia: string) {
+        this._state.seoMedia = seoMedia;
     }
 }

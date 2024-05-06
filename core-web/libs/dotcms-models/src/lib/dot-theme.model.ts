@@ -10,4 +10,11 @@ export interface DotTheme {
         inode: string;
         identifier: string;
     };
+    defaultFileType?: string;
+    filesMasks?: string;
+    modDate?: number;
+    path?: string;
+    sortOrder?: number;
+    showOnMenu?: boolean;
+    type?: string;
 }

@@ -3,8 +3,19 @@ import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
-import { DotContentTypeService, DotESContentService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotESContentService,
+    DotSessionStorageService,
+    PaginatorService
+} from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';
+import {
+    ContentletWithDuplicatedMock,
+    NewVariantContentletMock,
+    NotDuplicatedContentletMock,
+    VARIANT_ID_MOCK
+} from '@portlets/dot-edit-page/components/dot-palette/mocks/contentlets.mock';
 
 import { DotPaletteStore } from './dot-palette.store';
 
@@ -104,11 +115,13 @@ describe('DotPaletteStore', () => {
     let paginatorService: PaginatorService;
     let dotContentTypeService: DotContentTypeService;
     let dotESContentService: DotESContentService;
+    let dotSessionStorageService: DotSessionStorageService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 DotPaletteStore,
+                DotSessionStorageService,
                 { provide: PaginatorService, useClass: MockPaginatorService },
                 { provide: DotContentTypeService, useClass: MockContentTypeService },
                 { provide: DotESContentService, useClass: MockESPaginatorService }
@@ -118,6 +131,7 @@ describe('DotPaletteStore', () => {
         paginatorService = TestBed.inject(PaginatorService);
         dotContentTypeService = TestBed.inject(DotContentTypeService);
         dotESContentService = TestBed.inject(DotESContentService);
+        dotSessionStorageService = TestBed.inject(DotSessionStorageService);
     });
 
     // Updaters
@@ -129,9 +143,11 @@ describe('DotPaletteStore', () => {
     });
 
     it('should update languageId', () => {
-        dotPaletteStore.setLanguageId('1');
+        dotPaletteStore.setLanguage('4');
         dotPaletteStore.state$.subscribe((data) => {
-            expect(data.languageId).toEqual('1');
+            expect(data.languageId).toEqual('4');
+            expect(data.filter).toEqual('');
+            expect(data.viewContentlet).toEqual('contentlet:out');
         });
     });
 
@@ -240,7 +256,7 @@ describe('DotPaletteStore', () => {
             ] as unknown as DotCMSContentlet[]);
             expect(data.filter).toEqual('');
             expect(data.loading).toEqual(false);
-            expect(data.totalRecords).toEqual(20);
+            expect(data.totalRecords).toEqual(1); // changed due a filter the data in the store and the totalRecords now have the real amount of the array
             done();
         });
     });
@@ -303,4 +319,87 @@ describe('DotPaletteStore', () => {
         expect(dotContentTypeService.filterContentTypes).not.toHaveBeenCalled();
         expect(dotContentTypeService.getContentTypes).not.toHaveBeenCalled();
     }));
+
+    describe('handle variant contentlets', () => {
+        beforeEach(() => {
+            spyOn(dotSessionStorageService, 'getVariationId').and.returnValue(VARIANT_ID_MOCK);
+        });
+        it('should remove the `DEFAULT` Contentlets and leave the copied', (done) => {
+            spyOn(dotESContentService, 'get').and.returnValue(
+                of({
+                    contentTook: 0,
+                    jsonObjectView: {
+                        contentlets: [
+                            ...ContentletWithDuplicatedMock,
+                            ...NotDuplicatedContentletMock
+                        ]
+                    },
+                    queryTook: 1,
+                    resultsSize: 20
+                })
+            );
+
+            dotPaletteStore.loadContentlets('');
+
+            dotPaletteStore.vm$.subscribe(({ contentlets }) => {
+                expect(contentlets.length).toEqual(2);
+
+                const contentlet = contentlets[0] as DotCMSContentlet;
+                expect(ContentletWithDuplicatedMock[0].inode).toEqual(contentlet.inode);
+                done();
+            });
+        });
+        it('should leave the created contentled in the variant', (done) => {
+            spyOn(dotESContentService, 'get').and.returnValue(
+                of({
+                    contentTook: 0,
+                    jsonObjectView: {
+                        contentlets: [...NotDuplicatedContentletMock, ...NewVariantContentletMock]
+                    },
+                    queryTook: 1,
+                    resultsSize: 20
+                })
+            );
+
+            dotPaletteStore.loadContentlets('');
+
+            dotPaletteStore.vm$.subscribe(({ contentlets }) => {
+                expect(contentlets.length).toEqual(2);
+
+                const contentletsStore = contentlets as DotCMSContentlet[];
+                expect(NotDuplicatedContentletMock[0].inode).toEqual(contentletsStore[0].inode);
+                expect(NewVariantContentletMock[0].inode).toEqual(contentletsStore[1].inode);
+                done();
+            });
+        });
+
+        it('should leave the created variant contentled and delete the `DEFAULT` Contentlets modified ', (done) => {
+            spyOn(dotESContentService, 'get').and.returnValue(
+                of({
+                    contentTook: 0,
+                    jsonObjectView: {
+                        contentlets: [
+                            ...ContentletWithDuplicatedMock,
+                            ...NotDuplicatedContentletMock,
+                            ...NewVariantContentletMock
+                        ]
+                    },
+                    queryTook: 1,
+                    resultsSize: 20
+                })
+            );
+
+            dotPaletteStore.loadContentlets('');
+
+            dotPaletteStore.vm$.subscribe(({ contentlets }) => {
+                expect(contentlets.length).toEqual(3);
+
+                const contentletsStore = contentlets as DotCMSContentlet[];
+                expect(ContentletWithDuplicatedMock[0].inode).toEqual(contentletsStore[0].inode);
+                expect(NotDuplicatedContentletMock[0].inode).toEqual(contentletsStore[1].inode);
+                expect(NewVariantContentletMock[0].inode).toEqual(contentletsStore[2].inode);
+                done();
+            });
+        });
+    });
 });

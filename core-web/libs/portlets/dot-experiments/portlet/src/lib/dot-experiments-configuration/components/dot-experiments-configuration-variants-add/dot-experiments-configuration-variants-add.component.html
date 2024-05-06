@@ -2,8 +2,7 @@
     <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.variants.add' | dm }}"
-        ></dot-sidebar-header>
+            dotTitle="{{ 'experiments.configure.variants.add' | dm }}"></dot-sidebar-header>
 
         <div class="experiment-variant-add__form-wrapper">
             <form
@@ -11,18 +10,18 @@
                 id="new-variant-form"
                 [formGroup]="form"
                 data-testId="new-variant-form"
-                novalidate
-            >
+                novalidate>
                 <div class="field">
                     <label class="p-label-input-required" for="name">{{
                         'experiments.configure.variant.add.form.name.label' | dm
                     }}</label>
                     <input
                         id="name"
-                        [tabindex]="1"
                         [maxlength]="this.maxNameLength + 1"
+                        [tabindex]="1"
                         data-testId="add-experiment-description-input"
                         dotAutofocus
+                        dotTrimInput
                         formControlName="name"
                         name="name"
                         pInputText
@@ -30,11 +29,9 @@
                             'experiments.configure.variant.add.form.name.placeholder' | dm
                         }}"
                         required
-                        type="text"
-                    />
+                        type="text" />
                     <dot-field-validation-message
-                        [field]="form.controls.name"
-                    ></dot-field-validation-message>
+                        [field]="form.controls.name"></dot-field-validation-message>
                 </div>
             </form>
         </div>
@@ -49,7 +46,6 @@
             form="new-variant-form"
             label="{{ 'experiments.action.add' | dm }}"
             pButton
-            type="submit"
-        ></button>
+            type="submit"></button>
     </ng-template>
 </ng-container>

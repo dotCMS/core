@@ -6,6 +6,7 @@ import com.dotmarketing.util.json.JSONObject;
 import io.vavr.Lazy;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.function.Supplier;
 
 /**
@@ -15,7 +16,7 @@ import java.util.function.Supplier;
  * the content information if they do not need it.
  * @author jsanca
  */
-public class LazyLoaderContentMap {
+public class LazyLoaderContentMap implements Serializable {
 
     private final Lazy<ContentMap> contentMapSupplier;
 

@@ -1,21 +1,16 @@
 <div
     class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3"
     [pTooltip]="disabled ? ('editpage.personalization.content.add.message' | dm) : null"
-    [tooltipPosition]="disabled ? 'bottom' : null"
->
+    [tooltipPosition]="disabled ? 'bottom' : null">
     <p-avatar
-        *ngIf="persona?.personalized"
-        [text]="persona?.name || ('modes.persona.no.persona' | dm)"
+        *ngIf="persona"
+        [text]="persona?.name"
         [image]="persona?.photo"
+        [badgeDisabled]="!persona?.personalized"
         pBadge
-        dotAvatar
-    ></p-avatar>
-    <p-avatar
-        *ngIf="!persona?.personalized"
-        [text]="persona?.name || ('modes.persona.no.persona' | dm)"
-        [image]="persona?.photo"
-        dotAvatar
-    ></p-avatar>
+        dotAvatar></p-avatar>
+
+    <p-avatar *ngIf="!persona" [text]="'modes.persona.no.persona' | dm" dotAvatar></p-avatar>
 
     <span class="dot-persona-selector__name">{{
         persona?.name || ('modes.persona.no.persona' | dm)

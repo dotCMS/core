@@ -2,6 +2,7 @@ package com.dotcms.cube;
 
 
 
+import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.cube.filters.Filter.Order;
 import com.dotcms.cube.filters.LogicalFilter;
 import com.dotcms.cube.filters.SimpleFilter;
@@ -84,20 +85,17 @@ public class CubeJSQuery {
 
     private long limit = -1;
     private long offset = -1;
+    private TimeDimension[] timeDimensions;
 
-    private CubeJSQuery(final String[] dimensions,
-            final String[] measures,
-            final Filter[] filters,
-            final OrderItem[] orderItems,
-            final long limit,
-            final long offset) {
 
-        this.dimensions = dimensions;
-        this.measures = measures;
-        this.filters = filters;
-        this.orders = orderItems;
-        this.limit = limit;
-        this.offset = offset;
+    private CubeJSQuery(final Builder builder) {
+        this.dimensions = builder.dimensions;
+        this.measures = builder.measures;
+        this.filters = builder.filters.toArray(new Filter[builder.filters.size()]);
+        this.orders = builder.orders.toArray(new OrderItem[builder.orders.size()]);
+        this.limit = builder.limit;
+        this.offset = builder.offset;
+        this.timeDimensions = builder.timeDimensions.toArray(new TimeDimension[builder.timeDimensions.size()]);
     }
 
     @Override
@@ -138,6 +136,10 @@ public class CubeJSQuery {
 
         if (offset >= 0) {
             map.put("offset", offset);
+        }
+
+        if (timeDimensions.length > 0) {
+            map.put("timeDimensions", timeDimensions);
         }
 
         return map;
@@ -193,6 +195,7 @@ public class CubeJSQuery {
         private Collection<OrderItem> orders = new ArrayList<>();
         private long limit = -1;
         private long offset = -1;
+        private List<TimeDimension> timeDimensions = new ArrayList<>();
 
         /**
          * Merge two {@link CubeJSQuery}, each section of the Query is merge ignoring duplicated values
@@ -258,11 +261,17 @@ public class CubeJSQuery {
                     getEmptyIfIsNotSet(cubeJSQuery2.orders)
             );
 
+            final Collection<TimeDimension> timeDimension = merge(
+                    getEmptyIfIsNotSet(cubeJSQuery1.timeDimensions),
+                    getEmptyIfIsNotSet(cubeJSQuery2.timeDimensions)
+            );
+
             return new Builder()
                     .dimensions(dimensionsMerged)
                     .measures(measuresMerged)
                     .filters(filtersMerged)
                     .orders(ordersMerged)
+                    .timeDimensions(timeDimension)
                     .build();
         }
 
@@ -307,10 +316,7 @@ public class CubeJSQuery {
 
         public CubeJSQuery build(){
 
-            return new CubeJSQuery(dimensions, measures,
-                    filters.toArray(new Filter[filters.size()]),
-                    orders.toArray(new OrderItem[orders.size()]),
-                    limit, offset);
+            return new CubeJSQuery(this);
         }
 
         public Builder dimensions(final String... dimensions) {
@@ -351,6 +357,34 @@ public class CubeJSQuery {
             DotPreconditions.checkArgument(offset >= 0, "Offset must be greater than or equal to 0");
             this.offset = offset;
             return this;
+        }
+
+        public Builder timeDimension(final String dimension, final String granularity) {
+            this.timeDimensions.add(new TimeDimension(dimension, granularity));
+            return this;
+        }
+
+        public Builder timeDimensions(Collection<TimeDimension> timeDimensions) {
+            this.timeDimensions.addAll(timeDimensions);
+            return this;
+        }
+    }
+
+    static class TimeDimension {
+        String dimension;
+        String granularity;
+
+        public TimeDimension(String dimension, String granularity) {
+            this.dimension = dimension;
+            this.granularity = granularity;
+        }
+
+        public String getDimension() {
+            return dimension;
+        }
+
+        public String getGranularity() {
+            return granularity;
         }
     }
 

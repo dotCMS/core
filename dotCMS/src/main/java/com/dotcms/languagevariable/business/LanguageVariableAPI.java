@@ -23,7 +23,7 @@ import java.util.List;
  */
 public interface LanguageVariableAPI {
 	
-	public static final String LANGUAGEVARIABLE = "Languagevariable";
+	public static final String LANGUAGEVARIABLE_VAR_NAME = "Languagevariable";
 
     /**
      * Returns the Language Variable value associated to the specified key and language ID. This

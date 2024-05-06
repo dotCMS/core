@@ -8,22 +8,23 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { filter, map, pluck, skip, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
     DotLicenseService,
     DotMessageService,
     DotPropertiesService,
-    DotSessionStorageService
+    DotRouterService,
+    DotSessionStorageService,
+    DotGlobalMessageService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
@@ -31,28 +32,25 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotContainerStructure,
+    DotContentletEventAddContentType,
     DotExperiment,
     DotIframeEditEvent,
     DotPageContainer,
+    DotPageContent,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
     DotVariantData,
     ESContent,
-    FeaturedFlags
+    FeaturedFlags,
+    PageModelChangeEvent,
+    PageModelChangeEventType,
+    SeoMetaTags
 } from '@dotcms/dotcms-models';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import {
-    PageModelChangeEvent,
-    PageModelChangeEventType
-} from './services/dot-edit-content-html/models';
-import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
-import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
-
-import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
-import { DotPageContent } from '../shared/models';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -86,10 +84,14 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     isEnterpriseLicense$ = of(false);
     variantData: Observable<DotVariantData>;
     featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
+    seoOGTags: SeoMetaTags;
+    seoOGTagsResults = null;
+    pageLanguageId: string;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private pageStateInternal: DotPageRenderState;
+    private pageSaved$: Subject<void> = new Subject<void>();
 
     constructor(
         private dialogService: DialogService,
@@ -139,7 +141,9 @@ browse from the page internal links
                         this.dotPageStateService.setLocalState(dotRenderedPageState);
                     } else {
                         this.dotPageStateService.setInternalNavigationState(dotRenderedPageState);
-                        this.dotRouterService.goToEditPage({ url: pageRendered.page.pageURI });
+                        this.dotRouterService.goToEditPage({
+                            url: pageRendered.page.pageURI
+                        });
                     }
                 },
                 'in-iframe': () => {
@@ -180,6 +184,7 @@ browse from the page internal links
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
         this.getExperimentResolverData();
+        this.subscribeToLanguageChange();
 
         /*This is needed when the user is in the edit mode in an experiment variant
         and navigate to another page with the page menu and want to go back with the
@@ -192,6 +197,13 @@ browse from the page internal links
             .subscribe((_event: NavigationStart) => {
                 this.getExperimentResolverData();
             });
+
+        this.pageSaved$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            // If this changes and the dialog closes we trigger a reload
+            this.dotContentletEditorService.close$.pipe(take(1)).subscribe(() => {
+                this.reload(null);
+            });
+        });
     }
 
     ngOnDestroy(): void {
@@ -289,6 +301,9 @@ browse from the page internal links
      * @memberof DotEditContentComponent
      */
     onCustomEvent($event: CustomEvent): void {
+        // If we save we trigger a change
+        if ($event.detail?.name === 'save-page') return this.pageSaved$.next();
+
         this.dotCustomEventHandlerService.handle($event);
     }
 
@@ -395,6 +410,7 @@ browse from the page internal links
                 .getActionUrl($event.data.contentType.variable)
                 .pipe(take(1))
                 .subscribe((url) => {
+                    url = this.setCurrentContentLang(url);
                     this.dotContentletEditorService.create({
                         data: { url },
                         events: {
@@ -518,7 +534,10 @@ browse from the page internal links
                 this.isEditMode = true;
             });
         } else {
-            this.dotEditContentHtmlService.renderPage(pageState, this.iframe);
+            this.dotEditContentHtmlService.renderPage(pageState, this.iframe)?.then(() => {
+                this.seoOGTags = this.dotEditContentHtmlService.getMetaTags();
+                this.seoOGTagsResults = this.dotEditContentHtmlService.getMetaTagsResults();
+            });
             this.isEditMode = false;
         }
     }
@@ -645,5 +664,29 @@ browse from the page internal links
                 } as DotVariantData;
             })
         );
+    }
+
+    /**
+     * Subscribe to language change, because pageState.page.languageId is not being updated
+     * as should be between dev environments.
+     */
+    private subscribeToLanguageChange(): void {
+        this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+            this.pageLanguageId = params['language_id'];
+        });
+    }
+
+    /**
+     * Sets the language parameter in the given URL and returns the concatenated pathname and search.
+     * the input URL doesn't include the host, origin is used as the base URL.
+     *
+     * @param {string} url - The input URL ( include pathname and search parameters).
+     * @returns {string} - The concatenated pathname and search parameters with the language parameter set.
+     */
+    private setCurrentContentLang(url: string): string {
+        const newUrl = new URL(url, window.location.origin);
+        newUrl.searchParams.set('_content_lang', this.pageLanguageId);
+
+        return newUrl.pathname + newUrl.search;
     }
 }

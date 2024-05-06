@@ -1,5 +1,6 @@
 import { DotContainerMap } from './dot-container.model';
 import { DotLayout } from './dot-layout.model';
+import { DotTheme } from './dot-theme.model';
 
 export interface DotTemplate {
     anonymous: boolean;
@@ -31,6 +32,7 @@ export interface DotTemplate {
     versionType: string;
     working: boolean;
     disableInteraction?: boolean;
+    themeInfo?: DotTheme;
 }
 
 // Extra properties from renderHTML

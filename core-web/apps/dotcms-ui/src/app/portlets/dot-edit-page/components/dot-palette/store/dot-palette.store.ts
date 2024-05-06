@@ -7,9 +7,15 @@ import { LazyLoadEvent } from 'primeng/api';
 
 import { debounceTime, map, take } from 'rxjs/operators';
 
-import { DotContentTypeService, DotESContentService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotESContentService,
+    DotSessionStorageService,
+    PaginatorService
+} from '@dotcms/data-access';
 import {
     ComponentStatus,
+    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotCMSContentType,
     ESContent
@@ -26,6 +32,9 @@ export interface DotPaletteState {
     loading: boolean;
 }
 
+const CONTENTLET_VIEW_IN = 'contentlet:in';
+const CONTENTLET_VIEW_OUT = 'contentlet:out';
+
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     readonly vm$ = this.state$;
@@ -34,8 +43,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         return { ...state, filter: data };
     });
 
-    readonly setLanguageId = this.updater((state: DotPaletteState, data: string) => {
-        return { ...state, languageId: data };
+    readonly setLanguage = this.updater((state: DotPaletteState, languageId: string) => {
+        return { ...state, languageId, viewContentlet: CONTENTLET_VIEW_OUT, filter: '' };
     });
 
     readonly setViewContentlet = this.updater((state: DotPaletteState, data: string) => {
@@ -55,6 +64,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             loading: !(ComponentStatus.LOADED === ComponentStatus.LOADED)
         };
     });
+
     readonly setAllowedContent = this.updater((state: DotPaletteState, data: string[]) => {
         return { ...state, allowedContent: data };
     });
@@ -113,7 +123,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     // UPDATERS
     private readonly setContentlets = this.updater(
         (state: DotPaletteState, data: DotCMSContentlet[] | DotCMSContentType[]) => {
-            return { ...state, contentlets: data };
+            return { ...state, contentlets: data, totalRecords: data.length };
         }
     );
 
@@ -151,8 +161,9 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
 
     constructor(
         private dotContentTypeService: DotContentTypeService,
-        public paginatorESService: DotESContentService,
-        public paginationService: PaginatorService
+        private paginatorESService: DotESContentService,
+        private paginationService: PaginatorService,
+        private dotSessionStorageService: DotSessionStorageService
     ) {
         super({
             contentlets: null,
@@ -161,9 +172,20 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             filter: '',
             languageId: '1',
             totalRecords: 0,
-            viewContentlet: 'contentlet:out',
+            viewContentlet: CONTENTLET_VIEW_OUT,
             loading: false
         });
+    }
+
+    /**
+     * Switch language and request Content Types data.
+     * @param languageId
+     *
+     * @memberof DotPaletteStore
+     */
+    switchLanguage(languageId: string): void {
+        this.setLanguage(languageId);
+        this.getContenttypesData();
     }
 
     /**
@@ -183,7 +205,6 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                     .getWithOffset((event && event.first) || 0)
                     .pipe(take(1))
                     .subscribe((data: DotCMSContentlet[] | DotCMSContentType[]) => {
-                        data.forEach((item) => (item.contentType = item.variable = 'FORM'));
                         this.setLoaded();
                         this.setContentlets(data);
                         this.setTotalRecords(this.paginationService.totalRecords);
@@ -195,13 +216,27 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                         lang: languageId || '1',
                         filter: filter || '',
                         offset: (event && event.first.toString()) || '0',
-                        query: `+contentType: ${this.contentTypeVarName} +deleted: false`
+                        query: `+contentType: ${
+                            this.contentTypeVarName
+                        } +deleted: false ${this.getExperimentVariantQueryField()}`.trim()
                     })
                     .pipe(take(1))
                     .subscribe((response: ESContent) => {
                         this.setLoaded();
-                        this.setTotalRecords(response.resultsSize);
-                        this.setContentlets(response.jsonObjectView.contentlets);
+                        if (this.dotSessionStorageService.getVariationId() !== DEFAULT_VARIANT_ID) {
+                            // GH issue: https://github.com/dotCMS/core/issues/26363
+                            // This is a workaround to remove the original (variant: DEFAULT) when exist a modified contentlet inside a
+                            // variant (it make a copy of the original) the endpoint return the original and the derivated/duplicated.
+                            // We need to discus about create or not a new endpoint to get the contentlets taking
+                            // in consideration the variant contentlets, if you remove this, the contentlets will show the duplicated and the original contentlet
+                            const contentlets = this.removeOriginalContentletsDuplicated(
+                                response.jsonObjectView.contentlets
+                            );
+
+                            this.setContentlets(contentlets);
+                        } else {
+                            this.setContentlets(response.jsonObjectView.contentlets);
+                        }
                     });
             }
         });
@@ -269,10 +304,54 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      * @memberof DotPaletteContentletsComponent
      */
     switchView(variableName?: string): void {
-        const viewContentlet = variableName ? 'contentlet:in' : 'contentlet:out';
+        const viewContentlet = variableName ? CONTENTLET_VIEW_IN : CONTENTLET_VIEW_OUT;
         this.setViewContentlet(viewContentlet);
         this.setFilter('');
         this.loadContentlets(variableName);
         this.setContentTypes(this.initialContent);
+    }
+
+    /**
+     * Retrieves the experiment variant query field.
+     *
+     * @private
+     *
+     * @returns {string} The query field for the experiment variant.
+     */
+    private getExperimentVariantQueryField(): string {
+        return this.dotSessionStorageService.getVariationId() !== DEFAULT_VARIANT_ID
+            ? `+(variant:default OR variant:${this.dotSessionStorageService.getVariationId()})`
+            : '';
+    }
+
+    /**
+     * If the contentlets have a derivated/duplicated contentlet, remove the original (variant: DEFAULT).
+     *
+     * @param {DotCMSContentlet[]} contentlets - The array of contentlets to remove derived contentlets from.
+     * @return {DotCMSContentlet[]} - The modified array of contentlets without the original contentlets.
+     */
+    private removeOriginalContentletsDuplicated(contentlets: DotCMSContentlet[]) {
+        const currentVariationId = this.dotSessionStorageService.getVariationId();
+        const uniqueIdentifiersFromVariantContentlet = new Set();
+        const iNodesOfOriginalContentletToDelete = [];
+
+        contentlets.reduce((acc, item) => {
+            if (item.variant === currentVariationId) {
+                uniqueIdentifiersFromVariantContentlet.add(item.identifier);
+            }
+
+            if (
+                uniqueIdentifiersFromVariantContentlet.has(item.identifier) &&
+                item.variant !== currentVariationId
+            ) {
+                iNodesOfOriginalContentletToDelete.push(item.inode);
+            }
+
+            return acc;
+        }, {});
+
+        return contentlets.filter(
+            (item) => !iNodesOfOriginalContentletToDelete.includes(item.inode)
+        );
     }
 }

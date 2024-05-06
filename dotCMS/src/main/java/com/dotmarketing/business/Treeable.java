@@ -4,11 +4,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public interface Treeable extends Permissionable{
+public interface Treeable extends Permissionable, Serializable {
 
 	public String getInode();
 

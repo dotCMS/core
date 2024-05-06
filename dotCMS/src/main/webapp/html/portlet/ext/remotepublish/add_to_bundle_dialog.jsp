@@ -33,7 +33,7 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
         <%--DATE FILTERING BOX--%>
 
 		<div class="fieldWrapper" id="bundleSelectDiv">
-			<div class="fieldName" style="width:120px">
+			<div class="fieldName">
 				<label for="bundleSelect" class="required">
 					<%= LanguageUtil.get(pageContext, "publisher_dialog_choose_bundle") %>
 				</label>

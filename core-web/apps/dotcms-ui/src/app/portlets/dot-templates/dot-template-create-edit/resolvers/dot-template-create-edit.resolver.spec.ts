@@ -4,8 +4,8 @@ import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
@@ -15,7 +15,7 @@ const templateMock: DotTemplate = {
     anonymous: false,
     friendlyName: 'Published template',
     identifier: '123Published',
-    inode: '1AreSD',
+    inode: 'inode123',
     name: 'Published template',
     type: 'type',
     versionType: 'type',

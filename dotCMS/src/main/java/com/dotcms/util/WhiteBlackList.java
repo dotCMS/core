@@ -37,10 +37,15 @@ public class WhiteBlackList {
             return false;
         }
 
-        boolean anyIncludeMatches = includePatterns.stream().map(pattern -> pattern.matcher(input)).anyMatch(Matcher::matches);
+        boolean anyIncludeMatches = isEmptyPattern(includePatterns) ||
+                includePatterns.stream().map(pattern -> pattern.matcher(input)).anyMatch(Matcher::matches);
         boolean anyExcludeMatches = excludePatterns.stream().map(pattern -> pattern.matcher(input)).anyMatch(Matcher::matches);
 
         return anyIncludeMatches && !anyExcludeMatches;
+    }
+
+    private boolean isEmptyPattern (final List<Pattern> collection) {
+        return Objects.isNull(collection) || collection.isEmpty() || (collection.size()==1 && collection.get(0).pattern().isEmpty());
     }
 
     /**
@@ -53,8 +58,8 @@ public class WhiteBlackList {
     }
 
     public static final class Builder {
-        private Set<String> includePatterns = new LinkedHashSet<>();
-        private Set<String> excludePatterns = new LinkedHashSet<>();
+        private final Set<String> includePatterns = new LinkedHashSet<>();
+        private final Set<String> excludePatterns = new LinkedHashSet<>();
 
         public Builder addWhitePatterns(final String... includePatterns) {
             this.includePatterns.addAll(Arrays.asList(includePatterns));

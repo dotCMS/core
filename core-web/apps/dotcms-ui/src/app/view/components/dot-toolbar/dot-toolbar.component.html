@@ -9,19 +9,16 @@
                             : 'pi pi-arrow-left'
                     "
                     (click)="handleMainButtonClick()"
-                    styleClass="p-button-rounded p-button-text"
-                ></p-button>
+                    styleClass="p-button-rounded p-button-text"></p-button>
             </div>
             <div
                 class="toolbar__logo-wrapper"
                 [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
-                [class.toolbar__logo-wrapper--whitelabel]="logo$ | async"
-            >
+                [class.toolbar__logo-wrapper--whitelabel]="logo$ | async">
                 <span
                     class="toolbar__logo--whitelabel"
                     *ngIf="logo$ | async as logo; else toolbarLogo"
-                    [ngStyle]="{ 'background-image': logo }"
-                ></span>
+                    [ngStyle]="{ 'background-image': logo }"></span>
                 <ng-template #toolbarLogo><span class="toolbar__logo"></span></ng-template>
                 <span class="toolbar__logo-bg"></span>
             </div>
@@ -37,10 +34,8 @@
             (hide)="iframeOverlayService.hide()"
             (display)="iframeOverlayService.show()"
             cssClass="d-secondary"
-            width="200px"
-        >
+            width="200px">
         </dot-site-selector>
-        <span class="toolbar__sep"></span>
         <dot-toolbar-notifications></dot-toolbar-notifications>
         <dot-toolbar-user></dot-toolbar-user>
     </div>

@@ -1,6 +1,8 @@
 @use "variables" as *;
 @import "mixins";
 
+$select-border-size: 2px;
+
 #form-field-base {
     background-color: $white;
     height: $field-height-md;
@@ -75,7 +77,6 @@
 }
 
 #field-trigger-icon {
-    padding: $spacing-1 $spacing-1;
     font-size: $icon-sm;
 }
 
@@ -84,7 +85,7 @@
     color: $black;
     border: 0 none;
     border-radius: $border-radius-md;
-    box-shadow: $md-shadow-6;
+    box-shadow: $shadow-l;
     padding: $spacing-1;
     margin-top: $spacing-1;
 }
@@ -119,6 +120,7 @@
     padding: 0 $spacing-2;
     color: $black;
     height: $field-height-md;
+    gap: $spacing-1;
 }
 
 #field-panel-item-highlight {
@@ -131,15 +133,18 @@
 
 #field-panel-item-disabled {
     @extend #form-field-disabled;
-    color: $color-palette-gray-500;
     cursor: initial;
 }
 
-#field-panel-item-checkbox {
-    margin-right: $spacing-1;
-
-    .p-checkbox-box {
-        border-radius: $border-radius-sm;
-        border: 2px solid $color-palette-gray-400;
-    }
+#field-chip {
+    height: 1.5rem;
+    padding: $spacing-1;
+    background: $color-palette-primary-200;
+    border-radius: $border-radius-sm;
+    color: $color-palette-primary;
+    font-size: $font-size-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-0;
 }

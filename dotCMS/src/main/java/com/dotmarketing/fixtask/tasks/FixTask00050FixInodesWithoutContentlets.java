@@ -1,6 +1,7 @@
 package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -12,7 +13,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -141,7 +141,7 @@ public class FixTask00050FixInodesWithoutContentlets implements FixTask {
 
 	public List<Map<String, String>> getModifiedData() {
 		if (modifiedData.size() > 0) {
-			XStream _xstream = new XStream(new DomDriver());
+			XStream xStreamInstance = XStreamHandler.newXStreamInstance();
 			Date date = new Date();
 			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 			String lastmoddate = sdf.format(date);
@@ -160,7 +160,7 @@ public class FixTask00050FixInodesWithoutContentlets implements FixTask {
 
 			}
 			try {
-				_xstream.toXML(modifiedData, _bout);
+				xStreamInstance.toXML(modifiedData, _bout);
 			} finally {
 				CloseUtils.closeQuietly(_bout);
 			}

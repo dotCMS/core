@@ -1,0 +1,37 @@
+{
+  "name": "@dotcms/{{ npmPackageName }}",
+  "version": "{{ npmPackageVersion }}",
+  "scripts": {
+    "postinstall": "node src/postinstall.js install",
+    "postuninstall": "node src/postinstall.js uninstall && npm prune"
+  },
+  "binaries": {
+    "{{ packageName }}-darwin-arm64": "bin/{{ packageName }}-{{ packageVersion }}-osx-aarch_64",
+    "{{ packageName }}-darwin-x64": "bin/{{ packageName }}-{{ packageVersion }}-osx-x86_64",
+    "{{ packageName }}-linux-x64": "bin/{{ packageName }}-{{ packageVersion }}-linux-x86_64"
+  },
+  "alias": "{{ npmPackageName }}",
+  "packageName": "{{ packageName }}",
+  "files": [
+    "bin",
+    "src"
+  ],
+  "description": "Official command-line tool to manage dotCMS content.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dotCMS/core.git#master"
+  },
+  "keywords": [
+    "dotCMS",
+    "CMS",
+    "Content Management",
+    "CLI",
+    "dotCMS CLI",
+    "dotCMS command-line tool"
+  ],
+  "author": "dotcms <dev@dotcms.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dotCMS/core/issues"
+  }
+}

@@ -1,12 +1,13 @@
 package com.dotcms.experiments.business.web;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.Serializable;
-
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This is a {@link com.dotcms.experiments.model.Experiment} selected to a User, this mean this user
@@ -50,8 +51,8 @@ public class SelectedExperiment implements Serializable {
     @JsonProperty("lookBackWindow")
     private final LookBackWindow lookBackWindow;
 
-    @JsonProperty("redirectPattern")
-    private final String redirectPattern;
+    @JsonProperty("regexs")
+    private Map<String, String> regexs = new HashMap();
 
     private SelectedExperiment(final Builder builder) {
 
@@ -60,7 +61,7 @@ public class SelectedExperiment implements Serializable {
         this.pageUrl = builder.pageUrl;
         this.variant = builder.variant;
         this.lookBackWindow = new LookBackWindow(builder.lookBackWindow, builder.expireTime);
-        this.redirectPattern = builder.redirectPattern;
+        this.regexs = builder.regexs();
         this.runningId = builder.runningId;
     }
 
@@ -84,12 +85,12 @@ public class SelectedExperiment implements Serializable {
         return lookBackWindow;
     }
 
-    public String redirectPattern() {
-        return redirectPattern;
-    }
-
     public String getRunningId() {
         return runningId;
+    }
+
+    public Map<String, String> regexs() {
+        return regexs;
     }
 
     public static class Builder {
@@ -101,6 +102,7 @@ public class SelectedExperiment implements Serializable {
         private long expireTime;
 
         private String redirectPattern;
+        private String targetPagePattern;
         private String runningId;
 
         public Builder runningId(final String runningId) {
@@ -117,8 +119,13 @@ public class SelectedExperiment implements Serializable {
             return this;
         }
 
-        public Builder redirectPattern(final String redirectPattern) {
+        public Builder experimentPagePattern(final String redirectPattern) {
             this.redirectPattern = redirectPattern;
+            return this;
+        }
+
+        public Builder targetPagePattern(final String targetPagePattern) {
+            this.targetPagePattern = targetPagePattern;
             return this;
         }
 
@@ -144,6 +151,16 @@ public class SelectedExperiment implements Serializable {
 
         public SelectedExperiment build(){
             return new SelectedExperiment(this);
+        }
+
+        public Map<String, String> regexs() {
+
+            final Map<String, String> regexs = new HashMap();
+
+            regexs.put("isExperimentPage", redirectPattern);
+            regexs.put("isTargetPage", targetPagePattern);
+
+            return regexs;
         }
     }
 

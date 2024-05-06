@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const rootMain = require('../../../.storybook/main');
 
 module.exports = {
@@ -12,9 +13,11 @@ module.exports = {
         '../src/**/*.stories.@(js|jsx|ts|tsx)',
         '../../../libs/template-builder/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/block-editor/**/*.stories.@(js|jsx|ts|tsx|mdx)',
-        '../../../libs/contenttype-fields/**/*.stories.@(js|jsx|ts|tsx|mdx)'
+        '../../../libs/edit-content/**/*.stories.@(js|jsx|ts|tsx|mdx)',
+        '../../../libs/ui/**/*.stories.@(js|jsx|ts|tsx|mdx)',
+        '../../../libs/portlets/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],
-    addons: ['storybook-design-token', '@storybook/addon-essentials', ...rootMain.addons],
+    addons: ['@storybook/addon-essentials', ...rootMain.addons],
     features: {
         previewMdx2: true
     },
@@ -28,9 +31,16 @@ module.exports = {
             test: /\.css$/,
             use: ['style-loader', 'css-loader'],
             include: path.resolve(__dirname, '../../../libs/dotcms-scss/shared')
-            // include: path.resolve(__dirname, '../'),
         });
 
+        // add USE_MIDDLEWARE environment variable to the storybook build
+        config.plugins.push(
+            new webpack.DefinePlugin({
+                'process.env.USE_MIDDLEWARE': JSON.stringify(process.env.USE_MIDDLEWARE)
+            })
+        );
+
         return config;
-    }
+    },
+    middleware: './middleware.js'
 };

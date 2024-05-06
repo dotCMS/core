@@ -7,9 +7,9 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -66,7 +66,6 @@ import com.liferay.portal.struts.ActionException;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -78,6 +77,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -718,20 +718,37 @@ public class BrowserAjax {
 		return result;
 	}
 
-	public Map<String, Object> getFileInfo(String fileId, long languageId) throws DotDataException, DotSecurityException, PortalException, SystemException {
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest req = ctx.getHttpServletRequest();
-        ServletContext servletContext = ctx.getServletContext();
-        User user = userAPI.getLoggedInUser(req);
-        boolean respectFrontendRoles = userAPI.isLoggedToFrontend(req);
-
-        Identifier ident = APILocator.getIdentifierAPI().find(fileId);
+	/**
+	 * Returns information related to a specific File in the dotCMS repository for a given
+	 * language. If an invalid Language ID is passed down, the default Language ID will be used
+	 * instead. The requested File must belong to one of three types:
+	 * <ol>
+	 *     <li>File Asset.</li>
+	 *     <li>HTML Page.</li>
+	 *     <li>dotAsset.</li>
+	 * </ol>
+	 *
+	 * @param fileId     The Identifier of the File.
+	 * @param languageId The language associated to the File.
+	 *
+	 * @return A Map containing brief information related to the File.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The currently logged-in user does not have the required
+	 *                              permissions to perform this action.
+	 * @throws PortalException      An error occurred when retrieving the currently logged-in user.
+	 * @throws SystemException      An error occurred when retrieving the currently logged-in user.
+	 */
+	public Map<String, Object> getFileInfo(final String fileId, long languageId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		final User user = DwrUtil.getLoggedInUser();
+		final boolean respectFrontendRoles = user.isFrontendUser();
+        final Identifier ident = this.identifierAPI.find(fileId);
 
 		if(languageId==0) {
 			languageId = languageAPI.getDefaultLanguage().getId();
 		}
 
-		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
+		if (ident != null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals(Identifier.ASSET_TYPE_CONTENTLET)) {
 		    Optional<ContentletVersionInfo> vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 
 			if(vinfo.isEmpty() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
@@ -745,31 +762,34 @@ public class BrowserAjax {
 			}
 
 		    boolean live = respectFrontendRoles || vinfo.get().getLiveInode()!=null;
-			Contentlet cont = contentletAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
-			if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-    			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
-    			java.io.File file = fileAsset.getFileAsset();
-    			String mimeType = servletContext.getMimeType(file.getName().toLowerCase());
-    			Map<String, Object> fileMap = fileAsset.getMap();
-    			fileMap.put("mimeType", mimeType);
+			final Contentlet cont = this.contentletAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
+			if (cont.getContentType().baseType().getType() == BaseContentType.FILEASSET.getType()) {
+    			final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
+    			final java.io.File file = fileAsset.getFileAsset();
+    			String mimeType = StringPool.BLANK;
+				if (null != file) {
+					mimeType = DwrUtil.getServletContext().getMimeType(file.getName().toLowerCase());
+				} else {
+					Logger.warn(this, String.format("Binary File associated to FileAsset with " +
+							"Inode '%s' was not found", fileAsset.getInode()));
+				}
+				final Map<String, Object> fileMap = fileAsset.getMap();
+				fileMap.put("mimeType", mimeType);
     			fileMap.put("path", fileAsset.getPath());
-    			fileMap.put("type", "contentlet");
+    			fileMap.put("type", Identifier.ASSET_TYPE_CONTENTLET);
 				fileMap.put("title", cont.getTitle());
     			return fileMap;
-			}
-			else if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
-			    HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(cont);
-			    Map<String, Object> pageMap = page.getMap();
+			} else if (cont.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
+			    final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(cont);
+			    final Map<String, Object> pageMap = page.getMap();
 			    pageMap.put("mimeType", "application/dotpage");
 	            pageMap.put("pageURI", ident.getURI());
 	            return pageMap;
-			} else if(cont.getStructure().getStructureType()== BaseContentType.DOTASSET.getType()) {
-
+			} else if (cont.getContentType().baseType().getType() == BaseContentType.DOTASSET.getType()) {
 				final java.io.File file = Try.of(()->cont.getBinary(DotAssetContentType.ASSET_FIELD_VAR)).getOrNull();
 				if (null != file) {
 					final String fileName = file.getName();
-					final String mimeType = servletContext.getMimeType(fileName.toLowerCase());
-
+					final String mimeType = DwrUtil.getServletContext().getMimeType(fileName.toLowerCase());
 					final Map<String, Object> fileMap = cont.getMap();
 					fileMap.put("mimeType", mimeType);
 					fileMap.put("path",          "/dA/" + cont.getIdentifier() + StringPool.SLASH);
@@ -778,10 +798,12 @@ public class BrowserAjax {
 					fileMap.put("fileName", fileName);
 					fileMap.put("title", cont.getTitle());
 					return fileMap;
+				} else {
+					Logger.warn(this, String.format("Binary File associated to dotAsset with Inode" +
+							" '%s' was not found", cont.getInode()));
 				}
 			}
 		}
-
 		return null;
 	}
 
@@ -2064,15 +2086,17 @@ public class BrowserAjax {
 				false).getHostname();
 		final String fullPath = currentPath + ":/" + folder.getName();
 		final String absolutePath = "/" + folder.getName();
-		final Map<String, Object> folderMap = CollectionsUtils.map(
-				"type", "folder",
-				"name", folder.getName(),
-				"id", folder.getIdentifier(),
-				"inode", folder.getInode(),
-				"defaultFileType", folder.getDefaultFileType(),
-				"fullPath", fullPath,
-				"absolutePath", absolutePath,
-				"folderPath", folder.getPath());
+		final Map<String, Object> folderMap = new HashMap<>();
+
+		folderMap.put("type", "folder");
+		folderMap.put("name", folder.getName());
+		folderMap.put("id", folder.getIdentifier());
+		folderMap.put("inode", folder.getInode());
+		folderMap.put("defaultFileType", folder.getDefaultFileType());
+		folderMap.put("fullPath", fullPath);
+		folderMap.put("absolutePath", absolutePath);
+		folderMap.put("folderPath", folder.getPath());
+
 		return folderMap;
 	}
 
@@ -2080,6 +2104,7 @@ public class BrowserAjax {
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
     	WebContext ctx = WebContextFactory.get();
         User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
+		Logger.info(this,"currentLoggedUser: " + user.getFullName()+" - id"+user.getUserId());
         Role[] roles = new Role[]{};
 		try {
 			roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
@@ -2089,9 +2114,19 @@ public class BrowserAjax {
         boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts = hostAPI.findAll(user, respectFrontendRoles);
+		// Remove invalid hosts, before sorting the list
+		hosts.removeIf(host -> Objects.isNull(host) || Strings.isNullOrEmpty(host.getHostname()));
 		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
 		Collections.sort(hosts, new HostNameComparator());
 		for (Host h: hosts) {
+			/**
+			 * When we created the provided host list, we already validated the user's permission over the system host.
+			 * Therefore, there is no need to validate it again.
+			 **/
+			if (h.isSystemHost()){
+				hostsToReturn.add(hostMap(h));
+				continue;
+			}
 			List permissions = new ArrayList();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(h, roles, user);
@@ -2267,6 +2302,7 @@ public class BrowserAjax {
 	@CloseDBIfOpened
 	public List<Map<String, Object>> getFolderSubfolders(final String parentFolderId) throws DotDataException, DotSecurityException {
 		final User user = this.getLoggedInUser();
+		Logger.info(this, "subFoldersUSer" + user.getUserId());
 		final Role[] roles = DwrUtil.getUserRoles(user);
 		final Folder parentFolder = this.folderAPI.find(parentFolderId, user, false);
 		final List<Folder> subFolders = this.folderAPI.findSubFolders(parentFolder, user, false);
@@ -2466,13 +2502,18 @@ public class BrowserAjax {
 	}
 
 	/**
-	 * Returns the set of IDs of Folders that are currently open in the Site Browser.
+	 * Returns the set of IDs of Folders that are currently expanded in the Site Browser's UI.
 	 *
-	 * @return The set of open folder IDs.
+	 * @return The set of expanded folder IDs.
 	 */
+	@SuppressWarnings("unchecked")
 	private Set<String> getOpenFolderIds() {
-		final Set<String> openFolderIds = (Set<String>) DwrUtil.getSession().getAttribute(OPEN_FOLDER_IDS);
-		return null != openFolderIds ? openFolderIds : new HashSet<>();
+		Set<String> openFolderIds = (Set<String>) DwrUtil.getSession().getAttribute(OPEN_FOLDER_IDS);
+		if (null == openFolderIds) {
+			openFolderIds = new HashSet<>();
+			DwrUtil.getSession().setAttribute(OPEN_FOLDER_IDS, openFolderIds);
+		}
+		return openFolderIds;
 	}
 
 	/**

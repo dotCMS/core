@@ -127,14 +127,6 @@ create table PortletPreferences (
     primary key (portletId, userId, layoutId)
 );
 
-create table Release_ (
-    releaseId NVARCHAR(100) not null primary key,
-    createDate datetimeoffset(3) null,
-    modifiedDate datetimeoffset(3) null,
-    buildNumber int null,
-    buildDate datetimeoffset(3) null
-);
-
 create table User_ (
     userId NVARCHAR(100) not null primary key,
     companyId NVARCHAR(100) not null,

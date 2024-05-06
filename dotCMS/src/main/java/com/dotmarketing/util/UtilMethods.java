@@ -24,6 +24,8 @@ import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.beans.PropertyDescriptor;
 import java.io.BufferedReader;
 import java.io.File;
@@ -62,7 +64,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.imageio.ImageIO;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -234,12 +235,40 @@ public class UtilMethods {
         }
     }
 
-    public static final boolean isImage(String x) {
-        if (x == null)
-            return false;
 
-        return ImageIO.getImageReadersByFormatName(getFileExtension(x)).hasNext();
+    private static final String[] DEFAULT_IMAGE_EXTENSIONS=                {
+            "png", "gif", "webp", "jpeg", ".jpg", "tiff", "bpm", "svg", "avif",
+            "bmp",
+            "tif", "tiff"
+    };
+
+    /**
+     * returns the valid image extensions with a . in front of the extension, e.g.
+     * png -> .png
+     */
+    private static final Lazy<String[]> IMAGE_EXTENSIONS = Lazy.of(() ->
+
+                    Try.of(() -> Arrays.stream(Config.getStringArrayProperty("VALID_IMAGE_EXTENSIONS",DEFAULT_IMAGE_EXTENSIONS))
+                            .map(x -> x.startsWith(".") ? x : "." + x)
+                            .toArray(String[]::new)
+                    ).getOrElse(() -> Arrays.stream(DEFAULT_IMAGE_EXTENSIONS)
+                            .map(x -> x.startsWith(".") ? x : "." + x)
+                            .toArray(String[]::new))
+    );
+
+    public static final boolean isImage(String x) {
+        if (UtilMethods.isEmpty(x)) {
+            return false;
+        }
+        final String imageName = x.toLowerCase();
+        for (String ext : IMAGE_EXTENSIONS.get()) {
+            if (imageName.endsWith(ext)) {
+                return true;
+            }
+        }
+        return false;
     }
+
 
     public static final String getMonthFromNow() {
         java.util.GregorianCalendar cal = new java.util.GregorianCalendar();
@@ -1360,6 +1389,12 @@ public class UtilMethods {
         return "";
     }
 
+    public static String escapeHTMLCodeFromJSON(String json) {
+        json = json.replace("&#58;",":")
+                .replace("&#44;",",");
+        return json;
+    }
+
 
 
     // Used by the code generated in the contentletmapservices
@@ -2373,7 +2408,7 @@ public class UtilMethods {
         if (x == null) {
             return "";
         }
-
+        HTML_DATETIME_TO_DATE.setTimeZone(APILocator.systemTimeZone());
         return HTML_DATETIME_TO_DATE.format(x);
     }
 
@@ -3644,5 +3679,18 @@ public class UtilMethods {
      */
     public static <T> T isSetOrGet(final T toEvaluate, final T defaultValue){
         return UtilMethods.isSet(toEvaluate) ? toEvaluate : defaultValue;
+    }
+
+
+    /**
+     * Finds if the length of the given value is valid
+     *
+     * @param value
+     * @param maxLength
+     * @param <T>
+     * @return
+     */
+    public static <T extends CharSequence> boolean exceedsMaxLength(final T value, final int maxLength) {
+        return value != null && value.length() > maxLength;
     }
 }

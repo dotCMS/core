@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.vtl;
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCacheFactory;
+import com.dotcms.rendering.util.ScriptingReaderParams;
+import com.dotcms.rendering.util.ScriptingUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotmarketing.util.json.JSONException;
@@ -14,15 +16,9 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.DotPreconditions;
-import com.dotcms.uuid.shorty.ShortType;
-import com.dotcms.uuid.shorty.ShortyId;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -37,7 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -59,6 +54,7 @@ import org.glassfish.jersey.server.JSONP;
 public class VTLResource {
 
     public static final String IDENTIFIER = "identifier";
+    public static final String VELOCITY = "velocity";
     private final MultiPartUtils multiPartUtils;
     private final WebResource webResource;
     @VisibleForTesting
@@ -474,25 +470,6 @@ public class VTLResource {
         }
     }
 
-    private void validateBodyMap(final Map<String, Object> bodyMap, final HTTPMethod httpMethod) {
-
-        // if it is an update method (not get) and the
-        if (UtilMethods.isSet(bodyMap) && bodyMap.containsKey(IDENTIFIER) &&
-                UtilMethods.isSet(bodyMap.get(IDENTIFIER))
-                // an non-existing identifier could be just on get or post, put, patch or delete needs an existing id.
-                && httpMethod != HTTPMethod.GET && httpMethod != HTTPMethod.POST) {
-
-            final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(bodyMap.get(IDENTIFIER).toString());
-            final boolean isIdentifier = shortyId.isPresent() && shortyId.get().type == ShortType.IDENTIFIER;
-
-            if (!isIdentifier) {
-
-                throw new DoesNotExistException("The identifier: " + bodyMap.get(IDENTIFIER) + " does not exists");
-            }
-        }
-    }
-
-
     private Response processRequest(final HttpServletRequest request, final HttpServletResponse response,
                                     final UriInfo uriInfo, final String folderName,
                                     final String pathParam,
@@ -502,7 +479,7 @@ public class VTLResource {
 
         try {
 
-            this.validateBodyMap(bodyMap, httpMethod);
+            ScriptingUtil.getInstance().validateBodyMap(bodyMap, httpMethod);
 
             final InitDataObject initDataObject = this.webResource.init
                     (null, request, response, false, null);
@@ -517,7 +494,7 @@ public class VTLResource {
                 return Response.ok(dotJSONOptional.get().getMap()).build();
             }
 
-            final VelocityReaderParams velocityReaderParams = new VelocityReaderParams.VelocityReaderParamsBuilder()
+            final ScriptingReaderParams velocityReaderParams = new ScriptingReaderParams.ScriptingReaderParamsBuilder()
                     .setBodyMap(bodyMap)
                     .setFolderName(folderName)
                     .setHttpMethod(httpMethod)
@@ -528,11 +505,12 @@ public class VTLResource {
 
             final VelocityReader velocityReader = VelocityReaderFactory.getVelocityReader(UtilMethods.isSet(folderName));
 
-            final Map<String, Object> contextParams = CollectionsUtils.map(
-                    "pathParam", pathParam,
-                    "queryParams", uriInfo.getQueryParameters(),
-                    "bodyMap", bodyMap,
-                    "binaries", Arrays.asList(binaries));
+            final Map<String, Object> contextParams = new HashMap<>();
+
+            contextParams.put("pathParam", pathParam);
+            contextParams.put("queryParams", uriInfo.getQueryParameters());
+            contextParams.put("bodyMap", bodyMap);
+            contextParams.put("binaries", Arrays.asList(binaries));
 
             try(Reader reader = velocityReader.getVelocity(velocityReaderParams)){
                 return evalVelocity(request, response, reader, contextParams,
@@ -599,92 +577,6 @@ public class VTLResource {
         return this.multiPartUtils.getBinariesFromMultipart(multipart);
     }
 
-    static class VelocityReaderParams {
-        private final HTTPMethod httpMethod;
-        private final HttpServletRequest request;
-        private final String folderName;
-        private final User user;
-        private final Map<String, Object> bodyMap;
-        private final PageMode pageMode;
-
-        VelocityReaderParams(final HTTPMethod httpMethod, final HttpServletRequest request, final String folderName,
-                             final User user, final Map<String, Object> bodyMap, final PageMode pageMode) {
-            this.httpMethod = httpMethod;
-            this.request = request;
-            this.folderName = folderName;
-            this.user = user;
-            this.bodyMap = bodyMap;
-            this.pageMode = pageMode;
-        }
-
-        HTTPMethod getHttpMethod() {
-            return httpMethod;
-        }
-
-        public HttpServletRequest getRequest() {
-            return request;
-        }
-
-        public String getFolderName() {
-            return folderName;
-        }
-
-        public User getUser() {
-            return user;
-        }
-
-        Map<String, Object> getBodyMap() {
-            return bodyMap;
-        }
-
-        public PageMode getPageMode() {
-            return pageMode;
-        }
-
-        public static class VelocityReaderParamsBuilder {
-            private HTTPMethod httpMethod;
-            private HttpServletRequest request;
-            private String folderName;
-            private User user;
-            private Map<String, Object> bodyMap;
-            private PageMode pageMode;
-
-            public VelocityReaderParamsBuilder setPageMode(final PageMode pageMode) {
-                this.pageMode = pageMode;
-                return this;
-            }
-
-            public VelocityReaderParamsBuilder setHttpMethod(final HTTPMethod httpMethod) {
-                this.httpMethod = httpMethod;
-                return this;
-            }
-
-            public VelocityReaderParamsBuilder setRequest(final HttpServletRequest request) {
-                this.request = request;
-                return this;
-            }
-
-            public VelocityReaderParamsBuilder setFolderName(final String folderName) {
-                this.folderName = folderName;
-                return this;
-            }
-
-            public VelocityReaderParamsBuilder setUser(final User user) {
-                this.user = user;
-                return this;
-            }
-
-            public VelocityReaderParamsBuilder setBodyMap(final Map<String, Object> bodyMap) {
-                this.bodyMap = bodyMap;
-                return this;
-            }
-
-            public VTLResource.VelocityReaderParams build() {
-                return new VTLResource.VelocityReaderParams(httpMethod, request, folderName, user, bodyMap, pageMode);
-            }
-        }
-    }
-
     private Map<String, Object> parseBodyMap(final String bodyMapString) {
         Map<String, Object> bodyMap = new HashMap<>();
 
@@ -692,50 +584,27 @@ public class VTLResource {
         try {
             bodyMap = new ObjectMapper().readValue(bodyMapString, HashMap.class);
 
-            if(bodyMap.containsKey("velocity")){
-                bodyMap.put("velocity", unescapeValue((String)bodyMap.get("velocity"), "\n"));
+            if(bodyMap.containsKey(VELOCITY)){
+                bodyMap.put(VELOCITY, ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get(VELOCITY), "\n"));
             }
         } catch (IOException e) {
             // 2) let's try escaping then parsing
-            String escapedJsonValues = escapeJsonValues(bodyMapString, '\n');
+            String escapedJsonValues = ScriptingUtil.getInstance().escapeJsonValues(bodyMapString, '\n');
 
             try {
                 bodyMap = new ObjectMapper().readValue(escapedJsonValues, HashMap.class);
 
-                if(bodyMap.containsKey("velocity")){
-                    bodyMap.put("velocity", unescapeValue((String)bodyMap.get("velocity"), "\n"));
+                if(bodyMap.containsKey(VELOCITY)){
+                    bodyMap.put(VELOCITY, ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get(VELOCITY), "\n"));
                 }
             } catch (IOException e1) {
-                bodyMap.put("velocity", bodyMapString);
+                bodyMap.put(VELOCITY, bodyMapString);
             }
         }
 
         return bodyMap;
     }
 
-    private final String ESCAPE_ME_VALUE= " THIS_ESCAPES_LINE_BREAKS ";
-    
-    private String escapeJsonValues(final String jsonStr, final char escapeFrom) {
-        
-        StringWriter sw = new StringWriter();
-        char[] charArr = jsonStr.toCharArray();
-        boolean inQuotes=false;
-        for(int i=0;i <charArr.length;i++) {
-            char c = charArr[i];
-            if(c=='"' && charArr[i-1] != '\\') {
-                inQuotes=!inQuotes;
-            }
-            if(inQuotes && c==escapeFrom) {
-                sw.append(ESCAPE_ME_VALUE);
-            }else {
-                sw.append(c);
-            }
-        }
-        return sw.toString();
-    }
-    
-    private String unescapeValue(String escapedValue, final String escapeFrom) {
-        return escapedValue.replace(ESCAPE_ME_VALUE, escapeFrom);
-    }
+
 
 }

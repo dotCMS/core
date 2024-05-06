@@ -1,5 +1,5 @@
 <div class="row-header">
-    <span class="row-header__drag"></span>
+    <dot-icon class="row-header__drag" name="drag_handle"></dot-icon>
 </div>
 <div class="row-columns">
     <div
@@ -8,24 +8,21 @@
         [(dragulaModel)]="column.fields"
         [class.empty]="!column.fields.length"
         data-drag-type="target"
-        dragula="fields-bag"
-    >
+        dragula="fields-bag">
         <p-button
             class="row-header__remove"
             *ngIf="!column.fields.length"
             [pTooltip]="'contenttypes.action.delete' | dm"
             (click)="remove(i)"
             icon="pi pi-trash"
-            styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
-        ></p-button>
+            styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"></p-button>
 
         <dot-content-type-field-dragabble-item
             *ngFor="let field of column.fields"
             [field]="field"
             [isSmall]="fieldRow.columns.length > 1"
             (remove)="onRemoveField($event)"
-            (edit)="this.editField.emit(field)"
-        >
+            (edit)="this.editField.emit(field)">
         </dot-content-type-field-dragabble-item>
     </div>
 </div>

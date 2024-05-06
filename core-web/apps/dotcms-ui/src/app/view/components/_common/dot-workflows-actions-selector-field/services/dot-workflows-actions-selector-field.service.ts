@@ -7,8 +7,7 @@ import { SelectItem, SelectItemGroup } from 'primeng/api';
 
 import { catchError, map, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 @Injectable()

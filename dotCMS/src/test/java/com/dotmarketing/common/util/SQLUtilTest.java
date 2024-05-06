@@ -1,20 +1,26 @@
 package com.dotmarketing.common.util;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.SecurityLoggerServiceAPIFactory;
-import com.dotmarketing.util.StringUtils;
+import com.dotcms.util.pagination.OrderDirection;
 import com.liferay.util.StringPool;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
-public class SQLUtilTest  extends UnitTestBase {
+/**
+ * This Unit Test verifies that the {@link SQLUtil} class works as expected.
+ *
+ * @author Jonathan Sanchez
+ * @since Jan 4th, 2017
+ */
+public class SQLUtilTest extends UnitTestBase {
 
     protected static SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
@@ -649,4 +655,42 @@ public class SQLUtilTest  extends UnitTestBase {
 
         assertEquals(StringPool.BLANK, Output);
     }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link SQLUtil#getOrderByAndDirectionSql(String, OrderDirection)}</li>
+     *     <li><b>Given Scenario: </b>Checks that the order-by and direction statements are
+     *     appended correctly, and with the expected fallbacks as well.</li>
+     *     <li><b>Expected Result: </b>If the order-by is specified, use it and the direction to
+     *     form the SQL statement. If it isn't, then fall back to mod_date in DESC order.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetOrderByAndDirectionSql() {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final String orderByClause = "upper(name)";
+        final String expectedTestOne = "upper(name) asc";
+        final String expectedTestTwo = "upper(name) desc";
+        final String expectedTestThree = "mod_date desc";
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final String testResultOne = SQLUtil.getOrderByAndDirectionSql(orderByClause,
+                OrderDirection.ASC);
+        final String testResultTwo = SQLUtil.getOrderByAndDirectionSql(orderByClause,
+                OrderDirection.DESC);
+        final String testResultThree = SQLUtil.getOrderByAndDirectionSql("", OrderDirection.DESC);
+
+        // ╔══════════════╗
+        // ║  Assertions  ║
+        // ╚══════════════╝
+        assertEquals("Result of test one is not valid", expectedTestOne, testResultOne);
+        assertEquals("Result of test two is not valid", expectedTestTwo, testResultTwo);
+        assertEquals("Result of test three is not valid", expectedTestThree, testResultThree);
+    }
+
 }

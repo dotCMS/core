@@ -1,26 +1,23 @@
-<div class="dot-language-selector h-full flex-auto flex align-items-center gap-3">
-    <dot-icon class="flex-none flex" name="language" size="22"></dot-icon>
-
-    <div class="device-selector__field flex-grow-1 flex">
-        <ng-container *ngIf="!readonly; else showSelectedReadOnlyTpl">
-            <p-dropdown
-                class="p-dropdown-sm w-full"
-                [(ngModel)]="value"
-                [disabled]="disabled"
-                [options]="options"
-                (onChange)="change($event.value)"
-                dataKey="id"
-                optionLabel="language"
-            >
-            </p-dropdown>
-        </ng-container>
+<div class="dot-language-selector h-full flex-auto flex align-items-center gap-2">
+    <span class="icon-lg"><i class="pi pi-globe"></i></span>
+    <div class="language-selector__field flex-grow-1 flex">
+        @if (!readonly){
+        <p-dropdown
+            class="p-dropdown-sm w-full"
+            [(ngModel)]="value"
+            [disabled]="disabled || languagesList().length === 0"
+            [options]="languagesList()"
+            (onChange)="selectedItem($event.value)"
+            data-testId="language-selector"
+            dataKey="id"
+            optionLabel="language" />
+        }@else{
+        <div class="h-full w-full flex align-items-center gap-3">
+            <span>
+                {{ value.language }}
+                <ng-container *ngIf="value.countryCode"> ({{ value.countryCode }}) </ng-container>
+            </span>
+        </div>
+        }
     </div>
 </div>
-<ng-template #showSelectedReadOnlyTpl>
-    <div class="h-full w-full flex align-items-center gap-3">
-        <span>
-            {{ value.language }}
-            <ng-container *ngIf="value.countryCode"> ({{ value.countryCode }}) </ng-container>
-        </span>
-    </div>
-</ng-template>

@@ -87,3 +87,11 @@
 .p-paginator-bottom {
     border: none;
 }
+.p-paginator .p-paginator-prev.p-disabled .p-paginator-icon,
+.p-paginator .p-paginator-next.p-disabled .p-paginator-icon {
+    color: $color-palette-gray-400;
+}
+
+.p-paginator-icon {
+    color: $color-palette-primary;
+}

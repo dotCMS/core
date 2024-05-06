@@ -1,0 +1,396 @@
+{
+	"info": {
+		"_postman_id": "0f1898fc-13bb-49b2-b6d8-3719a256b8ae",
+		"name": "Announcements",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10041132"
+	},
+	"item": [
+		{
+			"name": "Create Announcement ContentType",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let jsonData = pm.response.json();",
+							"let contentTypeId = jsonData.entity[0].id;",
+							"let contentTypeVar = jsonData.entity[0].variable",
+							"",
+							"pm.collectionVariables.set(\"contentTypeId\", contentTypeId);",
+							"pm.collectionVariables.set(\"contentTypeVar\", contentTypeVar);",
+							"",
+							"pm.test(\"Variable is created\", function () {",
+							"",
+							"   pm.expect(contentTypeId,'Announcement ct Id is set ').not.undefined;  ",
+							"   pm.expect(contentTypeVar,'Announcement ct Var is set ').not.undefined;  ",
+							"",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"DotCMS Announcements\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Announcement\",\n\t\"variable\": \"Announcement\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"Announcement\",\n    \"sortOrder\": 0,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"title\",\n\t\t\t\"variable\": \"title\",\n\t\t\t\"fixed\": true\n\t\t},\n        {\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.SelectField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"type\",\n\t\t\t\"variable\": \"type1\",\n            \"values\": \"Announcement\\nRelease\\nComment\",\n\t\t\t\"fixed\": true\n\t\t},\n        {\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 3,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Url\",\n\t\t\t\"variable\": \"url\",\n\t\t\t\"fixed\": true\n\t\t},\n        {\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.DateTimeField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"DATE\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": false,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 4,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"announcementDate\",\n\t\t\t\"variable\": \"announcementDate\",\n\t\t\t\"fixed\": true\n\t\t},\n        {\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 5,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"description\",\n\t\t\t\"variable\": \"description\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"publishDateVar\": \"announcementDate\",\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/contenttype",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"contenttype"
+					]
+				},
+				"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+			},
+			"response": []
+		},
+		{
+			"name": "Create Announcements",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const jsonData = pm.response.json();",
+							"pm.test(\"Status code should be 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const contents = jsonData.entity.results;",
+							"",
+							"console.log(contents);",
+							"",
+							"pm.test(\"Announcements are error free\", function() {",
+							"   for(let i in contents){",
+							"       const content = contents[i];",
+							"       const key = Object.keys(content)[0];",
+							"       const object = content[key];       ",
+							"       // humoring QA ",
+							"       pm.expect(object.errorMessage,'No error should be reported back').to.be.undefined;",
+							"   }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"function formatDate(date) {",
+							"    const year = date.getFullYear();",
+							"    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based",
+							"    const day = String(date.getDate()).padStart(2, '0');",
+							"    const hours = String(date.getHours()).padStart(2, '0');",
+							"    const minutes = String(date.getMinutes()).padStart(2, '0');",
+							"    const seconds = String(date.getSeconds()).padStart(2, '0');",
+							"",
+							"    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;",
+							"}",
+							"//Set the content to be published wihtin 40 seconds ",
+							"const announcementDate =  new Date();",
+							"//announcementDate.setSeconds(announcementDate.getSeconds() + 10);",
+							"const formattedAnnouncementDate = formatDate(announcementDate);",
+							"",
+							"console.log(formattedAnnouncementDate);",
+							"pm.collectionVariables.set(\"announcementDate\", announcementDate);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"contentlets\": [\n       {\n        \"contentType\": \"{{contentTypeId}}\",     \n        \"title\": \"Test Announcement\",\n        \"type1\":\"Announcement\",\n        \"announcementDate\":\"{{announcementDate}}\",\n        \"url\":\"https://www.dotcms.com/announcement\",\n        \"description\": \"Test Announcement\"\n       },{\n        \"contentType\": \"{{contentTypeId}}\",     \n        \"title\": \"Test Release\",\n        \"type1\":\"Release\",\n        \"announcementDate\":\"{{announcementDate}}\",\n        \"url\":\"https://www.dotcms.com/release\",\n        \"description\": \"Test Release\"\n       },{\n        \"contentType\": \"{{contentTypeId}}\",     \n        \"title\": \"Test Comment\",\n        \"type1\":\"Comment\",\n        \"announcementDate\":\"{{announcementDate}}\",\n        \"url\":\"https://www.dotcms.com/comment\",\n        \"description\": \"Test Comment\"\n       }\n    ]    \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"PUBLISH"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Retrieve Announcements",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Status code should be 200\", function() {",
+							"    pm.response.to.have.status(200);        ",
+							"});",
+							"",
+							"pm.test(\"Validate Announcements\", function() {    ",
+							"    pm.expect(jsonData.entity.length).to.be.at.least(3);  ",
+							"    ",
+							"    let a3 = jsonData.entity.find(item => item.title === 'Test Comment');",
+							"    pm.expect(a3,'Comment should be present').not.undefined;",
+							"    pm.expect(a3.announcementDate,'Comment should have a date').not.undefined;",
+							"    pm.expect(a3.announcementDateAsISO8601,'Comment should have a announcementDateAsISO8601').not.undefined;",
+							"    pm.expect(a3.identifier,'Comment should have an identifier').not.undefined;",
+							"    pm.expect(a3.inode,'Comment should have an inode').not.undefined;    ",
+							"    pm.expect(a3.languageId,'Comment should have a languageId').eql('1');",
+							"    pm.expect(a3.type,'Comment should have a type').eql('Comment');",
+							"    pm.expect(a3.description,'Comment should have a desc').eql('Test Comment');",
+							"    pm.expect(a3.url,'Comment should have a url').eql('https://www.dotcms.com/comment');",
+							"    pm.expect(a3.modDate,'Comment should have a modDate').not.undefined;",
+							"",
+							"    let a2 = jsonData.entity.find(item => item.title === 'Test Release');",
+							"    pm.expect(a2,'Release should be present').not.undefined;",
+							"    pm.expect(a2.announcementDate,'Release should have a date').not.undefined;",
+							"    pm.expect(a2.announcementDateAsISO8601,'Release should have a announcementDateAsISO8601').not.undefined;",
+							"    pm.expect(a2.identifier,'Release should have an identifier').not.undefined;",
+							"    pm.expect(a2.inode,'Release should have an inode').not.undefined;    ",
+							"    pm.expect(a2.languageId,'Release should have a languageId').eql('1');",
+							"    pm.expect(a2.type,'Release should have a type').eql('Release');",
+							"    pm.expect(a2.description,'Release should have a desc').eql('Test Release');",
+							"    pm.expect(a2.url,'Release should have a url').eql('https://www.dotcms.com/release');",
+							"    pm.expect(a2.modDate,'Release should have a modDate').not.undefined;",
+							"    ",
+							"    let a1 = jsonData.entity.find(item => item.title === 'Test Announcement');",
+							"    pm.expect(a1,'Announcement should be present').not.undefined;",
+							"    pm.expect(a1.announcementDate,'Announcement should have a date').not.undefined;",
+							"    pm.expect(a1.announcementDateAsISO8601,'Announcement should have a announcementDateAsISO8601').not.undefined;",
+							"    pm.expect(a1.identifier,'Announcement should have an identifier').not.undefined;",
+							"    pm.expect(a1.inode,'Announcement #1 should have an inode').not.undefined;    ",
+							"    pm.expect(a1.languageId,'Announcement #1 should have a languageId').eql('1');",
+							"    pm.expect(a1.type,'Announcement should have a type').eql('Announcement');",
+							"    pm.expect(a1.description,'Announcement should have a desc').eql('Test Announcement');",
+							"    pm.expect(a1.url,'Announcement should have a url').eql('https://www.dotcms.com/announcement');",
+							"    pm.expect(a1.modDate,'Announcement should have a modDate').not.undefined;",
+							"",
+							"     ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"function doWait(){",
+							"    // This should give enough time for the content to be published",
+							"    setTimeout(function(){",
+							"            console.log(\"Sleeping before request.\");",
+							"    }, 24000);",
+							"}",
+							"",
+							"const MAX_CALL_COUNT = 3;",
+							"",
+							"let callCount = 1;",
+							"",
+							"function allowSomeTimeForPublish(){",
+							"    console.log('allowing time for publish '+callCount);",
+							"    if(callCount == MAX_CALL_COUNT){",
+							"       console.log('Max have waited long enough giving it up.'); ",
+							"       return;",
+							"    }",
+							"    //Lets wait a while to allow some time for publishing to take effect",
+							"    doWait();    ",
+							"    try{",
+							"        const host = pm.environment.get(\"serverURL\");",
+							"        pm.sendRequest({",
+							"            url:  host + '/api/v1/announcements',",
+							"            method: 'GET',",
+							"            header: {",
+							"                'content-type': 'application/json',",
+							"                'authorization': request.headers[\"authorization\"]",
+							"            },",
+							"",
+							"        }, function (err, res) {                    ",
+							"            var data = res.json();",
+							"            if(data == undefined || !Array.isArray(data.entity) || data.entity.length == 0 ){",
+							"                doWait(); ",
+							"                allowSomeTimeForPublish();             ",
+							"            }  ",
+							"            console.log(data);          ",
+							"        });",
+							"    } finally {",
+							"          callCount++; ",
+							"    }",
+							"          ",
+							"}",
+							"",
+							"",
+							"allowSomeTimeForPublish();",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/announcements",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"announcements"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "contentTypeID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVAR",
+			"value": ""
+		},
+		{
+			"key": "contentTypeFieldID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVar",
+			"value": ""
+		},
+		{
+			"key": "announcementDate",
+			"value": ""
+		}
+	]
+}

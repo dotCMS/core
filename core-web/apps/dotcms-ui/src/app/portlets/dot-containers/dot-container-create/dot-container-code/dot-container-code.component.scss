@@ -26,67 +26,32 @@
     }
 
     .p-tabview {
-        height: 100%;
-    }
-    .p-tabview-panels {
-        height: 100%;
-        flex-grow: 1;
-        flex-basis: 0;
-        overflow: auto;
+        border: 1px solid $color-palette-gray-500;
     }
 
-    .p-tabview-nav-content {
-        border: 1px solid $input-border-color;
-    }
-    .p-tabview-nav {
-        padding: 0;
-    }
+    .tab-panel-btn:first-child {
+        min-height: 63.79px;
+        a.p-tabview-nav-link {
+            align-items: center;
+            background: $color-palette-primary-500;
+            border: 0;
+            display: flex;
+            height: 100%;
+            justify-content: center;
+            padding: 0;
+            width: 48px;
 
-    .p-tabview-panel {
-        height: 100%;
-        padding: 0;
-        padding-top: 0;
-        border: 1px solid $input-border-color;
-        border-top: none;
-    }
+            i {
+                width: 100%;
+                height: 100%;
+                color: $white;
+                text-align: center;
+            }
 
-    .p-tabview-nav-next {
-        width: $tabView-scroll-btn-width;
-        border: 1px solid $input-border-color;
-        border-left: none;
-        background: $color-palette-gray-200;
-    }
-
-    .p-tabview-nav-prev {
-        width: $tabView-scroll-btn-width;
-        border: 1px solid $input-border-color;
-        border-right: none;
-        background: $color-palette-gray-200;
-    }
-
-    .p-tabview .p-tabview-nav {
-        border: none;
-    }
-
-    .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-        border-bottom: 2px solid $color-palette-secondary-500;
-    }
-
-    .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
-        border-bottom: 2px solid $color-palette-secondary-500;
-    }
-
-    .p-tabview .p-tabview-nav li .p-tabview-nav-link {
-        padding-left: $spacing-4;
-        padding-right: $spacing-4;
-    }
-
-    .p-tabview .tab-panel-btn a.p-tabview-nav-link {
-        padding: 0;
-    }
-
-    .p-tabview-title {
-        display: inline-block;
-        margin-right: $spacing-2;
+            &:hover {
+                background-color: $color-palette-primary-700;
+                border: 0;
+            }
+        }
     }
 }

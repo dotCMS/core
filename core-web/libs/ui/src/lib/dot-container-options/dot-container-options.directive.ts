@@ -4,10 +4,14 @@ import { ChangeDetectorRef, Directive, OnDestroy, OnInit, Optional, Self } from 
 
 import { Dropdown } from 'primeng/dropdown';
 
-import { catchError, debounceTime, map, switchMap, take, takeUntil } from 'rxjs/operators';
+import { catchError, debounceTime, map, switchMap, takeUntil } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotContainer, DotDropdownSelectOption } from '@dotcms/dotcms-models';
+import {
+    DotContainer,
+    DotDropdownGroupSelectOption,
+    DotDropdownSelectOption
+} from '@dotcms/dotcms-models';
 
 const DEFAULT_LABEL_NAME_INDEX = 'label';
 const DEFAULT_VALUE_NAME_INDEX = 'value';
@@ -40,6 +44,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         );
 
         if (this.control) {
+            this.control.group = true;
             this.control.optionLabel = DEFAULT_LABEL_NAME_INDEX;
             this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
             this.control.optionDisabled = 'inactive';
@@ -65,16 +70,19 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
     }
 
     private fetchContainerOptions(
-        filter: string = ''
-    ): Observable<DotDropdownSelectOption<DotContainer>[]> {
+        filter = ''
+    ): Observable<DotDropdownGroupSelectOption<DotContainer>[]> {
         return this.dotContainersService.getFiltered(filter, this.maxOptions, true).pipe(
-            take(1),
             map((containerEntities) => {
-                return containerEntities.map((container) => ({
-                    label: container.title,
-                    value: container,
-                    inactive: false
-                }));
+                const options = containerEntities
+                    .map((container) => ({
+                        label: container.title,
+                        value: container,
+                        inactive: false
+                    }))
+                    .sort((a, b) => a.label.localeCompare(b.label));
+
+                return this.getOptionsGroupedByHost(options);
             }),
             catchError(() => {
                 return this.handleContainersLoadError();
@@ -88,9 +96,54 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         return of([]);
     }
 
-    private setOptions(options: Array<DotDropdownSelectOption<DotContainer>>) {
+    private setOptions(options: Array<DotDropdownGroupSelectOption<DotContainer>>) {
         this.control.options = [...options];
         this.changeDetectorRef.detectChanges();
+    }
+
+    /**
+     * Group options by host
+     *
+     * @private
+     * @param {DotDropdownSelectOption<DotContainer>[]} options
+     * @return {*}
+     * @memberof DotContainerOptionsDirective
+     */
+    private getOptionsGroupedByHost(options: DotDropdownSelectOption<DotContainer>[]) {
+        const groupByHost = this.getContainerGroupedByHost(options);
+
+        return Object.keys(groupByHost).map((key) => {
+            return {
+                label: key,
+                items: groupByHost[key].items
+            };
+        });
+    }
+
+    /**
+     * Group containers by host
+     *
+     * @private
+     * @param {DotDropdownSelectOption<DotContainer>[]} options
+     * @return {*}  {{
+     *         [key: string]: { items: DotDropdownSelectOption<DotContainer>[] };
+     *     }}
+     * @memberof DotContainerOptionsDirective
+     */
+    private getContainerGroupedByHost(options: DotDropdownSelectOption<DotContainer>[]): {
+        [key: string]: { items: DotDropdownSelectOption<DotContainer>[] };
+    } {
+        return options.reduce((acc, option) => {
+            const { hostname } = option.value.parentPermissionable;
+
+            if (!acc[hostname]) {
+                acc[hostname] = { items: [] };
+            }
+
+            acc[hostname].items.push(option);
+
+            return acc;
+        }, {});
     }
 
     ngOnDestroy() {

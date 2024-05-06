@@ -1,12 +1,12 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectorRef,
     Component,
     ComponentFactoryResolver,
     ComponentRef,
     Input,
     OnDestroy,
-    OnInit,
     QueryList,
     Type,
     ViewChild,
@@ -15,24 +15,27 @@ import {
 
 import { takeUntil } from 'rxjs/operators';
 
+import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
+import { DotMessageService, DotWizardService } from '@dotcms/data-access';
 import {
     DialogButton,
     DotDialogActions,
-    DotDialogComponent
-} from '@components/dot-dialog/dot-dialog.component';
-import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotMessageService } from '@dotcms/data-access';
+    DotWizardComponentEnum,
+    DotWizardInput,
+    DotWizardStep
+} from '@dotcms/dotcms-models';
+import { DotDialogComponent } from '@dotcms/ui';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
-import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
+
+import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
+import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
 @Component({
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss']
 })
-export class DotWizardComponent implements OnInit, OnDestroy {
+export class DotWizardComponent implements OnDestroy {
     wizardData: { [key: string]: string };
     dialogActions: DotDialogActions;
     transform = '';
@@ -46,22 +49,28 @@ export class DotWizardComponent implements OnInit, OnDestroy {
     private componentsHost: DotContainerReferenceDirective[];
     private stepsValidation: boolean[];
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private wizardComponentMap: { [key in DotWizardComponentEnum]: Type<unknown> } = {
+        commentAndAssign: DotCommentAndAssignFormComponent,
+        pushPublish: DotPushPublishFormComponent
+    };
 
     constructor(
         private componentFactoryResolver: ComponentFactoryResolver,
         private dotMessageService: DotMessageService,
-        private dotWizardService: DotWizardService
-    ) {}
-
-    ngOnInit() {
+        private dotWizardService: DotWizardService,
+        private cd: ChangeDetectorRef
+    ) {
         this.dotWizardService.showDialog$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
             this.data = data;
+
             // need to wait to render the dotContainerReference.
+            this.cd.detectChanges();
             setTimeout(() => {
                 this.loadComponents();
                 this.setDialogActions();
+                this.cd.detectChanges();
                 this.focusFistFormElement();
-            }, 0);
+            }, 1000);
         });
     }
 
@@ -113,15 +122,21 @@ export class DotWizardComponent implements OnInit, OnDestroy {
         }
     }
 
+    getWizardComponent(type: DotWizardComponentEnum | string): Type<unknown> {
+        return this.wizardComponentMap[type];
+    }
+
     private loadComponents(): void {
         this.componentsHost = this.formHosts.toArray();
         this.stepsValidation = [];
-        this.data.steps.forEach((step: DotWizardStep<Type<unknown>>, index: number) => {
-            const comp = this.componentFactoryResolver.resolveComponentFactory(step.component);
+        this.data.steps.forEach((step: DotWizardStep, index: number) => {
+            const componentClass = this.getWizardComponent(step.component);
+            const componentInstance =
+                this.componentFactoryResolver.resolveComponentFactory(componentClass);
             const viewContainerRef = this.componentsHost[index].viewContainerRef;
             viewContainerRef.clear();
             const componentRef: ComponentRef<DotFormModel<unknown, unknown>> =
-                viewContainerRef.createComponent(comp) as ComponentRef<
+                viewContainerRef.createComponent(componentInstance) as ComponentRef<
                     DotFormModel<unknown, unknown>
                 >;
             componentRef.instance.data = step.data;

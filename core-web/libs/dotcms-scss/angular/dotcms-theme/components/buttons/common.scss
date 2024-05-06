@@ -26,11 +26,6 @@
     .p-button-label {
         font-size: inherit;
     }
-
-    .p-button-icon,
-    .pi {
-        font-size: $icon-sm;
-    }
 }
 
 #main-primary-severity {
@@ -70,6 +65,7 @@
 #outlined-primary-severity {
     background-color: transparent;
     border: $field-border-size solid $color-palette-primary;
+    white-space: nowrap;
 
     .p-button-label,
     .p-button-icon,
@@ -130,7 +126,7 @@
     max-width: 100%;
 
     .p-button-label {
-        color: inherit;
+        color: $color-palette-primary;
         @include truncate-text;
     }
 
@@ -157,6 +153,10 @@
     background-color: transparent;
     color: $black;
 
+    &.p-button-semi-transparent {
+        background-color: rgba(255, 255, 255, 0.65);
+    }
+
     .p-button-label {
         color: inherit;
     }
@@ -164,6 +164,13 @@
     .p-button-icon,
     .pi {
         color: $color-palette-secondary;
+    }
+
+    &.p-button-icon-only {
+        .p-button-icon,
+        .pi {
+            color: $black;
+        }
     }
 
     &:hover {
@@ -216,4 +223,9 @@
 
 #button-disabled-outlined {
     border: $field-border-size solid $color-palette-gray-300;
+}
+
+#button-disabled-text {
+    border: none;
+    background-color: transparent;
 }

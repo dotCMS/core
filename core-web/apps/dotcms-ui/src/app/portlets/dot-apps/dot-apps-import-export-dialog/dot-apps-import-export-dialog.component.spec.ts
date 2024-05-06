@@ -9,19 +9,21 @@ import { By } from '@angular/platform-browser';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
-    DotApps,
+    DotApp,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
-    DotAppsSites
+    DotAppsSite
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotDialogModule,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
@@ -43,14 +45,13 @@ export class DotAppsServiceMock {
             [app]="app"
             [site]="site"
             [show]="true"
-            (resolved)="resolveHandler($event)"
-        ></dot-apps-import-export-dialog>
+            (resolved)="resolveHandler($event)"></dot-apps-import-export-dialog>
     `
 })
 class HostTestComponent {
     @Input() action?: string;
-    @Input() app?: DotApps;
-    @Input() site?: DotAppsSites;
+    @Input() app?: DotApp;
+    @Input() site?: DotAppsSite;
 
     resolveHandler(_$event) {
         return;
@@ -79,11 +80,11 @@ describe('DotAppsImportExportDialogComponent', () => {
             declarations: [DotAppsImportExportDialogComponent, HostTestComponent],
             imports: [
                 InputTextModule,
-                DotAutofocusModule,
+                DotAutofocusDirective,
                 DotDialogModule,
                 CommonModule,
                 ReactiveFormsModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 HttpClientTestingModule
             ],

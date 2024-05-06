@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
@@ -226,6 +227,21 @@ public class DateUtil {
 		final String[] formats = Config.getStringArrayProperty("dotcontentlet_dateformats", ContentletAPI.DEFAULT_DATE_FORMATS);
 		return convertDate(date, companyTimeZone.get(), formats);
 	}
+
+	/**
+	 * This method try to parse a number into a Date object
+	 *
+	 *
+	 * @param unixTimeStamp
+	 *            - the number to be parsed
+	 * @return return the Date object that represent the string
+	 */
+	public static Date convertDate(final Number unixTimeStamp)  {
+
+		return new Date(unixTimeStamp.longValue());
+	}
+
+
 
 	/**
 	 * This method try to parse a string into a Date object using an array with

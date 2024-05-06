@@ -12,18 +12,17 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
-import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import {
     DotCrudService,
     DotEventsService,
     DotMessageService,
+    DotTempFileUploadService,
     DotThemesService,
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFormDialogComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     MockDotMessageService,
@@ -138,7 +137,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 FormsModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
-                DotFormDialogModule,
+                DotFormDialogComponent,
                 DotTemplatePropsModule,
                 ButtonModule,
                 HttpClientTestingModule

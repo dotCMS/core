@@ -26,10 +26,6 @@ export class DotLoopEditorComponent implements ControlValueAccessor, OnInit {
 
     public readonly loopControl = new FormControl('');
 
-    constructor() {
-        //
-    }
-
     public ngOnInit(): void {
         this.loopControl.valueChanges.subscribe((fieldVal) => {
             this._onChange(fieldVal);

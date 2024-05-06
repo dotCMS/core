@@ -4,7 +4,7 @@ import picocli.CommandLine;
 
 public class ShortOutputOptionMixin {
 
-    @CommandLine.Option(names = {"-sh","--short"},  description = "Pulled Content is shown in shorten format.", hidden = true)
+    @CommandLine.Option(names = {"-sh","--short"},  description = "Pulled Content is shown in shorten format only on the screen.", hidden = true)
     boolean shortOutput;
 
     public boolean isShortOutput() {

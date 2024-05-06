@@ -1,0 +1,69 @@
+name: UX Requirement
+description: Provide details for a UX improvement or issue.
+labels: ["Team : UX"]
+projects: ["dotCMS/7"]
+
+body:
+
+  - type: markdown
+    attributes:
+      value: |
+        # UX Requirement Submission Guide
+        Precise input is crucial to helping the UX team understand and address the problem efficiently.
+        Remember, the quality of our UX improvements is greatly enhanced by the clarity of the information you provide here.
+
+  - type: textarea
+    id: problem-definition
+    attributes:
+      label: Define the Problem
+      description: Describe the problem that needs to be addressed in words.
+      placeholder: "e.g., Users are unable to find the search functionality easily due to its placement on the page..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: affected-users
+    attributes:
+      label: Who's Facing the Problem?
+      description: Identify the user groups that are impacted by this problem.
+      placeholder: "e.g., New users are facing difficulties..., Regular visitors are frustrated by..., etc."
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Visual Evidence
+        Please attach screenshots or videos that show the current situation and the problem. A picture is worth a thousand words!
+  
+  - type: textarea
+    attributes:
+      label: Screenshot or Video
+      description: Upload a screenshot or video demonstrating the issue and describe the issue.
+      placeholder: "e.g., In the attached screenshot, the search bar is obscured by the banner ad, making it hard to notice..."
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Extra Information
+        Anything else that you think might be helpful to the UX team.
+
+  - type: textarea
+    id: links-resources
+    attributes:
+      label: Relevant Links and Resources
+      description: Provide any links to relevant resources such as portlets, Slack channels, documents, etc.
+      placeholder: "e.g., Slack channel discussion about the issue: https://slack..., Link to the user feedback document: https://docs..., etc."
+    validations:
+      required: false
+
+  - type: textarea
+    id: assumptions-initiation
+    attributes:
+      label: Assumptions & Initiation Needs
+      description: Describe any assumptions and what's needed to initiate this UX project.
+      placeholder: "Assumption: Users prefer a minimalistic design. Needs: Access to user surveys, Current site analytics, etc."
+    validations:
+      required: false

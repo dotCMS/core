@@ -7,16 +7,14 @@
                         [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
                         [size]="16"
                         data-testId="variant-title-step-done"
-                        name="check_circle"
-                    ></dot-icon>
+                        name="check_circle"></dot-icon>
                     <span class="p-label-input-required" data-testId="variants-card-header">{{
                         'experiments.configure.variants.name' | dm
                     }}</span>
                 </h2>
                 <dot-experiments-configuration-items-count
                     [count]="vm.trafficProportion.variants?.length"
-                    [maxLength]="maxVariantsAllowed"
-                >
+                    [maxLength]="maxVariantsAllowed">
                 </dot-experiments-configuration-items-count>
             </div>
         </ng-template>
@@ -26,19 +24,16 @@
                 let variant of vm.trafficProportion.variants;
                 let first = first;
                 let last = last
-            "
-        >
+            ">
             <p-card [ngClass]="{ first: first, last: last }" data-testId="variant-row-card">
                 <div
-                    class="variant--row__wrapper flex flex-row align-items-center align-content-between gap-2"
-                >
+                    class="variant--row__wrapper flex flex-row align-items-center align-content-between gap-2">
                     <div class="flex flex-grow-1 flex-row align-items-center gap-2">
                         <ng-container
                             *ngIf="
-                                variant.name === defaultVariantName || !vm.isExperimentADraft;
+                                variant.name === defaultVariantName || vm.disabledTooltipLabel;
                                 else editVariantNameTpl
-                            "
-                        >
+                            ">
                             <span data-testId="variant-name-original"> {{ variant.name }} </span>
                         </ng-container>
 
@@ -46,64 +41,63 @@
                             *ngIf="variant.url"
                             [copy]="variant.url"
                             [label]="'editpage.header.copy' | dm"
-                            [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
-                        ></dot-copy-button>
+                            [tooltipText]="
+                                'dot.common.message.pageurl.copy.clipboard' | dm
+                            "></dot-copy-button>
                     </div>
                     <span class="separator">|</span>
 
                     <div
-                        [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
-                        [tooltipDisabled]="vm.isExperimentADraft"
+                        [pTooltip]="vm.disabledTooltipLabel | dm"
+                        [tooltipDisabled]="!vm.disabledTooltipLabel"
                         data-testId="tooltip-on-disabled"
-                        tooltipPosition="bottom"
-                    >
+                        tooltipPosition="bottom">
                         <button
-                            class="p-button-sm p-button-text"
-                            [disabled]="!vm.isExperimentADraft"
+                            class="p-button-sm p-button-link"
+                            [disabled]="!vm.isExperimentADraft || vm.disabledTooltipLabel"
                             (click)="changeTrafficProportion()"
                             data-testId="variant-weight"
                             label="{{ variant.weight | number : '2.2-2' }}% {{
                                 'experiments.configure.variants.weight' | dm
                             }}"
-                            pButton
-                        ></button>
+                            pButton></button>
                     </div>
 
                     <ng-container
                         *ngIf="
-                            variant.name === defaultVariantName || !vm.isExperimentADraft;
+                            variant.name === defaultVariantName ||
+                                !vm.isExperimentADraft ||
+                                vm.pageSate.lockedByAnotherUser;
                             else editableButtonTpl
-                        "
-                    >
+                        ">
                         <button
                             class="p-button-sm p-button-outlined no-padding"
                             (click)="goToEditPageVariant(variant, dotPageMode.PREVIEW)"
                             data-testId="variant-preview-button"
                             label="{{ 'experiments.configure.variants.view' | dm }}"
                             pButton
-                            type="button"
-                        ></button>
+                            type="button"></button>
                     </ng-container>
 
                     <div
-                        [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                        [pTooltip]="vm.disabledTooltipLabel | dm"
                         [tooltipDisabled]="
-                            vm.isExperimentADraft || variant.name === defaultVariantName
+                            !vm.disabledTooltipLabel || variant.name === defaultVariantName
                         "
                         data-testId="tooltip-on-disabled"
-                        tooltipPosition="bottom"
-                    >
+                        tooltipPosition="bottom">
                         <button
-                            class="p-button-sm p-button-danger p-button-text"
+                            class="p-button-sm p-button-text p-button-danger"
                             [disabled]="
-                                variant.name === defaultVariantName || !vm.isExperimentADraft
+                                variant.name === defaultVariantName ||
+                                !vm.isExperimentADraft ||
+                                vm.disabledTooltipLabel
                             "
                             (click)="deleteVariant({$event, variant}, vm.experimentId)"
                             data-testId="variant-delete-button"
                             label="{{ 'experiments.configure.variants.delete' | dm }}"
                             pButton
-                            type="button"
-                        ></button>
+                            type="button"></button>
                     </div>
                 </div>
             </p-card>
@@ -115,8 +109,7 @@
                     data-testId="variant-edit-button"
                     label="{{ 'experiments.action.edit' | dm }}"
                     pButton
-                    type="button"
-                ></button>
+                    type="button"></button>
             </ng-template>
 
             <ng-template #editVariantNameTpl>
@@ -126,34 +119,32 @@
                     [required]="true"
                     [showErrorMsg]="false"
                     [text]="variant.name"
-                    (textChanged)="editVariantName($event, variant, vm.experimentId)"
-                />
+                    (textChanged)="editVariantName($event, variant, vm.experimentId)" />
             </ng-template>
         </ng-container>
 
         <ng-template pTemplate="footer">
             <div
                 class="inline-block"
-                [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                [pTooltip]="vm.disabledTooltipLabel | dm"
                 [tooltipDisabled]="
-                    vm.isExperimentADraft ||
+                    !vm.disabledTooltipLabel ||
                     vm.trafficProportion.variants?.length >= maxVariantsAllowed
                 "
                 data-testId="tooltip-on-disabled"
-                tooltipPosition="bottom"
-            >
+                tooltipPosition="bottom">
                 <button
                     class="p-button-sm p-button-outlined"
                     [disabled]="
                         vm.trafficProportion.variants?.length >= maxVariantsAllowed ||
-                        !vm.isExperimentADraft
+                        !vm.isExperimentADraft ||
+                        vm.disabledTooltipLabel
                     "
                     (click)="addVariant()"
                     data-testId="variant-add-button"
                     label="{{ 'experiments.configure.variants.add' | dm }}"
                     pButton
-                    type="button"
-                ></button>
+                    type="button"></button>
             </div>
         </ng-template>
     </p-card>

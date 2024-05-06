@@ -15,10 +15,18 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     border-color: $color-alert-red;
 }
 
+.p-fluid .p-dropdown input.p-dropdown-label {
+    width: 100%;
+}
+
 .p-dropdown {
     @extend #form-field-base;
     padding-right: 0;
     align-items: center;
+
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
 
     &:not(.p-disabled):hover {
         @extend #form-field-hover;
@@ -97,6 +105,7 @@ p-dropdown.p-dropdown-sm {
 
     .p-dropdown-items {
         @extend #field-panel-items;
+
         .p-dropdown-item {
             @extend #field-panel-item;
 
@@ -124,8 +133,11 @@ p-dropdown.p-dropdown-sm {
             margin: 0;
             padding: $spacing-2;
             color: $black;
-            background: $white;
-            font-weight: 400;
+            background-color: $color-palette-gray-200;
+            font-weight: $font-weight-bold;
+            -webkit-user-select: none;
+            cursor: default;
+            user-select: none;
         }
     }
 

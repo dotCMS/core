@@ -1,24 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotHttpErrorManagerService,
     DotLicenseService,
-    DotWorkflowActionsFireService
+    DotMessageDisplayService,
+    DotPropertiesService,
+    DotRouterService,
+    DotWorkflowActionsFireService,
+    DotIframeService,
+    DotGlobalMessageService,
+    DotFormatDateService,
+    DotWizardService,
+    DotWorkflowEventHandlerService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -33,22 +43,18 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
+    DotMessageDisplayServiceMock,
     MockDotRouterService
 } from '@dotcms/utils-testing';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@services/dot-menu.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;
@@ -62,9 +68,16 @@ describe('DotCustomEventHandlerService', () => {
     let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
     let dotEventsService: DotEventsService;
     let dotLicenseService: DotLicenseService;
+    let dotContentTypeService: DotContentTypeService;
+    let router: Router;
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
+    const createFeatureFlagResponse = (enabled = 'NOT_FOUND', contentType = '*') => ({
+        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled,
+        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: contentType
+    });
+
+    const setup = (dotPropertiesMock: unknown) => {
+        TestBed.resetTestingModule().configureTestingModule({
             providers: [
                 DotCustomEventHandlerService,
                 DotLoadingIndicatorService,
@@ -88,7 +101,10 @@ describe('DotCustomEventHandlerService', () => {
                 DotcmsConfigService,
                 LoggerService,
                 DotCurrentUserService,
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 DotWizardService,
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
@@ -100,7 +116,10 @@ describe('DotCustomEventHandlerService', () => {
                 DotDownloadBundleDialogService,
                 DotGenerateSecurePasswordService,
                 LoginService,
-                DotLicenseService
+                DotLicenseService,
+                { provide: DotPropertiesService, useValue: dotPropertiesMock },
+                Router,
+                DotContentTypeService
             ],
             imports: [RouterTestingModule, HttpClientTestingModule]
         });
@@ -116,6 +135,19 @@ describe('DotCustomEventHandlerService', () => {
         dotWorkflowEventHandlerService = TestBed.inject(DotWorkflowEventHandlerService);
         dotEventsService = TestBed.inject(DotEventsService);
         dotLicenseService = TestBed.inject(DotLicenseService);
+        dotContentTypeService = TestBed.inject(DotContentTypeService);
+        router = TestBed.inject(Router);
+    };
+
+    const metadata = {};
+    const metadata2 = {};
+    metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = true;
+    metadata2[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
+
+    beforeEach(() => {
+        setup({
+            getKeys: () => of(createFeatureFlagResponse())
+        });
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
@@ -144,10 +176,48 @@ describe('DotCustomEventHandlerService', () => {
 
     it('should create a contentlet', () => {
         spyOn(dotContentletEditorService, 'create');
+
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
                     name: 'create-contentlet',
+                    data: { url: 'hello.world.com' }
+                }
+            })
+        );
+
+        expect(dotContentletEditorService.create).toHaveBeenCalledWith({
+            data: {
+                url: 'hello.world.com'
+            }
+        });
+    });
+
+    it('should create a host', () => {
+        spyOn(dotContentletEditorService, 'create');
+
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'create-host',
+                    data: { url: 'hello.world.com' }
+                }
+            })
+        );
+
+        expect(dotContentletEditorService.create).toHaveBeenCalledWith({
+            data: {
+                url: 'hello.world.com'
+            }
+        });
+    });
+
+    it('should create a contentlet from edit page', () => {
+        spyOn(dotContentletEditorService, 'create');
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'create-contentlet-from-edit-page',
                     data: { url: 'hello.world.com' }
                 }
             })
@@ -165,6 +235,20 @@ describe('DotCustomEventHandlerService', () => {
             new CustomEvent('ng-event', {
                 detail: {
                     name: 'edit-contentlet',
+                    data: {
+                        inode: '123'
+                    }
+                }
+            })
+        );
+        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledWith('123');
+    });
+
+    it('should edit a host', () => {
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'edit-host',
                     data: {
                         inode: '123'
                     }
@@ -303,5 +387,185 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotLicenseService.updateLicense).toHaveBeenCalled();
+    });
+
+    describe('edit content 2 is enabled and contentTypes are catchall', () => {
+        beforeEach(() => {
+            setup({
+                getKeys: () => of(createFeatureFlagResponse('true'))
+            });
+
+            spyOn(router, 'navigate');
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata } as DotCMSContentType)
+            );
+        });
+
+        it('should create a contentlet', () => {
+            spyOn(dotContentletEditorService, 'create');
+
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-contentlet',
+                        data: { contentType: 'test' }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+        });
+
+        it('should edit a a workflow task', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-task',
+                        data: {
+                            inode: '123',
+                            contentType: 'test'
+                        }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should edit a contentlet', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-contentlet',
+                        data: {
+                            inode: '123',
+                            contentType: 'test'
+                        }
+                    }
+                })
+            );
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+        });
+    });
+
+    describe('edit content 2 is enabled and contentTypes are limited', () => {
+        beforeEach(() => {
+            setup({
+                getKeys: () => of(createFeatureFlagResponse('true', 'test,test2'))
+            });
+
+            spyOn(router, 'navigate');
+        });
+
+        it('should create a contentlet', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata } as DotCMSContentType)
+            );
+            spyOn(dotContentletEditorService, 'create');
+
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-contentlet',
+                        data: { contentType: 'test' }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+        });
+
+        it('should edit a a workflow task', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata } as DotCMSContentType)
+            );
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-task',
+                        data: {
+                            inode: '123',
+                            contentType: 'test2'
+                        }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should edit a contentlet', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata } as DotCMSContentType)
+            );
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-contentlet',
+                        data: {
+                            inode: '123',
+                            contentType: 'test2'
+                        }
+                    }
+                })
+            );
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should not create a contentlet', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata: metadata2 } as DotCMSContentType)
+            );
+            spyOn(dotContentletEditorService, 'create');
+
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-contentlet',
+                        data: { contentType: 'not in the list' }
+                    }
+                })
+            );
+
+            expect(router.navigate).not.toHaveBeenCalledWith(['content/new/test']);
+        });
+
+        it('should not edit a a workflow task', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata: metadata2 } as DotCMSContentType)
+            );
+
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-task',
+                        data: {
+                            inode: '123',
+                            contentType: 'not in the list'
+                        }
+                    }
+                })
+            );
+
+            expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should not edit a contentlet', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata: metadata2 } as DotCMSContentType)
+            );
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-contentlet',
+                        data: {
+                            inode: '123',
+                            contentType: 'not in the list'
+                        }
+                    }
+                })
+            );
+            expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
+        });
     });
 });

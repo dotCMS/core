@@ -1,101 +1,110 @@
 package com.dotcms.api.client.files.traversal.task;
 
+import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteURL;
+import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
+
+import com.dotcms.api.client.FileHashCalculatorService;
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.api.traversal.TreeNode;
-import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
-import com.dotcms.security.Utils;
-import org.jboss.logging.Logger;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.RecursiveTask;
-
-import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
-import static com.dotcms.common.AssetsUtils.buildRemoteURL;
-import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import javax.enterprise.context.Dependent;
+import org.eclipse.microprofile.context.ManagedExecutor;
+import org.jboss.logging.Logger;
 
 /**
  * Recursive task for pulling the contents of a tree node from a remote server.
  */
-public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
+@Dependent
+public class PullTreeNodeTask extends
+        TaskProcessor<PullTreeNodeTaskParams, CompletableFuture<List<Exception>>> {
 
-    private final TreeNode rootNode;
-    private final String destination;
-    private final boolean overwrite;
-    private final boolean generateEmptyFolders;
-    private final boolean failFast;
-    private final String language;
+    private final ManagedExecutor executor;
 
     private final Downloader downloader;
 
-    private final ConsoleProgressBar progressBar;
+    private final Logger logger;
 
-    private Logger logger;
+    private final FileHashCalculatorService fileHashService;
+
+    private PullTreeNodeTaskParams traversalTaskParams;
 
     /**
      * Constructs a new PullTreeNodeTask.
      *
-     * @param logger               logger for logging messages
-     * @param downloader           class responsible for handling the downloading of assets
-     *                             from a given path through the AssetAPI
-     * @param rootNode             the root node of the file system tree
-     * @param destination          the destination path to save the pulled files
-     * @param overwrite            true to overwrite existing files, false otherwise
-     * @param generateEmptyFolders true to generate empty folders, false otherwise
-     * @param failFast             true to fail fast, false to continue on error
-     * @param language             the language of the assets
-     * @param progressBar          the progress bar for tracking the pull progress
+     * @param logger          logger for logging messages
+     * @param executor        the executor for parallel execution of pulling tasks
+     * @param downloader      class responsible for handling the downloading of assets from a given
+     *                        path through the AssetAPI
+     * @param fileHashService The file hash calculator service
      */
-    public PullTreeNodeTask(final Logger logger,
-                            final Downloader downloader,
-                            final TreeNode rootNode,
-                            final String destination,
-                            final boolean overwrite,
-                            final boolean generateEmptyFolders,
-                            final boolean failFast,
-                            final String language,
-                            final ConsoleProgressBar progressBar) {
+    public PullTreeNodeTask(final Logger logger, final ManagedExecutor executor,
+            final Downloader downloader, final FileHashCalculatorService fileHashService) {
         this.logger = logger;
+        this.executor = executor;
         this.downloader = downloader;
-        this.rootNode = rootNode;
-        this.overwrite = overwrite;
-        this.destination = destination;
-        this.generateEmptyFolders = generateEmptyFolders;
-        this.failFast = failFast;
-        this.language = language;
-        this.progressBar = progressBar;
+        this.fileHashService = fileHashService;
+    }
+
+    /**
+     * Sets the traversal parameters for the PullTreeNodeTask. This method provides a way to inject
+     * necessary configuration after the instance of PullTreeNodeTask has been created by the
+     * container, which is a common pattern when working with frameworks like Quarkus that manage
+     * object creation and dependency injection in a specific manner.
+     * <p>
+     * This method is used as an alternative to constructor injection, which is not feasible due to
+     * the limitations or constraints of the framework's dependency injection mechanism. It allows
+     * for the explicit setting of traversal parameters after the object's instantiation, ensuring
+     * that the executor is properly configured before use.
+     *
+     * @param params The traversal parameters
+     */
+    @Override
+    public void setTaskParams(final PullTreeNodeTaskParams params) {
+        this.traversalTaskParams = params;
     }
 
     @Override
-    protected List<Exception> compute() {
+    public CompletableFuture<List<Exception>> compute() {
 
         var errors = new ArrayList<Exception>();
 
         // Create the folder for the current node
         try {
-            createFolderInFileSystem(destination, rootNode.folder());
+            createFolderInFileSystem(
+                    traversalTaskParams.destination(),
+                    traversalTaskParams.rootNode().folder()
+            );
         } catch (Exception e) {
-            if (failFast) {
-                throw e;
+            if (traversalTaskParams.failFast()) {
+                return CompletableFuture.failedFuture(e);
             } else {
                 errors.add(e);
             }
         }
 
         // Create files for the assets in the current node
-        for (AssetView asset : rootNode.assets()) {
+        for (AssetView asset : traversalTaskParams.rootNode().assets()) {
             try {
-                createFileInFileSystem(destination, rootNode.folder(), asset);
+                createFileInFileSystem(
+                        traversalTaskParams.destination(),
+                        traversalTaskParams.rootNode().folder(),
+                        asset
+                );
             } catch (Exception e) {
-                if (failFast) {
-                    throw e;
+                if (traversalTaskParams.failFast()) {
+                    return CompletableFuture.failedFuture(e);
                 } else {
                     errors.add(e);
                 }
@@ -103,32 +112,51 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
         }
 
         // Recursively build the file system tree for the children nodes
-        if (rootNode.children() != null && !rootNode.children().isEmpty()) {
+        return handleChildren(errors);
+    }
 
-            List<PullTreeNodeTask> tasks = new ArrayList<>();
-            for (TreeNode child : rootNode.children()) {
+    /**
+     * Recursively build the file system tree for the children nodes
+     *
+     * @param errors the list of errors to add to
+     */
+    private CompletableFuture<List<Exception>> handleChildren(ArrayList<Exception> errors) {
+
+        if (traversalTaskParams.rootNode().children() != null &&
+                !traversalTaskParams.rootNode().children().isEmpty()) {
+
+            List<CompletableFuture<List<Exception>>> futures = new ArrayList<>();
+
+            for (TreeNode child : traversalTaskParams.rootNode().children()) {
+
                 var task = new PullTreeNodeTask(
                         logger,
+                        executor,
                         downloader,
-                        child,
-                        destination,
-                        overwrite,
-                        generateEmptyFolders,
-                        failFast,
-                        language,
-                        progressBar
+                        fileHashService
                 );
-                task.fork();
-                tasks.add(task);
+                task.setTaskParams(PullTreeNodeTaskParams.builder()
+                        .from(traversalTaskParams)
+                        .rootNode(child)
+                        .build()
+                );
+
+                CompletableFuture<List<Exception>> future = CompletableFuture.supplyAsync(
+                        task::compute, executor
+                ).thenCompose(Function.identity());
+                futures.add(future);
             }
 
-            for (PullTreeNodeTask task : tasks) {
-                var taskErrors = task.join();
-                errors.addAll(taskErrors);
-            }
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .thenApply(ignored -> {
+                        for (CompletableFuture<List<Exception>> future : futures) {
+                            errors.addAll(future.join());
+                        }
+                        return errors;
+                    });
         }
 
-        return errors;
+        return CompletableFuture.completedFuture(errors);
     }
 
     /**
@@ -154,7 +182,7 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
             }
         } catch (Exception e) {
             var message = String.format("Error creating folder [%s] to [%s]", remoteFolderURL, folderPath);
-            logger.debug(message, e);
+            logger.error(message, e);
             throw new TraversalTaskException(message, e);
         }
     }
@@ -180,8 +208,8 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
             String localFileHash = null;
             if (Files.exists(assetFilePath)) {
 
-                if (overwrite) {
-                    localFileHash = Utils.Sha256toUnixHash(assetFilePath);
+                if (traversalTaskParams.overwrite()) {
+                    localFileHash = fileHashService.sha256toUnixHash(assetFilePath);
                 } else {
                     // If the file already exist, and we are not overwriting files, there is no point in downloading it
                     localFileHash = remoteFileHash; // Fixing hashes so the download is skipped
@@ -196,7 +224,7 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
                 // Download the file
                 try (var inputStream = this.downloader.download(AssetRequest.builder().
                         assetPath(remoteAssetURL).
-                        language(language).
+                        language(traversalTaskParams.language()).
                         live(asset.live()).
                         build())) {
 
@@ -206,15 +234,15 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
                 }
             } else {
                 logger.debug(String.format("Skipping file [%s], it already exists in the file system - Override flag [%b]",
-                        remoteAssetURL, overwrite));
+                        remoteAssetURL, traversalTaskParams.overwrite()));
             }
         } catch (Exception e) {
             var message = String.format("Error pulling file [%s] to [%s]", remoteAssetURL, assetFilePath);
-            logger.debug(message, e);
+            logger.error(message, e);
             throw new TraversalTaskException(message, e);
         } finally {
             // File processed, updating the progress bar
-            progressBar.incrementStep();
+            traversalTaskParams.progressBar().incrementStep();
         }
 
     }

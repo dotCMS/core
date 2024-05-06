@@ -9,7 +9,7 @@ export const DEFAULT_VARIANT_NAME = 'Original';
 
 export const SESSION_STORAGE_VARIATION_KEY = 'variantName';
 
-export const TIME_14_DAYS = 12096e5;
+export const TIME_7_DAYS = 6048e5;
 
 export const TIME_90_DAYS = 7776e6;
 
@@ -40,10 +40,22 @@ export enum DotExperimentStatus {
     ARCHIVED = 'ARCHIVED'
 }
 
+export const ExperimentsStatusIcons: Record<DotExperimentStatus, string> = {
+    [DotExperimentStatus.DRAFT]: 'pi pi-pencil',
+    [DotExperimentStatus.SCHEDULED]: 'pi pi-calendar',
+    [DotExperimentStatus.RUNNING]: 'pi pi-play',
+    [DotExperimentStatus.ENDED]: 'pi pi-check',
+    [DotExperimentStatus.ARCHIVED]: 'pi pi-inbox'
+};
+
 export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'draft',
         value: DotExperimentStatus.DRAFT
+    },
+    {
+        label: 'scheduled',
+        value: DotExperimentStatus.SCHEDULED
     },
     {
         label: 'running',
@@ -56,10 +68,6 @@ export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'archived',
         value: DotExperimentStatus.ARCHIVED
-    },
-    {
-        label: 'scheduled',
-        value: DotExperimentStatus.SCHEDULED
     }
 ];
 
@@ -237,6 +245,8 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
 
 type DotExperimentListAction =
     | 'delete'
+    | 'abort'
+    | 'results'
     | 'configuration'
     | 'archive'
     | 'end'
@@ -248,6 +258,7 @@ export const AllowedActionsByExperimentStatus: Record<
     Array<DotExperimentStatus>
 > = {
     ['delete']: [DotExperimentStatus.DRAFT, DotExperimentStatus.SCHEDULED],
+    ['abort']: [DotExperimentStatus.RUNNING],
     ['configuration']: [
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.ENDED,
@@ -271,7 +282,20 @@ export const AllowedActionsByExperimentStatus: Record<
         DotExperimentStatus.ARCHIVED,
         DotExperimentStatus.SCHEDULED
     ],
-    ['cancelSchedule']: [DotExperimentStatus.SCHEDULED]
+    ['cancelSchedule']: [DotExperimentStatus.SCHEDULED],
+    ['results']: [DotExperimentStatus.RUNNING, DotExperimentStatus.ENDED]
 };
 
 export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';
+
+export enum HealthStatusTypes {
+    OK = 'OK',
+    NOT_CONFIGURED = 'NOT_CONFIGURED',
+    CONFIGURATION_ERROR = 'CONFIGURATION_ERROR'
+}
+
+export const RUNNING_UNTIL_DATE_FORMAT = 'EEE, LLL dd';
+
+export const EXP_CONFIG_ERROR_LABEL_CANT_EDIT = 'experiment.configure.edit.only.draft.status';
+
+export const EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED = 'experiment.configure.edit.page.blocked';

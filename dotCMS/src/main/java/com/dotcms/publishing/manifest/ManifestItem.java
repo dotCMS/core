@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.util.StringPool;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -103,7 +104,7 @@ public interface ManifestItem {
         }
     }
 
-    class ManifestInfo {
+    class ManifestInfo implements Serializable {
         private String objectType;
         private String id;
         private String inode;
