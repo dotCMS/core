@@ -22,6 +22,7 @@ public class URLUtils {
 		private String resource;
 		private String queryString;
 		private Map<String, String[]> parameters;
+		private String fragment;
 		
 		public String getProtocol() {
 			return protocol;
@@ -71,10 +72,16 @@ public class URLUtils {
 		public String getURI() {
 			return URI;
 		}
-
+		public String getFragment() {
+			return fragment;
+		}
+		public void setFragment(String fragment) {
+			this.fragment = fragment;
+		}
 	}	
 
-	private static Pattern regexPattern = Pattern.compile("((\\w+)://([^/\\p{Cntrl}:]+)(?::([0-9]+))?)?(((?:/[^/\\p{Cntrl}]+)*)(?:/([^/\\p{Cntrl}?]+)?))?\\??(.*)?");
+	private static final Pattern regexPattern = Pattern.compile(
+			"((\\w+)://([^/\\p{Cntrl}:]+)(?::([0-9]+))?)?(((?:/[^/\\p{Cntrl}]+)*)(?:/([^/\\p{Cntrl}?#]+)?))?\\??([^#]*)?(?:#(.*))?");
 	
 	public static ParsedURL parseURL(String url) throws IllegalArgumentException {
 		
@@ -91,6 +98,7 @@ public class URLUtils {
 		parsedUrl.setPath(matcher.group(6));
 		parsedUrl.setResource(matcher.group(7));
 		parsedUrl.setQueryString(matcher.group(8));
+		parsedUrl.setFragment(matcher.group(9));
 
 		Map<String, List<String>> parameters = new HashMap<>();
 		String[] queryStringSplitted = parsedUrl.queryString.split("&");
