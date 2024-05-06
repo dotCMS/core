@@ -14,6 +14,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -488,14 +489,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   @Override
   public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
-    return copyFromAndDependencies(copyContentTypeBean, null);
+    return copyFromAndDependencies(copyContentTypeBean, null, true);
   }
 
   @WrapInTransaction
   @Override
   public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException {
+    return copyFromAndDependencies(copyContentTypeBean, destinationSite, true);
+  }
+
+  @WrapInTransaction
+  @Override
+  public ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException {
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
-    final ContentType copiedContentType = copyFrom(copyContentTypeBean, destinationSite);
+    final ContentType copiedContentType = copyFrom(copyContentTypeBean, destinationSite, copyRelationshipFields);
     // saving workflow information
     final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
     final List<WorkflowScheme> workflowSchemes = workflowAPI.findSchemesForContentType(find(sourceContentType.id()));
@@ -515,13 +522,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   @EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL, errorMsg = "An enterprise license is required in order to use this feature.")
   public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
-    return copyFrom(copyContentTypeBean, null);
+    return copyFrom(copyContentTypeBean, null, true);
   }
 
   @WrapInTransaction
   @Override
   @EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL, errorMsg = "An enterprise license is required in order to use this feature.")
   public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException {
+    return copyFrom(copyContentTypeBean, destinationSite, true);
+  }
+
+  @WrapInTransaction
+  @Override
+  @EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL, errorMsg = "An enterprise license is required in order to use this feature.")
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException {
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
     final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType)
             .name(copyContentTypeBean.getName())
@@ -572,6 +586,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     for (final Field sourceField : sourceFields) {
         DotPreconditions.checkNotEmpty(sourceField.variable(), DotCorruptedDataException.class,
               "Velocity Variable Name in Field ID '%s' cannot be empty", sourceField.id());
+        if (sourceField instanceof RelationshipField && !copyRelationshipFields) {
+          continue;
+        }
         Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
         if (null == newField) {
 
