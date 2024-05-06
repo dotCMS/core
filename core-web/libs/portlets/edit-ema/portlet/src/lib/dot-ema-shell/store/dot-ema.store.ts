@@ -257,7 +257,27 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 iframeURL,
                 isEnterpriseLicense,
                 state: currentState,
-                dragItem
+                dragItem,
+                showContentletTools:
+                    editorData.canEditVariant &&
+                    !!contentletArea &&
+                    !editorData.device &&
+                    editor.page.canEdit &&
+                    (currentState === EDITOR_STATE.IDLE ||
+                        currentState === EDITOR_STATE.DRAGGING) &&
+                    !editorData.page.isLocked,
+                showDropzone:
+                    editorData.canEditVariant &&
+                    !editorData.device &&
+                    (currentState === EDITOR_STATE.DRAGGING ||
+                        currentState === EDITOR_STATE.SCROLLING),
+                showPalette:
+                    editorData.canEditVariant &&
+                    isEnterpriseLicense &&
+                    (editorData.mode === EDITOR_MODE.EDIT ||
+                        editorData.mode === EDITOR_MODE.EDIT_VARIANT ||
+                        editorData.mode === EDITOR_MODE.INLINE_EDITING) &&
+                    editor.page.canEdit
             };
         }
     );

@@ -189,7 +189,11 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             },
                             variantId: undefined
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });
@@ -242,7 +246,11 @@ describe('EditEmaStore', () => {
                             variantId: undefined
                         },
                         showWorkflowActions: true,
-                        showInfoDisplay: false
+                        showInfoDisplay: false,
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });
@@ -293,7 +301,11 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             },
                             variantId: undefined
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: false
                     });
                     done();
                 });
@@ -334,7 +346,11 @@ describe('EditEmaStore', () => {
                                 isLocked: false,
                                 lockedByUser: ''
                             }
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: false
                     });
                     done();
                 });
@@ -375,7 +391,11 @@ describe('EditEmaStore', () => {
                                 isLocked: false,
                                 lockedByUser: ''
                             }
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: false
                     });
                     done();
                 });
@@ -416,7 +436,11 @@ describe('EditEmaStore', () => {
                                 isLocked: false,
                                 lockedByUser: ''
                             }
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });
@@ -499,7 +523,11 @@ describe('EditEmaStore', () => {
                                 isLocked: false,
                                 lockedByUser: ''
                             }
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });
@@ -1002,7 +1030,11 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             },
                             variantId: undefined
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });
@@ -1045,7 +1077,11 @@ describe('EditEmaStore', () => {
                             },
                             variantId: undefined
                         },
-                        currentExperiment: null
+                        currentExperiment: null,
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });

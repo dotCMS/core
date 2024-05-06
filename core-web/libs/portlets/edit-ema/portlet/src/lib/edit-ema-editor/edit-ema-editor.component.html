@@ -52,14 +52,7 @@
                 mode="indeterminate"></p-progressBar>
 
             <dot-ema-contentlet-tools
-                *ngIf="
-                    es.editorData.canEditVariant &&
-                    !!es.contentletArea &&
-                    !es.editorData.device &&
-                    es.editor.page.canEdit &&
-                    (es.state === editorState.IDLE || es.state === editorState.DRAGGING) &&
-                    !es.editorData.page.isLocked
-                "
+                *ngIf="es.showContentletTools"
                 [hide]="es.state === editorState.DRAGGING"
                 [contentletArea]="es.contentletArea"
                 (edit)="handleEditContentlet($event)"
@@ -70,13 +63,7 @@
                 (addContent)="dialog.addContentlet($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
-                *ngIf="
-                    (es.editorData.canEditVariant &&
-                        !!es.bounds.length &&
-                        !es.editorData.device &&
-                        es.state === editorState.DRAGGING) ||
-                    es.state === editorState.SCROLLING
-                "
+                *ngIf="es.showDropzone"
                 [containers]="es.bounds"
                 [dragItem]="es.dragItem"
                 data-testId="dropzone" />
@@ -84,14 +71,7 @@
     </div>
 
     <dot-edit-ema-palette
-        *ngIf="
-            es.editorData.canEditVariant &&
-            es.isEnterpriseLicense &&
-            (es.editorData.mode === editorMode.EDIT ||
-                es.editorData.mode === editorMode.EDIT_VARIANT ||
-                es.editorData.mode === editorMode.INLINE_EDITING) &&
-            es.editor.page.canEdit
-        "
+        *ngIf="es.showPalette"
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
         data-testId="palette" />
