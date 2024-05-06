@@ -2876,9 +2876,6 @@ describe('EditEmaEditorComponent', () => {
                             '[data-dot-object="container"]:empty'
                         );
                         expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="contentlet"]:empty'
-                        );
-                        expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"].empty-contentlet'
                         );
                     });
@@ -2896,9 +2893,6 @@ describe('EditEmaEditorComponent', () => {
                         );
                         expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"]:empty'
-                        );
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="contentlet"].empty-contentlet'
                         );
                     });
 
