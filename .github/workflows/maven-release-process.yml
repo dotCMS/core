@@ -49,7 +49,7 @@ jobs:
     steps:
       - name: Validate Inputs
         run: |
-          if [[ ! ${{ github.event.inputs.release_version }} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}(_lts_v[0-9]{2})?$ ]]; then
+          if [[ ! ${{ github.event.inputs.release_version }} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}(_lts_v[0-9]{1,2})?$ ]]; then
             echo 'Release version must be in the format yy.mm.dd or yy.mm.dd_lts_v##'
             exit 1
           fi
@@ -81,7 +81,7 @@ jobs:
           fi
           release_hash=${release_commit::7}
           is_lts=false
-          [[ ${release_version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts_v[0-9]{2}$ ]] && is_lts=true
+          [[ ${release_version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts_v[0-9]{1,2}$ ]] && is_lts=true
 
           echo "release_version=${release_version}" >> $GITHUB_OUTPUT
           echo "release_branch=${release_branch}" >> $GITHUB_OUTPUT
