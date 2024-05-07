@@ -14,7 +14,7 @@
         <changelist>-SNAPSHOT</changelist>
         <sha1/>
         <flatten.mode>oss</flatten.mode>
-        <flatten.skip>true</flatten.skip>
+        <flatten.skip>false</flatten.skip>
         <maven.deploy.skip>false</maven.deploy.skip>
         <tomcat.version>9.0.85</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
