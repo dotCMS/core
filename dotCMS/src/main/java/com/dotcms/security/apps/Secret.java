@@ -17,7 +17,7 @@ import java.util.Optional;
 @JsonDeserialize(builder = Secret.Builder.class)
 public final class Secret extends AbstractProperty<char[]> {
 
-    private static final long serialVersionUID = 7975602366706460873L;
+    private static final long serialVersionUID = 1L;
     public Secret(final char[] value,
                   final Boolean hidden,
                   final Type type,

@@ -23,8 +23,13 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.security.Key;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
@@ -404,6 +409,73 @@ public class AppsUtilTest {
         assertNull(secret2.get().getEnvVar());
         assertTrue(secret2.get().isEnvShow());
         assertArrayEquals(OVERRIDDEN_VALUE, secret2.get().envVarValue);
+    }
+
+    /**
+     * Given scenario: A secret is created with a key and a set of secrets
+     * Expected Result: The secret is created exported and imported back.
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void testExportThenImportSecrets() throws DotDataException, IOException {
+
+        final Key key = AppsUtil.generateKey(AppsUtil.loadPass(()->"lol"));
+
+        final AppSecrets secrets = AppSecrets.builder()
+                .withKey("key")
+                .withHiddenSecret("hidden1", "value1")
+                .withHiddenSecret("hidden2", "value2")
+                .withSecret("secret1", "value3")
+                .withSecret("secret2", Secret.builder().withType(Type.STRING).withValue("value4").withEnvValue("env".toCharArray()).build())
+                .build();
+
+        final Map<String, List<AppSecrets>> appSecrets = Map.of("SYSTEM_HOST", List.of(secrets));
+        final AppsSecretsImportExport importExport = new AppsSecretsImportExport(appSecrets);
+        final Path in = AppsUtil.exportSecret(importExport, key);
+
+        final Map<String, List<AppSecrets>>  importSecrets = AppsUtil.importSecrets(in, key);
+        assertNotNull(importSecrets);
+        assertEquals(1, importSecrets.size());
+        final List<AppSecrets> appSecretsList = importSecrets.get("SYSTEM_HOST");
+        assertNotNull(appSecretsList);
+        assertEquals(1, appSecretsList.size());
+        final AppSecrets importedSecrets = appSecretsList.get(0);
+        assertEquals("key", importedSecrets.getKey());
+        assertEquals(4, importedSecrets.getSecrets().size());
+        assertEquals("value1", new String(importedSecrets.getSecrets().get("hidden1").getValue()));
+        assertEquals("value2", new String(importedSecrets.getSecrets().get("hidden2").getValue()));
+        assertEquals("value3", new String(importedSecrets.getSecrets().get("secret1").getValue()));
+        assertEquals("value4", new String(importedSecrets.getSecrets().get("secret2").getValue()));
+        assertEquals("env", new String(importedSecrets.getSecrets().get("secret2").getEnvVarValue()));
+    }
+
+    /**
+     * Given scenario: Lets import an old version of the secrets
+     * Expected Result: The secret is imported back.
+     * @throws DotDataException
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    @Test
+    public void testImportOldVersionSecrets()
+            throws DotDataException, IOException, URISyntaxException {
+        final URL resource = Thread.currentThread().getContextClassLoader()
+                .getResource("apps/googleTranslationApp.export");
+        assertNotNull("resource is null ", resource);
+        final Path in = Path.of(resource.toURI());
+        final Key key = AppsUtil.generateKey(AppsUtil.loadPass(()->"testdotcms1234"));
+        final Map<String, List<AppSecrets>> importSecrets = AppsUtil.importSecrets(in, key);
+        assertNotNull(importSecrets);
+        assertEquals(1, importSecrets.size());
+        final List<AppSecrets> appSecretsList = importSecrets.get("SYSTEM_HOST");
+        assertNotNull(appSecretsList);
+        assertEquals(1, appSecretsList.size());
+        final AppSecrets importedSecrets = appSecretsList.get(0);
+        assertEquals("dotGoogleTranslate-config", importedSecrets.getKey());
+        assertEquals(1, importedSecrets.getSecrets().size());
+        assertEquals("testgoogleAPIAPP", new String(importedSecrets.getSecrets().get("apiKey").getValue()));
+
     }
 
 }
