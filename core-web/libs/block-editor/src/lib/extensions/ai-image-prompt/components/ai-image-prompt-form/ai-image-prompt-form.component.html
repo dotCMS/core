@@ -66,19 +66,22 @@
                 <div class="field" *ngIf="aiProcessedPrompt && !isLoading">
                     <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten"
                         >{{ 'block-editor.extension.ai-image.rewritten' | dm }}
+                    </label>
+
+                    <div class="ai-image-prompt__text-wrapper">
+                        <textarea
+                            class="w-full ai-image-prompt__rewritten-textarea"
+                            id="prompt-rewritten"
+                            [value]="aiProcessedPrompt"
+                            cols="30"
+                            pInputTextarea
+                            readonly
+                            rows="11">
+                        </textarea>
                         <dot-copy-button
                             [copy]="aiProcessedPrompt"
                             customClass="p-button-rounded" />
-                    </label>
-                    <textarea
-                        class="w-full ai-image-prompt__rewritten-textarea"
-                        id="prompt-rewritten"
-                        [value]="aiProcessedPrompt"
-                        cols="30"
-                        pInputTextarea
-                        readonly
-                        rows="11">
-                    </textarea>
+                    </div>
                 </div>
             </div>
         </p-accordionTab>

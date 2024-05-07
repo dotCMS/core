@@ -35,8 +35,8 @@ form {
 
     dot-copy-button {
         position: absolute;
-        right: 1rem;
-        bottom: 0.25rem;
+        right: $spacing-3;
+        bottom: $spacing-0;
     }
 }
 
@@ -53,7 +53,7 @@ dot-empty-container {
 }
 
 .ai-content__input-text {
-    height: 4rem;
+    height: $spacing-8;
 }
 
 .ai-content__buttons {

@@ -45,6 +45,18 @@ form {
     }
 }
 
+.ai-image-prompt__text-wrapper {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    dot-copy-button {
+        position: absolute;
+        right: $spacing-1;
+        bottom: $spacing-0;
+    }
+}
+
 .ai-image-prompt__orientation {
     margin-bottom: 9rem;
 }
