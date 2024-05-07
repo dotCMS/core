@@ -4,12 +4,13 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-build-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dotcms-core</artifactId>
     <packaging>jar</packaging>
     <properties>
+        <maven.deploy.skip>false</maven.deploy.skip>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
@@ -72,11 +73,26 @@
         <sonar.sources>src/main/java,src/enterprise/java</sonar.sources>
     </properties>
     <dependencies>
+        <!-- Force dependency resolution when using also-make option even though these do not provide jar dependencies -->
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-core-web</artifactId>
             <version>${project.version}</version>
             <type>war</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms.plugins</groupId>
+            <artifactId>dotcms-core-bundles</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms.plugins</groupId>
+            <artifactId>dotcms-system-bundles</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
             <scope>provided</scope>
         </dependency>
         <dependency>

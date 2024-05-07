@@ -4,13 +4,12 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-nodejs-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
         <relativePath>../nodejs-parent/pom.xml</relativePath>
     </parent>
 
     <packaging>jar</packaging>
     <artifactId>dotcms-postman</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
         <!--suppress UnresolvedMavenProperty -->
