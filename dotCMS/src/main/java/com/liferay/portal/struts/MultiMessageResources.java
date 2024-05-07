@@ -17,6 +17,8 @@
 
 package com.liferay.portal.struts;
 
+import com.dotcms.languagevariable.business.LanguageVariable;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.org.apache.struts.util.MessageResourcesFactory;
 import com.dotcms.repackage.org.apache.struts.util.PropertyMessageResources;
@@ -27,7 +29,9 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.StringUtil;
+import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -175,26 +179,19 @@ public class MultiMessageResources extends PropertyMessageResources {
     private void _loadProps(String name, String localeKey) {
 
         if (name.contains("cms_language")) {
-            LanguageAPI langAPI = APILocator.getLanguageAPI();
-            List<LanguageKey> keys;
-            if (localeKey.split("_").length > 1) {
-                keys = langAPI.getLanguageKeys(localeKey.split("_")[0], localeKey.split("_")[1]);
-            } else {
-                keys = langAPI.getLanguageKeys(localeKey.split("_")[0]);
 
-            }
-
-            if (keys.size() < 1) {
+            final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+            final long languageId = LanguageUtil.getLanguageId(localeKey, false);
+            final List<LanguageVariable> vars = Try.of(()->
+              languageVariableAPI.findVariables(languageId)
+            ).getOrElse(List.of());
+            if (vars.isEmpty()){
                 return;
             }
 
             synchronized (messages) {
-                Iterator<LanguageKey> names = keys.iterator();
-
-                while (names.hasNext()) {
-                    LanguageKey langkey = (LanguageKey) names.next();
-                    String key = langkey.getKey();
-                    messages.put(messageKey(localeKey, key), langkey.getValue());
+                for (LanguageVariable var : vars) {
+                    messages.put(messageKey(localeKey, var.key()), var.value());
                 }
             }
 

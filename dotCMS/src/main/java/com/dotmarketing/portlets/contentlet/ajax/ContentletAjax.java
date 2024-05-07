@@ -10,6 +10,8 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.keyvalue.model.KeyValue;
+import com.dotcms.languagevariable.business.LanguageVariable;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
@@ -50,7 +52,6 @@ import com.dotmarketing.portlets.hostadmin.business.CopyHostContentUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
@@ -141,6 +142,8 @@ public class ContentletAjax {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
+
+	private LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
 
 	//Number of children related IDs to be added to a lucene query to get children related to a selected parent
 	private static final int RELATIONSHIPS_FILTER_CRITERIA_SIZE = Config
@@ -1649,7 +1652,7 @@ public class ContentletAjax {
 	}
 
 	@CloseDB
-	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
+	public List<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
 		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
 		ArrayList<String[]> list = new ArrayList<>(limit);
 		final User systemUser = APILocator.systemUser();
@@ -1657,20 +1660,20 @@ public class ContentletAjax {
 		List<String> listAddedKeys = new ArrayList<>();
 		String[] term;
 
-		List<LanguageKey> props = retrieveProperties(languageId);
+		final List<LanguageVariable> variables = languageVariableAPI.findVariables(languageId);
 		valueToComplete = valueToComplete.toLowerCase();
-		for (LanguageKey prop : props) {
-			if (prop.getKey().toLowerCase().startsWith(valueToComplete)) {
-				term = new String[]{prop.getKey(),
-						(70 < prop.getValue().length() ? prop.getValue().substring(0, 69)
-								: prop.getValue())};
+		for (LanguageVariable variable : variables) {
+			if (variable.key().toLowerCase().startsWith(valueToComplete)) {
+				term = new String[]{variable.key(),
+						(70 < variable.value().length() ? variable.value().substring(0, 69)
+								: variable.value())};
 				list.add(term);
-				listAddedKeys.add(prop.getKey());
+				listAddedKeys.add(variable.key());
 			}
 		}
 
 		if(list.size() < limit){
-			List<KeyValue> languageVariables = APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith(valueToComplete,languageId,systemUser,limit);
+			List<KeyValue> languageVariables = languageVariableAPI.getAllLanguageVariablesKeyStartsWith(valueToComplete,languageId,systemUser,limit);
 			for (KeyValue languageVariable : languageVariables) {
 				if(!listAddedKeys.contains(languageVariable.getKey())) {
 					term = new String[]{languageVariable.getKey(),
@@ -1685,11 +1688,6 @@ public class ContentletAjax {
 		}
 
 		return list;
-	}
-
-	private List<LanguageKey> retrieveProperties(long langId) throws Exception {
-		Language lang = langAPI.getLanguage(langId);
-		return langAPI.getLanguageKeys(lang);
 	}
 
 	/**
