@@ -37,7 +37,8 @@ export class DotErrorPipe implements PipeTransform {
             ?.container;
 
         if (
-            container?.identifier !== originContainer?.identifier && // If it is not from the same container then we are adding a new contentlet
+            (container?.identifier !== originContainer?.identifier ||
+                container.uuid !== originContainer?.uuid) && // If it is not from the same container then we are adding a new contentlet
             !this.contentCanFitInContainer(container.maxContentlets, contentletsLength)
         ) {
             const message =
