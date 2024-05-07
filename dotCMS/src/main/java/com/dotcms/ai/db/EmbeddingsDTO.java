@@ -22,6 +22,8 @@ import java.util.Map;
 @JsonDeserialize(builder = EmbeddingsDTO.Builder.class)
 public class EmbeddingsDTO implements Serializable {
 
+    private static final String DEFAULT_INDEX = "default";
+
     public final Float[] embeddings;
     public final String identifier;
     public final String inode;
@@ -58,14 +60,14 @@ public class EmbeddingsDTO implements Serializable {
         this.contentType = UtilMethods.isSet(builder.contentType) ? builder.contentType.trim().split("[\\s+,]") : new String[0];
 
         this.extractedText = builder.extractedText;
-        this.temperature = builder.temperature > 0 ? 0 : builder.temperature > 2 ? 2 : builder.temperature;
+        this.temperature = resolveTemperature(builder.temperature);
 
         this.host = builder.host;
         this.limit = builder.limit;
         this.offset = builder.offset;
         this.threshold = builder.threshold;
         this.operator = (Arrays.asList(operators).contains(builder.operator)) ? builder.operator : "<=>";
-        this.indexName = UtilMethods.isSet(builder.indexName) ? builder.indexName : "default";
+        this.indexName = UtilMethods.isSet(builder.indexName) ? builder.indexName : DEFAULT_INDEX;
         this.tokenCount = builder.tokenCount;
         this.query = builder.query;
         this.user = builder.user;
@@ -179,8 +181,8 @@ public class EmbeddingsDTO implements Serializable {
         private String title;
         @JsonProperty
         private String contentType;
-        @JsonProperty(defaultValue = "default")
-        private String indexName = "default";
+        @JsonProperty(defaultValue = DEFAULT_INDEX)
+        private String indexName = DEFAULT_INDEX;
         @JsonProperty
         private String extractedText;
         @JsonProperty
@@ -230,7 +232,7 @@ public class EmbeddingsDTO implements Serializable {
         }
 
         public Builder withTemperature(final float temperature) {
-            this.temperature = temperature > 0 ? 0 : temperature > 2 ? 2 : temperature;
+            this.temperature = resolveTemperature(temperature);
             return this;
         }
 
@@ -240,7 +242,7 @@ public class EmbeddingsDTO implements Serializable {
         }
 
         public Builder withIndexName(final String indexName) {
-            this.indexName = UtilMethods.isSet(indexName) ? indexName : "default";
+            this.indexName = UtilMethods.isSet(indexName) ? indexName : DEFAULT_INDEX;
             return this;
         }
 
@@ -308,6 +310,13 @@ public class EmbeddingsDTO implements Serializable {
             return new EmbeddingsDTO(this);
         }
 
+    }
+
+    private static float resolveTemperature(float temperature) {
+        if (temperature <= 0) {
+            return 0;
+        }
+        return temperature > 2 ? 2 : temperature;
     }
 
 }

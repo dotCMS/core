@@ -1,5 +1,6 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.ai.db.EmbeddingsDB;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -37,6 +38,7 @@ public class SearchToolTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        EmbeddingsDB.impl.get();
     }
 
     @Before

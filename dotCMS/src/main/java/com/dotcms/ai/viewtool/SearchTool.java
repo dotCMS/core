@@ -84,7 +84,6 @@ public class SearchTool implements ViewTool {
         try {
             return EmbeddingsAPI.impl(host).searchForContent(searcher);
         } catch (Exception e) {
-            e.printStackTrace();
             return Map.of(ERROR_KEY, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }
     }

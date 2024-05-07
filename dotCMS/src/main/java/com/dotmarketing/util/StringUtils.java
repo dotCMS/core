@@ -2,7 +2,6 @@ package com.dotmarketing.util;
 
 import static org.apache.commons.lang.StringUtils.split;
 
-import com.dotcms.ai.db.EmbeddingsDB;
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;

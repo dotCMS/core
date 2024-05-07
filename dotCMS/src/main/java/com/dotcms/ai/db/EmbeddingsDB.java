@@ -18,6 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static com.dotcms.ai.db.EmbeddingsDTO.ALL_INDICES;
 
@@ -28,6 +29,13 @@ import static com.dotcms.ai.db.EmbeddingsDTO.ALL_INDICES;
  */
 public class EmbeddingsDB {
 
+    private static final String AND_KEYWORD = " and ";
+    private static final String EQUALS_OPERATOR = "=";
+    private static final String NOT_EQUALS_OPERATOR = " <> ";
+    private static final String LOWER_FN = "LOWER(%s)";
+    private static final String INODE_KEY = "inode";
+    private static final String IDENTIFIER_KEY = "identifier";
+    private static final String INDEX_NAME_KEY = "index_name";
     public static final Lazy<EmbeddingsDB> impl = Lazy.of(EmbeddingsDB::new);
 
     private EmbeddingsDB() {
@@ -140,7 +148,7 @@ public class EmbeddingsDB {
             final ResultSet rs = statement.executeQuery();
             while (rs.next()) {
                 final int tokenCount = rs.getInt("token_count");
-                final String indexName = rs.getString("index_name");
+                final String indexName = rs.getString(INDEX_NAME_KEY);
                 final float[] vector = rs.getObject("embeddings", PGvector.class).toArray();
                 final List<Float> list = Arrays.asList(ArrayUtils.toObject(vector));
                 return Tuple.of(indexName,tokenCount, list);
@@ -247,11 +255,11 @@ public class EmbeddingsDB {
                 final float distance = rs.getFloat("distance");
                 final EmbeddingsDTO conEmbed = new EmbeddingsDTO.Builder()
                         .withContentType(rs.getString("content_type"))
-                        .withIdentifier(rs.getString("identifier"))
-                        .withInode(rs.getString("inode"))
+                        .withIdentifier(rs.getString(IDENTIFIER_KEY))
+                        .withInode(rs.getString(INODE_KEY))
                         .withTitle(rs.getString("title"))
                         .withLanguage(rs.getLong("language"))
-                        .withIndexName(rs.getString("index_name"))
+                        .withIndexName(rs.getString(INDEX_NAME_KEY))
                         .withHost(rs.getString("host"))
                         .withTokenCount(rs.getInt("token_count"))
                         .withThreshold(distance)
@@ -265,6 +273,45 @@ public class EmbeddingsDB {
         }
     }
 
+    private <T> void appendParam(final StringBuilder sb,
+                                 final Predicate<T> evaluation,
+                                 final List<Object> params,
+                                 final String column,
+                                 final String operator,
+                                 final String decorator,
+                                 final T value) {
+        if (!evaluation.test(value)) {
+            return;
+        }
+
+        sb.append(AND_KEYWORD)
+                .append(column)
+                .append(operator)
+                .append(Optional.ofNullable(decorator).map(ph -> String.format(ph, "?")).orElse("?"));
+        params.add(value);
+    }
+
+    private <T> void appendParams(final StringBuilder sb,
+                                  final List<Object> params,
+                                  final String column,
+                                  final String operator,
+                                  final String decorator,
+                                  final List<T> values) {
+        Optional
+                .ofNullable(values)
+                .ifPresent(v ->
+                        v.forEach(value -> appendParam(sb, e -> true, params, column, operator, decorator, value)));
+    }
+
+    private void appendParams(final StringBuilder sb,
+                              final List<Object> params,
+                              final String column,
+                              final String operator,
+                              final String decorator,
+                              final Object[] values) {
+        appendParams(sb, params, column, operator, decorator, Arrays.asList(values));
+    }
+
     /**
      * Appends parameters to the provided StringBuilder based on the provided DTO.
      * This method is used to build SQL queries dynamically based on the DTO.
@@ -276,53 +323,27 @@ public class EmbeddingsDB {
     List<Object> appendParams(final StringBuilder sql, final EmbeddingsDTO dto) {
         final List<Object> params = new ArrayList<>();
 
-        if (UtilMethods.isSet(dto.inode)) {
-            sql.append(" and inode=? ");
-            params.add(dto.inode);
-        }
+        appendParam(sql, UtilMethods::isSet, params, INODE_KEY, EQUALS_OPERATOR, null, dto.inode);
+        appendParam(sql, UtilMethods::isSet, params, IDENTIFIER_KEY, EQUALS_OPERATOR, null, dto.identifier);
+        appendParams(sql, params, IDENTIFIER_KEY, NOT_EQUALS_OPERATOR, null, dto.excludeIdentifiers);
+        appendParams(sql, params, INODE_KEY, NOT_EQUALS_OPERATOR, null, dto.excludeInodes);
+        appendParam(sql, lang -> lang > 0, params, "language", EQUALS_OPERATOR, null, dto.language);
 
-        if (UtilMethods.isSet(dto.identifier)) {
-            sql.append(" and identifier=? ");
-            params.add(dto.identifier);
-        }
-
-        if (UtilMethods.isSet(dto.excludeIdentifiers)) {
-            for (final String id : dto.excludeIdentifiers) {
-                sql.append(" and identifier <> ? ");
-                params.add(id);
-            }
-        }
-
-        if (UtilMethods.isSet(dto.excludeInodes)) {
-            for (final String id : dto.excludeInodes) {
-                sql.append(" and inode <> ? ");
-                params.add(id);
-            }
-        }
-
-        if (dto.language > 0) {
-            sql.append(" and language=? ");
-            params.add(dto.language);
-        }
-
-        if (UtilMethods.isSet(dto.contentType) && dto.contentType.length > 0) {
-            sql.append(" and ( false ") ;
-            for(final String contentType : dto.contentType){
-                sql.append(" OR lower(content_type)=lower(?)");
-                params.add(contentType);
-            }
+        if (UtilMethods.isSet(dto.contentType)) {
+            sql.append(" and ( false ");
+            appendParams(sql, params, "lower(content_type)", EQUALS_OPERATOR, LOWER_FN, dto.contentType);
             sql.append(") ") ;
         }
 
-        if (UtilMethods.isSet(dto.host)) {
-            sql.append(" and host=? ");
-            params.add(dto.host);
-        }
-
-        if (UtilMethods.isSet(dto.indexName) && !ALL_INDICES.equals(dto.indexName)) {
-            sql.append(" and lower(index_name)=lower(?) ");
-            params.add(dto.indexName);
-        }
+        appendParam(sql, UtilMethods::isSet, params, "host", EQUALS_OPERATOR, null, dto.host);
+        appendParam(
+                sql,
+                indexName -> UtilMethods.isSet(indexName) && !ALL_INDICES.equals(indexName),
+                params,
+                "lower(index_name)",
+                EQUALS_OPERATOR,
+                LOWER_FN,
+                dto.indexName);
 
         return params;
     }
@@ -405,7 +426,7 @@ public class EmbeddingsDB {
             final ResultSet rs = statement.executeQuery();
             while (rs.next()) {
                 results.put(
-                        rs.getString("index_name"),
+                        rs.getString(INDEX_NAME_KEY),
                         Map.of(
                             "fragments", rs.getLong("embeddings"),
                             "contents", rs.getLong("contents"),
