@@ -53,6 +53,7 @@ import com.dotcms.contenttype.business.CopyContentTypeBean;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RelationshipFieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.HostAssetsJobProxy;
@@ -67,12 +68,14 @@ import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.SiteCreatedEvent;
+import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -124,6 +127,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 /**
  * This Quartz Job allows dotCMS users to copy sites. The Sites portlet also allows users to select
@@ -214,7 +219,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			sourceSite = this.siteAPI.DBSearch(sourceSiteId, this.userAPI.getSystemUser(), DONT_RESPECT_FRONTEND_ROLES);
 			destinationSite = this.siteAPI.DBSearch(destinationSiteId, this.userAPI.getSystemUser(), DONT_RESPECT_FRONTEND_ROLES);
 			if(QuartzUtils.getTaskProgress(jobName,jobGroup) >= 0 && QuartzUtils.getTaskProgress(jobName, jobGroup) < 100) {
-				final String infoMsg = String.format("Site '%s' is already being copied. This copy request will be ignored.",
+				final String infoMsg = String.format("Site '%s' is already being copied. This new request will be ignored.",
 						sourceSite.getHostname());
 				Logger.warn(this, infoMsg);
 				sendNotification(infoMsg, userId, NotificationLevel.WARNING);
@@ -228,13 +233,13 @@ public class HostAssetsJobImpl extends ParentProxy{
 					destinationSite.getHostname(), sourceSite.getHostname()), userId, NotificationLevel.INFO);
 			validateSiteInfo(sourceSite,destinationSite,sourceSiteId,destinationSiteId,jobName);
 			copySiteAssets(sourceSite, destinationSite, copyOptions);
-		} catch (final DotDataException | DotSecurityException e) {
+		} catch (final Throwable e) {
 			final String errorMsg = String
 					.format("An error occurred when copying source Site '%s' to destination Site '%s': %s",
 							sourceSite.getHostname(), destinationSite.getHostname(), ExceptionUtil.getErrorMessage(e));
 			Logger.error(HostAssetsJobImpl.class, errorMsg, e);
-			this.sendNotification(String.format("The copy of Site '%s' has failed. Please check the logs for more information",
-					destinationSite.getHostname()), userId, NotificationLevel.ERROR);
+			this.sendNotification(String.format("The copy of Site '%s' has failed: %s. Please check the logs for more information",
+					destinationSite.getHostname(), ExceptionUtil.getErrorMessage(e)), userId, NotificationLevel.ERROR);
 			throw new JobExecutionException(errorMsg, e);
 		}
 		Logger.info(this, "======================================================================");
@@ -300,7 +305,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			final Map<String, ContentMapping> contentMappingsBySourceId = new HashMap<>();
 			final List<Contentlet> contentsToCopyDependencies =  new ArrayList<>();
 			final Map<String, ContentTypeMapping> copiedContentTypes = new HashMap<>();
-			
+			final Map<String, RelationshipMapping> copiedRelationships = new HashMap<>();
 			if (copyOptions.isCopyTemplatesAndContainers()) {
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying Templates and Containers to new Site '%s'", destinationSite.getHostname()));
@@ -522,7 +527,6 @@ public class HostAssetsJobImpl extends ParentProxy{
 			this.siteCopyStatus.updateProgress(70);
 
 			if (Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false) && copyOptions.isCopyContentTypes()) {
-				final List<Relationship> copiedRelationships = new ArrayList<>();
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying Content Types to new Site '%s'", destinationSite.getHostname()));
 				final List<ContentType> sourceContentTypes = this.contentTypeAPI.search("",
@@ -535,25 +539,67 @@ public class HostAssetsJobImpl extends ParentProxy{
 							.name(sourceContentType.name())
 							.folder(sourceContentType.folder())
 							.host(destinationSite.getIdentifier());
-					final ContentType copiedContentType = this.contentTypeAPI.copyFromAndDependencies(builder.build(), destinationSite);
+					// Copy the Content Type objects with NONE of their relationship fields
+					final ContentType copiedContentType =
+							this.contentTypeAPI.copyFromAndDependencies(builder.build(), destinationSite, false);
 					copiedContentTypes.put(sourceContentType.id(), new ContentTypeMapping(sourceContentType, copiedContentType));
-					final List<Field> relFields = copiedContentType.fields(RelationshipField.class);
-					if (!relFields.isEmpty()) {
-						for (final Field field : relFields) {
-							final Relationship relationshipFromField = this.relationshipAPI.getRelationshipFromField(field, this.SYSTEM_USER);
-							copiedRelationships.add(relationshipFromField);
+				}
+				final List<RelationshipMapping> childRelationships = new ArrayList<>();
+				// Now, copy the relationship fields back, but EXCLUDE all relationship fields that are pointing
+				// to Content Types living under System Host
+				for (final ContentType sourceContentType : sourceContentTypes) {
+					final List<Field> sourceRelationshipFields = sourceContentType.fields(RelationshipField.class);
+					for (final Field sourceField : sourceRelationshipFields) {
+						final RelationshipField sourceRelationshipField = (RelationshipField) sourceField;
+						final Relationship sourceRelationship = this.relationshipAPI.getRelationshipFromField(sourceRelationshipField, this.SYSTEM_USER);
+						if (this.hasSystemHostTypes(sourceRelationship)) {
+							Logger.warn(this, String.format("Skipping Relationship Field '%s' from Content Type '%s'" +
+											" because it points to at least one Content Type living under System Host",
+									sourceRelationshipField.name(), sourceContentType.name()));
+							continue;
 						}
+						final ContentTypeMapping parentContentTypeMapping = copiedContentTypes.get(sourceRelationship.getParentStructure().id());
+						final ContentTypeMapping childContentTypeMapping = copiedContentTypes.get(sourceRelationship.getChildStructure().id());
+						checkNotNull(parentContentTypeMapping, "Parent Content Type ID in Relationship Field " +
+								"'%s' in Content Type '%s' is null", sourceRelationshipField.name(), sourceContentType.name());
+						checkNotNull(childContentTypeMapping, "Child Content Type ID in Relationship Field " +
+								"'%s' in Content Type '%s' is null", sourceRelationshipField.name(), sourceContentType.name());
+						// If this Relationship Field represents the parent of the relationship, or if the relationship is between
+						// the same Content Types, just copy the field with the new IDs and data
+						if (this.relationshipAPI.isChildField(sourceRelationship, sourceRelationshipField) || this.relationshipAPI.sameParentAndChild(sourceRelationship)) {
+							final String copiedContentTypeId = copiedContentTypes.get(sourceContentType.id()).destinationContentType.id();
+							final String copiedContentTypeVarName = childContentTypeMapping.destinationContentType.variable();
+							this.createRelationshipField(copiedContentTypeId,
+									copiedContentTypeVarName, sourceRelationshipField,
+									sourceRelationship, copiedRelationships);
+						} else {
+							// Here, the Relationship Field is the child of the current Relationship and its parent Relationship has
+							// already been copied. Therefore, we can create the child Relationship Field now and reference the
+							// existing relationship
+							if (copiedRelationships.containsKey(sourceRelationship.getInode())) {
+								final Relationship copiedRelationship = copiedRelationships.get(sourceRelationship.getInode()).destinationRelationship;
+								final String copiedContentTypeId = copiedContentTypes.get(sourceContentType.id()).destinationContentType.id();
+								this.createRelationshipField(copiedContentTypeId,
+										copiedRelationship.getRelationTypeValue(), sourceRelationshipField,
+										sourceRelationship, copiedRelationships);
+							} else {
+								// If the Relationship Field points to a relationship that hasn't been copied yet, we'll wait until
+								// the parent Relationship is created and store its data in a list
+								final RelationshipMapping childRelationshipMapping =
+										new RelationshipMapping(sourceRelationship, sourceContentType, sourceRelationshipField);
+								childRelationships.add(childRelationshipMapping);
+							}
+						}
+
 					}
 				}
-				if (!copiedRelationships.isEmpty()) {
-					for (final Relationship relationship : copiedRelationships) {
-						final String parentContentTypeId = copiedContentTypes.containsKey(relationship.getParentStructureInode()) ?
-								copiedContentTypes.get(relationship.getParentStructureInode()).destinationContentType.id() : relationship.getParentStructureInode();
-						final String childContentTypeId = copiedContentTypes.containsKey(relationship.getChildStructureInode()) ?
-								copiedContentTypes.get(relationship.getChildStructureInode()).destinationContentType.id() : relationship.getChildStructureInode();
-						relationship.setParentStructureInode(parentContentTypeId);
-						relationship.setChildStructureInode(childContentTypeId);
-						this.relationshipAPI.save(relationship);
+				if (!childRelationships.isEmpty()) {
+					// Copy all child Relationships that don't have a parent Relationship, if any
+					for (final RelationshipMapping childRelationshipMapping : childRelationships) {
+						this.copyChildRelationship(childRelationshipMapping.sourceRelationship,
+								childRelationshipMapping.sourceContentType,
+								childRelationshipMapping.sourceField, copiedRelationships,
+								copiedContentTypes);
 					}
 				}
 				HibernateUtil.closeAndCommitTransaction();
@@ -570,7 +616,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			// copyOptions.isCopyContentOnHost() == true should be handled by option 2.
             if (!copyOptions.isCopyContentOnHost() && copyOptions.isCopyLinks()) {
 				Logger.info(this, "----------------------------------------------------------------------");
-				Logger.info(this, String.format(":::: Copying HTML Pages - without their contents - to new Site '%s'", destinationSite.getHostname()));
+				Logger.info(this, String.format(":::: Copying HTML Pages - but NOT their contents - to new Site '%s'", destinationSite.getHostname()));
                 final PaginatedContentlets sourceContentlets = this.contentAPI.findContentletsPaginatedByHost(sourceSite,
                         Arrays.asList(BaseContentType.HTMLPAGE.getType()), null, this.SYSTEM_USER,
 						DONT_RESPECT_FRONTEND_ROLES);
@@ -596,7 +642,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 
                 // Copy contentlet dependencies
 				this.copyRelatedContentlets(contentsToCopyDependencies,
-                        contentMappingsBySourceId, copiedContentTypes, copyOptions);
+                        contentMappingsBySourceId, copiedRelationships, copyOptions);
             }
 
             // Option 2: Copy all content on site
@@ -652,7 +698,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 				Logger.info(this, String.format("-> A total of %d contents have been copied", contentCount));
                 // Copy contentlet dependencies
                 this.copyRelatedContentlets(contentsToCopyDependencies,
-                        contentMappingsBySourceId, copiedContentTypes, copyOptions);
+                        contentMappingsBySourceId, copiedRelationships, copyOptions);
             }
 
 			this.siteCopyStatus.updateProgress(95);
@@ -690,6 +736,107 @@ public class HostAssetsJobImpl extends ParentProxy{
 		} finally {
 			HibernateUtil.closeSessionSilently();
 		}
+	}
+
+	/**
+	 * Creates a Relationship Field in a given Content Type with a list of specific parameters, and
+	 * keeps track of the generated Relationship record. This method is very useful when Content
+	 * Types are being copied over to the new Site and Relationships are present.
+	 * <p>Relationship Fields must be carefully handled as the Relationship they generate must
+	 * reflect the new IDs and Velocity Variable Names from the copied Content Types while keeping
+	 * the exact same structure as the original one. Keep in mind that the API will create both the
+	 * Relationship Field and the Relationship record. It's very important that the new
+	 * Relationship be added to the Relationship tracking map.</p>
+	 *
+	 * @param contentTypeId       The ID of the Content Type where the new Relationship Field
+	 *                            will be added.
+	 * @param relationTypeValue   The Velocity Variable Name of the Content Type that the
+	 *                            Relationship Field will point to, or the existing Relation Type
+	 *                            Value in case the Relationship already exists.
+	 * @param relationshipField   The source {@link RelationshipField} that will be used to build
+	 *                            the new field, as it contain data that can be simply reused.
+	 * @param sourceRelationship  The source {@link Relationship} that will be added to the map of
+	 *                            copied Relationships.
+	 * @param copiedRelationships The map containing the copied Relationships from the source Site.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The current User does not have the permissions to perform this
+	 *                              action.
+	 */
+	private void createRelationshipField(final String contentTypeId,
+										 final String relationTypeValue,
+										 final RelationshipField relationshipField,
+										 final Relationship sourceRelationship,
+										 final Map<String, RelationshipMapping> copiedRelationships) throws DotDataException, DotSecurityException {
+		final Field newField = RelationshipFieldBuilder.builder(relationshipField)
+				.sortOrder(relationshipField.sortOrder())
+				.contentTypeId(contentTypeId)
+				.id(null)
+				.relationType(relationTypeValue)
+				.build();
+		this.contentTypeFieldAPI.save(newField, this.SYSTEM_USER);
+		final Relationship copiedRelationship = this.relationshipAPI.getRelationshipFromField(newField, this.SYSTEM_USER);
+		copiedRelationships.put(sourceRelationship.getInode(), new RelationshipMapping(sourceRelationship, copiedRelationship));
+	}
+
+	/**
+	 * Depending on the order in which Content Types are copied, there might be a situation where
+	 * a child Relationship is retrieved before its parent Relationship has been saved. This method
+	 * takes all the child Relationships that could not be processed yet, and copies them to the new
+	 * Content Type. If their parent Relationship was added, then it will be associated to the
+	 * existing Relationship; if there's no parent Relationship, a new one will be created.
+	 *
+	 * @param sourceRelationship      The source child {@link Relationship} used to retrieve useful
+	 *                                information from the source data. Also, it will be added to
+	 *                                the map of copied Relationships.
+	 * @param sourceContentType       The source {@link ContentType} that contains the child
+	 *                                Relationship.
+	 * @param sourceRelationshipField The source {@link RelationshipField} that represents the
+	 *                                child Relationship and will be used to create the new field.
+	 * @param copiedRelationships     The map containing the copied Relationships from the source
+	 *                                Content Types.
+	 * @param copiedContentTypes      The map containing the copied Content Types from the source
+	 *                                Site.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The current User does not have the permissions to perform this
+	 *                              action.
+	 */
+	private void copyChildRelationship(final Relationship sourceRelationship,
+									   final ContentType sourceContentType,
+									   final RelationshipField sourceRelationshipField,
+									   final Map<String, RelationshipMapping> copiedRelationships,
+									   final Map<String, ContentTypeMapping> copiedContentTypes) throws DotDataException, DotSecurityException {
+		String contentTypeId;
+		String relationTypeValue;
+		if (copiedRelationships.containsKey(sourceRelationship.getInode())) {
+			// Copy the Relationship Field using an existing Relationship
+			final Relationship copiedRelationship = copiedRelationships.get(sourceRelationship.getInode()).destinationRelationship;
+			contentTypeId = copiedContentTypes.get(sourceContentType.id()).destinationContentType.id();
+			relationTypeValue = copiedRelationship.getRelationTypeValue();
+		} else {
+			// Copy the Relationship Field and create a new Relationship as it doesn't exist yet
+			final ContentTypeMapping parentContentTypeMapping = copiedContentTypes.get(sourceRelationship.getParentStructureInode());
+			final ContentTypeMapping childContentTypeMapping = copiedContentTypes.get(sourceRelationship.getChildStructureInode());
+			contentTypeId = childContentTypeMapping.destinationContentType.id();
+			relationTypeValue = parentContentTypeMapping.destinationContentType.variable();
+		}
+		this.createRelationshipField(contentTypeId, relationTypeValue, sourceRelationshipField, sourceRelationship, copiedRelationships);
+	}
+
+	/**
+	 * Indicates whether the given {@link Relationship} references at least one Content Type that
+	 * lives under System Host.
+	 *
+	 * @param relationship The {@link Relationship} to be analyzed.
+	 *
+	 * @return If the Relationship contains at least one Content Type that lives under System Host,
+	 * returns {@code true}.
+	 */
+	private boolean hasSystemHostTypes(final Relationship relationship) {
+		final String parentContentTypeSiteId = relationship.getParentStructure().getHost();
+		final String childContentTypeSiteId = relationship.getChildStructure().getHost();
+		return Host.SYSTEM_HOST.equals(parentContentTypeSiteId) || Host.SYSTEM_HOST.equals(childContentTypeSiteId);
 	}
 
 	private void triggerEvents (final String destinationSiteIdentifier) {
@@ -957,23 +1104,23 @@ public class HostAssetsJobImpl extends ParentProxy{
 
 	/**
 	 * Copies the Relationship data of Contentlets that have child relationships based on the newly
-	 * assigned Identifiers after they have been copied to the new Site.
+	 * assigned Identifiers after they have been copied to the new Site; i.e., parent Contentlets.
 	 * <p>If no Content Types are being copied to the new Site, the relationship data update will
 	 * only include adding the new related Contentlet copies that now live in the new Site. But, if
-	 * Content Types ARE being copied, the Content Type IDs in the relationship data must reflect
-	 * both the new related Contentlet copies, AND the new Content Type IDs.</p>
+	 * Content Types ARE being copied, the copied Relationships must be taken into account to save
+	 * the copied Contentlets to the new Relationship records as they reflect the new IDs for the
+	 * copied Content Types as well.</p>
 	 *
 	 * @param contentsToCopyDependencies The list of {@link Contentlet} objects that are the
 	 *                                   parents of a given relationship.
-	 * @param contentMappingsBySourceId  A {@link Map} containing the association between the
+	 * @param contentMappingsBySourceId  The {@link Map} containing the association between the
 	 *                                   contentlet's Identifier from the source site and the
 	 *                                   contentlet's Identifier from the destination site. This
 	 *                                   map keeps both the source and the destination
 	 *                                   {@link Contentlet} objects.
-	 * @param copiedContentTypes         A {@link Map} containing the association between the
-	 *                                   Content Type's ID from the source site and the Content
-	 *                                   Type's ID from the destination site. This map keeps both
-	 *                                   the source and the destination {@link ContentType} objects.
+	 * @param copiedRelationships        The {@link Map} containing the copied Relationships from
+	 *                                   the source Site. This way, the copied Contentlets will
+	 *                                   be saved just like the original ones.
 	 * @param copyOptions                The {@link HostCopyOptions} object containing what objects
 	 *                                   from the source Site must be copied to the destination
 	 *                                   Site.
@@ -982,8 +1129,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * @throws DotSecurityException The {@link User} accessing the APIs doesn't have the required
 	 *                              permissions to perform this action.
 	 */
-    private void copyRelatedContentlets(final List<Contentlet> contentsToCopyDependencies,
-										final Map<String, ContentMapping> contentMappingsBySourceId, final Map<String, ContentTypeMapping> copiedContentTypes, final HostCopyOptions copyOptions) throws DotDataException, DotSecurityException {
+	private void copyRelatedContentlets(final List<Contentlet> contentsToCopyDependencies,
+										final Map<String, ContentMapping> contentMappingsBySourceId, final Map<String, RelationshipMapping> copiedRelationships, final HostCopyOptions copyOptions) throws DotDataException, DotSecurityException {
         for (final Contentlet sourceContent : contentsToCopyDependencies) {
             final Contentlet destinationContent = contentMappingsBySourceId.get(sourceContent.getIdentifier()).destinationContent;
             final Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
@@ -997,47 +1144,50 @@ public class HostAssetsJobImpl extends ParentProxy{
                 for (final Contentlet c : cons) {
                     records = contentRelationships.get(r);
                     if (UtilMethods.isSet(contentMappingsBySourceId.get(c.getIdentifier()))) {
+						final Tree relationshipData = TreeFactory.getTree(c.getIdentifier(), sourceContent.getIdentifier(), r.getRelationTypeValue());
+						// In self-related Relationships, we need to make sure that the related Contentlet is NOT the
+						// parent in the relationship in order to NOT create a duplicate relationship
+						if (this.relationshipAPI.sameParentAndChild(r) && UtilMethods.isSet(relationshipData.getParent())) {
+							continue;
+						}
                         records.add(contentMappingsBySourceId.get(c.getIdentifier()).destinationContent);
                     } else {
                         records.add(c);
                     }
                 }
-				ContentletRelationshipRecords related;
-				if (!Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false) || !copyOptions.isCopyContentTypes()) {
-					related = new ContentletRelationships(
-							destinationContent).new ContentletRelationshipRecords(r, true);
-				} else {
-					// First, we must find the parent of the relationship in order to update it using
-					// the actual relationship field in the parent Content Type. Once we have it, we
-					// can associate the recently copied Contentlets to it
-					final String relationName = UtilMethods.isSet(r.getParentRelationName())
-							? r.getParentRelationName()
-							: r.getChildRelationName();
-					final String contentTypeWithRelField = UtilMethods.isNotSet(r.getParentRelationName())
-							? r.getParentStructureInode()
-							: r.getChildStructureInode();
-					final ContentTypeMapping contentTypeMapping = copiedContentTypes.get(contentTypeWithRelField);
-					final Field relationshipField = this.contentTypeFieldAPI.byContentTypeIdAndVar(
-							contentTypeMapping.destinationContentType.id(), relationName);
-					final Relationship relationshipFromField = this.relationshipAPI.getRelationshipFromField(relationshipField, this.SYSTEM_USER);
-					related = new ContentletRelationships(destinationContent).new ContentletRelationshipRecords(relationshipFromField, true);
+				if (!records.isEmpty()) {
+					ContentletRelationshipRecords related;
+					if (!Config.getBooleanProperty("FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY", false) || !copyOptions.isCopyContentTypes()) {
+						related = new ContentletRelationships(
+								destinationContent).new ContentletRelationshipRecords(r, true);
+					} else {
+						if (!copiedRelationships.containsKey(r.getInode())) {
+							continue;
+						}
+						final Relationship copiedRelationship = copiedRelationships.get(r.getInode()).destinationRelationship;
+						related = new ContentletRelationships(destinationContent).new ContentletRelationshipRecords(copiedRelationship, true);
+					}
+					related.setRecords(records);
+					this.contentAPI.relateContent(destinationContent, related, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
 				}
-                related.setRecords(records);
-				this.contentAPI.relateContent(destinationContent, related, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
             }
         }
     }
 
 	/**
-	 * Verifies if the specified {@link Contentlet} object has one or more valid related contentlets.
+	 * Verifies if the specified {@link Contentlet} object has one or more valid related
+	 * contentlets. That is, whether the Contentlet is the parent of the relationship or not. Keep
+	 * in mind that, in the case of self-related Content Types, the parent and child point to each
+	 * other, so the Tree data must be accessed and read accordingly.
 	 *
 	 * @param contentlet The Contentlet whose relationships will be verified.
 	 *
-	 * @return If the Contentlet is the parent of one or more Contentlets, returns {@code true}. Otherwise, returns
-	 * {@code false}.
+	 * @return If the Contentlet is the parent of one or more Contentlets, returns {@code true}.
+	 * Otherwise, returns {@code false}.
 	 *
 	 * @throws DotDataException     An error occurred when accessing the data source.
-	 * @throws DotSecurityException The specified user does not have the required permissions to perform this action.
+	 * @throws DotSecurityException The specified user does not have the required permissions to
+	 *                              perform this action.
 	 */
 	private boolean doesRelatedContentExists(final Contentlet contentlet) throws DotDataException, DotSecurityException{
         if(contentlet == null) {
@@ -1085,13 +1235,21 @@ public class HostAssetsJobImpl extends ParentProxy{
     }
 
 	/**
-	 *
+	 * This mapping class stores the relationship between source Content Types, and copied Content
+	 * Types. This is very useful when Content Types are copied.
 	 */
 	private static class ContentTypeMapping {
 
 		ContentType sourceContentType;
 		ContentType destinationContentType;
 
+		/**
+		 * Default class constructor.
+		 *
+		 * @param sourceContentType      The {@link ContentType} from the source/original Site.
+		 * @param destinationContentType The {@link ContentType} from the new Site that is taking
+		 *                               the copied data.
+		 */
 		public ContentTypeMapping(final ContentType sourceContentType,
 								  final ContentType destinationContentType) {
 			this.sourceContentType = sourceContentType;
@@ -1099,6 +1257,68 @@ public class HostAssetsJobImpl extends ParentProxy{
 		}
 
     }
+
+	/**
+	 * This mapping class stores the relationship between source Relationships and copied
+	 * Relationships. This is very useful when Content Types are copied as it helps re-create the
+	 * appropriate data Relationship structures in the copied Content Types.
+	 */
+	private static class RelationshipMapping {
+
+		final ContentType sourceContentType;
+		final RelationshipField sourceField;
+		final Relationship sourceRelationship;
+		final Relationship destinationRelationship;
+
+		/**
+		 * Creates a Relationship Mapping for a copied Content Type.
+		 *
+		 * @param sourceRelationship      The {@link Relationship} record from the source/original
+		 *                                Site.
+		 * @param destinationRelationship The {@link Relationship} record for the new Site that is
+		 *                                taking the copied data.
+		 */
+		public RelationshipMapping(final Relationship sourceRelationship,
+								   final Relationship destinationRelationship) {
+			this(sourceRelationship, destinationRelationship, null, null);
+		}
+
+		/**
+		 * Creates a Relationship Mapping for a copied Content Type.
+		 *
+		 * @param sourceRelationship The {@link Relationship} record from the source/original Site.
+		 * @param sourceContentType  The {@link ContentType} from the source/original Site.
+		 * @param sourceField        The {@link RelationshipField} from the source/original Content
+		 *                           Type.
+		 */
+		public RelationshipMapping(final Relationship sourceRelationship,
+								   final ContentType sourceContentType,
+								   final RelationshipField sourceField) {
+			this(sourceRelationship, null, sourceContentType, sourceField);
+		}
+
+		/**
+		 * Creates a Relationship Mapping for a copied Content Type.
+		 *
+		 * @param sourceRelationship      The {@link Relationship} record from the source/original
+		 *                                Site.
+		 * @param destinationRelationship The {@link Relationship} record for the new Site that is
+		 *                                taking the copied data.
+		 * @param sourceContentType       The {@link ContentType} from the source/original Site.
+		 * @param sourceField             The {@link RelationshipField} from the source/original
+		 *                                Content Type.
+		 */
+		public RelationshipMapping(final Relationship sourceRelationship,
+								   final Relationship destinationRelationship,
+								   final ContentType sourceContentType,
+								   final RelationshipField sourceField) {
+			this.sourceRelationship = sourceRelationship;
+			this.destinationRelationship = destinationRelationship;
+			this.sourceContentType = sourceContentType;
+			this.sourceField = sourceField;
+		}
+
+	}
 
 	/**
 	 * Utility method which validates that the source and destination Sites can be pulled from the database. That is,

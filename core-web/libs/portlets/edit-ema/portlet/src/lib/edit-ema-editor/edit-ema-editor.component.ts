@@ -459,7 +459,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragleave')
             .pipe(
                 takeUntil(this.destroy$),
-                filter((event: DragEvent) => !event.x && !event.y && !event.relatedTarget) // Just reset when is out of the window
+                filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
                 // I need to do this to hide the dropzone but maintain the current dragItem
@@ -676,6 +676,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
+            this.store.updateEditorState(EDITOR_STATE.IDLE); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
+
             this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert } = insertContentletInContainer({

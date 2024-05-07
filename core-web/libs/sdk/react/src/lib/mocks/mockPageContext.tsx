@@ -69,7 +69,7 @@ export const mockPageContext: PageProviderContext = {
         }
     },
     page: { identifier: 'page-1', title: 'Hello Page' },
-    viewAs: { language: { id: 'en' }, persona: { keyTag: 'persona-1' } },
+    viewAs: { language: { id: 'en' }, persona: { keyTag: 'persona-1' }, variantId: 'variant-1' },
     components: {},
     isInsideEditor: false
 };

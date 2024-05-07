@@ -1232,7 +1232,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     ParseContainer.PARSE_CONTAINER_UUID_PREFIX + ContainerUUID.UUID_START_VALUE) ;
 
             if (!pageContenstContains && container instanceof FileAssetContainer) {
-                pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+                pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE)
+                    || pageContents.contains(container.getIdentifier(),
+                        ParseContainer.PARSE_CONTAINER_UUID_PREFIX + ContainerUUID.UUID_START_VALUE);
             }
 
             return pageContenstContains;
