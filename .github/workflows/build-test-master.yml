@@ -22,8 +22,8 @@ jobs:
     name: Initialize
     uses: ./.github/workflows/reusable-initialize.yml
     with:
-      reuse-previous-build: ${{ inputs.reuse-previous-build || github.event_name != 'workflow_dispatch' }}
-      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || github.event_name != 'workflow_dispatch' }}
+      reuse-previous-build: false
+      build-on-missing-artifacts: false
   build:
     name: PR Build
     needs: [ initialize ]
@@ -38,7 +38,7 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/reusable-ci-test.yml
     with:
-      run-all-tests: ${{ inputs.run-all-tests || false }}
+      run-all-tests: true
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
