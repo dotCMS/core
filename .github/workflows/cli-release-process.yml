@@ -99,8 +99,10 @@ jobs:
           AUXILIARY_BRANCH=version-update-${RELEASE_VERSION}-${{ github.run_id }}
           git checkout -b $AUXILIARY_BRANCH
           
-          # Update version in pom.xml
-          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
+          # set version in .mvn/maven.config
+          echo "-Dprod=true" > .mvn/maven.config
+          echo "-Drelease=${release_version}" >> .mvn/maven.config
+          echo "-Dchangelist=" >> .mvn/maven.config
           
           # Commit version changes
           git commit --allow-empty -a -m "Update dotCLI version to $RELEASE_VERSION"

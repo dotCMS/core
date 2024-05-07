@@ -2809,4 +2809,98 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+	/**
+	 * <ul>
+	 *     <li><b>Method to test:
+	 *     </b>{@link ContentTypeAPI#copyFromAndDependencies(CopyContentTypeBean, Host, boolean)}</li>
+	 *     <li><b>Given Scenario: </b>Creates a test Content Type and a test Workflow Schemes. Then,
+	 *     assigns it to the test Content Type. Create a new test Site as well. Finally, copies the
+	 *     source Content Type and its dependencies to the new Site WITHOUT copying Relationship
+	 *     Fields.</li>
+	 *     <li><b>Expected Result: </b>The copied Content Type must point to the same Workflow
+	 *     Scheme as it was copied with dependencies, and also point to the new Site. Moreover, NO
+	 *     Relationship Fields must be present.</li>
+	 * </ul>
+	 */
+	@Test
+	public void testCopyFromAndDependenciesToAnotherSiteWithNoRelationshipFields() throws DotDataException, DotSecurityException {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+		final long millis = System.currentTimeMillis();
+		final String siteTwoName = "sitetwo" + millis +".com";
+		ContentType sourceContentType = null;
+		ContentType copiedContentType = null;
+		WorkflowScheme workflowScheme = null;
+		try {
+			// ╔════════════════════════╗
+			// ║  Generating Test data  ║
+			// ╚════════════════════════╝
+			final List<Field> fields = new ArrayList<>();
+			fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+			fields.add(new FieldDataGen().type(RelationshipField.class)
+					.name("First Related Content").velocityVarName("firstRelatedContent").relationType("webPageContent").values("0").next());
+			fields.add(new FieldDataGen().name("Author").velocityVarName("author").next());
+			fields.add(new FieldDataGen().type(WysiwygField.class).name("Description").velocityVarName("description").next());
+			fields.add(new FieldDataGen().type(RelationshipField.class)
+					.name("Second Related Content").velocityVarName("secondRelatedContent").relationType("webPageContent").values("0").next());
+			sourceContentType = new ContentTypeDataGen()
+					.host(APILocator.systemHost()).description("This is a description of my test Content Type")
+					.fields(fields)
+					.nextPersisted();
+			sourceContentType = contentTypeAPI.save(sourceContentType);
+			final Host siteTwo = new SiteDataGen().name(siteTwoName).nextPersisted();
+			workflowScheme = new WorkflowDataGen().name("Test Workflow_" + millis).nextPersisted();
+			final Set<String> schemesIds = new HashSet<>();
+			schemesIds.add(workflowScheme.getId());
+			workflowAPI.saveSchemeIdsForContentType(sourceContentType, schemesIds);
+			final String newVariableName = sourceContentType.variable() + millis;
+			// Pass down the flag to skip copying Relationship fields
+			copiedContentType =
+					contentTypeAPI.copyFromAndDependencies(
+							new CopyContentTypeBean.Builder().sourceContentType(sourceContentType).name(newVariableName).newVariable(newVariableName).build(),
+							siteTwo,
+							false);
+
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			assertEquals("Source Content Types MUST belong to System Host", "systemHost", sourceContentType.siteName());
+			assertEquals("Copied Content Types MUST belong to the second test Site", siteTwoName, copiedContentType.siteName());
+			assertEquals("The copied Content Type MUST have a different Velocity Variable Name",
+					newVariableName, copiedContentType.variable());
+			final Map<String, Field> copiedTypeFieldMap = copiedContentType.fieldMap();
+			assertEquals("The copied Content Type must have ONLY 3 fields, as Relationship Fields were not copied",
+					3,  copiedTypeFieldMap.size());
+			copiedTypeFieldMap.forEach((fieldVarName, field)
+					-> assertNotEquals("The copied Content Type must NOT have any Relationship Field",
+                    RelationshipField.class, field.getClass()));
+			final List<WorkflowScheme> schemesForSourceContentType = workflowAPI.findSchemesForContentType(sourceContentType);
+			final List<WorkflowScheme> schemesForCopiedContentType = workflowAPI.findSchemesForContentType(copiedContentType);
+			if (!schemesForSourceContentType.containsAll(schemesForCopiedContentType)) {
+				fail("The Workflow Schemes from both Content Types MUST be the same");
+			}
+		} finally {
+			// ╔═══════════╗
+			// ║  Cleanup  ║
+			// ╚═══════════╝
+			if (null != sourceContentType) {
+				contentTypeAPI.delete(sourceContentType);
+			}
+			if (null != copiedContentType) {
+				contentTypeAPI.delete(copiedContentType);
+			}
+			if (null != workflowScheme) {
+				try {
+					workflowAPI.archive(workflowScheme, APILocator.systemUser());
+					workflowAPI.deleteScheme(workflowScheme, APILocator.systemUser());
+				} catch (final AlreadyExistException e) {
+					// Failed to delete the scheme. Just move on
+				}
+			}
+		}
+	}
+
 }
