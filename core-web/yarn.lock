@@ -4307,6 +4307,18 @@
   resolved "https://registry.npmjs.org/@nx/nx-win32-x64-msvc/-/nx-win32-x64-msvc-18.0.4.tgz#c57cbb5e42b10322cb966270a32a2f7869634186"
   integrity sha512-FdAdl5buvtUXp8hZVRkK0AZeiCu35l0u+yHsulNViYdh3OXRT1hYJ0CeqpxlLfvbHqB9JzDPtJtG0dpKHH/O0Q==
 
+"@nx/playwright@18.0.4":
+  version "18.0.4"
+  resolved "https://registry.npmjs.org/@nx/playwright/-/playwright-18.0.4.tgz#d2b8ed181e4e5b7ce9cc484579459cd9488a0215"
+  integrity sha512-HTex+K8O9ZWZw9RyiRiw1x46Tc0DOqCWVC0Gouu1oN7sPiukag1OwKpmaELx7UXYzo2O42D8Wr5It7tFGLvWEQ==
+  dependencies:
+    "@nx/devkit" "18.0.4"
+    "@nx/eslint" "18.0.4"
+    "@nx/js" "18.0.4"
+    "@phenomnomnominal/tsquery" "~5.0.1"
+    minimatch "9.0.3"
+    tslib "^2.3.0"
+
 "@nx/react@18.0.4":
   version "18.0.4"
   resolved "https://registry.npmjs.org/@nx/react/-/react-18.0.4.tgz#438ff005467ecb311a1231f84ab78db4c40ef37c"
@@ -4557,6 +4569,13 @@
   version "0.11.0"
   resolved "https://registry.npmjs.org/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
+
+"@playwright/test@^1.36.0":
+  version "1.44.0"
+  resolved "https://registry.npmjs.org/@playwright/test/-/test-1.44.0.tgz#ac7a764b5ee6a80558bdc0fcbc525fcb81f83465"
+  integrity sha512-rNX5lbNidamSUorBhB4XZ9SQTjAqfe5M+p37Z8ic0jPFBMo5iCtQz1kRWkEMg+rYOKSlVycpQmpqjSFq7LXOfg==
+  dependencies:
+    playwright "1.44.0"
 
 "@polka/url@^1.0.0-next.24":
   version "1.0.0-next.24"
@@ -11850,6 +11869,11 @@ eslint-plugin-jsx-a11y@6.7.1:
     object.fromentries "^2.0.6"
     semver "^6.3.0"
 
+eslint-plugin-playwright@^0.15.3:
+  version "0.15.3"
+  resolved "https://registry.npmjs.org/eslint-plugin-playwright/-/eslint-plugin-playwright-0.15.3.tgz#9fd8753688351bcaf41797eb6a7df8807fd5eb1b"
+  integrity sha512-LQMW5y0DLK5Fnpya7JR1oAYL2/7Y9wDiYw6VZqlKqcRGSgjbVKNqxraphk7ra1U3Bb5EK444xMgUlQPbMg2M1g==
+
 eslint-plugin-react-hooks@4.6.0:
   version "4.6.0"
   resolved "https://registry.npmjs.org/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.6.0.tgz#4c3e697ad95b77e93f8646aaa1630c1ba607edd3"
@@ -12878,6 +12902,11 @@ fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
   integrity sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==
+
+fsevents@2.3.2:
+  version "2.3.2"
+  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
+  integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
 
 fsevents@^2.3.2, fsevents@~2.3.2, fsevents@~2.3.3:
   version "2.3.3"
@@ -18563,6 +18592,20 @@ pkg-dir@^7.0.0:
   integrity sha512-Ie9z/WINcxxLp27BKOCHGde4ITq9UklYKDzVo1nhk5sqGEXU3FpkwP5GM2voTGJkGd9B3Otl+Q4uwSOeSUtOBA==
   dependencies:
     find-up "^6.3.0"
+
+playwright-core@1.44.0:
+  version "1.44.0"
+  resolved "https://registry.npmjs.org/playwright-core/-/playwright-core-1.44.0.tgz#316c4f0bca0551ffb88b6eb1c97bc0d2d861b0d5"
+  integrity sha512-ZTbkNpFfYcGWohvTTl+xewITm7EOuqIqex0c7dNZ+aXsbrLj0qI8XlGKfPpipjm0Wny/4Lt4CJsWJk1stVS5qQ==
+
+playwright@1.44.0:
+  version "1.44.0"
+  resolved "https://registry.npmjs.org/playwright/-/playwright-1.44.0.tgz#22894e9b69087f6beb639249323d80fe2b5087ff"
+  integrity sha512-F9b3GUCLQ3Nffrfb6dunPOkE5Mh68tR7zN32L4jCk4FjQamgesGay7/dAAe1WaMEGV04DkdJfcJzjoCKygUaRQ==
+  dependencies:
+    playwright-core "1.44.0"
+  optionalDependencies:
+    fsevents "2.3.2"
 
 png-js@^1.0.0:
   version "1.0.0"

@@ -223,6 +223,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     );
 
     ngOnInit(): void {
+        console.log("Se cargó el componente")
         this.handleReloadContent();
         this.handleDragEvents();
 
@@ -805,6 +806,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 doc.open();
                 doc.write(newFile);
                 doc.close();
+
+                console.log("Se cargo el iframe content");
+
 
                 this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
                 this.ogTagsResults$ = this.dotSeoMetaTagsService
