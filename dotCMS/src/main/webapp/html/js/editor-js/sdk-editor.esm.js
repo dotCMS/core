@@ -323,6 +323,15 @@ function findVTLData(target) {
     }
     return window.parent !== window;
 }
+function addClasstForEmptyContentlets() {
+    var contentlets = document.querySelectorAll('[data-dot-object="contentlet"]');
+    contentlets.forEach(function(contentlet) {
+        if (contentlet.clientHeight) {
+            return;
+        }
+        contentlet.classList.add("empty-contentlet");
+    });
+}
 
 /**
  * This is the main entry point for the SDK VTL.
@@ -339,4 +348,5 @@ function findVTLData(target) {
     scrollHandler();
     preserveScrollOnIframe();
     listenHoveredContentlet();
+    addClasstForEmptyContentlets();
 }
