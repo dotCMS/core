@@ -188,4 +188,12 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
             .collect(Collectors.groupingBy(LanguageVariableExt::key));
   }
 
+  @CloseDBIfOpened
+  @Override
+  public int countVariablesByIdentifier() throws DotDataException {
+    final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
+    final ContentType contentType = langVarContentType.get();
+    return factory.countVariablesByIdentifier(contentType);
+  }
+
 }

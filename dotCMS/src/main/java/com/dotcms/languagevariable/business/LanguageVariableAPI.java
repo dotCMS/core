@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public interface LanguageVariableAPI {
 	
-	public static final String LANGUAGEVARIABLE_VAR_NAME = "Languagevariable";
+	String LANGUAGEVARIABLE_VAR_NAME = "Languagevariable";
 
     /**
      * Returns the Language Variable value associated to the specified key and language ID. This
@@ -162,7 +162,7 @@ public interface LanguageVariableAPI {
      * @return
      * @throws DotDataException
      */
-    //int countLiveVariables() throws DotDataException;
+    int countVariablesByIdentifier() throws DotDataException;
 
     //void invalidateLanguageVariablesCache(Contentlet contentlet);
 }

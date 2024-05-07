@@ -115,4 +115,30 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
         return Collections.unmodifiableList(languageVariables);
     }
 
+    @Override
+    public int countVariablesByIdentifier(ContentType contentType) throws DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        final String select = "select count( distinct( contentlet.identifier )) as x \n"
+                + "     from contentlet  \n"
+                + "     inner join ( \n"
+                + "      select distinct c.identifier \n"
+                + "       from contentlet c, contentlet_version_info vi, inode i \n"
+                + "      where \n"
+                + "       c.structure_inode = '"+contentType.inode()+"' \n"
+                + "       and vi.identifier = c.identifier \n"
+                + "       and ( vi.working_inode = c.inode or vi.live_inode = c.inode ) \n"
+                + "       and c.inode = i.inode  \n"
+                + "       and vi.deleted = 'false' \n"
+                + "        order by c.identifier       \n"
+                + "    ) con_ident on contentlet.identifier = con_ident.identifier \n"
+                + "     inner join ( \n"
+                + "       select cvi.* from contentlet_version_info cvi  \n"
+                + "     ) cc on ( cc.working_inode = contentlet.inode or cc.live_inode = contentlet.inode ) \n"
+                + "     join (\n"
+                + "      select i.* from inode i \n"
+                + "     ) inode on inode.inode = contentlet.inode";
+        dotConnect.setSQL(select);
+        return dotConnect.getInt("x");
+    }
+
 }
