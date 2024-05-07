@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
@@ -62,6 +63,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     private static User systemUser;
     private static Template template;
 
+    private static int permissionCacheSize = 0;
     @BeforeClass
     public static void createTestHost() throws Exception {
 
@@ -75,7 +77,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
 		userAPI = APILocator.getUserAPI();
 
         host = new Host();
-        host.setHostname("testhost.demo.dotcms.com");
+        host.setHostname(System.currentTimeMillis() + "testhost.demo.dotcms.com");
         try{
             HibernateUtil.startTransaction();
             host=hostAPI.save(host, systemUser, false);
@@ -94,6 +96,11 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         APILocator.getTemplateAPI().saveTemplate(template, host, systemUser, false);
         Map<String, Object> sessionAttrs = new HashMap<>();
         sessionAttrs.put("USER_ID", "dotcms.org.1");
+        permissionCacheSize = Config.getIntProperty("cache.permissionshortlived.size", 0);
+        Config.setProperty("cache.permissionshortlived.size", 0);
+        CacheLocator.getPermissionCache().flushShortTermCache();
+
+
     }
 
     @AfterClass
@@ -107,6 +114,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
         }
+        Config.setProperty("cache.permissionshortlived.size", 0);
+        CacheLocator.getPermissionCache().flushShortTermCache();
     }
    
     @Test
@@ -277,7 +286,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
 
         try {
             // Create test Host.
-            host.setHostname("permission.dotcms.com");
+            host.setHostname( System.currentTimeMillis() + "-permission.dotcms.com");
             host = hostAPI.save(host, systemUser, false);
 
             // Create the Folders needed.
@@ -289,14 +298,14 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             // Child: Product Publisher
             // Grandchild: Product Contributor
             // Create Parent Role.
-            parentRole.setName("Webmaster-Test");
+            parentRole.setName(System.currentTimeMillis() + "-Webmaster-Test");
             parentRole.setEditUsers(true);
             parentRole.setEditPermissions(true);
             parentRole.setEditLayouts(true);
             parentRole = roleAPI.save(parentRole);
 
             // Create Child Role Role.
-            childRole.setName("Product Contributor-Test");
+            childRole.setName(System.currentTimeMillis() + "-Product Contributor-Test");
             childRole.setEditUsers(true);
             childRole.setEditPermissions(true);
             childRole.setEditLayouts(true);
@@ -304,7 +313,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             childRole = roleAPI.save(childRole);
 
             // Create Grandchild Role Role.
-            grandChildRole.setName("Product Contributor-Test");
+            grandChildRole.setName(System.currentTimeMillis() + "-Product Contributor-Test");
             grandChildRole.setEditUsers(true);
             grandChildRole.setEditPermissions(true);
             grandChildRole.setEditLayouts(true);
@@ -312,7 +321,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             grandChildRole = roleAPI.save(grandChildRole);
 
             // Now lets create a user, assign the role and test basic permissions.
-            newUser = userAPI.createUser("new.user@test.com", "new.user@test.com");
+            newUser = userAPI.createUser("new.user@test.com", System.currentTimeMillis() + "-new.user@test.com");
             newUser.setFirstName("Test-11962");
             newUser.setLastName("User-11962");
             userAPI.save(newUser, systemUser, false);

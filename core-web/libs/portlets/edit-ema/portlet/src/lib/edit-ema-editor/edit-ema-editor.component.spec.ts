@@ -2259,6 +2259,8 @@ describe('EditEmaEditorComponent', () => {
                     it('should open dialog when dropping a content-type', () => {
                         const contentType = CONTENT_TYPE_MOCK[0];
 
+                        jest.spyOn(store, 'updateEditorState');
+
                         store.setDragItem({
                             baseType: contentType.baseType,
                             contentType: contentType.variable,
@@ -2310,6 +2312,7 @@ describe('EditEmaEditorComponent', () => {
                         );
 
                         expect(dialog.attributes['ng-reflect-visible']).toBe('true');
+                        expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
                     });
 
                     it('should advice and reset the state to IDLE when the dropped file is not an image', () => {

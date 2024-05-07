@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -1553,13 +1554,325 @@ class SiteCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: Create a site with variables, push the changes to the server, update the site
+     * variables including duplicated variables and push those changes.
+     * <br>
+     * Expected result: The site should be created with the variables, and the variables should be
+     * updated handling properly the duplicated variables, no duplications should return from the
+     * server.
+     *
+     * @throws IOException if there is an error creating the temporary folder or writing to files
+     */
+    @Test
+    @Order(22)
+    void Test_Command_Duplicated_Variables() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+
+            final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            var result = createSite(workspace, false, false);
+
+            // Pushing the changes to create the site
+            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // Validating the site was created
+            status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                    "--name", result.siteName);
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ---
+            // Now validating the updated the site descriptors
+            var mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            validateLocalDescriptor(result.siteName, mappedSiteWithVariables, 0);
+
+            // ╔═══════════════════════════════╗
+            // ║  Adding duplicated variables  ║
+            // ╚═══════════════════════════════╝
+            var siteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            siteWithVariables = siteWithVariables.withVariables(
+                    SiteVariableView.builder()
+                            .name("var1Name")
+                            .key("var1Key")
+                            .value("var1Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var2Name")
+                            .key("var2Key")
+                            .value("var2Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var3Name")
+                            .key("var3Key")
+                            .value("var3Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var3Name")
+                            .key("var3Key")
+                            .value("var3Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var4Name")
+                            .key("var4Key")
+                            .value("var4Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var5Name")
+                            .key("var5Key")
+                            .value("var5Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var5Name")
+                            .key("var5Key")
+                            .value("var5Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var5Name")
+                            .key("var5Key")
+                            .value("var5Value")
+                            .build()
+            );
+            var jsonContent = this.mapperService
+                    .objectMapper(result.path.toFile())
+                    .writeValueAsString(siteWithVariables);
+            Files.write(result.path, jsonContent.getBytes());
+
+            // Pushing again
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            // Now validating the updated the site descriptors
+            mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            validateLocalDescriptor(result.siteName, mappedSiteWithVariables, 5);
+
+            // Now check the server
+            var byName = siteAPI.findByName(
+                    GetSiteByNameRequest.builder().siteName(result.siteName).build()
+            );
+            validateServerVariables(result.siteName, byName.entity(), 5);
+
+            // Applying the same cleanup we do in the server to remove the duplicated variables
+            final var uniqueSiteVariables = new ArrayList<>(siteWithVariables.variables().stream().
+                    collect(Collectors.toMap(
+                            SiteVariableView::key, // key is the HostVariable's `key`
+                            siteVariable -> siteVariable,  // value is the HostVariable itself
+                            (existing, replacement) -> existing)) // if there's a conflict, keep the existing
+                    .values()
+            );
+
+            // Validating everything matches between the local site and the server
+            validateVariablesMatches(uniqueSiteVariables, byName.entity());
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Create a site with variables, push the changes to the server, update the site
+     * variables including variables with empty keys and push those changes.
+     * <br>
+     * Expected result: The operation should fail because the keys are required for the variables.
+     *
+     * @throws IOException if there is an error creating the temporary folder or writing to files
+     */
+    @Test
+    @Order(23)
+    void Test_Command_Variables_With_Empty_Keys() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            var result = createSite(workspace, false, false);
+
+            // Pushing the changes to create the site
+            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // Validating the site was created
+            status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                    "--name", result.siteName);
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ---
+            // Now validating the updated the site descriptors
+            var mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            validateLocalDescriptor(result.siteName, mappedSiteWithVariables, 0);
+
+            // ╔════════════════════════════════════╗
+            // ║  Adding variables with empty keys  ║
+            // ╚════════════════════════════════════╝
+            var siteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            siteWithVariables = siteWithVariables.withVariables(
+                    SiteVariableView.builder()
+                            .name("var1Name")
+                            .key("var1Key")
+                            .value("var1Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var2Name")
+                            .key("")
+                            .value("var2Value")
+                            .build()
+            );
+            var jsonContent = this.mapperService
+                    .objectMapper(result.path.toFile())
+                    .writeValueAsString(siteWithVariables);
+            Files.write(result.path, jsonContent.getBytes());
+
+            // Pushing again
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
+
+            final String output = writer.toString();
+            Assertions.assertTrue(
+                    output.contains("Site Variable key is required"));
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Create a site with variables, push the changes to the server, update the site
+     * variables including variables with keys with a invalid format and push those changes.
+     * <br>
+     * Expected result: The operation should fail because the keys should only contain characters.
+     *
+     * @throws IOException if there is an error creating the temporary folder or writing to files
+     */
+    @Test
+    @Order(24)
+    void Test_Command_Variables_With_Invalid_Key_Format() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            var result = createSite(workspace, false, false);
+
+            // Pushing the changes to create the site
+            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // Validating the site was created
+            status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                    "--name", result.siteName);
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // ---
+            // Now validating the updated the site descriptors
+            var mappedSiteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            validateLocalDescriptor(result.siteName, mappedSiteWithVariables, 0);
+
+            // ╔══════════════════════════════════════╗
+            // ║  Adding variables with invalid keys  ║
+            // ╚══════════════════════════════════════╝
+            var siteWithVariables = this.mapperService.map(
+                    result.path.toFile(),
+                    SiteView.class
+            );
+            siteWithVariables = siteWithVariables.withVariables(
+                    SiteVariableView.builder()
+                            .name("var1Name")
+                            .key("var1Key")
+                            .value("var1Value")
+                            .build(),
+                    SiteVariableView.builder()
+                            .name("var2Name")
+                            .key("var2Key invalid")
+                            .value("var2Value")
+                            .build()
+            );
+            var jsonContent = this.mapperService
+                    .objectMapper(result.path.toFile())
+                    .writeValueAsString(siteWithVariables);
+            Files.write(result.path, jsonContent.getBytes());
+
+            // Pushing again
+            status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                    workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
+
+            final String output = writer.toString();
+            Assertions.assertTrue(
+                    output.contains("Site Variable key should only contains characters"));
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
      * Given scenario: Find a site using the site name. Authentication is done using a token.
      * Expected Result: The site should be found
      *
      * @throws IOException
      */
     @Test
-    @Order(22)
+    @Order(25)
     void Test_Find_Site_Command_Authenticate_With_Token() throws IOException {
         final String token = requestToken();
         final CommandLine commandLine = createCommand();
@@ -1615,15 +1928,27 @@ class SiteCommandIT extends CommandTest {
      * @param remoteSite The remote SiteView object containing the expected variables.
      */
     private void validateVariablesMatches(final SiteView localSite, final SiteView remoteSite) {
+        validateVariablesMatches(localSite.variables(), remoteSite);
+    }
 
-        var localSiteVariables = new ArrayList<>(localSite.variables());
-        localSiteVariables.sort(Comparator.comparing(SiteVariableView::key));
+    /**
+     * Validates that the variables in the "localSite" match the variables in the "remoteSite".
+     *
+     * @param localSiteVariables The local SiteVariableView list containing the variables to be
+     *                           validated.
+     * @param remoteSite         The remote SiteView object containing the expected variables.
+     */
+    private void validateVariablesMatches(final List<SiteVariableView> localSiteVariables,
+            final SiteView remoteSite) {
+
+        var localSiteVariablesCopy = new ArrayList<>(localSiteVariables);
+        localSiteVariablesCopy.sort(Comparator.comparing(SiteVariableView::key));
         var serverSiteVariables = remoteSite.variables();
 
-        Assertions.assertEquals(localSiteVariables.size(), serverSiteVariables.size());
+        Assertions.assertEquals(localSiteVariablesCopy.size(), serverSiteVariables.size());
 
-        for (int i = 0; i < localSiteVariables.size(); i++) {
-            var localVar = localSiteVariables.get(i);
+        for (int i = 0; i < localSiteVariablesCopy.size(); i++) {
+            var localVar = localSiteVariablesCopy.get(i);
             var serverVar = serverSiteVariables.get(i);
             Assertions.assertEquals(localVar.name(), serverVar.name());
             Assertions.assertEquals(localVar.key(), serverVar.key());
