@@ -2892,7 +2892,7 @@ describe('EditEmaEditorComponent', () => {
                             '[data-dot-object="container"]:empty'
                         );
                         expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="contentlet"]:empty'
+                            '[data-dot-object="contentlet"].empty-contentlet'
                         );
                     });
 
