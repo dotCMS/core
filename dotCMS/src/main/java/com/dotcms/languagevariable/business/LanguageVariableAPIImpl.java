@@ -10,6 +10,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -194,6 +195,15 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
     final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
     final ContentType contentType = langVarContentType.get();
     return factory.countVariablesByIdentifier(contentType);
+  }
+
+  /**
+   * Invalidates the language variables cache for the given contentlet.
+   * @param contentlet the contentlet to invalidate the cache for.
+   */
+  public void invalidateLanguageVariablesCache(final Contentlet contentlet) {
+    final LanguageCache languageCache = CacheLocator.getLanguageCache();
+    languageCache.clearVarsByLang(contentlet.getLanguageId());
   }
 
 }

@@ -4,7 +4,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -63,7 +62,7 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
     @Override
     public List<LanguageVariableExt> findVariablesForPagination(ContentType contentType, int offset,
             int limit, String orderBy) throws DotDataException {
-
+        // START-NOSCAN
         String select = "select contentlet.contentlet_as_json->'fields'->'key'->'value' as key, \n"
                 + "          contentlet.contentlet_as_json->'fields'->'value'->'value' as value, \n"
                 + "          contentlet.identifier,\n"
@@ -87,7 +86,7 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
                 + "     join (\n"
                 + "      select i.* from inode i \n"
                 + "     ) inode on inode.inode = contentlet.inode \n";
-
+        // END-NOSCAN
         final String sanitizedSort = SQLUtil.sanitizeSortBy(orderBy);
         if (!sanitizedSort.isEmpty()) {
             select += ORDER_BY + sanitizedSort;
@@ -118,6 +117,7 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
     @Override
     public int countVariablesByIdentifier(ContentType contentType) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
+        // START-NOSCAN
         final String select = "select count( distinct( contentlet.identifier )) as x \n"
                 + "     from contentlet  \n"
                 + "     inner join ( \n"
@@ -137,6 +137,7 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
                 + "     join (\n"
                 + "      select i.* from inode i \n"
                 + "     ) inode on inode.inode = contentlet.inode";
+        // END-NOSCAN
         dotConnect.setSQL(select);
         return dotConnect.getInt("x");
     }

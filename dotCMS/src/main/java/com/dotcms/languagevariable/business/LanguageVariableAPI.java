@@ -3,6 +3,7 @@ package com.dotcms.languagevariable.business;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -164,5 +165,5 @@ public interface LanguageVariableAPI {
      */
     int countVariablesByIdentifier() throws DotDataException;
 
-    //void invalidateLanguageVariablesCache(Contentlet contentlet);
+    void invalidateLanguageVariablesCache(Contentlet contentlet);
 }

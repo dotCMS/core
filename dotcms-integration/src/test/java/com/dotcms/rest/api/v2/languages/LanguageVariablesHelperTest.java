@@ -81,7 +81,7 @@ public class LanguageVariablesHelperTest {
             //Validate the order of the keys we have to have key1, key2, key3
             Assert.assertEquals("key"+ count.getAndIncrement(), key);
             //At least we should have a value for each language
-            Assert.assertEquals("The inner map has to have  at least 3", 3, langVarMap.size());
+            Assert.assertEquals("The inner map has to have at least 3", 3, langVarMap.size());
             //Each one of those keys should have a value for each language
             languageTags.forEach(languageTag -> {
                 Assert.assertTrue(langVarMap.containsKey(languageTag));

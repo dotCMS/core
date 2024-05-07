@@ -53,6 +53,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -419,6 +420,7 @@ public class LanguagesResource {
     public Response getVariables(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @QueryParam("renderNulls") @DefaultValue("true") final boolean renderNulls,
             @BeanParam final PaginationContext paginationContext) throws DotDataException {
 
                 new WebResource.InitBuilder(webResource)
@@ -430,7 +432,7 @@ public class LanguagesResource {
                         .init();
 
         final LanguageVariablePageView view = new LanguageVariablesHelper()
-                .view(paginationContext, true);
+                .view(paginationContext, renderNulls);
         return Response.ok(new ResponseEntityView<>(view)).build();
     }
 
