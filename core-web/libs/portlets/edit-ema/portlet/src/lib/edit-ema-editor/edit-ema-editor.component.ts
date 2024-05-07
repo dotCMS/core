@@ -91,6 +91,7 @@ import {
     ReorderPayload
 } from '../shared/models';
 import {
+    SDK_EDITOR_SCRIPT_SOURCE,
     areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
@@ -500,7 +501,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragleave')
             .pipe(
                 takeUntil(this.destroy$),
-                filter((event: DragEvent) => !event.x && !event.y && !event.relatedTarget) // Just reset when is out of the window
+                filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
                 // I need to do this to hide the dropzone but maintain the current dragItem
@@ -582,7 +583,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="/html/js/editor-js/sdk-editor.js"></script>`;
+        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
+        const bodyExists = rendered.includes('</body>');
+
+        /*
+         * For advance template case. It might not include `body` tag.
+         */
+        if (!bodyExists) {
+            return rendered + scriptString;
+        }
+
         const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
@@ -608,11 +618,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             height: 10rem;
         }
 
+        [data-dot-object="contentlet"].empty-contentlet {
+            min-height: 4rem;
+            width: 100%;
+        }
+
         [data-dot-object="container"]:empty::after {
             content: '${this.dotMessageService.get('editpage.container.is.empty')}';
         }
         </style>
         `;
+
+        const headExists = rendered.includes('</head>');
+
+        /*
+         * For advance template case. It might not include `head` tag.
+         */
+        if (!headExists) {
+            return rendered + styles;
+        }
 
         return rendered.replace('</head>', styles + '</head>');
     }
@@ -626,11 +650,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private inyectCodeToVTL(rendered: string): string {
-        let newFile = this.addEditorPageScript(rendered);
+        const fileWithScript = this.addEditorPageScript(rendered);
+        const fileWithStylesAndScript = this.addCustomStyles(fileWithScript);
 
-        newFile = this.addCustomStyles(newFile);
-
-        return newFile;
+        return fileWithStylesAndScript;
     }
 
     ngOnDestroy(): void {
@@ -719,6 +742,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
+            this.store.updateEditorState(EDITOR_STATE.IDLE); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
+
             this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert } = insertContentletInContainer({

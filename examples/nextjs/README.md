@@ -1,24 +1,39 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+DotCMS provides a Next.js example that shows how to build dotCMS pages heedlessly with Next.js JavaScript framework.
 
-## Getting Started
+## What do you need?
+1. A dotCMS instance or you can use https://demo.dotcms.com
+2. [Node.js](https://nodejs.org) and npm installed
+3. Terminal
+4. And a code editor.
 
-First, run the development server:
+### Create the new Next.js application
+Open your terminal and let’s create the Next.js app by running the following:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npx create-next-app YOUR_NAME --example https://github.com/dotCMS/core/tree/master/examples/nextjs
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This will create a new Next.js app with dotCMS example
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Add the dotCMS configuration
+Now we need to tell the Next.js app what dotCMS instance is going to use to get the data to build its pages.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+1. Open the folder `YOUR_NAME` in your code editor
+2. In the root, find the file .env.local.example and rename to .env.local
+3. Open the .env.local file and update the environment variable:
+  - `DOTCMS_AUTH_TOKEN` this is the auth token for dotCMS, you can use the dotCMS UI to create one.
+  - `NEXT_PUBLIC_DOTCMS_HOST` this is the instance of dotCMS where your pages and content lives (license needed) if you don’t have one, you can use [https://demo.dotcms.com](https://demo.dotcms.com) (be careful it restarts every 24h)
+
+## Run the app
+Once all the configuration is in place, it is time to run the web app. 
+
+1. Go back to your terminal and from the folder YOUR_NAME
+3. Run `npm run dev`
+3. Open http://localhost:3000 in your browser
+
+🎉 And that’s it. 
+
+Consider that if you go to `localhost:3000/about`, the page `/about` needs to exist in your dotCMS instance.
 
 ## Learn More
 

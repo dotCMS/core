@@ -98,6 +98,7 @@ import {
 } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
+import { SDK_EDITOR_SCRIPT_SOURCE } from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -111,6 +112,23 @@ const messagesMock = {
     'dot.common.dialog.reject': 'Reject',
     'editpage.content.add.already.title': 'Content already added',
     'editpage.content.add.already.message': 'This content is already added to this container'
+};
+
+const IFRAME_MOCK = {
+    nativeElement: {
+        contentDocument: {
+            getElementsByTagName: () => [],
+            querySelectorAll: () => [],
+            write: function (html) {
+                this.body.innerHTML = html;
+            },
+            body: {
+                innerHTML: ''
+            },
+            open: jest.fn(),
+            close: jest.fn()
+        }
+    }
 };
 
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
@@ -2241,6 +2259,8 @@ describe('EditEmaEditorComponent', () => {
                     it('should open dialog when dropping a content-type', () => {
                         const contentType = CONTENT_TYPE_MOCK[0];
 
+                        jest.spyOn(store, 'updateEditorState');
+
                         store.setDragItem({
                             baseType: contentType.baseType,
                             contentType: contentType.variable,
@@ -2292,6 +2312,7 @@ describe('EditEmaEditorComponent', () => {
                         );
 
                         expect(dialog.attributes['ng-reflect-visible']).toBe('true');
+                        expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
                     });
 
                     it('should advice and reset the state to IDLE when the dropped file is not an image', () => {
@@ -2912,6 +2933,59 @@ describe('EditEmaEditorComponent', () => {
 
                     componentsToHide.forEach((testId) => {
                         expect(spectator.query(byTestId(testId))).not.toBeNull();
+                    });
+                });
+
+                describe('script and styles injection', () => {
+                    let iframeDocument: Document;
+                    let spy: jest.SpyInstance;
+
+                    beforeEach(() => {
+                        jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+                            cb(0); // Pass a dummy value to satisfy the expected argument count
+
+                            return 0;
+                        });
+
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        spectator.component.iframe = IFRAME_MOCK as any;
+                        iframeDocument = spectator.component.iframe.nativeElement.contentDocument;
+                        spy = jest.spyOn(iframeDocument, 'write');
+                    });
+
+                    it('should add script and styles to iframe', () => {
+                        spectator.component.setIframeContent(`<head></head></body></body>`);
+
+                        expect(spy).toHaveBeenCalled();
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                        );
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="container"]:empty'
+                        );
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"].empty-contentlet'
+                        );
+                    });
+
+                    it('should add script and styles to iframe for advance templates', () => {
+                        spectator.component.setIframeContent(`<div>Advanced Template</div>`);
+
+                        expect(spy).toHaveBeenCalled();
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                        );
+
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="container"]:empty'
+                        );
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"].empty-contentlet'
+                        );
+                    });
+
+                    afterEach(() => {
+                        (window.requestAnimationFrame as jest.Mock).mockRestore();
                     });
                 });
             });

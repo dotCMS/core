@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -366,7 +365,7 @@ public class AppsUtil {
     private static AppsSecretsImportExport readObject(final Path importFile)
             throws IOException, ClassNotFoundException {
         try(InputStream inputStream = Files.newInputStream(importFile)){
-            return (AppsSecretsImportExport)new ObjectInputStream(inputStream).readObject();
+            return (AppsSecretsImportExport) new VersionOverrideObjectInputStream(inputStream).readObject();
         }
     }
 

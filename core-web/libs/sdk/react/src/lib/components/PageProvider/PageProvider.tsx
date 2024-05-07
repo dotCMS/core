@@ -77,8 +77,12 @@ export interface PageProviderContext {
         persona: {
             keyTag: string;
         };
+        // variant requested
+        variantId: string;
     };
     isInsideEditor: boolean;
+    // If the page is part of an experiment, this will be the experiment id
+    runningExperimentId?: string;
 }
 
 /**

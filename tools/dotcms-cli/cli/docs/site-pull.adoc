@@ -19,7 +19,7 @@ site-pull - *Retrieves sites descriptors*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site pull* [*-h*] [*-ff*] [*-fmt*=_<inputOutputFormat>_]
+*site pull* [*-h*] [*-ff*] [*--dotcms-url*=_<remoteURL>_] [*-fmt*=_<inputOutputFormat>_]
           [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [*--workspace*=_<file>_]
           [_idOrName_]
 
@@ -48,6 +48,9 @@ site-pull - *Retrieves sites descriptors*
 
 // tag::picocli-generated-man-section-options[]
 == Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
 
 *-ff, --fail-fast*::
   Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.

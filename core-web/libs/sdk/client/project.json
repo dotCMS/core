@@ -38,6 +38,11 @@
             },
             "dependsOn": ["build"]
         },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/client"
+            }
+        },
         "lint": {
             "executor": "@nrwl/linter:eslint",
             "outputs": ["{options.outputFile}"],

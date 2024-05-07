@@ -46,6 +46,11 @@
                     "codeCoverage": true
                 }
             }
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/react"
+            }
         }
     }
 }

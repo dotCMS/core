@@ -313,6 +313,24 @@ public interface ContentTypeAPI {
   ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException;
 
   /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site.
+   *
+   * @param copyContentTypeBean    The {@link CopyContentTypeBean} object containing the data of
+   *                               the Content Type being copied.
+   * @param destinationSite        The {@link Host} object representing the Site where the Content
+   *                               Type will be saved.
+   * @param copyRelationshipFields If Relationship Fields must be copied as well, set this to
+   *                               {@code true}.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException;
+
+  /**
    * Creates a copy of an existing Content Type and saves it.
    *
    * @param copyContentTypeBean The {@link CopyContentTypeBean} object containing the data of the
@@ -343,6 +361,26 @@ public interface ContentTypeAPI {
    *                              permissions to perform this action.
    */
   ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site. Additionally,
+   * the Workflow Schemes being used by the original Content Type will be assigned to the copied
+   * Content Type.
+   *
+   * @param copyContentTypeBean    The {@link CopyContentTypeBean} object containing the data of
+   *                               the Content Type being copied.
+   * @param destinationSite        The {@link Host} object representing the Site where the Content
+   *                               Type will be saved.
+   * @param copyRelationshipFields If Relationship Fields must be copied as well, set this to
+   *                               {@code true}.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException;
 
   /**
    * Saves a new Content Type.
