@@ -601,7 +601,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
+        const scriptString = `<script src="/html/js/editor-js/sdk-editor.js"></script>`;
         const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
