@@ -135,7 +135,6 @@ jobs:
           ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
             -Dprod=true \
-            -Dflatten.skip=false \
             -Ddocker.buildArchiveOnly=${DOCKER_BUILD_CONTEXT} \
             -DskipTests=true \
             -DskipITs=true \
@@ -287,7 +286,6 @@ jobs:
           ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
             -Dprod=true \
-            -Dflatten.skip=false \
             -DskipTests=true \
             -DskipITs=true \
             deploy
