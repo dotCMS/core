@@ -2,7 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
-import { ContentletDragPayload } from '../../../../../shared/models';
+import { ContainerPayload, ContentletDragPayload } from '../../../../../shared/models';
 import { Container, EmaDragItem } from '../../types';
 
 interface DotErrorPipeResponse {
@@ -37,8 +37,7 @@ export class DotErrorPipe implements PipeTransform {
             ?.container;
 
         if (
-            (container?.identifier !== originContainer?.identifier ||
-                container.uuid !== originContainer?.uuid) && // If it is not from the same container then we are adding a new contentlet
+            !this.isSameTheContainer(container, originContainer) && // If it is not from the same container then we are adding a new contentlet
             !this.contentCanFitInContainer(container.maxContentlets, contentletsLength)
         ) {
             const message =
@@ -74,5 +73,15 @@ export class DotErrorPipe implements PipeTransform {
 
     private contentCanFitInContainer(maxContentlets: number, contentletsLength: number): boolean {
         return contentletsLength < maxContentlets;
+    }
+
+    private isSameTheContainer(
+        container?: ContainerPayload,
+        originContainer?: ContainerPayload
+    ): boolean {
+        return (
+            container?.identifier === originContainer?.identifier &&
+            container?.uuid === originContainer?.uuid
+        );
     }
 }
