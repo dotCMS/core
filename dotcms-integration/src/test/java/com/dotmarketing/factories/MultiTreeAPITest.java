@@ -4226,9 +4226,14 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
 
-        final FileAssetContainer container = new ContainerAsFileDataGen()
+        FileAssetContainer container = new ContainerAsFileDataGen()
                 .contentType(contentType, "")
                 .nextPersisted();
+
+
+        container = (FileAssetContainer) APILocator.getContainerAPI()
+                .find(container.getInode(), APILocator.systemUser(), true);
+
 
         final Template template = new TemplateDataGen()
                 .host(host)

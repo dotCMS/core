@@ -6,13 +6,12 @@
   <parent>
     <groupId>com.dotcms</groupId>
     <artifactId>dotcms-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}${sha1}${changelist}</version>
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>dotcms-cli-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.0-SNAPSHOT</version>
 
   <modules>
     <module>api-data-model</module>
