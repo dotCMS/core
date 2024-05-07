@@ -450,7 +450,9 @@ describe('EditEmaStore', () => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
                         state: EDITOR_STATE.IDLE,
-                        code: undefined
+                        code: undefined,
+                        isVTL: false,
+                        changedFromLoading: true
                     });
                     done();
                 });
@@ -1044,7 +1046,9 @@ describe('EditEmaStore', () => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
                         state: EDITOR_STATE.IDLE,
-                        code: '<html><body><h1>Hello, World!</h1></body></html>'
+                        code: '<html><body><h1>Hello, World!</h1></body></html>',
+                        isVTL: true,
+                        changedFromLoading: true
                     });
                     done();
                 });

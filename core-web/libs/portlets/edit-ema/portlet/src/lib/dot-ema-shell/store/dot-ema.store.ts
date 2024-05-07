@@ -6,7 +6,17 @@ import { Injectable } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
-import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import {
+    catchError,
+    map,
+    pairwise,
+    shareReplay,
+    startWith,
+    switchMap,
+    take,
+    tap,
+    filter
+} from 'rxjs/operators';
 
 import {
     DotContentletLockerService,
@@ -141,7 +151,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     private readonly editor$ = this.select((state) => state.editor);
     private readonly isEnterpriseLicense$ = this.select((state) => state.isEnterpriseLicense);
-    readonly currentState$ = this.select((state) => state.editorState ?? EDITOR_STATE.LOADING);
+    private readonly currentState$ = this.select(
+        (state) => state.editorState ?? EDITOR_STATE.LOADING
+    );
     private readonly currentExperiment$ = this.select((state) => state.currentExperiment);
     private readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
     private readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
@@ -198,10 +210,28 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly editorMode$ = this.select((state) => state.editorData.mode);
     readonly editorData$ = this.select((state) => state.editorData);
     readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
-    readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => ({
-        state,
-        code
-    }));
+
+    readonly contentState$ = this.select(
+        this.code$,
+        this.stateLoad$,
+        this.clientHost$,
+        (code, state, clientHost) => ({
+            state,
+            code,
+            isVTL: !clientHost
+        })
+    ).pipe(
+        startWith({ state: EDITOR_STATE.LOADING, code: '', isVTL: false }),
+        pairwise(),
+        filter(([_prev, curr]) => curr?.state === EDITOR_STATE.IDLE),
+        map(([prev, curr]) => ({
+            changedFromLoading: prev.state === EDITOR_STATE.LOADING,
+            isVTL: curr.isVTL,
+            code: curr.code,
+            state: curr.state
+        }))
+    );
+
     readonly vtlIframePage$ = this.select(
         this.pageRendered$,
         this.isEnterpriseLicense$,
@@ -337,6 +367,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         dragItem
     }));
 
+    readonly isUserDragging$ = this.select((state) => state.editorState).pipe(
+        filter((state) => state === EDITOR_STATE.DRAGGING)
+    );
     /**
      * Concurrently loads page and license data to updat the state.
      *

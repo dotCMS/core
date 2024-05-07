@@ -27,17 +27,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import {
-    takeUntil,
-    catchError,
-    filter,
-    map,
-    switchMap,
-    tap,
-    take,
-    startWith,
-    pairwise
-} from 'rxjs/operators';
+import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
@@ -316,13 +306,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     handleDragEvents() {
-        this.store.currentState$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
-            if (state === EDITOR_STATE.DRAGGING) {
-                this.iframe.nativeElement.contentWindow?.postMessage(
-                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-                    this.host
-                );
-            }
+        this.store.isUserDragging$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+            this.iframe.nativeElement.contentWindow?.postMessage(
+                NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+                this.host
+            );
         });
 
         fromEvent(this.window, 'dragstart')
@@ -551,28 +539,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     handleReloadContent() {
         this.store.contentState$
-            .pipe(
-                startWith({ state: EDITOR_STATE.LOADING, code: '' }),
-                takeUntilDestroyed(this.destroyRef),
-                pairwise(),
-                filter(([_prev, curr]) => curr?.state === EDITOR_STATE.IDLE)
-            )
-            .subscribe(([prev, curr]) => {
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(({ changedFromLoading, code, isVTL }) => {
                 // If we are idle then we are not dragging
                 this.resetDragProperties();
 
-                if (prev?.state !== EDITOR_STATE.LOADING) {
+                if (!changedFromLoading) {
                     /** We have some EDITOR_STATE values that we don't want to reload the content
                      * Only when the state is changed from LOADING to IDLE we need to reload the content
                      */
                     return;
                 }
 
-                if (this.isVTLPage()) {
-                    // If is VTL, the content is updated by store.code$
-                    this.setIframeContent(curr.code);
+                if (isVTL) {
+                    this.setIframeContent(code);
                 } else {
-                    // Only reload if is Headless.
                     this.reloadIframe();
                 }
             });
