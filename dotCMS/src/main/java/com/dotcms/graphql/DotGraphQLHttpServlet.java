@@ -23,25 +23,6 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
     final private static String CORS_DEFAULT=CorsFilter.CORS_PREFIX + "." + CorsFilter.CORS_DEFAULT;
     
     final private static String CORS_GRAPHQL = CorsFilter.CORS_PREFIX + ".graphql";
-    @Override
-    protected GraphQLQueryInvoker getQueryInvoker() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected GraphQLInvocationInputFactory getInvocationInputFactory() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected GraphQLObjectMapper getGraphQLObjectMapper() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected boolean isAsyncServletMode() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     protected GraphQLConfiguration getConfiguration() {
