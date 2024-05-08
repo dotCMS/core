@@ -17,6 +17,7 @@ import io.vavr.control.Try;
 
 import java.io.File;
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -24,6 +25,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -47,8 +51,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private final MetadataGenerator metadataGenerator;
     private final StoragePersistenceProvider persistenceProvider;
     private final MetadataCache metadataCache;
-
-    /**
+    // Create a ConcurrentHashMap to store locks for each cache key
+    private final ConcurrentHashMap<String, WeakReference<ReadWriteLock>> locks = new ConcurrentHashMap<>();/**
      * Constructor used by Integration Tests.
      *
      * @param objectReaderDelegate The {@link ObjectReaderDelegate} that reads an object.
@@ -279,6 +283,24 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     }
 
     /**
+     * Gets the lock for the given cache key. If the lock does not exist, it will be created.
+     * We use a {@link WeakReference} to avoid memory leaks.
+     * @param key The cache key.
+     *
+     * @return The {@link ReadWriteLock} for the given cache key.
+     */
+    private ReadWriteLock getLock(String key) {
+        return locks.compute(key, (k, v) -> {
+            ReadWriteLock lock = (v != null) ? v.get() : null;
+            if (lock == null) {
+                lock = new ReentrantReadWriteLock();
+                return new WeakReference<>(lock);
+            }
+            return v;
+        }).get();
+    }
+
+    /**
      * Group existence verifier
      * @param storageKey
      * @param storage
@@ -377,34 +399,52 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     @Override
     public Map<String, Serializable> retrieveMetaData(final FetchMetadataParams requestMetaData)
             throws DotDataException {
-        if (requestMetaData.isCache()) {
-            final Map<String, Serializable> metadataMap = this.metadataCache
-                    .getMetadataMap(requestMetaData.getCacheKeySupplier().get());
-            if (null != metadataMap) {
-                checkEditableAsText(metadataMap);
-                putIntoCache(requestMetaData.getCacheKeySupplier().get(), metadataMap);
-                return metadataMap;
-            }
-        }
+        final String cacheKey = requestMetaData.getCacheKeySupplier().get();
+        Map<String, Serializable> metadataMap = this.metadataCache.getMetadataMap(cacheKey);
+        // Don't like that we check and fixup this one property here. SteveB
+        boolean updatedEditable = checkUpdateEditableAsText(metadataMap);
 
-        Map<String, Serializable> metadataMap = null;
-        final StorageKey storageKey = requestMetaData.getStorageKey();
-        final StoragePersistenceAPI storage = this.persistenceProvider
-                .getStorage(storageKey.getStorage());
+        if (metadataMap == null || updatedEditable)  {
+            final ReadWriteLock lock = getLock(cacheKey);
+            lock.writeLock().lock();
+            try {
+                // Double-check pattern inside the lock to ensure data hasn't been loaded.
+                // Also we can be here if we need to update the editable as text property and
+                // do not want to get again in this case.
+                if (metadataMap != null) {
+                    putIntoCache(cacheKey, metadataMap);
+                    return metadataMap;
+                }
 
-        this.checkBucket(storageKey, storage);
-        if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
-            metadataMap = retrieveMetadata(storageKey, storage);
-            Logger.debug(FileStorageAPIImpl.class,
-                    () -> "Retrieve the meta data from storage path: " + storageKey.getPath());
-            checkEditableAsText(metadataMap);
-            if (null != requestMetaData.getCacheKeySupplier()) {
-                final Map<String, Serializable> projection = requestMetaData.getProjectionMapForCache().apply(metadataMap);
-                putIntoCache(requestMetaData.getCacheKeySupplier().get(), projection);
-                return projection;
+                metadataMap = this.metadataCache.getMetadataMap(cacheKey);
+                checkUpdateEditableAsText(metadataMap);
+
+                if (metadataMap == null) {
+                    metadataMap = fetchAndCacheMetadata(requestMetaData, cacheKey);
+                }
+            } finally {
+                lock.writeLock().unlock();
             }
         }
         return metadataMap;
+    }
+
+    private Map<String, Serializable> fetchAndCacheMetadata(FetchMetadataParams requestMetaData, String cacheKey)
+            throws DotDataException {
+        final StorageKey storageKey = requestMetaData.getStorageKey();
+        final StoragePersistenceAPI storage = this.persistenceProvider.getStorage(storageKey.getStorage());
+        this.checkBucket(storageKey, storage);
+        if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
+            Map<String, Serializable> metadataMap = retrieveMetadata(storageKey, storage);
+            Logger.debug(FileStorageAPIImpl.class, () -> "Retrieve the meta data from storage path: " + storageKey.getPath());
+            checkUpdateEditableAsText(metadataMap);
+            if (null != cacheKey) {
+                final Map<String, Serializable> projection = requestMetaData.getProjectionMapForCache().apply(metadataMap);
+                putIntoCache(cacheKey, projection);
+                return projection;
+            }
+        }
+        return Collections.emptyMap();
     }
 
     /**
@@ -418,16 +458,15 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      *
      * @param metadataMap The File's metadata Map.
      */
-    private void checkEditableAsText(final Map<String, Serializable> metadataMap) {
-        if (UtilMethods.isSet(metadataMap)) {
-            metadataMap.computeIfAbsent(EDITABLE_AS_TEXT.key(), key -> {
-
+    private boolean checkUpdateEditableAsText(final Map<String, Serializable> metadataMap) {
+        boolean created = false;
+        if (UtilMethods.isSet(metadataMap) && !metadataMap.containsKey(EDITABLE_AS_TEXT.key())) {
                 final String mimeType =
                         Try.of(() -> metadataMap.get(CONTENT_TYPE_META_KEY.key()).toString()).getOrElse(StringPool.BLANK);
-                return FileUtil.isFileEditableAsText(mimeType);
-
-            });
-        }
+                metadataMap.put(EDITABLE_AS_TEXT.key(), FileUtil.isFileEditableAsText(mimeType));
+                created = true;
+            }
+        return created;
     }
 
     @Override

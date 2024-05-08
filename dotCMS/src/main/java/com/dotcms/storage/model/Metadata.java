@@ -40,6 +40,19 @@ public class Metadata implements Serializable {
 
     private final Map<String, Serializable> fieldsMeta;
 
+    private final transient Lazy<Map<String, Serializable>> stdMeta =
+            Lazy.of(() -> {
+                TreeMap<String, Serializable> myMap = getFieldsMeta().entrySet().stream()
+                        .filter(entry -> !entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
+                        .collect(Collectors.toMap(
+                                Entry::getKey,
+                                Entry::getValue,
+                                (oldValue, newValue) -> oldValue, // Merge function in case of key collisions
+                                TreeMap::new)
+                        );
+                return ImmutableSortedMap.copyOf(myMap);
+            });
+
     // Lazy initialization of custom metadata
     private final transient Lazy<Map<String, Serializable>> customMeta =
             Lazy.of(() -> {
@@ -90,7 +103,7 @@ public class Metadata implements Serializable {
      * @return fieldsMeta
      */
     public Map<String, Serializable> getFieldsMeta() {
-        return fieldsMeta;
+        return stdMeta.get();
     }
 
     /**
