@@ -26,7 +26,7 @@ export enum EDITOR_STATE {
     DRAGGING = 'dragging',
     ERROR = 'error',
     OUT_OF_BOUNDS = 'out-of-bounds',
-    SCROLLING = 'scrolling'
+    SCROLL_DRAG = 'scroll-drag'
 }
 
 export enum EDITOR_MODE {
