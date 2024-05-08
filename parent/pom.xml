@@ -1679,6 +1679,9 @@
                                     <snapshotRepoKey>dotcms-libs-snapshot</snapshotRepoKey>
                                 </repository>
                             </deploy>
+                            <buildInfo>
+                                <buildNumber>${buildNumber}</buildNumber>
+                            </buildInfo>
                         </configuration>
                     </plugin>
                 </plugins>
