@@ -6,8 +6,6 @@ import static com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE;
 import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
 
 import com.dotcms.keyvalue.model.KeyValue;
-import com.dotcms.languagevariable.business.LanguageVariable;
-import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
