@@ -18,6 +18,7 @@ import java.util.Map;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
@@ -159,6 +160,17 @@ public class TypeUtil {
 
         if (type instanceof GraphQLObjectType) {
             return GraphQLObjectType.class.cast(type).getName();
+        }
+
+        if (type instanceof GraphQLList) {
+            final GraphQLType wrappedType = GraphQLList.class.cast(type).getWrappedType();
+            if (wrappedType instanceof GraphQLNamedSchemaElement) {
+                return GraphQLNamedSchemaElement.class.cast(wrappedType).getName();
+            }
+
+            if (wrappedType instanceof GraphQLObjectType) {
+                return GraphQLObjectType.class.cast(wrappedType).getName();
+            }
         }
 
         final String typeName = null != type ?type.getClass().getSimpleName():"NULL";
