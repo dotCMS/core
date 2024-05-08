@@ -161,7 +161,8 @@ public class TypeUtil {
             return GraphQLObjectType.class.cast(type).getName();
         }
 
-        throw new IllegalArgumentException("Type is not a GraphQLNamedSchemaElement or GraphQLObjectType");
+        final String typeName = null != type ?type.getClass().getSimpleName():"NULL";
+        throw new IllegalArgumentException("Type: " + typeName + " is not a GraphQLNamedSchemaElement or GraphQLObjectType");
     }
 
     public static class TypeFetcher {
