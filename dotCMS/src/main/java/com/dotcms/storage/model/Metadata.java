@@ -15,13 +15,13 @@ import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
 
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableSortedMap;
-import io.vavr.Lazy;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -40,45 +40,12 @@ public class Metadata implements Serializable {
 
     private final Map<String, Serializable> fieldsMeta;
 
-    private final transient Lazy<Map<String, Serializable>> stdMeta =
-            Lazy.of(() -> {
-                TreeMap<String, Serializable> myMap = getFieldsMeta().entrySet().stream()
-                        .filter(entry -> !entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
-                        .collect(Collectors.toMap(
-                                Entry::getKey,
-                                Entry::getValue,
-                                (oldValue, newValue) -> oldValue, // Merge function in case of key collisions
-                                TreeMap::new)
-                        );
-                return ImmutableSortedMap.copyOf(myMap);
-            });
+    private final transient AtomicReference<Map<String, Serializable>> stdMeta = new AtomicReference<>();
+    private final transient AtomicReference<Map<String, Serializable>> customMeta = new AtomicReference<>();
+    private final transient AtomicReference<Map<String, Serializable>> customMetaWithPrefix = new AtomicReference<>();
 
-    // Lazy initialization of custom metadata
-    private final transient Lazy<Map<String, Serializable>> customMeta =
-            Lazy.of(() -> {
-                TreeMap<String, Serializable> myMap = getFieldsMeta().entrySet().stream()
-                        .filter(entry -> entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
-                        .collect(Collectors.toMap(
-                                entry -> entry.getKey().substring(CUSTOM_PROP_PREFIX.length()),
-                                Entry::getValue,
-                                (oldValue, newValue) -> oldValue, // Merge function in case of key collisions
-                                TreeMap::new)
-                        );
-                return ImmutableSortedMap.copyOf(myMap);
-            });
-    // Lazy initialization of custom metadata with prefix
-    private final transient Lazy<Map<String, Serializable>> customMetaWithPrefix =
-            Lazy.of(() -> {
-                TreeMap<String, Serializable>  myMap = getFieldsMeta().entrySet().stream()
-                        .filter(entry -> entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
-                        .collect(Collectors.toMap(
-                                Entry::getKey,
-                                Entry::getValue,
-                                (oldValue, newValue) -> oldValue, // Merge function in case of key collisions
-                                TreeMap::new)
-                        );
-                return ImmutableSortedMap.copyOf(myMap);
-            });
+
+
     /**
      * Constructor for Metadata
      * @param fieldName The name of the field
@@ -103,7 +70,30 @@ public class Metadata implements Serializable {
      * @return fieldsMeta
      */
     public Map<String, Serializable> getFieldsMeta() {
-        return stdMeta.get();
+        Map<String, Serializable> ret = stdMeta.get();
+        if (ret != null) {
+           return ret;
+        }
+        return stdMeta.updateAndGet(
+                currentMap -> {
+                    if (currentMap == null) {
+                        TreeMap<String, Serializable> myMap =
+                                fieldsMeta.entrySet().stream()
+                                        .filter(
+                                                entry ->
+                                                        !entry.getKey()
+                                                                .startsWith(CUSTOM_PROP_PREFIX))
+                                        .collect(
+                                                Collectors.toMap(
+                                                        Entry::getKey,
+                                                        Entry::getValue,
+                                                        (oldValue, newValue) ->
+                                                                oldValue,
+                                                        TreeMap::new));
+                        return ImmutableSortedMap.copyOf(myMap);
+                    }
+                    return currentMap;
+                });
     }
 
     /**
@@ -111,7 +101,31 @@ public class Metadata implements Serializable {
      * @return customMeta
      */
     public Map<String, Serializable> getCustomMeta() {
-        return customMeta.get();
+        Map<String, Serializable> ret = customMeta.get();
+        if (ret != null) {
+            return ret;
+        }
+        return customMeta.updateAndGet(
+                currentMap -> {
+                    if (currentMap == null) {
+                        TreeMap<String, Serializable> myMap =
+                                fieldsMeta.entrySet().stream()
+                                        .filter(
+                                                entry ->
+                                                        entry.getKey()
+                                                                .startsWith(CUSTOM_PROP_PREFIX))
+                                        .collect(
+                                                Collectors.toMap(
+                                                        e -> e.getKey().substring(CUSTOM_PROP_PREFIX.length()),
+                                                        Entry::getValue,
+                                                        (oldValue, newValue) ->
+                                                                oldValue,
+                                                        TreeMap::new));
+                        return ImmutableSortedMap.copyOf(myMap);
+                    }
+                    return currentMap;
+                });
+
     }
 
     /**
@@ -119,7 +133,30 @@ public class Metadata implements Serializable {
      * @return customMetaWithPrefix
      */
     public Map<String, Serializable> getCustomMetaWithPrefix() {
-        return customMetaWithPrefix.get();
+        Map<String, Serializable> ret = customMetaWithPrefix.get();
+        if (ret != null) {
+            return ret;
+        }
+        return customMetaWithPrefix.updateAndGet(
+                currentMap -> {
+                    if (currentMap == null) {
+                        TreeMap<String, Serializable> myMap =
+                                fieldsMeta.entrySet().stream()
+                                        .filter(
+                                                entry ->
+                                                        entry.getKey()
+                                                                .startsWith(CUSTOM_PROP_PREFIX))
+                                        .collect(
+                                                Collectors.toMap(
+                                                        Entry::getKey,
+                                                        Entry::getValue,
+                                                        (oldValue, newValue) ->
+                                                                oldValue,
+                                                        TreeMap::new));
+                        return ImmutableSortedMap.copyOf(myMap);
+                    }
+                    return currentMap;
+                });
     }
 
     /**
@@ -128,16 +165,16 @@ public class Metadata implements Serializable {
      * @return The value of the field
      */
     public Serializable getField(String key) {
-        return fieldsMeta.get(key);
+        return getFieldsMeta().get(key);
     }
 
     /**
-     * Returns the metadata map
+     * Returns all metadata as a map
      * @return fieldsMeta
      */
     public Map<String, Serializable> getMap() {
         // See if we can remove merge this duplicate method
-        return getFieldsMeta();
+        return fieldsMeta;
     }
 
     /**
@@ -145,7 +182,7 @@ public class Metadata implements Serializable {
      * @return title
      */
     public String getTitle(){
-        return safelyCast(fieldsMeta.get(TITLE_META_KEY.key()), String.class)
+        return safelyCast(getFieldsMeta().get(TITLE_META_KEY.key()), String.class)
                 .orElse(UNKNOWN);
     }
 
@@ -154,7 +191,7 @@ public class Metadata implements Serializable {
      * @return name
      */
     public String getName(){
-        return safelyCast(fieldsMeta.get(NAME_META_KEY.key()), String.class)
+        return safelyCast(getFieldsMeta().get(NAME_META_KEY.key()), String.class)
                 .orElse(UNKNOWN);
     }
 
@@ -179,7 +216,7 @@ public class Metadata implements Serializable {
      * @return path
      */
     public String getPath() {
-        return safelyCast(fieldsMeta.get(PATH_META_KEY.key()), String.class)
+        return safelyCast(getFieldsMeta().get(PATH_META_KEY.key()), String.class)
                 .orElse(UNKNOWN);
     }
 
@@ -188,7 +225,7 @@ public class Metadata implements Serializable {
      * @return sha256
      */
     public String getSha256() {
-        return safelyCast(fieldsMeta.get(SHA256_META_KEY.key()), String.class)
+        return safelyCast(getFieldsMeta().get(SHA256_META_KEY.key()), String.class)
                 .orElse(UNKNOWN);
     }
 
@@ -197,7 +234,7 @@ public class Metadata implements Serializable {
      * @return contentType
      */
     public String getContentType() {
-        return safelyCast(fieldsMeta.get(CONTENT_TYPE_META_KEY.key()), String.class)
+        return safelyCast(getFieldsMeta().get(CONTENT_TYPE_META_KEY.key()), String.class)
                 .orElse(UNKNOWN);
     }
 
@@ -206,7 +243,7 @@ public class Metadata implements Serializable {
      * @return isImage
      */
     public boolean isImage() {
-        return safelyCast(fieldsMeta.get(IS_IMAGE_META_KEY.key()), Boolean.class)
+        return safelyCast(getFieldsMeta().get(IS_IMAGE_META_KEY.key()), Boolean.class)
                 .orElse(false);
     }
 
@@ -231,7 +268,7 @@ public class Metadata implements Serializable {
      * @return modDate
      */
     public long getModDate() {
-        return safelyCast(fieldsMeta.get(MOD_DATE_META_KEY.key()), Number.class)
+        return safelyCast(getFieldsMeta().get(MOD_DATE_META_KEY.key()), Number.class)
                 .map(Number::longValue)
                 .orElseGet(() -> {
                     Logger.debug(Metadata.class, () -> "Invalid or missing numeric value for modification date");
@@ -292,7 +329,7 @@ public class Metadata implements Serializable {
 
     // General method for getting numeric values safely
     private int getNumericValue(String key) {
-        return safelyCast(fieldsMeta.get(key), Number.class)
+        return safelyCast(getFieldsMeta().get(key), Number.class)
                 .map(Number::intValue)
                 .orElseGet(() -> {
                     Logger.debug(Metadata.class, () -> String.format("Invalid or missing numeric value for key `%s`", key));
