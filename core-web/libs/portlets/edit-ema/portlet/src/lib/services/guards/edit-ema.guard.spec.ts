@@ -1,3 +1,4 @@
+import { it, describe, expect } from '@jest/globals';
 import { Observable } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
@@ -36,6 +37,27 @@ describe('EditEmaGuard', () => {
             },
             queryParams: {
                 url: '/some-url',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                language_id: 1
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+
+        const didEnteredPortlet = TestBed.runInInjectionContext(
+            () => editEmaGuard(route, state) as boolean
+        );
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(didEnteredPortlet).toBe(true);
+    });
+
+    it('should just return true when the url has an "index" in the url', () => {
+        const route: ActivatedRouteSnapshot = {
+            firstChild: {
+                url: [{ path: 'content' }]
+            },
+            queryParams: {
+                url: '/im-just-a-cool-index-index',
                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
                 language_id: 1
             }
