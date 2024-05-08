@@ -6,6 +6,7 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    DestroyRef,
     ElementRef,
     HostListener,
     OnDestroy,
@@ -18,7 +19,7 @@ import {
     signal,
     untracked
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
@@ -72,7 +73,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, WINDOW } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import {
     ActionPayload,
@@ -90,6 +91,7 @@ import {
     ReorderPayload
 } from '../shared/models';
 import {
+    SDK_EDITOR_SCRIPT_SOURCE,
     areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
@@ -146,6 +148,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
+    private readonly destroyRef = inject(DestroyRef);
 
     readonly editorState$ = this.store.editorState$;
     readonly dragState$ = this.store.dragState$;
@@ -304,6 +307,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     handleDragEvents() {
+        this.store.isUserDragging$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+            this.iframe.nativeElement.contentWindow?.postMessage(
+                NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+                this.host
+            );
+        });
+
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
@@ -340,11 +350,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         } as ContentletDragPayload
                     });
                 }
-
-                this.iframe.nativeElement.contentWindow?.postMessage(
-                    NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-                    this.host
-                );
             });
 
         fromEvent(this.window, 'dragenter')
@@ -406,6 +411,43 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
                 event.preventDefault(); // Prevent file opening
+                const iframeRect = this.iframe.nativeElement.getBoundingClientRect();
+
+                const isInsideIframe =
+                    event.clientX > iframeRect.left && event.clientX < iframeRect.right;
+
+                if (!isInsideIframe) {
+                    return;
+                }
+
+                let direction;
+
+                if (
+                    event.clientY > iframeRect.top &&
+                    event.clientY < iframeRect.top + IFRAME_SCROLL_ZONE
+                ) {
+                    direction = 'up';
+                }
+
+                if (
+                    event.clientY > iframeRect.bottom - IFRAME_SCROLL_ZONE &&
+                    event.clientY <= iframeRect.bottom
+                ) {
+                    direction = 'down';
+                }
+
+                if (!direction) {
+                    this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+
+                    return;
+                }
+
+                this.store.setScrollingState();
+
+                this.iframe.nativeElement.contentWindow?.postMessage(
+                    { name: NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME, direction },
+                    this.host
+                );
             });
 
         fromEvent(this.window, 'drop')
@@ -459,7 +501,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'dragleave')
             .pipe(
                 takeUntil(this.destroy$),
-                filter((event: DragEvent) => !event.x && !event.y && !event.relatedTarget) // Just reset when is out of the window
+                filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
                 // I need to do this to hide the dropzone but maintain the current dragItem
@@ -498,20 +540,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     handleReloadContent() {
         this.store.contentState$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter(({ state }) => state === EDITOR_STATE.IDLE)
-            )
-            .subscribe(({ code }) => {
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(({ changedFromLoading, code, isVTL }) => {
                 // If we are idle then we are not dragging
                 this.resetDragProperties();
 
-                if (!this.isVTLPage()) {
-                    // Only reload if is Headless.
-                    // If is VTL, the content is updated by store.code$
-                    this.reloadIframe();
-                } else {
+                if (!changedFromLoading) {
+                    /** We have some EDITOR_STATE values that we don't want to reload the content
+                     * Only when the state is changed from LOADING to IDLE we need to reload the content
+                     */
+                    return;
+                }
+
+                if (isVTL) {
                     this.setIframeContent(code);
+                } else {
+                    this.reloadIframe();
                 }
             });
     }
@@ -539,7 +583,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="/html/js/editor-js/sdk-editor.esm.js"></script>`;
+        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
+        const bodyExists = rendered.includes('</body>');
+
+        /*
+         * For advance template case. It might not include `body` tag.
+         */
+        if (!bodyExists) {
+            return rendered + scriptString;
+        }
+
         const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
 
         return updatedRendered;
@@ -565,11 +618,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             height: 10rem;
         }
 
+        [data-dot-object="contentlet"].empty-contentlet {
+            min-height: 4rem;
+            width: 100%;
+        }
+
         [data-dot-object="container"]:empty::after {
             content: '${this.dotMessageService.get('editpage.container.is.empty')}';
         }
         </style>
         `;
+
+        const headExists = rendered.includes('</head>');
+
+        /*
+         * For advance template case. It might not include `head` tag.
+         */
+        if (!headExists) {
+            return rendered + styles;
+        }
 
         return rendered.replace('</head>', styles + '</head>');
     }
@@ -583,11 +650,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private inyectCodeToVTL(rendered: string): string {
-        let newFile = this.addEditorPageScript(rendered);
+        const fileWithScript = this.addEditorPageScript(rendered);
+        const fileWithStylesAndScript = this.addCustomStyles(fileWithScript);
 
-        newFile = this.addCustomStyles(newFile);
-
-        return newFile;
+        return fileWithStylesAndScript;
     }
 
     ngOnDestroy(): void {
@@ -676,6 +742,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
+            this.store.updateEditorState(EDITOR_STATE.IDLE); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
+
             this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert } = insertContentletInContainer({
@@ -924,8 +992,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
-                this.resetDragProperties();
-                this.store.updateEditorState(EDITOR_STATE.IDLE);
+                this.store.updateEditorState(EDITOR_STATE.SCROLLING);
+            },
+            [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
+                this.store.updateEditorScrollState();
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
                 this.iframe?.nativeElement?.contentWindow.postMessage(

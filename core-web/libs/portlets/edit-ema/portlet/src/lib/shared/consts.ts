@@ -28,6 +28,8 @@ export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
 
 export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
+export const IFRAME_SCROLL_ZONE = 100;
+
 export const DEFAULT_PERSONA: DotPersona = {
     hostFolder: 'SYSTEM_HOST',
     inode: '',

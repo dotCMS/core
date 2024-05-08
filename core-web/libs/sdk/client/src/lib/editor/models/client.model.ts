@@ -22,6 +22,10 @@ export enum CUSTOMER_ACTIONS {
      */
     IFRAME_SCROLL = 'scroll',
     /**
+     * Tell the editor that the page has stopped scrolling
+     */
+    IFRAME_SCROLL_END = 'scroll-end',
+    /**
      * Ping the editor to see if the page is inside the editor
      */
     PING_EDITOR = 'ping-editor',

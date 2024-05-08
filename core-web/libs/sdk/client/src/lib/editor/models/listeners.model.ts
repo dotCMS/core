@@ -16,7 +16,12 @@ export enum NOTIFY_CUSTOMER {
     /**
      * Received pong from the editor
      */
-    EMA_EDITOR_PONG = 'ema-editor-pong'
+    EMA_EDITOR_PONG = 'ema-editor-pong',
+    /**
+     * Received scroll event trigger from the editor
+     */
+
+    EMA_SCROLL_INSIDE_IFRAME = 'scroll-inside-iframe'
 }
 
 type ListenerCallbackMessage = (event: MessageEvent) => void;
