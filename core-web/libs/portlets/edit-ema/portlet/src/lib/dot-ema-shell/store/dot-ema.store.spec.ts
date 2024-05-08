@@ -548,9 +548,9 @@ describe('EditEmaStore', () => {
                 });
             });
 
-            it('should update editor state to dragginf when  have dragItem', (done) => {
+            it('should update editor state to dragging when  have dragItem', (done) => {
                 spectator.service.setDragItem({} as EmaDragItem);
-                spectator.service.updateEditorScrollState();
+                spectator.service.updateEditorDragState();
 
                 spectator.service.editorState$.subscribe((state) => {
                     expect(state).toEqual({
@@ -559,6 +559,31 @@ describe('EditEmaStore', () => {
                         state: EDITOR_STATE.DRAGGING
                     });
                     done();
+                });
+            });
+
+            it('should update editor state to idle when dont have dragItem', (done) => {
+                spectator.service.updateEditorDragState();
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        ...state,
+                        state: EDITOR_STATE.IDLE
+                    });
+                    done();
+                });
+            });
+
+            it('should update editor state to scroll-drag when have dragItem', () => {
+                spectator.service.setDragItem({} as EmaDragItem);
+                spectator.service.updateEditorScrollState();
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        ...state,
+                        bounds: [],
+                        state: EDITOR_STATE.SCROLL_DRAG
+                    });
                 });
             });
         });
