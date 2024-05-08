@@ -43,7 +43,7 @@ function confirmQueryParams(queryParams: Params): {
             } else if (
                 curr.key === 'url' &&
                 queryParams[curr.key] !== 'index' &&
-                /\/index$/.test(queryParams[curr.key])
+                queryParams[curr.key].endsWith('/index')
             ) {
                 acc[curr.key] = sanitizeURL(queryParams[curr.key]);
                 acc.missing = true;
