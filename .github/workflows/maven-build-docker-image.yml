@@ -164,12 +164,11 @@ jobs:
           
           if [[ "${is_trunk}" == 'true' ]]; then
             is_snapshot=true
-            if [[ "${is_lts}" == 'true' ]]; then
-#          Add _lts to the version it will be used in the tag
-               version=${version}_lts
-            fi
+          if [[ "${is_lts}" == 'true' ]]; then
+            version=${version}_lts
+          fi
           elif [[ ${version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts_v[0-9]{1,2}$ ]]; then
-               is_release=true
+            is_release=true
           else
             is_custom=true
             version=${build_id}
@@ -191,9 +190,6 @@ jobs:
           echo "is_release=${is_release}"
           echo "is_latest=${is_latest}"
           echo "is_custom=${is_custom}"
-               
-#               if build_id is release-*_lts should is_trunk = true, is_lts = true, is_snaphost = true generate docker images: version_lts_sha, version_lts_snapshot
-#               if version is xx.yy.zz_lts_vX is_lts = true, is_release = true generate docker images: version_lts_vX_sha, version_lts_vX
           
           echo "version=${version}" >> $GITHUB_OUTPUT
           echo "build_hash=${build_hash}" >> $GITHUB_OUTPUT
