@@ -63,6 +63,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.graphql.CustomFieldType;
+import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -648,11 +649,11 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 if (isOneEndingCardinality(cardinality)) {
                     assertFalse(outputTypeFromParentToChild instanceof GraphQLList);
                     assertEquals(childContentType.variable(),
-                            outputTypeFromParentToChild.getName());
+                            TypeUtil.getName(outputTypeFromParentToChild));
                 } else {
                     assertTrue(outputTypeFromParentToChild instanceof GraphQLList);
                     assertEquals(childContentType.variable(),
-                            ((GraphQLList) outputTypeFromParentToChild).getWrappedType().getName());
+                            TypeUtil.getName(((GraphQLList) outputTypeFromParentToChild).getWrappedType()));
                 }
 
                 final GraphQLFieldDefinition fieldDefinitionFromChildToParent =
@@ -664,11 +665,11 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 if (isManyStartingCardinality(cardinality)) {
                     assertTrue(outputTypeFromChildToParent instanceof GraphQLList);
                     assertEquals(parentContentType.variable(),
-                            ((GraphQLList) outputTypeFromChildToParent).getWrappedType().getName());
+                            TypeUtil.getName(((GraphQLList) outputTypeFromChildToParent).getWrappedType()));
                 } else {
                     assertFalse(outputTypeFromChildToParent instanceof GraphQLList);
                     assertEquals(parentContentType.variable(),
-                            outputTypeFromChildToParent.getName());
+                            TypeUtil.getName(outputTypeFromChildToParent));
                 }
             }
 
