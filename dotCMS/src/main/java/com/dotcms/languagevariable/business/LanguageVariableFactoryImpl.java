@@ -1,6 +1,7 @@
 package com.dotcms.languagevariable.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.transform.DBColumnToJSONConverter;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -47,8 +48,8 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
         final List<LanguageVariable> languageVariables = new ArrayList<>();
         final List<Map<String, Object>> maps = dotConnect.loadObjectResults();
         for (Map<String, Object> map : maps) {
-            final String key = map.get("key").toString();
-            final String value =  map.get("value").toString();
+            final String key = DBColumnToJSONConverter.getObjectFromDBJson(map.get("key"), String.class);
+            final String value =  DBColumnToJSONConverter.getObjectFromDBJson(map.get("value"), String.class);
             final String identifier = (String) map.get("identifier");
             languageVariables.add(ImmutableLanguageVariable.builder()
                     .identifier(identifier)

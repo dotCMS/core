@@ -10,21 +10,28 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.LanguageVariableDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -370,4 +377,70 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Given scenario: Create 3 languages and 3 language variables for each language and then unpublish all the content
+     * Expected Result: 1. The API should return all the language variables created regardless of status (published or unpublished)
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findLanguageVariablesThenUnpublishTest() throws DotDataException, DotSecurityException {
+
+        final LanguageCache languageCache = CacheLocator.getLanguageCache();
+        languageCache.clearVariables();
+        final List<LanguageVariable> vars = languageCache.getVars(1);
+        Assert.assertTrue(vars.isEmpty());
+        //Let's create 3 languages and 3 language variables for each language
+        final List<Language> languages = List.of(
+                new LanguageDataGen().nextPersisted(),
+                new LanguageDataGen().nextPersisted(),
+                new LanguageDataGen().nextPersisted()
+        );
+
+        List<Contentlet> contentlets = new ArrayList<>();
+        LanguageVariableDataGen languageVariableDataGen = new LanguageVariableDataGen();
+        //Contentlets are created and published
+        for (Language language : languages) {
+            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key1").value("value1").nextPersistedAndPublish());
+            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key2").value("value2").nextPersistedAndPublish());
+            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("key3").value("value3").nextPersistedAndPublish());
+        }
+
+        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+        //Now let's see if the API can find all the variables
+        for (Language language:languages) {
+            final List<LanguageVariable> languageVariables = languageVariableAPI.findVariables(language.getId());
+            Assert.assertTrue(languageVariables.size() >= 3);
+            for (LanguageVariable variable : languageVariables) {
+                Assert.assertTrue(variable.key().startsWith("key"));
+                Assert.assertTrue(variable.value().startsWith("value"));
+                Assert.assertTrue(containsIdentifier(contentlets, variable.identifier()));
+            }
+        }
+        //Now let's unpublish all the content
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        for (Contentlet contentlet: contentlets) {
+            contentletAPI.unpublish(contentlet, systemUser,false);
+        }
+        // Now let's see if the API can find all the variables regardless of status
+        final Map<Language, List<LanguageVariable>> allVariables = languageVariableAPI.findAllVariables();
+        Assert.assertFalse(allVariables.isEmpty());
+
+        allVariables.forEach((language, languageVariables) -> {
+            for (LanguageVariable variable : languageVariables) {
+                Assert.assertTrue("Unpublished Variables should still appear in the contentlets first created",
+                        containsIdentifier(contentlets, variable.identifier()));
+            }
+        });
+    }
+
+    /**
+     * helper method to check if a list of contentlets contains a contentlet with a given inode
+     * @param variables list of contentlets
+     * @param identifier  the inode to check for
+     * @return  true if the inode is found in the list of contentlets
+     */
+    boolean containsIdentifier(final List<Contentlet> variables, final String identifier) {
+        return variables.stream().anyMatch(variable -> variable.getIdentifier().equals(identifier));
+    }
 }
