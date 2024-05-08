@@ -300,7 +300,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     editorData.canEditVariant &&
                     !editorData.device &&
                     (currentState === EDITOR_STATE.DRAGGING ||
-                        currentState === EDITOR_STATE.SCROLLING),
+                        currentState === EDITOR_STATE.SCROLL_DRAG),
                 showPalette:
                     editorData.canEditVariant &&
                     isEnterpriseLicense &&
@@ -736,7 +736,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly setScrollingState = this.updater((state) => {
         return {
             ...state,
-            editorState: EDITOR_STATE.SCROLLING,
+            editorState: EDITOR_STATE.SCROLL_DRAG,
             bounds: []
         };
     });
@@ -765,6 +765,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * @returns The updated dot-ema store state.
      */
     readonly updateEditorScrollState = this.updater((state) => {
+        const newState = state.dragItem
+            ? {
+                  ...state,
+                  editorState: EDITOR_STATE.SCROLL_DRAG
+              }
+            : {
+                  ...state,
+                  editorState: EDITOR_STATE.IDLE,
+                  bounds: [],
+                  contentletArea: undefined
+              };
+
+        return newState;
+    });
+
+    readonly updateEditorDragState = this.updater((state) => {
         return {
             ...state,
             editorState: state.dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
