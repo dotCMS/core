@@ -29,6 +29,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.quartz.job.DefaultLanguageTransferAssetJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -369,7 +370,7 @@ public class LanguagesResource {
     public Response getAllMessages (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("language") final String language) throws DotDataException {
+            @PathParam("language") final String language){
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
@@ -377,26 +378,25 @@ public class LanguagesResource {
 
         final User user = initData.getUser();
 
-        final Locale currentLocale = resolveAdminLocale(language);
+        final Locale currentLocale=resolveAdminLocale(language);
+
         //Messages in the properties file
-        final Map<?,?> mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
+        final Map mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
 
-        final Map<Object,Object> result = new TreeMap<>(mapPropertiesFile);
+        final Map result = new TreeMap(mapPropertiesFile);
 
-        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+        final Language language1 = APILocator.getLanguageAPI().getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
+        if(UtilMethods.isSet(language1)) {
+            //Language Keys
+            final Map mapLanguageKeys = APILocator.getLanguageAPI()
+                    .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
+                            Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 
-        final Language matchingLang = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
-        if(UtilMethods.isSet(matchingLang)) {
-            //Language Vars
-            final List<LanguageVariable> variables = languageVariableAPI.findVariables(
-                    matchingLang.getId());
-            final Map<?,?> map = variables.stream().collect(
-                    Collectors.toMap(LanguageVariable::key, LanguageVariable::value));
-            result.putAll(map);
+            result.putAll(mapLanguageKeys);
 
             //Language Variable
-            long langId = matchingLang.getId();
-            final Map<String,String> mapLanguageVariables = Try.of(()-> languageVariableAPI.getAllLanguageVariablesKeyStartsWith("", langId,
+            long langId = language1.getId();
+            final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
                     user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
                     KeyValue::getKey,KeyValue::getValue, (value1,value2) ->{
                         Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
@@ -408,7 +408,7 @@ public class LanguagesResource {
         }
 
 
-        return Response.ok(new ResponseEntityView<>(result)).build();
+        return Response.ok(new ResponseEntityView(result)).build();
     }
 
     @GET
