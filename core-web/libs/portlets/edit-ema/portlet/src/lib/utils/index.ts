@@ -4,7 +4,7 @@ import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
 import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
 
-export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.esm.js';
+export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
 
 /**
  * Insert a contentlet in a container

@@ -24,6 +24,7 @@ import {
 
 import { EditEmaStore } from './dot-ema.store';
 
+import { EmaDragItem } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, MOCK_RESPONSE_HEADLESS } from '../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../shared/enums';
@@ -188,7 +189,11 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             },
                             variantId: undefined
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });
@@ -241,7 +246,11 @@ describe('EditEmaStore', () => {
                             variantId: undefined
                         },
                         showWorkflowActions: true,
-                        showInfoDisplay: false
+                        showInfoDisplay: false,
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });
@@ -292,7 +301,11 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             },
                             variantId: undefined
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: false
                     });
                     done();
                 });
@@ -333,7 +346,11 @@ describe('EditEmaStore', () => {
                                 isLocked: false,
                                 lockedByUser: ''
                             }
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: false
                     });
                     done();
                 });
@@ -374,7 +391,11 @@ describe('EditEmaStore', () => {
                                 isLocked: false,
                                 lockedByUser: ''
                             }
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: false
                     });
                     done();
                 });
@@ -415,7 +436,11 @@ describe('EditEmaStore', () => {
                                 isLocked: false,
                                 lockedByUser: ''
                             }
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });
@@ -425,7 +450,9 @@ describe('EditEmaStore', () => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
                         state: EDITOR_STATE.IDLE,
-                        code: undefined
+                        code: undefined,
+                        isVTL: false,
+                        changedFromLoading: true
                     });
                     done();
                 });
@@ -498,7 +525,38 @@ describe('EditEmaStore', () => {
                                 isLocked: false,
                                 lockedByUser: ''
                             }
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
+                    });
+                    done();
+                });
+            });
+
+            it('should update editor state to idle when dont have dragItem', (done) => {
+                spectator.service.updateEditorScrollState();
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        ...state,
+                        bounds: [],
+                        state: EDITOR_STATE.IDLE
+                    });
+                    done();
+                });
+            });
+
+            it('should update editor state to dragginf when  have dragItem', (done) => {
+                spectator.service.setDragItem({} as EmaDragItem);
+                spectator.service.updateEditorScrollState();
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        ...state,
+                        bounds: [],
+                        state: EDITOR_STATE.DRAGGING
                     });
                     done();
                 });
@@ -974,7 +1032,11 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             },
                             variantId: undefined
-                        }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });
@@ -984,7 +1046,9 @@ describe('EditEmaStore', () => {
                 spectator.service.contentState$.subscribe((state) => {
                     expect(state).toEqual({
                         state: EDITOR_STATE.IDLE,
-                        code: '<html><body><h1>Hello, World!</h1></body></html>'
+                        code: '<html><body><h1>Hello, World!</h1></body></html>',
+                        isVTL: true,
+                        changedFromLoading: true
                     });
                     done();
                 });
@@ -1017,7 +1081,11 @@ describe('EditEmaStore', () => {
                             },
                             variantId: undefined
                         },
-                        currentExperiment: null
+                        currentExperiment: null,
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
                     });
                     done();
                 });

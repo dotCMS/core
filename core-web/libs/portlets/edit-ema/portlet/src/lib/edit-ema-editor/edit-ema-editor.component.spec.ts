@@ -2625,6 +2625,86 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            describe('scroll inside iframe', () => {
+                it('should emit postMessage and change state to Scroll', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 200, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 120, enumerable: true });
+
+                    const postMessageSpy = jest.spyOn(
+                        spectator.component.iframe.nativeElement.contentWindow,
+                        'postMessage'
+                    );
+
+                    const scrollingStateSpy = jest.spyOn(store, 'setScrollingState');
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(postMessageSpy).toHaveBeenCalled();
+                    expect(scrollingStateSpy).toHaveBeenCalled();
+                });
+
+                it('should dont emit postMessage or changestate scroll when drag outside iframe', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 200, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 90, enumerable: true });
+
+                    const postMessageSpy = jest.spyOn(
+                        spectator.component.iframe.nativeElement.contentWindow,
+                        'postMessage'
+                    );
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(postMessageSpy).not.toHaveBeenCalled();
+                });
+
+                it('should change state to dragging when drag outsite scroll trigger area', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 300, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 120, enumerable: true });
+
+                    const updateEditorState = jest.spyOn(store, 'updateEditorState');
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                });
+            });
+
             describe('DOM', () => {
                 it("should not show a loader when the editor state is not 'loading'", () => {
                     spectator.detectChanges();
@@ -2656,12 +2736,18 @@ describe('EditEmaEditorComponent', () => {
                 describe('VTL Page', () => {
                     beforeEach(() => {
                         jest.useFakeTimers(); // Mock the timers
+                        spectator.detectChanges();
+
+                        // We need to force the editor state to loading for this test
+                        // because first we get the pageapi of "1" person
+                        // and then we get the pageapi of "3" person
+                        store.updateEditorState(EDITOR_STATE.LOADING);
+
                         store.load({
                             url: 'index',
                             language_id: '3',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                         });
-                        spectator.detectChanges();
                     });
 
                     afterEach(() => {
@@ -2669,13 +2755,12 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('iframe should have the correct content when is VTL', () => {
-                        spectator.detectChanges();
-
                         jest.runOnlyPendingTimers();
+
                         const iframe = spectator.debugElement.query(
                             By.css('[data-testId="iframe"]')
                         );
-                        expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>hello world</div>'
                         );

@@ -6,7 +6,17 @@ import { Injectable } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
-import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import {
+    catchError,
+    map,
+    pairwise,
+    shareReplay,
+    startWith,
+    switchMap,
+    take,
+    tap,
+    filter
+} from 'rxjs/operators';
 
 import {
     DotContentletLockerService,
@@ -200,10 +210,28 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly editorMode$ = this.select((state) => state.editorData.mode);
     readonly editorData$ = this.select((state) => state.editorData);
     readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
-    readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => ({
-        state,
-        code
-    }));
+
+    readonly contentState$ = this.select(
+        this.code$,
+        this.stateLoad$,
+        this.clientHost$,
+        (code, state, clientHost) => ({
+            state,
+            code,
+            isVTL: !clientHost
+        })
+    ).pipe(
+        startWith({ state: EDITOR_STATE.LOADING, code: '', isVTL: false }),
+        pairwise(),
+        filter(([_prev, curr]) => curr?.state === EDITOR_STATE.IDLE),
+        map(([prev, curr]) => ({
+            changedFromLoading: prev.state === EDITOR_STATE.LOADING,
+            isVTL: curr.isVTL,
+            code: curr.code,
+            state: curr.state
+        }))
+    );
+
     readonly vtlIframePage$ = this.select(
         this.pageRendered$,
         this.isEnterpriseLicense$,
@@ -259,7 +287,27 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 iframeURL,
                 isEnterpriseLicense,
                 state: currentState,
-                dragItem
+                dragItem,
+                showContentletTools:
+                    editorData.canEditVariant &&
+                    !!contentletArea &&
+                    !editorData.device &&
+                    editor.page.canEdit &&
+                    (currentState === EDITOR_STATE.IDLE ||
+                        currentState === EDITOR_STATE.DRAGGING) &&
+                    !editorData.page.isLocked,
+                showDropzone:
+                    editorData.canEditVariant &&
+                    !editorData.device &&
+                    (currentState === EDITOR_STATE.DRAGGING ||
+                        currentState === EDITOR_STATE.SCROLLING),
+                showPalette:
+                    editorData.canEditVariant &&
+                    isEnterpriseLicense &&
+                    (editorData.mode === EDITOR_MODE.EDIT ||
+                        editorData.mode === EDITOR_MODE.EDIT_VARIANT ||
+                        editorData.mode === EDITOR_MODE.INLINE_EDITING) &&
+                    editor.page.canEdit
             };
         }
     );
@@ -319,6 +367,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         dragItem
     }));
 
+    readonly isUserDragging$ = this.select((state) => state.editorState).pipe(
+        filter((state) => state === EDITOR_STATE.DRAGGING)
+    );
     /**
      * Concurrently loads page and license data to updat the state.
      *
@@ -678,6 +729,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }));
 
     /**
+     * Update the editor state to scroll
+     *
+     * @memberof EditEmaStore
+     */
+    readonly setScrollingState = this.updater((state) => {
+        return {
+            ...state,
+            editorState: EDITOR_STATE.SCROLLING,
+            bounds: []
+        };
+    });
+
+    /**
      * Update the preview state
      *
      * @memberof EditEmaStore
@@ -690,6 +754,20 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 ...editorData
             },
             editorState: EDITOR_STATE.IDLE
+        };
+    });
+
+    /**
+     * Updates the editor scroll state in the dot-ema store.
+     * If a drag item is present, we assume that scrolling was done during a drag and drop, and the state will automatically change to dragging.
+     * if there is no dragItem, we change the state to IDLE
+     *
+     * @returns The updated dot-ema store state.
+     */
+    readonly updateEditorScrollState = this.updater((state) => {
+        return {
+            ...state,
+            editorState: state.dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
         };
     });
 
