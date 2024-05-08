@@ -100,7 +100,6 @@ public class EmbeddingsDB {
     public void dropVectorDbTable() {
         Logger.info(EmbeddingsDB.class, "Dropping table dot_embeddings from database");
         runSQL(EmbeddingsSQL.DROP_EMBEDDINGS_TABLE);
-
     }
 
     void runSQL(final String sql) {

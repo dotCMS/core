@@ -147,4 +147,11 @@ public interface EmbeddingsAPI {
      */
     Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(String content);
 
+    /**
+     * Saves the provided embeddings to the database.
+     *
+     * @param embeddings the EmbeddingsDTO object containing the embeddings to be saved.
+     */
+    void saveEmbeddings(final EmbeddingsDTO embeddings);
+
 }

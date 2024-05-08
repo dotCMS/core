@@ -300,6 +300,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     }
 
     @Override
+    @WrapInTransaction
     public void initEmbeddingsTable() {
         EmbeddingsDB.impl.get().initVectorExtension();
         EmbeddingsDB.impl.get().initVectorDbTable();
@@ -350,6 +351,12 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         return openAiEmbeddings;
     }
 
+    @WrapInTransaction
+    @Override
+    public void saveEmbeddings(final EmbeddingsDTO embeddings) {
+        EmbeddingsDB.impl.get().saveEmbeddings(embeddings);
+    }
+
     private JSONObject dtoToContentJson(final EmbeddingsDTO dto, final User user) {
         return Try.of(() ->
                 ContentResource.contentletToJSON(
@@ -386,7 +393,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 .withEmbeddings(embeddings._2)
                 .build();
 
-        EmbeddingsDB.impl.get().saveEmbeddings(embeddingsDTO);
+        saveEmbeddings(embeddingsDTO);
     }
 
     private List<Float> sendTokensToOpenAI(@NotNull final List<Integer> tokens) {

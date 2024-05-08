@@ -1,6 +1,6 @@
 package com.dotcms.ai.viewtool;
 
-import com.dotcms.ai.db.EmbeddingsDB;
+import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -38,7 +38,8 @@ public class SearchToolTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        EmbeddingsDB.impl.get();
+        EmbeddingsAPI.impl().initEmbeddingsTable();
+        Thread.sleep(5000);
     }
 
     @Before
@@ -57,7 +58,7 @@ public class SearchToolTest {
      * Then the system should return the search results related to the query from the specified index
      */
     @Test
-    public void test_query_withIdexName() {
+    public void test_query_withIndexName() {
         final String query = "Facts about Nikola Tesla";
         EmbeddingsDTODataGen.persistEmbeddings(query, null, "default");
 
