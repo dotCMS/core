@@ -13,8 +13,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * The EmbeddingsAPI interface provides methods for managing and interacting with embeddings.
+ * Embeddings are used to convert text into a form that can be processed by machine learning algorithms.
+ * This interface provides methods for generating, deleting, and searching embeddings.
+ * It also provides methods for managing the embeddings table.
+ *
+ * Implementations of this interface should provide specific functionality for these operations.
+ */
 public interface EmbeddingsAPI {
-
 
     static EmbeddingsAPI impl(Host host) {
         return new EmbeddingsAPIImpl(host);
@@ -40,7 +47,7 @@ public interface EmbeddingsAPI {
      * @param index
      * @return
      */
-    boolean generateEmbeddingsforContent(Contentlet contentlet, List<Field> fields, String index);
+    boolean generateEmbeddingsForContent(Contentlet contentlet, List<Field> fields, String index);
 
     /**
      * this method takes a contentlet and a velocity template, generates a velocity context that includes the
@@ -51,7 +58,7 @@ public interface EmbeddingsAPI {
      * @param indexName
      * @return
      */
-    boolean generateEmbeddingsforContent(@NotNull Contentlet contentlet, String velocityTemplate, String indexName);
+    boolean generateEmbeddingsForContent(@NotNull Contentlet contentlet, String velocityTemplate, String indexName);
 
     /**
      * this method takes a lucene query and
@@ -69,7 +76,6 @@ public interface EmbeddingsAPI {
      * @return
      */
     int deleteEmbedding(EmbeddingsDTO dto);
-
 
     /**
      * This method takes comma or line separated string of content types and optionally fields and returns
@@ -141,5 +147,11 @@ public interface EmbeddingsAPI {
      */
     Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(String content);
 
+    /**
+     * Saves the provided embeddings to the database.
+     *
+     * @param embeddings the EmbeddingsDTO object containing the embeddings to be saved.
+     */
+    void saveEmbeddings(final EmbeddingsDTO embeddings);
 
 }
