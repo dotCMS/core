@@ -43,6 +43,9 @@
             "@dotcms/portlets/dot-experiments/portlet": [
                 "libs/portlets/dot-experiments/portlet/src/index.ts"
             ],
+            "@dotcms/portlets/dot-languages/portlet": [
+                "libs/portlets/dot-languages/portlet/src/index.ts"
+            ],
             "@dotcms/react": ["libs/sdk/react/src/index.ts"],
             "@dotcms/react/mocks": ["libs/sdk/react/src/lib/mocks/index.ts"],
             "@dotcms/template-builder": ["libs/template-builder/src/index.ts"],
@@ -55,7 +58,8 @@
             "@portlets/*": ["apps/dotcms-ui/src/app/portlets/*"],
             "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
-            "@tests/*": ["apps/dotcms-ui/src/app/test/*"]
+            "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
+            "dot-languages": ["libs/portlets/dot-languages/portlet/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]
