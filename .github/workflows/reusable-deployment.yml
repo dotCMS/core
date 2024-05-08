@@ -86,6 +86,8 @@ jobs:
           build_args: |
             DOTCMS_DOCKER_TAG=${{ inputs.environment }}
 
+      - uses: ./.github/actions/cleanup-runner
+
       # The artifacts are uploaded to Artifactory using the 'deploy-artifact-artifactory' action.
       - name: CLI Deploy
         id: cli_deploy

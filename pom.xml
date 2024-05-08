@@ -61,13 +61,11 @@
             <name>DotCMS libs Release</name>
             <url>https://repo.dotcms.com/artifactory/libs-release</url>
         </repository>
-        <!--
         <snapshotRepository>
             <id>dotcms-libs-snapshot</id>
             <name>DotCMS libs Snapshots</name>
             <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
         </snapshotRepository>
-        -->
     </distributionManagement>
 
     <reporting>
