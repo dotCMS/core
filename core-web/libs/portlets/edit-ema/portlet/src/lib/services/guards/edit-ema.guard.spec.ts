@@ -72,6 +72,27 @@ describe('EditEmaGuard', () => {
         expect(didEnteredPortlet).toBe(true);
     });
 
+    it('should just return true when the url has an "index-something" in the url', () => {
+        const route: ActivatedRouteSnapshot = {
+            firstChild: {
+                url: [{ path: 'content' }]
+            },
+            queryParams: {
+                url: '/im-just-a-cool-index-index/index-something',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                language_id: 1
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+
+        const didEnteredPortlet = TestBed.runInInjectionContext(
+            () => editEmaGuard(route, state) as boolean
+        );
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(didEnteredPortlet).toBe(true);
+    });
+
     it('should navigate to "edit-page" and sanitize url', () => {
         const route: ActivatedRouteSnapshot = {
             firstChild: {
