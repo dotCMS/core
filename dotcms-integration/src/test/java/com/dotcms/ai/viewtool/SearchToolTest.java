@@ -50,7 +50,6 @@ public class SearchToolTest {
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
         EmbeddingsAPI.impl().initEmbeddingsTable();
-        Thread.sleep(5000);
     }
 
     @Before
