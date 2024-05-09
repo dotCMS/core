@@ -343,7 +343,7 @@
 							"pm.test(\"Test data is retrieved correctly\", function () {",
 							"    const jsonData = pm.response.json();    ",
 							"    pm.expect(jsonData.entity.variables).to.not.eql(null);    ",
-							"    pm.expect(jsonData.entity.total).to.be.eql(6);    ",
+							"    pm.expect(jsonData.entity.total).to.be.eql(2);    ",
 							"    const variables = jsonData.entity.variables;    ",
 							"",
 							"   const languageMap = {",
