@@ -11,5 +11,4 @@ import { DotcmsLayoutComponent } from './lib/layout/dotcms-layout/dotcms-layout.
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  title = 'angular';
 }

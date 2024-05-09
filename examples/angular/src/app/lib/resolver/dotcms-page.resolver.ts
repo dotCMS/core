@@ -1,6 +1,6 @@
 import { inject } from "@angular/core";
 import { ActivatedRouteSnapshot, ResolveFn, RouterStateSnapshot } from "@angular/router";
-import { from } from "rxjs";
+import { from, map } from "rxjs";
 import { DOTCMS_CLIENT_TOKEN } from "../dotcms-client-token";
 
 export const DotCMSPageResolver: ResolveFn<any> = (
@@ -29,6 +29,6 @@ export const DotCMSPageResolver: ResolveFn<any> = (
     const pageRequest = client.page.get(pageProps).then((resp: any) => resp.entity);
     const naRequest = client.nav.get(navProps).then((resp: any) => resp.entity);
     
-    return from(Promise.all([ pageRequest, naRequest]));
+    return from(Promise.all([ pageRequest, naRequest])).pipe(map(([page, nav]) => ({ page, nav }) ))
   };
   
