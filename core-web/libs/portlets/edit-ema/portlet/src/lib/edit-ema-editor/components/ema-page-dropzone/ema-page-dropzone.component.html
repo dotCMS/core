@@ -22,7 +22,10 @@
             context: { error: container | dotError : dragItem, container: container }
         "></ng-container>
 </div>
+
+@if (containers.length > 0) {
 <div class="pointer" [ngStyle]="pointerPosition"></div>
+}
 
 <ng-template #errorTemplate let-error="error" let-container="container">
     <div

@@ -54,6 +54,18 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.dotcms.core.plugins</groupId>
+            <artifactId>com.dotcms.tika</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>com.dotcms.samlbundle</groupId>
             <artifactId>com.dotcms.samlbundle</artifactId>
             <version>24.02.29</version>
@@ -139,54 +151,4 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>use-legacy-tika-plugin</id>
-            <activation>
-                <property>
-                    <name>useLegacyTikaPlugin</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>com.dotcms.tika</groupId>
-                    <artifactId>com.dotcms.tika</artifactId>
-                    <version>${tika.plugin.bundle.version}</version>
-                    <scope>provided</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>*</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-            <!-- dependencies -->
-        </profile>
-        <profile>
-            <id>use-local-tika-plugin</id>
-            <activation>
-                <property>
-                    <name>!useLegacyTikaPlugin</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>com.dotcms.core.plugins</groupId>
-                    <artifactId>com.dotcms.tika</artifactId>
-                    <version>${project.version}</version>
-                    <scope>provided</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>*</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-        </profile>
-
-    </profiles>
-
 </project>

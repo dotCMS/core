@@ -98,6 +98,7 @@ import {
 } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
+import { SDK_EDITOR_SCRIPT_SOURCE } from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -111,6 +112,23 @@ const messagesMock = {
     'dot.common.dialog.reject': 'Reject',
     'editpage.content.add.already.title': 'Content already added',
     'editpage.content.add.already.message': 'This content is already added to this container'
+};
+
+const IFRAME_MOCK = {
+    nativeElement: {
+        contentDocument: {
+            getElementsByTagName: () => [],
+            querySelectorAll: () => [],
+            write: function (html) {
+                this.body.innerHTML = html;
+            },
+            body: {
+                innerHTML: ''
+            },
+            open: jest.fn(),
+            close: jest.fn()
+        }
+    }
 };
 
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
@@ -2607,6 +2625,86 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            describe('scroll inside iframe', () => {
+                it('should emit postMessage and change state to Scroll', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 200, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 120, enumerable: true });
+
+                    const postMessageSpy = jest.spyOn(
+                        spectator.component.iframe.nativeElement.contentWindow,
+                        'postMessage'
+                    );
+
+                    const scrollingStateSpy = jest.spyOn(store, 'setScrollingState');
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(postMessageSpy).toHaveBeenCalled();
+                    expect(scrollingStateSpy).toHaveBeenCalled();
+                });
+
+                it('should dont emit postMessage or changestate scroll when drag outside iframe', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 200, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 90, enumerable: true });
+
+                    const postMessageSpy = jest.spyOn(
+                        spectator.component.iframe.nativeElement.contentWindow,
+                        'postMessage'
+                    );
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(postMessageSpy).not.toHaveBeenCalled();
+                });
+
+                it('should change state to dragging when drag outsite scroll trigger area', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 300, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 120, enumerable: true });
+
+                    const updateEditorState = jest.spyOn(store, 'updateEditorState');
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                });
+            });
+
             describe('DOM', () => {
                 it("should not show a loader when the editor state is not 'loading'", () => {
                     spectator.detectChanges();
@@ -2638,12 +2736,18 @@ describe('EditEmaEditorComponent', () => {
                 describe('VTL Page', () => {
                     beforeEach(() => {
                         jest.useFakeTimers(); // Mock the timers
+                        spectator.detectChanges();
+
+                        // We need to force the editor state to loading for this test
+                        // because first we get the pageapi of "1" person
+                        // and then we get the pageapi of "3" person
+                        store.updateEditorState(EDITOR_STATE.LOADING);
+
                         store.load({
                             url: 'index',
                             language_id: '3',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                         });
-                        spectator.detectChanges();
                     });
 
                     afterEach(() => {
@@ -2651,13 +2755,12 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('iframe should have the correct content when is VTL', () => {
-                        spectator.detectChanges();
-
                         jest.runOnlyPendingTimers();
+
                         const iframe = spectator.debugElement.query(
                             By.css('[data-testId="iframe"]')
                         );
-                        expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>hello world</div>'
                         );
@@ -2830,6 +2933,59 @@ describe('EditEmaEditorComponent', () => {
 
                     componentsToHide.forEach((testId) => {
                         expect(spectator.query(byTestId(testId))).not.toBeNull();
+                    });
+                });
+
+                describe('script and styles injection', () => {
+                    let iframeDocument: Document;
+                    let spy: jest.SpyInstance;
+
+                    beforeEach(() => {
+                        jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+                            cb(0); // Pass a dummy value to satisfy the expected argument count
+
+                            return 0;
+                        });
+
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        spectator.component.iframe = IFRAME_MOCK as any;
+                        iframeDocument = spectator.component.iframe.nativeElement.contentDocument;
+                        spy = jest.spyOn(iframeDocument, 'write');
+                    });
+
+                    it('should add script and styles to iframe', () => {
+                        spectator.component.setIframeContent(`<head></head></body></body>`);
+
+                        expect(spy).toHaveBeenCalled();
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                        );
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="container"]:empty'
+                        );
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"].empty-contentlet'
+                        );
+                    });
+
+                    it('should add script and styles to iframe for advance templates', () => {
+                        spectator.component.setIframeContent(`<div>Advanced Template</div>`);
+
+                        expect(spy).toHaveBeenCalled();
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                        );
+
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="container"]:empty'
+                        );
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"].empty-contentlet'
+                        );
+                    });
+
+                    afterEach(() => {
+                        (window.requestAnimationFrame as jest.Mock).mockRestore();
                     });
                 });
             });

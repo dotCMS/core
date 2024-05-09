@@ -108,25 +108,20 @@ describe('DotRelativeDatePipe', () => {
             expect(pipe.transform(date)).toEqual('12/03/2020');
         }));
 
-        it('should return formated date after N days when timeStampAfter is bigger than  N days', fakeAsync(() => {
+        it('should return formated date after N days when timeStampAfter is less than N days', () => {
             const date = new Date();
-
             const N_DAYS = Math.round(Math.random() * 10);
+            const timeStampAfter = N_DAYS - 1;
 
-            // Plus one because we need to go over N Days
-            const N_DAYS_MILLISECONDS = (N_DAYS + 1) * ONE_DAY;
-
-            tick(N_DAYS_MILLISECONDS);
-
-            // TimeStampAfter should be bigger than  N days, so it should return the date in the format MM/dd/yyyy
-            expect(pipe.transform(date.getTime(), 'MM/dd/yyyy', N_DAYS - 1)).toEqual(
+            date.setDate(date.getDate() - N_DAYS); //Set the date to N days before
+            expect(pipe.transform(date.getTime(), 'MM/dd/yyyy', timeStampAfter)).toEqual(
                 date.toLocaleDateString('en-US', {
                     month: '2-digit',
                     day: '2-digit',
                     year: 'numeric'
                 })
             );
-        }));
+        });
 
         it('should return formated date with specified format', fakeAsync(() => {
             const date = new Date();
