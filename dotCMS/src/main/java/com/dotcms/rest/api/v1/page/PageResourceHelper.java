@@ -562,9 +562,11 @@ public class PageResourceHelper implements Serializable {
      * @return The Optional {@link CachedVanityUrl} object if the URI matches a Vanity URL.
      */
     public Optional<CachedVanityUrl> resolveVanityUrlIfPresent(final HttpServletRequest request,
-                                                     final String uri, final String languageId) {
+                                                               final String uri,
+                                                               final String languageId) {
         final Host site = this.hostWebAPI.getCurrentHostNoThrow(request);
-        final Language language = this.languageAPI.getLanguage(languageId);
+        final Language language = UtilMethods.isSet(languageId) ?
+                this.languageAPI.getLanguage(languageId) : this.languageAPI.getDefaultLanguage();
         final String correctedUri = !uri.startsWith(StringPool.SLASH) ? StringPool.SLASH + uri :
                 uri;
         final Optional<CachedVanityUrl> vanityUrlOpt =
