@@ -12,6 +12,8 @@ import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.beans.Host;
@@ -60,7 +62,6 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -93,6 +94,7 @@ public class PageResourceHelper implements Serializable {
     private final UserAPI userAPI = APILocator.getUserAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final transient LanguageAPI languageAPI = APILocator.getLanguageAPI();
+    private final transient VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI();
 
     /**
      * Private constructor
@@ -548,6 +550,31 @@ public class PageResourceHelper implements Serializable {
         allLanguages.forEach(language -> languagesForPage.add(new ExistingLanguagesForPageView(language,
                 existingPageLanguages.contains(language.getId()))));
         return languagesForPage.build();
+    }
+
+    /**
+     * Verifies whether the incoming URI matches a Vanity URL or not.
+     *
+     * @param request    The current instance of the {@link HttpServletRequest}.
+     * @param uri        The incoming URI.
+     * @param languageId The language ID in which the URI is being requested.
+     *
+     * @return The Optional {@link CachedVanityUrl} object if the URI matches a Vanity URL.
+     */
+    public Optional<CachedVanityUrl> resolveVanityUrlIfPresent(final HttpServletRequest request,
+                                                     final String uri, final String languageId) {
+        final Host site = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final Language language = this.languageAPI.getLanguage(languageId);
+        final String correctedUri = !uri.startsWith(StringPool.SLASH) ? StringPool.SLASH + uri :
+                uri;
+        final Optional<CachedVanityUrl> vanityUrlOpt =
+                this.vanityUrlAPI.resolveVanityUrl(correctedUri, site, language);
+        if (vanityUrlOpt.isPresent()) {
+            DotPreconditions.checkArgument(!this.vanityUrlAPI.isSelfReferenced(vanityUrlOpt.get()
+                    , correctedUri));
+            return vanityUrlOpt;
+        }
+        return Optional.empty();
     }
 
 }
