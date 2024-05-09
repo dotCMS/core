@@ -11,7 +11,7 @@ import {
     TIME_15_DAYS_MILLISECONDS,
     TIME_5_DAYS_MILLISECONDS
 } from '../mocks/mock';
-import { Experiment, ExperimentParsed } from '../models';
+import { Experiment, ExperimentParsed, FetchExperiments } from '../models';
 
 const assignedExperiments: Experiment[] = IsUserIncludedResponse.entity.experiments;
 
@@ -112,20 +112,26 @@ describe('Parsers', () => {
 
         it('should handle case where only NEW data is available', () => {
             // First request, expire in now + experiment.lookBackWindow.expireMillis
-            const newData: Experiment[] | undefined = IsUserIncludedResponse.entity.experiments;
+            const newData: FetchExperiments = {
+                experiments: IsUserIncludedResponse.entity.experiments,
+                excludedExperimentIdsEnded: []
+            };
 
             const dataFromIndexDB: Experiment[] | undefined = undefined;
 
             const parsedData = parseData(newData, dataFromIndexDB);
 
             expect(parsedData).toStrictEqual(MockDataStoredIndexDB);
-            expect(newData.length).toBe(parsedData.length);
+            expect(newData.experiments.length).toBe(parsedData.length);
         });
 
         it('should handle case where only OLD data is available', () => {
             //No new request, not touch anything if not expired
 
-            const newData: Experiment[] | undefined = undefined;
+            const newData: FetchExperiments = {
+                experiments: [],
+                excludedExperimentIdsEnded: []
+            };
 
             const dataFromIndexDB: Experiment[] | undefined = MockDataStoredIndexDB;
 
@@ -142,7 +148,12 @@ describe('Parsers', () => {
 
             mockNow.mockImplementation(() => nowPlus5Days);
 
-            const newData: Experiment[] | undefined = NewIsUserIncludedResponse.entity.experiments;
+            const newData: FetchExperiments = {
+                experiments: NewIsUserIncludedResponse.entity.experiments,
+                excludedExperimentIdsEnded: [
+                    ...NewIsUserIncludedResponse.entity.excludedExperimentIdsEnded
+                ]
+            };
 
             const dataFromIndexDB: Experiment[] | undefined = MockDataStoredIndexDB;
 
@@ -160,7 +171,10 @@ describe('Parsers', () => {
 
             mockNow.mockImplementation(() => now15Days);
 
-            const newData: Experiment[] | undefined = undefined;
+            const newData: FetchExperiments = {
+                experiments: [],
+                excludedExperimentIdsEnded: []
+            };
 
             const dataFromIndexDB: Experiment[] | undefined = MockDataStoredIndexDBWithNew;
 
