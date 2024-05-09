@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
-import { DotcmsLayoutComponent } from './layout/dotcms-layout/dotcms-layout.component';
+import { DotcmsLayoutComponent } from './lib/layout/dotcms-layout/dotcms-layout.component';
 
 @Component({
   selector: 'app-root',
