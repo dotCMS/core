@@ -8,6 +8,11 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableLanguageVariable.class)
 @JsonDeserialize(as = ImmutableLanguageVariable.class)
 @Value.Immutable
+/*
+ * Minimalist interface for LanguageVariable
+ * We only keep the bare minimum to track the key, value and identifier
+ * And keep a small memory footprint in cache
+ */
 public interface LanguageVariable extends Comparable<LanguageVariable> {
 
     String identifier();

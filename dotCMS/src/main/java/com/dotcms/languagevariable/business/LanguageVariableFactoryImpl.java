@@ -10,10 +10,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Implementation class for the {@link LanguageVariableFactory}.
+ */
 public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
 
     public static final String ORDER_BY = " order by ";
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<LanguageVariable> findVariables(final ContentType contentType,
             final long languageId,
@@ -60,6 +66,9 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
         return Collections.unmodifiableList(languageVariables);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<LanguageVariableExt> findVariablesForPagination(ContentType contentType, int offset,
             int limit, String orderBy) throws DotDataException {
@@ -115,6 +124,9 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
         return Collections.unmodifiableList(languageVariables);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int countVariablesByKey(ContentType contentType) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();

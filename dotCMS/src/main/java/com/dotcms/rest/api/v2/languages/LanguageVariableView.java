@@ -10,6 +10,9 @@ import org.immutables.value.Value;
 @JsonInclude(Include.NON_NULL)
 @JsonSerialize(as = ImmutableLanguageVariableView.class)
 @JsonDeserialize(as = ImmutableLanguageVariableView.class)
+/*
+ * Small json View object for LanguageVariable
+ */
 public interface LanguageVariableView {
     String identifier();
     String value();
