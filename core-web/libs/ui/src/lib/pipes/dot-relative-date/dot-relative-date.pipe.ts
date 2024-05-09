@@ -12,11 +12,8 @@ export class DotRelativeDatePipe implements PipeTransform {
         private readonly dotMessageService: DotMessageService
     ) {}
 
-    transform(
-        time: string | number = new Date().getTime(),
-        format = 'MM/dd/yyyy',
-        timeStampAfter = 7
-    ): string {
+    transform(date: string | number, format = 'MM/dd/yyyy', timeStampAfter = 7): string {
+        const time = date || new Date().getTime();
         const isMilliseconds = !isNaN(Number(time));
 
         // Sometimes the time is a string with this format 2/8/2023 - 10:08 PM
@@ -29,22 +26,29 @@ export class DotRelativeDatePipe implements PipeTransform {
         // We need it in UTC
         // When the date is a timestamp date the conversion will be done as it is and not transformed to System Timezone
         // So we don't need to convert it to UTC, because it is already in UTC format (the backend works with UTC dates)
-        const finalDate = isMilliseconds ? this.dotFormatDateService.getUTC(cleanDate) : cleanDate;
+        const endDate = isMilliseconds ? this.dotFormatDateService.getUTC(cleanDate) : cleanDate;
 
         // Check how many days are between the final date and the current date
-        const diffTime = this.dotFormatDateService.differenceInCalendarDays(
-            finalDate,
-            this.dotFormatDateService.getUTC()
+        // Absolute value because we don't care if it is in the past or future
+        const diffTime = Math.abs(
+            this.dotFormatDateService.differenceInCalendarDays(
+                this.dotFormatDateService.getUTC(),
+                endDate
+            )
         );
 
-        const showTimeStamp = timeStampAfter ? Math.abs(diffTime) > timeStampAfter : false;
+        // Check if the timeStampAfter is a valid number
+        const validTimeAfter = !isNaN(timeStampAfter) && timeStampAfter !== null;
 
-        if (diffTime === 0 && !showTimeStamp) {
+        // If the diffTime is less than the timeStampAfter we show the relative time
+        const showRelativeTime = validTimeAfter ? diffTime < timeStampAfter : true;
+
+        if (diffTime === 0 && showRelativeTime) {
             return this.dotMessageService.get('Now');
         }
 
-        return showTimeStamp
-            ? this.dotFormatDateService.format(finalDate, format)
-            : this.dotFormatDateService.getRelative(finalDate);
+        return showRelativeTime
+            ? this.dotFormatDateService.getRelative(endDate)
+            : this.dotFormatDateService.format(endDate, format);
     }
 }

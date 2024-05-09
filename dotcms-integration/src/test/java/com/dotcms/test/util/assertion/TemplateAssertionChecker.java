@@ -5,17 +5,14 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
 import java.io.File;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Template}
@@ -46,7 +43,7 @@ public class TemplateAssertionChecker implements AssertionChecker<Template> {
 
             Template template = isLive ? liveTemplate : workingTemplate;
 
-            return map(
+            return Map.of(
                     "id", template.getIdentifier(),
                     "host_id", identifier.getHostId(),
                     "inode", template.getInode(),

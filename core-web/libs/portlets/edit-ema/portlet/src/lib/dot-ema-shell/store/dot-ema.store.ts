@@ -6,7 +6,17 @@ import { Injectable } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
-import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import {
+    catchError,
+    map,
+    pairwise,
+    shareReplay,
+    startWith,
+    switchMap,
+    take,
+    tap,
+    filter
+} from 'rxjs/operators';
 
 import {
     DotContentletLockerService,
@@ -25,7 +35,8 @@ import {
 
 import {
     Container,
-    ContentletArea
+    ContentletArea,
+    EmaDragItem
 } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import {
     DotPageApiParams,
@@ -39,6 +50,7 @@ import {
     EditEmaState,
     EditorData,
     ReloadPagePayload,
+    SaveInlineEditing,
     SavePagePayload
 } from '../../shared/models';
 import {
@@ -96,6 +108,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *******************/
 
     readonly clientHost$ = this.select((state) => state.clientHost);
+    readonly dragItem$ = this.select((state) => state.dragItem);
 
     private readonly stateLoad$ = this.select((state) => state.editorState);
     private readonly code$ = this.select((state) => state.editor.page.rendered);
@@ -197,10 +210,28 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly editorMode$ = this.select((state) => state.editorData.mode);
     readonly editorData$ = this.select((state) => state.editorData);
     readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
-    readonly contentState$ = this.select(this.code$, this.stateLoad$, (code, state) => ({
-        state,
-        code
-    }));
+
+    readonly contentState$ = this.select(
+        this.code$,
+        this.stateLoad$,
+        this.clientHost$,
+        (code, state, clientHost) => ({
+            state,
+            code,
+            isVTL: !clientHost
+        })
+    ).pipe(
+        startWith({ state: EDITOR_STATE.LOADING, code: '', isVTL: false }),
+        pairwise(),
+        filter(([_prev, curr]) => curr?.state === EDITOR_STATE.IDLE),
+        map(([prev, curr]) => ({
+            changedFromLoading: prev.state === EDITOR_STATE.LOADING,
+            isVTL: curr.isVTL,
+            code: curr.code,
+            state: curr.state
+        }))
+    );
+
     readonly vtlIframePage$ = this.select(
         this.pageRendered$,
         this.isEnterpriseLicense$,
@@ -223,6 +254,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         this.iframeURL$,
         this.isEnterpriseLicense$,
         this.pageURL$,
+        this.dragItem$,
         (
             bounds,
             clientHost,
@@ -234,7 +266,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             favoritePageURL,
             iframeURL,
             isEnterpriseLicense,
-            pageURL
+            pageURL,
+            dragItem
         ) => {
             return {
                 apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
@@ -253,7 +286,28 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 favoritePageURL,
                 iframeURL,
                 isEnterpriseLicense,
-                state: currentState
+                state: currentState,
+                dragItem,
+                showContentletTools:
+                    editorData.canEditVariant &&
+                    !!contentletArea &&
+                    !editorData.device &&
+                    editor.page.canEdit &&
+                    (currentState === EDITOR_STATE.IDLE ||
+                        currentState === EDITOR_STATE.DRAGGING) &&
+                    !editorData.page.isLocked,
+                showDropzone:
+                    editorData.canEditVariant &&
+                    !editorData.device &&
+                    (currentState === EDITOR_STATE.DRAGGING ||
+                        currentState === EDITOR_STATE.SCROLL_DRAG),
+                showPalette:
+                    editorData.canEditVariant &&
+                    isEnterpriseLicense &&
+                    (editorData.mode === EDITOR_MODE.EDIT ||
+                        editorData.mode === EDITOR_MODE.EDIT_VARIANT ||
+                        editorData.mode === EDITOR_MODE.INLINE_EDITING) &&
+                    editor.page.canEdit
             };
         }
     );
@@ -308,6 +362,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
+    readonly dragState$ = this.select(this.stateLoad$, this.dragItem$, (editorState, dragItem) => ({
+        editorState,
+        dragItem
+    }));
+
+    readonly isUserDragging$ = this.select((state) => state.editorState).pipe(
+        filter((state) => state === EDITOR_STATE.DRAGGING)
+    );
     /**
      * Concurrently loads page and license data to updat the state.
      *
@@ -459,10 +521,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     readonly saveFromInlineEditedContentlet = this.effect(
-        (payload$: Observable<{ contentlet: { [fieldName: string]: string; inode: string } }>) => {
+        (payload$: Observable<SaveInlineEditing>) => {
             return payload$.pipe(
-                switchMap((contentlet) => {
-                    return this.dotPageApiService.saveContentlet(contentlet).pipe(
+                tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
+                switchMap(({ contentlet, params }) => {
+                    return this.dotPageApiService.saveContentlet({ contentlet }).pipe(
                         tapResponse(
                             () => {
                                 this.messageService.add({
@@ -470,7 +533,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     summary: this.dotMessageService.get('message.content.saved'),
                                     life: 2000
                                 });
-                                this.setEditorMode(EDITOR_MODE.EDIT);
                             },
                             (e) => {
                                 console.error(e);
@@ -481,8 +543,24 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     ),
                                     life: 2000
                                 });
-
-                                this.setEditorMode(EDITOR_MODE.EDIT);
+                            }
+                        ),
+                        switchMap(() => this.dotPageApiService.get(params)),
+                        tapResponse(
+                            (pageData: DotPageApiResponse) => {
+                                this.patchState((state) => ({
+                                    ...state,
+                                    editor: pageData,
+                                    editorState: EDITOR_STATE.IDLE,
+                                    editorData: {
+                                        ...state.editorData,
+                                        mode: EDITOR_MODE.EDIT
+                                    }
+                                }));
+                            },
+                            (e) => {
+                                console.error(e);
+                                this.updateEditorState(EDITOR_STATE.ERROR);
                             }
                         )
                     );
@@ -594,6 +672,23 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     });
 
+    readonly setDragItem = this.updater((state, dragItem: EmaDragItem) => {
+        return {
+            ...state,
+            dragItem,
+            editorState: EDITOR_STATE.DRAGGING
+        };
+    });
+
+    readonly resetDragProperties = this.updater((state) => {
+        return {
+            ...state,
+            dragItem: undefined,
+            bounds: [],
+            contentletArea: undefined
+        };
+    });
+
     private createPageURL(state: EditEmaState): string {
         const params = {
             url: state.editor.page.pageURI,
@@ -634,6 +729,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }));
 
     /**
+     * Update the editor state to scroll
+     *
+     * @memberof EditEmaStore
+     */
+    readonly setScrollingState = this.updater((state) => {
+        return {
+            ...state,
+            editorState: EDITOR_STATE.SCROLL_DRAG,
+            bounds: []
+        };
+    });
+
+    /**
      * Update the preview state
      *
      * @memberof EditEmaStore
@@ -646,6 +754,36 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 ...editorData
             },
             editorState: EDITOR_STATE.IDLE
+        };
+    });
+
+    /**
+     * Updates the editor scroll state in the dot-ema store.
+     * If a drag item is present, we assume that scrolling was done during a drag and drop, and the state will automatically change to dragging.
+     * if there is no dragItem, we change the state to IDLE
+     *
+     * @returns The updated dot-ema store state.
+     */
+    readonly updateEditorScrollState = this.updater((state) => {
+        const newState = state.dragItem
+            ? {
+                  ...state,
+                  editorState: EDITOR_STATE.SCROLL_DRAG
+              }
+            : {
+                  ...state,
+                  editorState: EDITOR_STATE.IDLE,
+                  bounds: [],
+                  contentletArea: undefined
+              };
+
+        return newState;
+    });
+
+    readonly updateEditorDragState = this.updater((state) => {
+        return {
+            ...state,
+            editorState: state.dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
         };
     });
 

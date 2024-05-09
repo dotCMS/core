@@ -80,6 +80,11 @@ export function listenEditorMessages() {
                 break;
             }
         }
+
+        if (event.data.name === NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME) {
+            const scrollY = event.data.direction === 'up' ? -120 : 120;
+            window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
+        }
     };
 
     window.addEventListener('message', messageCallback);
@@ -113,6 +118,7 @@ export function listenHoveredContentlet() {
             contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
             inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
             widgetTitle: 'TEMP_EMPTY_CONTENTLET',
+            baseType: 'TEMP_EMPTY_CONTENTLET',
             onNumberOfPages: 1
         };
 
@@ -121,6 +127,7 @@ export function listenHoveredContentlet() {
             title: foundElement.dataset?.['dotTitle'],
             inode: foundElement.dataset?.['dotInode'],
             contentType: foundElement.dataset?.['dotType'],
+            baseType: foundElement.dataset?.['dotBasetype'],
             widgetTitle: foundElement.dataset?.['dotWidgetTitle'],
             onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages']
         };
@@ -173,7 +180,20 @@ export function scrollHandler() {
         window.lastScrollYPosition = window.scrollY;
     };
 
+    const scrollEndCallback = () => {
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.IFRAME_SCROLL_END
+        });
+    };
+
     window.addEventListener('scroll', scrollCallback);
+    window.addEventListener('scrollend', scrollEndCallback);
+
+    subscriptions.push({
+        type: 'listener',
+        event: 'scroll',
+        callback: scrollEndCallback
+    });
 
     subscriptions.push({
         type: 'listener',

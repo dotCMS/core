@@ -28,6 +28,8 @@ export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
 
 export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
+export const IFRAME_SCROLL_ZONE = 100;
+
 export const DEFAULT_PERSONA: DotPersona = {
     hostFolder: 'SYSTEM_HOST',
     inode: '',
@@ -194,35 +196,6 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
     layout: mockDotLayout(),
     template: mockDotTemplate(),
     containers: mockDotContainers()
-};
-
-export const dragMoveEventMock = {
-    target: {
-        dataset: {
-            type: 'contentlet',
-            item: JSON.stringify({
-                identifier: '123',
-                title: 'hello world',
-                contentType: 'File',
-                baseType: 'CONTENT'
-            })
-        }
-    }
-};
-
-export const dragAddEventMock = {
-    target: {
-        dataset: {
-            type: 'contentlet',
-            item: JSON.stringify({
-                contentlet: {
-                    identifier: '322b7cc0-3ab9-4267-97f7-9634e519d5a8'
-                },
-                contentType: 'Banner',
-                baseType: 'CONTENT'
-            })
-        }
-    }
 };
 
 export const dotPageContainerStructureMock: DotPageContainerStructure = {

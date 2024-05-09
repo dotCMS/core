@@ -81,24 +81,25 @@ public class PermissionAPITest extends IntegrationTestBase {
     private static Host host;
     private static User sysuser;
     private static Template template;
+    private static int permissionCacheSize = 0;
 
     @BeforeClass
     public static void createTestHost() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        
+
         permissionAPI =APILocator.getPermissionAPI();
         sysuser=APILocator.getUserAPI().getSystemUser();
         host = new Host();
-        host.setHostname("testhost.demo.dotcms.com");
+        host.setHostname(System.currentTimeMillis() + "testhost.demo.dotcms.com");
         try{
         	HibernateUtil.startTransaction();
             host=APILocator.getHostAPI().save(host, sysuser, false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
-        	host = APILocator.getHostAPI().findByName("testhost.demo.dotcms.com", sysuser, false);
+        	host = APILocator.getHostAPI().findByName(host.getHostname(), sysuser, false);
         	Logger.error(PermissionAPITest.class, e.getMessage());
         } finally {
             HibernateUtil.closeSessionSilently();
@@ -115,6 +116,14 @@ public class PermissionAPITest extends IntegrationTestBase {
         template.setTitle("testtemplate");
         template.setBody("<html><head></head><body>en empty template just for test</body></html>");
         APILocator.getTemplateAPI().saveTemplate(template, host, sysuser, false);
+
+        permissionCacheSize = Config.getIntProperty("cache.permissionshortlived.size", 0);
+        Config.setProperty("cache.permissionshortlived.size", 0);
+        CacheLocator.getPermissionCache().flushShortTermCache();
+
+
+
+
     }
 
     @AfterClass
@@ -130,7 +139,9 @@ public class PermissionAPITest extends IntegrationTestBase {
         }finally {
             HibernateUtil.closeSessionSilently();
         }
-        
+
+        Config.setProperty("cache.permissionshortlived.size", permissionCacheSize);
+        CacheLocator.getPermissionCache().flushShortTermCache();
     }
 
     @Test

@@ -505,11 +505,12 @@ public class VTLResource {
 
             final VelocityReader velocityReader = VelocityReaderFactory.getVelocityReader(UtilMethods.isSet(folderName));
 
-            final Map<String, Object> contextParams = CollectionsUtils.map(
-                    "pathParam", pathParam,
-                    "queryParams", uriInfo.getQueryParameters(),
-                    "bodyMap", bodyMap,
-                    "binaries", Arrays.asList(binaries));
+            final Map<String, Object> contextParams = new HashMap<>();
+
+            contextParams.put("pathParam", pathParam);
+            contextParams.put("queryParams", uriInfo.getQueryParameters());
+            contextParams.put("bodyMap", bodyMap);
+            contextParams.put("binaries", Arrays.asList(binaries));
 
             try(Reader reader = velocityReader.getVelocity(velocityReaderParams)){
                 return evalVelocity(request, response, reader, contextParams,

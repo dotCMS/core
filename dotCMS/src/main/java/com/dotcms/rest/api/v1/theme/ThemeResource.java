@@ -5,15 +5,10 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.JsonProcessingRuntimeException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -21,11 +16,8 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
-import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,10 +31,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import java.util.HashMap;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Provides different methods to access information about Themes in dotCMS.
@@ -107,7 +97,7 @@ public class ThemeResource {
         Logger.debug(this,
                 "Getting the themes for the hostId: " + hostId);
 
-        final Map<String, Object> params = map(ThemePaginator.HOST_ID_PARAMETER_NAME, hostId);
+        final Map<String, Object> params = new HashMap<>(Map.of(ThemePaginator.HOST_ID_PARAMETER_NAME, hostId));
 
         if (UtilMethods.isSet(searchParam)) {
             params.put(ThemePaginator.SEARCH_PARAMETER, searchParam);

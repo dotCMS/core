@@ -38,12 +38,11 @@
             justify-content: center;
             gap: $spacing-0;
 
-            label {
+            span {
                 color: $color-palette-primary-500;
-                font-size: 12px;
-                font-style: normal;
-                font-weight: 400;
-                line-height: 140%;
+                font-size: $font-size-xsm;
+                font-weight: $font-weight-regular-bold;
+                line-height: $line-height-relative;
                 text-transform: capitalize;
             }
 
@@ -54,11 +53,12 @@
             }
         }
 
-        label {
+        h2 {
             color: $black;
             font-size: $font-size-lmd;
             font-weight: $font-weight-bold;
             line-height: $line-height;
+            margin: 0;
         }
     }
 }

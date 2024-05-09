@@ -108,7 +108,7 @@
     function getVersionBack(inode) {
         window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=getversionback&inode=' + inode + '&inode_version=' + inode  + '&referer=' + referer;
         setTimeout(() => {
-            ngEditContentletEvents.next({
+            ngEditContentletEvents?.next({
                 name: 'save',
                 data: {
                     identifier: null,

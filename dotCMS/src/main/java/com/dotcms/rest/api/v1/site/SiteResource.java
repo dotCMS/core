@@ -77,7 +77,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.api.v1.site.SiteHelper.toView;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -240,9 +239,13 @@ public class SiteResource implements Serializable {
         final String sanitizedFilter = !"all".equals(filter) ? filter : StringUtils.EMPTY;
 
         try {
-            response = paginationUtil.getPage(httpServletRequest, user, sanitizedFilter, page, perPage,
-                    map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, showLive,
-                            SitePaginator.SYSTEM_PARAMETER_NAME, showSystem));
+
+            final Map<String, Object>  extraParams = new HashMap<>();
+            extraParams.put(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived);
+            extraParams.put(SitePaginator.LIVE_PARAMETER_NAME, showLive);
+            extraParams.put(SitePaginator.SYSTEM_PARAMETER_NAME, showSystem);
+
+            response = paginationUtil.getPage(httpServletRequest, user, sanitizedFilter, page, perPage, extraParams);
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
@@ -293,11 +296,12 @@ public class SiteResource implements Serializable {
                 }
             }
 
-            response = (switchDone) ?
-                    Response.ok(new ResponseEntityView<>(map("hostSwitched",
-                            switchDone))).build(): // 200
-                    Response.status(Response.Status.NOT_FOUND).build();
+            final Map<String, Object> resultMap = new HashMap<>();
+            resultMap.put("hostSwitched", switchDone);
 
+            response = (switchDone) ?
+                    Response.ok(new ResponseEntityView(resultMap)).build(): // 200
+                    Response.status(Response.Status.NOT_FOUND).build();
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);

@@ -1,25 +1,20 @@
 package com.dotcms.test.util.assertion;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
-import static com.dotmarketing.beans.Host.HOST_NAME_KEY;
-
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
-import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.util.UtilMethods;
+
 import java.io.File;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Experiment}
@@ -40,7 +35,7 @@ public class ExperimentChecker implements AssertionChecker<Experiment>{
                      .filter(experimentVariant -> !DEFAULT_VARIANT.name().equals(experimentVariant.id()))
                      .findFirst()
                      .orElseThrow();
-             return map(
+             return Map.of(
                     "name", experiment.name(),
                     "description", experiment.description().orElseThrow(),
                     "id", experiment.id().orElseThrow(),

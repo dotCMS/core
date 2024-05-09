@@ -111,20 +111,12 @@ jobs:
           fi
           git checkout -b ${release_branch}
           
-          ./mvnw -ntp \
-            ${JVM_TEST_MAVEN_OPTS} \
-            versions:set \
-            versions:commit \
-            -DnewVersion=${release_version} \
-            -DprocessAllModules=true
+          # set version in .mvn/maven.config
+          echo "-Dprod=true" > .mvn/maven.config
+          echo "-Drevision=${release_version}" >> .mvn/maven.config
+          echo "-Dchangelist=" >> .mvn/maven.config
           
-          ./mvnw -ntp \
-            ${JVM_TEST_MAVEN_OPTS} \
-            versions:set-property \
-            versions:commit \
-            -Dproperty=tika.api.version \
-            -DnewVersion=${release_version} \
-            --file independent-projects/pom.xml
+          git add .mvn/maven.config
           
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
@@ -298,8 +290,7 @@ jobs:
             -Dprod=true \
             -DskipTests=true \
             -DskipITs=true \
-            deploy \
-            --file dotCMS/pom.xml
+            deploy
         if: github.event.inputs.deploy_artifact == 'true'
 
       - name: Generate/Push Javadoc
@@ -307,7 +298,7 @@ jobs:
           ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
             javadoc:javadoc \
-            --file dotCMS/pom.xml
+            -pl :dotcms-core
           rc=$?
           if [[ $rc != 0 ]]; then
             echo "Javadoc generation failed with exit code $rc"

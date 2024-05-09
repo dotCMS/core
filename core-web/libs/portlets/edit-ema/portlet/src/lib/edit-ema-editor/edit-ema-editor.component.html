@@ -52,53 +52,28 @@
                 mode="indeterminate"></p-progressBar>
 
             <dot-ema-contentlet-tools
-                *ngIf="
-                    es.editorData.canEditVariant &&
-                    !!es.contentletArea &&
-                    !es.editorData.device &&
-                    es.editor.page.canEdit &&
-                    (es.state === editorState.IDLE || es.state === editorState.DRAGGING) &&
-                    !es.editorData.page.isLocked
-                "
+                *ngIf="es.showContentletTools"
                 [hide]="es.state === editorState.DRAGGING"
-                [contentlet]="es.contentletArea"
+                [contentletArea]="es.contentletArea"
                 (edit)="handleEditContentlet($event)"
                 (editVTL)="handleEditVTL($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
-                (moveStart)="moveContentlet($event)"
-                (moveStop)="onDragEnd($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
-                *ngIf="
-                    es.editorData.canEditVariant &&
-                    !!es.bounds.length &&
-                    !!dragItem &&
-                    !es.editorData.device &&
-                    es.state === editorState.DRAGGING
-                "
+                *ngIf="es.showDropzone"
                 [containers]="es.bounds"
-                [item]="dragItem"
-                (place)="onPlaceItem($event)"
+                [dragItem]="es.dragItem"
                 data-testId="dropzone" />
         </div>
     </div>
 
     <dot-edit-ema-palette
-        *ngIf="
-            es.editorData.canEditVariant &&
-            es.isEnterpriseLicense &&
-            (es.editorData.mode === editorMode.EDIT ||
-                es.editorData.mode === editorMode.EDIT_VARIANT ||
-                es.editorData.mode === editorMode.INLINE_EDITING) &&
-            es.editor.page.canEdit
-        "
+        *ngIf="es.showPalette"
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
-        (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
 
     @if(es.editorData.canEditVariant && (es.editorData.mode === editorMode.EDIT ||
@@ -106,6 +81,7 @@
     <dot-edit-ema-dialog
         #dialog
         (action)="onCustomEvent($event)"
+        (reloadFromDialog)="reloadFromDialog()"
         data-testId="ema-dialog"></dot-edit-ema-dialog>
     <p-confirmDialog
         [style]="{

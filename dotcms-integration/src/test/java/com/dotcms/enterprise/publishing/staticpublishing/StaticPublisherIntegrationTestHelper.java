@@ -1,18 +1,8 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
-import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.enterprise.publishing.bundlers.FileAssetBundler.FILE_ASSET_EXTENSION;
-import static com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -27,7 +17,6 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,16 +25,14 @@ import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -59,8 +46,9 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
+
+import static com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION;
+import static com.dotcms.util.CollectionsUtils.list;
 
 public class StaticPublisherIntegrationTestHelper {
 
@@ -119,7 +107,7 @@ public class StaticPublisherIntegrationTestHelper {
 
     @NotNull
     private static Map<String, String> getAssetsMap(Contentlet page) {
-        return map(
+        return Map.of(
                 page.getIdentifier(), PusheableAsset.CONTENTLET.getType()
         );
     }
@@ -221,7 +209,7 @@ public class StaticPublisherIntegrationTestHelper {
 
         final ContentTypeWithDependencies contentTypeWithDependencies = createURLMapContentType();
 
-        final Map<String, String> assetsMap = map(
+        final Map<String, String> assetsMap = Map.of(
                 contentTypeWithDependencies.contentType.id(), PusheableAsset.CONTENT_TYPE.getType()
         );
 
@@ -466,7 +454,7 @@ public class StaticPublisherIntegrationTestHelper {
         final HostWithDependencies hostWithDependencies = createHostWithDependencies();
 
         final Folder folderToAddInBundle = hostWithDependencies.folders.stream().findFirst().get();
-        final Map<String, String> assetsMap = map(
+        final Map<String, String> assetsMap = Map.of(
                 folderToAddInBundle.getIdentifier(), PusheableAsset.FOLDER.getType()
         );
 
@@ -501,7 +489,7 @@ public class StaticPublisherIntegrationTestHelper {
 
         final HostWithDependencies hostWithDependencies = createHostWithDependencies();
 
-        final Map<String, String> assetsMap = map(
+        final Map<String, String> assetsMap = Map.of(
                 hostWithDependencies.host.getIdentifier(), PusheableAsset.SITE.getType()
         );
 
@@ -665,7 +653,7 @@ public class StaticPublisherIntegrationTestHelper {
         final List<Field> fields = livePageWithContent.contentlet.getContentType().fields();
 
         final Contentlet contentlet = createNewVersionInDifferentLang(
-                livePageWithContent.contentlet, language, map(fields.get(0).variable(), "Content in another Lang"));
+                livePageWithContent.contentlet, language, Map.of(fields.get(0).variable(), "Content in another Lang"));
         ContentletDataGen.publish(contentlet);
 
         final PageWithDependencies pageAnotherLang = new PageWithDependenciesBuilder()

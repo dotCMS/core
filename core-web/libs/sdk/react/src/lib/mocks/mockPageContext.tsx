@@ -45,7 +45,8 @@ export const mockPageContext: PageProviderContext = {
                         identifier: 'contentlet-1',
                         title: 'Contentlet 1',
                         inode: 'inode-1',
-                        onNumberOfPages: 1
+                        onNumberOfPages: 1,
+                        baseType: 'base-type-1'
                     }
                 ]
             }
@@ -68,7 +69,7 @@ export const mockPageContext: PageProviderContext = {
         }
     },
     page: { identifier: 'page-1', title: 'Hello Page' },
-    viewAs: { language: { id: 'en' }, persona: { keyTag: 'persona-1' } },
+    viewAs: { language: { id: 'en' }, persona: { keyTag: 'persona-1' }, variantId: 'variant-1' },
     components: {},
     isInsideEditor: false
 };

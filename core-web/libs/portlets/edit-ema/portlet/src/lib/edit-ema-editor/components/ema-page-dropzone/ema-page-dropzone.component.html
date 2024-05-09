@@ -2,25 +2,30 @@
     *ngFor="let container of containers"
     [ngStyle]="container | dotPosition"
     [attr.data-payload]="container.payload"
-    (drop)="onDropEmptyContainer($event)"
-    (dragover)="onDragoverEmptyContainer($event)"
+    [attr.data-dropzone]="true"
+    [attr.data-empty]="true"
+    (dragover)="onDragover($event)"
     data-type="container">
     <div
         *ngFor="let contentlet of container.contentlets"
         [attr.data-payload]="contentlet.payload"
         [ngStyle]="contentlet | dotPosition"
-        (drop)="onDrop($event)"
+        [attr.data-dropzone]="true"
+        [attr.data-position]="$positionData().position"
+        [attr.data-empty]="false"
         (dragover)="onDragover($event)"
         data-type="contentlet"></div>
 
     <ng-container
         *ngTemplateOutlet="
             errorTemplate;
-            context: { error: container | dotError : item, container: container }
+            context: { error: container | dotError : dragItem, container: container }
         "></ng-container>
 </div>
 
+@if (containers.length > 0) {
 <div class="pointer" [ngStyle]="pointerPosition"></div>
+}
 
 <ng-template #errorTemplate let-error="error" let-container="container">
     <div
