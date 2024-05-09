@@ -160,10 +160,14 @@ public interface LanguageVariableAPI {
 
     /**
      * Count content Variables
-     * @return
+     * @return the number of content variables unique by key
      * @throws DotDataException
      */
-    int countVariablesByIdentifier() throws DotDataException;
+    int countVariablesByKey() throws DotDataException;
 
+    /**
+     * Invalidate the cache for the Language Variables
+     * @param contentlet - The contentlet that will be used to invalidate the cache.
+     */
     void invalidateLanguageVariablesCache(Contentlet contentlet);
 }

@@ -99,8 +99,8 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
         final List<LanguageVariableExt> languageVariables = new ArrayList<>();
         final List<Map<String, Object>> maps = dotConnect.loadObjectResults();
         for (Map<String, Object> map : maps) {
-            final String key = map.get("key").toString();
-            final String value =  map.get("value").toString();
+            final String key = DBColumnToJSONConverter.getObjectFromDBJson(map.get("key"), String.class);
+            final String value =  DBColumnToJSONConverter.getObjectFromDBJson(map.get("value"), String.class);
             final String identifier = (String) map.get("identifier");
             final long languageId = (long) map.get("language_id");
             languageVariables.add(
@@ -116,10 +116,10 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
     }
 
     @Override
-    public int countVariablesByIdentifier(ContentType contentType) throws DotDataException {
+    public int countVariablesByKey(ContentType contentType) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
         // START-NOSCAN
-        final String select = "select count( distinct( contentlet.identifier )) as x \n"
+        final String select = "select count( distinct( contentlet.contentlet_as_json->'fields'->'key'->'value' )) as x \n"
                 + "     from contentlet  \n"
                 + "     inner join ( \n"
                 + "      select distinct c.identifier \n"
