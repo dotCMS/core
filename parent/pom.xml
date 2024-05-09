@@ -5,10 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.dotcms</groupId>
     <artifactId>dotcms-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}${sha1}${changelist}</version>
     <packaging>pom</packaging>
     <description>DotCMS</description>
     <properties>
+        <!-- See https://maven.apache.org/maven-ci-friendly.html -->
+        <revision>1.0.0</revision>
+        <changelist>-SNAPSHOT</changelist>
+        <sha1/>
+        <flatten.mode>oss</flatten.mode>
+        <flatten.skip>false</flatten.skip>
+        <maven.deploy.skip>false</maven.deploy.skip>
         <tomcat.version>9.0.85</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
         <!--suppress UnresolvedMavenProperty -->
@@ -99,6 +106,7 @@
         <version.source.plugin>3.1.0</version.source.plugin>
         <version.frontend.plugin>1.12.1</version.frontend.plugin>
         <version.properties.plugin>1.2.1</version.properties.plugin>
+        <version.flatten.plugin>1.6.0</version.flatten.plugin>
         <version.versions.plugin>2.8.1</version.versions.plugin>
         <version.maven.plugin.plugin>3.8.1</version.maven.plugin.plugin>
         <version.war.plugin>3.2.3</version.war.plugin>
@@ -161,7 +169,34 @@
 
     <build>
         <pluginManagement>
+
             <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${version.flatten.plugin}</version>
+                    <configuration>
+                        <updatePomFile>true</updatePomFile>
+                        <flattenMode>${flatten.mode}</flattenMode>
+                        <skip>${flatten.skip}</skip>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>flatten.clean</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>properties-maven-plugin</artifactId>
@@ -883,6 +918,10 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>properties-maven-plugin</artifactId>

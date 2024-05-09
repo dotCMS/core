@@ -5,7 +5,12 @@ import {
     scrollHandler
 } from './listeners/listeners';
 import { postMessageToEditor, CUSTOMER_ACTIONS } from './models/client.model';
-import { initEditor, isInsideEditor, updateNavigation } from './sdk-editor';
+import {
+    addClassToEmptyContentlets,
+    initEditor,
+    isInsideEditor,
+    updateNavigation
+} from './sdk-editor';
 
 jest.mock('./models/client.model', () => ({
     postMessageToEditor: jest.fn(),
@@ -87,6 +92,24 @@ describe('DotCMSPageEditor', () => {
             expect(listenEditorMessages).toHaveBeenCalled();
             expect(listenHoveredContentlet).toHaveBeenCalled();
             expect(scrollHandler).toHaveBeenCalled();
+        });
+    });
+
+    describe('Add Class to Empty Contentets', () => {
+        it('should add class to empty contentlets', () => {
+            const contentlet = document.createElement('div');
+            contentlet.setAttribute('data-dot-object', 'contentlet');
+            Object.defineProperty(contentlet, 'clientHeight', { value: 100 }); // Emulate a contentlet with height in the DOM
+            document.body.appendChild(contentlet);
+
+            const emptyContentlet = document.createElement('div');
+            emptyContentlet.setAttribute('data-dot-object', 'contentlet');
+            document.body.appendChild(emptyContentlet);
+
+            addClassToEmptyContentlets();
+
+            expect(emptyContentlet.classList.contains('empty-contentlet')).toBe(true);
+            expect(contentlet.classList.contains('empty-contentlet')).toBe(false);
         });
     });
 });

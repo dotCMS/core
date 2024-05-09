@@ -31,7 +31,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotMessagePipe, DotValidators } from '@dotcms/ui';
+import {
+    DotCopyButtonComponent,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotValidators
+} from '@dotcms/ui';
 
 import {
     AIImagePrompt,
@@ -55,7 +60,8 @@ import { PromptType } from '../../ai-image-prompt.models';
         NgIf,
         InputTextareaModule,
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        DotCopyButtonComponent
     ],
     styleUrls: ['./ai-image-prompt-form.component.scss']
 })
@@ -89,10 +95,6 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     submitButtonLabel = 'block-editor.extension.ai-image.generate';
     requiredPrompt = true;
     tooltipText: string = null;
-
-    private isUpdatingValidators = false;
-    private destroyRef = inject(DestroyRef);
-
     orientationOptions: SelectItem<DotAIImageOrientation>[] = [
         {
             value: DotAIImageOrientation.HORIZONTAL,
@@ -111,6 +113,8 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
             )
         }
     ];
+    private isUpdatingValidators = false;
+    private destroyRef = inject(DestroyRef);
 
     ngOnInit(): void {
         this.initForm();
@@ -124,14 +128,6 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         this.setSubmitButtonLabel(isLoading?.currentValue);
 
         this.toggleFormState(isLoading?.currentValue && !isLoading.firstChange);
-    }
-
-    copyToClipboard(): void {
-        navigator.clipboard.writeText(this.aiProcessedPrompt);
-        this.tooltipText = this.dotMessageService.get('Copied');
-        setTimeout(() => {
-            this.tooltipText = null;
-        }, 1000);
     }
 
     private initForm(): void {
