@@ -1,11 +1,14 @@
 package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.localizationEnhancements;
 import static com.dotmarketing.util.WebKeys.CONTENT_SELECTED_LANGUAGE;
 import static com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE;
 import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
 
 import com.dotcms.keyvalue.model.KeyValue;
+import com.dotcms.languagevariable.business.LanguageVariable;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
@@ -347,10 +350,6 @@ public class LanguagesResource {
     }
     
     
-    
-    
-    
-    
     /**
      * Gets all the Messages from the language passed.
      * If default is passed it will get the messages for the default language.
@@ -368,7 +367,7 @@ public class LanguagesResource {
     public Response getAllMessages (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("language") final String language){
+            @PathParam("language") final String language) throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
@@ -379,34 +378,45 @@ public class LanguagesResource {
         final Locale currentLocale=resolveAdminLocale(language);
 
         //Messages in the properties file
-        final Map mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
+        //These are the resources that are in the properties file added by developers to dotCMS so will always need this
+        final Map<?,?> mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
 
-        final Map result = new TreeMap(mapPropertiesFile);
+        final Map<Object,Object> result = new TreeMap<>(mapPropertiesFile);
 
         final Language language1 = APILocator.getLanguageAPI().getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
         if(UtilMethods.isSet(language1)) {
-            //Language Keys
-            final Map mapLanguageKeys = APILocator.getLanguageAPI()
-                    .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
-                            Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 
-            result.putAll(mapLanguageKeys);
+            final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+            if(Boolean.TRUE.equals(localizationEnhancements.get())) {
+                final Language matchingLang = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
+                // Enhanced Language Vars
+                final List<LanguageVariable> variables = languageVariableAPI.findVariables(matchingLang.getId());
+                final Map<?,?> map = variables.stream().collect(
+                        Collectors.toMap(LanguageVariable::key, LanguageVariable::value));
+                result.putAll(map);
+            } else {
+                //Language Keys
+                final Map mapLanguageKeys = APILocator.getLanguageAPI()
+                        .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
+                                Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 
-            //Language Variable
-            long langId = language1.getId();
-            final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
-                    user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
-                    KeyValue::getKey,KeyValue::getValue, (value1,value2) ->{
-                        Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
-                        return value1;
-                    }));
+                result.putAll(mapLanguageKeys);
 
-            result.putAll(mapLanguageVariables);
+                //Legacy Language Variable
+                long langId = language1.getId();
+                final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
+                        user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
+                        KeyValue::getKey,KeyValue::getValue, (value1,value2) ->{
+                            Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
+                            return value1;
+                        }));
+                result.putAll(mapLanguageVariables);
+            }
 
         }
 
 
-        return Response.ok(new ResponseEntityView(result)).build();
+        return Response.ok(new ResponseEntityView<>(result)).build();
     }
 
     @GET

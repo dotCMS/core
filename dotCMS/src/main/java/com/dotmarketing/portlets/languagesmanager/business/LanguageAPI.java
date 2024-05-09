@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotmarketing.util.Config;
+import io.vavr.Lazy;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -29,6 +31,9 @@ import com.liferay.portal.model.User;
  *
  */
 public interface LanguageAPI {
+
+	Lazy<Boolean> localizationEnhancements = Lazy.of(
+			() -> Config.getBooleanProperty("LOCALIZATION_ENHANCEMENTS", true));
 
     /**
      * 
