@@ -57,7 +57,7 @@ public class LanguageVariablesHelper {
         final LinkedHashMap<String, Map<String,LanguageVariableView>> table = new LinkedHashMap<>();
         final List<Language> allLanguages = languageAPI.getLanguages().stream()
                 .collect(Collectors.toUnmodifiableList());
-        final int count = languageVariableAPI.countVariablesByIdentifier();
+        final int count = languageVariableAPI.countVariablesByKey();
         final Map<String, List<LanguageVariableExt>> variablesGroupedByKey = languageVariableAPI.findVariablesGroupedByKey(offset, limit, null);
         variablesGroupedByKey.forEach((key,variables) -> buildVariablesTable(key, variables, allLanguages, table, renderNulls));
         table.forEach((k,v) -> Logger.debug(this, "Key: " + k ));

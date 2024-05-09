@@ -20,6 +20,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -185,16 +188,15 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
     final ContentType contentType = langVarContentType.get();
     final List<LanguageVariableExt> variables = factory.findVariablesForPagination(contentType, offset, limit, orderBy);
     //Group by key including the language id
-    return variables.stream()
-            .collect(Collectors.groupingBy(LanguageVariableExt::key));
+    return variables.stream().collect(Collectors.groupingBy(LanguageVariableExt::key));
   }
 
   @CloseDBIfOpened
   @Override
-  public int countVariablesByIdentifier() throws DotDataException {
+  public int countVariablesByKey() throws DotDataException {
     final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
     final ContentType contentType = langVarContentType.get();
-    return factory.countVariablesByIdentifier(contentType);
+    return factory.countVariablesByKey(contentType);
   }
 
   /**

@@ -48,8 +48,10 @@ public class LanguageVariablesHelperTest {
     public void paginationTestVerifyKeyOrder()
             throws DotDataException, DotSecurityException, JsonProcessingException {
 
+        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+
         cleanup();
-        Assert.assertEquals(0, APILocator.getLanguageVariableAPI().countVariablesByIdentifier());
+        Assert.assertEquals(0, languageVariableAPI.countVariablesByKey());
 
         final List<Language> languages = List.of(
                 new LanguageDataGen().nextPersisted(),
@@ -64,7 +66,7 @@ public class LanguageVariablesHelperTest {
             languageVariableDataGen.languageId(language.getId()).key("key2").value("value2").nextPersistedAndPublish();
             languageVariableDataGen.languageId(language.getId()).key("key3").value("value3").nextPersistedAndPublish();
         }
-
+        Assert.assertEquals("Count should match the number of unique keys ",3, languageVariableAPI.countVariablesByKey());
         final List<String> languageTags = languages.stream().map(Language::getIsoCode)
                 .collect(Collectors.toList());
 
@@ -72,7 +74,7 @@ public class LanguageVariablesHelperTest {
         final LanguageVariablePageView view = helper.view(
                 new PaginationContext(null, 0, 10, null, null), false);
 
-        Assert.assertEquals("Total languages does not match ", view.total(), languages.size() * 3);
+        Assert.assertEquals("Total languages does not match ", view.total(),  3);
         final LinkedHashMap<String, Map<String, LanguageVariableView>> variables = view.variables();
         //Validate order of the keys
 

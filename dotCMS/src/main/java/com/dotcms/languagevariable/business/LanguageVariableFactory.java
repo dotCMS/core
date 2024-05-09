@@ -11,6 +11,6 @@ public interface LanguageVariableFactory {
 
     List<LanguageVariableExt> findVariablesForPagination(ContentType contentType, final int offset, final int limit, final String orderBy) throws DotDataException;
 
-    int countVariablesByIdentifier(ContentType contentType) throws DotDataException;
+    int countVariablesByKey(ContentType contentType) throws DotDataException;
 
 }
