@@ -409,6 +409,15 @@ public class LanguagesResource {
         return Response.ok(new ResponseEntityView(result)).build();
     }
 
+    /**
+     * Gets all the language variables in the system organized by key
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param renderNulls boolean
+     * @param paginationContext {@link PaginationContext}
+     * @return all the messages of the language
+     * @throws DotDataException if an error occurs
+     */
     @GET
     @Path("/variables")
     @JSONP
@@ -422,8 +431,8 @@ public class LanguagesResource {
 
                 new WebResource.InitBuilder(webResource)
                         .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requireAdmin(true)
+                        .requiredFrontendUser(true)
+                        .requiredPortlet(PortletID.LANGUAGES.toString())
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
                         .init();

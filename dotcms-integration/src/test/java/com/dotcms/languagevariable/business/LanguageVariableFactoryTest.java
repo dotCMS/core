@@ -16,6 +16,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Test class for {@link LanguageVariableFactoryImpl}.
+ */
 public class LanguageVariableFactoryTest {
 
     @BeforeClass
@@ -24,6 +27,12 @@ public class LanguageVariableFactoryTest {
         LanguageVariableAPITest.prepare();
     }
 
+    /**
+     * Method to find a content type by its velocity variable name.
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     ContentType findContentType() throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
         final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME;
