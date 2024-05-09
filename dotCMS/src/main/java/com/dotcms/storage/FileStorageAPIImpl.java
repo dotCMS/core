@@ -435,8 +435,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         final StorageKey storageKey = requestMetaData.getStorageKey();
         final StoragePersistenceAPI storage = this.persistenceProvider.getStorage(storageKey.getStorage());
         this.checkBucket(storageKey, storage);
+        Map<String, Serializable>  metadataMap = null;
         if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
-            Map<String, Serializable>  metadataMap = retrieveMetaData(storageKey, storage);
+            metadataMap = retrieveMetaData(storageKey, storage);
             Logger.debug(FileStorageAPIImpl.class, () -> "Retrieve the meta data from storage path: " + storageKey.getPath());
             checkUpdateEditableAsText(metadataMap);
             if (null != cacheKey) {
@@ -444,9 +445,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 putIntoCache(cacheKey, projection);
                 return projection;
             }
-            return metadataMap;
         }
-        return null;
+        return metadataMap;
     }
 
     /**
