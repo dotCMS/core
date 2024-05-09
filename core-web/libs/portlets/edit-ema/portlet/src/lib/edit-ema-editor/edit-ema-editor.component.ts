@@ -992,10 +992,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
-                this.store.updateEditorState(EDITOR_STATE.SCROLLING);
+                this.store.updateEditorScrollState();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
-                this.store.updateEditorScrollState();
+                this.store.updateEditorDragState();
             },
             [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
                 this.iframe?.nativeElement?.contentWindow.postMessage(

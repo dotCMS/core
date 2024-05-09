@@ -113,8 +113,10 @@ jobs:
           
           # set version in .mvn/maven.config
           echo "-Dprod=true" > .mvn/maven.config
-          echo "-Drelease=${release_version}" >> .mvn/maven.config
+          echo "-Drevision=${release_version}" >> .mvn/maven.config
           echo "-Dchangelist=" >> .mvn/maven.config
+          
+          git add .mvn/maven.config
           
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
