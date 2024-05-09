@@ -27,7 +27,7 @@ import static com.dotcms.ai.db.EmbeddingsDTO.ALL_INDICES;
  * It uses the PGVector extension for PostgresSQL to store and query embeddings.
  * This class provides methods for initializing the database table and extension, saving embeddings, searching embeddings, and deleting embeddings.
  */
-public class EmbeddingsDB {
+public class EmbeddingsFactory {
 
     private static final String AND_KEYWORD = " and ";
     private static final String EQUALS_OPERATOR = "=";
@@ -36,9 +36,9 @@ public class EmbeddingsDB {
     private static final String INODE_KEY = "inode";
     private static final String IDENTIFIER_KEY = "identifier";
     private static final String INDEX_NAME_KEY = "index_name";
-    public static final Lazy<EmbeddingsDB> impl = Lazy.of(EmbeddingsDB::new);
+    public static final Lazy<EmbeddingsFactory> impl = Lazy.of(EmbeddingsFactory::new);
 
-    private EmbeddingsDB() {
+    private EmbeddingsFactory() {
         initVectorExtension();
         initVectorDbTable();
     }
@@ -49,10 +49,10 @@ public class EmbeddingsDB {
      */
     public void initVectorExtension() {
         if (!doesExtensionExist()) {
-            Logger.info(EmbeddingsDB.class, "Adding PGVector extension to database");
+            Logger.info(EmbeddingsFactory.class, "Adding PGVector extension to database");
             runSQL(EmbeddingsSQL.INIT_VECTOR_EXTENSION);
         } else {
-            Logger.info(EmbeddingsDB.class, "PGVector exists, skipping extension installation");
+            Logger.info(EmbeddingsFactory.class, "PGVector exists, skipping extension installation");
         }
     }
 
@@ -64,7 +64,7 @@ public class EmbeddingsDB {
         try {
             internalInitVectorDbTable();
         } catch (Exception e) {
-            Logger.info(EmbeddingsDB.class, "Create Table Failed : " + e.getMessage());
+            Logger.info(EmbeddingsFactory.class, "Create Table Failed : " + e.getMessage());
             moveVectorDbTable();
             internalInitVectorDbTable();
         }
@@ -76,7 +76,7 @@ public class EmbeddingsDB {
      */
     public void moveVectorDbTable() {
         String newTableName = "dot_embeddings_" + System.currentTimeMillis();
-        Logger.info(EmbeddingsDB.class, "Create Table Failed : trying to rename:" + newTableName);
+        Logger.info(EmbeddingsFactory.class, "Create Table Failed : trying to rename:" + newTableName);
         runSQL("ALTER TABLE IF EXISTS dot_embeddings RENAME TO " + newTableName);
     }
 
@@ -85,9 +85,9 @@ public class EmbeddingsDB {
      * It first logs the action, then runs the SQL command to create the table, and finally logs the creation of indexes on the table.
      */
     public void internalInitVectorDbTable() {
-        Logger.info(EmbeddingsDB.class, "Adding table dot_embeddings to database");
+        Logger.info(EmbeddingsFactory.class, "Adding table dot_embeddings to database");
         runSQL(EmbeddingsSQL.CREATE_EMBEDDINGS_TABLE);
-        Logger.info(EmbeddingsDB.class, "Adding indexes to dot_embedding table");
+        Logger.info(EmbeddingsFactory.class, "Adding indexes to dot_embedding table");
         for (final String index : EmbeddingsSQL.CREATE_TABLE_INDEXES) {
             runSQL(index);
         }
@@ -98,12 +98,12 @@ public class EmbeddingsDB {
      * This method is used when you want to remove the embeddings table from the database.
      */
     public void dropVectorDbTable() {
-        Logger.info(EmbeddingsDB.class, "Dropping table dot_embeddings from database");
+        Logger.info(EmbeddingsFactory.class, "Dropping table dot_embeddings from database");
         runSQL(EmbeddingsSQL.DROP_EMBEDDINGS_TABLE);
     }
 
     void runSQL(final String sql) {
-        try (Connection db = getPGVectorConnection()) {
+        try (final Connection db = getPGVectorConnection()) {
             new DotConnect().setSQL(sql).loadResult(db);
         } catch (SQLException | DotDataException e) {
             throw new DotRuntimeException(e);
@@ -112,7 +112,7 @@ public class EmbeddingsDB {
 
     private boolean doesExtensionExist() {
         try(final Connection conn = DbConnectionFactory.getDataSource().getConnection()){
-            Logger.info(EmbeddingsDB.class, "Checking if Vector Extension Exists");
+            Logger.info(EmbeddingsFactory.class, "Checking if Vector Extension Exists");
             return !new DotConnect().setSQL(EmbeddingsSQL.CHECK_IF_VECTOR_EXISTS).loadObjectResults(conn).isEmpty();
         } catch (Exception  e) {
             throw new DotRuntimeException(e);
@@ -191,7 +191,7 @@ public class EmbeddingsDB {
      * @param embeddings the embeddings to save
      */
     public void saveEmbeddings(final EmbeddingsDTO embeddings) {
-        Logger.info(EmbeddingsDB.class, "Saving embeddings for content:" + embeddings.title);
+        Logger.info(EmbeddingsFactory.class, "Saving embeddings for content:" + embeddings.title);
 
         final PGvector vector = new PGvector(ArrayUtils.toPrimitive(embeddings.embeddings));
         try (final Connection conn = getPGVectorConnection();
@@ -356,7 +356,7 @@ public class EmbeddingsDB {
     public int deleteEmbeddings(final EmbeddingsDTO dto) {
         final StringBuilder sql = new StringBuilder("delete from dot_embeddings where true ");
         final List<Object> params = appendParams(sql, dto);
-        Logger.info(EmbeddingsDB.class, "deleting embeddings:" + dto);
+        Logger.info(EmbeddingsFactory.class, "deleting embeddings:" + dto);
 
         try (final Connection conn = getPGVectorConnection();
              final PreparedStatement statement = conn.prepareStatement(sql.toString())) {

@@ -140,21 +140,29 @@ public class EmbeddingsDTODataGen extends AbstractDataGen<EmbeddingsDTO> {
 
     public static List<EmbeddingsDTODataGen> generateEmbeddings(final String text,
                                                                 final String inode,
-                                                                final String indexName) {
+                                                                final String indexName,
+                                                                final int limit) {
         final String[] words = text.split(" ");
         if (words.length == 0) {
             return List.of();
         }
 
-        return IntStream.range(0, 16)
+        return IntStream.range(0, limit)
                 .mapToObj(i -> new EmbeddingsDTODataGen().generate(inode, indexName, text))
                 .collect(Collectors.toList());
     }
 
     public static void persistEmbeddings(final String text,
                                          final String inode,
+                                         final String indexName,
+                                         final int limit) {
+        generateEmbeddings(text, inode, indexName, limit).forEach(EmbeddingsDTODataGen::nextPersisted);
+    }
+
+    public static void persistEmbeddings(final String text,
+                                         final String inode,
                                          final String indexName) {
-        generateEmbeddings(text, inode, indexName).forEach(EmbeddingsDTODataGen::nextPersisted);
+        persistEmbeddings(text, inode, indexName, 16);
     }
 
     private static float[] generateVector() {
