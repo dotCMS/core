@@ -3,7 +3,7 @@
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-languages/portlet/src",
     "prefix": "lib",
-    "tags": [],
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:languages"],
     "projectType": "library",
     "targets": {
         "test": {

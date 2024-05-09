@@ -58,8 +58,7 @@
             "@portlets/*": ["apps/dotcms-ui/src/app/portlets/*"],
             "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
-            "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
-            "dot-languages": ["libs/portlets/dot-languages/portlet/src/index.ts"]
+            "@tests/*": ["apps/dotcms-ui/src/app/test/*"]
         }
     },
     "exclude": ["node_modules", "tmp"]
