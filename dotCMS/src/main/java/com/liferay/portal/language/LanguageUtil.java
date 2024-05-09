@@ -145,7 +145,7 @@ public class LanguageUtil {
 
 		//Attempt fallback by base lang
 		if ((null == language || language.getId() <= 0) && (UtilMethods.isSet(languageCode) && fallbackByBaseLang)) {
-				language = languageAPI.getFallbackLanguage(countryCode);
+				language = languageAPI.getFallbackLanguage(languageCode);
 		}
 		if (null != language && language.getId() > 0) {
 			languageId = language.getId();
