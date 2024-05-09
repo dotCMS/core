@@ -1,106 +1,221 @@
 package com.dotcms.rest.api.v1.user;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.rest.api.Validated;
+import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Encapsulates the minimal information for the RestUser
- * @author Geoff M. Granum
+ * Encapsulates the information to update an User
  */
 @JsonDeserialize(builder = UpdateUserForm.Builder.class)
 public final class UpdateUserForm extends Validated  {
 
+    private String userId;
+    private final boolean active;
     @NotNull
     @NotBlank
-    private final String userId;
-
+    private final String firstName;
+    private final String middleName;
     @NotNull
     @NotBlank
-    private final String givenName;
+    private final String lastName;
+    private final String nickName;
+    @NotNull
+    @NotBlank
     private final String email;
+    private final boolean male;
+    private final String  birthday;
+    private final String    languageId;
+    private final String  timeZoneId;
+    private final char[] currentPassword;
+    private final char[] newPassword;
 
-    @NotNull
-    @NotBlank
-    private final String surname;
-    private final String currentPassword;
-    private final String newPassword;
+    private final Map<String, Object> additionalInfo;
+
+    private final List<String> roles;
 
     private UpdateUserForm(UpdateUserForm.Builder builder) {
-        userId    = builder.userId;
-        givenName = builder.givenName;
-        surname   = builder.surname;
-        currentPassword  = builder.currentPassword;
-        email     = builder.email;
-        newPassword = builder.newPassword;
+
+        this.active = builder.active;
+        this.firstName = builder.firstName;
+        this.middleName = builder.middleName;
+        this.lastName = builder.lastName;
+        this.nickName = builder.nickName;
+        this.email = builder.email;
+        this.male = builder.male;
+        this.birthday = builder.birthday;
+        this.languageId = builder.languageId;
+        this.timeZoneId = builder.timeZoneId;
+        this.currentPassword = builder.currentPassword;
+        this.newPassword = builder.newPassword;
+        this.additionalInfo = builder.additionalInfo;
+        this.roles = UtilMethods.isSet(builder.roles)?builder.roles: Collections.emptyList();
+        this.userId = builder.userId;
 
         checkValid();
+        if (!UtilMethods.isSet(this.newPassword) || !UtilMethods.isSet(this.currentPassword)) {
+            throw new IllegalArgumentException("Password can not be null");
+        }
     }
 
     public String getUserId() {
         return userId;
     }
 
-    public String getGivenName() {
-        return givenName;
+    public boolean isActive() {
+        return active;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getMiddleName() {
+        return middleName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getNickName() {
+        return nickName;
     }
 
     public String getEmail() {
         return email;
     }
 
-    public String getSurname() {
-        return surname;
+    public boolean isMale() {
+        return male;
     }
 
-    public String getCurrentPassword() {
+    public String getBirthday() {
+        return birthday;
+    }
+
+    public String getLanguageId() {
+        return languageId;
+    }
+
+    public String getTimeZoneId() {
+        return timeZoneId;
+    }
+
+    public Map<String, Object> getAdditionalInfo() {
+        return additionalInfo;
+    }
+
+    public List<String> getRoles() {
+        return roles;
+    }
+
+    public char[] getCurrentPassword() {
         return currentPassword;
     }
 
-    public String getNewPassword() {
+    public char[] getNewPassword() {
         return newPassword;
     }
 
     public static final class Builder {
         @JsonProperty private String userId;
-        @JsonProperty private String givenName;
-        @JsonProperty private String surname;
-        @JsonProperty private String currentPassword;
-        @JsonProperty private String newPassword;
+        @JsonProperty private boolean active;
+        @JsonProperty private String firstName;
+        @JsonProperty private String middleName;
+        @JsonProperty private String lastName;
+        @JsonProperty private String nickName;
         @JsonProperty private String email;
+        @JsonProperty private boolean male;
+        @JsonProperty private String  birthday;
+        @JsonProperty private String    languageId ="en-US";
+        @JsonProperty private String    timeZoneId;
+        @JsonProperty private char[]    newPassword;
+        @JsonProperty private char[]    currentPassword;
+        @JsonProperty private Map<String, Object>    additionalInfo;
 
+        @JsonProperty private List<String> roles;
         public Builder() {
         }
 
-        public UpdateUserForm.Builder userId(String userId) {
+        public Builder userId(String userId) {
             this.userId = userId;
             return this;
         }
-
-        public UpdateUserForm.Builder givenName(String givenName) {
-            this.givenName = givenName;
+        public Builder roles(List<String> roles) {
+            this.roles = roles;
             return this;
         }
 
-        public UpdateUserForm.Builder surname(String surname) {
-            this.surname = surname;
+        public Builder active(boolean active) {
+            this.active = active;
             return this;
         }
 
-        public UpdateUserForm.Builder currentPassword(String password) {
+        public Builder firstName(String firstName) {
+            this.firstName = firstName;
+            return this;
+        }
+
+        public Builder middleName(String middleName) {
+            this.middleName = middleName;
+            return this;
+        }
+
+        public Builder lastName(String lastName) {
+            this.lastName = lastName;
+            return this;
+        }
+
+        public Builder nickName(String nickName) {
+            this.nickName = nickName;
+            return this;
+        }
+
+        public Builder email(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public Builder male(boolean male) {
+            this.male = male;
+            return this;
+        }
+
+        public Builder birthday(String birthday) {
+            this.birthday = birthday;
+            return this;
+        }
+
+        public Builder languageId(String languageId) {
+            this.languageId = languageId;
+            return this;
+        }
+
+        public Builder timeZoneId(String timeZoneId) {
+            this.timeZoneId = timeZoneId;
+            return this;
+        }
+
+        public Builder newPassword(char[] password) {
+            this.newPassword = password;
+            return this;
+        }
+
+        public Builder currentPassword(char[] password) {
             this.currentPassword = password;
             return this;
         }
 
-        public UpdateUserForm.Builder newPassword(String newPassword) {
-            this.newPassword = newPassword;
-            return this;
-        }
-
-        public UpdateUserForm.Builder email(String email) {
-            this.email = email;
+        public Builder additionalInfo(Map<String, Object>    additionalInfo) {
+            this.additionalInfo = additionalInfo;
             return this;
         }
 
@@ -109,4 +224,4 @@ public final class UpdateUserForm extends Validated  {
         }
     }
 }
- 
+

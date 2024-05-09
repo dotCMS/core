@@ -149,7 +149,7 @@ public class UserResource implements Serializable {
 	 *
 	 * @param httpServletRequest  The current {@link HttpServletRequest} instance.
 	 * @param httpServletResponse The current {@link HttpServletResponse} instance.
-	 * @param updateUserForm      The {@link UpdateUserForm} containing the User's information.
+	 * @param updateUserForm      The {@link UpdateCurrentUserForm} containing the User's information.
 	 *
 	 * @return The JSON response with the result of the User update process.
 	 *
@@ -169,7 +169,7 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response update(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
-								 final UpdateUserForm updateUserForm) throws Exception {
+								 final UpdateCurrentUserForm updateUserForm) throws Exception {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -741,5 +741,43 @@ public class UserResource implements Serializable {
 		user.setLanguageId(createUserForm.getLanguageId());
 	}
 
+	/**
+	 * Update an existing user.
+	 *
+	 * Only Admin User or have access to Users and Roles Portlets can update an existing user
+	 *
+	 * @param httpServletRequest
+	 * @param userForm
+	 * @return User Updated
+	 * @throws Exception
+	 */
+	@POST
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response udpate(@Context final HttpServletRequest httpServletRequest,
+								 @Context final HttpServletResponse httpServletResponse,
+								 final UpdateUserForm createUserForm) throws Exception {
 
+		final User modUser = new WebResource.InitBuilder(webResource)
+				.requestAndResponse(httpServletRequest, httpServletResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+
+		final boolean isRoleAdministrator = modUser.isAdmin() ||
+				(
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+				);
+
+		if (isRoleAdministrator) {
+			final User userToUpdated = this.createNewUser(
+					modUser, createUserForm);
+
+			return Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
+					"user", userToUpdated.toMap()))).build(); // 200
+		}
+
+		throw new ForbiddenException("User " + modUser.getUserId() + " does not have permissions to create users");
+	} // create.
 }

@@ -102,7 +102,7 @@ public class UserResourceTest extends UnitTestBase {
 
             try {
 
-                UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();
+                UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();
                 userResource.update(request, response, updateUserForm);
                 fail ("Should throw a ValidationException");
             } catch (Exception e) {
@@ -111,7 +111,7 @@ public class UserResourceTest extends UnitTestBase {
 
             try {
 
-                UpdateUserForm updateUserForm = new UpdateUserForm.Builder().userId("dotcms.org.1")/*.givenName("Admin")*/.surname("User Admin").email("admin@dotcms.com").build();
+                UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder().userId("dotcms.org.1")/*.givenName("Admin")*/.surname("User Admin").email("admin@dotcms.com").build();
                 userResource.update(request, response, updateUserForm);
                 fail ("Should throw a ValidationException");
             } catch (Exception e) {
@@ -120,7 +120,7 @@ public class UserResourceTest extends UnitTestBase {
 
             try {
 
-                UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin")/*.surname("User Admin")*/.email("admin@dotcms.com").build();
+                UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin")/*.surname("User Admin")*/.email("admin@dotcms.com").build();
                 userResource.update(request, response, updateUserForm);
                 fail ("Should throw a ValidationException");
             } catch (Exception e) {
@@ -203,7 +203,7 @@ public class UserResourceTest extends UnitTestBase {
             UserResource userResource =
                     new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
-            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+            UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()
                     .userId("dotcms.org.1")
                     .givenName("Admin")
                     .surname("User Admin")
@@ -293,7 +293,7 @@ public class UserResourceTest extends UnitTestBase {
             UserResource userResource =
                     new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
-            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+            UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()
                     .userId("dotcms.org.1")
                     .givenName("Admin")
                     .surname("User Admin")
@@ -392,7 +392,7 @@ public class UserResourceTest extends UnitTestBase {
             UserResource userResource =
                     new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
-            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+            UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()
                     .userId("dotcms.org.1")
                     .givenName("Admin")
                     .surname("User Admin")
