@@ -4,6 +4,8 @@ import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
 import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
 
+export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
+
 /**
  * Insert a contentlet in a container
  *
@@ -159,11 +161,7 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 export function sanitizeURL(url?: string): string {
     return url
         ?.replace(/(^\/)|(\/$)/g, '') // Remove slashes from the beginning and end of the url
-        .split('/')
-        .filter((part, i) => {
-            return !i || part !== 'index'; // Filter the index from the url if it is at the last position
-        })
-        .join('/');
+        .replace(/\/index$/, ''); // Remove index from the end of the url
 }
 
 /**

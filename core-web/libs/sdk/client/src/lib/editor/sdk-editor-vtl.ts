@@ -5,7 +5,7 @@ import {
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
-import { isInsideEditor } from './sdk-editor';
+import { isInsideEditor, addClassToEmptyContentlets } from './sdk-editor';
 
 declare global {
     interface Window {
@@ -29,4 +29,5 @@ if (isInsideEditor()) {
     scrollHandler();
     preserveScrollOnIframe();
     listenHoveredContentlet();
+    addClassToEmptyContentlets();
 }

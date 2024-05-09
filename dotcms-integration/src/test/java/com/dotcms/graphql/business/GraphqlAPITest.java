@@ -564,8 +564,8 @@ public class GraphqlAPITest extends IntegrationTestBase {
 
             if (testCase.fieldRequired) {
                 Assert.assertEquals("Type of GraphQL Field should match type expected",
-                        new GraphQLNonNull(expectedType)
-                        , graphQLFieldType);
+                        new GraphQLNonNull(expectedType).toString()
+                        , graphQLFieldType.toString());
             } else {
                 Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
                         , graphQLFieldType);
