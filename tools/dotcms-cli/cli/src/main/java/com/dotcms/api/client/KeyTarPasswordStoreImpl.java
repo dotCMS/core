@@ -18,6 +18,7 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
 
+    // START-NOSCAN
     private Keytar instance;
 
     private boolean unsupported = false;
@@ -66,4 +67,5 @@ public class KeyTarPasswordStoreImpl implements SecurePasswordStore {
             throw new StoreSecureException("Failure deleting password from secure storage",e);
         }
     }
+    // END-NOSCAN
 }
