@@ -339,7 +339,8 @@ import org.junit.runners.Suite.SuiteClasses;
         RemoteAnnouncementsLoaderIntegrationTest.class,
         Task240112AddMetadataColumnToStructureTableTest.class,
         AIViewToolTest.class,
-        SearchToolTest.class
+        SearchToolTest.class,
+        TimeMachineAPITest.class
 })
 
 public class MainSuite2b {
