@@ -41,7 +41,7 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
             var path = detailPageURI.getRawPath();
 
             final Host site = APILocator.getHostAPI()
-                    .findByName(detailPageURI.getHost(), user, false);
+                    .findByName(detailPageURI.getRawAuthority(), user, false);
 
             if (null == detailPageURI.getRawPath()) {
                 throw new IllegalArgumentException(
