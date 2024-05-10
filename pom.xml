@@ -40,16 +40,6 @@
             <id>dotcms-libs</id>
             <url>https://repo.dotcms.com/artifactory/libs-release</url>
         </repository>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
-        </repository>
     </repositories>
     <distributionManagement>
         <site>
@@ -57,17 +47,15 @@
             <url>file://${project.build.directory}/staging</url>
         </site>
         <repository>
-            <id>dotcms-libs</id>
+            <id>dotcms-libs-local</id>
             <name>DotCMS libs Release</name>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
+            <url>https://repo.dotcms.com/artifactory/libs-release-local</url>
         </repository>
-        <!--
         <snapshotRepository>
-            <id>dotcms-libs-snapshot</id>
+            <id>dotcms-libs-snapshot-local</id>
             <name>DotCMS libs Snapshots</name>
             <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
         </snapshotRepository>
-        -->
     </distributionManagement>
 
     <reporting>

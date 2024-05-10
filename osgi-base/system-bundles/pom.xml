@@ -21,36 +21,6 @@
         <tika.plugin.bundle.version>2.7.0</tika.plugin.bundle.version>
     </properties>
 
-    <repositories>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>
