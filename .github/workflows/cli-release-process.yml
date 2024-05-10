@@ -105,7 +105,8 @@ jobs:
           echo "-Dchangelist=" >> .mvn/maven.config
           
           # Commit version changes
-          git commit --allow-empty -a -m "Update dotCLI version to $RELEASE_VERSION"
+          git add .mvn/maven.config
+          git commit --allow-empty -a -m "🏁 Update dotCLI version to $RELEASE_VERSION"
           git push origin $AUXILIARY_BRANCH
           
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
