@@ -75,6 +75,7 @@ import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
+import com.dotcms.timemachine.business.TimeMachineAPITest;
 import com.dotcms.util.content.json.PopulateContentletAsJSONUtilTest;
 import com.dotcms.variant.VariantAPITest;
 import com.dotcms.variant.VariantFactoryTest;
@@ -337,7 +338,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AnnouncementsHelperIntegrationTest.class,
         RemoteAnnouncementsLoaderIntegrationTest.class,
         Task240112AddMetadataColumnToStructureTableTest.class,
-        AIViewToolTest.class
+        AIViewToolTest.class,
+        TimeMachineAPITest.class
 })
 
 public class MainSuite2b {

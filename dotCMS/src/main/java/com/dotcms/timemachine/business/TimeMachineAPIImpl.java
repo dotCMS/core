@@ -2,6 +2,7 @@ package com.dotcms.timemachine.business;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -10,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotcms.publishing.PublishStatus;
@@ -23,12 +25,17 @@ import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.TimeMachineJob;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 
 public class TimeMachineAPIImpl implements TimeMachineAPI {
 
+    public Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
+            () -> Config.getLongProperty("PRUNE_TIMEMACHINE_OLDER_THAN_DAYS", 90)
+    );
     @Override
     public List<PublishStatus> startTimeMachine(final List<Host> hosts,
                                                 final List<Language> languages,
@@ -111,8 +118,30 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 
 		return list;
 	}
-	
-	@Override
+
+    @Override
+    public List<File> removeOldTimeMachineBackupsFiles() {
+        long now = Instant.now().toEpochMilli();
+        final List<File> fileToRemove = new ArrayList<>();
+        final File timeMachinePath = new File(ConfigUtils.getTimeMachinePath());
+
+        for ( File file : timeMachinePath.listFiles()) {
+            if ( file.isDirectory() && file.getName().startsWith("timeMachineBundle_")) {
+
+                long lastModifiedDays = TimeUnit.MILLISECONDS.toDays(now - file.lastModified());
+
+                if (lastModifiedDays > PRUNE_TIMEMACHINE_OLDER_THAN_DAYS.get()) {
+                    fileToRemove.add(file);
+                }
+            }
+        }
+
+        fileToRemove.forEach(File::delete);
+
+        return fileToRemove;
+    }
+
+    @Override
 	public ScheduledTask getQuartzJob() {
 	    try {
 	        List<ScheduledTask> sched = QuartzUtils.getScheduledTasks("timemachine");
