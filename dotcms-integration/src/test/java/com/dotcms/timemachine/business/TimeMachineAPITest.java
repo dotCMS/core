@@ -57,9 +57,19 @@ public class TimeMachineAPITest {
 
                 final File tmExpiredFolder = new File(tmTestingFolder, "timeMachineBundle_expired_" + (currentTimeMillis + i));
                 tmExpiredFolder.mkdir();
-                tmExpiredFolder.setLastModified(expireDate.toInstant().toEpochMilli());
 
                 expireFolders.add(tmExpiredFolder);
+
+                final File fileInside = new File(tmExpiredFolder, "file");
+                fileInside.createNewFile();
+
+                final File folderInside = new File(tmExpiredFolder, "folder");
+                folderInside.mkdir();
+
+                final File fileInsideFolderInside = new File(folderInside, "file");
+                fileInsideFolderInside.createNewFile();
+
+                tmExpiredFolder.setLastModified(expireDate.toInstant().toEpochMilli());
             }
 
             for (int i = 0; i < 10; i++) {

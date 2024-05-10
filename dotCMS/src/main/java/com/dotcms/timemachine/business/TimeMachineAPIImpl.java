@@ -2,6 +2,12 @@ package com.dotcms.timemachine.business;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -136,9 +142,31 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
             }
         }
 
-        fileToRemove.forEach(File::delete);
+        for (File file : fileToRemove) {
+            try {
+                deleteFolder(file.toPath());
+            } catch (IOException e) {
+                //ignore
+            }
+        }
 
         return fileToRemove;
+    }
+
+    public static void deleteFolder(Path folderPath) throws IOException {
+        Files.walkFileTree(folderPath, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     @Override
